@@ -2,9 +2,23 @@ import type { A4DocumentLayout } from './layout';
 import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
 } from './layout';
-import { domPointForFlowPoint, hydrateFlowContainer } from './model';
-import type { FlowSelectionBookmark } from './selection';
-import type { DocumentTransactionResult } from './document-actions';
+import {
+  domPointForFlowPoint,
+  hydrateFlowContainer,
+  normalizeEditedFlowIds,
+} from './model';
+import {
+  documentTextOffsetForFlowPoint,
+  flowPointAtDocumentTextOffset,
+  type FlowSelectionBookmark,
+} from './selection';
+import {
+  applyLogicalDelete,
+  collapsedFlowSelection,
+  insertReplacementNodes,
+  sanitizeReplacementHtml,
+  type DocumentTransactionResult,
+} from './document-actions';
 
 export interface EditorFormatState {
   bold: boolean;
@@ -59,6 +73,147 @@ function defaultFormatState(
     textColor: '#000000',
     highlightColor: '#ffffff',
   };
+}
+
+const FORMAT_PROPERTIES: Array<[keyof InlineFormatPatch, string]> = [
+  ['fontFamily', 'font-family'],
+  ['fontSize', 'font-size'],
+  ['color', 'color'],
+  ['backgroundColor', 'background-color'],
+  ['fontWeight', 'font-weight'],
+  ['fontStyle', 'font-style'],
+  ['textDecoration', 'text-decoration'],
+];
+
+export function normalizeColorValue(value: string): string {
+  const trimmed = value.trim().toLowerCase();
+  const shorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(trimmed);
+  if (shorthand) {
+    return `#${shorthand[1]}${shorthand[1]}${shorthand[2]}${shorthand[2]}${shorthand[3]}${shorthand[3]}`;
+  }
+  if (/^#[0-9a-f]{6}$/.test(trimmed)) return trimmed;
+
+  const rgb = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/.exec(
+    trimmed,
+  );
+  if (rgb) {
+    return `#${rgb
+      .slice(1, 4)
+      .map((component) =>
+        Math.max(0, Math.min(255, Number(component)))
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')}`;
+  }
+
+  if (
+    trimmed === 'transparent' ||
+    trimmed === 'inherit' ||
+    trimmed === 'currentcolor'
+  ) {
+    return '#000000';
+  }
+
+  try {
+    const probe = document.createElement('span');
+    probe.style.color = trimmed;
+    const computed =
+      document.defaultView?.getComputedStyle(probe).color ?? '';
+    const computedRgb =
+      /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/.exec(computed);
+    if (computedRgb) {
+      return `#${computedRgb
+        .slice(1, 4)
+        .map((component) =>
+          Math.max(0, Math.min(255, Number(component)))
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('')}`;
+    }
+  } catch {
+    // Fall through to the safe fallback below.
+  }
+
+  return '#000000';
+}
+
+function positivePatch(patch: InlineFormatPatch): InlineFormatPatch {
+  return Object.fromEntries(
+    (Object.entries(patch) as Array<[keyof InlineFormatPatch, unknown]>).filter(
+      ([, value]) => typeof value === 'string',
+    ),
+  ) as InlineFormatPatch;
+}
+
+function nullPatchProperties(
+  patch: InlineFormatPatch,
+): Array<[keyof InlineFormatPatch, string]> {
+  return (Object.entries(patch) as Array<
+    [keyof InlineFormatPatch, unknown]
+  >)
+    .filter(([, value]) => value === null)
+    .map(([key]) => {
+      const property = FORMAT_PROPERTIES.find(([candidate]) => candidate === key);
+      return [key, property?.[1] ?? ''] as [keyof InlineFormatPatch, string];
+    });
+}
+
+function hasSubstantiveContent(root: ParentNode): boolean {
+  return Boolean(
+    root.textContent?.length ||
+      root.querySelector(
+        'audio,canvas,embed,hr,iframe,img,input,object,svg,table,textarea,video',
+      ),
+  );
+}
+
+function containsFlowId(root: ParentNode, flowId: string): boolean {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>('[data-flow-id]'),
+  ).some((element) => element.dataset.flowId === flowId);
+}
+
+function firstFlowPoint(root: HTMLElement): FlowSelectionBookmark['anchor'] | null {
+  const first = root.querySelector<HTMLElement>('[data-flow-id]');
+  if (!first?.dataset.flowId) return null;
+  return { flowId: first.dataset.flowId, offset: 0 };
+}
+
+function finalizeRoot(
+  root: HTMLElement,
+  requestedSelection: FlowSelectionBookmark | null,
+  selectFallback: boolean,
+): Pick<DocumentTransactionResult, 'html' | 'selection'> {
+  if (!hasSubstantiveContent(root) && !root.querySelector('.page-break')) {
+    const paragraph = document.createElement('p');
+    paragraph.innerHTML = '<br>';
+    root.replaceChildren(paragraph);
+  }
+  hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
+
+  const requestedIsValid =
+    requestedSelection &&
+    containsFlowId(root, requestedSelection.anchor.flowId) &&
+    containsFlowId(root, requestedSelection.focus.flowId);
+  const fallbackPoint = selectFallback ? firstFlowPoint(root) : null;
+
+  return {
+    html: root.innerHTML,
+    selection: requestedIsValid
+      ? requestedSelection
+      : fallbackPoint
+        ? collapsedFlowSelection(fallbackPoint)
+        : null,
+  };
+}
+
+function fragmentTextLength(fragment: DocumentFragment): number {
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(fragment.cloneNode(true));
+  return wrapper.textContent?.length ?? 0;
 }
 
 function compareDomPoints(left: DomPoint, right: DomPoint): number {
@@ -157,37 +312,123 @@ function wrapTextSlice(
 
 function unwrapElementsInRange(
   root: HTMLElement,
-  start: DomPoint,
-  end: DomPoint,
+  selection: FlowSelectionBookmark,
 ): void {
-  const range = document.createRange();
-  range.setStart(start.node, start.offset);
-  range.setEnd(end.node, end.offset);
+  for (let pass = 0; pass < 12; pass += 1) {
+    const resolved = resolveRange(root, selection);
+    if (!resolved) return;
+    const range = document.createRange();
+    range.setStart(resolved.start.node, resolved.start.offset);
+    range.setEnd(resolved.end.node, resolved.end.offset);
+    let changed = false;
+    const rangeStart: DomPoint = {
+      node: range.startContainer,
+      offset: range.startOffset,
+    };
+    const rangeEnd: DomPoint = {
+      node: range.endContainer,
+      offset: range.endOffset,
+    };
+    const elements = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'span,strong,b,em,i,u,s,strike,[style]',
+      ),
+    );
 
-  const elements = Array.from(
-    root.querySelectorAll<HTMLElement>(
-      'span,strong,b,em,i,u,s,strike,[style]',
-    ),
+    for (const element of elements) {
+      if (!range.intersectsNode(element)) continue;
+
+      const elementStart: DomPoint = { node: element, offset: 0 };
+      const elementEnd: DomPoint = {
+        node: element,
+        offset: element.childNodes.length,
+      };
+      const rangeStartsInside =
+        compareDomPoints(elementStart, rangeStart) < 0 &&
+        compareDomPoints(rangeStart, elementEnd) < 0;
+      const rangeEndsInside =
+        compareDomPoints(elementStart, rangeEnd) < 0 &&
+        compareDomPoints(rangeEnd, elementEnd) < 0;
+      const firstChild = element.firstChild;
+      const lastChild = element.lastChild;
+      const contentStart: DomPoint | null = firstChild
+        ? { node: firstChild, offset: 0 }
+        : null;
+      const contentEnd: DomPoint | null = lastChild
+        ? {
+            node: lastChild,
+            offset:
+              lastChild.nodeType === Node.TEXT_NODE
+                ? lastChild.textContent?.length ?? 0
+                : lastChild.childNodes.length,
+          }
+        : null;
+      const fullyInside =
+        contentStart !== null &&
+        contentEnd !== null &&
+        compareDomPoints(rangeStart, contentStart) <= 0 &&
+        compareDomPoints(contentEnd, rangeEnd) <= 0;
+
+      if (fullyInside) {
+        if (
+          element.tagName === 'SPAN' ||
+          FORMATTING_ELEMENTS.has(element.tagName)
+        ) {
+          element.replaceWith(...Array.from(element.childNodes));
+        } else if (element.getAttribute('style')) {
+          element.removeAttribute('style');
+        }
+        changed = true;
+        break;
+      }
+
+      if (rangeStartsInside && splitElementAtDomPoint(element, rangeStart)) {
+        changed = true;
+        break;
+      }
+
+      if (rangeEndsInside && splitElementAtDomPoint(element, rangeEnd)) {
+        changed = true;
+        break;
+      }
+    }
+
+    if (!changed) break;
+  }
+}
+
+function splitElementAtDomPoint(
+  element: HTMLElement,
+  point: DomPoint,
+): boolean {
+  const beforeRange = document.createRange();
+  beforeRange.setStart(element, 0);
+  beforeRange.setEnd(point.node, point.offset);
+  const afterRange = document.createRange();
+  afterRange.setStart(point.node, point.offset);
+  afterRange.setEnd(element, element.childNodes.length);
+  if (!rangeHasContent(beforeRange) || !rangeHasContent(afterRange)) {
+    return false;
+  }
+
+  const before = beforeRange.extractContents();
+  const clone = element.cloneNode(false) as HTMLElement;
+  clone.appendChild(before);
+  element.parentNode?.insertBefore(clone, element);
+  return true;
+}
+
+function rangeHasContent(range: Range): boolean {
+  return (
+    range.toString().length > 0 ||
+    Boolean(
+      range
+        .cloneContents()
+        .querySelector(
+          'img,br,hr,svg,canvas,iframe,object,embed,video,audio,input,textarea',
+        ),
+    )
   );
-  elements.forEach((element) => {
-    if (!range.intersectsNode(element)) return;
-    const inside =
-      range.comparePoint(element, 0) === 0 &&
-      range.comparePoint(element, element.childNodes.length) === 0;
-    if (!inside) return;
-
-    if (
-      element.tagName === 'SPAN' ||
-      FORMATTING_ELEMENTS.has(element.tagName)
-    ) {
-      element.replaceWith(...Array.from(element.childNodes));
-      return;
-    }
-
-    if (element.getAttribute('style')) {
-      element.removeAttribute('style');
-    }
-  });
 }
 
 function canonicalStyleText(element: HTMLElement): string {
@@ -239,14 +480,15 @@ export function normalizeFormattingSpans(root: HTMLElement): void {
         return;
       }
 
-      let next = span.nextElementSibling as HTMLElement | null;
+      let next = span.nextSibling as HTMLElement | null;
       while (
+        next?.nodeType === Node.ELEMENT_NODE &&
         next?.tagName === 'SPAN' &&
         canonicalStyleText(next) === canonicalStyleText(span)
       ) {
         while (next.firstChild) span.appendChild(next.firstChild);
         const toRemove = next;
-        next = toRemove.nextElementSibling as HTMLElement | null;
+        next = toRemove.nextSibling as HTMLElement | null;
         toRemove.remove();
         changed = true;
       }
@@ -272,7 +514,7 @@ export function applyInlineFormat(
   const { start, end } = resolved;
 
   if (isClearPatch(patch)) {
-    unwrapElementsInRange(root, start, end);
+    unwrapElementsInRange(root, selection);
     normalizeFormattingSpans(root);
     hydrateFlowContainer(root);
     return {
@@ -319,6 +561,459 @@ export function applyInlineFormat(
   };
 }
 
+function inlineWrapperHasNullPatch(
+  element: HTMLElement,
+  nullProperties: Array<[keyof InlineFormatPatch, string]>,
+): boolean {
+  const hasNull = (key: keyof InlineFormatPatch) =>
+    nullProperties.some(([candidate]) => candidate === key);
+  if (
+    (element.tagName === 'B' || element.tagName === 'STRONG') &&
+    hasNull('fontWeight')
+  ) {
+    return true;
+  }
+  if (
+    (element.tagName === 'I' || element.tagName === 'EM') &&
+    hasNull('fontStyle')
+  ) {
+    return true;
+  }
+  if (
+    (element.tagName === 'U' || element.tagName === 'S' ||
+      element.tagName === 'STRIKE') &&
+    hasNull('textDecoration')
+  ) {
+    return true;
+  }
+  if (
+    element.tagName !== 'SPAN' &&
+    !FORMATTING_ELEMENTS.has(element.tagName)
+  ) {
+    return false;
+  }
+  return nullProperties.some(([, property]) =>
+    Boolean(element.style.getPropertyValue(property)),
+  );
+}
+
+/**
+ * Moves a collapsed caret outside any inline wrapper that explicitly turns a
+ * formatting property off (null patch), so subsequent insertion does not
+ * inherit the cancelled format. Returns the DOM point where the caret should
+ * be inserted.
+ */
+function prepareCaretForPatch(
+  root: HTMLElement,
+  point: DomPoint,
+  patch: InlineFormatPatch,
+): DomPoint {
+  const nullProperties = nullPatchProperties(patch);
+  if (nullProperties.length === 0) return point;
+
+  const candidates: HTMLElement[] = [];
+  let element: HTMLElement | null =
+    point.node.nodeType === Node.ELEMENT_NODE
+      ? (point.node as HTMLElement)
+      : point.node.parentElement;
+  while (element && element !== root) {
+    if (inlineWrapperHasNullPatch(element, nullProperties)) {
+      candidates.push(element);
+    }
+    element = element.parentElement;
+  }
+  const wrapper = candidates[candidates.length - 1];
+  if (!wrapper || !root.contains(wrapper) || !wrapper.parentNode) return point;
+
+  const beforeRange = document.createRange();
+  beforeRange.setStart(wrapper, 0);
+  beforeRange.setEnd(point.node, point.offset);
+  const afterRange = document.createRange();
+  afterRange.setStart(point.node, point.offset);
+  afterRange.setEnd(wrapper, wrapper.childNodes.length);
+
+  const parent = wrapper.parentNode;
+  const index = Array.prototype.indexOf.call(parent.childNodes, wrapper);
+  const beforeHasContent = rangeHasContent(beforeRange);
+  const afterHasContent = rangeHasContent(afterRange);
+  if (!beforeHasContent) return { node: parent, offset: index };
+  if (!afterHasContent) return { node: parent, offset: index + 1 };
+
+  const before = beforeRange.extractContents();
+  const clone = wrapper.cloneNode(false) as HTMLElement;
+  clone.appendChild(before);
+  wrapper.parentNode?.insertBefore(clone, wrapper);
+  return { node: parent, offset: index };
+}
+
+function applyPositivePatchToFragment(
+  fragment: DocumentFragment,
+  patch: InlineFormatPatch,
+): void {
+  const positive = positivePatch(patch);
+  if (Object.keys(positive).length === 0) return;
+
+  const textNodes: Text[] = [];
+  const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (node.textContent?.length) textNodes.push(node as Text);
+  }
+
+  textNodes.forEach((textNode) => {
+    const span = document.createElement('span');
+    applyPatchToSpan(span, positive);
+    textNode.parentNode?.replaceChild(span, textNode);
+    span.appendChild(textNode);
+  });
+}
+
+function ensureEditableRoot(root: HTMLElement): void {
+  if (!hasSubstantiveContent(root) && !root.querySelector('.page-break')) {
+    const paragraph = document.createElement('p');
+    paragraph.innerHTML = '<br>';
+    root.replaceChildren(paragraph);
+  }
+}
+
+/**
+ * Inserts typed text at a collapsed logical caret while applying the pending
+ * typing format. Null patch values split the caret out of any wrapper that
+ * currently carries that property; positive values wrap the inserted text.
+ */
+export function insertTextWithFormat(
+  html: string,
+  selection: FlowSelectionBookmark,
+  text: string,
+  patch: InlineFormatPatch,
+): DocumentTransactionResult {
+  if (!text) return { html, selection, changed: false };
+  if (!selection.collapsed) {
+    const deleted = applyLogicalDelete(html, selection, 'forward');
+    if (!deleted.changed || !deleted.selection?.collapsed) {
+      return { html, selection, changed: false };
+    }
+    return insertTextWithFormat(deleted.html, deleted.selection, text, patch);
+  }
+
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const point = domPointForFlowPoint(root, selection.anchor);
+  if (!point) return { html, selection, changed: false };
+  const startDocumentOffset = documentTextOffsetForFlowPoint(
+    html,
+    selection.anchor,
+  );
+
+  const insertionPoint = prepareCaretForPatch(root, point, patch);
+  const positive = positivePatch(patch);
+  const textNode = document.createTextNode(text);
+  const fragment = document.createDocumentFragment();
+  if (Object.keys(positive).length > 0) {
+    const span = document.createElement('span');
+    applyPatchToSpan(span, positive);
+    span.appendChild(textNode);
+    fragment.appendChild(span);
+  } else {
+    fragment.appendChild(textNode);
+  }
+
+  const range = document.createRange();
+  range.setStart(insertionPoint.node, insertionPoint.offset);
+  range.collapse(true);
+  range.insertNode(fragment);
+
+  normalizeFormattingSpans(root);
+  ensureEditableRoot(root);
+  hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
+
+  const caret =
+    startDocumentOffset === null
+      ? selection.anchor
+      : flowPointAtDocumentTextOffset(
+          root.innerHTML,
+          startDocumentOffset + text.length,
+        ) ?? selection.anchor;
+  return {
+    html: root.innerHTML,
+    selection: collapsedFlowSelection(caret),
+    changed: true,
+  };
+}
+
+/**
+ * Replaces the logical selection with formatted content, applying the pending
+ * typing format the same way as typed text.
+ */
+export function replaceFormattedSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+  replacementHtml: string,
+  patch: InlineFormatPatch,
+): DocumentTransactionResult {
+  if (!selection.collapsed) {
+    const deleted = applyLogicalDelete(html, selection, 'forward');
+    if (!deleted.changed || !deleted.selection?.collapsed) {
+      return { html, selection, changed: false };
+    }
+    return replaceFormattedSelection(
+      deleted.html,
+      deleted.selection,
+      replacementHtml,
+      patch,
+    );
+  }
+
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const point = domPointForFlowPoint(root, selection.anchor);
+  if (!point) return { html, selection, changed: false };
+  const startDocumentOffset = documentTextOffsetForFlowPoint(
+    html,
+    selection.anchor,
+  );
+
+  const insertionPoint = prepareCaretForPatch(root, point, patch);
+  const template = document.createElement('template');
+  template.innerHTML = sanitizeReplacementHtml(replacementHtml);
+  const fragment = template.content;
+  if (fragment.childNodes.length === 0) {
+    return { html, selection, changed: false };
+  }
+  const replacementLength = fragmentTextLength(fragment);
+  applyPositivePatchToFragment(fragment, patch);
+  insertReplacementNodes(root, insertionPoint, fragment);
+
+  normalizeFormattingSpans(root);
+  ensureEditableRoot(root);
+  hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
+
+  const caret =
+    startDocumentOffset === null
+      ? selection.anchor
+      : flowPointAtDocumentTextOffset(
+          root.innerHTML,
+          startDocumentOffset + replacementLength,
+        ) ?? selection.anchor;
+  return {
+    html: root.innerHTML,
+    selection: collapsedFlowSelection(caret),
+    changed: true,
+  };
+}
+
+const BLOCK_FORMAT_TAGS = new Set([
+  'P',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'BLOCKQUOTE',
+]);
+
+function copyBlockAttributes(
+  source: HTMLElement,
+  target: HTMLElement,
+): void {
+  for (const attribute of Array.from(source.attributes)) {
+    if (
+      attribute.name.startsWith('data-flow-') ||
+      attribute.name === 'style' ||
+      attribute.name === 'class'
+    ) {
+      target.setAttribute(attribute.name, attribute.value);
+    }
+  }
+}
+
+function intersectedBlocks(
+  root: HTMLElement,
+  range: Range,
+): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>('p,h1,h2,h3,h4,h5,h6,blockquote'),
+  ).filter((block) => range.intersectsNode(block));
+}
+
+export function applyBlockFormatToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+  tagName: string,
+): DocumentTransactionResult {
+  const normalizedTag = tagName.toUpperCase();
+  if (!BLOCK_FORMAT_TAGS.has(normalizedTag)) {
+    return { html, selection, changed: false };
+  }
+
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return { html, selection, changed: false };
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+
+  const blocks = intersectedBlocks(root, range);
+  if (blocks.length === 0) return { html, selection, changed: false };
+
+  blocks.forEach((block) => {
+    const replacement = document.createElement(normalizedTag);
+    copyBlockAttributes(block, replacement);
+    while (block.firstChild) replacement.appendChild(block.firstChild);
+    block.replaceWith(replacement);
+  });
+
+  normalizeFormattingSpans(root);
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+export function applyBlockAlignmentToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+  alignment: EditorFormatState['alignment'],
+): DocumentTransactionResult {
+  if (!['left', 'center', 'right', 'justify'].includes(alignment)) {
+    return { html, selection, changed: false };
+  }
+
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return { html, selection, changed: false };
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+  const blocks = intersectedBlocks(root, range);
+  if (blocks.length === 0) return { html, selection, changed: false };
+
+  const before = root.innerHTML;
+  blocks.forEach((block) => {
+    if (alignment === 'left') {
+      if (block.style.textAlign === 'left') {
+        block.style.removeProperty('text-align');
+      }
+    } else {
+      block.style.setProperty('text-align', alignment);
+    }
+  });
+  if (root.innerHTML === before) return { html, selection, changed: false };
+
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+export function applyListToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+  listType: 'ordered' | 'unordered',
+): DocumentTransactionResult {
+  const tag = listType === 'ordered' ? 'OL' : 'UL';
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return { html, selection, changed: false };
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+  const blocks = intersectedBlocks(root, range);
+  if (blocks.length === 0) return { html, selection, changed: false };
+
+  const allInMatchingList = blocks.every((block) => {
+    const list = block.parentElement?.closest('ol,ul');
+    return list?.tagName === tag;
+  });
+
+  if (allInMatchingList) {
+    const byList = new Map<HTMLElement, HTMLElement[]>();
+    blocks.forEach((block) => {
+      const listItem = block.parentElement;
+      const list = listItem?.closest('ol,ul') as HTMLElement | null;
+      if (!listItem || !list || listItem.parentElement !== list) return;
+      const paragraph = document.createElement('p');
+      copyBlockAttributes(block, paragraph);
+      while (block.firstChild) paragraph.appendChild(block.firstChild);
+      const paragraphs = byList.get(list);
+      if (paragraphs) paragraphs.push(paragraph);
+      else byList.set(list, [paragraph]);
+      listItem.remove();
+    });
+
+    for (const [list, paragraphs] of byList) {
+      const parent = list.parentNode;
+      if (!parent) continue;
+      let reference: Node = list;
+      paragraphs.forEach((paragraph) => {
+        parent.insertBefore(paragraph, reference);
+        reference = paragraph;
+      });
+      if (list.children.length === 0) list.remove();
+    }
+  } else {
+    blocks.forEach((block) => {
+      if (block.parentElement?.closest('ol,ul')) return;
+      const listItem = document.createElement('li');
+      copyBlockAttributes(block, listItem);
+      while (block.firstChild) listItem.appendChild(block.firstChild);
+      const list = document.createElement(tag);
+      list.appendChild(listItem);
+      block.replaceWith(list);
+    });
+  }
+
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+export function applyIndentToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return { html, selection, changed: false };
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+  const blocks = intersectedBlocks(root, range);
+  if (blocks.length === 0) return { html, selection, changed: false };
+
+  blocks.forEach((block) => {
+    const current = block.style.marginLeft;
+    if (!current) block.style.setProperty('margin-left', '2em');
+  });
+
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+export function applyOutdentToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return { html, selection, changed: false };
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+  const blocks = intersectedBlocks(root, range);
+  if (blocks.length === 0) return { html, selection, changed: false };
+
+  blocks.forEach((block) => {
+    if (block.style.marginLeft) block.style.removeProperty('margin-left');
+  });
+
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
 function inlinePropertyInAncestors(
   start: Node,
   root: HTMLElement,
@@ -352,14 +1047,11 @@ function hasFormattingTag(
   return false;
 }
 
-export function readLogicalFormatState(
+function readFormatStateAtPoint(
   root: HTMLElement,
-  bookmark: FlowSelectionBookmark,
+  point: DomPoint,
   fallbackLayout: A4DocumentLayout = DEFAULT_A4_DOCUMENT_LAYOUT,
 ): EditorFormatState {
-  const point = domPointForFlowPoint(root, bookmark.anchor);
-  if (!point) return defaultFormatState(fallbackLayout);
-
   const state = defaultFormatState(fallbackLayout);
   const element =
     point.node.nodeType === Node.ELEMENT_NODE
@@ -393,11 +1085,13 @@ export function readLogicalFormatState(
     root,
     'font-size',
   ) ?? fallbackLayout.fontSize;
-  state.textColor =
-    inlinePropertyInAncestors(point.node, root, 'color') ?? '#000000';
-  state.highlightColor =
+  state.textColor = normalizeColorValue(
+    inlinePropertyInAncestors(point.node, root, 'color') ?? '#000000',
+  );
+  state.highlightColor = normalizeColorValue(
     inlinePropertyInAncestors(point.node, root, 'background-color') ??
-    '#ffffff';
+      '#ffffff',
+  );
   state.bold =
     hasFormattingTag(point.node, root, ['B', 'STRONG']) ||
     ['bold', 'bolder', '600', '700', '800', '900'].includes(
@@ -415,4 +1109,74 @@ export function readLogicalFormatState(
     );
 
   return state;
+}
+
+export function readLogicalFormatState(
+  root: HTMLElement,
+  bookmark: FlowSelectionBookmark,
+  fallbackLayout: A4DocumentLayout = DEFAULT_A4_DOCUMENT_LAYOUT,
+): EditorFormatState {
+  const point = domPointForFlowPoint(root, bookmark.anchor);
+  if (!point) return defaultFormatState(fallbackLayout);
+  return readFormatStateAtPoint(root, point, fallbackLayout);
+}
+
+function formatStateKey(state: EditorFormatState): string {
+  return [
+    state.bold,
+    state.italic,
+    state.underline,
+    state.alignment,
+    state.list,
+    state.paragraphStyle,
+    state.fontFamily,
+    state.fontSize,
+    state.textColor,
+    state.highlightColor,
+  ].join('\u0001');
+}
+
+/**
+ * Returns the format state when every sampled point in the selection agrees,
+ * otherwise null. Used to derive toggle semantics for formatting commands.
+ */
+export function readUniformFormatState(
+  root: HTMLElement,
+  bookmark: FlowSelectionBookmark,
+  fallbackLayout: A4DocumentLayout = DEFAULT_A4_DOCUMENT_LAYOUT,
+): EditorFormatState | null {
+  if (bookmark.collapsed) {
+    return readLogicalFormatState(root, bookmark, fallbackLayout);
+  }
+
+  const resolved = resolveRange(root, bookmark);
+  if (!resolved) return null;
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+
+  const samples: DomPoint[] = [
+    { node: range.startContainer, offset: range.startOffset },
+    { node: range.endContainer, offset: range.endOffset },
+  ];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (!node.textContent?.length) continue;
+    const nodeRange = document.createRange();
+    nodeRange.selectNodeContents(node);
+    if (range.intersectsNode(node)) {
+      samples.push({ node, offset: 0 });
+      samples.push({ node, offset: node.textContent.length });
+    }
+  }
+
+  const first = readFormatStateAtPoint(root, samples[0], fallbackLayout);
+  const firstKey = formatStateKey(first);
+  const uniform = samples.every(
+    (sample) =>
+      formatStateKey(readFormatStateAtPoint(root, sample, fallbackLayout)) ===
+      firstKey,
+  );
+  return uniform ? first : null;
 }

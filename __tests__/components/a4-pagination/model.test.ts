@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HARD_PAGE_BREAK_HTML,
+  hardSectionCountFromPages,
   hydrateFlowHtml,
   normalizeEditedFlowIds,
   normalizeCanonicalHtml,
@@ -10,6 +11,19 @@ import {
 } from '@/components/documents/a4-pagination/model';
 
 describe('A4 pagination canonical model', () => {
+  it('counts hard sections from derived pages without touching the DOM', () => {
+    expect(hardSectionCountFromPages([])).toBe(0);
+    expect(hardSectionCountFromPages([{ hardBreakBefore: false }])).toBe(1);
+    expect(
+      hardSectionCountFromPages([
+        { hardBreakBefore: false },
+        { hardBreakBefore: true },
+        { hardBreakBefore: false },
+        { hardBreakBefore: true },
+      ]),
+    ).toBe(3);
+  });
+
   it('treats legacy comment page breaks as soft boundaries', () => {
     expect(
       normalizeCanonicalHtml(

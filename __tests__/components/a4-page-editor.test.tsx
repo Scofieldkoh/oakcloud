@@ -1661,4 +1661,148 @@ describe('A4PageEditor', () => {
 
     expect(document.activeElement).toBe(screen.getByTestId('a4-document-surface'));
   });
+
+  it('applies a pending bold format to typed text and toggles it off at the caret', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(<A4PageEditor ref={editorRef} value="<p>Alpha</p>" />);
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const page = screen.getByTestId('a4-page-content-1');
+    const textNode = page.querySelector('p')!.firstChild!;
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(textNode, 5);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    act(() => {
+      surface.dispatchEvent(
+        new InputEvent('beforeinput', {
+          inputType: 'insertText',
+          data: 'X',
+          cancelable: true,
+          bubbles: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByTestId('a4-page-content-1')
+          .querySelector('span[style*="font-weight"]')?.textContent,
+      ).toBe('X');
+    });
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+    expect(editorRef.current!.getContent()).toContain('font-weight: bold');
+
+    const boldSpan = screen
+      .getByTestId('a4-page-content-1')
+      .querySelector('span[style*="font-weight"]')!;
+    const boldText = boldSpan.firstChild!;
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(boldText, 1);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    act(() => {
+      surface.dispatchEvent(
+        new InputEvent('beforeinput', {
+          inputType: 'insertText',
+          data: 'Y',
+          cancelable: true,
+          bubbles: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editorRef.current!.getContent()).toContain('Y');
+    });
+    const body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.textContent).toBe('AlphaXY');
+    expect(body.querySelector('p')?.lastChild?.textContent).toBe('Y');
+    expect(
+      body.querySelector('p')?.lastChild?.parentElement?.tagName,
+    ).toBe('P');
+  });
+
+  it('refuses insertion when the saved logical selection is stale', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value="<p>Alpha</p>"
+        onChange={onChange}
+      />,
+    );
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const page = screen.getByTestId('a4-page-content-1');
+    const textNode = page.querySelector('p')!.firstChild!;
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(textNode, 2);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    fireEvent.blur(surface);
+    act(() => {
+      window.getSelection()?.removeAllRanges();
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+    onChange.mockClear();
+
+    act(() => {
+      editorRef.current!.setContent('<p>Replaced</p>');
+    });
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    act(() => {
+      editorRef.current!.insertHtmlAtCursor('<p>Dropped</p>');
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Selection moved after repagination; choose the text again.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(editorRef.current!.getContent()).toBe('<p>Replaced</p>');
+    expect(onChange).not.toHaveBeenCalled();
+
+    act(() => {
+      editorRef.current!.insertAtCursor('Dropped text');
+    });
+    expect(editorRef.current!.getContent()).toBe('<p>Replaced</p>');
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

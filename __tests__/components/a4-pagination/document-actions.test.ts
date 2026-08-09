@@ -280,4 +280,125 @@ describe('A4 canonical document actions', () => {
     ]);
     expect(result.selection?.anchor.offset).toBe(0);
   });
+
+  it('Enter deletes a forward selection before splitting at its start', () => {
+    const html = hydrateFlowHtml('<p>SELCASECASE</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = insertParagraphAtSelection(html, {
+      anchor: { flowId, offset: 3 },
+      focus: { flowId, offset: 7 },
+      collapsed: false,
+    });
+
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(
+      Array.from(body.querySelectorAll('p'), (paragraph) => paragraph.textContent),
+    ).toEqual(['SEL', 'CASE']);
+    expect(result.selection?.collapsed).toBe(true);
+    expect(result.selection?.anchor.offset).toBe(0);
+    expect(result.changed).toBe(true);
+  });
+
+  it('Enter deletes a reversed selection before splitting at its logical start', () => {
+    const html = hydrateFlowHtml('<p>SELCASECASE</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = insertParagraphAtSelection(html, {
+      anchor: { flowId, offset: 7 },
+      focus: { flowId, offset: 3 },
+      collapsed: false,
+    });
+
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(
+      Array.from(body.querySelectorAll('p'), (paragraph) => paragraph.textContent),
+    ).toEqual(['SEL', 'CASE']);
+    expect(result.selection?.collapsed).toBe(true);
+    expect(result.selection?.anchor.offset).toBe(0);
+  });
+
+  it('inserts block clipboard nodes at block boundaries without nesting', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = replaceLogicalSelection(
+      html,
+      {
+        anchor: { flowId, offset: 5 },
+        focus: { flowId, offset: 5 },
+        collapsed: true,
+      },
+      '<p>One</p><p>Two</p>',
+    );
+
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(
+      Array.from(body.querySelectorAll('p'), (paragraph) => paragraph.textContent),
+    ).toEqual(['Alpha', 'One', 'Two', 'Beta']);
+    expect(body.querySelector('p p, p h1, p h2, p blockquote, p table, p ul, p ol')).toBeNull();
+    expect(result.html.match(/One/g)).toHaveLength(1);
+    expect(result.html.match(/Two/g)).toHaveLength(1);
+  });
+
+  it('strips editor-owned flow metadata from clipboard HTML', () => {
+    const html = hydrateFlowHtml('<p>Alpha</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = replaceLogicalSelection(
+      html,
+      {
+        anchor: { flowId, offset: 5 },
+        focus: { flowId, offset: 5 },
+        collapsed: true,
+      },
+      '<p data-flow-id="f1" data-flow-continuation="true">One</p>' +
+        '<p data-flow-id="f1" data-flow-oversized="true">Two</p>',
+    );
+
+    expect(result.html).not.toContain('data-flow-continuation');
+    expect(result.html).not.toContain('data-flow-oversized');
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    const ids = Array.from(
+      body.querySelectorAll<HTMLElement>('[data-flow-id]'),
+      (element) => element.dataset.flowId!,
+    );
+    expect(ids).not.toContain('f1');
+    expect(stripFlowMetadata(result.html)).toBe(
+      '<p>Alpha</p><p>One</p><p>Two</p>',
+    );
+  });
+
+  it('assigns globally unique flow ids after every replacement', () => {
+    const html = hydrateFlowHtml('<p>Alpha</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = replaceLogicalSelection(
+      html,
+      {
+        anchor: { flowId, offset: 5 },
+        focus: { flowId, offset: 5 },
+        collapsed: true,
+      },
+      '<p>One</p><p>Two</p>',
+    );
+
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    const ids = Array.from(
+      body.querySelectorAll<HTMLElement>('[data-flow-id]'),
+      (element) => element.dataset.flowId!,
+    );
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

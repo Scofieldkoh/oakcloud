@@ -9,6 +9,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from 'vitest';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
 import '@/app/globals.css';
@@ -21,6 +22,7 @@ declare global {
 describe('A4PageEditor page controls', () => {
   let host: HTMLDivElement;
   let root: Root;
+  let consoleError: ReturnType<typeof vi.spyOn>;
   const previousActEnvironment = globalThis.IS_REACT_ACT_ENVIRONMENT;
 
   beforeAll(() => {
@@ -35,9 +37,26 @@ describe('A4PageEditor page controls', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
+    consoleError = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      const message = args.map(String).join(' ');
+      if (message.includes('not wrapped in act')) {
+        throw new Error(`Unexpected React act warning: ${message}`);
+      }
+      if (message.includes('download the React DevTools')) return;
+      throw new Error(`Unexpected console.error: ${message}`);
+    });
   });
 
   afterEach(async () => {
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+    consoleError.mockRestore();
     await act(async () => root.unmount());
     host.remove();
   });
@@ -50,9 +69,13 @@ describe('A4PageEditor page controls', () => {
         />,
       );
     });
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
 
     const deleteControls = Array.from(
       host.querySelectorAll<HTMLButtonElement>(
@@ -81,9 +104,13 @@ describe('A4PageEditor page controls', () => {
         />,
       );
     });
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
 
     expect(
       host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
@@ -102,9 +129,13 @@ describe('A4PageEditor page controls', () => {
     await act(async () => {
       root.render(<A4PageEditor value="<p>Narrow viewport content</p>" />);
     });
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
 
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(1024);
 
@@ -125,9 +156,13 @@ describe('A4PageEditor page controls', () => {
     const addPage = Array.from(host.querySelectorAll('button')).find(
       (button) => button.textContent?.trim() === 'Add Page',
     )!;
-    formats.focus();
+    await act(async () => {
+      formats.focus();
+    });
     expect(document.activeElement).toBe(formats);
-    addPage.focus();
+    await act(async () => {
+      addPage.focus();
+    });
     expect(document.activeElement).toBe(addPage);
   });
 });

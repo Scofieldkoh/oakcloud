@@ -145,8 +145,26 @@ describe('template editor page panel integration', () => {
       pixelsPerCharacter: 6,
       blockHeight: 0,
     });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(
+      (...args) => {
+        const message = args.map(String).join(' ');
+        if (message.includes('not wrapped in act')) {
+          throw new Error(`Unexpected React act warning: ${message}`);
+        }
+        if (message.includes('download the React DevTools')) return;
+        throw new Error(`Unexpected console.error: ${message}`);
+      },
+    );
 
     try {
+      const flush = async () => {
+        await act(async () => {
+          await flushA4Reflow();
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          await flushA4Reflow();
+        });
+      };
+
       const firstRender = render(<TemplateEditorPage />);
 
       await waitFor(() => {
@@ -154,7 +172,7 @@ describe('template editor page panel integration', () => {
           screen.getByTestId('a4-page-content-1'),
         ).toHaveTextContent('{{company.name}}');
       });
-      await flushA4Reflow();
+      await flush();
 
       const surface = screen.getByTestId('a4-document-surface');
       const pageContent = screen.getByTestId('a4-page-content-1');
@@ -172,16 +190,19 @@ describe('template editor page panel integration', () => {
         selection.removeAllRanges();
         selection.addRange(range);
       });
-      fireEvent.paste(pageContent, {
-        clipboardData: {
-          getData: (type: string) => (type === 'text/plain' ? lines.join('\n') : ''),
-        },
+      act(() => {
+        fireEvent.paste(pageContent, {
+          clipboardData: {
+            getData: (type: string) =>
+              type === 'text/plain' ? lines.join('\n') : '',
+          },
+        });
       });
       await waitFor(() => {
         const content = screen.getByTestId('a4-document-surface').textContent ?? '';
         expect(content).toContain('Draft line 120');
       });
-      await flushA4Reflow();
+      await flush();
 
       const selectAll = () => {
         act(() => {
@@ -197,7 +218,7 @@ describe('template editor page panel integration', () => {
       };
       const waitForIdle = async () => {
         for (let attempt = 0; attempt < 10; attempt += 1) {
-          await flushA4Reflow();
+          await flush();
           if (
             screen
               .getByTestId('a4-document-surface')
@@ -208,74 +229,98 @@ describe('template editor page panel integration', () => {
         }
       };
       selectAll();
-      fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
+      });
       const formatsPopover = () =>
         screen.getByRole('dialog', { name: 'Formats popover' });
       selectAll();
-      fireEvent.change(within(formatsPopover()).getByLabelText('Font family'), {
-        target: { value: 'Georgia, serif' },
+      act(() => {
+        fireEvent.change(
+          within(formatsPopover()).getByLabelText('Font family'),
+          {
+            target: { value: 'Georgia, serif' },
+          },
+        );
       });
-      await flushA4Reflow();
+      await flush();
       selectAll();
-      fireEvent.change(within(formatsPopover()).getByLabelText('Font size'), {
-        target: { value: '14pt' },
+      act(() => {
+        fireEvent.change(within(formatsPopover()).getByLabelText('Font size'), {
+          target: { value: '14pt' },
+        });
       });
-      await flushA4Reflow();
+      await flush();
       selectAll();
-      fireEvent.change(within(formatsPopover()).getByLabelText('Text color'), {
-        target: { value: '#ff0000' },
+      act(() => {
+        fireEvent.change(
+          within(formatsPopover()).getByLabelText('Text color'),
+          {
+            target: { value: '#ff0000' },
+          },
+        );
       });
-      await flushA4Reflow();
+      await flush();
 
       const topMargin = screen.getByLabelText('Top margin');
-      fireEvent.change(topMargin, { target: { value: '30' } });
-      fireEvent.blur(topMargin);
+      act(() => {
+        fireEvent.change(topMargin, { target: { value: '30' } });
+        fireEvent.blur(topMargin);
+      });
       const leftMargin = screen.getByLabelText('Left margin');
-      fireEvent.change(leftMargin, { target: { value: '25' } });
-      fireEvent.blur(leftMargin);
-      await flushA4Reflow();
+      act(() => {
+        fireEvent.change(leftMargin, { target: { value: '25' } });
+        fireEvent.blur(leftMargin);
+      });
+      await flush();
 
       let pageCount = screen.getAllByTestId(/a4-page-content-/).length;
       await waitForIdle();
-      fireEvent.click(screen.getByRole('button', { name: 'Add blank page' }));
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Add blank page' }));
+      });
       const countAfterAddBlank = pageCount + 1;
       await waitFor(() => {
         expect(screen.getAllByTestId(/a4-page-content-/).length).toBe(
           countAfterAddBlank,
         );
       });
-      await flushA4Reflow();
+      await flush();
       await waitForIdle();
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Delete current page' }),
-      );
+      act(() => {
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Delete current page' }),
+        );
+      });
       await waitFor(() => {
         expect(screen.getAllByTestId(/a4-page-content-/).length).toBe(
           pageCount,
         );
       });
-      await flushA4Reflow();
+      await flush();
 
       await waitForIdle();
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Insert page break' }),
-      );
+      act(() => {
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Insert page break' }),
+        );
+      });
       await waitFor(() => {
         expect(screen.getAllByTestId(/a4-page-content-/).length).toBe(
           pageCount + 1,
         );
       });
-      await flushA4Reflow();
+      await flush();
       await waitFor(() => {
         expect(
           screen.getByRole('button', { name: 'Delete current page' }),
         ).not.toBeDisabled();
       });
-      await act(async () => {
-        await new Promise<void>((resolve) => setTimeout(resolve, 50));
-      });
+      await flush();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Save Template' }));
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Save Template' }));
+      });
 
       await waitFor(() => {
         expect(hoisted.updateMutation.mutateAsync).toHaveBeenCalled();
@@ -317,7 +362,7 @@ describe('template editor page panel integration', () => {
           screen.getByTestId('a4-document-surface').textContent,
         ).toContain('Draft line 120');
       });
-      await flushA4Reflow();
+      await flush();
       expect(
         new DOMParser()
           .parseFromString(
@@ -331,6 +376,7 @@ describe('template editor page panel integration', () => {
 
       act(() => unmount());
     } finally {
+      consoleError.mockRestore();
       restoreMeasurement();
     }
   }, 30_000);

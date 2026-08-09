@@ -34,7 +34,7 @@
 | P1 | The validation catalog rejects fields that the Fields panel offers. | The existing agreement reported blocking errors for `company.address.letter` and `selectedContact.*`; legacy `custom.*` references also had no definitions. Save Template remained disabled. | Existing supported templates can be edited but not saved. |
 | P1 | Formatting commands preserve raw DOM nodes across repagination. | `savedSelectionRef` stores `Node` references, while page effects replace `innerHTML`. | Font, font size, text colour, highlight, and insert-at-cursor commands can no-op or target the wrong place after reflow. |
 | P2 | Font and colour controls are uncontrolled and formatting markup grows excessively. | The controls use `defaultValue`, do not reflect the current cursor, and whole-document font/size changes produced 477 spans and about 62,000 HTML characters. | The toolbar presents stale values and repeated formatting progressively slows pagination and complicates later editing. |
-| P2 | Global layout status is false and reflow has no stable busy state. | A 60mm top margin repaginated the agreement from 15 to 17 pages while the footer continued to show `20mm margins`; the footer also rendered `794Ã—1123px`. Large changes produced multi-second unstable re-render windows. | Users cannot tell which layout is active or whether repagination has completed before continuing to edit. |
+| P2 | Global layout status is false and reflow has no stable busy state. | A 60mm top margin repaginated the agreement from 15 to 17 pages while the footer continued to show `20mm margins`; the footer also rendered `794×1123px`. Large changes produced multi-second unstable re-render windows. | Users cannot tell which layout is active or whether repagination has completed before continuing to edit. |
 | P2 | Oversized unsplittable content is silently clipped. | The pagination engine sets `oversized`, but `Page` ignores it and applies `overflow: hidden`. | Tall table rows and other unsplittable blocks can disappear without an explanation or editable recovery path. |
 | P2 | The editor's “What you see = What prints” statement is inaccurate. | Browser print adds `0.5em` to every `<br>`, uses different page-number positioning, and has different page-height/overflow rules. | Line breaks and page content can move between edit, preview, print, and PDF output. |
 | P2 test gap | The pagination suite is timing-sensitive and misses the live workflows above. | The combined review run had one soft-page deletion failure; the same test passed in isolation and on three reruns. The browser suite has no blank-document Enter, collapsed paste, selection-after-reflow, save/reopen, or print-media parity workflow. | Green isolated runs do not reliably protect the user-facing route. |
@@ -48,6 +48,141 @@
 - `npx.cmd tsc --noEmit --pretty false`: passed.
 - Targeted ESLint for the editor, route, and pagination modules: passed.
 - No application-origin console errors or framework error overlays appeared during the authenticated live review.
+
+---
+
+## Fix Implementation Review — 2026-08-09
+
+**Reviewed revision:** `a58b97f` (`fix(documents): remediate A4 editor reliability`)
+
+**Review outcome:** The implementation resolves most of the original high-risk failures, including duplicate plain-text paste, empty-document typing order, logical Backspace/Delete at soft page boundaries, hard-section deletion, validation catalog drift, selection restoration across reflow, truthful global layout feedback, oversized-content visibility, and shared print CSS. The editor is not ready to close as fully remediated because eight residual or newly exposed issues remain in core drafting, formatting, and production-rendering paths.
+
+### Confirmed Resolved Scope
+
+| Area | Review result | Evidence |
+|---|---|---|
+| Plain-text paste duplication | Resolved for the covered collapsed paste path. | Focused and Chromium suites pass the 120-line one-copy regression. |
+| Empty-document typing and collapsed Enter | Resolved for the covered caret split path. | Browser tests preserve `Alpha`, Enter, `Beta` in document order. |
+| Backspace and forward Delete across soft pages | Resolved for the covered boundary paths. | Pure transaction and component tests pass in both directions. |
+| Physical-page versus hard-section deletion | Resolved. | Soft-only pagination exposes no delete action; explicit Add/Delete returned the live document from 28 → 29 → 28 pages. |
+| Template field validation | Resolved for standard and inferred legacy custom fields. | The shared catalog is consumed by insertion and validation, and save/reopen tests preserve inferred definitions. |
+| Selection restoration and latest-generation reflow | Resolved for the covered logical bookmarks. | Reversed selection, controlled-layout rerender, and latest-generation tests pass. |
+| Global typography, spacing, and margins | Resolved in the reviewed route. | Authenticated QA applied Georgia, 14pt, 2× line spacing, 1em paragraph spacing, 30mm top and 25mm left margins; computed page styles reflected the final values. |
+| Oversized content and print styling | Resolved for the tested path. | Accessible warning, editable overflow, shared CSS, line-break parity, and print marker tests pass. |
+| Narrow layout containment | Resolved for 1024×720 and 768×720. | The application body did not overflow; the A4 canvas and toolbar retained independent horizontal scrolling. |
+
+### Residual and New Findings
+
+| ID | Priority | Finding | Confirmed evidence | Impact |
+|---|---|---|---|---|
+| IR-01 | P1 | Enter does not replace a non-collapsed selection. | `insertParagraphAtSelection` resolves only `selection.anchor` and immediately splits that block. A direct transaction probe with `SELCASE` and `CASE` selected returned `<p>SELCASE</p><p><br></p>` instead of deleting `CASE` before splitting. | A routine select-and-Enter action preserves text the user intended to replace and places the new paragraph at the wrong logical boundary, including for reversed selections. |
+| IR-02 | P1 | Rich HTML paste can create invalid nested blocks and duplicate logical flow IDs. | `sanitizeReplacementHtml` permits `data-flow-*`; `replaceLogicalSelection` inserts block nodes directly into a range inside the current paragraph and only hydrates missing IDs. A direct probe produced `<p data-flow-id="f1">ABC<p data-flow-id="f1">One</p><p data-flow-id="f2">Two</p>DEF</p>` with duplicate `f1`. | Invalid canonical structure and ambiguous flow identity can corrupt later caret restoration, formatting, deletion, and pagination after copying formatted editor content. |
+| IR-03 | P1 | Placeholder, guided-builder, AI, and table insertion still bypass the canonical transaction model and can relocate content to the document end. | `insertAtCursor` and `insertHtmlAtCursor` still use `document.execCommand`. If logical restoration fails, both select the entire surface, collapse at the end, and insert there. `insertHtmlIntoEditor` has the same end fallback for table insertion. | A stale or invalid bookmark can silently place generated clauses or placeholders at the end of a long template, contradicting the remediation constraint that failed restoration must leave canonical content unchanged. |
+| IR-04 | P1 | Inline formatting does not implement normal toggle or caret typing semantics. | `applyInlineFormat` returns `changed: false` for every collapsed bookmark. Bold, italic, and underline commands always apply their positive value and never send `null` when the active format is already on. | Users cannot choose a font/size/colour before typing at a caret, and Bold/Italic/Underline cannot be reliably toggled off with their toolbar buttons. |
+| IR-05 | P2 | Clear formatting is a no-op for a partial selection inside a styled element. | `unwrapElementsInRange` unwraps an element only when the whole element is inside the range. Clearing characters 3–4 of `<span style="font-weight:bold">abcdef</span>` returned the original fully bold HTML unchanged. | Users cannot clear formatting from a word or substring unless the selection happens to contain the entire formatting wrapper. |
+| IR-06 | P2 | Selected text and highlight colours are not normalized for controlled colour inputs. | `readLogicalFormatState` returns CSS serialization such as `rgb(255, 0, 0)`. Assigning that value to `<input type="color">` normalizes to `#000000`, so the toolbar can display black for red selected text. | The control presents a false active value and the next colour action starts from the wrong visual state. |
+| IR-07 | P2 | Paragraph-style changes do not preserve multi-block selection semantics, and the verification harness is not warning-clean. | `applyBlockTagToSelection` replaces only the block containing `range.startContainer` and then selects the entire replacement. The focused component and Chromium runs pass but emit repeated React `act(...)` warnings; the browser formatting test uses programmatic `button.click()` and direct `change` dispatch rather than real focus movement. | Multi-paragraph style changes are partial and the original caret/range is lost. Test passes can also complete while reflow-driven state updates are still pending, weakening regression confidence. |
+| IR-08 | P1 | The production template-editor route performs DOM work during server rendering and falls back to client rendering. | The rebuilt Docker container repeatedly logged `ReferenceError: document is not defined` with digest `2292164445` from `.next/server/chunks/265.js`. The minified frame resolves to `reassemblePageFragments`, which calls `document.createElement`; render-time `hardSectionCount` invokes it through `canonicalPagesHtml(pages)`. Each clean direct load also logged React production error `#419`: the server could not finish the Suspense boundary and switched to client rendering ([React error reference](https://react.dev/errors/419)). | Direct loads do not complete their intended server render and depend on client recovery before the editor becomes usable. This increases time-to-interactive and makes the route vulnerable to a blank or incomplete editor when hydration or JavaScript delivery is disrupted. |
+
+### Follow-up Fix Implementation Plan
+
+#### Task A: Make Enter and rich paste structurally selection-safe
+
+**Files:**
+
+- `src/components/documents/a4-pagination/document-actions.ts`
+- `src/components/documents/a4-pagination/model.ts`
+- `__tests__/components/a4-pagination/document-actions.test.ts`
+- `__tests__/browser/a4-page-editor.browser.test.tsx`
+
+- [ ] Order the anchor and focus points before an Enter transaction. Delete a non-collapsed range first, then split at the resulting logical start and return a collapsed bookmark in the new block.
+- [ ] Strip all incoming `data-flow-id`, `data-flow-continuation`, and `data-flow-oversized` attributes from clipboard HTML. Flow metadata is editor-owned and must never be trusted from pasted content.
+- [ ] Insert block-level clipboard nodes at block boundaries: retain the current block's leading inline fragment, insert the pasted sibling blocks, then retain the trailing inline fragment as a valid sibling block. Never leave `p`, headings, lists, blockquotes, or tables inside a `p`.
+- [ ] Run `normalizeEditedFlowIds` before finalizing every replacement transaction and assert that every persisted flow ID is unique.
+- [ ] Add forward and reversed select-and-Enter tests, mid-paragraph two-block paste, copy-from-editor paste, invalid nested-block assertions, and flow-ID uniqueness assertions.
+
+**Acceptance:** Enter removes the selection once and splits at its logical start; rich paste produces valid sibling blocks, one content copy, and globally unique flow IDs.
+
+#### Task B: Complete formatting semantics
+
+**Files:**
+
+- `src/components/documents/a4-pagination/formatting.ts`
+- `src/components/documents/a4-page-editor.tsx`
+- `src/components/documents/a4-editor-toolbar.tsx`
+- `__tests__/components/a4-pagination/formatting.test.ts`
+- `__tests__/components/a4-page-editor.test.tsx`
+- `__tests__/browser/a4-page-editor.browser.test.tsx`
+
+- [ ] Represent a collapsed-caret typing format separately from persisted document markup. Apply that state to subsequent `insertText`, composition, Enter, and paste transactions, and clear or inherit it when the caret moves.
+- [ ] Derive Bold/Italic/Underline commands from the current uniform selection state: send `null` when active and the positive value when inactive. Cover mixed selections explicitly.
+- [ ] Split formatting wrappers at the exact logical selection boundaries before clearing styles, then normalize adjacent spans. Preserve formatting outside the selected substring.
+- [ ] Convert `rgb(...)`, named colours, and shorthand hex to lowercase `#rrggbb` before assigning controlled colour and highlight values. Use a safe fallback only when conversion genuinely fails.
+- [ ] Replace `applyBlockTagToSelection` with a pure logical transaction over every intersected block. Preserve flow IDs, block attributes where valid, selection direction, and offsets.
+- [ ] Add tests for collapsed future typing, toggling each inline format on and off, partial clear formatting, selected-colour toolbar synchronization, reversed selections, and multi-paragraph style changes.
+
+**Acceptance:** Formatting behaves like a conventional document editor at both a caret and a range; toolbar state always matches the selected content after reflow.
+
+#### Task C: Remove end-of-document insertion fallbacks
+
+**Files:**
+
+- `src/components/documents/a4-page-editor.tsx`
+- `src/components/documents/template-editor/template-insertion.ts`
+- `src/app/(dashboard)/template-partials/editor/page.tsx`
+- `__tests__/components/a4-page-editor.test.tsx`
+- `__tests__/components/template-editor-page.test.tsx`
+
+- [ ] Route placeholder, guided-builder, AI text, table, row, and column insertion through explicit `DocumentTransactionResult` helpers and `commitUserTransaction`.
+- [ ] Require a valid logical bookmark or an explicitly chosen current block. If restoration fails, do not mutate content; surface the existing recoverable selection message and require reselection.
+- [ ] Remove `document.execCommand` and every `selectNodeContents(editor); collapse(false)` recovery path from insertion and formatting orchestration.
+- [ ] Add tests that invalidate the saved flow ID before each insertion API call and assert unchanged canonical HTML, unchanged history, no `onChange`, and visible recovery status.
+
+**Acceptance:** No insertion can silently append to the document end, and all insertions produce one canonical transaction, one history entry, and one reflow.
+
+#### Task D: Make verification warning-clean and cover real pointer/focus behavior
+
+**Files:**
+
+- `__tests__/helpers/a4-editor-test-utils.ts`
+- `__tests__/components/template-editor-page.test.tsx`
+- `__tests__/browser/a4-page-editor.browser.test.tsx`
+- `__tests__/browser/a4-page-editor-controls.browser.test.tsx`
+
+- [ ] Wrap every reflow-driven update in `act`, await the final `aria-busy="false"` generation, and fail the suite on unexpected console warnings or errors.
+- [ ] Replace programmatic toolbar `button.click()` and direct value mutation in browser regressions with pointer/focus interactions that preserve or intentionally restore a native selection.
+- [ ] Add the missing IR-01 through IR-07 regressions and run the focused unit matrix five times plus the Chromium matrix three times with identical results and no warnings.
+- [ ] Complete a production build to exit code 0. The review build compiled successfully but the available command window ended during `Collecting page data`, so the build result is not yet closure evidence.
+
+**Acceptance:** All focused runs pass repeatedly without `act(...)`, console, framework-overlay, or application-origin errors; TypeScript, scoped ESLint, production build, and `git diff --check` all exit zero.
+
+#### Task E: Remove DOM access from the server-render path
+
+**Files:**
+
+- `src/components/documents/a4-page-editor.tsx`
+- `src/components/documents/a4-pagination/model.ts`
+- `__tests__/components/a4-page-editor.test.tsx`
+- `__tests__/components/template-editor-page.test.tsx`
+
+- [ ] Replace render-time `splitHardSections(canonicalPagesHtml(pages)).length` with a DOM-free hard-section count derived from `PageData.hardBreakBefore`, with one section for every non-empty page list plus each explicit hard boundary.
+- [ ] Audit every render-time initializer, `useMemo`, and called helper in `A4PageEditor` for `document`, `window`, `Node`, `Range`, `DOMParser`, and DOMPurify usage. Keep those APIs inside effects, event handlers, or explicitly client-only transaction calls.
+- [ ] Add a `renderToString` regression for blank, populated, read-only, and preview editor states and assert no browser global is installed in the test environment.
+- [ ] Add a production-route smoke test that directly requests `/template-partials/editor` and an existing-template URL, then fails on any server log containing `document is not defined`, React server-render digest, React `#419`, or an HTTP 5xx response.
+- [ ] Rebuild and restart the Docker image, repeat direct-load and authenticated client navigation, and confirm both browser and container logs stay error-free.
+
+**Acceptance:** The editor server-renders without browser globals or a client-render fallback; direct route loads are reliable; browser and production-container logs contain no editor-origin error before, during, or after hydration.
+
+### Review Verification Evidence
+
+- Focused Vitest matrix: 17 files, 150 tests passed; repeated unwrapped React update warnings remain.
+- Chromium component matrix: 2 files, 17 tests passed; repeated unwrapped React update warnings remain.
+- `npx.cmd tsc --noEmit --pretty false`: passed.
+- Scoped editor/route/export ESLint: passed.
+- Production build: Prisma generation and Next.js compilation completed successfully in 49 seconds; the local command window ended while collecting page data. The subsequently rebuilt Docker image started the current revision successfully, but IR-08 prevents treating the production route as clean closure evidence.
+- Authenticated Docker route QA: the editor recovered and displayed 15 editable pages with no framework overlay, but each clean direct load logged React production error `#419`. React defines this as an incomplete server-rendered Suspense boundary that switched to client rendering. The app container concurrently emitted repeated `document is not defined` exceptions with digest `2292164445`.
+- Direct transaction probes confirmed IR-01, IR-02, IR-04, IR-05, and IR-06 without modifying application source.
+- Live Docker QA confirmed global typography, spacing, effective margins, explicit-page add/delete and Undo/Redo, generated preview, initial table insertion, panel collapse/expand, and 1024px/768px containment. No test data was saved.
 
 ## File Ownership Map
 

@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import {
   deleteFlowSelection,
   ensureEditableCanonicalHtml,
+  hardSectionCountFromPages,
   hydrateFlowContainer,
   replaceFlowSelection,
   hydrateFlowHtml,
@@ -50,9 +51,17 @@ import {
   type FlowSelectionBookmark,
 } from './a4-pagination/selection';
 import {
+  applyBlockAlignmentToSelection,
+  applyBlockFormatToSelection,
   applyInlineFormat,
+  applyIndentToSelection,
+  applyListToSelection,
+  applyOutdentToSelection,
+  insertTextWithFormat,
   normalizeFormattingSpans,
   readLogicalFormatState,
+  readUniformFormatState,
+  replaceFormattedSelection,
   type InlineFormatPatch,
 } from './a4-pagination/formatting';
 import {
@@ -60,6 +69,8 @@ import {
   applyLogicalDelete,
   deleteHardPageSection,
   hardSectionIndexForFragment,
+  insertTableColumnAtSelection,
+  insertTableRowAtSelection,
   insertParagraphAtSelection,
   replaceLogicalSelection,
   type DocumentTransactionResult,
@@ -339,168 +350,6 @@ function clipboardHtml(clipboard: DataTransfer | null): string {
       )
       .join(''),
   );
-}
-
-function selectNodeContents(node: Node): void {
-  const selection = window.getSelection();
-  if (!selection) return;
-
-  const range = document.createRange();
-  range.selectNodeContents(node);
-  selection.removeAllRanges();
-  selection.addRange(range);
-}
-
-function dispatchEditorInput(editor: HTMLElement): void {
-  editor.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function findEditableBlock(start: Node, editor: HTMLElement): HTMLElement | null {
-  let node: Node | null = start.nodeType === Node.TEXT_NODE ? start.parentNode : start;
-  const blockTags = new Set([
-    'P',
-    'DIV',
-    'H1',
-    'H2',
-    'H3',
-    'H4',
-    'H5',
-    'H6',
-    'BLOCKQUOTE',
-    'LI',
-    'TD',
-    'TH',
-  ]);
-
-  while (node && node !== editor) {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const element = node as HTMLElement;
-      if (blockTags.has(element.tagName)) {
-        return element;
-      }
-    }
-    node = node.parentNode;
-  }
-
-  return null;
-}
-
-function applyBlockTagToSelection(editor: HTMLElement, tagName: string): boolean {
-  const range = getEditorSelectionRange(editor);
-  if (!range) return false;
-
-  const block = findEditableBlock(range.startContainer, editor);
-  const replacement = document.createElement(tagName);
-
-  if (block) {
-    replacement.innerHTML = block.innerHTML;
-    block.parentNode?.replaceChild(replacement, block);
-  } else {
-    replacement.appendChild(range.extractContents());
-    range.insertNode(replacement);
-  }
-
-  selectNodeContents(replacement);
-  dispatchEditorInput(editor);
-  return true;
-}
-
-function insertHtmlIntoEditor(editor: HTMLElement, html: string): boolean {
-  const selection = window.getSelection();
-  let range = getEditorSelectionRange(editor);
-
-  if (!range) {
-    range = document.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-  }
-
-  const template = document.createElement('template');
-  template.innerHTML = sanitizeHtml(html);
-  const fragment = template.content;
-  const insertedNodes = Array.from(fragment.childNodes);
-
-  range.deleteContents();
-  range.insertNode(fragment);
-
-  const lastNode = insertedNodes[insertedNodes.length - 1];
-  if (lastNode && selection) {
-    const afterRange = document.createRange();
-    afterRange.setStartAfter(lastNode);
-    afterRange.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(afterRange);
-  }
-
-  dispatchEditorInput(editor);
-  return insertedNodes.length > 0;
-}
-
-function findSelectedTableCell(editor: HTMLElement): HTMLTableCellElement | null {
-  const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return null;
-
-  let node: Node | null = selection.anchorNode;
-  while (node && node !== editor) {
-    if (
-      node.nodeType === Node.ELEMENT_NODE &&
-      ['TD', 'TH'].includes((node as HTMLElement).tagName)
-    ) {
-      return node as HTMLTableCellElement;
-    }
-    node = node.parentNode;
-  }
-
-  return null;
-}
-
-function addTableRowAtSelection(editor: HTMLElement): boolean {
-  const cell = findSelectedTableCell(editor);
-  const row = cell?.closest('tr');
-  if (!cell || !row) return false;
-
-  const newRow = document.createElement('tr');
-  Array.from(row.children).forEach((sourceCell) => {
-    const tagName = sourceCell.tagName.toLowerCase() === 'th' ? 'th' : 'td';
-    const newCell = document.createElement(tagName);
-    newCell.innerHTML = '<br>';
-    newRow.appendChild(newCell);
-  });
-
-  row.insertAdjacentElement('afterend', newRow);
-  dispatchEditorInput(editor);
-  return true;
-}
-
-function addTableColumnAtSelection(editor: HTMLElement): boolean {
-  const cell = findSelectedTableCell(editor);
-  const table = cell?.closest('table');
-  const row = cell?.closest('tr');
-  if (!cell || !table || !row) return false;
-
-  const columnIndex = Array.from(row.children).indexOf(cell);
-  if (columnIndex === -1) return false;
-
-  Array.from(table.querySelectorAll('tr')).forEach((tableRow) => {
-    const cells = Array.from(tableRow.children);
-    const referenceCell = cells[Math.min(columnIndex, cells.length - 1)] as
-      | HTMLTableCellElement
-      | undefined;
-    const tagName = referenceCell?.tagName.toLowerCase() === 'th' ? 'th' : 'td';
-    const newCell = document.createElement(tagName);
-    newCell.innerHTML = '<br>';
-
-    if (referenceCell) {
-      referenceCell.insertAdjacentElement('afterend', newCell);
-    } else {
-      tableRow.appendChild(newCell);
-    }
-  });
-
-  dispatchEditorInput(editor);
-  return true;
 }
 
 // ============================================================================
@@ -807,6 +656,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const isInternalUpdate = useRef(false);
 
     const savedSelectionRef = useRef<FlowSelectionBookmark | null>(null);
+    const pendingTypingFormatRef = useRef<InlineFormatPatch | null>(null);
+    const pendingTypingPointRef = useRef<FlowSelectionBookmark['anchor'] | null>(
+      null,
+    );
+    const applyInsertionTransactionRef = useRef<(html: string) => void>(
+      () => undefined,
+    );
     const [activeFormats, setActiveFormats] = useState<EditorFormatState>({
       bold: false,
       italic: false,
@@ -848,61 +704,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       return false;
     }, []);
 
-    const insertAtCursor = useCallback(
-      (text: string) => {
-        const editor = documentSurfaceRef.current;
-        if (!editor) return;
+    const insertAtCursor = useCallback((text: string) => {
+      const wrapper = document.createElement('div');
+      wrapper.textContent = text;
+      applyInsertionTransactionRef.current(wrapper.innerHTML);
+    }, []);
 
-        editor.focus();
-
-        const selection = window.getSelection();
-        if (!selection) return;
-
-        if (
-          selection.rangeCount === 0 ||
-          !editor.contains(selection.anchorNode)
-        ) {
-          if (!restoreSelection()) {
-            const range = document.createRange();
-            range.selectNodeContents(editor);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          }
-        }
-
-        document.execCommand('insertText', false, text);
-      },
-      [restoreSelection],
-    );
-
-    const insertHtmlAtCursor = useCallback(
-      (html: string) => {
-        const editor = documentSurfaceRef.current;
-        if (!editor) return;
-
-        editor.focus();
-
-        const selection = window.getSelection();
-        if (!selection) return;
-
-        if (
-          selection.rangeCount === 0 ||
-          !editor.contains(selection.anchorNode)
-        ) {
-          if (!restoreSelection()) {
-            const range = document.createRange();
-            range.selectNodeContents(editor);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          }
-        }
-
-        document.execCommand('insertHTML', false, html);
-      },
-      [restoreSelection],
-    );
+    const insertHtmlAtCursor = useCallback((html: string) => {
+      applyInsertionTransactionRef.current(html);
+    }, []);
 
     const parsePages = useCallback(
       (content: string, existingPages?: PageData[]): PageData[] => {
@@ -1220,8 +1030,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, [rawDisplayPages, shouldRemovePage]);
 
     const hardSectionCount = useMemo(
-      () => splitHardSections(canonicalPagesHtml(pages)).length,
-      [canonicalPagesHtml, pages],
+      () => hardSectionCountFromPages(pages),
+      [pages],
     );
 
     useEffect(() => {
@@ -1391,6 +1201,42 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
     );
 
+    const applyInsertionTransaction = useCallback(
+      (html: string) => {
+        const surface = documentSurfaceRef.current;
+        if (!surface || effectivePreviewMode) return;
+        const bookmark =
+          savedSelectionRef.current ?? captureFlowSelection(surface);
+        if (!bookmark) {
+          setEditorStatus(
+            'Selection moved after repagination; choose the text again.',
+          );
+          return;
+        }
+        surface.focus();
+        const result = replaceLogicalSelection(
+          canonicalPagesHtml(pagesRef.current),
+          bookmark,
+          html,
+        );
+        if (!result.changed) {
+          setEditorStatus(
+            'Selection moved after repagination; choose the text again.',
+          );
+          return;
+        }
+        pendingTypingFormatRef.current = null;
+        pendingTypingPointRef.current = null;
+        commitUserTransaction(result);
+        savedSelectionRef.current = result.selection;
+      },
+      [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
+    );
+
+    useEffect(() => {
+      applyInsertionTransactionRef.current = applyInsertionTransaction;
+    }, [applyInsertionTransaction]);
+
     const handleAddPage = useCallback(() => {
       if (effectivePreviewMode) return;
       commitUserTransaction(appendHardPage(canonicalPagesHtml(pagesRef.current)));
@@ -1459,6 +1305,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       if (!surface) return;
       const bookmark = captureFlowSelection(surface);
       if (!bookmark) return;
+      if (bookmark.collapsed && pendingTypingFormatRef.current) {
+        const pendingPoint = pendingTypingPointRef.current;
+        if (
+          !pendingPoint ||
+          pendingPoint.flowId !== bookmark.anchor.flowId ||
+          pendingPoint.offset !== bookmark.anchor.offset
+        ) {
+          pendingTypingFormatRef.current = null;
+          pendingTypingPointRef.current = null;
+        }
+      }
       savedSelectionRef.current = bookmark;
       setActiveFormats(
         readLogicalFormatState(surface, bookmark, effectiveLayout),
@@ -1707,13 +1564,23 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         const bookmark = captureFlowSelection(surface);
         if (!bookmark) return;
-        commitUserTransaction(
-          replaceLogicalSelection(
-            canonicalPagesHtml(pagesRef.current),
-            bookmark,
-            html,
-          ),
-        );
+        const pendingFormat = pendingTypingFormatRef.current;
+        const result = pendingFormat
+          ? replaceFormattedSelection(
+              canonicalPagesHtml(pagesRef.current),
+              bookmark,
+              html,
+              pendingFormat,
+            )
+          : replaceLogicalSelection(
+              canonicalPagesHtml(pagesRef.current),
+              bookmark,
+              html,
+            );
+        if (result.changed && result.selection) {
+          pendingTypingPointRef.current = result.selection.anchor;
+        }
+        commitUserTransaction(result);
       },
       [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
     );
@@ -1885,6 +1752,37 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
+        const pendingFormat = pendingTypingFormatRef.current;
+        const isPendingFormatTextInsertion =
+          !effectivePreviewMode &&
+          surface &&
+          pendingFormat !== null &&
+          inputEvent.cancelable &&
+          (inputEvent.inputType === 'insertText' ||
+            inputEvent.inputType === 'insertReplacementText' ||
+            inputEvent.inputType === 'insertCompositionText' ||
+            inputEvent.inputType === 'insertFromComposition' ||
+            (!inputEvent.inputType && inputEvent.data !== null));
+        if (isPendingFormatTextInsertion) {
+          const bookmark = captureFlowSelection(surface);
+          if (bookmark?.collapsed) {
+            inputEvent.preventDefault();
+            const result = insertTextWithFormat(
+              canonicalPagesHtml(pagesRef.current),
+              bookmark,
+              inputEvent.data ?? '',
+              pendingFormat,
+            );
+            if (result.changed) {
+              if (result.selection) {
+                pendingTypingPointRef.current = result.selection.anchor;
+              }
+              commitUserTransaction(result);
+            }
+            return;
+          }
+        }
+
         if (!effectivePreviewMode && surface && selectionSpansPages(surface)) {
           const bookmark = captureFlowSelection(surface);
           if (!bookmark || bookmark.collapsed) return;
@@ -1947,12 +1845,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           const bookmark = captureFlowSelection(surface);
           if (bookmark) {
             inputEvent.preventDefault();
-            commitUserTransaction(
-              insertParagraphAtSelection(
-                canonicalPagesHtml(pagesRef.current),
-                bookmark,
-              ),
+            const result = insertParagraphAtSelection(
+              canonicalPagesHtml(pagesRef.current),
+              bookmark,
             );
+            if (result.changed) {
+              if (result.selection) {
+                pendingTypingPointRef.current = result.selection.anchor;
+              }
+              commitUserTransaction(result);
+            }
           }
         }
       },
@@ -2035,15 +1937,107 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       });
     }, [activePageId, effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
-    const applyFormattingTransaction = useCallback(
+    const clearPendingTypingFormat = useCallback(() => {
+      pendingTypingFormatRef.current = null;
+      pendingTypingPointRef.current = null;
+    }, []);
+
+    const isClearFormattingPatch = useCallback((patch: InlineFormatPatch) => {
+      return Object.values(patch).every(
+        (value) => value === null || value === undefined,
+      );
+    }, []);
+
+    const setPendingTypingFormat = useCallback(
       (patch: InlineFormatPatch) => {
+        const surface = documentSurfaceRef.current;
+        const bookmark =
+          savedSelectionRef.current ??
+          (surface ? captureFlowSelection(surface) : null);
+        if (!surface || !bookmark?.collapsed) return false;
+
+        pendingTypingFormatRef.current = {
+          ...pendingTypingFormatRef.current,
+          ...patch,
+        };
+        pendingTypingPointRef.current = bookmark.anchor;
+
+        setActiveFormats((prev) => {
+          const next = { ...prev };
+          if (patch.fontWeight !== undefined) {
+            next.bold = patch.fontWeight === 'bold';
+          }
+          if (patch.fontStyle !== undefined) {
+            next.italic = patch.fontStyle === 'italic';
+          }
+          if (patch.textDecoration !== undefined) {
+            next.underline = patch.textDecoration === 'underline';
+          }
+          if (typeof patch.fontFamily === 'string') {
+            next.fontFamily = patch.fontFamily;
+          }
+          if (typeof patch.fontSize === 'string') {
+            next.fontSize = patch.fontSize;
+          }
+          if (typeof patch.color === 'string') {
+            next.textColor = patch.color;
+          }
+          if (typeof patch.backgroundColor === 'string') {
+            next.highlightColor = patch.backgroundColor;
+          }
+          if (isClearFormattingPatch(patch)) {
+            next.bold = false;
+            next.italic = false;
+            next.underline = false;
+          }
+          return next;
+        });
+        return true;
+      },
+      [isClearFormattingPatch],
+    );
+
+    const applyFormattingTransaction = useCallback(
+      (
+        patch: InlineFormatPatch,
+        toggleField?: 'bold' | 'italic' | 'underline',
+      ) => {
         const surface = documentSurfaceRef.current;
         if (!surface || effectivePreviewMode) return;
         if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
           return;
         }
         const bookmark = captureFlowSelection(surface);
-        if (!bookmark || bookmark.collapsed) return;
+        if (!bookmark) return;
+
+        if (bookmark.collapsed) {
+          if (toggleField) {
+            const uniform = readUniformFormatState(
+              surface,
+              bookmark,
+              effectiveLayout,
+            );
+            const active = uniform?.[toggleField] === true;
+            const property =
+              toggleField === 'bold'
+                ? 'fontWeight'
+                : toggleField === 'italic'
+                  ? 'fontStyle'
+                  : 'textDecoration';
+            const value = patch[
+              property as keyof InlineFormatPatch
+            ] as InlineFormatPatch[keyof InlineFormatPatch];
+            setPendingTypingFormat({
+              ...patch,
+              [property]: active ? null : value,
+            } as InlineFormatPatch);
+          } else {
+            setPendingTypingFormat(patch);
+          }
+          return;
+        }
+
+        clearPendingTypingFormat();
         commitUserTransaction(
           applyInlineFormat(
             canonicalPagesHtml(pagesRef.current),
@@ -2054,6 +2048,37 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       },
       [
         canonicalPagesHtml,
+        clearPendingTypingFormat,
+        commitUserTransaction,
+        effectiveLayout,
+        effectivePreviewMode,
+        restoreSelection,
+        setPendingTypingFormat,
+      ],
+    );
+
+    const applySelectionTransaction = useCallback(
+      (
+        build: (
+          html: string,
+          bookmark: FlowSelectionBookmark,
+        ) => DocumentTransactionResult,
+      ) => {
+        const surface = documentSurfaceRef.current;
+        if (!surface || effectivePreviewMode) return;
+        if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
+          return;
+        }
+        const bookmark = captureFlowSelection(surface);
+        if (!bookmark) return;
+        clearPendingTypingFormat();
+        commitUserTransaction(
+          build(canonicalPagesHtml(pagesRef.current), bookmark),
+        );
+      },
+      [
+        canonicalPagesHtml,
+        clearPendingTypingFormat,
         commitUserTransaction,
         effectivePreviewMode,
         restoreSelection,
@@ -2083,7 +2108,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'paragraphStyle' && val) {
-          applyBlockTagToSelection(editor, val);
+          applySelectionTransaction((html, bookmark) =>
+            applyBlockFormatToSelection(html, bookmark, val),
+          );
           return;
         }
 
@@ -2108,17 +2135,20 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'bold') {
-          applyFormattingTransaction({ fontWeight: 'bold' });
+          applyFormattingTransaction({ fontWeight: 'bold' }, 'bold');
           return;
         }
 
         if (cmd === 'italic') {
-          applyFormattingTransaction({ fontStyle: 'italic' });
+          applyFormattingTransaction({ fontStyle: 'italic' }, 'italic');
           return;
         }
 
         if (cmd === 'underline') {
-          applyFormattingTransaction({ textDecoration: 'underline' });
+          applyFormattingTransaction(
+            { textDecoration: 'underline' },
+            'underline',
+          );
           return;
         }
 
@@ -2141,20 +2171,23 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'insertTable') {
-          insertHtmlIntoEditor(
-            editor,
+          insertHtmlAtCursor(
             '<table><tbody><tr><th>Header</th><th>Header</th></tr><tr><td>Cell</td><td>Cell</td></tr></tbody></table><p><br /></p>',
           );
           return;
         }
 
         if (cmd === 'addTableRow') {
-          addTableRowAtSelection(editor);
+          applySelectionTransaction((html, bookmark) =>
+            insertTableRowAtSelection(html, bookmark),
+          );
           return;
         }
 
         if (cmd === 'addTableColumn') {
-          addTableColumnAtSelection(editor);
+          applySelectionTransaction((html, bookmark) =>
+            insertTableColumnAtSelection(html, bookmark),
+          );
           return;
         }
 
@@ -2168,14 +2201,27 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
-        document.execCommand(cmd, false, val);
+        if (cmd === 'indent') {
+          applySelectionTransaction((html, bookmark) =>
+            applyIndentToSelection(html, bookmark),
+          );
+          return;
+        }
+
+        if (cmd === 'outdent') {
+          applySelectionTransaction((html, bookmark) =>
+            applyOutdentToSelection(html, bookmark),
+          );
+        }
       },
       [
         applyFormattingTransaction,
+        applySelectionTransaction,
         effectiveLayout,
         effectivePreviewMode,
         handleRedo,
         handleUndo,
+        insertHtmlAtCursor,
         restoreSelection,
         splitActivePageAtSelection,
         updateLayout,
@@ -2185,22 +2231,18 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const handleToolbarCommand = useCallback(
       (command: EditorCommand) => {
         if (command.type === 'align') {
-          const alignmentCommands = {
-            left: 'justifyLeft',
-            center: 'justifyCenter',
-            right: 'justifyRight',
-            justify: 'justifyFull',
-          } as const;
-          handleCommand(alignmentCommands[command.value]);
+          applySelectionTransaction((html, bookmark) =>
+            applyBlockAlignmentToSelection(html, bookmark, command.value),
+          );
           return;
         }
 
         if (command.type === 'list') {
-          if (command.value === 'ordered') {
-            handleCommand('insertOrderedList');
-          } else if (command.value === 'unordered') {
-            handleCommand('insertUnorderedList');
-          }
+          const listType = command.value;
+          if (listType === 'none') return;
+          applySelectionTransaction((html, bookmark) =>
+            applyListToSelection(html, bookmark, listType),
+          );
           return;
         }
 
@@ -2217,7 +2259,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         } as const;
         handleCommand(commandMap[command.type]);
       },
-      [handleCommand],
+      [applySelectionTransaction, handleCommand],
     );
 
     const handlePrint = useCallback(() => {
@@ -2526,7 +2568,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             onFocus={(event) => {
               if (!effectivePreviewMode) {
                 syncActivePage(event.target);
-                setTimeout(syncFormattingFromSelection, 0);
+                syncFormattingFromSelection();
               }
             }}
             onBlur={() => !effectivePreviewMode && saveCursorPosition()}

@@ -87,13 +87,23 @@ function viewportPoint(rect: DOMRect, edge: 'start' | 'end') {
 }
 
 async function pressEnter() {
-  await userEvent.keyboard('{Enter}');
+  await act(async () => {
+    await userEvent.keyboard('{Enter}');
+  });
 }
 
 async function flushLayoutFrames() {
   await new Promise<void>((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
   );
+}
+
+async function flushPendingEditorUpdates() {
+  await act(async () => {
+    await flushLayoutFrames();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    await flushLayoutFrames();
+  });
 }
 
 function selectedParagraphText(): string | null {
@@ -133,15 +143,43 @@ function logicalCaretOffset(root: HTMLElement): number | null {
 describe('A4PageEditor real layout pagination', () => {
   let host: HTMLDivElement;
   let root: Root;
+  let consoleError: ReturnType<typeof vi.spyOn>;
+
+  const waitForEditorIdle = async () => {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      await act(async () => {
+        await flushLayoutFrames();
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      });
+      const surface = host.querySelector<HTMLElement>(
+        '[data-testid="a4-document-surface"]',
+      );
+      if (surface?.getAttribute('aria-busy') === 'false') return;
+    }
+    throw new Error('A4 editor never reached an idle reflow state');
+  };
 
   beforeEach(() => {
+    act(() => {
+      (document.activeElement as HTMLElement | null)?.blur?.();
+    });
     host = document.createElement('div');
     host.style.height = '1400px';
     document.body.appendChild(host);
     root = createRoot(host);
+    consoleError = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      const message = args.map(String).join(' ');
+      if (message.includes('not wrapped in act')) {
+        throw new Error(`Unexpected React act warning: ${message}`);
+      }
+      if (message.includes('download the React DevTools')) return;
+      throw new Error(`Unexpected console.error: ${message}`);
+    });
   });
 
   afterEach(async () => {
+    await flushPendingEditorUpdates();
+    consoleError.mockRestore();
     await act(async () => root.unmount());
     host.remove();
   });
@@ -357,19 +395,28 @@ describe('A4PageEditor real layout pagination', () => {
     const paragraph = host.querySelector<HTMLParagraphElement>(
       '[data-testid="a4-page-content-1"] p',
     )!;
-    host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!.focus();
+    await act(async () => {
+      host.querySelector<HTMLElement>(
+        '[data-testid="a4-document-surface"]',
+      )!.focus();
+    });
     const range = document.createRange();
     range.setStart(paragraph, 0);
     range.collapse(true);
     window.getSelection()!.removeAllRanges();
     window.getSelection()!.addRange(range);
 
-    await cdp().send('Input.insertText', { text: 'Alpha' });
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'Alpha' });
+    });
     await act(flushLayoutFrames);
     await pressEnter();
     await act(flushLayoutFrames);
-    await cdp().send('Input.insertText', { text: 'Beta' });
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'Beta' });
+    });
     await act(flushLayoutFrames);
+    await flushPendingEditorUpdates();
 
     const canonical = new DOMParser().parseFromString(
       editorRef.current!.getContent(),
@@ -386,16 +433,19 @@ describe('A4PageEditor real layout pagination', () => {
       <A4PageEditor ref={editorRef} value="<p>Start</p>" onChange={onChange} />,
     ));
     await act(flushLayoutFrames);
+    await flushPendingEditorUpdates();
 
     const lines = Array.from({ length: 120 }, (_, index) => `Draft line ${index + 1}`);
     const pageContent = host.querySelector<HTMLElement>('[data-testid="a4-page-content-1"]')!;
     const text = pageContent.querySelector('p')!.firstChild!;
-    const selection = window.getSelection()!;
-    const range = document.createRange();
-    range.setStart(text, text.textContent!.length);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    await act(async () => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, text.textContent!.length);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
 
     const clipboardData = new DataTransfer();
     clipboardData.setData('text/plain', lines.join('\n'));
@@ -407,6 +457,7 @@ describe('A4PageEditor real layout pagination', () => {
       }));
     });
     await act(flushLayoutFrames);
+    await flushPendingEditorUpdates();
 
     const textContent = new DOMParser()
       .parseFromString(editorRef.current!.getContent(), 'text/html')
@@ -428,6 +479,7 @@ describe('A4PageEditor real layout pagination', () => {
       root.render(<A4PageEditor ref={editorRef} value={paragraphs} />);
     });
     await act(flushLayoutFrames);
+    await waitForEditorIdle();
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
@@ -543,7 +595,9 @@ describe('A4PageEditor real layout pagination', () => {
       '[data-testid="a4-page-content-1"]',
     )!;
     const paperContainer = firstPageContent.parentElement!;
-    surface.focus();
+    await act(async () => {
+      surface.focus();
+    });
     const selection = window.getSelection()!;
     const range = document.createRange();
     range.setStart(paperContainer, 0);
@@ -585,7 +639,7 @@ describe('A4PageEditor real layout pagination', () => {
       (button) => button.getAttribute('aria-label') === 'Add blank page',
     );
     expect(addPage).toBeTruthy();
-    await act(async () => addPage!.click());
+    await act(async () => userEvent.click(addPage!));
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
@@ -597,12 +651,14 @@ describe('A4PageEditor real layout pagination', () => {
     expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
 
     const secondPage = host.querySelector<HTMLElement>('[data-testid="a4-page-content-2"]')!;
-    secondPage.focus();
+    await act(async () => {
+      secondPage.focus();
+    });
     const deletePage = Array.from(host.querySelectorAll('button')).find(
       (button) => button.getAttribute('aria-label') === 'Delete current page',
     );
     expect(deletePage).toBeTruthy();
-    await act(async () => deletePage!.click());
+    await act(async () => userEvent.click(deletePage!));
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(1);
@@ -756,7 +812,9 @@ describe('A4PageEditor real layout pagination', () => {
     const surface = host.querySelector<HTMLElement>(
       '[data-testid="a4-document-surface"]',
     )!;
-    surface.focus();
+    await act(async () => {
+      surface.focus();
+    });
 
     const formatsButton = () =>
       Array.from(host.querySelectorAll('button')).find(
@@ -775,8 +833,13 @@ describe('A4PageEditor real layout pagination', () => {
       await act(async () => {
         selectAll();
         const button = formatsButton();
-        if (button.getAttribute('aria-expanded') !== 'true') button.click();
+        if (button.getAttribute('aria-expanded') !== 'true') {
+          await userEvent.click(button);
+        }
+        await flushLayoutFrames();
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
+      await waitForEditorIdle();
       const fontFamily = document.querySelector<HTMLSelectElement>(
         'select[aria-label="Font family"]',
       )!;
@@ -784,12 +847,19 @@ describe('A4PageEditor real layout pagination', () => {
         'select[aria-label="Font size"]',
       )!;
       await act(async () => {
-        fontFamily.value = 'Georgia, serif';
-        fontFamily.dispatchEvent(new Event('change', { bubbles: true }));
-        fontSize.value = '14pt';
-        fontSize.dispatchEvent(new Event('change', { bubbles: true }));
+        await userEvent.selectOptions(fontFamily, 'Georgia, serif');
+        await flushLayoutFrames();
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        await flushLayoutFrames();
       });
-      await act(flushLayoutFrames);
+      await waitForEditorIdle();
+      await act(async () => {
+        await userEvent.selectOptions(fontSize, '14pt');
+        await flushLayoutFrames();
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        await flushLayoutFrames();
+      });
+      await waitForEditorIdle();
     };
 
     await applyFormatting();
@@ -894,48 +964,349 @@ describe('A4PageEditor real layout pagination', () => {
     );
     expect(editMarkerPage).toBeGreaterThanOrEqual(0);
 
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(
-      (...args) => {
-        if (!String(args[0]).includes('not wrapped in act')) {
-          throw new Error(args.map(String).join(' '));
-        }
-      },
+    await cdp().send('Emulation.setEmulatedMedia', { media: 'print' });
+    await act(async () => {
+      const print = Array.from(host.querySelectorAll('button')).find(
+        (button) => button.textContent?.trim() === 'Print',
+      )!;
+      await userEvent.click(print);
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    });
+
+    const frame = document.querySelector('iframe')!;
+    expect(frame).toBeTruthy();
+    const frameDoc = frame.contentDocument!;
+    const printPages = Array.from(frameDoc.querySelectorAll('.print-page'));
+    expect(printPages.length).toBeGreaterThan(1);
+    const printMarkerPage = printPages.findIndex((page) =>
+      page.textContent?.includes(marker),
     );
-    try {
-      await cdp().send('Emulation.setEmulatedMedia', { media: 'print' });
-      await act(async () => {
-        const print = Array.from(host.querySelectorAll('button')).find(
-          (button) => button.textContent?.trim() === 'Print',
-        )!;
-        print.click();
-      });
-      await act(async () => {
-        await new Promise<void>((resolve) => setTimeout(resolve, 50));
-      });
+    expect(printMarkerPage).toBe(editMarkerPage);
+    expect(
+      printPages.filter((page) => page.textContent?.includes(marker)),
+    ).toHaveLength(1);
 
-      const frame = document.querySelector('iframe')!;
-      expect(frame).toBeTruthy();
-      const frameDoc = frame.contentDocument!;
-      const printPages = Array.from(frameDoc.querySelectorAll('.print-page'));
-      expect(printPages.length).toBeGreaterThan(1);
-      const printMarkerPage = printPages.findIndex((page) =>
-        page.textContent?.includes(marker),
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(document.querySelector('iframe')).toBeNull();
+      }, { timeout: 3000 });
+    });
+    await cdp().send('Emulation.setEmulatedMedia', { media: 'screen' });
+  });
+
+  it('Enter replaces a non-collapsed selection before splitting (IR-01)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>SELCASECASE</p>" />);
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const text = page.querySelector('p')!.firstChild!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, 3);
+      range.setEnd(text, 7);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await pressEnter();
+    await act(async () => {
+      await flushLayoutFrames();
+    });
+    await waitForEditorIdle();
+
+    const paragraphs = Array.from(
+      new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body.querySelectorAll('p'),
+      (paragraph) => paragraph.textContent,
+    );
+    expect(paragraphs).toEqual(['SEL', 'CASE']);
+  });
+
+  it('rich paste strips flow metadata and never nests blocks (IR-02)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>AlphaBeta</p>" />);
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const text = page.querySelector('p')!.firstChild!;
+    await act(async () => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, 5);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    const clipboardData = new DataTransfer();
+    clipboardData.setData(
+      'text/html',
+      '<p data-flow-id="f1" data-flow-continuation="true">One</p>' +
+        '<p data-flow-id="f1" data-flow-oversized="true">Two</p>',
+    );
+    await act(async () => {
+      page.dispatchEvent(
+        new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData,
+        }),
       );
-      expect(printMarkerPage).toBe(editMarkerPage);
-      expect(
-        printPages.filter((page) => page.textContent?.includes(marker)),
-      ).toHaveLength(1);
+    });
+    await waitForEditorIdle();
 
-      await act(async () => {
-        await vi.waitFor(() => {
-          expect(document.querySelector('iframe')).toBeNull();
-        }, { timeout: 3000 });
-      });
-      expect(consoleError).not.toHaveBeenCalled();
-    } finally {
-      await cdp().send('Emulation.setEmulatedMedia', { media: 'screen' });
-      consoleError.mockRestore();
-    }
+    const canonical = editorRef.current!.getContent();
+    expect(canonical).not.toContain('data-flow-id');
+    expect(canonical).not.toContain('data-flow-continuation');
+    expect(canonical).not.toContain('data-flow-oversized');
+    const body = new DOMParser().parseFromString(canonical, 'text/html').body;
+    expect(body.querySelector('p p, p h1, p blockquote, p table, p ul, p ol')).toBeNull();
+    expect(canonical.match(/One/g)).toHaveLength(1);
+    expect(canonical.match(/Two/g)).toHaveLength(1);
+  });
+
+  it('insertion APIs refuse stale bookmarks without touching content (IR-03)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>Alpha</p>" />);
+    });
+    await waitForEditorIdle();
+
+    await act(async () => {
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      window.getSelection()?.removeAllRanges();
+    });
+    await act(async () => {
+      editorRef.current!.insertHtmlAtCursor('<p>Dropped</p>');
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+    expect(
+      Array.from(host.querySelectorAll('[role="status"]')).some((element) =>
+        element.textContent?.includes(
+          'Selection moved after repagination; choose the text again.',
+        ),
+      ),
+    ).toBe(true);
+    expect(editorRef.current!.getContent()).toBe('<p>Alpha</p>');
+  });
+
+  it('applies and toggles bold for collapsed-caret typing with real pointer clicks (IR-04)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>Alpha</p>" />);
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const text = page.querySelector('p')!.firstChild!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, 5);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      await userEvent.click(
+        Array.from(host.querySelectorAll('button')).find(
+          (button) => button.getAttribute('aria-label') === 'Bold',
+        )!,
+      );
+    });
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'X' });
+    });
+    await waitForEditorIdle();
+    expect(
+      host.querySelector('[data-testid="a4-page-content-1"] span')?.textContent,
+    ).toBe('X');
+
+    const boldSpan = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"] span',
+    )!;
+    await act(async () => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(boldSpan.firstChild!, 1);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await act(async () => {
+      await userEvent.click(
+        Array.from(host.querySelectorAll('button')).find(
+          (button) => button.getAttribute('aria-label') === 'Bold',
+        )!,
+      );
+    });
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'Y' });
+    });
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.textContent).toBe('AlphaXY');
+    expect(body.querySelector('p')?.lastChild?.textContent).toBe('Y');
+  });
+
+  it('clears formatting only inside a partial selection (IR-05)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value='<p><span style="font-weight: bold">abcdef</span></p>'
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const text = page.querySelector('span')!.firstChild!;
+    await act(async () => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, 2);
+      range.setEnd(text, 4);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      const formats = Array.from(host.querySelectorAll('button')).find(
+        (button) => button.textContent?.trim() === 'Formats',
+      )!;
+      await userEvent.click(formats);
+    });
+    await act(async () => {
+      const clear = Array.from(document.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === 'Clear formatting',
+      )!;
+      await userEvent.click(clear);
+    });
+    await waitForEditorIdle();
+
+    const spans = Array.from(
+      new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body.querySelectorAll('span'),
+    );
+    expect(spans.map((span) => span.textContent)).toEqual(['ab', 'ef']);
+    expect(editorRef.current!.getContent()).toContain('>cd<');
+  });
+
+  it('normalizes selected colours for the controlled colour input (IR-06)', async () => {
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value='<p><span style="color: rgb(255, 0, 0)">Red</span></p>'
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const text = page.querySelector('span')!.firstChild!;
+    await act(async () => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await act(async () => {
+      const formats = Array.from(host.querySelectorAll('button')).find(
+        (button) => button.textContent?.trim() === 'Formats',
+      )!;
+      await userEvent.click(formats);
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+
+    const colorInput = document.querySelector<HTMLInputElement>(
+      'input[aria-label="Text color"]',
+    )!;
+    expect(colorInput.value).toBe('#ff0000');
+  });
+
+  it('applies a paragraph style to every intersected block and keeps the selection (IR-07)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>One</p><p>Two</p>" />);
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const paragraphs = Array.from(page.querySelectorAll('p'));
+    const firstText = paragraphs[0].firstChild!;
+    const secondText = paragraphs[1].firstChild!;
+    await act(async () => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(firstText, 1);
+      range.setEnd(secondText, 1);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      const formats = Array.from(host.querySelectorAll('button')).find(
+        (button) => button.textContent?.trim() === 'Formats',
+      )!;
+      await userEvent.click(formats);
+    });
+    const styleSelect = document.querySelector<HTMLSelectElement>(
+      'select[aria-label="Paragraph style"]',
+    )!;
+    await act(async () => {
+      await userEvent.selectOptions(styleSelect, 'h1');
+    });
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.querySelectorAll('h1')).toHaveLength(2);
+    const selection = window.getSelection()!;
+    expect(selection.isCollapsed).toBe(false);
+    expect(selection.anchorNode?.textContent).toBe('One');
+    expect(selection.focusNode?.textContent).toBe('Two');
   });
 });
   beforeAll(() => {

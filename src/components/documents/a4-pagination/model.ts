@@ -28,6 +28,21 @@ export interface DomPoint {
 
 export const EMPTY_EDITABLE_PARAGRAPH_HTML = '<p><br></p>';
 
+/**
+ * DOM-free hard-section count derived from derived page fragments.
+ * Every explicit hard boundary starts a new section, and an empty page list
+ * still represents one editable section once materialized.
+ */
+export function hardSectionCountFromPages(
+  pages: ReadonlyArray<{ hardBreakBefore: boolean }>,
+): number {
+  if (pages.length === 0) return 0;
+  return 1 + pages.reduce(
+    (count, page) => count + (page.hardBreakBefore ? 1 : 0),
+    0,
+  );
+}
+
 function nextFlowId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();

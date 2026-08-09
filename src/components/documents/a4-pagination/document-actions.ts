@@ -8,8 +8,10 @@ import {
   HARD_PAGE_BREAK_HTML,
   domPointForFlowPoint,
   hydrateFlowContainer,
+  normalizeEditedFlowIds,
   normalizeCanonicalHtml,
   splitHardSections,
+  stripFlowMetadata,
   type DomPoint,
   type PageFragment,
 } from './model';
@@ -46,8 +48,8 @@ function createContainer(html: string): HTMLElement {
   return container;
 }
 
-function sanitizeReplacementHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
+export function sanitizeReplacementHtml(html: string): string {
+  const sanitized = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
       'p',
       'br',
@@ -100,6 +102,10 @@ function sanitizeReplacementHtml(html: string): string {
       'data-flow-oversized',
     ],
   });
+
+  // Flow metadata is editor-owned: clipboard HTML must never carry flow ids
+  // into the canonical document.
+  return stripFlowMetadata(sanitized);
 }
 
 function fragmentTextLength(fragment: DocumentFragment): number {
@@ -151,6 +157,106 @@ function splitBlockAtDomPoint(
   return nextBlock;
 }
 
+const BLOCK_REPLACEMENT_TAGS = new Set([
+  'P',
+  'DIV',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'BLOCKQUOTE',
+]);
+
+const CONTAINING_BLOCK_TAGS = new Set([
+  'P',
+  'DIV',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'BLOCKQUOTE',
+]);
+
+function fragmentHasBlockNodes(fragment: DocumentFragment): boolean {
+  return Array.from(fragment.childNodes).some(
+    (node) =>
+      node.nodeType === Node.ELEMENT_NODE &&
+      BLOCK_REPLACEMENT_TAGS.has((node as HTMLElement).tagName),
+  );
+}
+
+/**
+ * Insert a replacement fragment at a collapsed DOM point. When the fragment
+ * contains block-level nodes, the containing flow block is split at the point:
+ * the leading inline fragment stays in a valid block, the pasted sibling
+ * blocks are inserted between, and the trailing inline fragment becomes a
+ * valid sibling block. This never nests p, headings, lists, blockquotes, or
+ * tables inside a p.
+ */
+export function insertReplacementNodes(
+  root: HTMLElement,
+  point: DomPoint,
+  fragment: DocumentFragment,
+): void {
+  if (!fragmentHasBlockNodes(fragment)) {
+    const range = document.createRange();
+    range.setStart(point.node, point.offset);
+    range.collapse(true);
+    range.insertNode(fragment);
+    return;
+  }
+
+  let block =
+    point.node.nodeType === Node.ELEMENT_NODE
+      ? (point.node as HTMLElement)
+      : point.node.parentElement;
+  while (
+    block &&
+    block !== root &&
+    !CONTAINING_BLOCK_TAGS.has(block.tagName)
+  ) {
+    block = block.parentElement;
+  }
+  if (!block || block === root) {
+    const range = document.createRange();
+    range.setStart(point.node, point.offset);
+    range.collapse(true);
+    range.insertNode(fragment);
+    return;
+  }
+
+  const beforeRange = document.createRange();
+  beforeRange.setStart(block, 0);
+  beforeRange.setEnd(point.node, point.offset);
+  const leading = beforeRange.cloneContents();
+
+  const afterRange = document.createRange();
+  afterRange.setStart(point.node, point.offset);
+  afterRange.setEnd(block, block.childNodes.length);
+  const trailing = afterRange.cloneContents();
+
+  const replacements: Node[] = [];
+  const leadingHasContent = hasSubstantiveContent(leading);
+  if (leadingHasContent) {
+    const leadingBlock = document.createElement(block.tagName);
+    leadingBlock.appendChild(leading);
+    replacements.push(leadingBlock);
+  }
+  replacements.push(...Array.from(fragment.childNodes));
+  const trailingHasContent = hasSubstantiveContent(trailing);
+  if (trailingHasContent) {
+    const trailingBlock = document.createElement(block.tagName);
+    trailingBlock.appendChild(trailing);
+    replacements.push(trailingBlock);
+  }
+
+  block.replaceWith(...replacements);
+}
+
 function createBlankParagraph(): HTMLParagraphElement {
   const paragraph = document.createElement('p');
   paragraph.appendChild(document.createElement('br'));
@@ -164,7 +270,7 @@ function createHardBreak(): HTMLDivElement {
   return hardBreak;
 }
 
-function collapsed(point: FlowPoint): FlowSelectionBookmark {
+export function collapsedFlowSelection(point: FlowPoint): FlowSelectionBookmark {
   return { anchor: point, focus: point, collapsed: true };
 }
 
@@ -215,7 +321,7 @@ function ensureEditableDocument(root: HTMLElement): boolean {
   return true;
 }
 
-function finalizeRoot(
+export function finalizeDocumentRoot(
   root: HTMLElement,
   requestedSelection: FlowSelectionBookmark | null,
   selectFallback: boolean,
@@ -234,7 +340,7 @@ function finalizeRoot(
     selection: requestedIsValid
       ? requestedSelection
       : fallbackPoint
-        ? collapsed(fallbackPoint)
+        ? collapsedFlowSelection(fallbackPoint)
         : null,
   };
 }
@@ -377,7 +483,11 @@ function deleteSelectedRange(
   range.deleteContents();
   if (root.innerHTML === before) return { html, selection, changed: false };
 
-  const finalized = finalizeRoot(root, collapsed(startPoint), true);
+  const finalized = finalizeDocumentRoot(
+    root,
+    collapsedFlowSelection(startPoint),
+    true,
+  );
   return { ...finalized, changed: true };
 }
 
@@ -388,13 +498,25 @@ function deleteCollapsedUnit(
 ): DocumentTransactionResult {
   const root = createContainer(html);
   const domPoint = domPointForFlowPoint(root, point);
-  if (!domPoint) return { html, selection: collapsed(point), changed: false };
+  if (!domPoint) {
+    return {
+      html,
+      selection: collapsedFlowSelection(point),
+      changed: false,
+    };
+  }
 
   const unit =
     direction === 'forward'
       ? nextLogicalUnit(root, domPoint)
       : previousLogicalUnit(root, domPoint);
-  if (!unit) return { html, selection: collapsed(point), changed: false };
+  if (!unit) {
+    return {
+      html,
+      selection: collapsedFlowSelection(point),
+      changed: false,
+    };
+  }
 
   let nextPoint = point;
   if (unit.type === 'break') {
@@ -410,7 +532,11 @@ function deleteCollapsedUnit(
     deleteTextUnit(unit, domPoint, direction);
   }
 
-  const finalized = finalizeRoot(root, collapsed(nextPoint), true);
+  const finalized = finalizeDocumentRoot(
+    root,
+    collapsedFlowSelection(nextPoint),
+    true,
+  );
   return { ...finalized, changed: true };
 }
 
@@ -461,14 +587,18 @@ export function replaceLogicalSelection(
   const replacement = template.content;
   const replacementTextLength = fragmentTextLength(replacement);
   if (replacement.childNodes.length > 0) {
-    range.insertNode(replacement);
+    insertReplacementNodes(root, start, replacement);
   } else if (!hadSelection) {
     const blank = document.createElement('p');
     blank.innerHTML = '<br>';
-    range.insertNode(blank);
+    const blankRange = document.createRange();
+    blankRange.setStart(start.node, start.offset);
+    blankRange.collapse(true);
+    blankRange.insertNode(blank);
   }
 
   hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
   const caret =
     replacementStartOffset === null
       ? replacementStartPoint
@@ -476,7 +606,11 @@ export function replaceLogicalSelection(
           root.innerHTML,
           replacementStartOffset + replacementTextLength,
         ) ?? replacementStartPoint;
-  const finalized = finalizeRoot(root, collapsed(caret), true);
+  const finalized = finalizeDocumentRoot(
+    root,
+    collapsedFlowSelection(caret),
+    true,
+  );
   return { ...finalized, changed: true };
 }
 
@@ -484,6 +618,14 @@ export function insertParagraphAtSelection(
   html: string,
   selection: FlowSelectionBookmark,
 ): DocumentTransactionResult {
+  if (!selection.collapsed) {
+    const deleted = deleteSelectedRange(html, selection);
+    if (!deleted.changed || !deleted.selection?.collapsed) {
+      return { html, selection, changed: false };
+    }
+    return insertParagraphAtSelection(deleted.html, deleted.selection);
+  }
+
   const root = createContainer(html);
   const point = domPointForFlowPoint(root, selection.anchor);
   if (!point) return { html, selection, changed: false };
@@ -492,15 +634,90 @@ export function insertParagraphAtSelection(
   if (!nextBlock) return { html, selection, changed: false };
 
   hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
   const nextFlowId = nextBlock.dataset.flowId;
   const selectionPoint = nextFlowId
     ? flowPointAtElementStart(root, nextBlock)
     : null;
-  const finalized = finalizeRoot(
+  const finalized = finalizeDocumentRoot(
     root,
-    selectionPoint ? collapsed(selectionPoint) : null,
+    selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
     true,
   );
+  return { ...finalized, changed: true };
+}
+
+function tableCellForPoint(
+  root: HTMLElement,
+  point: DomPoint,
+): HTMLTableCellElement | null {
+  const element =
+    point.node.nodeType === Node.ELEMENT_NODE
+      ? (point.node as HTMLElement)
+      : point.node.parentElement;
+  return element?.closest<HTMLTableCellElement>('td, th') ?? null;
+}
+
+export function insertTableRowAtSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = createContainer(html);
+  const point = domPointForFlowPoint(root, selection.anchor);
+  if (!point) return { html, selection, changed: false };
+  const cell = tableCellForPoint(root, point);
+  const row = cell?.closest('tr');
+  if (!cell || !row) return { html, selection, changed: false };
+
+  const newRow = document.createElement('tr');
+  Array.from(row.children).forEach((sourceCell) => {
+    const tagName = sourceCell.tagName.toLowerCase() === 'th' ? 'th' : 'td';
+    const newCell = document.createElement(tagName);
+    newCell.innerHTML = '<br>';
+    newRow.appendChild(newCell);
+  });
+  row.insertAdjacentElement('afterend', newRow);
+
+  hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
+  const finalized = finalizeDocumentRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+export function insertTableColumnAtSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = createContainer(html);
+  const point = domPointForFlowPoint(root, selection.anchor);
+  if (!point) return { html, selection, changed: false };
+  const cell = tableCellForPoint(root, point);
+  const table = cell?.closest('table');
+  const row = cell?.closest('tr');
+  if (!cell || !table || !row) return { html, selection, changed: false };
+
+  const columnIndex = Array.from(row.children).indexOf(cell);
+  if (columnIndex === -1) return { html, selection, changed: false };
+
+  Array.from(table.querySelectorAll('tr')).forEach((tableRow) => {
+    const cells = Array.from(tableRow.children);
+    const referenceCell = cells[Math.min(columnIndex, cells.length - 1)] as
+      | HTMLTableCellElement
+      | undefined;
+    const tagName = referenceCell?.tagName.toLowerCase() === 'th' ? 'th' : 'td';
+    const newCell = document.createElement(tagName);
+    newCell.innerHTML = '<br>';
+
+    if (referenceCell) {
+      referenceCell.insertAdjacentElement('afterend', newCell);
+    } else {
+      tableRow.appendChild(newCell);
+    }
+  });
+
+  hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
+  const finalized = finalizeDocumentRoot(root, selection, true);
   return { ...finalized, changed: true };
 }
 
@@ -590,9 +807,9 @@ export function insertHardPageAtSelection(
   const selectionPoint = afterFlow
     ? flowPointAtElementStart(root, afterFlow)
     : null;
-  const finalized = finalizeRoot(
+  const finalized = finalizeDocumentRoot(
     root,
-    selectionPoint ? collapsed(selectionPoint) : null,
+    selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
     true,
   );
   return { ...finalized, changed: true };
@@ -610,9 +827,9 @@ export function appendHardPage(html: string): DocumentTransactionResult {
   const selectionPoint = lastFlow
     ? flowPointAtElementStart(root, lastFlow)
     : null;
-  const finalized = finalizeRoot(
+  const finalized = finalizeDocumentRoot(
     root,
-    selectionPoint ? collapsed(selectionPoint) : null,
+    selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
     true,
   );
   return { ...finalized, changed: true };
@@ -635,7 +852,7 @@ export function deleteHardPageSection(
   const remainingSections =
     sections.length > 0 ? sections.map(normalizedSectionHtml) : [EMPTY_PARAGRAPH_HTML];
   const root = createContainer(remainingSections.join(HARD_PAGE_BREAK_HTML));
-  const finalized = finalizeRoot(root, null, false);
+  const finalized = finalizeDocumentRoot(root, null, false);
   return { ...finalized, changed: true };
 }
 
