@@ -10,6 +10,7 @@ import {
   useManualClientServiceCatalogOptions,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
+import type { CreateManualClientServiceRequest } from '@/lib/validations/client-service';
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -30,7 +31,7 @@ function createHarness() {
 }
 
 const variantId = '11111111-1111-4111-8111-111111111111';
-const createData = {
+const createData: CreateManualClientServiceRequest = {
   serviceVariantId: variantId,
   serviceCadence: 'ANNUALLY',
   startDate: '2026-08-01',

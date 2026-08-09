@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Modal } from '@/components/ui/modal';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -152,8 +153,8 @@ export function ClientServiceCreator({
 
   return <>
     <Modal isOpen={isOpen} onClose={requestClose} title="Add service" description="Add an operational service from the service catalog." size="2xl" closeOnEscape={!pending} closeOnOverlayClick={!pending}>
-      <div className="max-h-[70vh] space-y-4 overflow-y-auto p-4">
-        {formError ? <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-3 text-sm text-status-error">{formError}</div> : null}
+      <ModalBody className="max-h-[70vh] space-y-4 overflow-y-auto">
+        {formError ? <Alert variant="error">{formError}</Alert> : null}
         {duplicates ? (
           <div role="alert" className="rounded-lg border border-status-warning/30 bg-status-warning/5 p-3 text-sm">
             <p className="font-medium text-text-primary">A matching client service already exists ({duplicates.total} matching).</p>
@@ -163,8 +164,8 @@ export function ClientServiceCreator({
               ))}
             </ul>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button className="min-h-11 sm:min-h-8" size="sm" variant="secondary" disabled={pending} onClick={() => setDuplicates(null)}>Cancel</Button>
-              <Button className="min-h-11 sm:min-h-8" size="sm" variant="primary" disabled={pending} isLoading={pending} onClick={() => submit(true)}>Add anyway</Button>
+              <Button size="sm" variant="secondary" disabled={pending} onClick={() => setDuplicates(null)}>Cancel</Button>
+              <Button size="sm" variant="primary" disabled={pending} isLoading={pending} onClick={() => submit(true)}>Add anyway</Button>
             </div>
           </div>
         ) : null}
@@ -180,18 +181,17 @@ export function ClientServiceCreator({
             groupBy="group"
             clearable={false}
             error={selectorError}
-            containerClassName="min-h-11 sm:min-h-8"
           />
           {catalog.isLoading ? <p role="status" className="mt-1.5 text-xs text-text-secondary">Loading service catalog…</p> : null}
           {!catalog.isLoading && catalog.error ? <p className="mt-1.5 text-xs text-status-error">{catalog.error instanceof Error ? catalog.error.message : 'This catalog service is no longer available.'} Choose another catalog service to continue.</p> : null}
           {!catalog.isLoading && !catalog.error && (catalog.data?.variants.length ?? 0) === 0 ? <p className="mt-1.5 text-xs text-text-secondary">No active services are available in the catalog.</p> : null}
         </div>
         <OperationalServiceForm values={values} onChange={setValues} errors={errors} disabled={pending} sectionsDisabled={!selectedVariant} />
-      </div>
-      <div className="flex justify-end gap-2 border-t border-border-primary p-4">
+      </ModalBody>
+      <ModalFooter>
         <Button variant="secondary" disabled={pending} onClick={requestClose}>Cancel</Button>
         <Button isLoading={pending} disabled={!selectedVariant || pending} onClick={() => submit(false)}>Add service</Button>
-      </div>
+      </ModalFooter>
     </Modal>
     <ConfirmDialog
       isOpen={Boolean(pendingVariantId)}

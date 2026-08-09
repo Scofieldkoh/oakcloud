@@ -1,7 +1,8 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { Modal } from '@/components/ui/modal';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { FormInput } from '@/components/ui/form-input';
@@ -134,11 +135,15 @@ export function ClientServiceEditor({
 
   return <>
     <Modal isOpen={isOpen} onClose={onClose} title="Edit service" description={editDescription} size="2xl">
-      <div className="max-h-[70vh] space-y-4 overflow-y-auto p-4" aria-describedby={formError ? errorId : undefined}>
+      <ModalBody className="max-h-[70vh] space-y-4 overflow-y-auto" aria-describedby={formError ? errorId : undefined}>
         {formError ? (
-          <div id={errorId} role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-3 text-sm text-status-error">
-            <p>{formError}</p>
-            {hasConflict ? <Button className="mt-2 min-h-11 sm:min-h-8" size="sm" variant="secondary" isLoading={latestService.isFetching} onClick={reloadLatest}>Reload latest service</Button> : null}
+          <div id={errorId}>
+            <Alert variant="error">
+              <div className="flex flex-col gap-2">
+                <p>{formError}</p>
+                {hasConflict ? <Button size="sm" variant="secondary" isLoading={latestService.isFetching} onClick={reloadLatest}>Reload latest service</Button> : null}
+              </div>
+            </Alert>
           </div>
         ) : null}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -148,13 +153,13 @@ export function ClientServiceEditor({
         <OperationalServiceForm values={values} onChange={setValues} errors={fieldErrors} />
         <div className="rounded-lg border border-status-error/30 bg-status-error/5 p-3">
           <p className="text-sm text-text-secondary">{archiveDescription}</p>
-          <Button className="mt-2 min-h-11 sm:min-h-8" variant="danger" size="sm" onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
+          <Button className="mt-2" variant="danger" size="sm" onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
         </div>
-      </div>
-      <div className="flex justify-end gap-2 border-t border-border-primary p-4">
+      </ModalBody>
+      <ModalFooter>
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
         <Button isLoading={update.isPending} disabled={hasConflict} onClick={save}>Save changes</Button>
-      </div>
+      </ModalFooter>
     </Modal>
     <ConfirmDialog isOpen={archiveOpen} onClose={() => { setArchiveError(''); setArchiveOpen(false); }} onConfirm={archiveService} title="Archive service?" description="This service will no longer appear in the company Services list." confirmLabel="Archive service" requireReason reasonLabel="Archive reason" reasonPlaceholder="Explain why this service is being archived" reasonMinLength={10} isLoading={archive.isPending}>
       {archiveError ? <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-2 text-sm text-status-error">{archiveError}</div> : null}
