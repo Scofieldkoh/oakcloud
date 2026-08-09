@@ -105,3 +105,8 @@ export function a4LayoutsEqual(
     && left.marginsMm.bottom === right.marginsMm.bottom
     && left.marginsMm.left === right.marginsMm.left;
 }
+
+export function formatA4LayoutStatus(layout: A4DocumentLayout): string {
+  const { top, right, bottom, left } = layout.marginsMm;
+  return `A4 210 × 297 mm · margins T${top} R${right} B${bottom} L${left} mm`;
+}

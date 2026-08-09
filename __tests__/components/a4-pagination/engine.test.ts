@@ -112,4 +112,18 @@ describe('A4 deterministic pagination engine', () => {
     expect(pages[0].oversized).toBe(true);
     expect(pages[0].content.match(/<img/g)).toHaveLength(1);
   });
+
+  it('marks an unsplittable tall one-row table as oversized once', () => {
+    const tableMeasurer: HtmlMeasurer = {
+      measure: (html) => (html.includes('<table') ? 100 : 0),
+    };
+    const canonical = hydrateFlowHtml(
+      '<table><tbody><tr><td>Tall row</td></tr></tbody></table>',
+    );
+    const pages = paginateFlowHtml(canonical, tableMeasurer, 10);
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0].oversized).toBe(true);
+    expect(pages[0].content.match(/<tr\b/g)).toHaveLength(1);
+  });
 });

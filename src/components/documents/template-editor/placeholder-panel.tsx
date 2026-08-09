@@ -13,7 +13,10 @@ import {
   type TemplateCollection,
   type TemplateLoopLayout,
 } from '@/components/documents/template-editor/template-builders';
-import { SERVICE_AGREEMENT_SLOTS } from '@/components/documents/template-editor/template-validation';
+import {
+  TEMPLATE_FIELD_CATEGORIES,
+  type TemplateField,
+} from '@/components/documents/template-editor/template-field-catalog';
 import type { CustomPlaceholderDefinition, MergedPlaceholder } from '@/types/placeholders';
 
 export interface TemplatePartialOption {
@@ -38,100 +41,9 @@ export interface PlaceholderPanelProps {
 
 type Builder = 'loop-directors' | 'loop-shareholders' | 'condition';
 
-interface Field {
-  key: string;
-  label: string;
-  example: string;
-  category: string;
-  builder?: Builder;
-}
-
-interface Category {
-  key: string;
-  label: string;
-  fields: Field[];
-}
-
-const CATEGORIES: Category[] = [
-  { key: 'agreement-blocks', label: 'Agreement blocks', fields: [
-    { key: SERVICE_AGREEMENT_SLOTS.serviceSections, label: 'Service sections', example: 'Selected service scopes', category: 'Agreement blocks' },
-    { key: SERVICE_AGREEMENT_SLOTS.feeTable, label: 'Fee table', example: 'Entity-specific service fees', category: 'Agreement blocks' },
-    { key: SERVICE_AGREEMENT_SLOTS.entityAppendix, label: 'Entity appendix', example: 'Entity details and schedules', category: 'Agreement blocks' },
-  ] },
-  { key: 'company', label: 'Company', fields: [
-    { key: 'company.name', label: 'Company Name', example: 'Sample Company Pte Ltd', category: 'Company' },
-    { key: 'company.uen', label: 'UEN', example: '202312345A', category: 'Company' },
-    { key: 'company.registeredAddress', label: 'Full Address', example: '123 Sample Street, Singapore 123456', category: 'Company' },
-    { key: 'company.address.block', label: 'Block', example: '123', category: 'Company' },
-    { key: 'company.address.street', label: 'Street Name', example: 'Sample Street', category: 'Company' },
-    { key: 'company.address.level', label: 'Level', example: '01', category: 'Company' },
-    { key: 'company.address.unit', label: 'Unit', example: '01', category: 'Company' },
-    { key: 'company.address.building', label: 'Building Name', example: 'Sample Building', category: 'Company' },
-    { key: 'company.address.postalCode', label: 'Postal Code', example: '123456', category: 'Company' },
-    { key: 'company.address.letter', label: 'Company Letter Address', example: 'Sample Building\n123 Sample Street, #01-01\nSingapore  123456', category: 'Company' },
-    { key: 'company.incorporationDate', label: 'Incorporation Date', example: '15 January 2023', category: 'Company' },
-    { key: 'company.entityType', label: 'Entity Type', example: 'Private Limited Company', category: 'Company' },
-    { key: 'company.capital', label: 'Share Capital', example: '$100,000', category: 'Company' },
-  ] },
-  { key: 'selected-director', label: 'Selected Director', fields: [
-    { key: 'selectedDirector.name', label: 'Director Name', example: 'John Tan Wei Ming', category: 'Selected Director' },
-    { key: 'selectedDirector.detail', label: 'Director Detail', example: 'Director', category: 'Selected Director' },
-    { key: 'selectedDirector.email', label: 'Director Email', example: 'john.tan@example.com', category: 'Selected Director' },
-    { key: 'selectedDirector.phone', label: 'Director Phone', example: '+65 6123 4567', category: 'Selected Director' },
-    { key: 'selectedDirector.address.full', label: 'Director Full Address', example: '456 Director Road, Singapore 456789', category: 'Selected Director' },
-    { key: 'selectedDirector.address.letter', label: 'Director Letter Address', example: '456 Director Road\nSingapore  456789', category: 'Selected Director' },
-    { key: 'selectedDirector.nationality', label: 'Director Nationality', example: 'Singaporean', category: 'Selected Director' },
-    { key: 'selectedDirector.identificationNumber', label: 'Director Identification Number', example: 'S1234567A', category: 'Selected Director' },
-    { key: 'selectedDirector.role', label: 'Director Role', example: 'Director', category: 'Selected Director' },
-    { key: 'selectedDirector.appointmentDate', label: 'Director Appointment Date', example: '15 January 2023', category: 'Selected Director' },
-  ] },
-  { key: 'selected-shareholder', label: 'Selected Shareholder', fields: [
-    { key: 'selectedShareholder.name', label: 'Shareholder Name', example: 'Mary Lee Mei Ling', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.detail', label: 'Shareholder Detail', example: 'Ordinary shareholder', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.email', label: 'Shareholder Email', example: 'mary.lee@example.com', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.phone', label: 'Shareholder Phone', example: '+65 6987 6543', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.address.full', label: 'Shareholder Full Address', example: '789 Shareholder Lane, Singapore 789012', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.address.letter', label: 'Shareholder Letter Address', example: '789 Shareholder Lane\nSingapore  789012', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.nationality', label: 'Shareholder Nationality', example: 'Singaporean', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.identificationNumber', label: 'Shareholder Identification Number', example: 'S7654321B', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.shareholderType', label: 'Shareholder Type', example: 'Individual', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.shareClass', label: 'Share Class', example: 'Ordinary', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.numberOfShares', label: 'Number of Shares', example: '50,000', category: 'Selected Shareholder' },
-    { key: 'selectedShareholder.percentageHeld', label: 'Percentage Held', example: '50%', category: 'Selected Shareholder' },
-  ] },
-  { key: 'selected-contact', label: 'Selected Contact', fields: [
-    { key: 'selectedContact.name', label: 'Contact Name', example: 'Alex Lim', category: 'Selected Contact' },
-    { key: 'selectedContact.detail', label: 'Contact Detail', example: 'Company representative', category: 'Selected Contact' },
-    { key: 'selectedContact.email', label: 'Contact Email', example: 'alex.lim@example.com', category: 'Selected Contact' },
-    { key: 'selectedContact.phone', label: 'Contact Phone', example: '+65 6777 8899', category: 'Selected Contact' },
-    { key: 'selectedContact.address.full', label: 'Contact Full Address', example: '321 Contact Avenue, Singapore 321654', category: 'Selected Contact' },
-    { key: 'selectedContact.address.letter', label: 'Contact Letter Address', example: '321 Contact Avenue\nSingapore  321654', category: 'Selected Contact' },
-    { key: 'selectedContact.nationality', label: 'Contact Nationality', example: 'Singaporean', category: 'Selected Contact' },
-    { key: 'selectedContact.identificationNumber', label: 'Contact Identification Number', example: 'S2468135C', category: 'Selected Contact' },
-    { key: 'selectedContact.contactType', label: 'Contact Type', example: 'Individual', category: 'Selected Contact' },
-  ] },
-  { key: 'loops', label: 'Loops', fields: [
-    { key: 'directors', label: 'Directors loop', example: 'Repeat content for every director', category: 'Loops', builder: 'loop-directors' },
-    { key: 'shareholders', label: 'Shareholders loop', example: 'Repeat content for every shareholder', category: 'Loops', builder: 'loop-shareholders' },
-  ] },
-  { key: 'conditions', label: 'Conditions', fields: [
-    { key: 'condition', label: 'Conditional block', example: 'Show content when a field matches', category: 'Conditions', builder: 'condition' },
-  ] },
-  { key: 'system', label: 'System', fields: [
-    { key: 'system.currentDate', label: 'Current Date', example: '6 December 2024', category: 'System' },
-    { key: 'system.generatedBy', label: 'Generated By', example: 'John Doe', category: 'System' },
-    { key: 'system.preparerName', label: 'Preparer Name', example: 'John Doe', category: 'System' },
-  ] },
-  { key: 'modifiers', label: 'Modifiers', fields: [
-    { key: 'UCASE({{field}})', label: 'Uppercase', example: 'SAMPLE COMPANY PTE LTD', category: 'Modifiers' },
-    { key: 'LCASE({{field}})', label: 'Lowercase', example: 'sample company pte ltd', category: 'Modifiers' },
-    { key: 'PCASE({{field}})', label: 'Proper Case', example: 'Sample Company Pte Ltd', category: 'Modifiers' },
-  ] },
-];
-
 const CONDITION_FIELDS = ['company.name', 'company.uen', 'company.registeredAddress', 'company.incorporationDate', 'company.entityType', 'company.capital', 'contact.name', 'contact.email', 'system.currentDate', 'system.generatedBy', 'system.tenantName'];
 
-const fieldId = (field: Field) => `${field.category}:${field.key}`;
+const fieldId = (field: TemplateField) => `${field.category}:${field.key}`;
 const syntax = (key: string) => key.startsWith('{{') || /^[ULP]CASE\(/.test(key) ? key : `{{${key}}}`;
 const normalizeKey = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 const escapeText = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -150,7 +62,7 @@ export function PlaceholderPanel({ onInsert, partials, isLoadingPartials, custom
   const normalizedQuery = query.trim().toLowerCase();
   const serviceFields = customPlaceholders.filter((field) => field.storageSource === 'service');
   const filteredCategories = useMemo(() => [
-    ...CATEGORIES,
+    ...TEMPLATE_FIELD_CATEGORIES,
     {
       key: 'service-fields',
       label: 'Service fields',
@@ -162,8 +74,8 @@ export function PlaceholderPanel({ onInsert, partials, isLoadingPartials, custom
       })),
     },
   ].map((category) => ({ ...category, fields: category.fields.filter((field) => !normalizedQuery || matches(normalizedQuery, field.label, field.key, field.category, field.example, category.label)) })).filter((category) => category.fields.length > 0), [normalizedQuery, serviceFields]);
-  const allFields = useMemo(() => CATEGORIES.flatMap((category) => category.fields), []);
-  const recentFields = recents.map((id) => allFields.find((field) => fieldId(field) === id)).filter((field): field is Field => Boolean(field));
+  const allFields = useMemo(() => TEMPLATE_FIELD_CATEGORIES.flatMap((category) => category.fields), []);
+  const recentFields = recents.map((id) => allFields.find((field) => fieldId(field) === id)).filter((field): field is TemplateField => Boolean(field));
   const customFields = customPlaceholders.filter((field) => field.storageSource !== 'service');
   const matchingCustom = customFields.filter((field) => !normalizedQuery || matches(normalizedQuery, field.label, field.key, field.defaultValue, 'Custom'));
   const matchingPartials = partials.filter((partial) => !normalizedQuery || matches(normalizedQuery, partial.name, partial.displayName, partial.description, 'Partials'));
@@ -182,7 +94,7 @@ export function PlaceholderPanel({ onInsert, partials, isLoadingPartials, custom
     resetForm();
   };
 
-  const renderField = (field: Field) => <div key={fieldId(field)} className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-background-tertiary"><div className="min-w-0 flex-1"><div className="text-xs font-medium text-text-primary">{field.label}</div><div className="truncate font-mono text-[11px] text-accent-primary">{field.builder ? 'Guided builder' : syntax(field.key)}</div><div className="whitespace-pre-line break-words text-[11px] text-text-muted">Example: {field.example}</div></div><Button size="xs" variant="primary" aria-label={field.builder === 'loop-directors' ? 'Build directors loop' : field.builder === 'loop-shareholders' ? 'Build shareholders loop' : field.builder === 'condition' ? 'Build condition' : `Insert ${field.label}`} onClick={() => field.builder ? setBuilder(field.builder) : insert(syntax(field.key), fieldId(field))}>{field.builder ? 'Build' : 'Insert'}</Button>{!field.builder && <Button size="xs" variant="ghost" iconOnly aria-label={`Copy ${field.label}`} onClick={() => copy(syntax(field.key), fieldId(field))}>{copied === fieldId(field) ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</Button>}</div>;
+  const renderField = (field: TemplateField) => <div key={fieldId(field)} className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-background-tertiary"><div className="min-w-0 flex-1"><div className="text-xs font-medium text-text-primary">{field.label}</div><div className="truncate font-mono text-[11px] text-accent-primary">{field.builder ? 'Guided builder' : syntax(field.key)}</div><div className="whitespace-pre-line break-words text-[11px] text-text-muted">Example: {field.example}</div></div><Button size="xs" variant="primary" aria-label={field.builder === 'loop-directors' ? 'Build directors loop' : field.builder === 'loop-shareholders' ? 'Build shareholders loop' : field.builder === 'condition' ? 'Build condition' : `Insert ${field.label}`} onClick={() => field.builder ? setBuilder(field.builder) : insert(syntax(field.key), fieldId(field))}>{field.builder ? 'Build' : 'Insert'}</Button>{!field.builder && <Button size="xs" variant="ghost" iconOnly aria-label={`Copy ${field.label}`} onClick={() => copy(syntax(field.key), fieldId(field))}>{copied === fieldId(field) ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</Button>}</div>;
 
   return <div className="flex h-full flex-col bg-background-secondary"><div className="border-b border-border-primary p-3"><label htmlFor="placeholder-search" className="sr-only">Search fields</label><input id="placeholder-search" type="search" role="searchbox" aria-label="Search fields" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search fields" className="h-8 w-full rounded-md border border-border-primary bg-background-primary px-3 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50" /></div><div className="flex-1 overflow-y-auto p-2">{recentFields.length > 0 && !normalizedQuery && <section aria-label="Recently used" className="mb-2 rounded-md border border-border-primary"><h3 className="px-2 py-2 text-xs font-semibold text-text-primary">Recently used</h3>{recentFields.map(renderField)}</section>}{filteredCategories.map((category) => { const isOpen = Boolean(normalizedQuery) || expanded.includes(category.key); return <section key={category.key} className="mb-2 rounded-md border border-border-primary"><button type="button" aria-label={resultLabel(category.label, category.fields.length)} aria-expanded={isOpen} onClick={() => setExpanded((previous) => previous.includes(category.key) ? previous.filter((key) => key !== category.key) : [...previous, category.key])} className="flex w-full items-center justify-between px-2 py-2 text-left hover:bg-background-tertiary"><span className="text-xs font-semibold text-text-primary">{category.label}</span><span className="flex items-center gap-2 text-[11px] text-text-muted"><span className="rounded-full bg-background-tertiary px-1.5 py-0.5">{category.fields.length}</span>{isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}</span></button>{isOpen && <div className="border-t border-border-secondary">{category.fields.map(renderField)}</div>}</section>; })}{(!normalizedQuery || matchingCustom.length > 0 || formOpen) && <section className="mb-2 rounded-md border border-border-primary"><div className="flex items-center justify-between px-2 py-2"><button type="button" aria-label={resultLabel('Custom', matchingCustom.length)} className="text-left"><span className="text-xs font-semibold text-text-primary">Custom</span><span className="ml-2 rounded-full bg-background-tertiary px-1.5 py-0.5 text-[11px] text-text-muted">{matchingCustom.length}</span><p className="text-[11px] text-text-muted">Fields requested during generation.</p></button>{!formOpen && <Button size="xs" variant="secondary" leftIcon={<Plus />} onClick={() => { setEditingId(null); setFormOpen(true); }}>Add custom field</Button>}</div>{formOpen && <div className="space-y-3 border-t border-border-secondary p-3"><div><label htmlFor="custom-field-label" className="mb-1 block text-xs font-medium text-text-secondary">Field label</label><input id="custom-field-label" value={form.label} onChange={(event) => setForm((previous) => ({ ...previous, label: event.target.value, key: previous.key || normalizeKey(event.target.value) }))} className="h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" /></div><div><label htmlFor="custom-field-key" className="mb-1 block text-xs font-medium text-text-secondary">Field key</label><input id="custom-field-key" value={form.key} onChange={(event) => setForm((previous) => ({ ...previous, key: event.target.value }))} className="h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 font-mono text-xs text-text-primary" />{duplicateKey && <p className="mt-1 text-xs text-status-error">This placeholder key already exists.</p>}</div><div className="grid grid-cols-2 gap-2"><label className="text-xs font-medium text-text-secondary">Type<select value={form.type} onChange={(event) => setForm((previous) => ({ ...previous, type: event.target.value as CustomPlaceholderDefinition['type'] }))} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary"><option value="text">Text</option><option value="textarea">Long text</option><option value="date">Date</option><option value="number">Number</option><option value="currency">Currency</option><option value="boolean">Boolean</option></select></label><label className="text-xs font-medium text-text-secondary">Default value<input value={form.defaultValue} onChange={(event) => setForm((previous) => ({ ...previous, defaultValue: event.target.value }))} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" /></label></div><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={form.required} onChange={(event) => setForm((previous) => ({ ...previous, required: event.target.checked }))} />Required</label><p className="rounded bg-background-tertiary p-2 font-mono text-[11px] text-accent-primary">{`{{custom.${normalizeKey(form.key) || 'field_key'}}}`}</p><div className="flex justify-end gap-2"><Button variant="ghost" size="xs" onClick={resetForm}>Cancel</Button><Button size="xs" aria-label={editingId ? 'Update field' : 'Add field'} onClick={saveField} disabled={!form.label.trim() || !form.key.trim() || duplicateKey}>{editingId ? 'Update field' : 'Add field'}</Button></div></div>}{matchingCustom.map((field) => <div key={field.id} className="flex items-center gap-2 border-t border-border-secondary px-2 py-2"><div className="min-w-0 flex-1"><div className="text-xs font-medium text-text-primary">{field.label}</div><div className="font-mono text-[11px] text-accent-primary">{`{{custom.${field.key}}}`}</div></div><Button size="xs" aria-label={`Insert ${field.label}`} onClick={() => insert(`{{custom.${field.key}}}`, `custom.${field.key}`)}>Insert</Button><Button size="xs" variant="ghost" iconOnly aria-label={`Copy ${field.label}`} onClick={() => copy(`{{custom.${field.key}}}`, `custom.${field.key}`)}>{copied === `custom.${field.key}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</Button><Button size="xs" variant="ghost" iconOnly aria-label={`Edit ${field.label}`} onClick={() => startEdit(field)}><Pencil className="h-3.5 w-3.5" /></Button><Button size="xs" variant="ghost" iconOnly aria-label={`Delete ${field.label}`} onClick={() => onCustomPlaceholdersChange(customPlaceholders.filter((candidate) => candidate.id !== field.id))}><Trash2 className="h-3.5 w-3.5" /></Button></div>)}</section>}{(!normalizedQuery || matchingPartials.length > 0) && <section className="mb-2 rounded-md border border-border-primary"><div className="px-2 py-2"><button type="button" aria-label={resultLabel('Partials', matchingPartials.length)} className="text-left"><span className="text-xs font-semibold text-text-primary">Partials</span><span className="ml-2 rounded-full bg-background-tertiary px-1.5 py-0.5 text-[11px] text-text-muted">{matchingPartials.length}</span></button></div><div className="border-t border-border-secondary">{isLoadingPartials ? <p className="p-3 text-xs text-text-muted">Loading partials…</p> : matchingPartials.length === 0 ? <p className="p-3 text-xs text-text-muted">No partials available.</p> : matchingPartials.map((partial) => <div key={partial.id} className="border-b border-border-secondary last:border-b-0"><div className="flex items-center gap-2 px-2 py-2"><div className="min-w-0 flex-1"><div className="text-xs font-medium text-text-primary">{partial.displayName || partial.name}</div><div className="font-mono text-[11px] text-accent-primary">{`{{>${partial.name}}}`}</div></div><Button size="xs" aria-label={`Insert ${partial.displayName || partial.name}`} onClick={() => insert(`{{>${partial.name}}}`, `partial.${partial.name}`)}>Insert</Button><Button size="xs" variant="ghost" iconOnly aria-label={`Copy ${partial.displayName || partial.name}`} onClick={() => copy(`{{>${partial.name}}}`, `partial.${partial.name}`)}>{copied === `partial.${partial.name}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</Button></div>{!isPartialMode && partialLinks[partial.name]?.map((field) => <label key={field.id} className="mx-2 mb-2 flex items-center gap-2 rounded bg-background-tertiary p-2 text-xs text-text-secondary"><span className="min-w-0 flex-1 truncate">{field.label}</span><select aria-label={`Link ${field.label}`} value={partialPlaceholderLinkings[field.key] || ''} onChange={(event) => onPartialPlaceholderLinkingChange?.(field.key, event.target.value || undefined)} className="h-7 max-w-36 rounded border border-border-primary bg-background-primary px-1 text-xs text-text-primary"><option value="">Always show</option>{templateBooleanPlaceholders.map((booleanField) => <option key={booleanField.id} value={booleanField.key}>Show when: {booleanField.label}</option>)}</select></label>)}</div>)}</div></section>}{normalizedQuery && filteredCategories.length === 0 && matchingCustom.length === 0 && matchingPartials.length === 0 && <div className="p-4 text-center text-xs text-text-muted">No fields match this search. Clear it or create a custom field.</div>}</div><GuidedLoopDialog collection={builder === 'loop-directors' ? 'directors' : builder === 'loop-shareholders' ? 'shareholders' : null} onClose={() => setBuilder(null)} onInsert={(html, id) => { insert(html, id); setBuilder(null); }} /><GuidedConditionDialog isOpen={builder === 'condition'} onClose={() => setBuilder(null)} onInsert={(html) => { insert(html, 'Conditions:condition'); setBuilder(null); }} /></div>;
 }

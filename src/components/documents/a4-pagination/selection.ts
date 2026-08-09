@@ -167,3 +167,63 @@ export function restoreFlowSelection(
     return false;
   }
 }
+
+export function documentTextOffsetForFlowPoint(
+  html: string,
+  point: FlowSelectionBookmark['anchor'],
+): number | null {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let documentOffset = 0;
+  let flowOffset = 0;
+  let node: Node | null;
+
+  while ((node = walker.nextNode())) {
+    const length = node.textContent?.length ?? 0;
+    const flowElement = node.parentElement?.closest<HTMLElement>('[data-flow-id]');
+    if (flowElement?.dataset.flowId === point.flowId) {
+      if (point.offset <= flowOffset + length) {
+        return documentOffset + Math.max(0, point.offset - flowOffset);
+      }
+      flowOffset += length;
+    }
+    documentOffset += length;
+  }
+
+  return null;
+}
+
+export function flowPointAtDocumentTextOffset(
+  html: string,
+  requestedOffset: number,
+): FlowSelectionBookmark['anchor'] | null {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const offsetsByFlowId = new Map<string, number>();
+  let remaining = Math.max(0, requestedOffset);
+  let fallback: FlowSelectionBookmark['anchor'] | null = null;
+  let node: Node | null;
+
+  while ((node = walker.nextNode())) {
+    const length = node.textContent?.length ?? 0;
+    const flowElement = node.parentElement?.closest<HTMLElement>('[data-flow-id]');
+    const flowId = flowElement?.dataset.flowId;
+    if (!flowId) {
+      remaining = Math.max(0, remaining - length);
+      continue;
+    }
+
+    const flowOffset = offsetsByFlowId.get(flowId) ?? 0;
+    fallback = { flowId, offset: flowOffset + length };
+    if (remaining <= length) {
+      return { flowId, offset: flowOffset + remaining };
+    }
+
+    offsetsByFlowId.set(flowId, flowOffset + length);
+    remaining -= length;
+  }
+
+  return fallback;
+}

@@ -28,6 +28,8 @@ import {
 import { cn } from '@/lib/utils';
 import {
   deleteFlowSelection,
+  ensureEditableCanonicalHtml,
+  hydrateFlowContainer,
   replaceFlowSelection,
   hydrateFlowHtml,
   normalizeEditedFlowIds,
@@ -42,16 +44,29 @@ import {
 } from './a4-pagination/engine';
 import {
   captureFlowSelection,
+  documentTextOffsetForFlowPoint,
+  flowPointAtDocumentTextOffset,
   restoreFlowSelection,
   type FlowSelectionBookmark,
 } from './a4-pagination/selection';
 import {
+  applyInlineFormat,
+  normalizeFormattingSpans,
+  readLogicalFormatState,
+  type InlineFormatPatch,
+} from './a4-pagination/formatting';
+import {
   appendHardPage,
   applyLogicalDelete,
+  deleteHardPageSection,
+  hardSectionIndexForFragment,
+  insertParagraphAtSelection,
+  replaceLogicalSelection,
   type DocumentTransactionResult,
 } from './a4-pagination/document-actions';
 import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
+  formatA4LayoutStatus,
   normalizeA4DocumentLayout,
   type A4DocumentLayout,
   type A4MarginsMm,
@@ -61,6 +76,7 @@ import {
   type EditorCommand,
   type EditorFormatState,
 } from './a4-editor-toolbar';
+import { buildA4PrintCss } from './a4-print-styles';
 
 // ============================================================================
 // HTML Sanitization
@@ -286,66 +302,6 @@ function selectionStartPoint(
   return anchorIsStart ? bookmark.anchor : bookmark.focus;
 }
 
-function documentTextOffsetForFlowPoint(
-  html: string,
-  point: FlowSelectionBookmark['anchor'],
-): number | null {
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-  let documentOffset = 0;
-  let flowOffset = 0;
-  let node: Node | null;
-
-  while ((node = walker.nextNode())) {
-    const length = node.textContent?.length ?? 0;
-    const flowElement = node.parentElement?.closest<HTMLElement>('[data-flow-id]');
-    if (flowElement?.dataset.flowId === point.flowId) {
-      if (point.offset <= flowOffset + length) {
-        return documentOffset + Math.max(0, point.offset - flowOffset);
-      }
-      flowOffset += length;
-    }
-    documentOffset += length;
-  }
-
-  return null;
-}
-
-function flowPointAtDocumentTextOffset(
-  html: string,
-  requestedOffset: number,
-): FlowSelectionBookmark['anchor'] | null {
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-  const offsetsByFlowId = new Map<string, number>();
-  let remaining = Math.max(0, requestedOffset);
-  let fallback: FlowSelectionBookmark['anchor'] | null = null;
-  let node: Node | null;
-
-  while ((node = walker.nextNode())) {
-    const length = node.textContent?.length ?? 0;
-    const flowElement = node.parentElement?.closest<HTMLElement>('[data-flow-id]');
-    const flowId = flowElement?.dataset.flowId;
-    if (!flowId) {
-      remaining = Math.max(0, remaining - length);
-      continue;
-    }
-
-    const flowOffset = offsetsByFlowId.get(flowId) ?? 0;
-    fallback = { flowId, offset: flowOffset + length };
-    if (remaining <= length) {
-      return { flowId, offset: flowOffset + remaining };
-    }
-
-    offsetsByFlowId.set(flowId, flowOffset + length);
-    remaining -= length;
-  }
-
-  return fallback;
-}
-
 function replaceTypedPageBreaks(html: string): string {
   const pageBreakReplacement = '<div class="page-break"></div>';
   return html
@@ -397,28 +353,6 @@ function selectNodeContents(node: Node): void {
 
 function dispatchEditorInput(editor: HTMLElement): void {
   editor.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function applyInlineStyleToSelection(
-  editor: HTMLElement,
-  styles: Record<string, string>,
-): boolean {
-  const range = getEditorSelectionRange(editor);
-  if (!range || range.collapsed) return false;
-
-  const span = document.createElement('span');
-  Object.entries(styles).forEach(([key, value]) => {
-    if (value) {
-      const cssProperty = key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
-      span.style.setProperty(cssProperty, value);
-    }
-  });
-
-  span.appendChild(range.extractContents());
-  range.insertNode(span);
-  selectNodeContents(span);
-  dispatchEditorInput(editor);
-  return true;
 }
 
 function findEditableBlock(start: Node, editor: HTMLElement): HTMLElement | null {
@@ -608,12 +542,9 @@ interface PageData {
 // A4 Constants - 96 DPI (standard screen) for true WYSIWYG
 // ============================================================================
 
-const DEFAULT_PAGE_MARGIN_MM = 20;
-
 const A4 = {
   WIDTH_PX: 794,
   HEIGHT_PX: 1123,
-  MARGIN_MM: DEFAULT_PAGE_MARGIN_MM,
 };
 
 // Shared font styles
@@ -755,9 +686,9 @@ function Page({
             'a4-page-content outline-none',
             isPreviewMode && 'cursor-default',
           )}
-          style={{
-            position: 'absolute',
-            top: pageLayout.topPx,
+        style={{
+          position: 'absolute',
+          top: pageLayout.topPx,
             right: pageLayout.rightPx,
             bottom: pageLayout.bottomPx,
             left: pageLayout.leftPx,
@@ -767,12 +698,20 @@ function Page({
             fontSize,
             lineHeight,
             color: '#000',
-            overflow: 'hidden',
+            overflow: page.oversized ? 'auto' : 'hidden',
             overflowWrap: 'break-word',
             wordBreak: 'break-word',
             whiteSpace: 'pre-wrap',
           }}
         />
+        {page.oversized ? (
+          <div
+            role="alert"
+            className="absolute inset-x-4 bottom-2 z-20 rounded bg-status-warning/10 px-2 py-1 text-xs text-status-warning"
+          >
+            This block is taller than the printable A4 area. Split the content or reduce its size.
+          </div>
+        ) : null}
 
       </div>
     </div>
@@ -817,8 +756,8 @@ function PageChrome({
           type="button"
           onClick={() => onDelete(page.id)}
           className="pointer-events-auto absolute right-4 top-4 z-10 rounded bg-red-100 p-1.5 text-red-600 transition-colors hover:bg-red-200"
-          title="Delete page"
-          aria-label={`Delete page ${pageNumber}`}
+          title="Delete explicit page section"
+          aria-label={`Delete explicit page section starting at page ${pageNumber}`}
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -829,7 +768,7 @@ function PageChrome({
         </div>
       ) : null}
       {showPageNumbers ? (
-        <div className="absolute left-1/2 -translate-x-1/2 text-gray-400" data-testid={`a4-page-number-${pageNumber}`} style={{ fontFamily: FONT_FAMILY, fontSize: '10pt', bottom: '30px' }}>
+        <div className="absolute left-1/2 -translate-x-1/2 text-gray-400" data-testid={`a4-page-number-${pageNumber}`} style={{ fontFamily: FONT_FAMILY, fontSize: '10pt', bottom: pageLayout.bottomPx / 2 }}>
           {pageNumber}
         </div>
       ) : null}
@@ -867,62 +806,46 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const lastValueRef = useRef<string | null>(null);
     const isInternalUpdate = useRef(false);
 
-    const savedSelectionRef = useRef<{
-      startNode: Node;
-      startOffset: number;
-      endNode: Node;
-      endOffset: number;
-      collapsed: boolean;
-    } | null>(null);
+    const savedSelectionRef = useRef<FlowSelectionBookmark | null>(null);
     const [activeFormats, setActiveFormats] = useState<EditorFormatState>({
       bold: false,
       italic: false,
       underline: false,
       alignment: 'left',
       list: 'none',
+      paragraphStyle: 'p',
+      fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+      fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+      textColor: '#000000',
+      highlightColor: '#ffffff',
     });
+    const [editorStatus, setEditorStatus] = useState<string | null>(null);
 
     const saveCursorPosition = useCallback(() => {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        if (documentSurfaceRef.current?.contains(range.startContainer)) {
-          savedSelectionRef.current = {
-            startNode: range.startContainer,
-            startOffset: range.startOffset,
-            endNode: range.endContainer,
-            endOffset: range.endOffset,
-            collapsed: range.collapsed,
-          };
-        }
-      }
+      const surface = documentSurfaceRef.current;
+      if (surface) savedSelectionRef.current = captureFlowSelection(surface);
     }, []);
 
     const restoreSelection = useCallback(() => {
-      const editor = documentSurfaceRef.current;
-      const saved = savedSelectionRef.current;
-      if (!editor || !saved) return false;
+      const surface = documentSurfaceRef.current;
+      const bookmark = savedSelectionRef.current;
+      if (!surface || !bookmark) return false;
 
-      if (
-        !editor.contains(saved.startNode) ||
-        !editor.contains(saved.endNode)
-      ) {
-        return false;
-      }
-
-      try {
-        const selection = window.getSelection();
-        if (!selection) return false;
-
-        const range = document.createRange();
-        range.setStart(saved.startNode, saved.startOffset);
-        range.setEnd(saved.endNode, saved.endOffset);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      if (restoreFlowSelection(surface, bookmark)) {
+        savedSelectionRef.current = captureFlowSelection(surface) ?? bookmark;
+        setEditorStatus(null);
         return true;
-      } catch {
-        return false;
       }
+
+      const firstFlow = surface.querySelector<HTMLElement>('[data-flow-id]');
+      const firstEditor = firstFlow?.closest<HTMLElement>(
+        '[contenteditable="true"]',
+      );
+      firstEditor?.focus({ preventScroll: true });
+      setEditorStatus(
+        'Selection moved after repagination; choose the text again.',
+      );
+      return false;
     }, []);
 
     const insertAtCursor = useCallback(
@@ -983,7 +906,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const parsePages = useCallback(
       (content: string, existingPages?: PageData[]): PageData[] => {
-        const hydrated = hydrateFlowHtml(content || '');
+        const hydrated = hydrateFlowHtml(ensureEditableCanonicalHtml(content));
         const sections = splitHardSections(hydrated);
         return sections.map((section, i) => ({
           id: existingPages?.[i]?.id || crypto.randomUUID(),
@@ -1023,6 +946,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const pagesRef = useRef<PageData[]>(pages);
     const reflowFrameRef = useRef<number | null>(null);
     const reflowGenerationRef = useRef(0);
+    const [isReflowing, setIsReflowing] = useState(false);
     const pendingScrollTopRef = useRef<number | null>(null);
     const pendingUpdateRef = useRef(false);
     const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
@@ -1080,59 +1004,67 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         if (reflowFrameRef.current !== null) {
           cancelAnimationFrame(reflowFrameRef.current);
+          reflowFrameRef.current = null;
         }
+
+        setIsReflowing(true);
 
         reflowFrameRef.current = requestAnimationFrame(() => {
           if (generation !== reflowGenerationRef.current) return;
 
-          if (
-            documentSurfaceRef.current &&
-            !pendingFlowSelectionRef.current
-          ) {
-            pendingFlowSelectionRef.current = captureFlowSelection(
-              documentSurfaceRef.current,
-            );
-          }
-
-          const canonical = reassemblePageFragments(
-            pagesRef.current.map((page) => ({
-              content: page.content,
-              hardBreakBefore: page.hardBreakBefore,
-              oversized: page.oversized,
-            })),
-          );
-          const measurer = createPageMeasurer(
-            pageLayout,
-            fontFamily,
-            fontSize,
-            lineHeight,
-            paragraphSpacing,
-          );
-
-          try {
-            const fragments = paginateFlowHtml(
-              canonical,
-              measurer,
-              pageLayout.contentHeightPx,
-            );
+          reflowFrameRef.current = requestAnimationFrame(() => {
             if (generation !== reflowGenerationRef.current) return;
 
-            const nextPages = fragments.map((fragment, index) => ({
-              id: pagesRef.current[index]?.id || crypto.randomUUID(),
-              content: sanitizeHtml(fragment.content),
-              hardBreakBefore: fragment.hardBreakBefore,
-              oversized: fragment.oversized,
-            }));
-            pagesRef.current = nextPages;
-            lastValueRef.current = serializePages(nextPages);
-            pendingUpdateRef.current = emitChange;
-            setPages(nextPages);
-          } finally {
-            measurer.dispose();
-            if (reflowFrameRef.current !== null) {
-              reflowFrameRef.current = null;
+            if (
+              documentSurfaceRef.current &&
+              !pendingFlowSelectionRef.current
+            ) {
+              pendingFlowSelectionRef.current = captureFlowSelection(
+                documentSurfaceRef.current,
+              );
             }
-          }
+
+            const canonical = reassemblePageFragments(
+              pagesRef.current.map((page) => ({
+                content: page.content,
+                hardBreakBefore: page.hardBreakBefore,
+                oversized: page.oversized,
+              })),
+            );
+            const measurer = createPageMeasurer(
+              pageLayout,
+              fontFamily,
+              fontSize,
+              lineHeight,
+              paragraphSpacing,
+            );
+
+            try {
+              const fragments = paginateFlowHtml(
+                canonical,
+                measurer,
+                pageLayout.contentHeightPx,
+              );
+              if (generation !== reflowGenerationRef.current) return;
+
+              const nextPages = fragments.map((fragment, index) => ({
+                id: pagesRef.current[index]?.id || crypto.randomUUID(),
+                content: sanitizeHtml(fragment.content),
+                hardBreakBefore: fragment.hardBreakBefore,
+                oversized: fragment.oversized,
+              }));
+              pagesRef.current = nextPages;
+              lastValueRef.current = serializePages(nextPages);
+              pendingUpdateRef.current = emitChange;
+              setPages(nextPages);
+            } finally {
+              measurer.dispose();
+              if (generation === reflowGenerationRef.current) {
+                reflowFrameRef.current = null;
+                setIsReflowing(false);
+              }
+            }
+          });
         });
       },
       [fontFamily, fontSize, lineHeight, pageLayout, paragraphSpacing, serializePages],
@@ -1154,33 +1086,31 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const root = documentSurfaceRef.current;
       if (!bookmark || !root) return;
 
-      const frame = requestAnimationFrame(() => {
-        const targetFlowElement = Array.from(
-          root.querySelectorAll<HTMLElement>('[data-flow-id]'),
-        ).find(
-          (element) => element.dataset.flowId === bookmark.anchor.flowId,
-        );
-        const targetEditor = targetFlowElement?.closest(
-          '[contenteditable="true"]',
-        ) as HTMLDivElement | null;
-        targetEditor?.focus({ preventScroll: true });
+      const targetFlowElement = Array.from(
+        root.querySelectorAll<HTMLElement>('[data-flow-id]'),
+      ).find(
+        (element) => element.dataset.flowId === bookmark.anchor.flowId,
+      );
+      const targetEditor = targetFlowElement?.closest(
+        '[contenteditable="true"]',
+      ) as HTMLDivElement | null;
+      targetEditor?.focus({ preventScroll: true });
 
-        if (restoreFlowSelection(root, bookmark)) {
-          const pageElement = targetFlowElement?.closest('[data-page-id]') as
-            | HTMLElement
-            | null;
-          if (pageElement?.dataset.pageId) {
-            setActivePageId(pageElement.dataset.pageId);
-          }
+      if (restoreFlowSelection(root, bookmark)) {
+        savedSelectionRef.current = captureFlowSelection(root) ?? bookmark;
+        setEditorStatus(null);
+        const pageElement = targetFlowElement?.closest('[data-page-id]') as
+          | HTMLElement
+          | null;
+        if (pageElement?.dataset.pageId) {
+          setActivePageId(pageElement.dataset.pageId);
         }
-        if (pendingScrollTopRef.current !== null && scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = pendingScrollTopRef.current;
-          pendingScrollTopRef.current = null;
-        }
-        pendingFlowSelectionRef.current = null;
-      });
-
-      return () => cancelAnimationFrame(frame);
+      }
+      if (pendingScrollTopRef.current !== null && scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = pendingScrollTopRef.current;
+        pendingScrollTopRef.current = null;
+      }
+      pendingFlowSelectionRef.current = null;
     }, [pages, surfaceRepairGeneration]);
 
     // Expose methods via ref
@@ -1289,6 +1219,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       return rawDisplayPages.filter((page) => !shouldRemovePage(page.content));
     }, [rawDisplayPages, shouldRemovePage]);
 
+    const hardSectionCount = useMemo(
+      () => splitHardSections(canonicalPagesHtml(pages)).length,
+      [canonicalPagesHtml, pages],
+    );
+
     useEffect(() => {
       if (displayPages.length === 0) return;
       const currentIdx = displayPages.findIndex((p) => p.id === activePageId);
@@ -1298,7 +1233,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, [displayPages, activePageId]);
 
     useEffect(() => {
-      const canonicalValue = stripFlowMetadata(hydrateFlowHtml(value));
+      const canonicalValue = stripFlowMetadata(
+        hydrateFlowHtml(ensureEditableCanonicalHtml(value)),
+      );
       if (isInternalUpdate.current || canonicalValue === lastValueRef.current) {
         isInternalUpdate.current = false;
         return;
@@ -1407,6 +1344,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       );
       renderedPageElements.forEach(normalizeEditedFlowIds);
       pendingFlowSelectionRef.current = captureFlowSelection(surface);
+      normalizeFormattingSpans(surface);
 
       const renderedPages = renderedPageElements.flatMap((element) => {
         const page = metadataByPageId.get(element.dataset.pageId!);
@@ -1464,29 +1402,19 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const currentPages = pagesRef.current;
         const pageIndex = currentPages.findIndex((page) => page.id === id);
         if (pageIndex < 0) return;
-        const deletedPage = currentPages[pageIndex];
-        const remainingPages = currentPages.filter((page) => page.id !== id);
-        const nextPage = remainingPages[pageIndex];
-        if (deletedPage.hardBreakBefore && nextPage && !nextPage.hardBreakBefore) {
-          remainingPages[pageIndex] = {
-            ...nextPage,
-            hardBreakBefore: true,
-          };
-        }
-        commitUserTransaction({
-          html: canonicalPagesHtml(remainingPages),
-          selection: null,
-          changed: true,
-        });
+        const sectionIndex = hardSectionIndexForFragment(currentPages, pageIndex);
+        if (sectionIndex === null) return;
+        commitUserTransaction(
+          deleteHardPageSection(
+            canonicalPagesHtml(currentPages),
+            sectionIndex,
+          ),
+        );
       },
       [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
     );
 
     const pendingFocusStartPageId = useRef<string | null>(null);
-    const pendingBoundaryFocusRef = useRef<{
-      pageId: string;
-      previousContent: string;
-    } | null>(null);
 
     const focusPageAtStart = useCallback((pageId: string) => {
       const pageEl = documentSurfaceRef.current?.querySelector(
@@ -1528,35 +1456,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const syncFormattingFromSelection = useCallback(() => {
       const surface = documentSurfaceRef.current;
-      const selection = window.getSelection();
-      if (!surface || !selection?.anchorNode || !surface.contains(selection.anchorNode)) {
-        return;
-      }
-      if (typeof document.queryCommandState !== 'function') {
-        return;
-      }
-
-      const alignment = document.queryCommandState('justifyCenter')
-        ? 'center'
-        : document.queryCommandState('justifyRight')
-          ? 'right'
-          : document.queryCommandState('justifyFull')
-            ? 'justify'
-            : 'left';
-      const list = document.queryCommandState('insertOrderedList')
-        ? 'ordered'
-        : document.queryCommandState('insertUnorderedList')
-          ? 'unordered'
-          : 'none';
-
-      setActiveFormats({
-        bold: document.queryCommandState('bold'),
-        italic: document.queryCommandState('italic'),
-        underline: document.queryCommandState('underline'),
-        alignment,
-        list,
-      });
-    }, []);
+      if (!surface) return;
+      const bookmark = captureFlowSelection(surface);
+      if (!bookmark) return;
+      savedSelectionRef.current = bookmark;
+      setActiveFormats(
+        readLogicalFormatState(surface, bookmark, effectiveLayout),
+      );
+    }, [effectiveLayout]);
 
     const handleDeleteAcrossPages = useCallback(() => {
       if (effectivePreviewMode || !documentSurfaceRef.current) return;
@@ -1647,43 +1554,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
     );
 
-    const focusPageAtContentBoundary = useCallback(
-      (pageId: string, previousContent: string) => {
-        const pageEl = documentSurfaceRef.current?.querySelector(
-          `[data-testid^="a4-page-content-"][data-page-id="${pageId}"]`,
-        ) as HTMLDivElement | null;
-
-        if (!pageEl) return;
-
-        documentSurfaceRef.current?.focus();
-        const selection = window.getSelection();
-        if (!selection) return;
-
-        const temp = document.createElement('div');
-        temp.innerHTML = sanitizeHtml(previousContent || '');
-        const boundaryIndex = temp.childNodes.length;
-        const range = document.createRange();
-
-        if (boundaryIndex <= 0) {
-          range.setStart(pageEl, 0);
-        } else {
-          const boundaryNode =
-            pageEl.childNodes[Math.min(boundaryIndex - 1, pageEl.childNodes.length - 1)];
-          if (boundaryNode) {
-            range.setStartAfter(boundaryNode);
-          } else {
-            range.selectNodeContents(pageEl);
-            range.collapse(false);
-          }
-        }
-
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      },
-      [],
-    );
-
     useEffect(() => {
       if (!pendingFocusStartPageId.current) return;
 
@@ -1695,69 +1565,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
       return () => clearTimeout(timer);
     }, [pages, focusPageAtStart]);
-
-    useEffect(() => {
-      const pending = pendingBoundaryFocusRef.current;
-      if (!pending) return;
-
-      const timer = setTimeout(() => {
-        focusPageAtContentBoundary(pending.pageId, pending.previousContent);
-        pendingBoundaryFocusRef.current = null;
-      }, 0);
-
-      return () => clearTimeout(timer);
-    }, [pages, focusPageAtContentBoundary]);
-
-    const handleBackspaceAtPageStart = useCallback(
-      (pageId: string, currentContent?: string) => {
-        if (effectivePreviewMode) return;
-        preserveScrollPosition();
-
-        const currentPageIndex = pagesRef.current.findIndex((p) => p.id === pageId);
-        if (currentPageIndex <= 0) return;
-
-        const previousPage = pagesRef.current[currentPageIndex - 1];
-        pendingBoundaryFocusRef.current = {
-          pageId: previousPage.id,
-          previousContent: previousPage.content,
-        };
-
-        setActivePageId(previousPage.id);
-        setPages((prev) => {
-          const pageIndex = prev.findIndex((p) => p.id === pageId);
-          if (pageIndex <= 0) return prev;
-
-          pushHistorySnapshot(prev);
-          const previousPage = prev[pageIndex - 1];
-          const currentPage = prev[pageIndex];
-          const contentToMerge =
-            currentContent === undefined
-              ? currentPage.content
-              : sanitizeHtml(currentContent);
-          const updatedPages = [...prev];
-          const mergedContent = reassemblePageFragments([
-            {
-              content: previousPage.content,
-              hardBreakBefore: false,
-            },
-            {
-              content: contentToMerge,
-              hardBreakBefore: false,
-            },
-          ]);
-
-          updatedPages[pageIndex - 1] = {
-            ...previousPage,
-            content: mergedContent,
-          };
-          updatedPages.splice(pageIndex, 1);
-          pagesRef.current = updatedPages;
-          scheduleReflow(updatedPages, true);
-          return updatedPages;
-        });
-      },
-      [effectivePreviewMode, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
-    );
 
     const syncActivePage = useCallback((target?: EventTarget | null) => {
       const surface = documentSurfaceRef.current;
@@ -1898,15 +1705,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const html = clipboardHtml(event.clipboardData);
         if (!html) return;
 
-        if (surface && selectionSpansPages(surface)) {
-          handleReplaceAcrossPages(html);
-          return;
-        }
-
-        document.execCommand('insertHTML', false, html);
-        setTimeout(commitDocumentSurface, 0);
+        const bookmark = captureFlowSelection(surface);
+        if (!bookmark) return;
+        commitUserTransaction(
+          replaceLogicalSelection(
+            canonicalPagesHtml(pagesRef.current),
+            bookmark,
+            html,
+          ),
+        );
       },
-      [commitDocumentSurface, effectivePreviewMode, handleReplaceAcrossPages],
+      [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
     );
 
     const handleDocumentKeyDown = useCallback(
@@ -1968,20 +1777,45 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (
+          surface &&
           event.key === 'Backspace' &&
           pageContent &&
           isCaretAtEditorStart(pageContent)
         ) {
           event.preventDefault();
-          handleBackspaceAtPageStart(
-            pageContent.dataset.pageId!,
-            pageContent.innerHTML,
+          const currentPages = pagesRef.current;
+          const pageIndex = currentPages.findIndex(
+            (page) => page.id === pageContent.dataset.pageId,
+          );
+          let sourcePages = currentPages;
+          if (pageIndex >= 0) {
+            const liveContent = sanitizeHtml(pageContent.innerHTML);
+            if (currentPages[pageIndex].content !== liveContent) {
+              const hydrated = document.createElement('div');
+              hydrated.innerHTML = liveContent;
+              hydrateFlowContainer(hydrated);
+              pageContent.innerHTML = hydrated.innerHTML;
+              sourcePages = currentPages.map((page, index) =>
+                index === pageIndex
+                  ? { ...page, content: sanitizeHtml(hydrated.innerHTML) }
+                  : page,
+              );
+              pagesRef.current = sourcePages;
+            }
+          }
+          const bookmark = captureFlowSelection(surface);
+          if (!bookmark) return;
+          commitUserTransaction(
+            applyLogicalDelete(
+              canonicalPagesHtml(sourcePages),
+              bookmark,
+              'backward',
+            ),
           );
         }
       },
       [
         effectivePreviewMode,
-        handleBackspaceAtPageStart,
         canonicalPagesHtml,
         commitUserTransaction,
         handleDeleteAcrossPages,
@@ -2101,9 +1935,30 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             replacement.textContent = inputData;
             handleReplaceAcrossPages(replacement.innerHTML);
           }
+          return;
+        }
+
+        if (
+          !effectivePreviewMode &&
+          surface &&
+          inputEvent.cancelable &&
+          inputEvent.inputType === 'insertParagraph'
+        ) {
+          const bookmark = captureFlowSelection(surface);
+          if (bookmark) {
+            inputEvent.preventDefault();
+            commitUserTransaction(
+              insertParagraphAtSelection(
+                canonicalPagesHtml(pagesRef.current),
+                bookmark,
+              ),
+            );
+          }
         }
       },
       [
+        canonicalPagesHtml,
+        commitUserTransaction,
         effectivePreviewMode,
         handleDeleteAcrossPages,
         handleReplaceAcrossPages,
@@ -2180,6 +2035,31 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       });
     }, [activePageId, effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
+    const applyFormattingTransaction = useCallback(
+      (patch: InlineFormatPatch) => {
+        const surface = documentSurfaceRef.current;
+        if (!surface || effectivePreviewMode) return;
+        if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
+          return;
+        }
+        const bookmark = captureFlowSelection(surface);
+        if (!bookmark || bookmark.collapsed) return;
+        commitUserTransaction(
+          applyInlineFormat(
+            canonicalPagesHtml(pagesRef.current),
+            bookmark,
+            patch,
+          ),
+        );
+      },
+      [
+        canonicalPagesHtml,
+        commitUserTransaction,
+        effectivePreviewMode,
+        restoreSelection,
+      ],
+    );
+
     const handleCommand = useCallback(
       (cmd: string, val?: string) => {
         if (effectivePreviewMode) return;
@@ -2208,12 +2088,50 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'textColor' && val) {
-          applyInlineStyleToSelection(editor, { color: val });
+          applyFormattingTransaction({ color: val });
           return;
         }
 
         if (cmd === 'highlightColor' && val) {
-          applyInlineStyleToSelection(editor, { backgroundColor: val });
+          applyFormattingTransaction({ backgroundColor: val });
+          return;
+        }
+
+        if (cmd === 'customFontSize' && val) {
+          applyFormattingTransaction({ fontSize: val });
+          return;
+        }
+
+        if (cmd === 'fontName' && val) {
+          applyFormattingTransaction({ fontFamily: val });
+          return;
+        }
+
+        if (cmd === 'bold') {
+          applyFormattingTransaction({ fontWeight: 'bold' });
+          return;
+        }
+
+        if (cmd === 'italic') {
+          applyFormattingTransaction({ fontStyle: 'italic' });
+          return;
+        }
+
+        if (cmd === 'underline') {
+          applyFormattingTransaction({ textDecoration: 'underline' });
+          return;
+        }
+
+        if (cmd === 'removeFormat') {
+          applyFormattingTransaction({
+            fontFamily: null,
+            fontSize: null,
+            color: null,
+            backgroundColor: null,
+            fontWeight: null,
+            fontStyle: null,
+            textDecoration: null,
+          });
           return;
         }
 
@@ -2240,46 +2158,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
-        if (cmd === 'customFontSize' && val) {
-          const selection = window.getSelection();
-          if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            if (!range.collapsed) {
-              document.execCommand('fontSize', false, '7');
-              const fonts = editor.querySelectorAll('font[size="7"]');
-              fonts.forEach((font) => {
-                const span = document.createElement('span');
-                span.style.fontSize = val;
-                span.innerHTML = font.innerHTML;
-                font.parentNode?.replaceChild(span, font);
-              });
-              const event = new Event('input', { bubbles: true });
-              editor.dispatchEvent(event);
-            }
-          }
-          return;
-        }
-
-        if (cmd === 'fontName' && val) {
-          const selection = window.getSelection();
-          if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            if (!range.collapsed) {
-              document.execCommand('fontName', false, '__temp_font__');
-              const fonts = editor.querySelectorAll('font[face="__temp_font__"]');
-              fonts.forEach((font) => {
-                const span = document.createElement('span');
-                span.style.fontFamily = val;
-                span.innerHTML = font.innerHTML;
-                font.parentNode?.replaceChild(span, font);
-              });
-              const event = new Event('input', { bubbles: true });
-              editor.dispatchEvent(event);
-            }
-          }
-          return;
-        }
-
         if (cmd === 'lineSpacing' && val) {
           updateLayout({ ...effectiveLayout, lineHeight: Number(val) });
           return;
@@ -2293,6 +2171,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         document.execCommand(cmd, false, val);
       },
       [
+        applyFormattingTransaction,
         effectiveLayout,
         effectivePreviewMode,
         handleRedo,
@@ -2354,7 +2233,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               const pageNumberHtml = showPageNumbers
                 ? `<div class="print-page-number">${index + 1}</div>`
                 : '';
-              return `<section class="print-page"><div class="content">${content}</div>${pageNumberHtml}</section>`;
+              const oversized = page.oversized
+                ? ' data-oversized="true"'
+                : '';
+              return `<section class="print-page"${oversized}><div class="content">${content}</div>${pageNumberHtml}</section>`;
             })
             .join('')
         : '<section class="print-page"><div class="content">&nbsp;</div></section>';
@@ -2381,108 +2263,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 <head>
   <title>Print</title>
   <style>
-    @page {
-      size: 210mm 297mm;
-      margin: ${pageLayout.marginsMm.top}mm ${pageLayout.marginsMm.right}mm ${pageLayout.marginsMm.bottom}mm ${pageLayout.marginsMm.left}mm;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html, body {
-      font-family: ${fontFamily};
-      font-size: ${fontSize};
-      line-height: ${lineHeight};
-      color: #000;
-    }
-    .print-page {
-      position: relative;
-      min-height: calc(297mm - ${pageLayout.marginsMm.top + pageLayout.marginsMm.bottom}mm);
-      page-break-after: always;
-      break-after: page;
-    }
-    .print-page:last-child {
-      page-break-after: auto;
-      break-after: auto;
-    }
-    .content {
-      width: 100%;
-      white-space: pre-wrap;
-      overflow-wrap: break-word;
-      word-break: break-word;
-    }
-    .print-page-number {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      text-align: center;
-      font-family: ${FONT_FAMILY};
-      font-size: 10pt;
-      color: #555;
-    }
-    p:empty, div:empty { min-height: 1em; }
-    p { margin: 0 0 ${paragraphSpacing} 0; }
-    p, div, span, li, blockquote, th, td {
-      line-height: inherit;
-    }
-    h1, h2, h3 {
-      font-family: inherit;
-      font-weight: 700;
-      line-height: inherit;
-      margin: 0 0 ${paragraphSpacing} 0;
-    }
-    h1 { font-size: 24pt; }
-    h2 { font-size: 18pt; }
-    h3 { font-size: 14pt; }
-    br { display: block; content: ""; margin-top: 0.5em; }
-    ul, ol { margin: 0 0 ${paragraphSpacing} 0; padding-left: 1.5em; }
-    ul { list-style-type: disc; }
-    ol { list-style-type: decimal; }
-    li { display: list-item; margin: 0 0 0.25em 0; }
-    blockquote { margin: 0 0 ${paragraphSpacing} 40px; padding: 0; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      margin: 0 0 ${paragraphSpacing} 0;
-    }
-    th, td {
-      border: 1px solid #9ca3af;
-      padding: 6px 8px;
-      vertical-align: top;
-      min-height: 1.5em;
-      word-break: break-word;
-    }
-    th {
-      background: #f3f4f6;
-      font-weight: 700;
-    }
-    a {
-      color: #1155cc;
-      text-decoration: underline;
-    }
-    .page-break {
-      display: block;
-      page-break-before: always !important;
-      break-before: page !important;
-      page-break-after: auto;
-      break-after: auto;
-      page-break-inside: avoid;
-      break-inside: avoid;
-      height: 0;
-      margin: 0;
-      padding: 0;
-      border: none;
-      clear: both;
-    }
-    @media print {
-      html, body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-    }
+    ${buildA4PrintCss(effectiveLayout)}
   </style>
 </head>
 <body>${pagesHtml}</body>
@@ -2499,12 +2280,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }, 1000);
       }, 200);
     }, [
+      effectiveLayout,
       isPreviewMode,
-      fontFamily,
-      fontSize,
-      lineHeight,
-      paragraphSpacing,
-      pageLayout.marginsMm,
       pages,
       previewPages,
       shouldRemovePage,
@@ -2710,13 +2487,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             activeFormats={activeFormats}
             onLayoutChange={updateLayout}
             showPageNumbers={showPageNumbers}
-            canDeletePage={pages.some((page) => page.hardBreakBefore)}
+            canDeletePage={hardSectionCount > 1}
             onInsertPageBreak={splitActivePageAtSelection}
             onAddBlankPage={handleAddPage}
             onDeleteCurrentPage={() => handleDeletePage(activePageId)}
             onTogglePageNumbers={setShowPageNumbers}
             onLegacyCommand={handleCommand}
             disabled={effectivePreviewMode}
+            mutationDisabled={isReflowing}
           />
         )}
 
@@ -2728,6 +2506,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             data-testid="a4-document-surface"
             contentEditable={!effectivePreviewMode}
             suppressContentEditableWarning
+            aria-busy={isReflowing}
             onInput={handleDocumentInput}
             onCompositionEnd={handleDocumentCompositionEnd}
             onKeyDown={handleDocumentKeyDown}
@@ -2785,7 +2564,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 totalPages={displayPages.length}
                 isPreviewMode={effectivePreviewMode}
                 onDelete={handleDeletePage}
-                canDelete={displayPages.length > 1 && !readOnly}
+                canDelete={
+                  hardSectionCount > 1 &&
+                  !readOnly &&
+                  (index === 0 || page.hardBreakBefore)
+                }
                 placeholder={index === 0 ? placeholder : undefined}
                 pageLayout={pageLayout}
                 fontFamily={fontFamily}
@@ -2810,11 +2593,22 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         </div>
 
         <div className="flex-shrink-0 px-4 py-1.5 bg-background-elevated border-t border-border-primary text-xs text-text-muted flex justify-between">
+          {editorStatus ? (
+            <span role="status" className="text-status-warning">
+              {editorStatus}
+            </span>
+          ) : null}
           <span>
-            A4: {A4.WIDTH_PX}Ã—{A4.HEIGHT_PX}px ({A4.MARGIN_MM}mm margins)
+            {formatA4LayoutStatus(effectiveLayout)}
           </span>
-          <span>
-            {readOnly ? 'Viewing document' : (effectivePreviewMode ? 'Viewing preview' : 'Editing')} • What you see = What prints
+          <span role="status" aria-live="polite" data-testid="a4-editor-status">
+            {isReflowing
+              ? 'Repaginating…'
+              : readOnly
+                ? 'Viewing document'
+                : effectivePreviewMode
+                  ? 'Viewing preview'
+                  : 'Editing'}
           </span>
         </div>
       </div>

@@ -378,3 +378,45 @@ The 2026-07-24 migration is a complete reset of the retired Workflow/Projects da
 | Bank Reconciliation | Transaction matching and review |
 | Client Portal | Client-facing access and requests |
 | Accounting Integration | Xero, QuickBooks, MYOB |
+
+## A4 Editor Reliability Architecture
+
+The A4 editor keeps canonical sanitized continuous HTML as the single
+persisted representation. Physical A4 pages are derived fragments only and are
+never serialized. Every user mutation flows through one pipeline:
+
+1. A native event is captured in the live editing surface.
+2. The caret or selection is converted into a logical `FlowSelectionBookmark`
+   (flow id + text offset) by `a4-pagination/selection.ts`.
+3. A pure document transaction in `a4-pagination/document-actions.ts` or
+   `a4-pagination/formatting.ts` mutates the canonical HTML and returns one
+   `DocumentTransactionResult`.
+4. The editor pushes exactly one history snapshot, updates its canonical page
+   state, and schedules one latest-generation reflow.
+5. After reflow, the logical bookmark is restored into the live DOM.
+
+Hard page breaks are the only persisted definition of an explicit page
+section. `splitHardSections` derives canonical sections from hard breaks, the
+pagination engine splits those sections into soft physical fragments, and page
+deletion always targets an owning hard section (see
+`hardSectionIndexForFragment`). Backspace and forward Delete at soft or hard
+boundaries both use the same logical delete transaction, so they are
+symmetric.
+
+The Fields panel and template validation share one standard-field catalog in
+`template-editor/template-field-catalog.ts`. Legacy `custom.*` references found
+in loaded template content are inferred into editor custom-placeholder
+definitions on load and persist on the next save.
+
+Layout values are normalized once in `a4-pagination/layout.ts` and formatted
+into a truthful status line by `formatA4LayoutStatus`. Repagination exposes a
+stable `aria-busy`/`Repaginating…` state; only the newest reflow generation may
+publish pages or clear the busy state, so rapid layout changes coalesce.
+
+Editor, preview, browser print, HTML export, and PDF export consume the same
+print stylesheet built by `a4-print-styles.ts`, including identical typography,
+spacing, margins, `<br>` behavior, and page-content height. Oversized
+unsplittable blocks are represented once: the engine marks the fragment
+`oversized`, the editor shows an accessible warning and makes the page content
+scrollable, and print/export render the block a single time with
+`data-oversized="true"`.

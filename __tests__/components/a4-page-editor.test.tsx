@@ -6,6 +6,10 @@ import {
   type A4PageEditorRef,
 } from '@/components/documents/a4-page-editor';
 import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
+import {
+  flushA4Reflow,
+  installDeterministicA4Measurement,
+} from '../helpers/a4-editor-test-utils';
 
 const pageBreak = '<!-- PAGE_BREAK -->';
 const hardPageBreak =
@@ -276,7 +280,9 @@ describe('A4PageEditor', () => {
 
     expect(surface).not.toContainElement(screen.getByText('Page 1 of 2'));
     expect(surface).not.toContainElement(screen.getByTestId('a4-page-number-1'));
-    expect(surface).not.toContainElement(screen.getAllByTitle('Delete page')[0]);
+    expect(surface).not.toContainElement(
+      screen.getAllByTitle('Delete explicit page section')[0],
+    );
   });
 
   it('applies document line spacing without mutating canonical content or history', () => {
@@ -562,6 +568,12 @@ describe('A4PageEditor', () => {
   it('splits the current page when inserting a page break', async () => {
     const onChange = vi.fn();
     render(<A4PageEditor value="<p>First</p>" onChange={onChange} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-document-surface')).toHaveAttribute(
+        'aria-busy',
+        'false',
+      );
+    });
 
     const firstPage = screen.getByTestId('a4-page-content-1');
     act(() => {
@@ -630,6 +642,46 @@ describe('A4PageEditor', () => {
     expect(cell).not.toBeNull();
     expect(getComputedStyle(table!).borderCollapse).toBe('collapse');
     expect(getComputedStyle(cell!).borderStyle).toBe('solid');
+  });
+
+  it('surfaces oversized content with an accessible warning and editable overflow', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 100_000;
+      },
+    });
+
+    try {
+      render(
+        <A4PageEditor
+          value={
+            '<table><tbody><tr><td>Tall unsplittable row</td></tr></tbody></table>'
+          }
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'taller than the printable A4 area',
+        );
+      });
+      expect(screen.getByTestId('a4-page-content-1')).toHaveStyle({
+        overflow: 'auto',
+      });
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
   });
 
   it('applies selected text color and highlight formatting', () => {
@@ -710,6 +762,12 @@ describe('A4PageEditor', () => {
   it('inserts a basic table from the toolbar', async () => {
     const onChange = vi.fn();
     render(<A4PageEditor value="<p>Before</p>" onChange={onChange} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-document-surface')).toHaveAttribute(
+        'aria-busy',
+        'false',
+      );
+    });
 
     const editor = screen.getByTestId('a4-page-content-1');
     act(() => {
@@ -738,6 +796,12 @@ describe('A4PageEditor', () => {
     render(
       <A4PageEditor value="<table><tbody><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></tbody></table>" />,
     );
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-document-surface')).toHaveAttribute(
+        'aria-busy',
+        'false',
+      );
+    });
 
     const editor = screen.getByTestId('a4-page-content-1');
     const cellText = editor.querySelector('td')?.firstChild;
@@ -858,16 +922,10 @@ describe('A4PageEditor', () => {
     }
   });
 
-  it('joins content without deleting the preceding character at a soft page boundary', async () => {
-    const originalScrollHeight = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      'scrollHeight',
-    );
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      get() {
-        return (this.textContent?.length ?? 0) * 100;
-      },
+  it('deletes the preceding logical character at a soft page boundary', async () => {
+    const restoreMeasurement = installDeterministicA4Measurement({
+      pixelsPerCharacter: 100,
+      blockHeight: 0,
     });
     const onChange = vi.fn();
 
@@ -875,47 +933,37 @@ describe('A4PageEditor', () => {
       render(
         <A4PageEditor value="<p>123456789012345</p>" onChange={onChange} />,
       );
-      const secondPage = await screen.findByTestId('a4-page-content-2');
+      const pageTwoContent = await screen.findByTestId('a4-page-content-2');
+      await flushA4Reflow();
       act(() => {
-        secondPage.focus();
+        pageTwoContent.focus();
         const selection = window.getSelection();
         const range = document.createRange();
-        range.selectNodeContents(secondPage);
+        range.selectNodeContents(pageTwoContent);
         range.collapse(true);
         selection?.removeAllRanges();
         selection?.addRange(range);
       });
-      fireEvent.keyDown(secondPage, { key: 'Backspace' });
+      fireEvent.keyDown(pageTwoContent, { key: 'Backspace' });
 
       await waitFor(() => {
         expect(onChange).toHaveBeenLastCalledWith(
-          expect.stringContaining('123456789012345'),
+          expect.stringContaining('12345678012345'),
         );
       }, { timeout: 3000 });
       expect(onChange).toHaveBeenLastCalledWith(
-        expect.not.stringContaining(pageBreak),
+        expect.not.stringContaining('123456789012345'),
       );
+      expect(onChange).toHaveBeenCalledTimes(1);
     } finally {
-      if (originalScrollHeight) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          'scrollHeight',
-          originalScrollHeight,
-        );
-      }
+      restoreMeasurement();
     }
   });
 
   it('uses forward Delete to remove content across a soft boundary', async () => {
-    const originalScrollHeight = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      'scrollHeight',
-    );
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      get() {
-        return (this.textContent?.length ?? 0) * 100;
-      },
+    const restoreMeasurement = installDeterministicA4Measurement({
+      pixelsPerCharacter: 100,
+      blockHeight: 0,
     });
     const onChange = vi.fn();
 
@@ -924,9 +972,7 @@ describe('A4PageEditor', () => {
         <A4PageEditor value="<p>123456789012345</p>" onChange={onChange} />,
       );
       await screen.findByTestId('a4-page-content-2');
-      await act(async () => {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      });
+      await flushA4Reflow();
       const firstPage = screen.getByTestId('a4-page-content-1');
       const firstText = firstPage.querySelector('p')!.firstChild!;
       act(() => {
@@ -948,13 +994,7 @@ describe('A4PageEditor', () => {
         expect.stringContaining('12345678912345'),
       );
     } finally {
-      if (originalScrollHeight) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          'scrollHeight',
-          originalScrollHeight,
-        );
-      }
+      restoreMeasurement();
     }
   });
 
@@ -979,7 +1019,7 @@ describe('A4PageEditor', () => {
     const secondPage = screen.getByTestId('a4-page-content-2');
     fireEvent.mouseUp(secondPage);
 
-    fireEvent.click(screen.getAllByTitle('Delete page')[1]);
+    fireEvent.click(screen.getAllByTitle('Delete explicit page section')[1]);
 
     await waitFor(() =>
       expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(1),
@@ -987,27 +1027,15 @@ describe('A4PageEditor', () => {
     expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent('One');
   });
 
-  it('deletes only the clicked soft-paginated page', async () => {
-    const originalScrollHeight = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      'scrollHeight',
-    );
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      get() {
-        return (this.textContent?.length ?? 0) * 100;
-      },
+  it('exposes no page deletion for an automatically paginated document', async () => {
+    const restoreMeasurement = installDeterministicA4Measurement({
+      pixelsPerCharacter: 100,
+      blockHeight: 0,
     });
-    const editorRef = createRef<A4PageEditorRef>();
-
     try {
-      render(
-        <A4PageEditor
-          ref={editorRef}
-          value="<p>123456789012345</p>"
-        />,
-      );
+      render(<A4PageEditor value="<p>123456789012345</p>" />);
       await screen.findByTestId('a4-page-content-2');
+      await flushA4Reflow();
       expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
         '123456789',
       );
@@ -1015,36 +1043,21 @@ describe('A4PageEditor', () => {
         '012345',
       );
 
-      fireEvent.click(screen.getByRole('button', { name: 'Delete page 2' }));
-
-      await waitFor(() =>
-        expect(screen.queryByTestId('a4-page-content-2')).not.toBeInTheDocument(),
-      );
-      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
-        '123456789',
-      );
-      expect(editorRef.current?.getContent()).toBe('<p>123456789</p>');
+      expect(
+        screen.queryByTitle('Delete explicit page section'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Delete current page' }),
+      ).toBeDisabled();
     } finally {
-      if (originalScrollHeight) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          'scrollHeight',
-          originalScrollHeight,
-        );
-      }
+      restoreMeasurement();
     }
   });
 
-  it('preserves a manual page boundary after deleting its first soft fragment', async () => {
-    const originalScrollHeight = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      'scrollHeight',
-    );
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      get() {
-        return (this.textContent?.length ?? 0) * 100;
-      },
+  it('deletes the whole hard section when its first soft fragment is removed', async () => {
+    const restoreMeasurement = installDeterministicA4Measurement({
+      pixelsPerCharacter: 100,
+      blockHeight: 0,
     });
     const editorRef = createRef<A4PageEditorRef>();
 
@@ -1056,6 +1069,7 @@ describe('A4PageEditor', () => {
         />,
       );
       await screen.findByTestId('a4-page-content-3');
+      await flushA4Reflow();
       expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent(
         '123456789',
       );
@@ -1063,27 +1077,83 @@ describe('A4PageEditor', () => {
         '012345',
       );
 
-      fireEvent.click(screen.getByRole('button', { name: 'Delete page 2' }));
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: 'Delete explicit page section starting at page 2',
+        }),
+      );
 
-      await waitFor(() =>
-        expect(screen.queryByTestId('a4-page-content-3')).not.toBeInTheDocument(),
-      );
-      expect(editorRef.current?.getContent()).toContain(hardPageBreak);
-      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
-        'A',
-      );
-      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent(
-        '012345',
-      );
+      await waitFor(() => {
+        expect(screen.queryByTestId('a4-page-content-2')).not.toBeInTheDocument();
+      });
+      expect(editorRef.current?.getContent()).toBe('<p>A</p>');
     } finally {
-      if (originalScrollHeight) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          'scrollHeight',
-          originalScrollHeight,
-        );
-      }
+      restoreMeasurement();
     }
+  });
+
+  it('deletes the owning hard section when Delete Current Page fires in a later soft fragment', async () => {
+    const restoreMeasurement = installDeterministicA4Measurement({
+      pixelsPerCharacter: 100,
+      blockHeight: 0,
+    });
+    const editorRef = createRef<A4PageEditorRef>();
+
+    try {
+      render(
+        <A4PageEditor
+          ref={editorRef}
+          value={`<p>A</p>${hardPageBreak}<p>123456789012345</p>`}
+        />,
+      );
+      await screen.findByTestId('a4-page-content-3');
+      await flushA4Reflow();
+      const pageThree = screen.getByTestId('a4-page-content-3');
+      fireEvent.mouseUp(pageThree);
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Delete current page' }),
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('a4-page-content-2')).not.toBeInTheDocument();
+      });
+      expect(editorRef.current?.getContent()).toBe('<p>A</p>');
+    } finally {
+      restoreMeasurement();
+    }
+  });
+
+  it('undo restores a deleted hard section and redo removes it with one history entry per action', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={`<p>One</p>${hardPageBreak}<p>Two</p>`}
+        onChange={onChange}
+      />,
+    );
+    const surface = screen.getByTestId('a4-document-surface');
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Delete explicit page section starting at page 2',
+      }),
+    );
+    await waitFor(() => {
+      expect(editorRef.current?.getContent()).not.toContain('Two');
+    });
+
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(editorRef.current?.getContent()).toContain('Two');
+    });
+
+    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
+    await waitFor(() => {
+      expect(editorRef.current?.getContent()).not.toContain('Two');
+    });
   });
 
   it('deletes a selection spanning multiple pages as one document range', async () => {
@@ -1155,6 +1225,127 @@ describe('A4PageEditor', () => {
       expect(selection.focusNode?.textContent).toBe('Alpha');
       expect(selection.focusOffset).toBe(2);
     });
+  });
+
+  it('applies formatting to the logical selection after a controlled layout rerender', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 100;
+      },
+    });
+    const value = `<p>Alpha</p>${hardPageBreak}<p>Beta</p>`;
+
+    try {
+      const { rerender } = render(
+        <A4PageEditor
+          value={value}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontSize: '11pt',
+          }}
+        />,
+      );
+
+      const surface = screen.getByTestId('a4-document-surface');
+      const secondPage = screen.getByTestId('a4-page-content-2');
+      const betaText = secondPage.querySelector('p')!.firstChild!;
+      act(() => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(betaText, 0);
+        range.setEnd(betaText, 4);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+
+      rerender(
+        <A4PageEditor
+          value={value}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontSize: '14pt',
+          }}
+        />,
+      );
+
+      await act(async () => {
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve()),
+        );
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
+      fireEvent.change(screen.getByLabelText('Text color'), {
+        target: { value: '#ff0000' },
+      });
+
+      await waitFor(() => {
+        const betaPage = screen.getByTestId('a4-page-content-2');
+        expect(betaPage.querySelector('span[style*="color"]')?.textContent).toBe(
+          'Beta',
+        );
+      });
+      expect(
+        screen
+          .getByTestId('a4-page-content-1')
+          .querySelector('span[style*="color"]'),
+      ).toBeNull();
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
+  });
+
+  it('coalesces rapid controlled layout changes to the newest value', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    const value = '<p>Stable</p>';
+    const renderLayout = (fontSize: string) => (
+      <A4PageEditor
+        ref={editorRef}
+        value={value}
+        onChange={onChange}
+        layout={{ ...DEFAULT_A4_DOCUMENT_LAYOUT, fontSize }}
+      />
+    );
+    const { rerender } = render(renderLayout('11pt'));
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    rerender(renderLayout('14pt'));
+    rerender(renderLayout('20pt'));
+    rerender(renderLayout('11pt'));
+
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    expect(screen.getByTestId('a4-page-content-1')).toHaveStyle({
+      fontSize: '11pt',
+    });
+    expect(screen.getByTestId('a4-editor-status')).toHaveTextContent('Editing');
+    expect(editorRef.current?.getContent()).toBe('<p>Stable</p>');
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('collapses a reversed cross-page deletion at the logical range start', async () => {

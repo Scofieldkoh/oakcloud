@@ -349,6 +349,73 @@ describe('A4PageEditor real layout pagination', () => {
     });
   });
 
+  it('types the first two lines in document order', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => root.render(<A4PageEditor ref={editorRef} value="" />));
+    await act(flushLayoutFrames);
+
+    const paragraph = host.querySelector<HTMLParagraphElement>(
+      '[data-testid="a4-page-content-1"] p',
+    )!;
+    host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!.focus();
+    const range = document.createRange();
+    range.setStart(paragraph, 0);
+    range.collapse(true);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+
+    await cdp().send('Input.insertText', { text: 'Alpha' });
+    await act(flushLayoutFrames);
+    await pressEnter();
+    await act(flushLayoutFrames);
+    await cdp().send('Input.insertText', { text: 'Beta' });
+    await act(flushLayoutFrames);
+
+    const canonical = new DOMParser().parseFromString(
+      editorRef.current!.getContent(),
+      'text/html',
+    );
+    expect(Array.from(canonical.body.querySelectorAll('p'), (p) => p.textContent))
+      .toEqual(['Alpha', 'Beta']);
+  });
+
+  it('pastes a long plain-text draft once', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    await act(async () => root.render(
+      <A4PageEditor ref={editorRef} value="<p>Start</p>" onChange={onChange} />,
+    ));
+    await act(flushLayoutFrames);
+
+    const lines = Array.from({ length: 120 }, (_, index) => `Draft line ${index + 1}`);
+    const pageContent = host.querySelector<HTMLElement>('[data-testid="a4-page-content-1"]')!;
+    const text = pageContent.querySelector('p')!.firstChild!;
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(text, text.textContent!.length);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const clipboardData = new DataTransfer();
+    clipboardData.setData('text/plain', lines.join('\n'));
+    await act(async () => {
+      pageContent.dispatchEvent(new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData,
+      }));
+    });
+    await act(flushLayoutFrames);
+
+    const textContent = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body.textContent ?? '';
+    expect(textContent.match(/Draft line 34/g)).toHaveLength(1);
+    expect(textContent.match(/Draft line 120/g)).toHaveLength(1);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps an Enter-created line near the page bottom without jumping scroll', async () => {
     host.style.height = '500px';
     const editorRef = createRef<A4PageEditorRef>();
@@ -422,6 +489,9 @@ describe('A4PageEditor real layout pagination', () => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
       });
     });
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(flushLayoutFrames);
+    }
 
     const contents = host.querySelectorAll<HTMLElement>(
       '[data-testid^="a4-page-content-"]',
@@ -507,6 +577,9 @@ describe('A4PageEditor real layout pagination', () => {
     await act(async () => {
       root.render(<A4PageEditor value="<p>First page</p>" />);
     });
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(flushLayoutFrames);
+    }
 
     const addPage = Array.from(host.querySelectorAll('button')).find(
       (button) => button.getAttribute('aria-label') === 'Add blank page',
@@ -556,6 +629,9 @@ describe('A4PageEditor real layout pagination', () => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
       });
     });
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(flushLayoutFrames);
+    }
 
     const contents = host.querySelectorAll<HTMLElement>(
       '[data-testid^="a4-page-content-"]',
@@ -662,6 +738,204 @@ describe('A4PageEditor real layout pagination', () => {
         expect(text).toBe('AlphaBeta');
       });
     });
+  });
+
+  it('keeps repeated full-document formatting idempotent without growing markup', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const paragraphs = Array.from(
+      { length: 24 },
+      (_, index) =>
+        `<p>Formatting marker line ${index + 1} with enough words to exercise a whole-document selection.</p>`,
+    ).join('');
+
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={paragraphs} />);
+    });
+    await act(flushLayoutFrames);
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    surface.focus();
+
+    const formatsButton = () =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.textContent?.trim() === 'Formats',
+      )!;
+    const selectAll = () => {
+      surface.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'a',
+          ctrlKey: true,
+          bubbles: true,
+        }),
+      );
+    };
+    const applyFormatting = async () => {
+      await act(async () => {
+        selectAll();
+        const button = formatsButton();
+        if (button.getAttribute('aria-expanded') !== 'true') button.click();
+      });
+      const fontFamily = document.querySelector<HTMLSelectElement>(
+        'select[aria-label="Font family"]',
+      )!;
+      const fontSize = document.querySelector<HTMLSelectElement>(
+        'select[aria-label="Font size"]',
+      )!;
+      await act(async () => {
+        fontFamily.value = 'Georgia, serif';
+        fontFamily.dispatchEvent(new Event('change', { bubbles: true }));
+        fontSize.value = '14pt';
+        fontSize.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      await act(flushLayoutFrames);
+    };
+
+    await applyFormatting();
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('span[style]').length).toBeGreaterThan(0);
+      });
+    });
+    const afterFirst = host.querySelectorAll('span[style]').length;
+    const textAfterFirst =
+      new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body.textContent ?? '';
+
+    await applyFormatting();
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('span[style]')).toHaveLength(afterFirst);
+      });
+    });
+
+    expect(host.querySelectorAll('span > p')).toHaveLength(0);
+    const canonical = editorRef.current!.getContent();
+    expect(
+      new DOMParser().parseFromString(canonical, 'text/html').body.textContent,
+    ).toBe(textAfterFirst);
+    expect(canonical.length).toBeLessThan(30_000);
+  });
+
+  it('exposes a stable reflow busy state while repaginating', async () => {
+    const longDocument = Array.from(
+      { length: 120 },
+      (_, index) => `<p>Busy marker ${index + 1}</p>`,
+    ).join('');
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={longDocument}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            marginsMm: { top: 20, right: 20, bottom: 20, left: 20 },
+          }}
+        />,
+      );
+    });
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    expect(surface.getAttribute('aria-busy')).toBe('true');
+    expect(
+      host.querySelector('[data-testid="a4-editor-status"]')?.textContent,
+    ).toBe('Repaginating…');
+
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(flushLayoutFrames);
+    }
+    expect(surface.getAttribute('aria-busy')).toBe('false');
+    expect(
+      host.querySelector('[data-testid="a4-editor-status"]')?.textContent,
+    ).toBe('Editing');
+
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={longDocument}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            marginsMm: { top: 60, right: 20, bottom: 20, left: 20 },
+          }}
+        />,
+      );
+    });
+    expect(surface.getAttribute('aria-busy')).toBe('true');
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(flushLayoutFrames);
+    }
+    expect(surface.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it('keeps ordinary line breaks and the marker page aligned in print media', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const content = Array.from(
+      { length: 70 },
+      (_, index) =>
+        `<p>Print marker line ${index + 1}<br>Second break ${index + 1}</p>`,
+    ).join('');
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={content} />);
+    });
+    for (let frame = 0; frame < 4; frame += 1) {
+      await act(flushLayoutFrames);
+    }
+
+    const editPages = host.querySelectorAll<HTMLElement>(
+      '[data-testid^="a4-page-content-"]',
+    );
+    expect(editPages.length).toBeGreaterThan(1);
+    const marker = 'Print marker line 42';
+    const editMarkerPage = Array.from(editPages).findIndex((page) =>
+      page.textContent?.includes(marker),
+    );
+    expect(editMarkerPage).toBeGreaterThanOrEqual(0);
+
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(
+      (...args) => {
+        if (!String(args[0]).includes('not wrapped in act')) {
+          throw new Error(args.map(String).join(' '));
+        }
+      },
+    );
+    try {
+      await cdp().send('Emulation.setEmulatedMedia', { media: 'print' });
+      await act(async () => {
+        const print = Array.from(host.querySelectorAll('button')).find(
+          (button) => button.textContent?.trim() === 'Print',
+        )!;
+        print.click();
+      });
+      await act(async () => {
+        await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      });
+
+      const frame = document.querySelector('iframe')!;
+      expect(frame).toBeTruthy();
+      const frameDoc = frame.contentDocument!;
+      const printPages = Array.from(frameDoc.querySelectorAll('.print-page'));
+      expect(printPages.length).toBeGreaterThan(1);
+      const printMarkerPage = printPages.findIndex((page) =>
+        page.textContent?.includes(marker),
+      );
+      expect(printMarkerPage).toBe(editMarkerPage);
+      expect(
+        printPages.filter((page) => page.textContent?.includes(marker)),
+      ).toHaveLength(1);
+
+      await act(async () => {
+        await vi.waitFor(() => {
+          expect(document.querySelector('iframe')).toBeNull();
+        }, { timeout: 3000 });
+      });
+      expect(consoleError).not.toHaveBeenCalled();
+    } finally {
+      await cdp().send('Emulation.setEmulatedMedia', { media: 'screen' });
+      consoleError.mockRestore();
+    }
   });
 });
   beforeAll(() => {

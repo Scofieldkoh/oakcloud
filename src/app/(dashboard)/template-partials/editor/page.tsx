@@ -17,6 +17,10 @@ import { insertTemplateSnippet } from '@/components/documents/template-editor/te
 import type { TemplateEditorPartialForm, TemplateEditorTemplateForm } from '@/components/documents/template-editor/template-details-panel';
 import { validateTemplate, validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
 import {
+  inferLegacyCustomPlaceholders,
+  standardTemplateKeys,
+} from '@/components/documents/template-editor/template-field-catalog';
+import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
   extractA4DocumentLayout,
   mergeA4DocumentLayout,
@@ -128,12 +132,6 @@ const DEFAULT_MOCK_DATA: MockDataValues = {
 const MIN_PANEL_WIDTH = 320;
 const MAX_PANEL_WIDTH = 600;
 const DEFAULT_PANEL_WIDTH = 380;
-const STANDARD_TEMPLATE_KEYS = [
-  'company.name', 'company.uen', 'company.registeredAddress', 'company.address.block',
-  'company.address.street', 'company.address.level', 'company.address.unit',
-  'company.address.building', 'company.address.postalCode', 'company.incorporationDate',
-  'company.entityType', 'company.capital', 'system.currentDate', 'system.generatedBy',
-];
 
 // ============================================================================
 // Capital Amount Helper
@@ -1216,7 +1214,7 @@ function TemplateEditorContent() {
     const editorPlaceholders = isPartialMode
       ? partialFormData.customPlaceholders
       : formData.customPlaceholders;
-    const knownKeys = new Set(STANDARD_TEMPLATE_KEYS);
+    const knownKeys = new Set(standardTemplateKeys());
     for (const field of [...editorPlaceholders, ...mergedPlaceholders]) {
       knownKeys.add(
         field.storageSource === 'service'
@@ -1253,6 +1251,10 @@ function TemplateEditorContent() {
       const templatePlaceholders = storageFormatToCustomPlaceholders(
         placeholdersArray.filter((p: { sourcePartial?: string }) => !p.sourcePartial)
       );
+      const placeholdersWithLegacy = inferLegacyCustomPlaceholders(
+        existingTemplate.content || '',
+        templatePlaceholders,
+      );
 
       // Extract linkings from partial placeholders stored in template
       const linkings: Record<string, string> = {};
@@ -1272,7 +1274,7 @@ function TemplateEditorContent() {
         compositionType: existingTemplate.compositionType || 'STANDARD',
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
-        customPlaceholders: templatePlaceholders,
+        customPlaceholders: placeholdersWithLegacy,
         layout: extractA4DocumentLayout(existingTemplate.contentJson),
       });
 

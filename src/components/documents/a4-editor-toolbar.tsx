@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   useCallback,
@@ -33,18 +33,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { A4DocumentLayout } from './a4-pagination/layout';
+import type { EditorFormatState } from './a4-pagination/formatting';
 import {
   DOCUMENT_FONT_OPTIONS,
   DOCUMENT_FONT_SIZE_OPTIONS,
 } from './document-typography';
 
-export interface EditorFormatState {
-  bold: boolean;
-  italic: boolean;
-  underline: boolean;
-  alignment: 'left' | 'center' | 'right' | 'justify';
-  list: 'none' | 'ordered' | 'unordered';
-}
+export type { EditorFormatState } from './a4-pagination/formatting';
 
 export type EditorCommand =
   | { type: 'undo' | 'redo' | 'bold' | 'italic' | 'underline' | 'clear-formatting' }
@@ -54,6 +49,7 @@ export type EditorCommand =
 
 export interface A4EditorToolbarProps {
   disabled: boolean;
+  mutationDisabled?: boolean;
   layout: A4DocumentLayout;
   activeFormats: EditorFormatState;
   showPageNumbers: boolean;
@@ -239,6 +235,7 @@ function ToolbarMenu({
 
 export function A4EditorToolbar({
   disabled,
+  mutationDisabled = false,
   activeFormats,
   showPageNumbers,
   canDeletePage,
@@ -250,6 +247,7 @@ export function A4EditorToolbar({
   onSaveSelection,
   onLegacyCommand,
 }: A4EditorToolbarProps) {
+  const blocked = disabled || mutationDisabled;
   const command = (nextCommand: EditorCommand) => () => onCommand(nextCommand);
   const [openMenu, setOpenMenu] = useState<'tables' | 'formats' | null>(null);
 
@@ -262,38 +260,38 @@ export function A4EditorToolbar({
       )}
     >
       <ToolbarGroup label="History">
-        <ToolbarButton label="Undo" title="Undo (Ctrl+Z)" icon={Undo2} onSaveSelection={onSaveSelection} onClick={command({ type: 'undo' })} disabled={disabled} />
-        <ToolbarButton label="Redo" title="Redo (Ctrl+Y)" icon={Redo2} onSaveSelection={onSaveSelection} onClick={command({ type: 'redo' })} disabled={disabled} />
+        <ToolbarButton label="Undo" title="Undo (Ctrl+Z)" icon={Undo2} onSaveSelection={onSaveSelection} onClick={command({ type: 'undo' })} disabled={blocked} />
+        <ToolbarButton label="Redo" title="Redo (Ctrl+Y)" icon={Redo2} onSaveSelection={onSaveSelection} onClick={command({ type: 'redo' })} disabled={blocked} />
       </ToolbarGroup>
       <ToolbarGroup label="Text">
-        <ToolbarButton label="Bold" title="Bold (Ctrl+B)" icon={Bold} onSaveSelection={onSaveSelection} onClick={command({ type: 'bold' })} disabled={disabled} pressed={activeFormats.bold} />
-        <ToolbarButton label="Italic" title="Italic (Ctrl+I)" icon={Italic} onSaveSelection={onSaveSelection} onClick={command({ type: 'italic' })} disabled={disabled} pressed={activeFormats.italic} />
-        <ToolbarButton label="Underline" title="Underline (Ctrl+U)" icon={Underline} onSaveSelection={onSaveSelection} onClick={command({ type: 'underline' })} disabled={disabled} pressed={activeFormats.underline} />
-        <ToolbarButton label="Clear formatting" icon={RotateCcw} onSaveSelection={onSaveSelection} onClick={command({ type: 'clear-formatting' })} disabled={disabled} />
+        <ToolbarButton label="Bold" title="Bold (Ctrl+B)" icon={Bold} onSaveSelection={onSaveSelection} onClick={command({ type: 'bold' })} disabled={blocked} pressed={activeFormats.bold} />
+        <ToolbarButton label="Italic" title="Italic (Ctrl+I)" icon={Italic} onSaveSelection={onSaveSelection} onClick={command({ type: 'italic' })} disabled={blocked} pressed={activeFormats.italic} />
+        <ToolbarButton label="Underline" title="Underline (Ctrl+U)" icon={Underline} onSaveSelection={onSaveSelection} onClick={command({ type: 'underline' })} disabled={blocked} pressed={activeFormats.underline} />
+        <ToolbarButton label="Clear formatting" icon={RotateCcw} onSaveSelection={onSaveSelection} onClick={command({ type: 'clear-formatting' })} disabled={blocked} />
       </ToolbarGroup>
       <ToolbarGroup label="Paragraph">
-        <ToolbarButton label="Align left" icon={AlignLeft} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'left' })} disabled={disabled} pressed={activeFormats.alignment === 'left'} />
-        <ToolbarButton label="Align center" icon={AlignCenter} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'center' })} disabled={disabled} pressed={activeFormats.alignment === 'center'} />
-        <ToolbarButton label="Align right" icon={AlignRight} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'right' })} disabled={disabled} pressed={activeFormats.alignment === 'right'} />
-        <ToolbarButton label="Justify text" icon={AlignJustify} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'justify' })} disabled={disabled} pressed={activeFormats.alignment === 'justify'} />
-        <ToolbarButton label="Bulleted list" icon={List} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'unordered' })} disabled={disabled} pressed={activeFormats.list === 'unordered'} />
-        <ToolbarButton label="Numbered list" icon={ListOrdered} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'ordered' })} disabled={disabled} pressed={activeFormats.list === 'ordered'} />
-        <ToolbarButton label="Decrease indent" icon={Outdent} onSaveSelection={onSaveSelection} onClick={command({ type: 'outdent' })} disabled={disabled} />
-        <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={disabled} />
+        <ToolbarButton label="Align left" icon={AlignLeft} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'left' })} disabled={blocked} pressed={activeFormats.alignment === 'left'} />
+        <ToolbarButton label="Align center" icon={AlignCenter} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'center' })} disabled={blocked} pressed={activeFormats.alignment === 'center'} />
+        <ToolbarButton label="Align right" icon={AlignRight} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'right' })} disabled={blocked} pressed={activeFormats.alignment === 'right'} />
+        <ToolbarButton label="Justify text" icon={AlignJustify} onSaveSelection={onSaveSelection} onClick={command({ type: 'align', value: 'justify' })} disabled={blocked} pressed={activeFormats.alignment === 'justify'} />
+        <ToolbarButton label="Bulleted list" icon={List} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'unordered' })} disabled={blocked} pressed={activeFormats.list === 'unordered'} />
+        <ToolbarButton label="Numbered list" icon={ListOrdered} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'ordered' })} disabled={blocked} pressed={activeFormats.list === 'ordered'} />
+        <ToolbarButton label="Decrease indent" icon={Outdent} onSaveSelection={onSaveSelection} onClick={command({ type: 'outdent' })} disabled={blocked} />
+        <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={blocked} />
       </ToolbarGroup>
       <ToolbarGroup label="Insert">
         <ToolbarMenu label="Tables" disabled={disabled} isOpen={openMenu === 'tables'} onOpenChange={(open) => setOpenMenu(open ? 'tables' : null)}>
           <div role="group" aria-label="Insert actions">
-            <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={disabled} />
-            <ToolbarButton label="Add table row" title="Add Table Row" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableRow')} disabled={disabled || !onLegacyCommand} />
-            <ToolbarButton label="Add table column" title="Add Table Column" icon={Table2} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableColumn')} disabled={disabled || !onLegacyCommand} />
+            <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={blocked} />
+            <ToolbarButton label="Add table row" title="Add Table Row" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableRow')} disabled={blocked || !onLegacyCommand} />
+            <ToolbarButton label="Add table column" title="Add Table Column" icon={Table2} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableColumn')} disabled={blocked || !onLegacyCommand} />
           </div>
         </ToolbarMenu>
       </ToolbarGroup>
       <ToolbarGroup label="Page">
-        <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={disabled} />
-        <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={disabled} />
-        <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={disabled || !canDeletePage} destructive />
+        <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={blocked} />
+        <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={blocked} />
+        <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={blocked || !canDeletePage} destructive />
       </ToolbarGroup>
       <ToolbarGroup label="View">
         <ToolbarMenu label="Formats" disabled={disabled} isOpen={openMenu === 'formats'} onOpenChange={(open) => setOpenMenu(open ? 'formats' : null)}>
@@ -305,25 +303,25 @@ export function A4EditorToolbar({
           </div>
           <div role="group" aria-label="Advanced formatting" className="mt-3 grid grid-cols-2 gap-2 border-t border-border-primary pt-3">
             <label className="text-xs font-medium text-text-secondary">Font family
-              <select aria-label="Font family" title="Font Family" disabled={disabled || !onLegacyCommand} defaultValue="Arial, Helvetica, sans-serif" onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('fontName', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
+              <select aria-label="Font family" title="Font Family" value={activeFormats.fontFamily} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('fontName', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
                 {DOCUMENT_FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
               </select>
             </label>
             <label className="text-xs font-medium text-text-secondary">Font size
-              <select aria-label="Font size" title="Font Size" disabled={disabled || !onLegacyCommand} defaultValue="11pt" onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('customFontSize', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
+              <select aria-label="Font size" title="Font Size" value={activeFormats.fontSize} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('customFontSize', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
                 {DOCUMENT_FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}
               </select>
             </label>
             <label className="text-xs font-medium text-text-secondary">Paragraph style
-              <select title="Paragraph Style" disabled={disabled || !onLegacyCommand} defaultValue="p" onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('paragraphStyle', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
+              <select aria-label="Paragraph style" title="Paragraph Style" value={activeFormats.paragraphStyle} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('paragraphStyle', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
                 <option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option>
               </select>
             </label>
             <label className="text-xs font-medium text-text-secondary">Text color
-              <input type="color" title="Text Color" defaultValue="#000000" disabled={disabled || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('textColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-border-primary bg-background-secondary p-1" />
+              <input type="color" aria-label="Text color" title="Text Color" value={activeFormats.textColor} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('textColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-border-primary bg-background-secondary p-1" />
             </label>
             <label className="text-xs font-medium text-text-secondary">Highlight color
-              <input type="color" title="Highlight Color" defaultValue="#ffffff" disabled={disabled || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('highlightColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-border-primary bg-background-secondary p-1" />
+              <input type="color" aria-label="Highlight color" title="Highlight Color" value={activeFormats.highlightColor} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('highlightColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-border-primary bg-background-secondary p-1" />
             </label>
           </div>
         </ToolbarMenu>

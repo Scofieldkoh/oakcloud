@@ -3,10 +3,15 @@ import {
   appendHardPage,
   applyLogicalDelete,
   deleteHardPageSection,
+  hardSectionIndexForFragment,
   insertHardPageAtSelection,
+  insertParagraphAtSelection,
+  replaceLogicalSelection,
 } from '@/components/documents/a4-pagination/document-actions';
 import {
   HARD_PAGE_BREAK_HTML,
+  ensureEditableCanonicalHtml,
+  hydrateFlowHtml,
   stripFlowMetadata,
 } from '@/components/documents/a4-pagination/model';
 import type { FlowSelectionBookmark } from '@/components/documents/a4-pagination/selection';
@@ -212,5 +217,67 @@ describe('A4 canonical document actions', () => {
       selection: null,
       changed: false,
     });
+  });
+
+  it('maps every fragment to its owning hard section', () => {
+    const fragments = [
+      { content: '<p>A</p>', hardBreakBefore: false },
+      { content: '<p>B1</p>', hardBreakBefore: true },
+      { content: '<p>B2</p>', hardBreakBefore: false },
+      { content: '<p>C</p>', hardBreakBefore: true },
+    ];
+
+    expect(hardSectionIndexForFragment(fragments, 0)).toBe(0);
+    expect(hardSectionIndexForFragment(fragments, 1)).toBe(1);
+    expect(hardSectionIndexForFragment(fragments, 2)).toBe(1);
+    expect(hardSectionIndexForFragment(fragments, 3)).toBe(2);
+    expect(hardSectionIndexForFragment(fragments, -1)).toBeNull();
+    expect(hardSectionIndexForFragment(fragments, 4)).toBeNull();
+  });
+
+  it('replaces a collapsed selection with clipboard HTML exactly once', () => {
+    const html = hydrateFlowHtml('<p>Alpha</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = replaceLogicalSelection(
+      html,
+      {
+        anchor: { flowId, offset: 5 },
+        focus: { flowId, offset: 5 },
+        collapsed: true,
+      },
+      '<p>One</p><p>Two</p>',
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.html.match(/One/g)).toHaveLength(1);
+    expect(result.html.match(/Two/g)).toHaveLength(1);
+    expect(result.selection?.collapsed).toBe(true);
+  });
+
+  it('creates a stable editable paragraph for an empty canonical document', () => {
+    expect(ensureEditableCanonicalHtml('')).toBe('<p><br></p>');
+  });
+
+  it('splits the first paragraph at the logical caret', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+
+    const result = insertParagraphAtSelection(html, {
+      anchor: { flowId, offset: 5 },
+      focus: { flowId, offset: 5 },
+      collapsed: true,
+    });
+
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(Array.from(body.querySelectorAll('p'), (p) => p.textContent)).toEqual([
+      'Alpha',
+      'Beta',
+    ]);
+    expect(result.selection?.anchor.offset).toBe(0);
   });
 });

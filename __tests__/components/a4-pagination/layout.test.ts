@@ -3,6 +3,7 @@ import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
   a4LayoutsEqual,
   extractA4DocumentLayout,
+  formatA4LayoutStatus,
   mergeA4DocumentLayout,
   normalizeA4DocumentLayout,
 } from '@/components/documents/a4-pagination/layout';
@@ -89,5 +90,12 @@ describe('A4 document layout', () => {
       DEFAULT_A4_DOCUMENT_LAYOUT,
       { ...DEFAULT_A4_DOCUMENT_LAYOUT, marginsMm: { ...DEFAULT_A4_DOCUMENT_LAYOUT.marginsMm, left: 21 } },
     )).toBe(false);
+  });
+
+  it('formats all four effective margins without mojibake', () => {
+    expect(formatA4LayoutStatus({
+      ...DEFAULT_A4_DOCUMENT_LAYOUT,
+      marginsMm: { top: 60, right: 20, bottom: 15, left: 10 },
+    })).toBe('A4 210 × 297 mm · margins T60 R20 B15 L10 mm');
   });
 });

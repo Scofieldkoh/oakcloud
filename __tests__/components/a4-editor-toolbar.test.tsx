@@ -20,6 +20,11 @@ function renderToolbar(overrides: Partial<A4EditorToolbarProps> = {}) {
       underline: false,
       alignment: 'left',
       list: 'none',
+      paragraphStyle: 'p',
+      fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+      fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+      textColor: '#000000',
+      highlightColor: '#ffffff',
     },
     showPageNumbers: true,
     canDeletePage: true,
@@ -141,5 +146,89 @@ describe('A4EditorToolbar', () => {
     renderToolbar({ canDeletePage: false });
 
     expect(screen.getByRole('button', { name: 'Delete current page' })).toBeDisabled();
+  });
+
+  it('reflects changed active formatting in every controlled control', () => {
+    const baseProps: A4EditorToolbarProps = {
+      disabled: false,
+      layout: DEFAULT_A4_DOCUMENT_LAYOUT,
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'none',
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+      showPageNumbers: true,
+      canDeletePage: true,
+      onCommand: vi.fn(),
+      onLayoutChange: vi.fn(),
+      onInsertPageBreak: vi.fn(),
+      onAddBlankPage: vi.fn(),
+      onDeleteCurrentPage: vi.fn(),
+      onTogglePageNumbers: vi.fn(),
+      onSaveSelection: vi.fn(),
+    };
+    const { rerender } = render(<A4EditorToolbar {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
+
+    rerender(
+      <A4EditorToolbar
+        {...baseProps}
+        activeFormats={{
+          bold: true,
+          italic: false,
+          underline: true,
+          alignment: 'center',
+          list: 'ordered',
+          paragraphStyle: 'h1',
+          fontFamily: 'Georgia, serif',
+          fontSize: '14pt',
+          textColor: '#ff0000',
+          highlightColor: '#ffff00',
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText('Font family')).toHaveValue('Georgia, serif');
+    expect(screen.getByLabelText('Font size')).toHaveValue('14pt');
+    expect(screen.getByLabelText('Paragraph style')).toHaveValue('h1');
+    expect(screen.getByLabelText('Text color')).toHaveValue('#ff0000');
+    expect(screen.getByLabelText('Highlight color')).toHaveValue('#ffff00');
+    expect(screen.getByRole('button', { name: 'Bold' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Underline' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Align center' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Numbered list' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('blocks document mutations while reflow is pending without owning global layout controls', () => {
+    renderToolbar({ mutationDisabled: true, onLegacyCommand: vi.fn() });
+
+    expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Italic' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Delete current page' }),
+    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add blank page' })).toBeDisabled();
+    expect(screen.queryByLabelText('Line spacing')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Page margins')).not.toBeInTheDocument();
   });
 });

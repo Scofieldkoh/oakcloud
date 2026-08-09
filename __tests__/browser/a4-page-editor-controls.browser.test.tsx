@@ -1,5 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { page } from 'vitest/browser';
 import {
   afterAll,
   afterEach,
@@ -54,7 +55,9 @@ describe('A4PageEditor page controls', () => {
     );
 
     const deleteControls = Array.from(
-      host.querySelectorAll<HTMLButtonElement>('button[title="Delete page"]'),
+      host.querySelectorAll<HTMLButtonElement>(
+        'button[title="Delete explicit page section"]',
+      ),
     );
     expect(deleteControls).toHaveLength(2);
     deleteControls.forEach((control) => {
@@ -64,5 +67,67 @@ describe('A4PageEditor page controls', () => {
       expect(controlBounds.right).toBeLessThanOrEqual(pageBounds.right);
       expect(controlBounds.left).toBeGreaterThanOrEqual(pageBounds.left);
     });
+  });
+
+  it('hides page-chrome deletion and disables Delete Current Page for soft-only pagination', async () => {
+    host.style.zoom = '0.25';
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={Array.from(
+            { length: 120 },
+            (_, index) => `<p>Soft page marker ${index + 1}</p>`,
+          ).join('')}
+        />,
+      );
+    });
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+
+    expect(
+      host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+    ).toBeGreaterThan(1);
+    expect(
+      host.querySelectorAll('button[title="Delete explicit page section"]'),
+    ).toHaveLength(0);
+    const deleteCurrent = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.getAttribute('aria-label') === 'Delete current page',
+    );
+    expect(deleteCurrent?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('keeps the editor reachable at a narrow viewport without body overflow', async () => {
+    await page.viewport(1024, 720);
+    await act(async () => {
+      root.render(<A4PageEditor value="<p>Narrow viewport content</p>" />);
+    });
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(1024);
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const scrollContainer = surface.parentElement!.parentElement!;
+    scrollContainer.scrollLeft = 0;
+    expect(scrollContainer.scrollLeft).toBe(0);
+    scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+    expect(scrollContainer.scrollLeft).toBe(
+      Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth),
+    );
+
+    const formats = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'Formats',
+    )!;
+    const addPage = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'Add Page',
+    )!;
+    formats.focus();
+    expect(document.activeElement).toBe(formats);
+    addPage.focus();
+    expect(document.activeElement).toBe(addPage);
   });
 });

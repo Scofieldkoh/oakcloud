@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Document Export Service
  *
  * Handles PDF and HTML export of generated documents.
@@ -17,9 +17,9 @@ import { extractSections, type DocumentSection } from '@/services/document-valid
 import { splitHardPageSections } from '@/lib/document-page-breaks';
 import {
   extractA4DocumentLayout,
-  normalizeA4DocumentLayout,
-  type A4DocumentLayout,
 } from '@/components/documents/a4-pagination/layout';
+import { buildA4PrintCss } from '@/components/documents/a4-print-styles';
+export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
@@ -64,206 +64,6 @@ const DEFAULT_MARGINS: PageMargins = {
   bottom: 20,
   left: 20,
 };
-
-// ============================================================================
-// Document Styles - Matches A4PageEditor print CSS exactly
-// Uses CSS @page margin (same as browser print) instead of Puppeteer margin API
-// ============================================================================
-
-const DOCUMENT_STYLES = `
-  @page {
-    size: 210mm 297mm;
-    margin: 20mm;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #fff;
-    color: #000;
-  }
-
-  /*
-   * Default font styles - these are inherited defaults.
-   * Inline styles from the editor (font-family, font-size, line-height)
-   * will override these due to CSS specificity.
-   */
-  .document-content {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 11pt;
-    line-height: 1.5;
-    width: 100%;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  h1 {
-    font-size: 18pt;
-    font-weight: bold;
-    margin: 1em 0 0.5em;
-    color: #000;
-    page-break-after: avoid;
-    white-space: pre-wrap;
-  }
-
-  h2 {
-    font-size: 14pt;
-    font-weight: bold;
-    margin: 0.8em 0 0.4em;
-    color: #000;
-    page-break-after: avoid;
-    white-space: pre-wrap;
-  }
-
-  h3 {
-    font-size: 12pt;
-    font-weight: bold;
-    margin: 0.6em 0 0.3em;
-    color: #000;
-    page-break-after: avoid;
-    white-space: pre-wrap;
-  }
-
-  p {
-    margin: 0 0 0.5em 0;
-  }
-
-  /* Ensure empty paragraphs create space */
-  p:empty,
-  div:empty {
-    min-height: 1em;
-  }
-
-  /* Preserve line breaks */
-  br {
-    display: block;
-    content: "";
-    margin-top: 0.5em;
-  }
-
-  ul, ol {
-    margin: 0 0 0.5em 0;
-    padding-left: 1.5em;
-  }
-
-  li {
-    margin: 0.25em 0;
-    white-space: pre-wrap;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1em 0;
-    page-break-inside: avoid;
-  }
-
-  th, td {
-    border: 1px solid #000;
-    padding: 8px;
-    text-align: left;
-    white-space: pre-wrap;
-  }
-
-  th {
-    background-color: #f0f0f0;
-    font-weight: bold;
-  }
-
-  .page-break {
-    display: block;
-    page-break-before: always !important;
-    break-before: page !important;
-    page-break-after: auto;
-    break-after: auto;
-    page-break-inside: avoid;
-    break-inside: avoid;
-    height: 0;
-    margin: 0;
-    padding: 0;
-    border: none;
-    clear: both;
-  }
-
-  .signature-block {
-    margin: 2em 0;
-    page-break-inside: avoid;
-  }
-
-  .signature-line {
-    border-top: 1px solid #000;
-    width: 200px;
-    margin: 2em 0 0.5em;
-  }
-
-  /* Draft watermark */
-  .draft-watermark {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-45deg);
-    font-size: 100pt;
-    color: rgba(200, 200, 200, 0.3);
-    font-weight: bold;
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  /* Horizontal rule styling */
-  hr {
-    border: none;
-    border-top: 1px solid #000;
-    margin: 1em 0;
-  }
-
-  /* Underline and strikethrough */
-  u {
-    text-decoration: underline;
-  }
-
-  s, strike {
-    text-decoration: line-through;
-  }
-
-  /* Bold and italic */
-  strong, b {
-    font-weight: bold;
-  }
-
-  em, i {
-    font-style: italic;
-  }
-
-  @media print {
-    html, body {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-  }
-`;
-
-export function buildA4PrintCss(layout: A4DocumentLayout): string {
-  const normalized = normalizeA4DocumentLayout(layout);
-  const { top, right, bottom, left } = normalized.marginsMm;
-
-  return DOCUMENT_STYLES
-    .replace(
-      /@page \{\s*size: 210mm 297mm;\s*margin: 20mm;\s*\}/,
-      `@page { margin: ${top}mm ${right}mm ${bottom}mm ${left}mm; }`,
-    )
-    .replace(
-      'font-family: Arial, Helvetica, sans-serif;',
-      `font-family: ${normalized.fontFamily};`,
-    )
-    .replace('font-size: 11pt;', `font-size: ${normalized.fontSize};`)
-    .replace('line-height: 1.5;', `line-height: ${normalized.lineHeight};`)
-    .replace('p {\n    margin: 0 0 0.5em 0;\n  }', `p {\n    margin: 0 0 ${normalized.paragraphSpacing} 0;\n  }`);
-}
 
 // ============================================================================
 // PDF Export
@@ -504,7 +304,9 @@ export async function exportToHTML(params: ExportHTMLParams): Promise<HTMLResult
 
   return {
     html,
-    styles: includeStyles ? DOCUMENT_STYLES : '',
+    styles: includeStyles
+      ? buildA4PrintCss(extractA4DocumentLayout(document.contentJson))
+      : '',
     sections,
   };
 }

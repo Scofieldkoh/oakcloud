@@ -1,4 +1,9 @@
+import DOMPurify from 'dompurify';
 import type { FlowPoint, FlowSelectionBookmark } from './selection';
+import {
+  documentTextOffsetForFlowPoint,
+  flowPointAtDocumentTextOffset,
+} from './selection';
 import {
   HARD_PAGE_BREAK_HTML,
   domPointForFlowPoint,
@@ -6,6 +11,7 @@ import {
   normalizeCanonicalHtml,
   splitHardSections,
   type DomPoint,
+  type PageFragment,
 } from './model';
 
 const EMPTY_PARAGRAPH_HTML = '<p><br></p>';
@@ -38,6 +44,111 @@ function createContainer(html: string): HTMLElement {
   const container = document.createElement('div');
   container.innerHTML = normalizeCanonicalHtml(html);
   return container;
+}
+
+function sanitizeReplacementHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p',
+      'br',
+      'div',
+      'span',
+      'strong',
+      'b',
+      'em',
+      'i',
+      'u',
+      's',
+      'strike',
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'a',
+      'hr',
+      'table',
+      'thead',
+      'tbody',
+      'tfoot',
+      'tr',
+      'th',
+      'td',
+      'caption',
+    ],
+    ALLOWED_ATTR: [
+      'href',
+      'target',
+      'rel',
+      'style',
+      'class',
+      'colspan',
+      'rowspan',
+      'scope',
+      'align',
+      'valign',
+      'width',
+      'height',
+      'data-break-type',
+      'data-flow-id',
+      'data-flow-continuation',
+      'data-flow-oversized',
+    ],
+  });
+}
+
+function fragmentTextLength(fragment: DocumentFragment): number {
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(fragment.cloneNode(true));
+  return wrapper.textContent?.length ?? 0;
+}
+
+function splitBlockAtDomPoint(
+  root: HTMLElement,
+  point: DomPoint,
+): HTMLElement | null {
+  const splitTags = new Set([
+    'P',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'H5',
+    'H6',
+    'LI',
+    'BLOCKQUOTE',
+  ]);
+  let block =
+    point.node.nodeType === Node.ELEMENT_NODE
+      ? (point.node as HTMLElement)
+      : point.node.parentElement;
+  while (block && block !== root && !splitTags.has(block.tagName)) {
+    block = block.parentElement;
+  }
+  if (!block || block === root) return null;
+
+  const beforeRange = document.createRange();
+  beforeRange.setStart(block, 0);
+  beforeRange.setEnd(point.node, point.offset);
+  const afterRange = document.createRange();
+  afterRange.setStart(point.node, point.offset);
+  afterRange.setEnd(block, block.childNodes.length);
+
+  const beforeWrapper = document.createElement('div');
+  beforeWrapper.appendChild(beforeRange.cloneContents());
+  const afterWrapper = document.createElement('div');
+  afterWrapper.appendChild(afterRange.cloneContents());
+
+  const nextBlock = document.createElement(block.tagName);
+  nextBlock.innerHTML = afterWrapper.innerHTML || '<br>';
+  block.innerHTML = beforeWrapper.innerHTML || '<br>';
+  block.after(nextBlock);
+  return nextBlock;
 }
 
 function createBlankParagraph(): HTMLParagraphElement {
@@ -312,6 +423,87 @@ export function applyLogicalDelete(
   return deleteCollapsedUnit(html, selection.anchor, direction);
 }
 
+export function replaceLogicalSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+  replacementHtml: string,
+): DocumentTransactionResult {
+  const root = createContainer(html);
+  let start = domPointForFlowPoint(root, selection.anchor);
+  let end = domPointForFlowPoint(root, selection.focus);
+  if (!start || !end) return { html, selection, changed: false };
+
+  const startProbe = document.createRange();
+  startProbe.setStart(start.node, start.offset);
+  startProbe.collapse(true);
+  const endProbe = document.createRange();
+  endProbe.setStart(end.node, end.offset);
+  endProbe.collapse(true);
+  const startBeforeEnd =
+    startProbe.compareBoundaryPoints(Range.START_TO_START, endProbe) <= 0;
+  if (!startBeforeEnd) [start, end] = [end, start];
+
+  const replacementStartPoint =
+    startBeforeEnd ? selection.anchor : selection.focus;
+  const replacementStartOffset = documentTextOffsetForFlowPoint(
+    root.innerHTML,
+    replacementStartPoint,
+  );
+
+  const range = document.createRange();
+  range.setStart(start.node, start.offset);
+  range.setEnd(end.node, end.offset);
+  const hadSelection = !range.collapsed;
+  range.deleteContents();
+
+  const template = document.createElement('template');
+  template.innerHTML = sanitizeReplacementHtml(replacementHtml);
+  const replacement = template.content;
+  const replacementTextLength = fragmentTextLength(replacement);
+  if (replacement.childNodes.length > 0) {
+    range.insertNode(replacement);
+  } else if (!hadSelection) {
+    const blank = document.createElement('p');
+    blank.innerHTML = '<br>';
+    range.insertNode(blank);
+  }
+
+  hydrateFlowContainer(root);
+  const caret =
+    replacementStartOffset === null
+      ? replacementStartPoint
+      : flowPointAtDocumentTextOffset(
+          root.innerHTML,
+          replacementStartOffset + replacementTextLength,
+        ) ?? replacementStartPoint;
+  const finalized = finalizeRoot(root, collapsed(caret), true);
+  return { ...finalized, changed: true };
+}
+
+export function insertParagraphAtSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = createContainer(html);
+  const point = domPointForFlowPoint(root, selection.anchor);
+  if (!point) return { html, selection, changed: false };
+
+  const nextBlock = splitBlockAtDomPoint(root, point);
+  if (!nextBlock) return { html, selection, changed: false };
+
+  hydrateFlowContainer(root);
+  const nextFlowId = nextBlock.dataset.flowId;
+  const selectionPoint = nextFlowId
+    ? flowPointAtElementStart(root, nextBlock)
+    : null;
+  const finalized = finalizeRoot(
+    root,
+    selectionPoint ? collapsed(selectionPoint) : null,
+    true,
+  );
+  return { ...finalized, changed: true };
+}
+
 function flowIdForPoint(root: HTMLElement, point: DomPoint): string | null {
   const element =
     point.node.nodeType === Node.ELEMENT_NODE
@@ -445,4 +637,23 @@ export function deleteHardPageSection(
   const root = createContainer(remainingSections.join(HARD_PAGE_BREAK_HTML));
   const finalized = finalizeRoot(root, null, false);
   return { ...finalized, changed: true };
+}
+
+export function hardSectionIndexForFragment(
+  fragments: PageFragment[],
+  fragmentIndex: number,
+): number | null {
+  if (
+    !Number.isInteger(fragmentIndex) ||
+    fragmentIndex < 0 ||
+    fragmentIndex >= fragments.length
+  ) {
+    return null;
+  }
+  return fragments
+    .slice(0, fragmentIndex + 1)
+    .reduce(
+      (section, fragment) => section + (fragment.hardBreakBefore ? 1 : 0),
+      0,
+    );
 }

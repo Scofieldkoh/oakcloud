@@ -26,6 +26,8 @@ export interface DomPoint {
   offset: number;
 }
 
+export const EMPTY_EDITABLE_PARAGRAPH_HTML = '<p><br></p>';
+
 function nextFlowId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -40,6 +42,19 @@ export function normalizeCanonicalHtml(input: string): string {
     HARD_PAGE_BREAK_REGEX,
     HARD_PAGE_BREAK_HTML,
   );
+}
+
+export function ensureEditableCanonicalHtml(input: string): string {
+  const normalized = normalizeCanonicalHtml(input);
+  const root = document.createElement('div');
+  root.innerHTML = normalized;
+  const hasContent = Boolean(
+    root.textContent?.length ||
+      root.querySelector(
+        'audio,canvas,embed,hr,iframe,img,input,object,svg,table,textarea,video,.page-break',
+      ),
+  );
+  return hasContent ? root.innerHTML : EMPTY_EDITABLE_PARAGRAPH_HTML;
 }
 
 export function splitHardSections(input: string): string[] {
