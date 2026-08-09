@@ -1,13 +1,26 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ClientServiceDto, CompanyServiceActivationDto, ServiceAgreementActivationDto } from '@/services/client-service';
+import type { ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ServiceAgreementActivationDto } from '@/services/client-service';
 import type { SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
 type ClientServicesResult = { services: ClientServiceDto[]; total: number; activations: CompanyServiceActivationDto[] };
 
+export interface ErrorResponseBody {
+  error?: string;
+  code?: string;
+  details?: unknown;
+  duplicates?: DuplicateClientServiceMatches;
+}
+
 export class HttpRequestError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code: string | undefined,
+    public readonly details: unknown,
+    public readonly body: ErrorResponseBody,
+  ) {
     super(message);
     this.name = 'HttpRequestError';
   }
@@ -19,8 +32,8 @@ export function isHttpRequestError(error: unknown, status?: number): error is Ht
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
-  const body = await response.json().catch(() => ({})) as { error?: string };
-  if (!response.ok) throw new HttpRequestError(body.error ?? 'Request failed', response.status);
+  const body = await response.json().catch(() => ({})) as ErrorResponseBody;
+  if (!response.ok) throw new HttpRequestError(body.error ?? 'Request failed', response.status, body.code, body.details, body);
   return body as T;
 }
 

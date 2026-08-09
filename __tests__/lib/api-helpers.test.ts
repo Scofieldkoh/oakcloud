@@ -37,18 +37,29 @@ describe('api-helpers', () => {
   });
 
   describe('createErrorResponse', () => {
-    it('preserves typed not-found errors with the stable route payload shape', async () => {
+    it('preserves typed not-found errors with stable codes and the route payload shape', async () => {
       const response = createErrorResponse(new NotFoundError('Document not found'));
 
       expect(response.status).toBe(404);
-      await expect(response.json()).resolves.toEqual({ error: 'Document not found' });
+      await expect(response.json()).resolves.toEqual({ error: 'Document not found', code: 'NOT_FOUND' });
     });
 
-    it('preserves typed validation errors with a 400 status', async () => {
+    it('preserves typed validation errors with a 400 status and structured details', async () => {
       const response = createErrorResponse(new ValidationError('Shareholder is already active'));
 
       expect(response.status).toBe(400);
-      await expect(response.json()).resolves.toEqual({ error: 'Shareholder is already active' });
+      await expect(response.json()).resolves.toEqual({ error: 'Shareholder is already active', code: 'VALIDATION_ERROR' });
+    });
+
+    it('retains structured details on typed API errors', async () => {
+      const response = createErrorResponse(new ValidationError('Invalid request', { fieldErrors: { 'feeLines.0.amount': 'Enter a non-negative amount with at most two decimals.' } }));
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Invalid request',
+        code: 'VALIDATION_ERROR',
+        details: { fieldErrors: { 'feeLines.0.amount': 'Enter a non-negative amount with at most two decimals.' } },
+      });
     });
   });
 });

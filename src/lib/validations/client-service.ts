@@ -43,12 +43,54 @@ export const updateClientServiceSchema = z.object({
   endDate: z.string().date().nullable().optional(),
   fieldValues: z.record(z.string(), z.string().max(10_000)).optional(),
   feeLines: z.array(clientServiceFeeLineInputSchema).min(1).max(100).optional(),
-}).superRefine((value, ctx) => {
+}).strict().superRefine((value, ctx) => {
   validateCadenceAndDates(value, ctx);
   if (Object.keys(value).every((key) => key === 'updatedAt')) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'At least one service field must be updated' });
   }
 });
+
+const manualFeeLineSchema = z.object({
+  description: z.string().trim().min(1).max(500),
+  amount: z.string().regex(/^\d{1,16}(?:\.\d{1,2})?$/, 'Enter a non-negative amount with at most two decimals.'),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+  billingFrequency: billingFrequencySchema,
+  customFrequencyLabel: z.string().trim().min(1).max(100).nullable().optional(),
+  billingStartDate: z.string().date().nullable().optional(),
+}).strict().superRefine((value, ctx) => {
+  if (value.billingFrequency === 'CUSTOM' && !value.customFrequencyLabel?.trim()) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['customFrequencyLabel'], message: 'Custom frequency label is required' });
+  }
+});
+
+export const createManualClientServiceSchema = z.object({
+  serviceVariantId: z.string().uuid(),
+  status: z.enum(['ACTIVE', 'PAUSED', 'ENDED']).default('ACTIVE'),
+  serviceCadence: serviceCadenceSchema,
+  customCadenceLabel: z.string().trim().min(1).max(100).nullable().optional(),
+  startDate: z.string().date(),
+  endDate: z.string().date().nullable().optional(),
+  fieldValues: z.record(z.string(), z.string().max(10_000)).default({}),
+  feeLines: z.array(manualFeeLineSchema).min(1).max(100),
+  confirmDuplicate: z.boolean().default(false),
+}).strict().superRefine((value, ctx) => {
+  validateCadenceAndDates(value, ctx);
+  if (Object.keys(value.fieldValues).length > 100) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['fieldValues'], message: 'At most 100 service fields are allowed' });
+  }
+}).transform((value) => ({
+  ...value,
+  customCadenceLabel: value.serviceCadence === 'CUSTOM' ? value.customCadenceLabel ?? null : null,
+  endDate: value.endDate ?? null,
+  feeLines: value.feeLines.map((fee) => ({
+    ...fee,
+    customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel ?? null : null,
+    billingStartDate: fee.billingStartDate ?? null,
+  })),
+}));
+
+export type CreateManualClientServiceRequest = z.input<typeof createManualClientServiceSchema>;
+export type CreateManualClientServiceInput = z.output<typeof createManualClientServiceSchema>;
 
 export const archiveClientServiceSchema = z.object({ reason: z.string().trim().min(10).max(1000) });
 export const markServiceAgreementEffectiveSchema = z.object({

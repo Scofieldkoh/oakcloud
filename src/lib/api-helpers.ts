@@ -142,7 +142,11 @@ export function createErrorResponse(
   defaultMessage: string = 'Internal server error'
 ): NextResponse {
   if (error instanceof ApiError) {
-    return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    return NextResponse.json({
+      error: error.message,
+      code: error.code,
+      ...(error.details === undefined ? {} : { details: error.details }),
+    }, { status: error.statusCode });
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
