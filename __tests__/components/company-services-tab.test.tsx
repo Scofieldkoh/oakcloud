@@ -59,6 +59,14 @@ describe('CompanyServicesTab', () => {
     expect(screen.getByRole('link', { name: /service agreement/i })).toHaveAttribute('href', '/generated-documents/document-1');
   });
 
+  it('uses source-aware edit and archive copy for manual services', () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [manualService], total: 1, activations: [] }, isLoading: false, error: null });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit service' }));
+    expect(screen.getByText(/This service was added manually\. Operational changes are recorded in the audit history\./i)).toBeVisible();
+    expect(screen.getByText(/Archiving removes this manually added service from the active company view\./i)).toBeVisible();
+  });
+
   it('does not expose edit controls in read-only mode', () => {
     render(<CompanyServicesTab companyId="company-1" canEdit={false} />);
     expect(screen.queryByRole('button', { name: 'Edit service' })).not.toBeInTheDocument();
