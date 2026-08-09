@@ -1176,8 +1176,9 @@ model ClientService {
   id                   String               @id @default(uuid())
   tenantId             String               @map("tenant_id")
   companyId            String               @map("company_id")
-  agreementId          String               @map("agreement_id")
-  agreementItemId      String               @map("agreement_item_id")
+  source               ClientServiceSource  @default(AGREEMENT)
+  agreementId          String?              @map("agreement_id")
+  agreementItemId      String?              @map("agreement_item_id")
   serviceVariantId     String               @map("service_variant_id")
   familyName           String               @map("family_name") @db.VarChar(200)
   serviceName          String               @map("service_name") @db.VarChar(200)
@@ -1193,8 +1194,8 @@ model ClientService {
   deletedReason        String?              @map("deleted_reason")
   tenant               Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   company              Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  agreement            ServiceAgreement     @relation(fields: [agreementId], references: [id], onDelete: Restrict)
-  agreementItem        ServiceAgreementItem @relation(fields: [agreementItemId], references: [id], onDelete: Restrict)
+  agreement            ServiceAgreement?    @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  agreementItem        ServiceAgreementItem? @relation(fields: [agreementItemId], references: [id], onDelete: Restrict)
   serviceVariant       ServiceVariant       @relation(fields: [serviceVariantId], references: [id], onDelete: Restrict)
   feeLines             ClientServiceFeeLine[]
 
@@ -1202,7 +1203,13 @@ model ClientService {
   @@index([tenantId, companyId, status, deletedAt])
   @@index([tenantId, agreementId])
   @@index([serviceVariantId])
+  @@index([tenantId, companyId, serviceVariantId, startDate, deletedAt])
   @@map("client_services")
+}
+
+enum ClientServiceSource {
+  AGREEMENT
+  MANUAL
 }
 
 model ClientServiceFeeLine {

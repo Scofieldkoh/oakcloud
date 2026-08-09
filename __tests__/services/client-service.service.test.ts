@@ -16,7 +16,7 @@ import { archiveClientService, getClientService, listCompanyServices, updateClie
 const actor = { tenantId: 'tenant-1', userId: 'user-1' };
 const record = {
   id: 'service-1', tenantId: actor.tenantId, companyId: 'company-1', agreementId: 'agreement-1',
-  agreementItemId: 'item-1', serviceVariantId: 'variant-1', familyName: 'Corporate Services',
+  agreementItemId: 'item-1', source: 'AGREEMENT', serviceVariantId: 'variant-1', familyName: 'Corporate Services',
   serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY',
   customCadenceLabel: null, startDate: new Date('2026-07-30'), endDate: null, fieldValues: {},
   createdAt: new Date('2026-07-30T00:00:00Z'), updatedAt: new Date('2026-07-30T00:00:00Z'),
@@ -75,5 +75,24 @@ describe('client service service', () => {
   it('rejects a service from another tenant', async () => {
     prismaMock.clientService.findFirst.mockResolvedValue(null);
     await expect(getClientService(record.id, actor)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('maps agreement services with the generated document link', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue(record);
+    const result = await getClientService(record.id, actor);
+    expect(result.agreement?.href).toBe('/generated-documents/document-1');
+  });
+
+  it('maps manual services with null agreement lineage and no summary', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue({
+      ...record,
+      id: 'service-manual',
+      source: 'MANUAL',
+      agreementId: null,
+      agreementItemId: null,
+      agreement: null,
+    });
+    const result = await getClientService('service-manual', actor);
+    expect(result).toMatchObject({ source: 'MANUAL', agreementId: null, agreementItemId: null, agreement: null });
   });
 });

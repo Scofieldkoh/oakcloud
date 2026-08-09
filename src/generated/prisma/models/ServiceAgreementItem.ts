@@ -717,6 +717,11 @@ export type ServiceAgreementItemScalarRelationFilter = {
   isNot?: Prisma.ServiceAgreementItemWhereInput
 }
 
+export type ServiceAgreementItemNullableScalarRelationFilter = {
+  is?: Prisma.ServiceAgreementItemWhereInput | null
+  isNot?: Prisma.ServiceAgreementItemWhereInput | null
+}
+
 export type ServiceAgreementItemCreateNestedManyWithoutTenantInput = {
   create?: Prisma.XOR<Prisma.ServiceAgreementItemCreateWithoutTenantInput, Prisma.ServiceAgreementItemUncheckedCreateWithoutTenantInput> | Prisma.ServiceAgreementItemCreateWithoutTenantInput[] | Prisma.ServiceAgreementItemUncheckedCreateWithoutTenantInput[]
   connectOrCreate?: Prisma.ServiceAgreementItemCreateOrConnectWithoutTenantInput | Prisma.ServiceAgreementItemCreateOrConnectWithoutTenantInput[]
@@ -919,10 +924,12 @@ export type ServiceAgreementItemCreateNestedOneWithoutClientServicesInput = {
   connect?: Prisma.ServiceAgreementItemWhereUniqueInput
 }
 
-export type ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput = {
+export type ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput = {
   create?: Prisma.XOR<Prisma.ServiceAgreementItemCreateWithoutClientServicesInput, Prisma.ServiceAgreementItemUncheckedCreateWithoutClientServicesInput>
   connectOrCreate?: Prisma.ServiceAgreementItemCreateOrConnectWithoutClientServicesInput
   upsert?: Prisma.ServiceAgreementItemUpsertWithoutClientServicesInput
+  disconnect?: Prisma.ServiceAgreementItemWhereInput | boolean
+  delete?: Prisma.ServiceAgreementItemWhereInput | boolean
   connect?: Prisma.ServiceAgreementItemWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceAgreementItemUpdateToOneWithWhereWithoutClientServicesInput, Prisma.ServiceAgreementItemUpdateWithoutClientServicesInput>, Prisma.ServiceAgreementItemUncheckedUpdateWithoutClientServicesInput>
 }

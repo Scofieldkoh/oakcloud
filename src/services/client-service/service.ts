@@ -5,57 +5,7 @@ import type { TenantAwareParams } from '@/lib/types';
 import type { SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
-
-const serviceInclude = {
-  feeLines: { orderBy: [{ displayOrder: 'asc' as const }, { createdAt: 'asc' as const }] },
-  agreement: {
-    select: {
-      status: true,
-      activationStatus: true,
-      generatedDocument: { select: { id: true, title: true } },
-    },
-  },
-} satisfies Prisma.ClientServiceInclude;
-
-type ClientServiceRecord = Prisma.ClientServiceGetPayload<{ include: typeof serviceInclude }>;
-const dateOnly = (value: Date | null) => value ? value.toISOString().slice(0, 10) : null;
-
-function toDto(service: ClientServiceRecord): ClientServiceDto {
-  return {
-    id: service.id,
-    companyId: service.companyId,
-    agreementId: service.agreementId,
-    agreementItemId: service.agreementItemId,
-    serviceVariantId: service.serviceVariantId,
-    familyName: service.familyName,
-    serviceName: service.serviceName,
-    status: service.status,
-    serviceCadence: service.serviceCadence,
-    customCadenceLabel: service.customCadenceLabel,
-    startDate: dateOnly(service.startDate)!,
-    endDate: dateOnly(service.endDate),
-    fieldValues: (service.fieldValues ?? {}) as Record<string, string>,
-    feeLines: service.feeLines.map((fee) => ({
-      id: fee.id,
-      description: fee.description,
-      amount: fee.amount.toFixed(2),
-      currency: fee.currency,
-      billingFrequency: fee.billingFrequency,
-      customFrequencyLabel: fee.customFrequencyLabel,
-      billingStartDate: dateOnly(fee.billingStartDate),
-      displayOrder: fee.displayOrder,
-    })),
-    agreement: {
-      title: service.agreement.generatedDocument.title,
-      status: service.agreement.status,
-      activationStatus: service.agreement.activationStatus,
-      generatedDocumentId: service.agreement.generatedDocument.id,
-      href: `/generated-documents/${service.agreement.generatedDocument.id}`,
-    },
-    createdAt: service.createdAt.toISOString(),
-    updatedAt: service.updatedAt.toISOString(),
-  };
-}
+import { clientServiceInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
 
 function parseDate(value: string | null | undefined): Date | null | undefined {
   if (value === undefined) return undefined;
@@ -78,7 +28,7 @@ function sameJson(left: unknown, right: unknown): boolean {
 }
 
 async function requireService(id: string, tenantId: string, db: Prisma.TransactionClient | typeof prisma = prisma) {
-  const service = await db.clientService.findFirst({ where: { id, tenantId, deletedAt: null }, include: serviceInclude });
+  const service = await db.clientService.findFirst({ where: { id, tenantId, deletedAt: null }, include: clientServiceInclude });
   if (!service) throw new NotFoundError('Client service not found');
   return service;
 }
@@ -99,7 +49,7 @@ export async function listCompanyServices(
     ] } : {}),
   };
   const [services, total, agreements] = await Promise.all([
-    prisma.clientService.findMany({ where, include: serviceInclude, orderBy: [{ status: 'asc' }, { serviceName: 'asc' }], skip: (input.page - 1) * input.limit, take: input.limit }),
+    prisma.clientService.findMany({ where, include: clientServiceInclude, orderBy: [{ status: 'asc' }, { serviceName: 'asc' }], skip: (input.page - 1) * input.limit, take: input.limit }),
     prisma.clientService.count({ where }),
     prisma.serviceAgreement.findMany({
       where: { tenantId: params.tenantId, entities: { some: { companyId } }, activationStatus: { in: ['PENDING', 'PROCESSING', 'FAILED_RETRYABLE', 'FAILED_PERMANENT'] } },
@@ -107,11 +57,11 @@ export async function listCompanyServices(
       orderBy: { updatedAt: 'desc' },
     }),
   ]);
-  return { services: services.map(toDto), total, activations: agreements.map((agreement) => ({ agreementId: agreement.id, title: agreement.generatedDocument.title, activationStatus: agreement.activationStatus, activationLastError: agreement.activationLastError, canRetry: false })) };
+  return { services: services.map(toClientServiceDto), total, activations: agreements.map((agreement) => ({ agreementId: agreement.id, title: agreement.generatedDocument.title, activationStatus: agreement.activationStatus, activationLastError: agreement.activationLastError, canRetry: false })) };
 }
 
 export async function getClientService(id: string, params: TenantAwareParams): Promise<ClientServiceDto> {
-  return toDto(await requireService(id, params.tenantId));
+  return toClientServiceDto(await requireService(id, params.tenantId));
 }
 
 export async function updateClientService(id: string, input: UpdateClientServiceInput, params: TenantAwareParams): Promise<ClientServiceDto> {
@@ -209,7 +159,7 @@ export async function updateClientService(id: string, input: UpdateClientService
     }, tx);
     return result;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-  return toDto(updated);
+  return toClientServiceDto(updated);
 }
 
 export async function archiveClientService(id: string, reason: string, params: TenantAwareParams): Promise<{ id: string; archived: true }> {

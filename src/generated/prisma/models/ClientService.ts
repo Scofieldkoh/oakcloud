@@ -28,6 +28,7 @@ export type ClientServiceMinAggregateOutputType = {
   id: string | null
   tenantId: string | null
   companyId: string | null
+  source: $Enums.ClientServiceSource | null
   agreementId: string | null
   agreementItemId: string | null
   serviceVariantId: string | null
@@ -48,6 +49,7 @@ export type ClientServiceMaxAggregateOutputType = {
   id: string | null
   tenantId: string | null
   companyId: string | null
+  source: $Enums.ClientServiceSource | null
   agreementId: string | null
   agreementItemId: string | null
   serviceVariantId: string | null
@@ -68,6 +70,7 @@ export type ClientServiceCountAggregateOutputType = {
   id: number
   tenantId: number
   companyId: number
+  source: number
   agreementId: number
   agreementItemId: number
   serviceVariantId: number
@@ -91,6 +94,7 @@ export type ClientServiceMinAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  source?: true
   agreementId?: true
   agreementItemId?: true
   serviceVariantId?: true
@@ -111,6 +115,7 @@ export type ClientServiceMaxAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  source?: true
   agreementId?: true
   agreementItemId?: true
   serviceVariantId?: true
@@ -131,6 +136,7 @@ export type ClientServiceCountAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  source?: true
   agreementId?: true
   agreementItemId?: true
   serviceVariantId?: true
@@ -225,8 +231,9 @@ export type ClientServiceGroupByOutputType = {
   id: string
   tenantId: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source: $Enums.ClientServiceSource
+  agreementId: string | null
+  agreementItemId: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -267,8 +274,9 @@ export type ClientServiceWhereInput = {
   id?: Prisma.StringFilter<"ClientService"> | string
   tenantId?: Prisma.StringFilter<"ClientService"> | string
   companyId?: Prisma.StringFilter<"ClientService"> | string
-  agreementId?: Prisma.StringFilter<"ClientService"> | string
-  agreementItemId?: Prisma.StringFilter<"ClientService"> | string
+  source?: Prisma.EnumClientServiceSourceFilter<"ClientService"> | $Enums.ClientServiceSource
+  agreementId?: Prisma.StringNullableFilter<"ClientService"> | string | null
+  agreementItemId?: Prisma.StringNullableFilter<"ClientService"> | string | null
   serviceVariantId?: Prisma.StringFilter<"ClientService"> | string
   familyName?: Prisma.StringFilter<"ClientService"> | string
   serviceName?: Prisma.StringFilter<"ClientService"> | string
@@ -284,8 +292,8 @@ export type ClientServiceWhereInput = {
   deletedReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  agreement?: Prisma.XOR<Prisma.ServiceAgreementScalarRelationFilter, Prisma.ServiceAgreementWhereInput>
-  agreementItem?: Prisma.XOR<Prisma.ServiceAgreementItemScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput>
+  agreement?: Prisma.XOR<Prisma.ServiceAgreementNullableScalarRelationFilter, Prisma.ServiceAgreementWhereInput> | null
+  agreementItem?: Prisma.XOR<Prisma.ServiceAgreementItemNullableScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput> | null
   serviceVariant?: Prisma.XOR<Prisma.ServiceVariantScalarRelationFilter, Prisma.ServiceVariantWhereInput>
   feeLines?: Prisma.ClientServiceFeeLineListRelationFilter
 }
@@ -294,8 +302,9 @@ export type ClientServiceOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
-  agreementId?: Prisma.SortOrder
-  agreementItemId?: Prisma.SortOrder
+  source?: Prisma.SortOrder
+  agreementId?: Prisma.SortOrderInput | Prisma.SortOrder
+  agreementItemId?: Prisma.SortOrderInput | Prisma.SortOrder
   serviceVariantId?: Prisma.SortOrder
   familyName?: Prisma.SortOrder
   serviceName?: Prisma.SortOrder
@@ -325,8 +334,9 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ClientServiceWhereInput | Prisma.ClientServiceWhereInput[]
   tenantId?: Prisma.StringFilter<"ClientService"> | string
   companyId?: Prisma.StringFilter<"ClientService"> | string
-  agreementId?: Prisma.StringFilter<"ClientService"> | string
-  agreementItemId?: Prisma.StringFilter<"ClientService"> | string
+  source?: Prisma.EnumClientServiceSourceFilter<"ClientService"> | $Enums.ClientServiceSource
+  agreementId?: Prisma.StringNullableFilter<"ClientService"> | string | null
+  agreementItemId?: Prisma.StringNullableFilter<"ClientService"> | string | null
   serviceVariantId?: Prisma.StringFilter<"ClientService"> | string
   familyName?: Prisma.StringFilter<"ClientService"> | string
   serviceName?: Prisma.StringFilter<"ClientService"> | string
@@ -342,8 +352,8 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   deletedReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  agreement?: Prisma.XOR<Prisma.ServiceAgreementScalarRelationFilter, Prisma.ServiceAgreementWhereInput>
-  agreementItem?: Prisma.XOR<Prisma.ServiceAgreementItemScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput>
+  agreement?: Prisma.XOR<Prisma.ServiceAgreementNullableScalarRelationFilter, Prisma.ServiceAgreementWhereInput> | null
+  agreementItem?: Prisma.XOR<Prisma.ServiceAgreementItemNullableScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput> | null
   serviceVariant?: Prisma.XOR<Prisma.ServiceVariantScalarRelationFilter, Prisma.ServiceVariantWhereInput>
   feeLines?: Prisma.ClientServiceFeeLineListRelationFilter
 }, "id" | "agreementItemId_companyId">
@@ -352,8 +362,9 @@ export type ClientServiceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
-  agreementId?: Prisma.SortOrder
-  agreementItemId?: Prisma.SortOrder
+  source?: Prisma.SortOrder
+  agreementId?: Prisma.SortOrderInput | Prisma.SortOrder
+  agreementItemId?: Prisma.SortOrderInput | Prisma.SortOrder
   serviceVariantId?: Prisma.SortOrder
   familyName?: Prisma.SortOrder
   serviceName?: Prisma.SortOrder
@@ -379,8 +390,9 @@ export type ClientServiceScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
   companyId?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
-  agreementId?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
-  agreementItemId?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
+  source?: Prisma.EnumClientServiceSourceWithAggregatesFilter<"ClientService"> | $Enums.ClientServiceSource
+  agreementId?: Prisma.StringNullableWithAggregatesFilter<"ClientService"> | string | null
+  agreementItemId?: Prisma.StringNullableWithAggregatesFilter<"ClientService"> | string | null
   serviceVariantId?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
   familyName?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
   serviceName?: Prisma.StringWithAggregatesFilter<"ClientService"> | string
@@ -398,6 +410,7 @@ export type ClientServiceScalarWhereWithAggregatesInput = {
 
 export type ClientServiceCreateInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -412,8 +425,8 @@ export type ClientServiceCreateInput = {
   deletedReason?: string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
   company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
-  agreement: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
-  agreementItem: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
 }
@@ -422,8 +435,9 @@ export type ClientServiceUncheckedCreateInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -442,6 +456,7 @@ export type ClientServiceUncheckedCreateInput = {
 
 export type ClientServiceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -456,8 +471,8 @@ export type ClientServiceUpdateInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
-  agreement?: Prisma.ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput
-  agreementItem?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
 }
@@ -466,8 +481,9 @@ export type ClientServiceUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -488,8 +504,9 @@ export type ClientServiceCreateManyInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -507,6 +524,7 @@ export type ClientServiceCreateManyInput = {
 
 export type ClientServiceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -525,8 +543,9 @@ export type ClientServiceUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -561,6 +580,7 @@ export type ClientServiceCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   agreementId?: Prisma.SortOrder
   agreementItemId?: Prisma.SortOrder
   serviceVariantId?: Prisma.SortOrder
@@ -582,6 +602,7 @@ export type ClientServiceMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   agreementId?: Prisma.SortOrder
   agreementItemId?: Prisma.SortOrder
   serviceVariantId?: Prisma.SortOrder
@@ -602,6 +623,7 @@ export type ClientServiceMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   agreementId?: Prisma.SortOrder
   agreementItemId?: Prisma.SortOrder
   serviceVariantId?: Prisma.SortOrder
@@ -833,6 +855,10 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementItemNestedInput = {
   deleteMany?: Prisma.ClientServiceScalarWhereInput | Prisma.ClientServiceScalarWhereInput[]
 }
 
+export type EnumClientServiceSourceFieldUpdateOperationsInput = {
+  set?: $Enums.ClientServiceSource
+}
+
 export type EnumClientServiceStatusFieldUpdateOperationsInput = {
   set?: $Enums.ClientServiceStatus
 }
@@ -853,6 +879,7 @@ export type ClientServiceUpdateOneRequiredWithoutFeeLinesNestedInput = {
 
 export type ClientServiceCreateWithoutTenantInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -866,8 +893,8 @@ export type ClientServiceCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
-  agreement: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
-  agreementItem: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
 }
@@ -875,8 +902,9 @@ export type ClientServiceCreateWithoutTenantInput = {
 export type ClientServiceUncheckedCreateWithoutTenantInput = {
   id?: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -926,8 +954,9 @@ export type ClientServiceScalarWhereInput = {
   id?: Prisma.StringFilter<"ClientService"> | string
   tenantId?: Prisma.StringFilter<"ClientService"> | string
   companyId?: Prisma.StringFilter<"ClientService"> | string
-  agreementId?: Prisma.StringFilter<"ClientService"> | string
-  agreementItemId?: Prisma.StringFilter<"ClientService"> | string
+  source?: Prisma.EnumClientServiceSourceFilter<"ClientService"> | $Enums.ClientServiceSource
+  agreementId?: Prisma.StringNullableFilter<"ClientService"> | string | null
+  agreementItemId?: Prisma.StringNullableFilter<"ClientService"> | string | null
   serviceVariantId?: Prisma.StringFilter<"ClientService"> | string
   familyName?: Prisma.StringFilter<"ClientService"> | string
   serviceName?: Prisma.StringFilter<"ClientService"> | string
@@ -945,6 +974,7 @@ export type ClientServiceScalarWhereInput = {
 
 export type ClientServiceCreateWithoutCompanyInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -958,8 +988,8 @@ export type ClientServiceCreateWithoutCompanyInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
-  agreement: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
-  agreementItem: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
 }
@@ -967,8 +997,9 @@ export type ClientServiceCreateWithoutCompanyInput = {
 export type ClientServiceUncheckedCreateWithoutCompanyInput = {
   id?: string
   tenantId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1013,6 +1044,7 @@ export type ClientServiceUpdateManyWithWhereWithoutCompanyInput = {
 
 export type ClientServiceCreateWithoutServiceVariantInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -1027,8 +1059,8 @@ export type ClientServiceCreateWithoutServiceVariantInput = {
   deletedReason?: string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
   company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
-  agreement: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
-  agreementItem: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
 }
 
@@ -1036,8 +1068,9 @@ export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -1081,6 +1114,7 @@ export type ClientServiceUpdateManyWithWhereWithoutServiceVariantInput = {
 
 export type ClientServiceCreateWithoutAgreementInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -1095,7 +1129,7 @@ export type ClientServiceCreateWithoutAgreementInput = {
   deletedReason?: string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
   company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
-  agreementItem: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
 }
@@ -1104,7 +1138,8 @@ export type ClientServiceUncheckedCreateWithoutAgreementInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1149,6 +1184,7 @@ export type ClientServiceUpdateManyWithWhereWithoutAgreementInput = {
 
 export type ClientServiceCreateWithoutAgreementItemInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -1163,7 +1199,7 @@ export type ClientServiceCreateWithoutAgreementItemInput = {
   deletedReason?: string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
   company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
-  agreement: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
 }
@@ -1172,7 +1208,8 @@ export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1217,6 +1254,7 @@ export type ClientServiceUpdateManyWithWhereWithoutAgreementItemInput = {
 
 export type ClientServiceCreateWithoutFeeLinesInput = {
   id?: string
+  source?: $Enums.ClientServiceSource
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -1231,8 +1269,8 @@ export type ClientServiceCreateWithoutFeeLinesInput = {
   deletedReason?: string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
   company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
-  agreement: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
-  agreementItem: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
 }
 
@@ -1240,8 +1278,9 @@ export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1275,6 +1314,7 @@ export type ClientServiceUpdateToOneWithWhereWithoutFeeLinesInput = {
 
 export type ClientServiceUpdateWithoutFeeLinesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1289,8 +1329,8 @@ export type ClientServiceUpdateWithoutFeeLinesInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
-  agreement?: Prisma.ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput
-  agreementItem?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
 }
 
@@ -1298,8 +1338,9 @@ export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1318,8 +1359,9 @@ export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
 export type ClientServiceCreateManyTenantInput = {
   id?: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1337,6 +1379,7 @@ export type ClientServiceCreateManyTenantInput = {
 
 export type ClientServiceUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1350,8 +1393,8 @@ export type ClientServiceUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
-  agreement?: Prisma.ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput
-  agreementItem?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
 }
@@ -1359,8 +1402,9 @@ export type ClientServiceUpdateWithoutTenantInput = {
 export type ClientServiceUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1380,8 +1424,9 @@ export type ClientServiceUncheckedUpdateWithoutTenantInput = {
 export type ClientServiceUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1400,8 +1445,9 @@ export type ClientServiceUncheckedUpdateManyWithoutTenantInput = {
 export type ClientServiceCreateManyCompanyInput = {
   id?: string
   tenantId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1419,6 +1465,7 @@ export type ClientServiceCreateManyCompanyInput = {
 
 export type ClientServiceUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1432,8 +1479,8 @@ export type ClientServiceUpdateWithoutCompanyInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
-  agreement?: Prisma.ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput
-  agreementItem?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
 }
@@ -1441,8 +1488,9 @@ export type ClientServiceUpdateWithoutCompanyInput = {
 export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1462,8 +1510,9 @@ export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
 export type ClientServiceUncheckedUpdateManyWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1483,8 +1532,9 @@ export type ClientServiceCreateManyServiceVariantInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
   familyName: string
   serviceName: string
   status?: $Enums.ClientServiceStatus
@@ -1501,6 +1551,7 @@ export type ClientServiceCreateManyServiceVariantInput = {
 
 export type ClientServiceUpdateWithoutServiceVariantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1515,8 +1566,8 @@ export type ClientServiceUpdateWithoutServiceVariantInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
-  agreement?: Prisma.ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput
-  agreementItem?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
 }
 
@@ -1524,8 +1575,9 @@ export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1545,8 +1597,9 @@ export type ClientServiceUncheckedUpdateManyWithoutServiceVariantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1565,7 +1618,8 @@ export type ClientServiceCreateManyAgreementInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementItemId: string
+  source?: $Enums.ClientServiceSource
+  agreementItemId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1583,6 +1637,7 @@ export type ClientServiceCreateManyAgreementInput = {
 
 export type ClientServiceUpdateWithoutAgreementInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1597,7 +1652,7 @@ export type ClientServiceUpdateWithoutAgreementInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
-  agreementItem?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
 }
@@ -1606,7 +1661,8 @@ export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1627,7 +1683,8 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1647,7 +1704,8 @@ export type ClientServiceCreateManyAgreementItemInput = {
   id?: string
   tenantId: string
   companyId: string
-  agreementId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
   serviceVariantId: string
   familyName: string
   serviceName: string
@@ -1665,6 +1723,7 @@ export type ClientServiceCreateManyAgreementItemInput = {
 
 export type ClientServiceUpdateWithoutAgreementItemInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
@@ -1679,7 +1738,7 @@ export type ClientServiceUpdateWithoutAgreementItemInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
-  agreement?: Prisma.ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
 }
@@ -1688,7 +1747,8 @@ export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1709,7 +1769,8 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementItemInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  agreementId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   familyName?: Prisma.StringFieldUpdateOperationsInput | string
   serviceName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1760,6 +1821,7 @@ export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  source?: boolean
   agreementId?: boolean
   agreementItemId?: boolean
   serviceVariantId?: boolean
@@ -1777,8 +1839,8 @@ export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   deletedReason?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  agreement?: boolean | Prisma.ServiceAgreementDefaultArgs<ExtArgs>
-  agreementItem?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
+  agreement?: boolean | Prisma.ClientService$agreementArgs<ExtArgs>
+  agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
   feeLines?: boolean | Prisma.ClientService$feeLinesArgs<ExtArgs>
   _count?: boolean | Prisma.ClientServiceCountOutputTypeDefaultArgs<ExtArgs>
@@ -1788,6 +1850,7 @@ export type ClientServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  source?: boolean
   agreementId?: boolean
   agreementItemId?: boolean
   serviceVariantId?: boolean
@@ -1805,8 +1868,8 @@ export type ClientServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   deletedReason?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  agreement?: boolean | Prisma.ServiceAgreementDefaultArgs<ExtArgs>
-  agreementItem?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
+  agreement?: boolean | Prisma.ClientService$agreementArgs<ExtArgs>
+  agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["clientService"]>
 
@@ -1814,6 +1877,7 @@ export type ClientServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  source?: boolean
   agreementId?: boolean
   agreementItemId?: boolean
   serviceVariantId?: boolean
@@ -1831,8 +1895,8 @@ export type ClientServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   deletedReason?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  agreement?: boolean | Prisma.ServiceAgreementDefaultArgs<ExtArgs>
-  agreementItem?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
+  agreement?: boolean | Prisma.ClientService$agreementArgs<ExtArgs>
+  agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["clientService"]>
 
@@ -1840,6 +1904,7 @@ export type ClientServiceSelectScalar = {
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  source?: boolean
   agreementId?: boolean
   agreementItemId?: boolean
   serviceVariantId?: boolean
@@ -1857,12 +1922,12 @@ export type ClientServiceSelectScalar = {
   deletedReason?: boolean
 }
 
-export type ClientServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "agreementId" | "agreementItemId" | "serviceVariantId" | "familyName" | "serviceName" | "status" | "serviceCadence" | "customCadenceLabel" | "startDate" | "endDate" | "fieldValues" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["clientService"]>
+export type ClientServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "source" | "agreementId" | "agreementItemId" | "serviceVariantId" | "familyName" | "serviceName" | "status" | "serviceCadence" | "customCadenceLabel" | "startDate" | "endDate" | "fieldValues" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["clientService"]>
 export type ClientServiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  agreement?: boolean | Prisma.ServiceAgreementDefaultArgs<ExtArgs>
-  agreementItem?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
+  agreement?: boolean | Prisma.ClientService$agreementArgs<ExtArgs>
+  agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
   feeLines?: boolean | Prisma.ClientService$feeLinesArgs<ExtArgs>
   _count?: boolean | Prisma.ClientServiceCountOutputTypeDefaultArgs<ExtArgs>
@@ -1870,15 +1935,15 @@ export type ClientServiceInclude<ExtArgs extends runtime.Types.Extensions.Intern
 export type ClientServiceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  agreement?: boolean | Prisma.ServiceAgreementDefaultArgs<ExtArgs>
-  agreementItem?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
+  agreement?: boolean | Prisma.ClientService$agreementArgs<ExtArgs>
+  agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
 }
 export type ClientServiceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  agreement?: boolean | Prisma.ServiceAgreementDefaultArgs<ExtArgs>
-  agreementItem?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
+  agreement?: boolean | Prisma.ClientService$agreementArgs<ExtArgs>
+  agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
 }
 
@@ -1887,8 +1952,8 @@ export type $ClientServicePayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     company: Prisma.$CompanyPayload<ExtArgs>
-    agreement: Prisma.$ServiceAgreementPayload<ExtArgs>
-    agreementItem: Prisma.$ServiceAgreementItemPayload<ExtArgs>
+    agreement: Prisma.$ServiceAgreementPayload<ExtArgs> | null
+    agreementItem: Prisma.$ServiceAgreementItemPayload<ExtArgs> | null
     serviceVariant: Prisma.$ServiceVariantPayload<ExtArgs>
     feeLines: Prisma.$ClientServiceFeeLinePayload<ExtArgs>[]
   }
@@ -1896,8 +1961,9 @@ export type $ClientServicePayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     tenantId: string
     companyId: string
-    agreementId: string
-    agreementItemId: string
+    source: $Enums.ClientServiceSource
+    agreementId: string | null
+    agreementItemId: string | null
     serviceVariantId: string
     familyName: string
     serviceName: string
@@ -2307,8 +2373,8 @@ export interface Prisma__ClientServiceClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  agreement<T extends Prisma.ServiceAgreementDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreementDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  agreementItem<T extends Prisma.ServiceAgreementItemDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementItemClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  agreement<T extends Prisma.ClientService$agreementArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$agreementArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  agreementItem<T extends Prisma.ClientService$agreementItemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$agreementItemArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementItemClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   serviceVariant<T extends Prisma.ServiceVariantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceVariantDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceVariantClient<runtime.Types.Result.GetResult<Prisma.$ServiceVariantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   feeLines<T extends Prisma.ClientService$feeLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$feeLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceFeeLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2343,6 +2409,7 @@ export interface ClientServiceFieldRefs {
   readonly id: Prisma.FieldRef<"ClientService", 'String'>
   readonly tenantId: Prisma.FieldRef<"ClientService", 'String'>
   readonly companyId: Prisma.FieldRef<"ClientService", 'String'>
+  readonly source: Prisma.FieldRef<"ClientService", 'ClientServiceSource'>
   readonly agreementId: Prisma.FieldRef<"ClientService", 'String'>
   readonly agreementItemId: Prisma.FieldRef<"ClientService", 'String'>
   readonly serviceVariantId: Prisma.FieldRef<"ClientService", 'String'>
@@ -2751,6 +2818,44 @@ export type ClientServiceDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many ClientServices to delete.
    */
   limit?: number
+}
+
+/**
+ * ClientService.agreement
+ */
+export type ClientService$agreementArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceAgreement
+   */
+  select?: Prisma.ServiceAgreementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceAgreement
+   */
+  omit?: Prisma.ServiceAgreementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceAgreementInclude<ExtArgs> | null
+  where?: Prisma.ServiceAgreementWhereInput
+}
+
+/**
+ * ClientService.agreementItem
+ */
+export type ClientService$agreementItemArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceAgreementItem
+   */
+  select?: Prisma.ServiceAgreementItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceAgreementItem
+   */
+  omit?: Prisma.ServiceAgreementItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceAgreementItemInclude<ExtArgs> | null
+  where?: Prisma.ServiceAgreementItemWhereInput
 }
 
 /**

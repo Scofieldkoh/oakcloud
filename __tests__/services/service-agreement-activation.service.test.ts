@@ -57,6 +57,7 @@ describe('service agreement activation', () => {
     const result = await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
     expect(result).toEqual({ status: 'completed', clientServiceCount: 2 });
     expect(prismaMock.clientService.create).toHaveBeenCalledTimes(2);
+    expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ source: 'AGREEMENT' }) }));
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledTimes(1);
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ sourceAgreementFeeLineId: 'agreement-fee-1' })] }));
   });

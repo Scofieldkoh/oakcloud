@@ -9,6 +9,14 @@
 * 🟢 You can import this file directly.
 */
 
+export const ClientServiceSource = {
+  AGREEMENT: 'AGREEMENT',
+  MANUAL: 'MANUAL'
+} as const
+
+export type ClientServiceSource = (typeof ClientServiceSource)[keyof typeof ClientServiceSource]
+
+
 export const TaskStatus = {
   NOT_STARTED: 'NOT_STARTED',
   IN_PROGRESS: 'IN_PROGRESS',

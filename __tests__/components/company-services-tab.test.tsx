@@ -15,10 +15,19 @@ import { CompanyTabs } from '@/components/companies/company-detail/company-tabs'
 
 const service = {
   id: 'service-1', companyId: 'company-1', agreementId: 'agreement-1', agreementItemId: 'item-1', serviceVariantId: 'variant-1',
-  familyName: 'Corporate Services', serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY', customCadenceLabel: null,
+  source: 'AGREEMENT', familyName: 'Corporate Services', serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY', customCadenceLabel: null,
   startDate: '2026-07-30', endDate: null, fieldValues: {}, createdAt: '2026-07-30T00:00:00Z', updatedAt: '2026-07-30T00:00:00Z',
   feeLines: [{ id: 'fee-1', description: 'Annual fee', amount: '500.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: '2026-07-30', displayOrder: 0 }],
   agreement: { title: 'Service Agreement', status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocumentId: 'document-1', href: '/generated-documents/document-1' },
+};
+const manualService = {
+  ...service,
+  id: 'service-manual',
+  serviceName: 'Advisory Retainer',
+  source: 'MANUAL',
+  agreementId: null,
+  agreementItemId: null,
+  agreement: null,
 };
 
 describe('CompanyServicesTab', () => {
@@ -38,6 +47,16 @@ describe('CompanyServicesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit service' }));
     expect(screen.queryByLabelText(/service clause/i)).not.toBeInTheDocument();
     expect(screen.getByText(/do not change the signed agreement/i)).toBeVisible();
+  });
+
+  it('labels manual services as metadata and keeps the agreement link only for agreement services', () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [manualService, service], total: 2, activations: [] }, isLoading: false, error: null });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    expect(screen.getByText('Added manually')).toBeVisible();
+    expect(screen.getByText('Added manually').tagName).toBe('SPAN');
+    expect(screen.getByText('Advisory Retainer')).toBeVisible();
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: /service agreement/i })).toHaveAttribute('href', '/generated-documents/document-1');
   });
 
   it('does not expose edit controls in read-only mode', () => {

@@ -982,6 +982,7 @@ export const ClientServiceScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   companyId: 'companyId',
+  source: 'source',
   agreementId: 'agreementId',
   agreementItemId: 'agreementItemId',
   serviceVariantId: 'serviceVariantId',

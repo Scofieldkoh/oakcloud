@@ -8977,6 +8977,7 @@ export const ClientServiceScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   companyId: 'companyId',
+  source: 'source',
   agreementId: 'agreementId',
   agreementItemId: 'agreementItemId',
   serviceVariantId: 'serviceVariantId',
@@ -10608,6 +10609,20 @@ export type EnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> = Fi
  * Reference to a field of type 'ServiceAgreementActivationSource[]'
  */
 export type ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceAgreementActivationSource[]'>
+
+
+
+/**
+ * Reference to a field of type 'ClientServiceSource'
+ */
+export type EnumClientServiceSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ClientServiceSource'>
+
+
+
+/**
+ * Reference to a field of type 'ClientServiceSource[]'
+ */
+export type ListEnumClientServiceSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ClientServiceSource[]'>
 
 
 

@@ -1086,10 +1086,12 @@ export type ServiceAgreementCreateNestedOneWithoutClientServicesInput = {
   connect?: Prisma.ServiceAgreementWhereUniqueInput
 }
 
-export type ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput = {
+export type ServiceAgreementUpdateOneWithoutClientServicesNestedInput = {
   create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedCreateWithoutClientServicesInput>
   connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutClientServicesInput
   upsert?: Prisma.ServiceAgreementUpsertWithoutClientServicesInput
+  disconnect?: Prisma.ServiceAgreementWhereInput | boolean
+  delete?: Prisma.ServiceAgreementWhereInput | boolean
   connect?: Prisma.ServiceAgreementWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceAgreementUpdateToOneWithWhereWithoutClientServicesInput, Prisma.ServiceAgreementUpdateWithoutClientServicesInput>, Prisma.ServiceAgreementUncheckedUpdateWithoutClientServicesInput>
 }

@@ -193,7 +193,7 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           let service = await tx.clientService.findUnique({ where: { agreementItemId_companyId: { agreementItemId: item.id, companyId } } });
           const created = !service;
           if (!service) {
-            service = await tx.clientService.create({ data: { tenantId: agreement.tenantId, companyId, agreementId: agreement.id, agreementItemId: item.id, serviceVariantId: item.serviceVariantId, familyName: item.familyNameSnapshot, serviceName: item.variantNameSnapshot, serviceCadence: item.serviceCadence, customCadenceLabel: item.customCadenceLabel, startDate: item.startDate, endDate: item.endDate, fieldValues: item.fieldValues as Prisma.InputJsonValue } });
+            service = await tx.clientService.create({ data: { tenantId: agreement.tenantId, companyId, source: 'AGREEMENT', agreementId: agreement.id, agreementItemId: item.id, serviceVariantId: item.serviceVariantId, familyName: item.familyNameSnapshot, serviceName: item.variantNameSnapshot, serviceCadence: item.serviceCadence, customCadenceLabel: item.customCadenceLabel, startDate: item.startDate, endDate: item.endDate, fieldValues: item.fieldValues as Prisma.InputJsonValue } });
           }
           clientServiceCount += 1;
           const fees = item.feeLines.filter((fee) => fee.agreementEntityId === link.agreementEntityId);
