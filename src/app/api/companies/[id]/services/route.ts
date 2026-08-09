@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { hasPermission, requirePermission } from '@/lib/rbac';
-import { searchClientServicesSchema } from '@/lib/validations/client-service';
-import { listCompanyServices } from '@/services/client-service';
+import { createManualClientServiceSchema, searchClientServicesSchema } from '@/lib/validations/client-service';
+import { createManualClientService, listCompanyServices } from '@/services/client-service';
 import { getServiceAgreementCompanyIds } from '@/services/service-agreement';
+import { createManualClientServiceErrorResponse } from './route-utils';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -25,5 +26,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ ...result, activations });
   } catch (error) {
     return createErrorResponse(error);
+  }
+}
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await requireAuth();
+    const { id } = await params;
+    await requirePermission(session, 'company', 'update', id);
+    const tenantId = requireSessionWorkspaceId(session);
+    const input = createManualClientServiceSchema.parse(await request.json());
+    const service = await createManualClientService(id, input, { tenantId, userId: session.id });
+    return NextResponse.json(service, { status: 201 });
+  } catch (error) {
+    return createManualClientServiceErrorResponse(error);
   }
 }

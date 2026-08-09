@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ServiceAgreementActivationDto } from '@/services/client-service';
-import type { SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
+import type { ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, ServiceAgreementActivationDto } from '@/services/client-service';
+import type { CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
 type ClientServicesResult = { services: ClientServiceDto[]; total: number; activations: CompanyServiceActivationDto[] };
 
@@ -69,6 +69,27 @@ export function useUpdateClientService() {
   const invalidate = useInvalidateClientServices();
   return useMutation({
     mutationFn: ({ id, companyId: _companyId, data }: { id: string; companyId: string; data: UpdateClientServiceInput }) => requestJson<ClientServiceDto>(`/api/client-services/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) }),
+    onSuccess: (service, variables) => invalidate(variables.companyId, service.id),
+  });
+}
+
+export function useManualClientServiceCatalogOptions(companyId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['client-service-catalog-options', companyId],
+    queryFn: () => requestJson<ManualClientServiceCatalogOptionsResponse>(`/api/companies/${companyId}/services/catalog-options`),
+    enabled: enabled && Boolean(companyId),
+  });
+}
+
+export function useCreateManualClientService() {
+  const invalidate = useInvalidateClientServices();
+  return useMutation({
+    mutationFn: ({ companyId, data }: { companyId: string; data: CreateManualClientServiceRequest }) =>
+      requestJson<ClientServiceDto>(`/api/companies/${companyId}/services`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(data),
+      }),
     onSuccess: (service, variables) => invalidate(variables.companyId, service.id),
   });
 }

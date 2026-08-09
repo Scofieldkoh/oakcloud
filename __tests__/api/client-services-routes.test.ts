@@ -8,6 +8,7 @@ const rbacMock = vi.hoisted(() => ({ requirePermission: vi.fn(), hasPermission: 
 const serviceMock = vi.hoisted(() => ({
   listCompanyServices: vi.fn(), getClientService: vi.fn(), updateClientService: vi.fn(), archiveClientService: vi.fn(),
   requestManualServiceAgreementActivation: vi.fn(), retryServiceAgreementActivation: vi.fn(), getServiceAgreementCompanyIds: vi.fn(),
+  createManualClientService: vi.fn(),
 }));
 vi.mock('@/lib/auth', () => authMock);
 vi.mock('@/lib/rbac', () => rbacMock);
