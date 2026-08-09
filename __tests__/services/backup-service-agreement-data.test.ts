@@ -100,4 +100,62 @@ describe('service agreement backup data', () => {
     expect(calls).not.toContain('clientService');
     expect(calls).not.toContain('clientServiceFeeLine');
   });
+
+  it('exports and restores manual services with null agreement lineage and removes them on cleanup', async () => {
+    const manualService = {
+      id: 'service-manual',
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      source: 'MANUAL',
+      agreementId: null,
+      agreementItemId: null,
+      serviceVariantId: 'variant-1',
+      familyName: 'Corporate Services',
+      serviceName: 'Advisory Retainer',
+      status: 'ACTIVE',
+      serviceCadence: 'AD_HOC',
+      customCadenceLabel: null,
+      startDate: '2026-08-01',
+      endDate: null,
+      fieldValues: {},
+      createdAt: '2026-08-01T00:00:00.000Z',
+      updatedAt: '2026-08-01T00:00:00.000Z',
+      deletedAt: null,
+      deletedReason: null,
+    };
+    const db = new Proxy({}, { get: (_target, key) => key === 'workspace' ? { findUnique: vi.fn().mockResolvedValue({ id: 'tenant-1' }) } : key === 'workspaceLetterhead' ? { findUnique: vi.fn().mockResolvedValue(null) } : { findMany: vi.fn().mockResolvedValue(key === 'clientService' ? [manualService] : []) } });
+    const backup = new BackupService() as unknown as {
+      exportTenantData: (tenantId: string, options: object, db: object) => Promise<{ data: Record<string, unknown> }>;
+      restoreDatabaseData: (data: Record<string, unknown>, tenantId: string, tx: object) => Promise<void>;
+      deleteWorkspaceData: (tenantId: string, tx: object) => Promise<void>;
+    };
+
+    const exported = await backup.exportTenantData('tenant-1', {}, db);
+    expect(exported.data.clientServices).toEqual([manualService]);
+
+    const clientServiceCreateMany = vi.fn();
+    const clientServiceDeleteMany = vi.fn();
+    const tx = new Proxy({}, { get: (_target, key) => key === 'clientService'
+      ? {
+        createMany: clientServiceCreateMany,
+        deleteMany: clientServiceDeleteMany,
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        upsert: vi.fn(),
+      }
+      : {
+        createMany: vi.fn(),
+        deleteMany: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        upsert: vi.fn(),
+      } });
+    await backup.restoreDatabaseData({ tenant: { id: 'tenant-1' }, clientServices: [manualService] }, 'tenant-1', tx);
+    expect(clientServiceCreateMany).toHaveBeenCalledWith(expect.objectContaining({ data: [manualService], skipDuplicates: true }));
+
+    await backup.deleteWorkspaceData('tenant-1', tx);
+    expect(clientServiceDeleteMany).toHaveBeenCalled();
+  });
 });

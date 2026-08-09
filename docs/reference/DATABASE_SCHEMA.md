@@ -2618,12 +2618,32 @@ fixed-point strings.
 
 | Table | Purpose | Key constraints |
 |---|---|---|
-| `client_services` | Editable operational service for one agreement item and company | Unique `(agreement_item_id, company_id)`; tenant/company/status/archive index |
+| `client_services` | Editable operational service from an agreement or the catalog | `ClientServiceSource`; source/reference check; nullable unique `(agreement_item_id, company_id)`; tenant/company/status/archive index |
 | `client_service_fee_lines` | Entity-owned operational fee rows | Parent/source-fee uniqueness and tenant/parent/display-order index |
 
-`ClientServiceStatus` is `ACTIVE`, `PAUSED`, or `ENDED`. Operational edits are
-audited and never update agreement snapshots or generated/signed documents.
-Legal SOW content remains only on `service_agreement_items`.
+`ClientServiceStatus` is `ACTIVE`, `PAUSED`, or `ENDED`, and
+`ClientServiceSource` is `AGREEMENT` or `MANUAL`. `source` defaults to
+`AGREEMENT` for backward-compatible writes, but both flows set it explicitly.
+`agreement_id` and `agreement_item_id` are nullable so manual rows can store
+null lineage. Prisma relations for both columns are optional, and the migration
+adds the authoritative PostgreSQL check
+`client_services_source_reference_consistency`:
+
+```text
+AGREEMENT => agreement_id IS NOT NULL AND agreement_item_id IS NOT NULL
+MANUAL    => agreement_id IS NULL AND agreement_item_id IS NULL
+```
+
+The unique constraint `(agreement_item_id, company_id)` is retained as the
+agreement-activation idempotency boundary; PostgreSQL permits multiple manual
+rows whose nullable `agreement_item_id` is null. A non-unique lookup index
+covers `(tenant_id, company_id, service_variant_id, start_date, deleted_at)`
+for duplicate warnings. `ClientServiceFeeLine.sourceAgreementFeeLineId` remains
+nullable; manual fee rows leave it null.
+
+Operational edits are audited and never update agreement snapshots or
+generated/signed documents. Legal SOW content remains only on
+`service_agreement_items`.
 
 `ServiceAgreementActivationStatus` moves through `NOT_READY`, `PENDING`,
 `PROCESSING`, `COMPLETED`, `FAILED_RETRYABLE`, and `FAILED_PERMANENT`.

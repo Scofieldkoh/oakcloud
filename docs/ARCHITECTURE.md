@@ -287,6 +287,24 @@ owns copies of only that entity's fee rows. Identity, cadence, dates, and field
 values are operational and remain fully editable; pinned SOW wording and signed
 document content remain immutable and are not exposed as Client Service fields.
 
+Operational services have two origins. `source = AGREEMENT` rows come from
+activation and keep their agreement/item lineage and generated-document link;
+`source = MANUAL` rows are created by an authorized company editor from the
+company Services tab and store null agreement lineage. Manual creation is
+catalog-backed: the company-scoped options endpoint requires only
+`company:update` (never `document:read`) and projects active variants, families,
+linked SOW partials, operational `service.fields.*` definitions, and fee
+templates. The create route snapshots current server-side family/variant names,
+normalizes fee display order from request order, and keeps `source`, catalog
+identity, and agreement lineage immutable.
+
+The Services tab exposes permission-gated **Add service** actions, a shared
+controlled operational form used by both create and edit, a duplicate warning
+with an explicit override, and a success notice whose **View service** action
+opens the returned DTO directly without waiting for a list refetch. List,
+detail, update, archive, backup, restore, and cleanup stay common through one
+nullable-agreement DTO mapper with no per-service agreement lookups.
+
 Envelope completion queues activation without depending on the post-commit
 worker. The scheduler claims pending or retryable agreements with
 `FOR UPDATE SKIP LOCKED`, a unique claim token, a five-minute lease, partial
@@ -301,6 +319,10 @@ Automatic activation preserves an existing effective date or derives the
 Singapore calendar date from envelope completion. It never uses delayed worker
 execution time. Client Service edits use `updatedAt` optimistic preconditions;
 domain writes and their audit entries commit or roll back together.
+Manual creation runs the duplicate predicate, service/fee writes, audit
+creation, and DTO reload inside one bounded serializable transaction; exhausted
+serialization retries map to a retriable conflict, and simultaneous unconfirmed
+creates cannot both silently succeed.
 
 Backup export, restore, and tenant cleanup explicitly include every catalog,
 agreement, and Client Service table. Restore orders parents before fee children;

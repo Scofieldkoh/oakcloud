@@ -428,9 +428,15 @@ const company = await prisma.company.findFirst({
 
 ## Client Service activation and editing patterns
 
-- Create operational Services only through signed agreement activation. Upsert
-  exactly one `ClientService` per agreement-item/company pair and copy only the
-  fee lines owned by that agreement entity.
+- Create operational Services through signed agreement activation or manual
+  company-scoped creation. Agreement activation upserts exactly one
+  `ClientService` per agreement-item/company pair and copies only the fee lines
+  owned by that agreement entity. Manual creation requires `company:update`,
+  never `document:read`, and accepts only the server-owned catalog identity.
+- Treat `source`, `serviceVariantId`, `agreementId`, and `agreementItemId` as
+  immutable; exclude them from update schemas and update data. A later
+  agreement activation that matches a manual service creates a separate
+  `AGREEMENT` row without converting or updating the manual record.
 - Treat the signed agreement and pinned SOW snapshots as legal authority.
   Client Service DTOs and editors may expose identity labels, status, cadence,
   dates, field values, and fee rows, but never legal clause content.
@@ -438,6 +444,17 @@ const company = await prisma.company.findFirst({
   archiving. Retry and manual activation additionally require `document:update`
   plus `company:update` for every agreement entity; return this complete retry
   capability to the UI instead of inferring it from the current company.
+- Serve manual catalog options from a minimal company-scoped projection that
+  includes only active, non-archived variants, families, linked SOW partials,
+  operational `service.fields.*` definitions, and fee templates. SOW `required`
+  metadata is advisory for manual creation: missing catalog fields and
+  additional operational fields are accepted within shared limits.
+- Warn on likely duplicates using a non-archived
+  `(tenant, company, serviceVariantId, exact startDate)` predicate inside the
+  serializable creation transaction, and require an explicit
+  `confirmDuplicate: true` override to proceed. Return at most five newest
+  summaries with the full total; rejected requests create no service, fee, or
+  audit rows, and no reason is required for an override.
 - Queue E-sign activation in the envelope completion transaction, then process
   after commit without allowing worker failure to fail signature completion.
 - Claim work with `FOR UPDATE SKIP LOCKED`, a unique claim token, a five-minute
@@ -458,6 +475,14 @@ const company = await prisma.company.findFirst({
   detailed exceptions remain in restricted server logs.
 - Restore catalog parents before agreements and Client Services; delete Client
   Service fee children first during tenant cleanup.
+- Render source-aware cards and editor copy: manual services never reference a
+  nonexistent agreement, and agreement services keep their generated-document
+  link. Do not add a source filter.
+- Use stable error codes for the create workflow: `VALIDATION_ERROR` with
+  field-addressable details, `DUPLICATE_CLIENT_SERVICE` with the top-level
+  `duplicates` body, and `CLIENT_SERVICE_WRITE_CONFLICT` with
+  `details: { retriable: true }` after exhausted serialization retries. Never
+  infer duplicates from message text.
 
 The controlled initial content is installed explicitly and remains inactive:
 

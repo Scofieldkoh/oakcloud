@@ -180,6 +180,35 @@ describePostgres('service agreement activation PostgreSQL concurrency', () => {
     expect(await prisma.auditLog.count({ where: { tenantId: seeded.workspace.id, entityType: 'ServiceAgreement', entityId: seeded.agreement.id, summary: 'Retried Service Agreement activation' } })).toBe(1);
   });
 
+  it('creates an independent agreement service when a manual row with null lineage exists', async () => {
+    const seeded = await seedAgreement();
+    await prisma.clientService.create({
+      data: {
+        tenantId: seeded.workspace.id,
+        companyId: seeded.company.id,
+        source: 'MANUAL',
+        agreementId: null,
+        agreementItemId: null,
+        serviceVariantId: seeded.item.serviceVariantId,
+        familyName: 'Manual family',
+        serviceName: 'Manual advisory',
+        serviceCadence: 'ANNUALLY',
+        startDate: new Date('2026-07-30T00:00:00Z'),
+        fieldValues: {},
+      },
+    });
+
+    await expect(processQueuedServiceAgreementActivations({ limit: 1, concurrency: 1 }))
+      .resolves.toMatchObject({ claimed: 1, completed: 1, failed: 0 });
+
+    const services = await prisma.clientService.findMany({ where: { tenantId: seeded.workspace.id }, orderBy: { createdAt: 'asc' } });
+    expect(services).toHaveLength(2);
+    expect(services[0]).toMatchObject({ source: 'MANUAL', agreementId: null, agreementItemId: null });
+    expect(services[1]).toMatchObject({ source: 'AGREEMENT', agreementItemId: seeded.item.id });
+    expect(await prisma.clientService.updateMany({ where: { id: services[0].id }, data: { serviceName: 'Unchanged' } })).toMatchObject({ count: 1 });
+    expect((await prisma.clientService.findUniqueOrThrow({ where: { id: services[0].id } })).serviceName).toBe('Unchanged');
+  });
+
   it('uses the activation queue indexes for pending and expired-lease claims', async () => {
     await seedAgreement();
     const plans = await prisma.$transaction(async (tx) => {

@@ -10,6 +10,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:stage3:postgres": "vitest run __tests__/integration/service-agreement-activation.postgres.test.ts",
+    "test:client-services:postgres": "vitest run __tests__/integration/client-service-manual-creation.postgres.test.ts",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage",
     "db:generate": "prisma generate && node scripts/normalize-generated-prisma.mjs",
