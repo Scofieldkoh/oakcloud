@@ -209,6 +209,57 @@ describePostgres('service agreement activation PostgreSQL concurrency', () => {
     expect((await prisma.clientService.findUniqueOrThrow({ where: { id: services[0].id } })).serviceName).toBe('Unchanged');
   });
 
+  it('rejects every impossible client-service source/reference combination', async () => {
+    const seeded = await seedAgreement();
+    const base = {
+      tenantId: seeded.workspace.id,
+      companyId: seeded.company.id,
+      serviceVariantId: seeded.item.serviceVariantId,
+      familyName: 'Constraint family',
+      serviceCadence: 'ANNUALLY' as const,
+      startDate: new Date('2026-08-02T00:00:00Z'),
+      fieldValues: {},
+    };
+    const invalid = [
+      { source: 'AGREEMENT' as const, agreementId: null, agreementItemId: null },
+      { source: 'AGREEMENT' as const, agreementId: seeded.agreement.id, agreementItemId: null },
+      { source: 'AGREEMENT' as const, agreementId: null, agreementItemId: seeded.item.id },
+      { source: 'MANUAL' as const, agreementId: seeded.agreement.id, agreementItemId: seeded.item.id },
+      { source: 'MANUAL' as const, agreementId: seeded.agreement.id, agreementItemId: null },
+      { source: 'MANUAL' as const, agreementId: null, agreementItemId: seeded.item.id },
+    ];
+
+    for (const [index, lineage] of invalid.entries()) {
+      await expect(prisma.clientService.create({
+        data: { ...base, ...lineage, serviceName: `Invalid lineage ${index}` },
+      })).rejects.toMatchObject({ code: 'P2004' });
+    }
+
+    expect(await prisma.clientService.count({ where: { tenantId: seeded.workspace.id } })).toBe(0);
+
+    await prisma.clientService.create({
+      data: {
+        ...base,
+        source: 'AGREEMENT',
+        agreementId: seeded.agreement.id,
+        agreementItemId: seeded.item.id,
+        serviceName: 'Valid agreement lineage',
+      },
+    });
+    await prisma.clientService.create({
+      data: {
+        ...base,
+        source: 'MANUAL',
+        agreementId: null,
+        agreementItemId: null,
+        serviceName: 'Valid manual lineage',
+        startDate: new Date('2026-08-03T00:00:00Z'),
+      },
+    });
+
+    expect(await prisma.clientService.count({ where: { tenantId: seeded.workspace.id } })).toBe(2);
+  });
+
   it('uses the activation queue indexes for pending and expired-lease claims', async () => {
     await seedAgreement();
     const plans = await prisma.$transaction(async (tx) => {

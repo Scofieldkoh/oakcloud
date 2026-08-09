@@ -39,4 +39,14 @@ describe('client service activation schema', () => {
     expect(sourceMigration).toContain('client_services_tenant_id_company_id_service_variant_id_start_date_deleted_at_idx');
     expect(sourceMigration).not.toContain('DROP INDEX "client_services_agreement_item_id_company_id_key"');
   });
+
+  it('declares the exact source/reference invariant', () => {
+    const normalized = sourceMigration.replace(/\s+/g, ' ');
+    expect(normalized).toContain(
+      '("source" = \'AGREEMENT\' AND "agreement_id" IS NOT NULL AND "agreement_item_id" IS NOT NULL)',
+    );
+    expect(normalized).toContain(
+      '("source" = \'MANUAL\' AND "agreement_id" IS NULL AND "agreement_item_id" IS NULL)',
+    );
+  });
 });

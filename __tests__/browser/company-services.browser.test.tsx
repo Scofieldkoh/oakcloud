@@ -182,6 +182,9 @@ describe('company Services browser workflow', () => {
     const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((entry) => entry.textContent?.includes('Corporate Secretarial'));
     if (!option) throw new Error('Catalog option missing');
     await act(async () => option.click());
+    const startDate = document.querySelector<HTMLInputElement>('#client-service-start-date');
+    if (!startDate) throw new Error('Start date control missing');
+    await act(async () => setControlValue(startDate, '2026-08-01', 'change'));
 
     const create = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent === 'Add service').at(-1);
     if (!create) throw new Error('Create button missing');

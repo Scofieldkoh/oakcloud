@@ -36,6 +36,7 @@ export type OperationalFieldErrors = Record<string, string | undefined>;
 
 export function validateOperationalServiceValues(values: OperationalServiceValues): OperationalFieldErrors {
   const errors: OperationalFieldErrors = {};
+  if (!values.startDate) errors.startDate = 'Start date is required.';
   if (values.serviceCadence === 'CUSTOM' && !values.customCadenceLabel.trim()) {
     errors.customCadenceLabel = 'Custom cadence is required.';
   }
@@ -53,6 +54,47 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
     }
   }
   return errors;
+}
+
+export function operationalErrorsFromServer(
+  details: unknown,
+  values: OperationalServiceValues,
+): OperationalFieldErrors {
+  if (!details || typeof details !== 'object' || !('fieldErrors' in details)) return {};
+  const fieldErrors = (details as { fieldErrors?: unknown }).fieldErrors;
+  if (!fieldErrors || typeof fieldErrors !== 'object') return {};
+
+  const translated: OperationalFieldErrors = {};
+  const feeSuffix: Record<string, string> = {
+    description: 'description',
+    amount: 'amount',
+    currency: 'currency',
+    billingFrequency: 'frequency',
+    customFrequencyLabel: 'custom-frequency',
+    billingStartDate: 'billing-start-date',
+  };
+
+  for (const [path, message] of Object.entries(fieldErrors)) {
+    if (typeof message !== 'string') continue;
+    const feeMatch = /^feeLines\.(\d+)\.([A-Za-z]+)$/.exec(path);
+    if (feeMatch) {
+      const fee = values.fees[Number(feeMatch[1])];
+      const suffix = feeSuffix[feeMatch[2]];
+      if (fee && suffix) translated[`fee-${fee.uiId}-${suffix}`] = message;
+      else translated.feeLines = message;
+      continue;
+    }
+
+    const fieldMatch = /^fieldValues\.([^.]*)$/.exec(path);
+    if (fieldMatch) {
+      const field = values.fields.find((row) => row.key === fieldMatch[1]);
+      translated[field ? `field-${field.uiId}-value` : 'fieldValues'] = message;
+      continue;
+    }
+
+    translated[path || 'body'] = message;
+  }
+  return translated;
 }
 
 export function operationalFieldValues(values: OperationalServiceValues): Record<string, string> {
@@ -207,6 +249,30 @@ export function createManualPayload(variantId: string, values: OperationalServic
   };
 }
 
-export function manualFormIsDirty(selectedVariantId: string | null, _values: OperationalServiceValues): boolean {
-  return Boolean(selectedVariantId);
+function manualDirtySignature(values: OperationalServiceValues): string {
+  return JSON.stringify({
+    status: values.status,
+    serviceCadence: values.serviceCadence,
+    customCadenceLabel: values.customCadenceLabel,
+    startDate: values.startDate,
+    endDate: values.endDate,
+    fields: values.fields.map(({ key, label, type, value, catalogDerived }) => ({ key, label, type, value, catalogDerived })),
+    fees: values.fees.map((fee) => ({
+      description: fee.description,
+      amount: fee.amount,
+      currency: fee.currency,
+      billingFrequency: fee.billingFrequency,
+      customFrequencyLabel: fee.customFrequencyLabel,
+      billingStartDate: fee.billingStartDate,
+      catalogDerived: fee.catalogDerived,
+    })),
+  });
+}
+
+export function manualFormIsDirty(
+  selectedVariantId: string | null,
+  values: OperationalServiceValues,
+): boolean {
+  return Boolean(selectedVariantId)
+    || manualDirtySignature(values) !== manualDirtySignature(emptyManualOperationalValues());
 }

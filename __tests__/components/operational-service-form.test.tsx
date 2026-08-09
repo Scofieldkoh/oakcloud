@@ -125,4 +125,39 @@ describe('OperationalServiceForm', () => {
     expect(errorId).toBeTruthy();
     expect(document.getElementById(errorId!)).toHaveTextContent('Enter a non-negative amount with at most two decimals.');
   });
+
+  it('renders catalog labels and type-appropriate field controls', () => {
+    const values: OperationalServiceValues = {
+      ...baseValues(),
+      fields: [
+        { uiId: 'text', key: 'software', label: 'Accounting software', type: 'text', value: 'Xero', catalogDerived: true },
+        { uiId: 'date', key: 'renewalDate', label: 'Renewal date', type: 'date', value: '2026-08-01', catalogDerived: true },
+        { uiId: 'number', key: 'headcount', label: 'Headcount', type: 'number', value: '25', catalogDerived: true },
+        { uiId: 'currency', key: 'budget', label: 'Budget', type: 'currency', value: '1200.00', catalogDerived: true },
+        { uiId: 'boolean', key: 'gstRegistered', label: 'GST registered', type: 'boolean', value: 'true', catalogDerived: true },
+        { uiId: 'textarea', key: 'notes', label: 'Service notes', type: 'textarea', value: 'Priority filing', catalogDerived: true },
+      ],
+    };
+    render(<Harness initial={values} />);
+
+    expect(screen.getByLabelText('Renewal date')).toHaveAttribute('type', 'date');
+    expect(screen.getByLabelText('Headcount')).toHaveAttribute('inputmode', 'decimal');
+    expect(screen.getByLabelText('Budget')).toHaveAttribute('inputmode', 'decimal');
+    expect(screen.getByLabelText('GST registered').tagName).toBe('SELECT');
+    expect(screen.getByLabelText('Service notes').tagName).toBe('TEXTAREA');
+    expect(screen.getByLabelText('Accounting software')).toHaveValue('Xero');
+  });
+
+  it('associates catalog field errors with the matching field control', () => {
+    const values: OperationalServiceValues = {
+      ...baseValues(),
+      fields: [{ uiId: 'software', key: 'software', label: 'Software', type: 'text', value: '', catalogDerived: true }],
+    };
+    render(<Harness initial={values} errors={{ 'field-software-value': 'Enter a value.' }} />);
+    const field = screen.getByLabelText('Software');
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    const errorId = field.getAttribute('aria-describedby');
+    expect(errorId).toBeTruthy();
+    expect(document.getElementById(errorId!)).toHaveTextContent('Enter a value.');
+  });
 });

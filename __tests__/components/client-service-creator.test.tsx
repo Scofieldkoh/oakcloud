@@ -145,7 +145,7 @@ describe('ClientServiceCreator', () => {
     expect(screen.getByLabelText('Start date')).toHaveValue('');
     expect(screen.getByLabelText('End date')).toHaveValue('');
     expect(screen.getByLabelText('Field 1 name')).toHaveValue('software');
-    expect(screen.getByLabelText('Field 1 value')).toHaveValue('Xero');
+    expect(screen.getByLabelText('Software')).toHaveValue('Xero');
     expect(screen.getByLabelText('Fee 1 description')).toHaveValue('Annual service fee');
     expect(screen.getByLabelText('Fee 1 amount')).toHaveValue('1200.00');
     expect(screen.getByLabelText('Fee 1 currency')).toHaveValue('SGD');
@@ -174,13 +174,13 @@ describe('ClientServiceCreator', () => {
   it('requires confirmation before discarding modified replacement values and preserves them on cancel', async () => {
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');
-    fireEvent.change(screen.getByLabelText('Field 1 value'), { target: { value: 'QuickBooks' } });
+    fireEvent.change(screen.getByLabelText('Software'), { target: { value: 'QuickBooks' } });
     await selectVariant('Payroll Bureau');
     const dialog = screen.getByRole('dialog', { name: 'Discard catalog changes?' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('dialog', { name: 'Discard catalog changes?' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Cadence')).toHaveValue('ANNUALLY');
-    expect(screen.getByLabelText('Field 1 value')).toHaveValue('QuickBooks');
+    expect(screen.getByLabelText('Software')).toHaveValue('QuickBooks');
   });
 
   it('applies a new variant while preserving status and dates after confirmation', async () => {
@@ -188,7 +188,7 @@ describe('ClientServiceCreator', () => {
     await selectVariant('Corporate Secretarial');
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'PAUSED' } });
     fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-09-01' } });
-    fireEvent.change(screen.getByLabelText('Field 1 value'), { target: { value: 'QuickBooks' } });
+    fireEvent.change(screen.getByLabelText('Software'), { target: { value: 'QuickBooks' } });
     await selectVariant('Payroll Bureau');
     await act(async () => {
       fireEvent.click(within(screen.getByRole('dialog', { name: 'Discard catalog changes?' })).getByRole('button', { name: 'Discard changes' }));
@@ -225,6 +225,36 @@ describe('ClientServiceCreator', () => {
     expect(screen.queryByText('Discard this draft?')).not.toBeInTheDocument();
   });
 
+  it('confirms before closing a pre-selection draft', () => {
+    const onClose = vi.fn();
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={onClose} onCreated={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByText('Discard this draft?')).toBeVisible();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the draft and blocks submission when a refetch removes the selection', async () => {
+    const query = { data: options, isLoading: false, error: null };
+    hooksMock.useManualClientServiceCatalogOptions.mockImplementation(() => query);
+    const view = render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
+
+    query.data = { variants: [] };
+    view.rerender(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+
+    expect(screen.getByText(/no longer available/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Add service' })).toBeDisabled();
+    expect(screen.getByLabelText('Start date')).toHaveValue('2026-08-01');
+  });
+
+  it('does not expose a non-functional clear-selection button', async () => {
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+    expect(screen.queryByRole('button', { name: 'Clear selection' })).not.toBeInTheDocument();
+  });
+
   it('retains the duplicate draft, cancels the warning without resubmitting, and resubmits unchanged on Add anyway', async () => {
     const onCreated = vi.fn();
     const mutateAsync = vi.fn()
@@ -234,11 +264,12 @@ describe('ClientServiceCreator', () => {
     hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync, isPending: false });
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={onCreated} />);
     await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/2 matching/i));
     expect(within(screen.getByRole('alert')).getAllByText(/Corporate Secretarial ·/)).toHaveLength(2);
-    expect(screen.getByLabelText('Field 1 value')).toHaveValue('Xero');
+    expect(screen.getByLabelText('Software')).toHaveValue('Xero');
 
     fireEvent.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -255,6 +286,41 @@ describe('ClientServiceCreator', () => {
     }));
   });
 
+  it('requires a start date and associates the error with the date control', async () => {
+    const mutateAsync = vi.fn();
+    hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync, isPending: false });
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+
+    const startDate = screen.getByLabelText('Start date');
+    expect(startDate).toHaveAttribute('aria-invalid', 'true');
+    expect(document.getElementById(startDate.getAttribute('aria-describedby')!))
+      .toHaveTextContent('Start date is required.');
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('maps server fee errors back to the matching controlled fee row', async () => {
+    const mutateAsync = vi.fn();
+    hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync, isPending: false });
+    mutateAsync.mockRejectedValueOnce(Object.assign(new Error('The service could not be created.'), {
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      details: { fieldErrors: { 'feeLines.0.amount': 'Enter a non-negative amount with at most two decimals.' } },
+      body: {},
+    }));
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+
+    const amount = await screen.findByLabelText('Fee 1 amount');
+    expect(amount).toHaveAttribute('aria-invalid', 'true');
+    expect(document.getElementById(amount.getAttribute('aria-describedby')!))
+      .toHaveTextContent('Enter a non-negative amount with at most two decimals.');
+    expect(screen.getByLabelText('Start date')).toHaveValue('2026-08-01');
+  });
+
   it('keeps the form open and disables repeated submissions while pending', async () => {
     let resolveCreate: ((value: unknown) => void) | undefined;
     const mutateAsync = vi.fn().mockReturnValue(new Promise((resolve) => { resolveCreate = resolve; }));
@@ -262,6 +328,7 @@ describe('ClientServiceCreator', () => {
     const onCreated = vi.fn();
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={onCreated} />);
     await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     expect(screen.getByRole('button', { name: 'Add service' })).toBeDisabled();
     expect(screen.getByLabelText('Cadence')).toBeDisabled();
@@ -276,10 +343,11 @@ describe('ClientServiceCreator', () => {
     });
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Network request failed'));
     expect(screen.getByRole('dialog')).toBeVisible();
-    expect(screen.getByLabelText('Field 1 value')).toHaveValue('Xero');
+    expect(screen.getByLabelText('Software')).toHaveValue('Xero');
   });
 
   it('shows a selector error when the selected catalog service becomes unavailable', async () => {
@@ -295,6 +363,7 @@ describe('ClientServiceCreator', () => {
     const onCreated = vi.fn();
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={onCreated} />);
     await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith(createdDto));
   });

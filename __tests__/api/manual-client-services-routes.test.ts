@@ -111,6 +111,24 @@ describe('manual client service catalog options route', () => {
     expect(serviceMock.createManualClientService).not.toHaveBeenCalled();
   });
 
+  it('returns the validation contract for malformed JSON', async () => {
+    const request = new NextRequest('http://localhost/api/companies/company-1/services', {
+      method: 'POST',
+      body: '{',
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const response = await createService(request, { params: Promise.resolve({ id: 'company-1' }) });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'The service could not be created.',
+      code: 'VALIDATION_ERROR',
+      details: { fieldErrors: { body: 'Enter a valid JSON object.' } },
+    });
+    expect(serviceMock.createManualClientService).not.toHaveBeenCalled();
+  });
+
   it('returns the duplicate summary as a top-level 409', async () => {
     serviceMock.createManualClientService.mockRejectedValueOnce(new DuplicateClientServiceError({
       total: 1,

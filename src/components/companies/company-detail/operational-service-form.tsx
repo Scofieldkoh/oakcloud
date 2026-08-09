@@ -40,6 +40,60 @@ function SelectField({
   );
 }
 
+function OperationalFieldValue({
+  field,
+  disabled,
+  error,
+  onChange,
+}: {
+  field: OperationalServiceValues['fields'][number];
+  disabled: boolean;
+  error?: string;
+  onChange: (value: string) => void;
+}) {
+  const id = `field-${field.uiId}-value`;
+  const errorId = `${id}-error`;
+  const label = field.label.trim() || field.key.trim() || 'Field value';
+  const accessibility = {
+    id,
+    'aria-invalid': error ? 'true' : 'false',
+    'aria-describedby': error ? errorId : undefined,
+  } as const;
+
+  let control: ReactNode;
+  if (field.type === 'textarea') {
+    control = <textarea {...accessibility} className="input min-h-24 p-3" disabled={disabled} value={field.value} onChange={(event) => onChange(event.target.value)} />;
+  } else if (field.type === 'boolean') {
+    control = (
+      <select {...accessibility} className="input min-h-11 px-3 sm:min-h-8" disabled={disabled} value={field.value} onChange={(event) => onChange(event.target.value)}>
+        <option value="">Not set</option>
+        <option value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
+    );
+  } else {
+    control = (
+      <input
+        {...accessibility}
+        className="input min-h-11 px-3 sm:min-h-8"
+        type={field.type === 'date' ? 'date' : 'text'}
+        inputMode={field.type === 'number' || field.type === 'currency' ? 'decimal' : undefined}
+        disabled={disabled}
+        value={field.value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
+
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-xs font-medium text-text-secondary">{label}</label>
+      {control}
+      {error ? <p id={errorId} className="mt-1.5 text-xs text-status-error">{error}</p> : null}
+    </div>
+  );
+}
+
 export interface OperationalServiceFormProps {
   values: OperationalServiceValues;
   onChange: (next: OperationalServiceValues) => void;
@@ -69,18 +123,20 @@ export function OperationalServiceForm({
           {['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY', 'ONE_TIME', 'AD_HOC', 'CUSTOM'].map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}
         </SelectField>
         {values.serviceCadence === 'CUSTOM' ? <FormInput id="client-service-custom-cadence" className="sm:col-span-2" label="Custom cadence" disabled={disabled || sectionsDisabled} value={values.customCadenceLabel} error={errors.customCadenceLabel} onChange={(event) => updateValue('customCadenceLabel', event.target.value)} /> : null}
-        <FormInput id="client-service-start-date" type="date" label="Start date" disabled={disabled} value={values.startDate} onChange={(event) => updateValue('startDate', event.target.value)} />
+        <FormInput id="client-service-start-date" type="date" label="Start date" required disabled={disabled} value={values.startDate} error={errors.startDate} onChange={(event) => updateValue('startDate', event.target.value)} />
         <FormInput id="client-service-end-date" type="date" label="End date" disabled={disabled} value={values.endDate} error={errors.endDate} onChange={(event) => updateValue('endDate', event.target.value)} />
       </div>
+      {errors.fieldValues ? <p role="alert" className="text-xs text-status-error">{errors.fieldValues}</p> : null}
+      {errors.feeLines ? <p role="alert" className="text-xs text-status-error">{errors.feeLines}</p> : null}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-text-primary">Service fields</h3>
           <Button className="min-h-11 sm:min-h-8" size="xs" variant="secondary" disabled={disabled || sectionsDisabled} onClick={() => updateValue('fields', [...values.fields, { uiId: uuid(), key: '', label: '', type: 'text', value: '', catalogDerived: false }])}>Add field</Button>
         </div>
         {values.fields.map((field, index) => (
-          <div key={field.uiId} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-            <input aria-label={`Field ${index + 1} name`} className="input" disabled={disabled || sectionsDisabled} value={field.key} onChange={(event) => updateValue('fields', values.fields.map((item) => item.uiId === field.uiId ? { ...item, key: event.target.value } : item))} />
-            <input aria-label={`Field ${index + 1} value`} className="input" disabled={disabled || sectionsDisabled} value={field.value} onChange={(event) => updateValue('fields', values.fields.map((item) => item.uiId === field.uiId ? { ...item, value: event.target.value } : item))} />
+          <div key={field.uiId} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-start">
+            <input aria-label={`Field ${index + 1} name`} className="input" disabled={disabled || sectionsDisabled} value={field.key} onChange={(event) => updateValue('fields', values.fields.map((item) => item.uiId === field.uiId ? { ...item, key: event.target.value, label: item.catalogDerived ? item.label : event.target.value } : item))} />
+            <OperationalFieldValue field={field} disabled={disabled || sectionsDisabled} error={errors[`field-${field.uiId}-value`]} onChange={(value) => updateValue('fields', values.fields.map((item) => item.uiId === field.uiId ? { ...item, value } : item))} />
             <Button className="min-h-11 sm:min-h-8" size="xs" variant="ghost" disabled={disabled || sectionsDisabled} onClick={() => updateValue('fields', values.fields.filter((item) => item.uiId !== field.uiId))}>Remove</Button>
           </div>
         ))}
@@ -102,7 +158,7 @@ export function OperationalServiceForm({
                 <option value="">Select frequency</option>
                 {['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY', 'ONE_TIME', 'CUSTOM'].map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}
               </SelectField>
-              <FormInput id={`${prefix}-billing-start-date`} label="Billing start date" aria-label={`Fee ${index + 1} billing start date`} type="date" disabled={disabled || sectionsDisabled} value={fee.billingStartDate} onChange={(event) => updateFee({ billingStartDate: event.target.value })} />
+              <FormInput id={`${prefix}-billing-start-date`} label="Billing start date" aria-label={`Fee ${index + 1} billing start date`} type="date" disabled={disabled || sectionsDisabled} value={fee.billingStartDate} error={errors[`${prefix}-billing-start-date`]} onChange={(event) => updateFee({ billingStartDate: event.target.value })} />
               {fee.billingFrequency === 'CUSTOM' ? <FormInput id={`${prefix}-custom-frequency`} className="sm:col-span-2" label="Custom frequency" aria-label={`Fee ${index + 1} custom frequency`} disabled={disabled || sectionsDisabled} value={fee.customFrequencyLabel} error={errors[`${prefix}-custom-frequency`]} onChange={(event) => updateFee({ customFrequencyLabel: event.target.value })} /> : null}
               <div className="sm:col-span-2"><Button className="min-h-11 sm:min-h-8" size="xs" variant="ghost" disabled={disabled || sectionsDisabled || values.fees.length === 1} onClick={() => updateValue('fees', values.fees.filter((item) => item.uiId !== fee.uiId))}>Remove fee</Button></div>
             </div>

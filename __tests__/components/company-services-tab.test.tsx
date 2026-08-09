@@ -121,6 +121,15 @@ describe('CompanyServicesTab', () => {
     expect(screen.getAllByRole('button', { name: 'Add service' })).toHaveLength(2);
   });
 
+  it('describes both manual and agreement service origins in the true empty state', () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [], total: 0, activations: [] }, isLoading: false, error: null });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+
+    expect(screen.getByText(
+      'Services appear here when they are added manually or activated from a Service Agreement.',
+    )).toBeVisible();
+  });
+
   it('does not duplicate the action in a filtered empty state', () => {
     hooksMock.useClientServices.mockReturnValue({ data: { services: [], total: 0, activations: [] }, isLoading: false, error: null });
     render(<CompanyServicesTab companyId="company-1" canEdit />);
@@ -141,6 +150,7 @@ describe('CompanyServicesTab', () => {
     render(<CompanyServicesTab companyId="company-1" canEdit />);
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     await selectVariantInCreator('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
     fireEvent.click(within(screen.getByRole('dialog', { name: 'Add service' })).getByRole('button', { name: 'Add service' }));
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'View service' })).toBeVisible());
@@ -155,6 +165,7 @@ describe('CompanyServicesTab', () => {
     render(<CompanyServicesTab companyId="company-1" canEdit />);
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     await selectVariantInCreator('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
     fireEvent.click(within(screen.getByRole('dialog', { name: 'Add service' })).getByRole('button', { name: 'Add service' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'View service' })).toBeVisible());
 
@@ -174,6 +185,7 @@ describe('CompanyServicesTab', () => {
     render(<CompanyServicesTab companyId="company-1" canEdit />);
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
     await selectVariantInCreator('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-08-01' } });
     fireEvent.click(within(screen.getByRole('dialog', { name: 'Add service' })).getByRole('button', { name: 'Add service' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'View service' })).toBeVisible());
 

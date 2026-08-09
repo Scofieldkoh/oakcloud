@@ -17,6 +17,13 @@ export function createManualClientServiceErrorResponse(error: unknown): NextResp
       details: { fieldErrors },
     }, { status: 400 });
   }
+  if (error instanceof SyntaxError) {
+    return NextResponse.json({
+      error: 'The service could not be created.',
+      code: ErrorCodes.VALIDATION_ERROR,
+      details: { fieldErrors: { body: 'Enter a valid JSON object.' } },
+    }, { status: 400 });
+  }
   if (error instanceof DuplicateClientServiceError) {
     return NextResponse.json({
       error: error.message,

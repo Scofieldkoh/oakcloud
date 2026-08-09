@@ -13,6 +13,7 @@ import {
   createManualPayload,
   emptyManualOperationalValues,
   manualFormIsDirty,
+  operationalErrorsFromServer,
   replacementValuesChanged,
   validateOperationalServiceValues,
   type OperationalFieldErrors,
@@ -43,6 +44,13 @@ export function ClientServiceCreator({
 
   const pending = createService.isPending;
   const selectedVariant = catalog.data?.variants.find((variant) => variant.id === selectedVariantId) ?? null;
+  const selectedVariantMissing = Boolean(
+    selectedVariantId && catalog.data && !selectedVariant,
+  );
+  const selectorError = errors.serviceVariantId
+    ?? (selectedVariantMissing
+      ? 'This catalog service is no longer available. Choose another service.'
+      : undefined);
   const selectOptions = useMemo(() => (catalog.data?.variants ?? []).map((variant) => ({
     value: variant.id,
     label: variant.name,
@@ -98,7 +106,14 @@ export function ClientServiceCreator({
   };
 
   const submit = async (confirmDuplicate: boolean) => {
-    if (!selectedVariantId || !selectedVariant) return;
+    if (!selectedVariantId) return;
+    if (!selectedVariant) {
+      setErrors((current) => ({
+        ...current,
+        serviceVariantId: 'This catalog service is no longer available. Choose another service.',
+      }));
+      return;
+    }
     const validationErrors = validateOperationalServiceValues(values);
     if (Object.values(validationErrors).some(Boolean)) {
       setErrors(validationErrors);
@@ -115,6 +130,16 @@ export function ClientServiceCreator({
     } catch (error) {
       if (isHttpRequestError(error, 409) && error.body.duplicates) {
         setDuplicates(error.body.duplicates);
+        return;
+      }
+      if (isHttpRequestError(error, 400) && error.code === 'VALIDATION_ERROR') {
+        const nextErrors = operationalErrorsFromServer(error.details, values);
+        setErrors(nextErrors);
+        setFormError(
+          Object.keys(nextErrors).length > 0
+            ? 'Review the highlighted fields and try again.'
+            : error.message,
+        );
         return;
       }
       if (isHttpRequestError(error, 404)) {
@@ -153,8 +178,10 @@ export function ClientServiceCreator({
             disabled={pending}
             loading={catalog.isLoading}
             groupBy="group"
+            clearable={false}
+            error={selectorError}
+            containerClassName="min-h-11 sm:min-h-8"
           />
-          {errors.serviceVariantId ? <p className="mt-1.5 text-xs text-status-error">{errors.serviceVariantId}</p> : null}
           {catalog.isLoading ? <p role="status" className="mt-1.5 text-xs text-text-secondary">Loading service catalog…</p> : null}
           {!catalog.isLoading && catalog.error ? <p className="mt-1.5 text-xs text-status-error">{catalog.error instanceof Error ? catalog.error.message : 'This catalog service is no longer available.'} Choose another catalog service to continue.</p> : null}
           {!catalog.isLoading && !catalog.error && (catalog.data?.variants.length ?? 0) === 0 ? <p className="mt-1.5 text-xs text-text-secondary">No active services are available in the catalog.</p> : null}
@@ -163,7 +190,7 @@ export function ClientServiceCreator({
       </div>
       <div className="flex justify-end gap-2 border-t border-border-primary p-4">
         <Button variant="secondary" disabled={pending} onClick={requestClose}>Cancel</Button>
-        <Button isLoading={pending} disabled={!selectedVariantId || pending} onClick={() => submit(false)}>Add service</Button>
+        <Button isLoading={pending} disabled={!selectedVariant || pending} onClick={() => submit(false)}>Add service</Button>
       </div>
     </Modal>
     <ConfirmDialog

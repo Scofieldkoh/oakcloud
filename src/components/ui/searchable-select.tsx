@@ -57,6 +57,8 @@ export interface SearchableSelectProps {
   popoverMinWidth?: number;
   /** Blur callback — fires when focus leaves the select input */
   onBlur?: () => void;
+  /** Error message associated with the select input */
+  error?: string;
 }
 
 export function SearchableSelect({
@@ -77,6 +79,7 @@ export function SearchableSelect({
   containerClassName,
   popoverMinWidth,
   onBlur,
+  error,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -95,6 +98,7 @@ export function SearchableSelect({
   const baseId = useId();
   const listboxId = `${baseId}-listbox`;
   const labelId = label ? `${baseId}-label` : undefined;
+  const errorId = error ? `${baseId}-error` : undefined;
 
   // Mount check for portal
   useEffect(() => {
@@ -377,6 +381,7 @@ export function SearchableSelect({
           isOpen && (variant === 'table-filter'
             ? 'ring-2 ring-oak-primary/30 border-oak-primary'
             : 'ring-2 ring-[#294D44]/20 border-[#294D44]'),
+          error && 'border-status-error',
           containerClassName
         )}
       >
@@ -391,6 +396,8 @@ export function SearchableSelect({
           aria-autocomplete="list"
           aria-labelledby={labelId}
           aria-label={!label ? placeholder : undefined}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? errorId : undefined}
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
@@ -433,6 +440,8 @@ export function SearchableSelect({
           </button>
         )}
       </div>
+
+      {error ? <p id={errorId} className="mt-1.5 text-xs text-status-error">{error}</p> : null}
 
       {/* Popover */}
       {isOpen &&
