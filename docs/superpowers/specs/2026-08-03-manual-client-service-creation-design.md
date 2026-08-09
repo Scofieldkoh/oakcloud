@@ -2,125 +2,510 @@
 
 **Date:** 2026-08-03
 
-**Scope:** Allow authorized users to add an operational service manually from the Service Catalog on a company detail page, without generating a Service Agreement first.
+**Last reviewed:** 2026-08-09
+
+**Status:** Approved for implementation planning
+
+## Context
+
+Operational Client Services currently originate only from signed Service
+Agreement activation. Authorized company editors also need to record a service
+that is already being delivered when generating an agreement first would add no
+value. Manual creation must retain a Service Catalog identity without inventing
+an agreement or weakening the existing agreement activation contract.
 
 ## Goals
 
-- Add catalog-backed services directly from the Companies detail page's Services tab.
-- Keep manually entered services clearly distinct from services activated from signed agreements.
-- Reuse the existing operational service editing, archiving, audit, search, filtering, and pagination behavior.
-- Warn when a likely duplicate exists while allowing an authorized user to confirm and continue.
-- Preserve workspace isolation, catalog validation, and atomic persistence.
+- Add a catalog-backed operational service from a company's Services tab.
+- Require only `company:update` for the target company.
+- Keep manual and agreement-created services visibly and structurally distinct.
+- Preserve the flexible operational editor after creation.
+- Warn about likely duplicates while allowing an explicit override.
+- Reuse existing list, detail, edit, archive, search, status-filter, pagination,
+  optimistic-concurrency, audit, backup, restore, and cleanup behavior.
+- Preserve workspace isolation, server-owned catalog identity, and atomic writes.
 
 ## Non-Goals
 
-- Creating free-form services that are not linked to the Service Catalog.
-- Generating a synthetic or hidden Service Agreement for manual services.
-- Changing signed agreement content or the agreement activation workflow.
-- Automatically refreshing existing operational services when the catalog changes.
-- Preventing duplicates after the user explicitly confirms the warning.
+- Creating a service without a Service Catalog variant.
+- Generating a synthetic, hidden, or retrospective Service Agreement.
+- Converting, merging, or linking a manual service when a later agreement
+  activates a matching service.
+- Enforcing SOW-required service fields on a manual operational record.
+- Refreshing an existing Client Service automatically when its catalog variant
+  changes.
+- Adding a source filter to the Services tab.
+- Preventing a duplicate after an authorized user explicitly confirms it.
+- Changing agreement activation, signed content, or pinned SOW snapshots.
 
-## Data Model
+## Domain Model And Invariants
 
-`ClientService` gains a required `source` field backed by a `ClientServiceSource` enum:
+### Source
 
-- `AGREEMENT` identifies services created by signed agreement activation.
-- `MANUAL` identifies services created directly from the company Services tab.
+Add a required `ClientServiceSource` enum and `ClientService.source` field:
 
-The field defaults to `AGREEMENT` so existing records and the migration remain backward compatible.
+- `AGREEMENT` identifies a service created by signed agreement activation.
+- `MANUAL` identifies a service created from the company Services tab.
 
-`agreementId` and `agreementItemId` become nullable. An agreement-created service must have both values, while a manual service must have neither. `serviceVariantId` remains required for both sources so every operational service retains a catalog identity. Application services enforce these source invariants on creation; agreement activation continues to populate both agreement references.
+`source` is immutable after creation. The update schema must not accept
+`source`, `serviceVariantId`, `agreementId`, or `agreementItemId`.
 
-The existing unique constraint on `(agreementItemId, companyId)` remains the idempotency boundary for agreement activation. PostgreSQL permits multiple rows containing a null `agreementItemId`, so confirmed manual duplicates remain possible. A supporting lookup index covers the duplicate query by workspace, company, catalog variant, start date, and archive state; it is not unique because confirmed duplicates are valid.
+`serviceVariantId` remains required and immutable for both sources. It is the
+stable catalog identity used for traceability and duplicate detection.
+`familyName` and `serviceName` are creation-time snapshots, not immutable
+catalog projections, and remain editable through the common operational editor.
 
-`ClientServiceFeeLine.sourceAgreementFeeLineId` is already nullable. Manual fee rows leave it null.
+### Agreement Relationships
+
+Make `agreementId`, `agreementItemId`, and their Prisma relations nullable.
+Application logic and a migration-managed PostgreSQL check constraint must both
+enforce:
+
+```text
+source = AGREEMENT -> agreement_id IS NOT NULL AND agreement_item_id IS NOT NULL
+source = MANUAL    -> agreement_id IS NULL     AND agreement_item_id IS NULL
+```
+
+The constraint prevents scripts, restores, and future code paths from creating
+an impossible source/reference combination. Prisma cannot declare this check,
+so the migration and database reference documentation are authoritative for it.
+
+Agreement activation must set `source: AGREEMENT` explicitly even though the
+schema default is `AGREEMENT`. Manual creation must set `source: MANUAL`
+explicitly. Neither flow may rely only on the default for domain correctness.
+
+### Migration
+
+The migration must:
+
+1. Add the enum and `source` with a temporary/default value of `AGREEMENT`.
+2. Backfill every existing Client Service as `AGREEMENT`.
+3. Make both agreement foreign-key columns nullable.
+4. Add the source/reference check constraint.
+5. Retain the default for backward-compatible agreement writes.
+6. Add the duplicate lookup index.
+
+The existing unique constraint on `(agreementItemId, companyId)` remains the
+agreement-activation idempotency boundary. PostgreSQL permits multiple rows
+whose nullable `agreementItemId` is null, so confirmed manual duplicates remain
+valid.
+
+Add a non-unique lookup index covering:
+
+```text
+(tenantId, companyId, serviceVariantId, startDate, deletedAt)
+```
+
+`ClientServiceFeeLine.sourceAgreementFeeLineId` is already nullable. Every fee
+row created manually leaves it null.
+
+A later agreement activation that matches a manual service still creates a
+separate `AGREEMENT` service. This preserves legal lineage and agreement-item
+idempotency; there is no conversion or reconciliation flow.
+
+## Authorization And Catalog Options
+
+### Company-Scoped Options Endpoint
+
+Add:
+
+```http
+GET /api/companies/{companyId}/services/catalog-options
+```
+
+The endpoint requires `company:update` for the target company. It must not reuse
+the existing selectable Service Catalog route because that route requires
+`document:read`, which is intentionally not required for manual service
+creation.
+
+The server derives the workspace from the authenticated session and returns only
+active, non-archived variants whose family is active and non-archived and whose
+linked SOW partial is non-archived. Cross-workspace or unavailable companies use
+the repository's non-revealing not-found behavior.
+
+The response contains only the data needed by the operational form:
+
+- variant ID and name;
+- family ID and name;
+- service cadence and optional custom cadence label;
+- merged `service.fields.*` definitions from the current SOW partial graph;
+- fee templates in display order.
+
+For service fields, return the unprefixed operational key, display label, input
+type, and optional default value. SOW `required` metadata has no effect on manual
+creation and should not be presented as an operational requirement. Do not
+return SOW content, legal wording, document placeholders outside
+`service.fields.*`, or unrelated catalog administration fields.
+
+Merging service-field definitions must reuse the existing SOW snapshot/partial
+composition semantics so definitions in nested partial dependencies are not
+lost. Duplicate definitions resolve deterministically through the existing
+composition rules.
 
 ## Manual Creation API
 
-`POST /api/companies/{companyId}/services` creates a manual operational service. The route requires `company:update` for the target company and derives the workspace and actor from the authenticated session.
+Add:
 
-The request contains:
+```http
+POST /api/companies/{companyId}/services
+```
 
-- `serviceVariantId`
-- `status`
-- `serviceCadence` and optional custom cadence label
-- `startDate` and optional `endDate`
-- operational field values
-- one or more fee rows
-- `confirmDuplicate`, defaulting to `false`
+The route requires `company:update`, derives the actor and workspace from the
+session, and returns HTTP `201` with the created `ClientServiceDto`.
 
-Service and family labels are not trusted from the client. The server loads the active, non-archived catalog variant and its active, non-archived family in the current workspace, then snapshots their names into `serviceName` and `familyName`. The server rejects a variant outside the workspace, an inactive or archived variant or family, invalid dates, invalid cadence details, or invalid fees.
+### Request Contract
 
-The client uses the selected catalog variant to prefill cadence, service fields, and fee templates for convenience. The submitted operational values may be adjusted before creation. Catalog fee templates without a default amount require the user to enter a valid amount; the form never silently invents a commercial amount.
+The request accepts:
 
-The `ClientService`, its fee rows, and a `CREATE` audit event commit in one serializable transaction. The audit record identifies the catalog variant and manual source, summarizes fees without exposing operational field values, and uses the authenticated actor and company.
+- `serviceVariantId`;
+- `status`, defaulting on the server to `ACTIVE`;
+- `serviceCadence` and an optional custom cadence label;
+- required `startDate` and optional `endDate`;
+- `fieldValues` as flexible operational key/value strings;
+- one to 100 fee rows;
+- `confirmDuplicate`, defaulting to `false`.
+
+The request must not accept `source`, agreement references, `familyName`, or
+`serviceName`. Manual fee-row IDs are generated by the server, display order is
+normalized from request array order, and `sourceAgreementFeeLineId` is never
+accepted from the client.
+
+Apply the existing operational limits, including:
+
+- date-only ISO values and `endDate >= startDate`;
+- a non-empty custom cadence label only when cadence is `CUSTOM`;
+- at most 100 operational field keys and 10,000 characters per value;
+- non-empty fee descriptions;
+- non-negative fixed-point amount strings with at most two decimal places;
+- three-letter uppercase currency codes;
+- a non-empty custom frequency label only for `CUSTOM` frequency;
+- optional date-only billing start dates.
+
+`0.00` is a valid explicit fee. Blank and negative amounts are invalid. Billing
+frequency is always explicit; the server must not infer it from service cadence.
+
+Catalog service fields are optional suggestions. The client may prefill catalog
+definitions and their defaults, but the server does not enforce SOW `required`
+flags, reject additional operational fields, or require catalog-defined fields
+to remain present. This flexibility continues on later edits.
+
+### Server-Owned Catalog Identity
+
+Inside the creation transaction, reload the catalog variant using all of:
+
+- the selected variant ID;
+- the authenticated workspace;
+- `deletedAt = null` and `isActive = true` for the variant;
+- an active, non-archived family in the same workspace;
+- a non-archived linked SOW partial in the same workspace.
+
+Snapshot the current server-side variant and family names into `serviceName` and
+`familyName`. If the active variant changed while the modal was open, accept the
+submitted operational cadence, dates, fields, and fees and use the latest names.
+No variant-version precondition is required. If any required catalog parent was
+archived or deactivated, reject creation and ask the user to select another
+service.
 
 ## Duplicate Warning Contract
 
-A likely duplicate is any non-archived Client Service in the same workspace and company with the same `serviceVariantId` and `startDate`, regardless of source or status.
+A likely duplicate is any non-archived Client Service in the same workspace and
+company with the same `serviceVariantId` and exact date-only `startDate`.
+`ACTIVE`, `PAUSED`, and `ENDED` records all participate, regardless of source.
+Archived records do not.
 
-When `confirmDuplicate` is false and a match exists, the API returns HTTP `409` with a stable `DUPLICATE_CLIENT_SERVICE` code and a minimal duplicate summary containing the existing service ID, displayed service name, start date, status, and source. It does not create or audit a new service.
+Run the lookup inside the same retryable serializable transaction as creation.
+This predicate read ensures that simultaneous unconfirmed requests cannot both
+silently create a service: a serialization loser retries, sees the committed
+match, and receives the duplicate warning.
 
-The modal displays the warning and keeps all entered values. The user may cancel or choose **Add anyway**. Confirming resubmits the same values with `confirmDuplicate: true`. The server still repeats authorization, catalog, validation, and transaction checks, but it bypasses only the duplicate warning. A normal stale or concurrent retry without confirmation continues to receive the warning.
+When `confirmDuplicate` is false and one or more matches exist, return HTTP `409`
+without creating a service, fee row, or audit event:
+
+```json
+{
+  "error": "A matching client service already exists.",
+  "code": "DUPLICATE_CLIENT_SERVICE",
+  "duplicates": {
+    "total": 2,
+    "items": [
+      {
+        "id": "existing-service-id",
+        "serviceName": "Corporate Secretarial",
+        "startDate": "2026-08-03",
+        "status": "ACTIVE",
+        "source": "MANUAL"
+      }
+    ]
+  }
+}
+```
+
+Return at most five summaries, ordered by `createdAt DESC` with a stable ID
+tie-breaker. `total` reports every match. The summaries expose only the existing
+service ID, displayed name, start date, status, and source.
+
+Choosing **Add anyway** resubmits the unchanged request with
+`confirmDuplicate: true`. The server repeats authorization, catalog, validation,
+and transaction checks and bypasses only the duplicate warning. No reason is
+required. The creation audit records that the duplicate override was confirmed.
+
+Direct API clients with `company:update` may submit `confirmDuplicate: true`
+without first obtaining a warning. This is an authorized business override, not
+a security boundary.
+
+## Transaction And Audit Contract
+
+Use the repository's bounded `runSerializableTransaction` helper. Within one
+transaction:
+
+1. Validate the company and current catalog identity in the workspace.
+2. Perform the duplicate predicate read unless confirmation is true.
+3. Create the `MANUAL` Client Service.
+4. Create its normalized fee rows.
+5. Create the `CREATE` audit event.
+6. Reload and return the complete DTO.
+
+Database, fee, or audit failure rolls back every write. Exhausted serialization
+retries return a retriable concurrency conflict rather than a validation error.
+
+The audit event records the actor, company, manual source, catalog variant ID,
+fee count and totals, and whether a duplicate override was used. It must not
+record operational field values. No duplicate audit is written when an
+unconfirmed request is rejected.
 
 ## User Interface
 
-The Services tab displays an **Add service** action when the user has edit permission. The same action appears in the empty state. Read-only users do not see it.
+### Entry Points And Catalog Selection
 
-Selecting the action opens an Add Service modal. The form provides:
+The Services tab displays **Add service** beside the list controls and in the
+true empty state when the user has edit permission. Read-only users do not see
+either action. Filtered-empty states retain the primary action near the controls
+without duplicating it in the filter result message.
 
-- an active Service Catalog selector;
-- status;
-- cadence and conditional custom cadence label;
-- required start date and optional end date;
-- catalog-derived service fields;
-- one or more editable fee rows with description, amount, currency, frequency, optional custom frequency label, and optional billing start date.
+The action opens a single scrollable Add Service modal using the existing
+compact modal, responsive grid, mobile touch-target, focus-management, and
+accessible error patterns.
 
-Choosing a catalog service replaces the catalog-derived defaults in the new-service form. If the user has already modified populated fields or fees, changing the selection requires confirmation before discarding those values. The form follows the existing modal, validation, mobile touch-target, and accessible error-message patterns in the design guide.
+The catalog selector is searchable and grouped by family. Until a service is
+selected, dependent cadence, field, and fee sections are unavailable. An empty
+catalog-options response explains that no active services are available; it does
+not show a document-administration link to a user who may lack `document:read`.
 
-The existing editor becomes a shared operational-service form where practical, while create-only catalog selection and edit-only archive/conflict behavior remain in their respective wrappers. This avoids maintaining two divergent copies of fee, field, cadence, and date validation.
+### Defaults And Editable Values
 
-After creation, the list query is invalidated and the modal closes. Agreement-created cards retain their Service Agreement link. Manual cards render an **Added manually** source label instead. Both kinds use the same Edit action and archive flow.
+Selecting a variant:
+
+- sets status to `ACTIVE` for a new untouched form;
+- copies service cadence and its custom label;
+- adds merged catalog service fields and their optional defaults;
+- copies catalog fee templates in display order;
+- leaves required start date and optional end date blank.
+
+All copied operational values remain editable. Service-field definitions are
+optional, may be removed or replaced, and do not prevent adding arbitrary
+fields.
+
+For each catalog fee template, use its description, currency, frequency, custom
+frequency label, display order, and default amount when present. A missing
+default amount remains blank and blocks submission until the user explicitly
+enters a valid amount.
+
+If the selected variant has no fee templates, create one required fee row with:
+
+- description set to the service name;
+- currency set to `SGD`;
+- blank amount;
+- blank billing frequency;
+- blank custom frequency and billing start date.
+
+This avoids inventing commercial terms. The last remaining fee row cannot be
+removed.
+
+### Dirty State And Catalog Switching
+
+Changing the selected variant replaces only catalog-derived cadence, service
+fields, and fees. Status and dates remain intact. If any values that would be
+replaced have been modified, require confirmation before discarding them.
+
+The form is dirty whenever it differs from its initial empty state, including
+after catalog selection. Cancel, the modal close button, Escape, and backdrop
+close all require discard confirmation for a dirty form. An untouched form
+closes immediately.
+
+### Duplicate Confirmation
+
+Keep the form open and retain every entered value after a duplicate response.
+Show the total match count and up to five returned summaries in an accessible
+warning. **Cancel** dismisses only the warning and returns to the unchanged form.
+**Add anyway** resubmits the same values with confirmation and requires no
+reason.
+
+Disable repeated submit actions while a request is pending. Network and server
+failures leave the form open and preserve its draft.
+
+### Success And List Behavior
+
+After creation:
+
+1. Close the modal.
+2. Invalidate the company service list and created service detail queries.
+3. Preserve the user's current search, status, page-size, and pagination state.
+4. Show a success notice with **View service**.
+
+**View service** opens the returned DTO directly. If search or status filters
+exclude it, clear only those excluding filters and reset pagination as needed;
+the action must not depend on the new record already being present on the
+current sorted page.
+
+Agreement-created cards retain their Service Agreement link. Manual cards show
+**Added manually** in the same metadata area. No source filter is added. Both
+sources retain the same edit action and archive flow.
+
+Existing empty-state and edit/archive descriptions must become source-aware.
+Manual records must never claim that an edit or archive leaves a nonexistent
+signed agreement unchanged.
+
+## Component Boundaries
+
+Share the operational form body rather than combining all create and edit state
+in one component:
+
+- A controlled operational-service form owns common status, cadence, date,
+  field, fee, and client-validation controls.
+- The create wrapper owns catalog loading, default application, catalog-switch
+  confirmation, dirty-close confirmation, duplicate state, and creation.
+- The edit wrapper retains optimistic `updatedAt` conflict recovery, reload,
+  archive, and source-aware explanatory copy.
+- Dedicated hooks load company-scoped catalog options and create a service.
+- Shared request handling retains structured error codes and details.
+
+Create-only catalog state and edit-only archive/conflict state must not leak into
+the common form. Avoid unrelated refactoring of the existing Services tab.
 
 ## DTO And Query Behavior
 
-`ClientServiceDto` exposes `source`. Its agreement summary becomes nullable. Agreement services return the existing document title, status, activation status, generated document ID, and link; manual services return `agreement: null`.
+`ClientServiceDto` exposes:
 
-List, detail, update, archive, search, status filtering, pagination, optimistic editing, and fee serialization remain common to both sources. Query includes use an optional agreement relation so manual rows can be mapped without special secondary queries.
+```ts
+source: 'AGREEMENT' | 'MANUAL';
+agreementId: string | null;
+agreementItemId: string | null;
+agreement: AgreementSummary | null;
+```
 
-## Error Handling
+Agreement services retain the current document title, agreement status,
+activation status, generated document ID, and link. Manual services return null
+for both IDs and the summary.
 
-- Unauthorized creation returns the existing permission error before any mutation.
-- An unavailable or cross-workspace company or catalog item returns a not-found response without revealing its existence.
-- Validation errors return field-addressable HTTP `400` responses.
-- A likely duplicate returns the structured HTTP `409` response described above.
-- Database or audit failure rolls back the service and fee rows.
-- If a catalog item becomes inactive or archived while the modal is open, the form remains open and explains that another catalog service must be selected.
-- Existing optimistic `updatedAt` conflicts continue to apply only to edits after creation.
+List and detail queries use an optional agreement include and map both sources
+without per-service secondary queries. List, detail, update, archive, search,
+status filtering, pagination, optimistic editing, fixed-point fee
+serialization, and audit behavior remain common.
 
-## Testing
+## Error Contract
 
-Test-first coverage will include:
+- Authentication failures use the existing unauthorized response.
+- Missing permission uses the existing permission response before mutation.
+- Unavailable or cross-workspace company/catalog records use non-revealing
+  not-found responses.
+- Input failures return HTTP `400`, code `VALIDATION_ERROR`, and field-addressable
+  details such as `feeLines.0.amount`.
+- Likely duplicates use HTTP `409` and `DUPLICATE_CLIENT_SERVICE`.
+- Exhausted transaction retries use a stable retriable concurrency-conflict
+  response.
+- Database and audit failures return the existing safe server error after full
+  rollback.
 
-1. Prisma schema and migration contract tests for the source enum, nullable agreement relationships, preserved agreement uniqueness, and duplicate lookup index.
-2. Validation tests for required catalog variant, dates, cadence details, fee rows, and `confirmDuplicate` defaulting.
-3. Service tests proving workspace-scoped catalog lookup, server-owned labels, catalog default handling, manual source persistence, null agreement references, atomic fee and audit creation, and rollback behavior.
-4. Duplicate tests proving the exact matching key, exclusion of archived rows, HTTP `409` behavior without mutation, and successful confirmed creation.
-5. API tests for `company:update`, not-found isolation, validation, structured duplicate responses, and success.
-6. Component tests for permission-gated Add Service actions, catalog prefilling, required amounts, validation accessibility, duplicate confirmation, query invalidation, and manual-versus-agreement source rendering.
-7. Regression tests proving agreement activation still creates `AGREEMENT` services idempotently and existing edit/archive flows work for both sources.
+The current generic API helper serializes `ApiError` as only `{ error }` and the
+current client `HttpRequestError` retains only a message and status. The
+implementation must extend or route around those boundaries so stable codes and
+structured details reach the create form. Do not infer a duplicate from message
+text.
+
+If the catalog selection becomes inactive or archived while the modal is open,
+keep the form open, attach the error to the selector, and explain that another
+catalog service must be chosen.
+
+## Testing Strategy
+
+Implement test-first coverage for:
+
+1. **Schema and migration:** source enum/default, nullable relations, source
+   check constraint, preserved agreement uniqueness, and duplicate index.
+2. **Validation:** server defaults, required variant/start date, date order,
+   cadence rules, flexible catalog/custom fields, field limits, one-to-100 fee
+   rows, explicit frequency, blank/negative rejection, and accepted `0.00`.
+3. **Catalog options:** `company:update` without `document:read`, workspace
+   isolation, active-parent filtering, nested service-field composition,
+   metadata minimization, defaults, and empty results.
+4. **Creation service:** current server-owned names, editable operational values,
+   catalog changes during an open form, manual source/null references, fee order,
+   null source fee IDs, audit contents, and rollback.
+5. **Duplicates:** exact matching key, all non-archived statuses and sources,
+   archived exclusion, deterministic five-item cap, total count, no rejected
+   mutation/audit, confirmed creation, and later independent agreement
+   activation.
+6. **Concurrency:** database-backed simultaneous unconfirmed creates proving one
+   succeeds and the other returns a duplicate after serializable retry.
+7. **Routes:** endpoint permissions, non-revealing not-found behavior, HTTP
+   `201`, field-addressable `400`, structured `409`, and retry exhaustion.
+8. **Components:** permission-gated actions, selector grouping/search, defaults,
+   no-template fee behavior, `0.00`, variant-switch confirmation, dirty-close
+   confirmation through every exit, duplicate-state retention, pending-state
+   controls, success notice, **View service**, source labels, nullable agreement
+   rendering, and accessible errors.
+9. **Regression:** agreement activation still creates explicit `AGREEMENT`
+   services idempotently, and existing list/edit/archive/backup/restore/cleanup
+   behavior works for both sources.
 
 ## Documentation And Operational Compatibility
 
-The approved implementation will update the existing architecture and service-pattern documentation to state that operational services may originate from either signed agreement activation or explicit manual catalog entry. Backup export, restore, and tenant cleanup continue to use the same Client Service tables; their tests will be updated for nullable agreement references and the new source field. Generated Prisma artifacts will be refreshed through the repository's existing generation command.
+Implementation updates existing documentation rather than adding unrelated
+files:
+
+- `docs/ARCHITECTURE.md` describes both operational-service origins.
+- `docs/guides/SERVICE_PATTERNS.md` documents source invariants, manual creation,
+  duplicate handling, and common editing behavior.
+- `docs/reference/DATABASE_SCHEMA.md` documents the nullable relationships,
+  source check constraint, retained unique constraint, and duplicate index.
+
+Backup export, restore, and tenant cleanup continue to use the existing Client
+Service tables. Their fixtures and tests must support nullable agreement
+references and the new source field. Refresh generated Prisma artifacts using
+the repository's existing generation command.
 
 ## Acceptance Criteria
 
-- An authorized user can add an active catalog service from a company's Services tab without generating an agreement.
-- Catalog selection prefills operational details and the user can adjust them before saving.
-- The created card is immediately listed and labeled **Added manually**.
-- A matching company, catalog variant, and start date produces a warning before creation.
-- Choosing **Add anyway** creates the duplicate; cancelling creates nothing and preserves the form until it is closed.
-- Agreement-created services retain their agreement links and activation behavior.
-- Manual services can be edited and archived through the existing workflows.
-- Cross-workspace, inactive, archived, invalid, or unauthorized inputs do not create partial records.
+- A user with `company:update`, but not necessarily `document:read`, can load the
+  minimal active catalog options and add a manual service.
+- The service is linked to an active catalog variant without creating an
+  agreement and is persisted with `source = MANUAL` and null agreement
+  references.
+- Status initially defaults to `ACTIVE`; start date has no default and is
+  required.
+- Catalog cadence, optional service-field defaults, and fee templates populate
+  an editable form. SOW-required fields do not block manual creation.
+- A catalog service without fee templates produces one incomplete fee row with
+  the service name and `SGD`; amount and frequency require explicit input.
+- `0.00` is accepted, while blank or negative fee amounts are rejected.
+- Dirty variant changes and every dirty modal exit require confirmation before
+  discarding affected values.
+- A matching company, catalog variant, and exact start date returns a structured
+  warning with the total and at most five newest matches.
+- Cancelling the warning creates nothing and preserves the form. **Add anyway**
+  creates and audits the duplicate without requiring a reason.
+- Concurrent unconfirmed requests cannot both create a service silently.
+- Active catalog edits do not invalidate an open draft; inactive or archived
+  catalog selections do.
+- Creation closes the modal, refetches data, preserves filters, and offers a
+  reliable **View service** action.
+- Manual cards show **Added manually**; agreement cards retain their agreement
+  link; no source filter is introduced.
+- Names remain editable, while source, catalog identity, and agreement lineage
+  remain immutable.
+- Manual and agreement-created services share the existing edit, archive, list,
+  search, status-filter, pagination, audit, backup, restore, and cleanup flows.
+- A later matching agreement activation creates an independent agreement-backed
+  service without modifying the manual record.
+- Unauthorized, cross-workspace, inactive, archived, invalid, concurrent, or
+  failed writes never leave partial service, fee, or audit records.
