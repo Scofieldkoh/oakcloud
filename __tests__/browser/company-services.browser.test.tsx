@@ -8,8 +8,35 @@ import '@/app/globals.css';
 const service = {
   id: 'service-1', companyId: 'company-1', agreementId: 'agreement-1', agreementItemId: 'item-1', serviceVariantId: 'variant-1', familyName: 'Corporate Services', serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY', customCadenceLabel: null, startDate: '2026-07-30', endDate: null, fieldValues: { filingMonth: 'July' }, createdAt: '2026-07-30T00:00:00Z', updatedAt: '2026-07-30T00:00:00Z', feeLines: [{ id: 'fee-1', description: 'Annual fee', amount: '500.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: '2026-07-30', displayOrder: 0 }], agreement: { title: 'Service Agreement', status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocumentId: 'document-1', href: '/generated-documents/document-1' },
 };
-const fixture = { services: [service], total: 1, activations: [{ agreementId: 'agreement-2', title: 'Retry agreement', activationStatus: 'FAILED_RETRYABLE', activationLastError: 'Activation temporarily unavailable.', canRetry: true }] };
+const manualService = {
+  ...service,
+  id: 'service-manual',
+  serviceName: 'Advisory Retainer',
+  source: 'MANUAL',
+  agreementId: null,
+  agreementItemId: null,
+  agreement: null,
+};
+const fixture = { services: [manualService, service], total: 2, activations: [{ agreementId: 'agreement-2', title: 'Retry agreement', activationStatus: 'FAILED_RETRYABLE', activationLastError: 'Activation temporarily unavailable.', canRetry: true }] };
 const refreshedService = { ...service, serviceName: 'Server-updated service', updatedAt: '2026-08-01T01:00:00.000Z' };
+const catalogOptions = {
+  variants: [{
+    id: 'variant-1',
+    name: 'Corporate Secretarial',
+    family: { id: 'family-1', name: 'Corporate Services' },
+    serviceCadence: 'ANNUALLY',
+    customCadenceLabel: null,
+    fields: [],
+    feeTemplates: [{
+      description: 'Annual service fee',
+      defaultAmount: '1200.00',
+      currency: 'SGD',
+      billingFrequency: 'ANNUALLY',
+      customFrequencyLabel: null,
+      displayOrder: 0,
+    }],
+  }],
+};
 
 async function waitUntil(check: () => boolean, timeout = 4000) {
   const started = Date.now();
@@ -47,6 +74,7 @@ describe('company Services browser workflow', () => {
       const body = init?.body ? JSON.parse(String(init.body)) : undefined;
       requests.push({ url, method, body });
       if (method === 'GET' && url.includes('/api/client-services/service-1')) return json(refreshedService);
+      if (method === 'GET' && url.includes('/services/catalog-options')) return json(catalogOptions);
       if (method === 'GET') return json(fixture);
       if (method === 'PATCH') {
         if ((body as { updatedAt?: string } | undefined)?.updatedAt === service.updatedAt) {
@@ -58,6 +86,7 @@ describe('company Services browser workflow', () => {
         return json({ error: 'Unexpected concurrency token' }, 500);
       }
       if (method === 'DELETE') return json({ id: service.id, archived: true });
+      if (method === 'POST' && url.includes('/services')) return json({ ...manualService, feeLines: [] }, 201);
       if (method === 'POST') return json({ agreementId: 'agreement-2', activationStatus: 'PENDING' });
       return json({ error: 'Unexpected request' }, 500);
     }));
@@ -72,7 +101,8 @@ describe('company Services browser workflow', () => {
   it('edits all fee fields, recovers from conflict, confirms archive, and retries through HTTP hooks', async () => {
     await act(async () => root.render(<QueryClientProvider client={queryClient}><CompanyServicesTab companyId="company-1" canEdit /></QueryClientProvider>));
     await waitUntil(() => host.textContent?.includes('Corporate Secretarial Services') ?? false);
-    const edit = host.querySelector<HTMLButtonElement>('button[aria-label="Edit service"]');
+    const agreementCard = [...host.querySelectorAll<HTMLElement>('article')].find((article) => article.textContent?.includes('Corporate Secretarial Services'));
+    const edit = agreementCard?.querySelector<HTMLButtonElement>('button[aria-label="Edit service"]');
     if (!edit) throw new Error('Edit service button missing');
     await act(async () => edit.click());
 
@@ -105,7 +135,8 @@ describe('company Services browser workflow', () => {
     expect(patches[0]?.body).toMatchObject({ updatedAt: service.updatedAt });
     expect(patches[1]?.body).toMatchObject({ updatedAt: refreshedService.updatedAt });
 
-    const editAgain = host.querySelector<HTMLButtonElement>('button[aria-label="Edit service"]');
+    const refreshedCard = [...host.querySelectorAll<HTMLElement>('article')].find((article) => article.textContent?.includes('Corporate Secretarial Services'));
+    const editAgain = refreshedCard?.querySelector<HTMLButtonElement>('button[aria-label="Edit service"]');
     if (!editAgain) throw new Error('Edit service button missing after save');
     await act(async () => editAgain.click());
     const archive = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent === 'Archive service');
@@ -132,5 +163,36 @@ describe('company Services browser workflow', () => {
     await act(async () => retry.click());
     await waitUntil(() => requests.some((request) => request.method === 'POST'));
     expect(requests.find((request) => request.method === 'POST')?.url).toContain('/retry-activation');
+  });
+
+  it('adds a manual service, preserves list state, and opens the created DTO directly', async () => {
+    await act(async () => root.render(<QueryClientProvider client={queryClient}><CompanyServicesTab companyId="company-1" canEdit /></QueryClientProvider>));
+    await waitUntil(() => host.textContent?.includes('Advisory Retainer') ?? false);
+    expect(host.textContent).toContain('Added manually');
+    expect(host.querySelector('a[href="/generated-documents/document-1"]')).not.toBeNull();
+    expect([...host.querySelectorAll('button')].some((button) => button.textContent === 'Manual')).toBe(false);
+
+    const add = [...host.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent === 'Add service');
+    if (!add) throw new Error('Add service button missing');
+    await act(async () => add.click());
+    const trigger = document.querySelector<HTMLInputElement>('input[placeholder="Select service"]');
+    if (!trigger) throw new Error('Catalog trigger missing');
+    await act(async () => { trigger.focus(); trigger.click(); });
+    await waitUntil(() => Boolean(document.querySelector('[data-searchable-select-popover]')));
+    const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((entry) => entry.textContent?.includes('Corporate Secretarial'));
+    if (!option) throw new Error('Catalog option missing');
+    await act(async () => option.click());
+
+    const create = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent === 'Add service').at(-1);
+    if (!create) throw new Error('Create button missing');
+    await act(async () => create.click());
+    await waitUntil(() => document.body.textContent?.includes('View service') ?? false);
+    const view = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent === 'View service');
+    if (!view) throw new Error('View service button missing');
+    await act(async () => view.click());
+    await waitUntil(() => document.body.textContent?.includes('Edit service') ?? false);
+    const serviceName = document.querySelector<HTMLInputElement>('#client-service-name');
+    expect(serviceName?.value).toBe('Advisory Retainer');
+    expect(requests.some((request) => request.method === 'POST' && request.url.includes('/services'))).toBe(true);
   });
 });

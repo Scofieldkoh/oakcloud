@@ -2,13 +2,14 @@
 
 import { useDeferredValue, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, BriefcaseBusiness, Pencil, Search } from 'lucide-react';
+import { AlertCircle, BriefcaseBusiness, Pencil, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { formatDate } from '@/lib/utils';
 import { useClientServices, useRetryServiceAgreementActivation } from '@/hooks/use-client-services';
 import type { ClientServiceDto } from '@/services/client-service';
 import { ClientServiceEditor } from './client-service-editor';
+import { ClientServiceCreator } from './client-service-creator';
 
 const label = (value: string) => value.toLowerCase().replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase());
 const currencySymbols: Record<string, string> = { SGD: 'S$', USD: 'US$', EUR: '€', GBP: '£', JPY: '¥', HKD: 'HK$', AUD: 'A$', MYR: 'RM' };
@@ -28,9 +29,23 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
   const [limit, setLimit] = useState(20);
   const [retryError, setRetryError] = useState('');
   const [editing, setEditing] = useState<ClientServiceDto | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createdService, setCreatedService] = useState<ClientServiceDto | null>(null);
   const { data, isLoading, error } = useClientServices(companyId, { query: deferredQuery || undefined, status, page, limit });
   const retryActivation = useRetryServiceAgreementActivation();
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / limit));
+  const filtered = Boolean(query.trim()) || Boolean(status);
+
+  const viewCreatedService = () => {
+    if (!createdService) return;
+    const queryExcludes = Boolean(query.trim()) && ![createdService.serviceName, createdService.familyName]
+      .some((value) => value.toLowerCase().includes(query.trim().toLowerCase()));
+    const statusExcludes = Boolean(status) && status !== createdService.status;
+    if (queryExcludes) setQuery('');
+    if (statusExcludes) setStatus(undefined);
+    if (queryExcludes || statusExcludes) setPage(1);
+    setEditing(createdService);
+  };
 
   useEffect(() => { setPage(1); }, [deferredQuery, status]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
@@ -42,15 +57,22 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
   const activations = data?.activations ?? [];
   return <div className="space-y-4">
     {retryError ? <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-3 text-sm text-status-error">{retryError}</div> : null}
+    {createdService ? <div role="status" className="flex flex-col gap-2 rounded-lg border border-status-success/30 bg-status-success/5 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-text-primary">{createdService.serviceName} was added.</span>
+      <Button className="min-h-11 sm:min-h-8" size="xs" variant="secondary" onClick={viewCreatedService}>View service</Button>
+    </div> : null}
     {activations.map((activation) => {
       const failed = activation.activationStatus.startsWith('FAILED');
       return <div key={activation.agreementId} role="alert" className={`flex flex-col gap-2 rounded-lg border p-3 text-sm sm:flex-row sm:items-center sm:justify-between ${failed ? 'border-status-error/30 bg-status-error/5 text-status-error' : 'border-status-warning/30 bg-status-warning/5 text-text-primary'}`}><div><span className="font-medium">{activation.title}</span><span className="ml-2">{failed ? activation.activationLastError ?? 'Activation failed' : 'Service activation is pending.'}</span></div>{failed && canEdit && activation.canRetry ? <Button className="min-h-11 sm:min-h-8" size="xs" variant="secondary" isLoading={retryActivation.isPending} onClick={async () => { setRetryError(''); try { await retryActivation.mutateAsync({ agreementId: activation.agreementId, companyId }); } catch (retryFailure) { setRetryError(retryFailure instanceof Error ? retryFailure.message : 'Unable to retry activation.'); } }} aria-label="Retry activation">Retry</Button> : null}</div>;
     })}
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="relative flex-1 sm:max-w-sm"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input aria-label="Search services" className="input w-full pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search services" /></div>
-      <div className="flex gap-2" aria-label="Service status filters">{[undefined, 'ACTIVE', 'PAUSED', 'ENDED'].map((value) => <Button className="min-h-11 sm:min-h-8" key={value ?? 'ALL'} size="xs" variant={status === value ? 'primary' : 'secondary'} onClick={() => setStatus(value as typeof status)}>{value ? label(value) : 'All'}</Button>)}</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-2" aria-label="Service status filters">{[undefined, 'ACTIVE', 'PAUSED', 'ENDED'].map((value) => <Button className="min-h-11 sm:min-h-8" key={value ?? 'ALL'} size="xs" variant={status === value ? 'primary' : 'secondary'} onClick={() => setStatus(value as typeof status)}>{value ? label(value) : 'All'}</Button>)}</div>
+        {canEdit ? <Button className="min-h-11 sm:min-h-8" size="xs" variant="secondary" leftIcon={<Plus />} onClick={() => setCreating(true)} aria-label="Add service">Add service</Button> : null}
+      </div>
     </div>
-    {services.length === 0 ? <div className="card p-6 text-center sm:p-10"><BriefcaseBusiness className="mx-auto mb-3 h-10 w-10 text-text-muted" /><h3 className="font-medium text-text-primary">No services found</h3><p className="mt-1 text-sm text-text-secondary">Services appear here after a Service Agreement is activated.</p></div> : <div className="space-y-3">{services.map((service) => {
+    {services.length === 0 ? <div className="card p-6 text-center sm:p-10"><BriefcaseBusiness className="mx-auto mb-3 h-10 w-10 text-text-muted" /><h3 className="font-medium text-text-primary">{filtered ? 'No matching services' : 'No services yet'}</h3><p className="mt-1 text-sm text-text-secondary">{filtered ? 'Try adjusting your search or status filter.' : 'Services appear here after a Service Agreement is activated.'}</p>{!filtered && canEdit ? <Button className="mt-4 min-h-11 sm:min-h-8" size="sm" variant="secondary" leftIcon={<Plus />} onClick={() => setCreating(true)}>Add service</Button> : null}</div> : <div className="space-y-3">{services.map((service) => {
       const fee = service.feeLines[0];
       const additionalFeeCount = service.feeLines.length - 1;
       return <article key={service.id} className="card p-3 sm:p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-medium text-text-primary">{service.serviceName}</h3><span className={`badge ${service.status === 'ACTIVE' ? 'badge-success' : service.status === 'PAUSED' ? 'badge-warning' : 'badge-neutral'}`}>{label(service.status)}</span></div><p className="mt-1 text-sm text-text-secondary">{service.familyName}</p><div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted"><span>{label(service.serviceCadence)}</span><span>{formatDate(service.startDate)}{service.endDate ? ` – ${formatDate(service.endDate)}` : ''}</span>{fee ? <span>{formatFixedCurrency(fee.amount, fee.currency)} {label(fee.billingFrequency).toLowerCase()}{additionalFeeCount > 0 ? ` · ${additionalFeeCount} additional fee${additionalFeeCount === 1 ? '' : 's'}` : ''}</span> : null}</div>{service.source === 'MANUAL' ? (
@@ -63,5 +85,6 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
     })}</div>}
     {(data?.total ?? 0) > limit ? <Pagination page={page} totalPages={totalPages} total={data?.total ?? 0} limit={limit} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} /> : null}
     {editing ? <ClientServiceEditor key={editing.id} service={editing} isOpen onClose={() => setEditing(null)} /> : null}
+    {creating ? <ClientServiceCreator companyId={companyId} isOpen onClose={() => setCreating(false)} onCreated={(service) => { setCreating(false); setCreatedService(service); }} /> : null}
   </div>;
 }

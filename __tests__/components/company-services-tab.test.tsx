@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const hooksMock = vi.hoisted(() => ({
   useClientServices: vi.fn(), useClientService: vi.fn(), useUpdateClientService: vi.fn(), useArchiveClientService: vi.fn(), useRetryServiceAgreementActivation: vi.fn(),
+  useManualClientServiceCatalogOptions: vi.fn(), useCreateManualClientService: vi.fn(),
   isHttpRequestError: vi.fn((error: unknown, status?: number) => Boolean(
     error && typeof error === 'object' && 'status' in error
       && (status === undefined || error.status === status)
@@ -30,13 +31,50 @@ const manualService = {
   agreement: null,
 };
 
+const catalogOptions = {
+  variants: [{
+    id: 'variant-1',
+    name: 'Corporate Secretarial',
+    family: { id: 'family-1', name: 'Corporate Services' },
+    serviceCadence: 'ANNUALLY',
+    customCadenceLabel: null,
+    fields: [],
+    feeTemplates: [{
+      description: 'Annual service fee',
+      defaultAmount: '1200.00',
+      currency: 'SGD',
+      billingFrequency: 'ANNUALLY',
+      customFrequencyLabel: null,
+      displayOrder: 0,
+    }],
+  }],
+};
+
+async function selectVariantInCreator(name: string) {
+  fireEvent.focus(screen.getByPlaceholderText('Select service'));
+  fireEvent.click(await screen.findByRole('option', { name: new RegExp(name) }));
+}
+
 describe('CompanyServicesTab', () => {
   beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 40,
+      top: 10,
+      left: 10,
+      bottom: 50,
+      right: 210,
+      x: 10,
+      y: 10,
+      toJSON: () => ({}),
+    });
     hooksMock.useClientServices.mockReturnValue({ data: { services: [service], total: 1 }, isLoading: false, error: null });
     hooksMock.useClientService.mockReturnValue({ refetch: vi.fn(), isFetching: false });
     hooksMock.useUpdateClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     hooksMock.useArchiveClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     hooksMock.useRetryServiceAgreementActivation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    hooksMock.useManualClientServiceCatalogOptions.mockReturnValue({ data: catalogOptions, isLoading: false, error: null });
+    hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
   });
 
   it('shows compact service identity, fee, and signed agreement source', async () => {
@@ -65,6 +103,86 @@ describe('CompanyServicesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit service' }));
     expect(screen.getByText(/This service was added manually\. Operational changes are recorded in the audit history\./i)).toBeVisible();
     expect(screen.getByText(/Archiving removes this manually added service from the active company view\./i)).toBeVisible();
+  });
+
+  it('hides add actions from read-only users', () => {
+    render(<CompanyServicesTab companyId="company-1" canEdit={false} />);
+    expect(screen.queryByRole('button', { name: 'Add service' })).not.toBeInTheDocument();
+  });
+
+  it('shows one add action beside the controls for editors', () => {
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    expect(screen.getAllByRole('button', { name: 'Add service' })).toHaveLength(1);
+  });
+
+  it('adds a second action to the true empty state only', () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [], total: 0, activations: [] }, isLoading: false, error: null });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    expect(screen.getAllByRole('button', { name: 'Add service' })).toHaveLength(2);
+  });
+
+  it('does not duplicate the action in a filtered empty state', () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [], total: 0, activations: [] }, isLoading: false, error: null });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.change(screen.getByLabelText('Search services'), { target: { value: 'zzz' } });
+    expect(screen.getAllByRole('button', { name: 'Add service' })).toHaveLength(1);
+    expect(screen.getByText(/No matching services/i)).toBeVisible();
+  });
+
+  it('does not add a source filter', () => {
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    expect(screen.queryByRole('button', { name: 'Manual' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Agreement' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All' })).toBeVisible();
+  });
+
+  it('closes the creator, keeps list state, and shows View service after creation', async () => {
+    hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(manualService), isPending: false });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+    await selectVariantInCreator('Corporate Secretarial');
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Add service' })).getByRole('button', { name: 'Add service' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'View service' })).toBeVisible());
+    expect(screen.queryByRole('dialog', { name: 'Add service' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Advisory Retainer was added/i)).toBeVisible();
+    expect(hooksMock.useClientServices).toHaveBeenLastCalledWith('company-1', expect.objectContaining({ query: undefined, status: undefined, page: 1, limit: 20 }));
+  });
+
+  it('opens the created DTO directly and clears only filters that exclude it', async () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [service], total: 55, activations: [] }, isLoading: false, error: null });
+    hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(manualService), isPending: false });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+    await selectVariantInCreator('Corporate Secretarial');
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Add service' })).getByRole('button', { name: 'Add service' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'View service' })).toBeVisible());
+
+    fireEvent.change(screen.getByLabelText('Search services'), { target: { value: 'zzz' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ended' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'View service' }));
+
+    expect(screen.getByRole('dialog', { name: 'Edit service' })).toBeVisible();
+    expect(screen.getByLabelText('Service name')).toHaveValue('Advisory Retainer');
+    await waitFor(() => expect(hooksMock.useClientServices).toHaveBeenLastCalledWith('company-1', expect.objectContaining({ query: undefined, status: undefined, page: 1, limit: 20 })));
+  });
+
+  it('keeps non-excluding filters and pagination when viewing a created service', async () => {
+    hooksMock.useClientServices.mockReturnValue({ data: { services: [service], total: 55, activations: [] }, isLoading: false, error: null });
+    hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(manualService), isPending: false });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+    await selectVariantInCreator('Corporate Secretarial');
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Add service' })).getByRole('button', { name: 'Add service' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'View service' })).toBeVisible());
+
+    fireEvent.change(screen.getByLabelText('Search services'), { target: { value: 'Advisory' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'View service' }));
+
+    expect(screen.getByRole('dialog', { name: 'Edit service' })).toBeVisible();
+    await waitFor(() => expect(hooksMock.useClientServices).toHaveBeenLastCalledWith('company-1', expect.objectContaining({ query: 'Advisory', status: undefined, page: 2, limit: 20 })));
   });
 
   it('does not expose edit controls in read-only mode', () => {
