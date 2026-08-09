@@ -24,6 +24,15 @@ export interface ServiceVariantSnapshot {
   }>;
 }
 
+export interface ComposablePartial {
+  id: string;
+  name: string;
+  version: number;
+  content: string;
+  placeholders: unknown;
+  updatedAt: Date;
+}
+
 function placeholderDefinitions(value: unknown): PlaceholderDefinition[] {
   return Array.isArray(value)
     ? value.filter(
@@ -33,6 +42,26 @@ function placeholderDefinitions(value: unknown): PlaceholderDefinition[] {
           typeof (entry as { key?: unknown }).key === 'string',
       )
     : [];
+}
+
+export function composeServicePartialGraph(root: ComposablePartial, candidates: ComposablePartial[]) {
+  const partialByName = new Map(candidates.map((partial) => [partial.name, partial]));
+  const dependencies = new Map<string, ComposablePartial>();
+  const placeholders = new Map(
+    placeholderDefinitions(root.placeholders).map((definition) => [definition.key, definition]),
+  );
+  const expand = (content: string, stack: string[]): string =>
+    content.replace(PARTIAL_TOKEN, (_token, name: string) => {
+      if (stack.includes(name)) throw new ValidationError(`Circular partial reference detected: ${[...stack, name].join(' -> ')}`);
+      const nested = partialByName.get(name);
+      if (!nested) throw new ValidationError(`Template partial not found: ${name}`);
+      dependencies.set(nested.id, nested);
+      for (const definition of placeholderDefinitions(nested.placeholders)) {
+        if (!placeholders.has(definition.key)) placeholders.set(definition.key, definition);
+      }
+      return expand(nested.content, [...stack, name]);
+    });
+  return { content: expand(root.content, [root.name]), placeholders: [...placeholders.values()], dependencies: [...dependencies.values()] };
 }
 
 export async function snapshotServiceVariant(
@@ -67,32 +96,7 @@ export async function snapshotServiceVariant(
       updatedAt: true,
     },
   });
-  const partialByName = new Map(partials.map((partial) => [partial.name, partial]));
-  const dependencies = new Map<string, (typeof partials)[number]>();
-  const placeholders = new Map(
-    placeholderDefinitions(variant.sowPartial.placeholders).map((definition) => [
-      definition.key,
-      definition,
-    ]),
-  );
-
-  const expand = (content: string, stack: string[]): string =>
-    content.replace(PARTIAL_TOKEN, (_token, name: string) => {
-      if (stack.includes(name)) {
-        throw new ValidationError(
-          `Circular partial reference detected: ${[...stack, name].join(' -> ')}`,
-        );
-      }
-      const nested = partialByName.get(name);
-      if (!nested) throw new ValidationError(`Template partial not found: ${name}`);
-      dependencies.set(nested.id, nested);
-      for (const definition of placeholderDefinitions(nested.placeholders)) {
-        if (!placeholders.has(definition.key)) {
-          placeholders.set(definition.key, definition);
-        }
-      }
-      return expand(nested.content, [...stack, name]);
-    });
+  const composed = composeServicePartialGraph(variant.sowPartial, partials);
 
   return {
     variantId: variant.id,
@@ -103,9 +107,9 @@ export async function snapshotServiceVariant(
     customCadenceLabel: variant.customCadenceLabel,
     partialId: variant.sowPartial.id,
     partialVersion: variant.sowPartial.version,
-    partialContent: expand(variant.sowPartial.content, [variant.sowPartial.name]),
-    placeholders: [...placeholders.values()],
-    dependencies: [...dependencies.values()].map((dependency) => ({
+    partialContent: composed.content,
+    placeholders: composed.placeholders,
+    dependencies: composed.dependencies.map((dependency) => ({
       id: dependency.id,
       name: dependency.name,
       version: dependency.version,
