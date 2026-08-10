@@ -43,6 +43,8 @@ export interface InlineFormatPatch {
   textDecoration?: 'underline' | null;
 }
 
+export type InlineToggleState = 'on' | 'off' | 'mixed';
+
 interface DomPoint {
   node: Node;
   offset: number;
@@ -284,10 +286,6 @@ function applyPatchToSpan(
   if (span.style.length === 0) span.removeAttribute('style');
 }
 
-function isClearPatch(patch: InlineFormatPatch): boolean {
-  return Object.values(patch).every((value) => value === null || value === undefined);
-}
-
 function wrapTextSlice(
   textNode: Text,
   startOffset: number,
@@ -299,7 +297,7 @@ function wrapTextSlice(
   const safeEnd = Math.max(safeStart, Math.min(length, endOffset));
   if (safeEnd <= safeStart) return;
 
-  const middle = textNode.splitText(safeStart);
+  const middle = safeStart > 0 ? textNode.splitText(safeStart) : textNode;
   const tail = safeEnd < length ? middle.splitText(safeEnd - safeStart) : null;
   const span = document.createElement('span');
   applyPatchToSpan(span, patch);
@@ -313,6 +311,23 @@ function wrapTextSlice(
 function unwrapElementsInRange(
   root: HTMLElement,
   selection: FlowSelectionBookmark,
+): void {
+  mutateInlineRangeElements(root, selection, (element) => {
+    if (
+      element.tagName === 'SPAN' ||
+      FORMATTING_ELEMENTS.has(element.tagName)
+    ) {
+      element.replaceWith(...Array.from(element.childNodes));
+    } else if (element.getAttribute('style')) {
+      element.removeAttribute('style');
+    }
+  });
+}
+
+function mutateInlineRangeElements(
+  root: HTMLElement,
+  selection: FlowSelectionBookmark,
+  onFullyInside: (element: HTMLElement) => void,
 ): void {
   for (let pass = 0; pass < 12; pass += 1) {
     const resolved = resolveRange(root, selection);
@@ -370,14 +385,7 @@ function unwrapElementsInRange(
         compareDomPoints(contentEnd, rangeEnd) <= 0;
 
       if (fullyInside) {
-        if (
-          element.tagName === 'SPAN' ||
-          FORMATTING_ELEMENTS.has(element.tagName)
-        ) {
-          element.replaceWith(...Array.from(element.childNodes));
-        } else if (element.getAttribute('style')) {
-          element.removeAttribute('style');
-        }
+        onFullyInside(element);
         changed = true;
         break;
       }
@@ -395,6 +403,43 @@ function unwrapElementsInRange(
 
     if (!changed) break;
   }
+}
+
+function removeInlinePropertiesFromRange(
+  root: HTMLElement,
+  selection: FlowSelectionBookmark,
+  nullProperties: Array<[keyof InlineFormatPatch, string]>,
+): void {
+  mutateInlineRangeElements(root, selection, (element) => {
+    if (
+      (element.tagName === 'B' || element.tagName === 'STRONG') &&
+      nullProperties.some(([key]) => key === 'fontWeight')
+    ) {
+      element.replaceWith(...Array.from(element.childNodes));
+      return;
+    }
+    if (
+      (element.tagName === 'I' || element.tagName === 'EM') &&
+      nullProperties.some(([key]) => key === 'fontStyle')
+    ) {
+      element.replaceWith(...Array.from(element.childNodes));
+      return;
+    }
+    if (
+      (element.tagName === 'U' ||
+        element.tagName === 'S' ||
+        element.tagName === 'STRIKE') &&
+      nullProperties.some(([key]) => key === 'textDecoration')
+    ) {
+      element.replaceWith(...Array.from(element.childNodes));
+      return;
+    }
+
+    nullProperties.forEach(([, property]) => {
+      element.style.removeProperty(property);
+    });
+    if (element.style.length === 0) element.removeAttribute('style');
+  });
 }
 
 function splitElementAtDomPoint(
@@ -463,8 +508,7 @@ export function normalizeFormattingSpans(root: HTMLElement): void {
           );
         }
         if (span.style.length === 0) span.removeAttribute('style');
-        while (child.firstChild) span.appendChild(child.firstChild);
-        child.remove();
+        child.replaceWith(...Array.from(child.childNodes));
         changed = true;
         return;
       }
@@ -474,8 +518,7 @@ export function normalizeFormattingSpans(root: HTMLElement): void {
         parent?.tagName === 'SPAN' &&
         canonicalStyleText(parent) === canonicalStyleText(span)
       ) {
-        while (span.firstChild) parent.appendChild(span.firstChild);
-        span.remove();
+        span.replaceWith(...Array.from(span.childNodes));
         changed = true;
         return;
       }
@@ -511,47 +554,84 @@ export function applyInlineFormat(
   root.innerHTML = html;
   const resolved = resolveRange(root, selection);
   if (!resolved) return { html, selection, changed: false };
-  const { start, end } = resolved;
 
-  if (isClearPatch(patch)) {
-    unwrapElementsInRange(root, selection);
-    normalizeFormattingSpans(root);
-    hydrateFlowContainer(root);
-    return {
-      html: root.innerHTML,
-      selection,
-      changed: true,
-    };
+  const nullProperties = nullPatchProperties(patch);
+  if (nullProperties.length > 0) {
+    removeInlinePropertiesFromRange(root, selection, nullProperties);
   }
 
-  const range = document.createRange();
-  range.setStart(start.node, start.offset);
-  range.setEnd(end.node, end.offset);
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const textNodes: Text[] = [];
-  let node: Node | null;
-  while ((node = walker.nextNode())) {
-    if (node.textContent?.length) textNodes.push(node as Text);
+  const positive = positivePatch(patch);
+  if (Object.keys(positive).length > 0) {
+    const resolvedAfterRemoval = resolveRange(root, selection);
+    if (resolvedAfterRemoval) {
+      const range = document.createRange();
+      range.setStart(
+        resolvedAfterRemoval.start.node,
+        resolvedAfterRemoval.start.offset,
+      );
+      range.setEnd(
+        resolvedAfterRemoval.end.node,
+        resolvedAfterRemoval.end.offset,
+      );
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const textNodes: Text[] = [];
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        if (node.textContent?.length) textNodes.push(node as Text);
+      }
+
+      textNodes.forEach((textNode) => {
+        const nodeRange = document.createRange();
+        nodeRange.selectNodeContents(textNode);
+        if (!range.intersectsNode(textNode)) return;
+
+        const nodeStart = nodeRange.startOffset;
+        const nodeEnd = nodeRange.endOffset;
+        const startOffset =
+          range.compareBoundaryPoints(Range.START_TO_START, nodeRange) > 0
+            ? range.startOffset - nodeStart
+            : 0;
+        const endOffset =
+          range.compareBoundaryPoints(Range.END_TO_END, nodeRange) < 0
+            ? range.endOffset - nodeStart
+            : nodeEnd - nodeStart;
+        wrapTextSlice(textNode, startOffset, endOffset, positive);
+      });
+    }
   }
 
-  textNodes.forEach((textNode) => {
-    const nodeRange = document.createRange();
-    nodeRange.selectNodeContents(textNode);
-    if (!range.intersectsNode(textNode)) return;
+  normalizeFormattingSpans(root);
+  hydrateFlowContainer(root);
+  return {
+    html: root.innerHTML,
+    selection,
+    changed: true,
+  };
+}
 
-    const nodeStart = nodeRange.startOffset;
-    const nodeEnd = nodeRange.endOffset;
-    const startOffset =
-      range.compareBoundaryPoints(Range.START_TO_START, nodeRange) > 0
-        ? range.startOffset - nodeStart
-        : 0;
-    const endOffset =
-      range.compareBoundaryPoints(Range.END_TO_END, nodeRange) < 0
-        ? range.endOffset - nodeStart
-        : nodeEnd - nodeStart;
-    wrapTextSlice(textNode, startOffset, endOffset, patch);
+/**
+ * Removes every inline formatting property from the selected range while
+ * preserving the surrounding text and any block structure. This is the
+ * explicit full Clear formatting command; property-specific removal stays in
+ * `applyInlineFormat` via null patch values.
+ */
+export function clearInlineFormatting(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  if (selection.collapsed) {
+    return { html, selection, changed: false };
+  }
+
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return { html, selection, changed: false };
+
+  unwrapElementsInRange(root, selection);
+  editableBlocksForSelection(root, selection).forEach((block) => {
+    block.removeAttribute('style');
   });
-
   normalizeFormattingSpans(root);
   hydrateFlowContainer(root);
   return {
@@ -643,7 +723,9 @@ function prepareCaretForPatch(
   const clone = wrapper.cloneNode(false) as HTMLElement;
   clone.appendChild(before);
   wrapper.parentNode?.insertBefore(clone, wrapper);
-  return { node: parent, offset: index };
+  // The leading clone now sits at `index` and the original trailing wrapper at
+  // `index + 1`; the caret must land on the boundary between them.
+  return { node: parent, offset: index + 1 };
 }
 
 function applyPositivePatchToFragment(
@@ -830,13 +912,156 @@ function copyBlockAttributes(
   }
 }
 
-function intersectedBlocks(
+/**
+ * Wraps legacy direct-text list items in a single paragraph-style block and
+ * keeps the flow id on the owning `li`, so every list item has exactly one
+ * editable block child and one selection owner.
+ */
+function ensureListItemBlock(li: HTMLElement): void {
+  const existing = Array.from(li.children).find((child) =>
+    BLOCK_FORMAT_TAGS.has(child.tagName),
+  ) as HTMLElement | undefined;
+  if (existing) {
+    if (existing.dataset.flowId) {
+      if (li.dataset.flowId) {
+        existing.removeAttribute('data-flow-id');
+      } else {
+        li.dataset.flowId = existing.dataset.flowId;
+        existing.removeAttribute('data-flow-id');
+      }
+    }
+    return;
+  }
+
+  const paragraph = document.createElement('p');
+  paragraph.innerHTML = '<br>';
+  while (li.firstChild) paragraph.appendChild(li.firstChild);
+  li.appendChild(paragraph);
+}
+
+function editableBlocksForSelection(
   root: HTMLElement,
-  range: Range,
+  selection: FlowSelectionBookmark,
 ): HTMLElement[] {
-  return Array.from(
-    root.querySelectorAll<HTMLElement>('p,h1,h2,h3,h4,h5,h6,blockquote'),
-  ).filter((block) => range.intersectsNode(block));
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return [];
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+
+  const blocks = new Set<HTMLElement>();
+  root
+    .querySelectorAll<HTMLElement>('p,h1,h2,h3,h4,h5,h6,blockquote')
+    .forEach((block) => {
+      if (range.intersectsNode(block)) blocks.add(block);
+    });
+  root.querySelectorAll<HTMLElement>('li').forEach((listItem) => {
+    if (!range.intersectsNode(listItem)) return;
+    ensureListItemBlock(listItem);
+    const blockChild = Array.from(listItem.children).find((child) =>
+      BLOCK_FORMAT_TAGS.has(child.tagName),
+    ) as HTMLElement | undefined;
+    if (blockChild) blocks.add(blockChild);
+  });
+
+  return Array.from(blocks).sort((left, right) =>
+    compareDomPoints({ node: left, offset: 0 }, { node: right, offset: 0 }),
+  );
+}
+
+function selectedListItemsByList(
+  blocks: HTMLElement[],
+): Map<HTMLElement, HTMLElement[]> {
+  const byList = new Map<HTMLElement, HTMLElement[]>();
+  blocks.forEach((block) => {
+    const listItem = block.parentElement;
+    const list = listItem?.parentElement as HTMLElement | null;
+    if (
+      !listItem ||
+      !list ||
+      listItem.parentElement !== list ||
+      (list.tagName !== 'UL' && list.tagName !== 'OL')
+    ) {
+      return;
+    }
+    const items = byList.get(list);
+    if (items) items.push(listItem);
+    else byList.set(list, [listItem]);
+  });
+  return byList;
+}
+
+function adjacentBlockGroups(blocks: HTMLElement[]): HTMLElement[][] {
+  const groups: HTMLElement[][] = [];
+  let current: HTMLElement[] = [];
+  let lastParent: HTMLElement | null = null;
+  let lastBlock: HTMLElement | null = null;
+
+  blocks.forEach((block) => {
+    const parent = block.parentElement;
+    const adjacent =
+      lastBlock !== null &&
+      parent === lastParent &&
+      block.previousElementSibling === lastBlock;
+    if (current.length === 0 || !adjacent) {
+      if (current.length > 0) groups.push(current);
+      current = [block];
+    } else {
+      current.push(block);
+    }
+    lastParent = parent;
+    lastBlock = block;
+  });
+  if (current.length > 0) groups.push(current);
+  return groups;
+}
+
+function toggleOffSelectedListItems(
+  lists: Map<HTMLElement, HTMLElement[]>,
+): boolean {
+  let changed = false;
+  for (const [list, selectedItems] of lists) {
+    const parent = list.parentNode;
+    if (!parent) continue;
+    const selected = new Set(selectedItems);
+    const parts: Node[] = [];
+    let pending: HTMLElement[] = [];
+    const flushPending = () => {
+      if (pending.length === 0) return;
+      const listFragment = document.createElement(list.tagName);
+      pending.forEach((item) => {
+        ensureListItemBlock(item);
+        listFragment.appendChild(item);
+      });
+      parts.push(listFragment);
+      pending = [];
+    };
+
+    Array.from(list.children as HTMLCollectionOf<HTMLElement>).forEach(
+      (item) => {
+        if (!selected.has(item)) {
+          pending.push(item);
+          return;
+        }
+        flushPending();
+        ensureListItemBlock(item);
+        const block = Array.from(item.children).find((child) =>
+          BLOCK_FORMAT_TAGS.has(child.tagName),
+        ) as HTMLElement;
+        if (item.dataset.flowId) {
+          block.dataset.flowId = item.dataset.flowId;
+          item.removeAttribute('data-flow-id');
+        }
+        parts.push(block);
+      },
+    );
+    flushPending();
+
+    if (parts.length === 0) list.remove();
+    else list.replaceWith(...parts);
+    changed = true;
+  }
+  return changed;
 }
 
 export function applyBlockFormatToSelection(
@@ -851,13 +1076,7 @@ export function applyBlockFormatToSelection(
 
   const root = document.createElement('div');
   root.innerHTML = html;
-  const resolved = resolveRange(root, selection);
-  if (!resolved) return { html, selection, changed: false };
-  const range = document.createRange();
-  range.setStart(resolved.start.node, resolved.start.offset);
-  range.setEnd(resolved.end.node, resolved.end.offset);
-
-  const blocks = intersectedBlocks(root, range);
+  const blocks = editableBlocksForSelection(root, selection);
   if (blocks.length === 0) return { html, selection, changed: false };
 
   blocks.forEach((block) => {
@@ -883,12 +1102,7 @@ export function applyBlockAlignmentToSelection(
 
   const root = document.createElement('div');
   root.innerHTML = html;
-  const resolved = resolveRange(root, selection);
-  if (!resolved) return { html, selection, changed: false };
-  const range = document.createRange();
-  range.setStart(resolved.start.node, resolved.start.offset);
-  range.setEnd(resolved.end.node, resolved.end.offset);
-  const blocks = intersectedBlocks(root, range);
+  const blocks = editableBlocksForSelection(root, selection);
   if (blocks.length === 0) return { html, selection, changed: false };
 
   const before = root.innerHTML;
@@ -915,55 +1129,104 @@ export function applyListToSelection(
   const tag = listType === 'ordered' ? 'OL' : 'UL';
   const root = document.createElement('div');
   root.innerHTML = html;
-  const resolved = resolveRange(root, selection);
-  if (!resolved) return { html, selection, changed: false };
-  const range = document.createRange();
-  range.setStart(resolved.start.node, resolved.start.offset);
-  range.setEnd(resolved.end.node, resolved.end.offset);
-  const blocks = intersectedBlocks(root, range);
+  const blocks = editableBlocksForSelection(root, selection);
   if (blocks.length === 0) return { html, selection, changed: false };
 
-  const allInMatchingList = blocks.every((block) => {
-    const list = block.parentElement?.closest('ol,ul');
-    return list?.tagName === tag;
-  });
+  const inListBlocks = blocks.filter(
+    (block) => block.parentElement?.tagName === 'LI',
+  );
+  const outsideBlocks = blocks.filter(
+    (block) => block.parentElement?.tagName !== 'LI',
+  );
+  const lists = selectedListItemsByList(inListBlocks);
+  const allListsMatch = Array.from(lists.keys()).every(
+    (list) => list.tagName === tag,
+  );
+  let changed = false;
 
-  if (allInMatchingList) {
-    const byList = new Map<HTMLElement, HTMLElement[]>();
-    blocks.forEach((block) => {
-      const listItem = block.parentElement;
-      const list = listItem?.closest('ol,ul') as HTMLElement | null;
-      if (!listItem || !list || listItem.parentElement !== list) return;
-      const paragraph = document.createElement('p');
-      copyBlockAttributes(block, paragraph);
-      while (block.firstChild) paragraph.appendChild(block.firstChild);
-      const paragraphs = byList.get(list);
-      if (paragraphs) paragraphs.push(paragraph);
-      else byList.set(list, [paragraph]);
-      listItem.remove();
-    });
-
-    for (const [list, paragraphs] of byList) {
-      const parent = list.parentNode;
-      if (!parent) continue;
-      let reference: Node = list;
-      paragraphs.forEach((paragraph) => {
-        parent.insertBefore(paragraph, reference);
-        reference = paragraph;
-      });
-      if (list.children.length === 0) list.remove();
+  if (outsideBlocks.length > 0) {
+    for (const list of lists.keys()) {
+      if (list.tagName === tag) continue;
+      const replacement = document.createElement(tag);
+      while (list.firstChild) replacement.appendChild(list.firstChild);
+      list.replaceWith(replacement);
+      changed = true;
     }
-  } else {
-    blocks.forEach((block) => {
-      if (block.parentElement?.closest('ol,ul')) return;
-      const listItem = document.createElement('li');
-      copyBlockAttributes(block, listItem);
-      while (block.firstChild) listItem.appendChild(block.firstChild);
+
+    adjacentBlockGroups(outsideBlocks).forEach((group) => {
+      const first = group[0];
+      const parent = first.parentElement;
+      if (!parent) return;
+      const previousSibling = first.previousElementSibling as HTMLElement | null;
+      const last = group[group.length - 1];
+      const nextSibling = last.nextElementSibling as HTMLElement | null;
+      const previousList =
+        previousSibling?.tagName === tag &&
+        previousSibling.parentElement === parent
+          ? (previousSibling as HTMLElement)
+          : null;
+      const nextList =
+        nextSibling?.tagName === tag && nextSibling.parentElement === parent
+          ? (nextSibling as HTMLElement)
+          : null;
+
+      if (previousList) {
+        group.forEach((block) => {
+          const listItem = document.createElement('li');
+          copyBlockAttributes(block, listItem);
+          if (block.dataset.flowId) {
+            listItem.dataset.flowId = block.dataset.flowId;
+            block.removeAttribute('data-flow-id');
+          }
+          listItem.appendChild(block);
+          previousList.appendChild(listItem);
+        });
+        changed = true;
+        return;
+      }
+
+      if (nextList) {
+        group.forEach((block) => {
+          const listItem = document.createElement('li');
+          copyBlockAttributes(block, listItem);
+          if (block.dataset.flowId) {
+            listItem.dataset.flowId = block.dataset.flowId;
+            block.removeAttribute('data-flow-id');
+          }
+          listItem.appendChild(block);
+          nextList.insertBefore(listItem, nextList.firstChild);
+        });
+        changed = true;
+        return;
+      }
+
       const list = document.createElement(tag);
-      list.appendChild(listItem);
-      block.replaceWith(list);
+      group.forEach((block) => {
+        const listItem = document.createElement('li');
+        copyBlockAttributes(block, listItem);
+        if (block.dataset.flowId) {
+          listItem.dataset.flowId = block.dataset.flowId;
+          block.removeAttribute('data-flow-id');
+        }
+        listItem.appendChild(block);
+        list.appendChild(listItem);
+      });
+      parent.insertBefore(list, nextSibling);
+      changed = true;
     });
+  } else if (allListsMatch) {
+    changed = toggleOffSelectedListItems(lists);
+  } else {
+    for (const list of lists.keys()) {
+      if (list.tagName === tag) continue;
+      const replacement = document.createElement(tag);
+      while (list.firstChild) replacement.appendChild(list.firstChild);
+      list.replaceWith(replacement);
+      changed = true;
+    }
   }
+
+  if (!changed) return { html, selection, changed: false };
 
   const finalized = finalizeRoot(root, selection, true);
   return { ...finalized, changed: true };
@@ -975,18 +1238,15 @@ export function applyIndentToSelection(
 ): DocumentTransactionResult {
   const root = document.createElement('div');
   root.innerHTML = html;
-  const resolved = resolveRange(root, selection);
-  if (!resolved) return { html, selection, changed: false };
-  const range = document.createRange();
-  range.setStart(resolved.start.node, resolved.start.offset);
-  range.setEnd(resolved.end.node, resolved.end.offset);
-  const blocks = intersectedBlocks(root, range);
+  const blocks = editableBlocksForSelection(root, selection);
   if (blocks.length === 0) return { html, selection, changed: false };
 
+  const before = root.innerHTML;
   blocks.forEach((block) => {
     const current = block.style.marginLeft;
     if (!current) block.style.setProperty('margin-left', '2em');
   });
+  if (root.innerHTML === before) return { html, selection, changed: false };
 
   const finalized = finalizeRoot(root, selection, true);
   return { ...finalized, changed: true };
@@ -998,17 +1258,14 @@ export function applyOutdentToSelection(
 ): DocumentTransactionResult {
   const root = document.createElement('div');
   root.innerHTML = html;
-  const resolved = resolveRange(root, selection);
-  if (!resolved) return { html, selection, changed: false };
-  const range = document.createRange();
-  range.setStart(resolved.start.node, resolved.start.offset);
-  range.setEnd(resolved.end.node, resolved.end.offset);
-  const blocks = intersectedBlocks(root, range);
+  const blocks = editableBlocksForSelection(root, selection);
   if (blocks.length === 0) return { html, selection, changed: false };
 
+  const before = root.innerHTML;
   blocks.forEach((block) => {
     if (block.style.marginLeft) block.style.removeProperty('margin-left');
   });
+  if (root.innerHTML === before) return { html, selection, changed: false };
 
   const finalized = finalizeRoot(root, selection, true);
   return { ...finalized, changed: true };
@@ -1029,6 +1286,84 @@ function inlinePropertyInAncestors(
     element = element.parentElement;
   }
   return null;
+}
+
+function inlinePropertyActiveAtPoint(
+  root: HTMLElement,
+  point: DomPoint,
+  field: 'bold' | 'italic' | 'underline',
+): boolean {
+  if (field === 'bold') {
+    return (
+      hasFormattingTag(point.node, root, ['B', 'STRONG']) ||
+      ['bold', 'bolder', '600', '700', '800', '900'].includes(
+        inlinePropertyInAncestors(point.node, root, 'font-weight') ?? '',
+      )
+    );
+  }
+  if (field === 'italic') {
+    return (
+      hasFormattingTag(point.node, root, ['I', 'EM']) ||
+      ['italic', 'oblique'].includes(
+        inlinePropertyInAncestors(point.node, root, 'font-style') ?? '',
+      )
+    );
+  }
+  return (
+    hasFormattingTag(point.node, root, ['U']) ||
+    (inlinePropertyInAncestors(point.node, root, 'text-decoration') ?? '').includes(
+      'underline',
+    )
+  );
+}
+
+/**
+ * Reads whether a formatting field is active across a selection. A collapsed
+ * caret reports on/off from its point; a non-collapsed range reports `on`
+ * when every sampled point is active, `off` when none is active, and `mixed`
+ * otherwise.
+ */
+export function readInlineToggleState(
+  root: HTMLElement,
+  selection: FlowSelectionBookmark,
+  field: 'bold' | 'italic' | 'underline',
+): InlineToggleState {
+  if (selection.collapsed) {
+    const point = domPointForFlowPoint(root, selection.anchor);
+    if (!point) return 'off';
+    return inlinePropertyActiveAtPoint(root, point, field) ? 'on' : 'off';
+  }
+
+  const resolved = resolveRange(root, selection);
+  if (!resolved) return 'off';
+  const range = document.createRange();
+  range.setStart(resolved.start.node, resolved.start.offset);
+  range.setEnd(resolved.end.node, resolved.end.offset);
+
+  const samples: DomPoint[] = [
+    { node: range.startContainer, offset: range.startOffset },
+    { node: range.endContainer, offset: range.endOffset },
+  ];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (!node.textContent?.length) continue;
+    const nodeRange = document.createRange();
+    nodeRange.selectNodeContents(node);
+    if (range.intersectsNode(node)) {
+      samples.push({ node, offset: 0 });
+      samples.push({ node, offset: node.textContent.length });
+    }
+  }
+
+  let sawOn = false;
+  let sawOff = false;
+  samples.forEach((sample) => {
+    if (inlinePropertyActiveAtPoint(root, sample, field)) sawOn = true;
+    else sawOff = true;
+  });
+  if (sawOn && sawOff) return 'mixed';
+  return sawOn ? 'on' : 'off';
 }
 
 function hasFormattingTag(

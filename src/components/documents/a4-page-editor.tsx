@@ -57,9 +57,11 @@ import {
   applyIndentToSelection,
   applyListToSelection,
   applyOutdentToSelection,
+  clearInlineFormatting,
   insertTextWithFormat,
   normalizeFormattingSpans,
   readLogicalFormatState,
+  readInlineToggleState,
   readUniformFormatState,
   replaceFormattedSelection,
   type InlineFormatPatch,
@@ -1942,12 +1944,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       pendingTypingPointRef.current = null;
     }, []);
 
-    const isClearFormattingPatch = useCallback((patch: InlineFormatPatch) => {
-      return Object.values(patch).every(
-        (value) => value === null || value === undefined,
-      );
-    }, []);
-
     const setPendingTypingFormat = useCallback(
       (patch: InlineFormatPatch) => {
         const surface = documentSurfaceRef.current;
@@ -1956,45 +1952,75 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           (surface ? captureFlowSelection(surface) : null);
         if (!surface || !bookmark?.collapsed) return false;
 
-        pendingTypingFormatRef.current = {
+        const merged = {
           ...pendingTypingFormatRef.current,
           ...patch,
         };
-        pendingTypingPointRef.current = bookmark.anchor;
+        const persisted = readUniformFormatState(
+          surface,
+          bookmark,
+          effectiveLayout,
+        );
+        const mergedIsNeutral =
+          persisted !== null &&
+          (Object.entries(merged) as Array<
+            [keyof InlineFormatPatch, string | null | undefined]
+          >).every(([key, value]) => {
+            if (typeof value === 'string') return false;
+            if (key === 'fontWeight') return persisted.bold === false;
+            if (key === 'fontStyle') return persisted.italic === false;
+            if (key === 'textDecoration') {
+              return persisted.underline === false;
+            }
+            if (key === 'color') return persisted.textColor === '#000000';
+            if (key === 'backgroundColor') {
+              return persisted.highlightColor === '#ffffff';
+            }
+            if (key === 'fontFamily') {
+              return persisted.fontFamily === effectiveLayout.fontFamily;
+            }
+            if (key === 'fontSize') {
+              return persisted.fontSize === effectiveLayout.fontSize;
+            }
+            return true;
+          });
+
+        if (mergedIsNeutral) {
+          pendingTypingFormatRef.current = null;
+          pendingTypingPointRef.current = null;
+        } else {
+          pendingTypingFormatRef.current = merged;
+          pendingTypingPointRef.current = bookmark.anchor;
+        }
 
         setActiveFormats((prev) => {
           const next = { ...prev };
-          if (patch.fontWeight !== undefined) {
-            next.bold = patch.fontWeight === 'bold';
+          if (merged.fontWeight !== undefined) {
+            next.bold = merged.fontWeight === 'bold';
           }
-          if (patch.fontStyle !== undefined) {
-            next.italic = patch.fontStyle === 'italic';
+          if (merged.fontStyle !== undefined) {
+            next.italic = merged.fontStyle === 'italic';
           }
-          if (patch.textDecoration !== undefined) {
-            next.underline = patch.textDecoration === 'underline';
+          if (merged.textDecoration !== undefined) {
+            next.underline = merged.textDecoration === 'underline';
           }
-          if (typeof patch.fontFamily === 'string') {
-            next.fontFamily = patch.fontFamily;
+          if (typeof merged.fontFamily === 'string') {
+            next.fontFamily = merged.fontFamily;
           }
-          if (typeof patch.fontSize === 'string') {
-            next.fontSize = patch.fontSize;
+          if (typeof merged.fontSize === 'string') {
+            next.fontSize = merged.fontSize;
           }
-          if (typeof patch.color === 'string') {
-            next.textColor = patch.color;
+          if (typeof merged.color === 'string') {
+            next.textColor = merged.color;
           }
-          if (typeof patch.backgroundColor === 'string') {
-            next.highlightColor = patch.backgroundColor;
-          }
-          if (isClearFormattingPatch(patch)) {
-            next.bold = false;
-            next.italic = false;
-            next.underline = false;
+          if (typeof merged.backgroundColor === 'string') {
+            next.highlightColor = merged.backgroundColor;
           }
           return next;
         });
         return true;
       },
-      [isClearFormattingPatch],
+      [effectiveLayout],
     );
 
     const applyFormattingTransaction = useCallback(
@@ -2017,7 +2043,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               bookmark,
               effectiveLayout,
             );
-            const active = uniform?.[toggleField] === true;
             const property =
               toggleField === 'bold'
                 ? 'fontWeight'
@@ -2027,6 +2052,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             const value = patch[
               property as keyof InlineFormatPatch
             ] as InlineFormatPatch[keyof InlineFormatPatch];
+            const pendingValue = pendingTypingFormatRef.current?.[
+              property as keyof InlineFormatPatch
+            ];
+            const active =
+              pendingValue !== undefined
+                ? pendingValue !== null
+                : uniform?.[toggleField] === true;
             setPendingTypingFormat({
               ...patch,
               [property]: active ? null : value,
@@ -2038,6 +2070,32 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         clearPendingTypingFormat();
+        if (toggleField) {
+          const property =
+            toggleField === 'bold'
+              ? 'fontWeight'
+              : toggleField === 'italic'
+                ? 'fontStyle'
+                : 'textDecoration';
+          const toggleState = readInlineToggleState(
+            surface,
+            bookmark,
+            toggleField,
+          );
+          const effectivePatch =
+            toggleState === 'on'
+              ? ({ ...patch, [property]: null } as InlineFormatPatch)
+              : patch;
+          commitUserTransaction(
+            applyInlineFormat(
+              canonicalPagesHtml(pagesRef.current),
+              bookmark,
+              effectivePatch,
+            ),
+          );
+          return;
+        }
+
         commitUserTransaction(
           applyInlineFormat(
             canonicalPagesHtml(pagesRef.current),
@@ -2056,6 +2114,39 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         setPendingTypingFormat,
       ],
     );
+
+    const applyClearFormattingTransaction = useCallback(() => {
+      const surface = documentSurfaceRef.current;
+      if (!surface || effectivePreviewMode) return;
+      if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
+        return;
+      }
+      const bookmark = captureFlowSelection(surface);
+      if (!bookmark) return;
+
+      clearPendingTypingFormat();
+      if (bookmark.collapsed) {
+        setActiveFormats((prev) => ({
+          ...prev,
+          bold: false,
+          italic: false,
+          underline: false,
+        }));
+        return;
+      }
+      commitUserTransaction(
+        clearInlineFormatting(
+          canonicalPagesHtml(pagesRef.current),
+          bookmark,
+        ),
+      );
+    }, [
+      canonicalPagesHtml,
+      clearPendingTypingFormat,
+      commitUserTransaction,
+      effectivePreviewMode,
+      restoreSelection,
+    ]);
 
     const applySelectionTransaction = useCallback(
       (
@@ -2153,15 +2244,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'removeFormat') {
-          applyFormattingTransaction({
-            fontFamily: null,
-            fontSize: null,
-            color: null,
-            backgroundColor: null,
-            fontWeight: null,
-            fontStyle: null,
-            textDecoration: null,
-          });
+          applyClearFormattingTransaction();
           return;
         }
 
@@ -2215,6 +2298,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
       },
       [
+        applyClearFormattingTransaction,
         applyFormattingTransaction,
         applySelectionTransaction,
         effectiveLayout,

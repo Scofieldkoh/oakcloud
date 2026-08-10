@@ -347,6 +347,144 @@ describe('A4 canonical document actions', () => {
     expect(result.html.match(/Two/g)).toHaveLength(1);
   });
 
+  it.each([
+    ['<ul><li>One</li><li>Two</li></ul>', 'UL'],
+    ['<table><tbody><tr><td>Cell</td></tr></tbody></table>', 'TABLE'],
+    ['<hr>', 'HR'],
+  ])('splits the containing paragraph for %s', (replacement, tagName) => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+    const result = replaceLogicalSelection(
+      html,
+      collapsed(flowId, 5),
+      replacement,
+    );
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(Array.from(body.children, (node) => node.tagName)).toEqual([
+      'P',
+      tagName,
+      'P',
+    ]);
+    expect(body.children[0].textContent).toBe('Alpha');
+    expect(body.children[2].textContent).toBe('Beta');
+    expect(result.html).toBe(body.innerHTML);
+  });
+
+  it.each([
+    ['start', 0, ['UL', 'P'], ['OneTwo', 'AlphaBeta']],
+    ['middle', 5, ['P', 'UL', 'P'], ['Alpha', 'OneTwo', 'Beta']],
+    ['end', 10, ['P', 'UL'], ['AlphaBeta', 'OneTwo']],
+  ])(
+    'replaces a list at the %s of a paragraph with canonical structure',
+    (position, offset, expectedTags, expectedTexts) => {
+      const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+      const flowId = new DOMParser()
+        .parseFromString(html, 'text/html')
+        .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+      const result = replaceLogicalSelection(
+        html,
+        collapsed(flowId, offset),
+        '<ul><li>One</li><li>Two</li></ul>',
+      );
+      const body = new DOMParser().parseFromString(result.html, 'text/html')
+        .body;
+      expect(Array.from(body.children, (node) => node.tagName)).toEqual(
+        expectedTags,
+      );
+      expect(
+        Array.from(body.children, (node) => node.textContent),
+      ).toEqual(expectedTexts);
+      expect(result.html).toBe(body.innerHTML);
+      const ids = Array.from(
+        body.querySelectorAll<HTMLElement>('[data-flow-id]'),
+        (element) => element.dataset.flowId!,
+      );
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(result.html.match(/One/g)).toHaveLength(1);
+      expect(result.html.match(/Two/g)).toHaveLength(1);
+    },
+  );
+
+  it('replaces a forward selection with a list in canonical structure', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+    const result = replaceLogicalSelection(
+      html,
+      {
+        anchor: { flowId, offset: 0 },
+        focus: { flowId, offset: 5 },
+        collapsed: false,
+      },
+      '<ul><li>One</li></ul>',
+    );
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(Array.from(body.children, (node) => node.tagName)).toEqual([
+      'UL',
+      'P',
+    ]);
+    expect(body.textContent).toBe('OneBeta');
+    expect(result.selection?.collapsed).toBe(true);
+  });
+
+  it('replaces a reversed selection with a list in canonical structure', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+    const result = replaceLogicalSelection(
+      html,
+      {
+        anchor: { flowId, offset: 5 },
+        focus: { flowId, offset: 0 },
+        collapsed: false,
+      },
+      '<ul><li>One</li></ul>',
+    );
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(Array.from(body.children, (node) => node.tagName)).toEqual([
+      'UL',
+      'P',
+    ]);
+    expect(body.textContent).toBe('OneBeta');
+  });
+
+  it('keeps mixed inline and block replacement nodes in document order', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+    const result = replaceLogicalSelection(
+      html,
+      collapsed(flowId, 5),
+      '<p>One</p><hr><p>Two</p>',
+    );
+    const body = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(Array.from(body.children, (node) => node.tagName)).toEqual([
+      'P',
+      'P',
+      'HR',
+      'P',
+      'P',
+    ]);
+    expect(body.textContent).toBe('AlphaOneTwoBeta');
+    expect(result.html).toBe(body.innerHTML);
+  });
+
+  it('leaves a stale bookmark unchanged for a block-rich replacement', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const result = replaceLogicalSelection(
+      html,
+      collapsed('missing', 5),
+      '<ul><li>One</li></ul>',
+    );
+    expect(result.changed).toBe(false);
+    expect(result.html).toBe(html);
+  });
+
   it('strips editor-owned flow metadata from clipboard HTML', () => {
     const html = hydrateFlowHtml('<p>Alpha</p>');
     const flowId = new DOMParser()

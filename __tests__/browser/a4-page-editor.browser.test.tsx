@@ -1177,6 +1177,361 @@ describe('A4PageEditor real layout pagination', () => {
     expect(body.querySelector('p')?.lastChild?.textContent).toBe('Y');
   });
 
+  it('toggles selected bold off and on with real pointer clicks while preserving colour and italic (VR2-01)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={
+            '<p><span style="font-weight:bold;color:rgb(255, 0, 0);font-style:italic">abcdef</span></p>'
+          }
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const boldButton = () =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === 'Bold',
+      )!;
+    const selectSpan = () => {
+      const text = page.querySelector('span')!.firstChild!;
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text, 0);
+      range.setEnd(text, text.textContent!.length);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    };
+
+    await act(async () => {
+      selectSpan();
+    });
+    await act(async () => {
+      await userEvent.click(boldButton());
+    });
+    await waitForEditorIdle();
+
+    await act(async () => {
+      selectSpan();
+    });
+    await act(async () => {
+      await userEvent.click(boldButton());
+    });
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.textContent).toBe('abcdef');
+    const boldSpan = Array.from(body.querySelectorAll('span')).find(
+      (candidate) => candidate.style.fontWeight === 'bold',
+    )!;
+    expect(boldSpan.textContent).toBe('abcdef');
+    expect(boldSpan.style.fontStyle).toBe('italic');
+    expect(boldSpan.style.color).toBe('rgb(255, 0, 0)');
+    expect(window.getSelection()?.toString()).toBe('abcdef');
+  });
+
+  it('toggles pending bold off and on before typing in the middle of a wrapper (VR2-01)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={'<p><span style="font-weight:bold">abc</span></p>'}
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const pageContent = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const placeCaret = async () => {
+      const text = pageContent.querySelector('span')!.firstChild!;
+      await act(async () => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(text, 1);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    };
+    await placeCaret();
+
+    const boldButton = () =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === 'Bold',
+      )!;
+    await act(async () => {
+      await userEvent.click(boldButton());
+    });
+    await placeCaret();
+    await act(async () => {
+      await userEvent.click(boldButton());
+    });
+    await placeCaret();
+    expect(window.getSelection()?.anchorOffset).toBe(1);
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'X' });
+    });
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.textContent).toBe('aXbc');
+    const boldSpan = Array.from(body.querySelectorAll('span')).find(
+      (candidate) => candidate.style.fontWeight === 'bold',
+    )!;
+    expect(boldSpan.textContent).toBe('aXbc');
+    const selection = window.getSelection()!;
+    expect(selection.isCollapsed).toBe(true);
+    expect(selection.anchorNode?.textContent).toBe('aXbc');
+    expect(selection.anchorOffset).toBe(2);
+  });
+
+  it('keeps list items editable through creation, alignment, indent, type switch, and toggle-off (VR2-02)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>One</p><p>Two</p>" />);
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const buttonByLabel = (label: string) =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === label,
+      )!;
+    const selectBoth = () => {
+      const paragraphs = Array.from(
+        host.querySelectorAll('[data-testid="a4-page-content-1"] p'),
+      );
+      expect(paragraphs).toHaveLength(2);
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(paragraphs[0].firstChild!, 0);
+      range.setEnd(
+        paragraphs[1].firstChild!,
+        paragraphs[1].textContent!.length,
+      );
+      selection.removeAllRanges();
+      selection.addRange(range);
+    };
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Bulleted list'));
+    });
+    await waitForEditorIdle();
+    let body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.querySelectorAll('ul')).toHaveLength(1);
+    expect(body.querySelectorAll('ul > li > p')).toHaveLength(2);
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Align center'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
+        (paragraph) => paragraph.style.textAlign === 'center',
+      ),
+    ).toBe(true);
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Increase indent'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
+        (paragraph) => paragraph.style.marginLeft === '2em',
+      ),
+    ).toBe(true);
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Numbered list'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.querySelectorAll('ol')).toHaveLength(1);
+    expect(body.querySelectorAll('ul')).toHaveLength(0);
+    expect(body.querySelectorAll('ol > li > p')).toHaveLength(2);
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Numbered list'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.querySelectorAll('ol, ul')).toHaveLength(0);
+    expect(
+      Array.from(body.children, (node) => node.tagName),
+    ).toEqual(['P', 'P']);
+    expect(
+      new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body.textContent,
+    ).toBe('OneTwo');
+  });
+
+  it('pastes block-rich lists and tables, then types, undoes, and redoes without duplicates (VR2-03)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>AlphaBeta</p>" />);
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const placeCaret = async () => {
+      const text = page.querySelector('p')!.firstChild!;
+      await act(async () => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(text, 5);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    };
+    const pasteHtml = async (html: string) => {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/html', html);
+      await act(async () => {
+        page.dispatchEvent(
+          new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            clipboardData,
+          }),
+        );
+      });
+      await waitForEditorIdle();
+    };
+    const canonicalBody = () =>
+      new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body;
+    const undo = async () => {
+      await act(async () => {
+        surface.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'z',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+      });
+      await waitForEditorIdle();
+    };
+
+    await placeCaret();
+    await pasteHtml('<ul><li>One</li><li>Two</li></ul>');
+    let body = canonicalBody();
+    expect(body.querySelector('p ul, p ol, p table')).toBeNull();
+    expect(body.textContent).toBe('AlphaOneTwoBeta');
+    expect(body.querySelectorAll('ul')).toHaveLength(1);
+    expect(editorRef.current!.getContent().match(/One/g)).toHaveLength(1);
+    expect(editorRef.current!.getContent().match(/Two/g)).toHaveLength(1);
+
+    const trailingText = Array.from(page.querySelectorAll('p')).at(-1)!
+      .firstChild!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(trailingText, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'X' });
+    });
+    await waitForEditorIdle();
+    body = canonicalBody();
+    expect(body.textContent).toBe('AlphaOneTwoXBeta');
+
+    await undo();
+    expect(canonicalBody().textContent).toBe('AlphaOneTwoBeta');
+    await undo();
+    expect(canonicalBody().textContent).toBe('AlphaBeta');
+    await act(async () => {
+      surface.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'y',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    await waitForEditorIdle();
+    expect(canonicalBody().textContent).toBe('AlphaOneTwoBeta');
+
+    await undo();
+    expect(canonicalBody().textContent).toBe('AlphaBeta');
+    await placeCaret();
+    await pasteHtml(
+      '<table><tbody><tr><td>Cell</td></tr></tbody></table>',
+    );
+    body = canonicalBody();
+    expect(body.querySelector('p ul, p ol, p table')).toBeNull();
+    expect(body.textContent).toBe('AlphaCellBeta');
+    expect(body.querySelectorAll('table')).toHaveLength(1);
+    expect(editorRef.current!.getContent().match(/Cell/g)).toHaveLength(1);
+    expect(
+      Array.from(body.children, (node) => node.tagName),
+    ).toEqual(['P', 'TABLE', 'P']);
+
+    await undo();
+    expect(canonicalBody().textContent).toBe('AlphaBeta');
+  });
+
   it('clears formatting only inside a partial selection (IR-05)', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     await act(async () => {

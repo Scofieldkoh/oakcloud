@@ -1744,6 +1744,255 @@ describe('A4PageEditor', () => {
     ).toBe('P');
   });
 
+  it('toggles selected bold off and on while preserving colour and italic (VR2-01)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={
+          '<p><span style="font-weight:bold;color:rgb(255, 0, 0);font-style:italic">abcdef</span></p>'
+        }
+      />,
+    );
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const selectSpan = () => {
+      const span = screen
+        .getByTestId('a4-page-content-1')
+        .querySelector('span')!;
+      const text = span.firstChild!;
+      act(() => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(text, 0);
+        range.setEnd(text, text.textContent!.length);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    };
+
+    selectSpan();
+    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+    selectSpan();
+    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(body.textContent).toBe('abcdef');
+    const boldSpan = Array.from(body.querySelectorAll('span')).find(
+      (span) => span.style.fontWeight === 'bold',
+    )!;
+    expect(boldSpan.textContent).toBe('abcdef');
+    expect(boldSpan.style.fontStyle).toBe('italic');
+    expect(boldSpan.style.color).toBe('rgb(255, 0, 0)');
+    expect(window.getSelection()?.toString()).toBe('abcdef');
+
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      const undone = new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body;
+      const plainSpan = Array.from(undone.querySelectorAll('span')).find(
+        (span) => span.style.fontWeight === '',
+      )!;
+      expect(plainSpan.style.fontWeight).toBe('');
+      expect(plainSpan.style.fontStyle).toBe('italic');
+      expect(plainSpan.style.color).toBe('rgb(255, 0, 0)');
+    });
+
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      const restored = new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body;
+      expect(
+        Array.from(restored.querySelectorAll('span')).some(
+          (span) => span.style.fontWeight === 'bold',
+        ),
+      ).toBe(true);
+    });
+  });
+
+  it('cancels a pending bold while keeping a pending italic before typing (VR2-01)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(<A4PageEditor ref={editorRef} value="<p>Alpha</p>" />);
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const page = screen.getByTestId('a4-page-content-1');
+    const textNode = page.querySelector('p')!.firstChild!;
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(textNode, 5);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Italic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    act(() => {
+      surface.dispatchEvent(
+        new InputEvent('beforeinput', {
+          inputType: 'insertText',
+          data: 'X',
+          cancelable: true,
+          bubbles: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      const body = new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body;
+      expect(body.textContent).toBe('AlphaX');
+      const italicSpan = Array.from(body.querySelectorAll('span')).find(
+        (span) => span.style.fontStyle === 'italic',
+      )!;
+      expect(italicSpan.textContent).toBe('X');
+      expect(italicSpan.style.fontWeight).toBe('');
+      expect(
+        body.querySelector('span[style*="font-weight"]'),
+      ).toBeNull();
+    });
+
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      const body = new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body;
+      expect(body.textContent).toBe('Alpha');
+      expect(body.querySelector('span')).toBeNull();
+    });
+  });
+
+  it('keeps list creation, type switch, alignment, indent, and toggle-off as one history entry each (VR2-02)', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(<A4PageEditor ref={editorRef} value="<p>One</p><p>Two</p>" />);
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const parse = (html: string) =>
+      new DOMParser().parseFromString(html, 'text/html').body;
+    const selectBoth = () => {
+      const page = screen.getByTestId('a4-page-content-1');
+      const paragraphs = Array.from(page.querySelectorAll('p'));
+      expect(paragraphs).toHaveLength(2);
+      act(() => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(paragraphs[0].firstChild!, 0);
+        range.setEnd(paragraphs[1].firstChild!, paragraphs[1].textContent!.length);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    };
+    const waitIdle = () =>
+      waitFor(() => {
+        expect(surface).toHaveAttribute('aria-busy', 'false');
+      });
+
+    selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Bulleted list' }));
+    await waitIdle();
+    let body = parse(editorRef.current!.getContent());
+    expect(body.querySelectorAll('ul')).toHaveLength(1);
+    expect(body.querySelectorAll('ul > li > p')).toHaveLength(2);
+
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(editorRef.current!.getContent()).toBe('<p>One</p><p>Two</p>');
+    });
+    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
+    await waitIdle();
+
+    selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Numbered list' }));
+    await waitIdle();
+    body = parse(editorRef.current!.getContent());
+    expect(body.querySelectorAll('ol')).toHaveLength(1);
+    expect(body.querySelectorAll('ul')).toHaveLength(0);
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(parse(editorRef.current!.getContent()).querySelector('ul')).not.toBeNull();
+    });
+    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
+    await waitIdle();
+
+    selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Align center' }));
+    await waitIdle();
+    body = parse(editorRef.current!.getContent());
+    expect(
+      Array.from(body.querySelectorAll<HTMLElement>('ol > li > p')).every(
+        (paragraph) => paragraph.style.textAlign === 'center',
+      ),
+    ).toBe(true);
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(
+        Array.from(
+          parse(editorRef.current!.getContent()).querySelectorAll('p'),
+        ).every((paragraph) => paragraph.style.textAlign === ''),
+      ).toBe(true);
+    });
+    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
+    await waitIdle();
+
+    selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Increase indent' }));
+    await waitIdle();
+    body = parse(editorRef.current!.getContent());
+    expect(
+      Array.from(body.querySelectorAll<HTMLElement>('ol > li > p')).every(
+        (paragraph) => paragraph.style.marginLeft === '2em',
+      ),
+    ).toBe(true);
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(
+        Array.from(parse(editorRef.current!.getContent()).querySelectorAll('p')).every(
+          (paragraph) => paragraph.style.marginLeft === '',
+        ),
+      ).toBe(true);
+    });
+    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
+    await waitIdle();
+
+    selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Numbered list' }));
+    await waitIdle();
+    body = parse(editorRef.current!.getContent());
+    expect(body.querySelectorAll('ol, ul')).toHaveLength(0);
+    expect(
+      Array.from(body.children, (node) => node.tagName),
+    ).toEqual(['P', 'P']);
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(parse(editorRef.current!.getContent()).querySelector('ol')).not.toBeNull();
+    });
+  });
+
   it('refuses insertion when the saved logical selection is stale', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const onChange = vi.fn();

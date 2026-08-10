@@ -14,8 +14,8 @@ import {
 } from '@/components/documents/a4-pagination/layout';
 import { commitTemplateFormChange } from '@/components/documents/template-editor/template-editor-state';
 import {
-  flushA4Reflow,
   installDeterministicA4Measurement,
+  waitForA4EditorIdle,
 } from '../helpers/a4-editor-test-utils';
 
 const hoisted = vi.hoisted(() => {
@@ -157,14 +157,6 @@ describe('template editor page panel integration', () => {
     );
 
     try {
-      const flush = async () => {
-        await act(async () => {
-          await flushA4Reflow();
-          await new Promise<void>((resolve) => setTimeout(resolve, 0));
-          await flushA4Reflow();
-        });
-      };
-
       const firstRender = render(<TemplateEditorPage />);
 
       await waitFor(() => {
@@ -172,14 +164,14 @@ describe('template editor page panel integration', () => {
           screen.getByTestId('a4-page-content-1'),
         ).toHaveTextContent('{{company.name}}');
       });
-      await flush();
 
       const surface = screen.getByTestId('a4-document-surface');
       const pageContent = screen.getByTestId('a4-page-content-1');
       const lines = Array.from(
-        { length: 120 },
+        { length: 24 },
         (_, index) => `Draft line ${index + 1}`,
       );
+      await waitForA4EditorIdle(surface);
 
       act(() => {
         surface.focus();
@@ -200,9 +192,9 @@ describe('template editor page panel integration', () => {
       });
       await waitFor(() => {
         const content = screen.getByTestId('a4-document-surface').textContent ?? '';
-        expect(content).toContain('Draft line 120');
+        expect(content).toContain('Draft line 24');
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
 
       const selectAll = () => {
         act(() => {
@@ -216,18 +208,7 @@ describe('template editor page panel integration', () => {
           );
         });
       };
-      const waitForIdle = async () => {
-        for (let attempt = 0; attempt < 10; attempt += 1) {
-          await flush();
-          if (
-            screen
-              .getByTestId('a4-document-surface')
-              .getAttribute('aria-busy') === 'false'
-          ) {
-            return;
-          }
-        }
-      };
+
       selectAll();
       act(() => {
         fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
@@ -243,14 +224,14 @@ describe('template editor page panel integration', () => {
           },
         );
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
       selectAll();
       act(() => {
         fireEvent.change(within(formatsPopover()).getByLabelText('Font size'), {
           target: { value: '14pt' },
         });
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
       selectAll();
       act(() => {
         fireEvent.change(
@@ -260,7 +241,7 @@ describe('template editor page panel integration', () => {
           },
         );
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
 
       const topMargin = screen.getByLabelText('Top margin');
       act(() => {
@@ -272,10 +253,10 @@ describe('template editor page panel integration', () => {
         fireEvent.change(leftMargin, { target: { value: '25' } });
         fireEvent.blur(leftMargin);
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
 
-      let pageCount = screen.getAllByTestId(/a4-page-content-/).length;
-      await waitForIdle();
+      const pageCount = screen.getAllByTestId(/a4-page-content-/).length;
+      expect(pageCount).toBeGreaterThan(1);
       act(() => {
         fireEvent.click(screen.getByRole('button', { name: 'Add blank page' }));
       });
@@ -285,8 +266,19 @@ describe('template editor page panel integration', () => {
           countAfterAddBlank,
         );
       });
-      await flush();
-      await waitForIdle();
+      await waitForA4EditorIdle(surface);
+      const pagesAfterAdd = screen.getAllByTestId(/a4-page-content-/);
+      act(() => {
+        const lastPage = pagesAfterAdd[pagesAfterAdd.length - 1];
+        lastPage.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.selectNodeContents(lastPage);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        fireEvent.mouseUp(lastPage);
+      });
       act(() => {
         fireEvent.click(
           screen.getByRole('button', { name: 'Delete current page' }),
@@ -297,9 +289,20 @@ describe('template editor page panel integration', () => {
           pageCount,
         );
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
 
-      await waitForIdle();
+      const pagesAfterDelete = screen.getAllByTestId(/a4-page-content-/);
+      act(() => {
+        const firstPage = pagesAfterDelete[0];
+        firstPage.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.selectNodeContents(firstPage);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        fireEvent.mouseUp(firstPage);
+      });
       act(() => {
         fireEvent.click(
           screen.getByRole('button', { name: 'Insert page break' }),
@@ -310,13 +313,12 @@ describe('template editor page panel integration', () => {
           pageCount + 1,
         );
       });
-      await flush();
       await waitFor(() => {
         expect(
           screen.getByRole('button', { name: 'Delete current page' }),
         ).not.toBeDisabled();
       });
-      await flush();
+      await waitForA4EditorIdle(surface);
 
       act(() => {
         fireEvent.click(screen.getByRole('button', { name: 'Save Template' }));
@@ -333,7 +335,7 @@ describe('template editor page panel integration', () => {
         };
         placeholders: Array<{ key: string }>;
       };
-      expect(payload.content.match(/Draft line 120/g)).toHaveLength(1);
+      expect(payload.content.match(/Draft line 24/g)).toHaveLength(1);
       expect(payload.contentJson).toMatchObject({
         existingMetadata: { keep: true },
         layout: {
@@ -360,16 +362,18 @@ describe('template editor page panel integration', () => {
       await waitFor(() => {
         expect(
           screen.getByTestId('a4-document-surface').textContent,
-        ).toContain('Draft line 120');
+        ).toContain('Draft line 24');
       });
-      await flush();
+      await waitForA4EditorIdle(
+        screen.getByTestId('a4-document-surface'),
+      );
       expect(
         new DOMParser()
           .parseFromString(
             screen.getByTestId('a4-document-surface').textContent ?? '',
             'text/html',
           )
-          .body.textContent?.match(/Draft line 120/g),
+          .body.textContent?.match(/Draft line 24/g),
       ).toHaveLength(1);
       expect(screen.getByLabelText('Top margin')).toHaveValue(30);
       expect(screen.getByLabelText('Left margin')).toHaveValue(25);

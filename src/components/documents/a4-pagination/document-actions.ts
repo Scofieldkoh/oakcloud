@@ -157,7 +157,33 @@ function splitBlockAtDomPoint(
   return nextBlock;
 }
 
-const BLOCK_REPLACEMENT_TAGS = new Set([
+/**
+ * Root replacement nodes that must never be nested inside a paragraph-style
+ * text block. Lists, tables, and horizontal rules are insertable root blocks
+ * even though they are not splittable text containers.
+ */
+const INSERTABLE_ROOT_BLOCK_TAGS = new Set([
+  'P',
+  'DIV',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'BLOCKQUOTE',
+  'UL',
+  'OL',
+  'HR',
+  'TABLE',
+]);
+
+/**
+ * Paragraph-style text blocks that can be split at a logical caret. Table
+ * internals remain children of `table`, and list items remain children of
+ * `ul`/`ol`, so they are intentionally not in this set.
+ */
+const SPLITTABLE_CONTAINING_BLOCK_TAGS = new Set([
   'P',
   'DIV',
   'H1',
@@ -169,23 +195,19 @@ const BLOCK_REPLACEMENT_TAGS = new Set([
   'BLOCKQUOTE',
 ]);
 
-const CONTAINING_BLOCK_TAGS = new Set([
-  'P',
-  'DIV',
-  'H1',
-  'H2',
-  'H3',
-  'H4',
-  'H5',
-  'H6',
-  'BLOCKQUOTE',
-]);
+function isInsertableRootBlock(element: HTMLElement): boolean {
+  return INSERTABLE_ROOT_BLOCK_TAGS.has(element.tagName);
+}
+
+function isSplittableContainingBlock(element: HTMLElement): boolean {
+  return SPLITTABLE_CONTAINING_BLOCK_TAGS.has(element.tagName);
+}
 
 function fragmentHasBlockNodes(fragment: DocumentFragment): boolean {
   return Array.from(fragment.childNodes).some(
     (node) =>
       node.nodeType === Node.ELEMENT_NODE &&
-      BLOCK_REPLACEMENT_TAGS.has((node as HTMLElement).tagName),
+      isInsertableRootBlock(node as HTMLElement),
   );
 }
 
@@ -217,7 +239,7 @@ export function insertReplacementNodes(
   while (
     block &&
     block !== root &&
-    !CONTAINING_BLOCK_TAGS.has(block.tagName)
+    !isSplittableContainingBlock(block)
   ) {
     block = block.parentElement;
   }
