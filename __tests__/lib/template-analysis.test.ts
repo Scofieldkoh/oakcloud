@@ -33,6 +33,16 @@ describe('template-analysis', () => {
     )).toEqual(['directors']);
   });
 
+  it('extracts keys from external modifiers wrapped in inline HTML', () => {
+    expect(extractTemplatePlaceholderKeys(
+      '<p>PCASE(<span style="color: rgb(0, 0, 0);">{{selectedContact.detail}}</span>)</p>',
+    )).toEqual(['selectedContact.detail']);
+
+    expect(getRequiredPartySelections(
+      '<p>PCASE(<span>{{selectedContact.name}}</span>)</p>',
+    ).contact).toBe(true);
+  });
+
   it('preserves legacy contact placeholders without requiring a singular contact selection', () => {
     expect(getRequiredPartySelections(
       '{{contact.fullName}}{{#each contacts}}{{this.email}}{{/each}}',

@@ -231,7 +231,8 @@ export function extractTemplatePlaceholderKeys(content: string): string[] {
     if (!LOOP_ONLY_PLACEHOLDERS.has(match[1])) placeholders.add(match[1]);
   }
 
-  const externalModifierRegex = /[A-Z_]+\(\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}\)/g;
+  const externalModifierRegex =
+    /[A-Z_]+\(\s*(?:<[^>]*>\s*)*\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}(?:\s*<[^>]*>)*\s*\)/g;
   while ((match = externalModifierRegex.exec(content)) !== null) {
     if (!LOOP_ONLY_PLACEHOLDERS.has(match[1])) placeholders.add(match[1]);
   }

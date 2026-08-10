@@ -177,6 +177,45 @@ describe('placeholder resolver', () => {
     expect(result.missing).toEqual([]);
   });
 
+  it('resolves external modifiers when the editor wraps the placeholder in inline HTML', () => {
+    const result = resolvePlaceholders(
+      '<p>PCASE(<span style="color: rgb(0, 0, 0); font-weight: 400;">{{company.name}}</span>)</p>',
+      {
+        company: {
+          id: 'company-1',
+          name: 'SAMPLE COMPANY PTE LTD',
+          uen: '202600001A',
+          status: 'LIVE COMPANY',
+        },
+      }
+    );
+
+    expect(result.resolved).toBe('<p>Sample Company Pte Ltd</p>');
+    expect(result.resolved).not.toContain('PCASE');
+    expect(result.resolved).not.toContain('{{');
+    expect(result.missing).toEqual([]);
+  });
+
+  it('resolves external modifiers inside each blocks when wrapped in inline HTML', () => {
+    const result = resolvePlaceholders(
+      '{{#each directors}}<p>PCASE(<span>{{this.name}}</span>)</p>{{/each}}',
+      {
+        directors: [
+          {
+            name: 'JOHN TAN WEI MING',
+            role: 'DIRECTOR',
+            isCurrent: true,
+          },
+        ],
+      }
+    );
+
+    expect(result.resolved).toContain('<p>John Tan Wei Ming</p>');
+    expect(result.resolved).not.toContain('PCASE');
+    expect(result.resolved).not.toContain('{{');
+    expect(result.missing).toEqual([]);
+  });
+
   it('supports equality and inequality conditionals', () => {
     const result = resolvePlaceholders(
       [

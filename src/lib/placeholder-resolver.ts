@@ -392,8 +392,12 @@ function processEachBlocks(
         itemContent = itemContent.replace(/\{\{@first\}\}/g, String(index === 0));
         itemContent = itemContent.replace(/\{\{@last\}\}/g, String(index === items.length - 1));
 
-        // Replace external modifiers with this.property: UCASE({{this.name}})
-        const extModThisRegex = /([A-Z_]+)\(\{\{this\.([a-zA-Z_][a-zA-Z0-9_]*)\}\}\)/g;
+        // Replace external modifiers with this.property: UCASE({{this.name}}).
+        // The contenteditable editor can wrap the placeholder in inline HTML
+        // (e.g. <span style="...">{{this.name}}</span>), so allow tags and
+        // whitespace between the modifier parentheses.
+        const extModThisRegex =
+          /([A-Z_]+)\(\s*(?:<[^>]*>\s*)*\{\{this\.([a-zA-Z_][a-zA-Z0-9_]*)\}\}(?:\s*<[^>]*>)*\s*\)/g;
         itemContent = itemContent.replace(extModThisRegex, (_: string, modifier: string, prop: string) => {
           const modifierFn = VALUE_MODIFIERS[modifier];
           if (!modifierFn) return _;
@@ -404,7 +408,8 @@ function processEachBlocks(
         });
 
         // Replace external modifiers with shorthand property: UCASE({{name}})
-        const extModPropRegex = /([A-Z_]+)\(\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}\)/g;
+        const extModPropRegex =
+          /([A-Z_]+)\(\s*(?:<[^>]*>\s*)*\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}(?:\s*<[^>]*>)*\s*\)/g;
         itemContent = itemContent.replace(extModPropRegex, (fullMatch: string, modifier: string, prop: string) => {
           // Skip if modifier is not recognized
           const modifierFn = VALUE_MODIFIERS[modifier];
@@ -551,7 +556,11 @@ function processExternalModifiers(
   options: ResolveOptions,
   missing: string[]
 ): string {
-  const regex = /([A-Z_]+)\(\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}\)/g;
+  // Allow inline HTML (e.g. formatting spans) and whitespace between the
+  // modifier parentheses and the placeholder, which the A4 contenteditable
+  // editor can introduce: PCASE(<span style="...">{{company.name}}</span>)
+  const regex =
+    /([A-Z_]+)\(\s*(?:<[^>]*>\s*)*\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}(?:\s*<[^>]*>)*\s*\)/g;
 
   return content.replace(regex, (match, modifier, path) => {
     const modifierFn = VALUE_MODIFIERS[modifier];

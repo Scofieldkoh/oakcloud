@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { ServiceCatalogPanel } from '@/components/documents/service-catalog/service-catalog-panel';
@@ -41,6 +42,7 @@ import {
   Check,
   X,
   Eye,
+  ArrowLeft,
   BriefcaseBusiness,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -1120,6 +1122,13 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
+          <Link
+            href="/generated-documents"
+            className="mb-3 inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Document Generation
+          </Link>
           <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
             Templates
           </h1>
