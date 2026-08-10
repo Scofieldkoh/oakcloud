@@ -1,6 +1,6 @@
 # TODO / Roadmap
 
-> **Last Updated**: 2026-03-11
+> **Last Updated**: 2026-08-10
 
 This document tracks known issues, planned features, and completed work for Oakcloud.
 
@@ -52,6 +52,7 @@ Key principles:
 | GEN-003 | P2 | Open | Letterhead rendering issues | Various formatting problems |
 | GEN-004 | P2 | Open | Share button issues | Format, comment, and notification problems |
 | GEN-005 | P3 | Open | Export details without line items | Option to exclude AI extraction data |
+| GEN-006 | P2 | Open | A4 editor blank-page browser test is flaky | `adds and removes a persistent blank page with one action` intermittently fails at the add or remove step under real Chromium layout; unrelated to list editing, likely tied to in-progress pagination reflow changes |
 
 ### UI/UX
 

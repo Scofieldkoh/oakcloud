@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -497,7 +498,7 @@ function Page({
 }: PageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (contentRef.current) {
       const sanitized = sanitizeHtml(page.content || '');
       const currentHtml = contentRef.current.innerHTML;
@@ -756,6 +757,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       },
     ]);
     const pagesRef = useRef<PageData[]>(pages);
+    const renderedPagesRef = useRef<PageData[]>(pages);
+    renderedPagesRef.current = pages;
     const reflowFrameRef = useRef<number | null>(null);
     const reflowGenerationRef = useRef(0);
     const [isReflowing, setIsReflowing] = useState(false);
@@ -815,6 +818,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const scheduleReflow = useCallback(
       (sourcePages: PageData[], emitChange: boolean) => {
+        const renderedPages = renderedPagesRef.current;
         pagesRef.current = sourcePages;
         reflowGenerationRef.current += 1;
         const generation = reflowGenerationRef.current;
@@ -865,7 +869,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               if (generation !== reflowGenerationRef.current) return;
 
               const nextPages = fragments.map((fragment, index) => ({
-                id: pagesRef.current[index]?.id || crypto.randomUUID(),
+                id:
+                  renderedPages[index]?.id ||
+                  pagesRef.current[index]?.id ||
+                  crypto.randomUUID(),
                 content: sanitizeHtml(fragment.content),
                 hardBreakBefore: fragment.hardBreakBefore,
                 oversized: fragment.oversized,
@@ -1227,7 +1234,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         pendingFlowSelectionRef.current = result.selection;
         const nextPages = parsePages(result.html, sourcePages);
         pagesRef.current = nextPages;
-        setPages(nextPages);
         scheduleReflow(nextPages, true);
       },
       [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],

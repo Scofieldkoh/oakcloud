@@ -411,6 +411,221 @@ describe('A4PageEditor real layout pagination', () => {
     });
   });
 
+  it('splits a numbered list item into two numbered items on Enter', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor ref={editorRef} value="<ol><li><p>ABCD</p></li></ol>" />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const pageContent = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const text = pageContent.querySelector('ol li p')!.firstChild!;
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(text, 2);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => pressEnter());
+    await act(flushLayoutFrames);
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        const body = new DOMParser()
+          .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+          .body;
+        expect(body.querySelectorAll('ol > li > p')).toHaveLength(2);
+        expect(
+          Array.from(
+            body.querySelectorAll('ol > li > p'),
+            (p) => p.textContent,
+          ),
+        ).toEqual(['AB', 'CD']);
+        expect(selectedParagraphText()).toBe('CD');
+      }, { timeout: 3000 });
+    });
+  });
+
+  it('exits the numbered list when Enter is pressed on the empty second item', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor ref={editorRef} value="<ol><li><p>ABCD</p></li></ol>" />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const pageContent = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const text = pageContent.querySelector('ol li p')!.firstChild!;
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(text, 4);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => pressEnter());
+    await act(flushLayoutFrames);
+    await act(async () => {
+      await vi.waitFor(() => {
+        const body = new DOMParser()
+          .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+          .body;
+        expect(body.querySelectorAll('ol > li > p')).toHaveLength(2);
+      }, { timeout: 3000 });
+    });
+
+    await act(async () => pressEnter());
+    await act(flushLayoutFrames);
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        const body = new DOMParser()
+          .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+          .body;
+        expect(body.querySelectorAll('ol > li > p')).toHaveLength(1);
+        expect(body.querySelector('ol')?.nextElementSibling?.tagName).toBe(
+          'P',
+        );
+        expect(
+          body.querySelector('ol')?.nextElementSibling?.textContent,
+        ).toBe('');
+        expect(selectedParagraphText()).toBe('');
+      }, { timeout: 3000 });
+    });
+  });
+
+  it('keeps committed pages mounted while Enter repaginates', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const paragraphs = Array.from(
+      { length: 90 },
+      (_, index) =>
+        `<p>Line ${index + 1}: atomic pagination content with enough words to fill several pages.</p>`,
+    ).join('');
+
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={paragraphs} />);
+    });
+    await waitForEditorIdle();
+
+    const committedPages = Array.from(
+      host.querySelectorAll<HTMLElement>('[data-page-id].relative.group'),
+    );
+    expect(committedPages.length).toBeGreaterThan(1);
+    const committedPageIds = committedPages.map(
+      (pageElement) => pageElement.dataset.pageId,
+    );
+    const firstPageContent = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const targetParagraph = Array.from(
+      firstPageContent.querySelectorAll('p'),
+    ).at(-1)!;
+    const targetText = targetParagraph.firstChild!;
+    const splitOffset = Math.floor((targetText.textContent?.length ?? 0) / 2);
+    const expectedBefore = targetText.textContent!.slice(0, splitOffset);
+    const expectedAfter = targetText.textContent!.slice(splitOffset);
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(targetText, splitOffset);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    const queuedFrames: FrameRequestCallback[] = [];
+    let nextFrameId = 1;
+    const animationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        queuedFrames.push(callback);
+        return nextFrameId++;
+      });
+
+    const releaseQueuedFrames = async () => {
+      while (queuedFrames.length > 0) {
+        const callback = queuedFrames.shift()!;
+        await act(async () => callback(performance.now()));
+      }
+    };
+
+    try {
+      await act(async () => {
+        surface.dispatchEvent(
+          new InputEvent('beforeinput', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertParagraph',
+          }),
+        );
+      });
+
+      const pagesDuringReflow = Array.from(
+        host.querySelectorAll<HTMLElement>('[data-page-id].relative.group'),
+      );
+      expect(surface).toHaveAttribute('aria-busy', 'true');
+      expect(pagesDuringReflow).toHaveLength(committedPages.length);
+      pagesDuringReflow.forEach((pageElement, index) => {
+        expect(pageElement).toBe(committedPages[index]);
+      });
+
+      await releaseQueuedFrames();
+    } finally {
+      await releaseQueuedFrames();
+      animationFrameSpy.mockRestore();
+    }
+
+    const repaginatedPages = Array.from(
+      host.querySelectorAll<HTMLElement>('[data-page-id].relative.group'),
+    );
+    expect(surface).toHaveAttribute('aria-busy', 'false');
+    repaginatedPages
+      .slice(0, Math.min(committedPages.length, repaginatedPages.length))
+      .forEach((pageElement, index) => {
+        expect(pageElement.dataset.pageId).toBe(committedPageIds[index]);
+        expect(pageElement).toBe(committedPages[index]);
+      });
+
+    const canonical = new DOMParser().parseFromString(
+      editorRef.current?.getContent() ?? '',
+      'text/html',
+    );
+    expect(
+      Array.from(canonical.body.querySelectorAll('p'), (paragraph) =>
+        paragraph.textContent,
+      ),
+    ).toEqual(expect.arrayContaining([expectedBefore, expectedAfter]));
+    expect(selectedParagraphText()).toBe(expectedAfter);
+    expect(window.getSelection()?.anchorOffset).toBe(0);
+  });
+
   it('types the first two lines in document order', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     await act(async () => root.render(<A4PageEditor ref={editorRef} value="" />));

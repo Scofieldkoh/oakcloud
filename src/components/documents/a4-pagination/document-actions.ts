@@ -114,6 +114,27 @@ function fragmentTextLength(fragment: DocumentFragment): number {
   return wrapper.textContent?.length ?? 0;
 }
 
+/**
+ * Normalizes one half of a split list item so both halves keep the editor's
+ * canonical `li > p` structure. An empty half becomes an empty paragraph so
+ * pressing Enter there again can lift the item out of the list.
+ */
+function normalizeListItemSplitHtml(html: string): string {
+  if (!html.trim() || html === '<br>') return EMPTY_PARAGRAPH_HTML;
+
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const hasBlockChild = Array.from(container.childNodes).some(
+    (node) =>
+      node.nodeType === Node.ELEMENT_NODE &&
+      /^(P|DIV|H[1-6]|UL|OL|BLOCKQUOTE|TABLE|HR)$/.test(
+        (node as HTMLElement).tagName,
+      ),
+  );
+  if (!hasBlockChild) return `<p>${html}</p>`;
+  return hasSubstantiveContent(container) ? html : EMPTY_PARAGRAPH_HTML;
+}
+
 function splitBlockAtDomPoint(
   root: HTMLElement,
   point: DomPoint,
@@ -137,6 +158,16 @@ function splitBlockAtDomPoint(
     block = block.parentElement;
   }
   if (!block || block === root) return null;
+
+  // When the caret sits inside a list item, split the list item itself so the
+  // continuation becomes a new numbered/bulleted item instead of a new
+  // paragraph nested inside the same item.
+  if (block.tagName !== 'LI') {
+    const listItem = block.closest('li');
+    if (listItem && root.contains(listItem)) {
+      block = listItem;
+    }
+  }
 
   const beforeRange = document.createRange();
   beforeRange.setStart(block, 0);
@@ -168,10 +199,64 @@ function splitBlockAtDomPoint(
     afterHtml = afterHtml.slice(leadingWhitespace[0].length) || '<br>';
   }
 
+  if (block.tagName === 'LI') {
+    beforeHtml = normalizeListItemSplitHtml(beforeHtml);
+    afterHtml = normalizeListItemSplitHtml(afterHtml);
+  }
+
   nextBlock.innerHTML = afterHtml;
   block.innerHTML = beforeHtml;
   block.after(nextBlock);
   return nextBlock;
+}
+
+/**
+ * Lifts an empty list item out of its list, placing a fresh editable
+ * paragraph where the item was. When the item is in the middle of the list,
+ * the list is split around the paragraph so the remaining items stay
+ * numbered/bulleted lists on both sides.
+ */
+function exitEmptyListItem(listItem: HTMLElement): HTMLParagraphElement | null {
+  const list = listItem.parentElement;
+  if (!list || (list.tagName !== 'OL' && list.tagName !== 'UL')) return null;
+
+  const previous = listItem.previousElementSibling;
+  const next = listItem.nextElementSibling;
+  const paragraph = document.createElement('p');
+  paragraph.innerHTML = '<br>';
+
+  if (!previous && !next) {
+    list.replaceWith(paragraph);
+    return paragraph;
+  }
+
+  listItem.remove();
+
+  if (!previous && next) {
+    list.before(paragraph);
+    return paragraph;
+  }
+
+  if (previous && !next) {
+    list.after(paragraph);
+    return paragraph;
+  }
+
+  const continuation = document.createElement(list.tagName);
+  Array.from(list.attributes).forEach((attribute) => {
+    if (attribute.name.startsWith('data-flow-')) return;
+    continuation.setAttribute(attribute.name, attribute.value);
+  });
+  const trailing: Element[] = [];
+  let cursor = next;
+  while (cursor) {
+    trailing.push(cursor);
+    cursor = cursor.nextElementSibling;
+  }
+  trailing.forEach((element) => continuation.appendChild(element));
+  list.after(paragraph);
+  paragraph.after(continuation);
+  return paragraph;
 }
 
 /**
@@ -668,6 +753,29 @@ export function insertParagraphAtSelection(
   const root = createContainer(html);
   const point = domPointForFlowPoint(root, selection.anchor);
   if (!point) return { html, selection, changed: false };
+
+  const caretElement =
+    point.node.nodeType === Node.ELEMENT_NODE
+      ? (point.node as HTMLElement)
+      : point.node.parentElement;
+  const emptyListItem = caretElement?.closest('li') ?? null;
+  if (emptyListItem && !hasSubstantiveContent(emptyListItem)) {
+    const paragraph = exitEmptyListItem(emptyListItem);
+    if (paragraph) {
+      hydrateFlowContainer(root);
+      normalizeEditedFlowIds(root);
+      const paragraphFlowId = paragraph.dataset.flowId;
+      const selectionPoint = paragraphFlowId
+        ? flowPointAtElementStart(root, paragraph)
+        : null;
+      const finalized = finalizeDocumentRoot(
+        root,
+        selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
+        true,
+      );
+      return { ...finalized, changed: true };
+    }
+  }
 
   const nextBlock = splitBlockAtDomPoint(root, point);
   if (!nextBlock) return { html, selection, changed: false };

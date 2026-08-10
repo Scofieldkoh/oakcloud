@@ -683,7 +683,7 @@ describe('A4PageEditor', () => {
     }
   });
 
-  it('applies selected text color and highlight formatting', () => {
+  it('applies selected text color and highlight formatting', async () => {
     render(<A4PageEditor value="<p>Hello world</p>" />);
 
     const editor = screen.getByTestId('a4-page-content-1');
@@ -704,6 +704,9 @@ describe('A4PageEditor', () => {
       target: { value: '#ff0000' },
     });
 
+    await waitFor(() => {
+      expect(editor.querySelector('span')?.firstChild).toBeTruthy();
+    });
     const coloredTextNode = editor.querySelector('span')?.firstChild;
     expect(coloredTextNode).toBeTruthy();
 
@@ -721,11 +724,13 @@ describe('A4PageEditor', () => {
       target: { value: '#ffff00' },
     });
 
-    expect(editor.innerHTML).toContain('color: rgb(255, 0, 0)');
-    expect(editor.innerHTML).toContain('background-color: rgb(255, 255, 0)');
+    await waitFor(() => {
+      expect(editor.innerHTML).toContain('color: rgb(255, 0, 0)');
+      expect(editor.innerHTML).toContain('background-color: rgb(255, 255, 0)');
+    });
   });
 
-  it('applies paragraph styles and spacing to editor pages', () => {
+  it('applies paragraph styles and spacing to editor pages', async () => {
     render(
       <A4PageEditor
         value="<p>Heading text</p>"
@@ -751,7 +756,9 @@ describe('A4PageEditor', () => {
       target: { value: 'h1' },
     });
 
-    expect(editor.querySelector('h1')).not.toBeNull();
+    await waitFor(() => {
+      expect(editor.querySelector('h1')).not.toBeNull();
+    });
     expect(getComputedStyle(editor.querySelector('h1')!).fontSize).toBe('24pt');
     expect(getComputedStyle(editor.querySelector('h1')!).marginBottom).toBe('1em');
   });
@@ -804,8 +811,8 @@ describe('A4PageEditor', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(editor.querySelector('table')).not.toBeNull();
     await waitFor(() => {
+      expect(editor.querySelector('table')).not.toBeNull();
       expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('<table'));
     });
   });
@@ -842,9 +849,11 @@ describe('A4PageEditor', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(editor.querySelectorAll('tr')).toHaveLength(3);
-    expect(editor.querySelectorAll('tr')[0].children).toHaveLength(3);
-    expect(editor.querySelectorAll('tr')[1].children).toHaveLength(3);
+    await waitFor(() => {
+      expect(editor.querySelectorAll('tr')).toHaveLength(3);
+      expect(editor.querySelectorAll('tr')[0].children).toHaveLength(3);
+      expect(editor.querySelectorAll('tr')[1].children).toHaveLength(3);
+    });
   });
 
   it('supports Ctrl+Z and Ctrl+Y for editor changes', async () => {

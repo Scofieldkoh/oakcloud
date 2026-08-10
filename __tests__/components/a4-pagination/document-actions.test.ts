@@ -322,6 +322,131 @@ describe('A4 canonical document actions', () => {
     expect(result.selection?.anchor.offset).toBe(0);
   });
 
+  describe('Enter inside list items', () => {
+    function listItemFlowId(html: string, selector: string): string {
+      const body = new DOMParser()
+        .parseFromString(html, 'text/html')
+        .body.querySelector<HTMLElement>(selector);
+      if (!body?.dataset.flowId) throw new Error(`no flow id for ${selector}`);
+      return body.dataset.flowId;
+    }
+
+    it('splits a numbered list item into two numbered items', () => {
+      const html = hydrateFlowHtml('<ol><li><p>ABCD</p></li></ol>');
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li'), 2),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(body.querySelectorAll('ol > li')).toHaveLength(2);
+      expect(
+        Array.from(body.querySelectorAll('ol > li > p'), (p) => p.textContent),
+      ).toEqual(['AB', 'CD']);
+      expect(result.selection?.collapsed).toBe(true);
+      expect(result.selection?.anchor.offset).toBe(0);
+      const ids = Array.from(
+        body.querySelectorAll<HTMLElement>('[data-flow-id]'),
+        (element) => element.dataset.flowId!,
+      );
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('creates an empty second item when Enter is pressed at the end', () => {
+      const html = hydrateFlowHtml('<ol><li><p>ABCD</p></li></ol>');
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li'), 4),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(
+        Array.from(body.querySelectorAll('ol > li > p'), (p) => p.innerHTML),
+      ).toEqual(['ABCD', '<br>']);
+      expect(result.selection?.collapsed).toBe(true);
+    });
+
+    it('splits bullet and numbered items consistently', () => {
+      const html = hydrateFlowHtml('<ul><li><p>WXYZ</p></li></ul>');
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ul li'), 2),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(body.querySelectorAll('ul > li')).toHaveLength(2);
+      expect(
+        Array.from(body.querySelectorAll('ul > li > p'), (p) => p.textContent),
+      ).toEqual(['WX', 'YZ']);
+    });
+
+    it('exits the list when Enter is pressed on an empty item', () => {
+      const html = hydrateFlowHtml(
+        '<ol><li><p>ABCD</p></li><li><p><br></p></li></ol>',
+      );
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li:nth-of-type(2)'), 0),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(
+        Array.from(body.querySelectorAll('ol > li > p'), (p) => p.textContent),
+      ).toEqual(['ABCD']);
+      expect(body.querySelectorAll('ol')).toHaveLength(1);
+      expect(body.querySelector('ol')!.nextElementSibling?.tagName).toBe('P');
+      expect(result.selection?.collapsed).toBe(true);
+      expect(result.selection?.anchor.offset).toBe(0);
+    });
+
+    it('exits an empty bullet item at the start of a list', () => {
+      const html = hydrateFlowHtml(
+        '<ul><li><p><br></p></li><li><p>Keep</p></li></ul>',
+      );
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ul li:nth-of-type(1)'), 0),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(Array.from(body.children, (node) => node.tagName)).toEqual([
+        'P',
+        'UL',
+      ]);
+      expect(body.children[1].textContent).toBe('Keep');
+    });
+
+    it('splits the list around a paragraph when exiting a middle item', () => {
+      const html = hydrateFlowHtml(
+        '<ol><li><p>A</p></li><li><p><br></p></li><li><p>C</p></li></ol>',
+      );
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li:nth-of-type(2)'), 0),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(
+        Array.from(body.children, (node) => node.tagName),
+      ).toEqual(['OL', 'P', 'OL']);
+      expect(
+        Array.from(body.querySelectorAll('ol > li > p'), (p) => p.textContent),
+      ).toEqual(['A', 'C']);
+    });
+  });
+
   it('inserts block clipboard nodes at block boundaries without nesting', () => {
     const html = hydrateFlowHtml('<p>AlphaBeta</p>');
     const flowId = new DOMParser()
