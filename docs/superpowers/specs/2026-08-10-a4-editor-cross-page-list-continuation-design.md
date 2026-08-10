@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-10
 
-**Status:** Approved in conversation; awaiting written-spec review
+**Status:** Approved by user (written spec reviewed in conversation)
 
 ## Goal
 
