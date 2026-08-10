@@ -23,6 +23,24 @@ describe('A4 deterministic pagination engine', () => {
     expect(stripFlowMetadata(reassemblePageFragments(pages))).toBe('<p>123456789012345</p>');
   });
 
+  it('splits overflowing paragraphs at word boundaries instead of mid-word', () => {
+    const canonical = hydrateFlowHtml('<p>one two three four five</p>');
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+
+    expect(pages.length).toBeGreaterThan(1);
+    // Every page except the last ends with the whitespace we kept, and every
+    // continuation starts with a complete word rather than a word fragment.
+    pages.slice(0, -1).forEach((page) => {
+      expect(visibleText(page.content)).toMatch(/\s$/);
+    });
+    pages.slice(1).forEach((page) => {
+      expect(visibleText(page.content)).toMatch(/^\S/);
+    });
+    expect(stripFlowMetadata(reassemblePageFragments(pages))).toBe(
+      '<p>one two three four five</p>',
+    );
+  });
+
   it('pulls following content backward when it fits', () => {
     const canonical = hydrateFlowHtml('<p>12345</p><p>6789</p>');
     const pages = paginateFlowHtml(canonical, characterMeasurer, 10);

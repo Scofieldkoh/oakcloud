@@ -760,6 +760,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const reflowGenerationRef = useRef(0);
     const [isReflowing, setIsReflowing] = useState(false);
     const pendingScrollTopRef = useRef<number | null>(null);
+    const pendingViewPageIdRef = useRef<string | null>(null);
+    const pendingSelectionFlowIdRef = useRef<string | null>(null);
     const pendingUpdateRef = useRef(false);
     const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
     const pendingNonCancelableMutationRef = useRef<{
@@ -805,7 +807,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     );
 
     const preserveScrollPosition = useCallback(() => {
-      if (scrollContainerRef.current) pendingScrollTopRef.current = scrollContainerRef.current.scrollTop;
+      if (scrollContainerRef.current) {
+        pendingScrollTopRef.current = scrollContainerRef.current.scrollTop;
+      }
+      pendingViewPageIdRef.current = activePageIdRef.current;
     }, []);
 
     const scheduleReflow = useCallback(
@@ -907,23 +912,48 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         '[contenteditable="true"]',
       ) as HTMLDivElement | null;
       targetEditor?.focus({ preventScroll: true });
+      const pageElement = targetFlowElement?.closest<HTMLElement>(
+        '[data-page-id]',
+      ) ?? null;
+      pendingSelectionFlowIdRef.current = bookmark.anchor.flowId;
 
       if (restoreFlowSelection(root, bookmark)) {
         savedSelectionRef.current = captureFlowSelection(root) ?? bookmark;
         setEditorStatus(null);
-        const pageElement = targetFlowElement?.closest('[data-page-id]') as
-          | HTMLElement
-          | null;
         if (pageElement?.dataset.pageId) {
           setActivePageId(pageElement.dataset.pageId);
         }
       }
-      if (pendingScrollTopRef.current !== null && scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = pendingScrollTopRef.current;
-        pendingScrollTopRef.current = null;
-      }
       pendingFlowSelectionRef.current = null;
     }, [pages, surfaceRepairGeneration]);
+
+    useEffect(() => {
+      if (isReflowing) return;
+      const scrollTop = pendingScrollTopRef.current;
+      if (scrollTop === null || !scrollContainerRef.current) return;
+
+      const root = documentSurfaceRef.current;
+      const flowId = pendingSelectionFlowIdRef.current;
+      const pageElement =
+        flowId && root
+          ? (Array.from(
+              root.querySelectorAll<HTMLElement>('[data-flow-id]'),
+            ).find((element) => element.dataset.flowId === flowId)
+              ?.closest<HTMLElement>('[data-page-id]') ?? null)
+          : null;
+      const selectionPageId = pageElement?.dataset.pageId ?? null;
+      const viewPageId = pendingViewPageIdRef.current;
+      if (selectionPageId && viewPageId && selectionPageId !== viewPageId) {
+        if (typeof pageElement?.scrollIntoView === 'function') {
+          pageElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      } else {
+        scrollContainerRef.current.scrollTop = scrollTop;
+      }
+      pendingScrollTopRef.current = null;
+      pendingViewPageIdRef.current = null;
+      pendingSelectionFlowIdRef.current = null;
+    }, [isReflowing, pages, surfaceRepairGeneration]);
 
     // Expose methods via ref
     useImperativeHandle(

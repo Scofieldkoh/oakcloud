@@ -69,6 +69,29 @@ function textPosition(
     : null;
 }
 
+/**
+ * Moves a character-based split point back to the nearest whitespace so text
+ * blocks split across pages never cut a word in half. The whitespace stays in
+ * the fitting fragment; the continuation begins with the next word.
+ */
+function wordBoundarySplitOffset(textNodes: Text[], preferred: number): number {
+  let fullText = '';
+  for (const node of textNodes) {
+    fullText += node.textContent ?? '';
+  }
+
+  const limit = Math.min(preferred, fullText.length);
+  for (let index = limit - 1; index >= 0; index -= 1) {
+    if (/\s/.test(fullText[index])) {
+      const afterWhitespace = index + 1;
+      if (afterWhitespace < fullText.length) return afterWhitespace;
+      break;
+    }
+  }
+
+  return preferred;
+}
+
 function rangeHtml(
   root: HTMLElement,
   start: { node: Node; offset: number },
@@ -122,7 +145,10 @@ function splitTextElement(
 
   if (best <= 0 || best >= totalLength) return null;
 
-  const position = textPosition(textNodes, best);
+  const splitOffset = wordBoundarySplitOffset(textNodes, best);
+  if (splitOffset <= 0 || splitOffset >= totalLength) return null;
+
+  const position = textPosition(textNodes, splitOffset);
   if (!position) return null;
   const fitWrapper = document.createElement('div');
   fitWrapper.innerHTML = rangeHtml(

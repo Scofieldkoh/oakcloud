@@ -151,8 +151,25 @@ function splitBlockAtDomPoint(
   afterWrapper.appendChild(afterRange.cloneContents());
 
   const nextBlock = document.createElement(block.tagName);
-  nextBlock.innerHTML = afterWrapper.innerHTML || '<br>';
-  block.innerHTML = beforeWrapper.innerHTML || '<br>';
+  let beforeHtml = beforeWrapper.innerHTML || '<br>';
+  let afterHtml = afterWrapper.innerHTML || '<br>';
+
+  // When the caret splits a paragraph mid-word, the continuation starts with
+  // the whitespace that separated the two words. Move that leading whitespace
+  // to the end of the split part so the new paragraph starts with a word and
+  // the preserved text still reassembles losslessly.
+  const leadingWhitespace = afterHtml.match(/^\s+/);
+  if (
+    leadingWhitespace &&
+    beforeHtml !== '<br>' &&
+    beforeHtml.trim().length > 0
+  ) {
+    beforeHtml += leadingWhitespace[0];
+    afterHtml = afterHtml.slice(leadingWhitespace[0].length) || '<br>';
+  }
+
+  nextBlock.innerHTML = afterHtml;
+  block.innerHTML = beforeHtml;
   block.after(nextBlock);
   return nextBlock;
 }
