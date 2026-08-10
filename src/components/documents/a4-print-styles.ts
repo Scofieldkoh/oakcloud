@@ -53,11 +53,18 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     h3 { font-size: 14pt; }
     br { margin: 0; }
     ul, ol { margin: 0 0 ${normalized.paragraphSpacing} 0; padding-left: 0; }
-    ul { list-style: disc inside; }
+    ul { list-style: none; }
     ol {
       list-style: none;
       counter-reset: item var(--list-start, 0);
     }
+    ul > li, ol > li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      margin: 0 0 0.25em 0;
+    }
+    ul > li::before { content: "•"; margin-right: 0.5ch; }
     ol > li { counter-increment: item; }
     ol > li::before { content: counter(item) ". "; }
     ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }
@@ -66,7 +73,13 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     }
     ol > li[data-flow-continuation-item] { counter-increment: none; }
     ol > li[data-flow-continuation-item]::before { content: none; }
-    ol ol, ol ul, ul ol, ul ul { padding-left: 1.5em; }
+    ol > li > p, ul > li > p { margin: 0; flex: 1 1 auto; }
+    ol > li > p ~ p, ul > li > p ~ p { flex-basis: 100%; }
+    ol ol, ol ul, ul ol, ul ul {
+      padding-left: 1.5em;
+      margin: 0;
+      flex-basis: 100%;
+    }
     ol ol { counter-reset: item; }
     ol ol > li::before { content: counters(item, ".") " "; }
     li { display: list-item; margin: 0 0 0.25em 0; }

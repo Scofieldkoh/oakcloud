@@ -41,7 +41,7 @@ describe('shared A4 print styles', () => {
   it('renders ordered lists with flush CSS counter markers', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
     expect(css).toContain('ul, ol { margin: 0 0 0.5em 0; padding-left: 0; }');
-    expect(css).toContain('ul { list-style: disc inside; }');
+    expect(css).toContain('ul { list-style: none; }');
     expect(css).toContain(
       'ol {\n      list-style: none;\n      counter-reset: item var(--list-start, 0);\n    }',
     );
@@ -50,11 +50,16 @@ describe('shared A4 print styles', () => {
     expect(css).toContain(
       'ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }',
     );
+    expect(css).toContain('ul > li, ol > li {');
+    expect(css).toContain('display: flex;');
+    expect(css).toContain('ul > li::before { content: "•"; margin-right: 0.5ch; }');
   });
 
   it('keeps nested list indentation and 1.1 counter numbering', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
-    expect(css).toContain('ol ol, ol ul, ul ol, ul ul { padding-left: 1.5em; }');
+    expect(css).toContain(
+      'ol ol, ol ul, ul ol, ul ul {\n      padding-left: 1.5em;\n      margin: 0;\n      flex-basis: 100%;\n    }',
+    );
     expect(css).toContain('ol ol { counter-reset: item; }');
     expect(css).toContain(
       'ol ol > li::before { content: counters(item, ".") " "; }',

@@ -768,6 +768,36 @@ describe('A4PageEditor real layout pagination', () => {
     ).toBe(true);
   });
 
+  it('renders the list marker on the same line as the item content', async () => {
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value="<ol><li><p>First item</p></li><li><p>Second item</p></li></ol><ul><li><p>Bullet</p></li></ul>"
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const numberedItem = host.querySelector('ol > li')!;
+    const numberedContent = host.querySelector('ol > li > p')!;
+    expect(getComputedStyle(numberedItem).display).toBe('flex');
+    const numberedRect = numberedItem.getBoundingClientRect();
+    const numberedContentRect = numberedContent.getBoundingClientRect();
+    expect(numberedContentRect.top - numberedRect.top).toBeLessThan(
+      numberedRect.height / 2,
+    );
+
+    const bulletItem = host.querySelector('ul > li')!;
+    expect(getComputedStyle(bulletItem).display).toBe('flex');
+    const bulletRect = bulletItem.getBoundingClientRect();
+    const bulletContentRect = host
+      .querySelector('ul > li > p')!
+      .getBoundingClientRect();
+    expect(bulletContentRect.top - bulletRect.top).toBeLessThan(
+      bulletRect.height / 2,
+    );
+  });
+
   it('keeps committed pages mounted while Enter repaginates', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const paragraphs = Array.from(

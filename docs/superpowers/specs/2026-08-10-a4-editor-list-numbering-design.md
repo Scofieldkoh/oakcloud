@@ -26,7 +26,8 @@ Replace native browser list markers with CSS counters for ordered lists. This gi
 - `ol.list-alpha > li::before` renders `counter(item, lower-alpha) ") "` instead.
 - Nested `ol ol` resets `item` and renders `counters(item, ".") " "` for 1.1 / 1.2.
 - Custom start values persist as `start="N"` on the `ol`, plus an inline `--list-start: N-1` style. `start` is added to every sanitizer allowlist so it survives save, paste, and export.
-- `ul` keeps native disc bullets but uses `list-style-position: inside` and zero left padding for flush alignment.
+- `ul` renders its bullet via `::before` (`content: "•"`) with zero left padding for flush alignment.
+- Markers share the item's first line: `li` elements are flex containers (`display: flex; flex-wrap: wrap`), so the `::before` marker and the first paragraph sit on the same line. Additional paragraphs and nested lists wrap to full-width lines beneath.
 - Nested lists (`ol ol`, `ul ul`, `ol ul`, `ul ol`) keep `padding-left: 1.5em` so the hierarchy remains visible.
 
 The same rules are applied to both A4 CSS sources so edit, preview, print, HTML export, and PDF export stay consistent: the inline `<style>` block in `a4-page-editor.tsx` and `buildA4PrintCss()` in `a4-print-styles.ts`.
