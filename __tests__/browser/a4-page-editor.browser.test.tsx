@@ -778,23 +778,59 @@ describe('A4PageEditor real layout pagination', () => {
     });
     await waitForEditorIdle();
 
-    const numberedItem = host.querySelector('ol > li')!;
-    const numberedContent = host.querySelector('ol > li > p')!;
-    expect(getComputedStyle(numberedItem).display).toBe('flex');
+    const page = host.querySelector('[data-testid="a4-page-content-1"]')!;
+    const numberedItem = page.querySelector('ol > li')!;
+    const numberedContent = page.querySelector('ol > li > p')!;
+    expect(getComputedStyle(numberedItem).position).toBe('relative');
+    const paddingPx = Number.parseFloat(
+      getComputedStyle(numberedItem).paddingLeft,
+    );
+    expect(paddingPx).toBeGreaterThan(10);
     const numberedRect = numberedItem.getBoundingClientRect();
     const numberedContentRect = numberedContent.getBoundingClientRect();
     expect(numberedContentRect.top - numberedRect.top).toBeLessThan(
       numberedRect.height / 2,
     );
+    expect(numberedContentRect.left - numberedRect.left).toBeGreaterThan(
+      paddingPx * 0.8,
+    );
 
-    const bulletItem = host.querySelector('ul > li')!;
-    expect(getComputedStyle(bulletItem).display).toBe('flex');
+    const bulletItem = page.querySelector('ul > li')!;
+    expect(getComputedStyle(bulletItem).position).toBe('relative');
     const bulletRect = bulletItem.getBoundingClientRect();
-    const bulletContentRect = host
+    const bulletContentRect = page
       .querySelector('ul > li > p')!
       .getBoundingClientRect();
     expect(bulletContentRect.top - bulletRect.top).toBeLessThan(
       bulletRect.height / 2,
+    );
+  });
+
+  it('keeps wrapped list content aligned under the marker text', async () => {
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={`<ol><li><p>${Array.from(
+            { length: 12 },
+            () => 'long wrapping sentence content',
+          ).join(' ')}</p></li></ol>`}
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector('[data-testid="a4-page-content-1"]')!;
+    const item = page.querySelector('ol > li')!;
+    const paragraph = page.querySelector('ol > li > p')!;
+    const itemRect = item.getBoundingClientRect();
+    const paragraphRect = paragraph.getBoundingClientRect();
+    expect(paragraphRect.top - itemRect.top).toBeLessThan(
+      itemRect.height / 2,
+    );
+    const paddingPx = Number.parseFloat(getComputedStyle(item).paddingLeft);
+    expect(paddingPx).toBeGreaterThan(10);
+    expect(paragraphRect.left - itemRect.left).toBeGreaterThan(
+      paddingPx * 0.8,
     );
   });
 

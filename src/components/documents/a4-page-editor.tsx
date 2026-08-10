@@ -2535,20 +2535,27 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           }
           .a4-page-content ul > li,
           .a4-page-content ol > li {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
+            position: relative;
+            padding-left: 3ch;
             margin: 0 0 0.25em 0;
+          }
+          .a4-page-content ul > li {
+            padding-left: 2ch;
           }
           .a4-page-content ul > li::before {
             content: "•";
-            margin-right: 0.5ch;
+            position: absolute;
+            left: 0;
+            top: 0;
           }
           .a4-page-content ol > li {
             counter-increment: item;
           }
           .a4-page-content ol > li::before {
             content: counter(item) ". ";
+            position: absolute;
+            left: 0;
+            top: 0;
           }
           .a4-page-content ol.list-alpha > li::before {
             content: counter(item, lower-alpha) ") ";
@@ -2562,22 +2569,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           .a4-page-content ol > li[data-flow-continuation-item]::before {
             content: none;
           }
-          .a4-page-content ol > li > p,
-          .a4-page-content ul > li > p {
-            margin: 0;
-            flex: 1 1 auto;
-          }
-          .a4-page-content ol > li > p ~ p,
-          .a4-page-content ul > li > p ~ p {
-            flex-basis: 100%;
-          }
           .a4-page-content ol ol,
           .a4-page-content ol ul,
           .a4-page-content ul ol,
           .a4-page-content ul ul {
             padding-left: 1.5em;
-            margin: 0;
-            flex-basis: 100%;
           }
           .a4-page-content ol ol {
             counter-reset: item;

@@ -59,27 +59,31 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
       counter-reset: item var(--list-start, 0);
     }
     ul > li, ol > li {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
+      position: relative;
+      padding-left: 3ch;
       margin: 0 0 0.25em 0;
     }
-    ul > li::before { content: "•"; margin-right: 0.5ch; }
+    ul > li { padding-left: 2ch; }
+    ul > li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
     ol > li { counter-increment: item; }
-    ol > li::before { content: counter(item) ". "; }
+    ol > li::before {
+      content: counter(item) ". ";
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
     ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }
     ol[style*="--flow-list-start"] {
       counter-reset: item var(--flow-list-start, 0);
     }
     ol > li[data-flow-continuation-item] { counter-increment: none; }
     ol > li[data-flow-continuation-item]::before { content: none; }
-    ol > li > p, ul > li > p { margin: 0; flex: 1 1 auto; }
-    ol > li > p ~ p, ul > li > p ~ p { flex-basis: 100%; }
-    ol ol, ol ul, ul ol, ul ul {
-      padding-left: 1.5em;
-      margin: 0;
-      flex-basis: 100%;
-    }
+    ol ol, ol ul, ul ol, ul ul { padding-left: 1.5em; }
     ol ol { counter-reset: item; }
     ol ol > li::before { content: counters(item, ".") " "; }
     li { display: list-item; margin: 0 0 0.25em 0; }
