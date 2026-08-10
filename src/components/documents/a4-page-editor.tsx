@@ -2581,6 +2581,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           .a4-page-content ol > li[data-flow-continuation-item]::before {
             content: none;
           }
+          .a4-page-content ul > li[data-flow-continuation-item]::before {
+            content: none;
+          }
           .a4-page-content ol ol,
           .a4-page-content ol ul,
           .a4-page-content ul ol,

@@ -145,6 +145,28 @@ describe('A4 deterministic pagination engine', () => {
     expect(container.textContent).toBe('123456789012345');
   });
 
+  it('suppresses repeated markers when an oversized nested item splits across pages', () => {
+    const canonical = hydrateFlowHtml(
+      '<ol><li><p>One</p><ol><li><p>123456789012345</p></li></ol></li></ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+
+    expect(pages).toHaveLength(2);
+    const pageTwo = document.createElement('div');
+    pageTwo.innerHTML = pages[1].content;
+    expect(
+      pageTwo.querySelectorAll('li[data-flow-continuation-item="true"]'),
+    ).toHaveLength(2);
+    const nestedList = pageTwo.querySelector('ol ol') as HTMLElement | null;
+    expect(
+      nestedList?.style.getPropertyValue('--flow-list-start'),
+    ).toBe('1');
+
+    const container = document.createElement('div');
+    container.innerHTML = stripFlowMetadata(reassemblePageFragments(pages));
+    expect(container.textContent).toBe('One123456789012345');
+  });
+
   it('keeps a heading with the following block when they fit together', () => {
     const blockMeasurer: HtmlMeasurer = {
       measure(html) {

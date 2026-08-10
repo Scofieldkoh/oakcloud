@@ -223,9 +223,12 @@ function splitListBetweenItems(
   fit.dataset.flowContinuation = 'start';
   overflow.dataset.flowContinuation = 'end';
   const runningStart = runningListStart(element);
+  const countedFitItems = items
+    .slice(0, best)
+    .filter((item) => !item.hasAttribute('data-flow-continuation-item')).length;
   overflow.style.setProperty(
     '--flow-list-start',
-    String(runningStart + best),
+    String(runningStart + countedFitItems),
   );
   if (runningStart > 0) {
     fit.style.setProperty('--flow-list-start', String(runningStart));
@@ -243,16 +246,32 @@ function markOrderedListContinuation(
   fit: HTMLElement,
   overflow: HTMLElement,
 ): void {
-  const sourceItems = Array.from(source.children).filter(
-    (child) => child.tagName === 'LI',
-  );
-  const fitItems = Array.from(fit.children).filter(
-    (child) => child.tagName === 'LI',
-  );
-  const overflowItems = Array.from(overflow.children).filter(
-    (child) => child.tagName === 'LI',
-  );
+  markListContinuationLevel(source, fit, overflow);
+}
+
+/**
+ * Marks the continuation halves of a mid-item list split at every nesting
+ * level so no marker is repeated on the next page, and records how many
+ * items of each list level were already rendered so counters keep counting.
+ */
+function markListContinuationLevel(
+  sourceList: HTMLElement,
+  fitList: HTMLElement,
+  overflowList: HTMLElement,
+): void {
+  const sourceItems = directListItems(sourceList);
+  const fitItems = directListItems(fitList);
+  const overflowItems = directListItems(overflowList);
   if (fitItems.length === 0 || overflowItems.length === 0) return;
+
+  const runningStart = runningListStart(sourceList);
+  overflowList.style.setProperty(
+    '--flow-list-start',
+    String(runningStart + fitItems.length),
+  );
+  if (runningStart > 0) {
+    fitList.style.setProperty('--flow-list-start', String(runningStart));
+  }
 
   const sourceItem = sourceItems[fitItems.length - 1];
   const fitLastText = fitItems[fitItems.length - 1].textContent ?? '';
@@ -263,18 +282,36 @@ function markOrderedListContinuation(
       (sourceItem.textContent ?? '') &&
     fitLastText.length > 0 &&
     overflowFirstText.length > 0;
-  if (isMidItem) {
-    overflowItems[0].setAttribute('data-flow-continuation-item', 'true');
-  }
+  if (!isMidItem) return;
 
-  const runningStart = runningListStart(source);
-  overflow.style.setProperty(
-    '--flow-list-start',
-    String(runningStart + fitItems.length),
-  );
-  if (runningStart > 0) {
-    fit.style.setProperty('--flow-list-start', String(runningStart));
+  const overflowItem = overflowItems[0];
+  overflowItem.setAttribute('data-flow-continuation-item', 'true');
+
+  const sourceNested = firstListChild(sourceItem);
+  const fitNested = firstListChild(fitItems[fitItems.length - 1]);
+  const overflowNested = firstListChild(overflowItem);
+  if (
+    sourceNested &&
+    fitNested &&
+    overflowNested &&
+    sourceNested.tagName === fitNested.tagName &&
+    fitNested.tagName === overflowNested.tagName
+  ) {
+    markListContinuationLevel(sourceNested, fitNested, overflowNested);
   }
+}
+
+function directListItems(list: HTMLElement): HTMLElement[] {
+  return Array.from(list.children).filter(
+    (child) => child.tagName === 'LI',
+  ) as HTMLElement[];
+}
+
+function firstListChild(item: HTMLElement): HTMLElement | null {
+  const child = Array.from(item.children).find(
+    (element) => element.tagName === 'OL' || element.tagName === 'UL',
+  );
+  return (child as HTMLElement | undefined) ?? null;
 }
 
 /**

@@ -828,6 +828,46 @@ describe('A4PageEditor real layout pagination', () => {
     ).toBe(true);
   });
 
+  it('does not repeat the marker when a nested list item splits across pages', async () => {
+    const longText = Array.from(
+      { length: 200 },
+      () => 'long nested item content that keeps wrapping onto additional lines',
+    ).join(' ');
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={`<ol><li><p>Parent</p><ol><li><p>${longText}</p></li></ol></li></ol>`}
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const pageContents = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        '[data-testid^="a4-page-content-"]',
+      ),
+    );
+    expect(pageContents.length).toBeGreaterThan(1);
+
+    const continuationItems = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        'li[data-flow-continuation-item="true"]',
+      ),
+    );
+    expect(continuationItems.length).toBeGreaterThanOrEqual(2);
+    continuationItems.forEach((item) => {
+      expect(getComputedStyle(item, '::before').content).toBe('none');
+    });
+
+    const continuationLists = Array.from(
+      host.querySelectorAll<HTMLElement>('ol[style*="--flow-list-start"]'),
+    );
+    expect(continuationLists.length).toBeGreaterThanOrEqual(2);
+    continuationLists.forEach((list) => {
+      expect(list.style.getPropertyValue('--flow-list-start')).not.toBe('');
+    });
+  });
+
   it('renders the list marker on the same line as the item content', async () => {
     await act(async () => {
       root.render(

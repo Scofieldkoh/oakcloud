@@ -82,5 +82,8 @@ describe('shared A4 print styles', () => {
     expect(css).toContain(
       'ol > li[data-flow-continuation-item]::before { content: none; }',
     );
+    expect(css).toContain(
+      'ul > li[data-flow-continuation-item]::before { content: none; }',
+    );
   });
 });

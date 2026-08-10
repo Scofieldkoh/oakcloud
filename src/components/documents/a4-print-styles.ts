@@ -84,6 +84,7 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     }
     ol > li[data-flow-continuation-item] { counter-increment: none; }
     ol > li[data-flow-continuation-item]::before { content: none; }
+    ul > li[data-flow-continuation-item]::before { content: none; }
     ol ol, ol ul, ul ol, ul ul { padding-left: 0; }
     ol ol { counter-reset: item; }
     ol ol > li::before { content: counters(item, ".") " "; }
