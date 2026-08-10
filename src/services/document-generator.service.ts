@@ -465,8 +465,8 @@ export async function renderTemplateForGeneration(
         detail: representative.role,
         role: representative.role,
         contactType: 'INDIVIDUAL',
-        email: representative.email,
-        phone: representative.phone,
+        email: representative.email ?? '',
+        phone: representative.phone ?? '',
         address: { full: null, letter: null },
       },
     };

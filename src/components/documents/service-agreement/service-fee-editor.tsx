@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import type { ServiceAgreementFeeLineInput } from '@/services/service-agreement';
+import { createServiceAgreementClientKey } from './client-key';
 
 interface ServiceFeeEditorProps {
   fees: ServiceAgreementFeeLineInput[];
@@ -10,9 +11,6 @@ interface ServiceFeeEditorProps {
   startDate: string;
   onChange: (fees: ServiceAgreementFeeLineInput[]) => void;
 }
-
-const clientKey = () =>
-  globalThis.crypto?.randomUUID?.() ?? `fee-${Date.now()}-${Math.random()}`;
 
 export function ServiceFeeEditor({
   fees,
@@ -30,7 +28,7 @@ export function ServiceFeeEditor({
   const addFee = (companyId: string) => {
     const displayOrder = fees.filter((fee) => fee.companyId === companyId).length;
     onChange([...fees, {
-      clientKey: clientKey(),
+      clientKey: createServiceAgreementClientKey(),
       companyId,
       description: '',
       amount: '0.00',

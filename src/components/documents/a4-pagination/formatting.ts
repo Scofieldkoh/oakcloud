@@ -2,6 +2,7 @@ import type { A4DocumentLayout } from './layout';
 import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
 } from './layout';
+import { normalizeDocumentFontSize } from '../document-typography';
 import {
   domPointForFlowPoint,
   hydrateFlowContainer,
@@ -1244,7 +1245,12 @@ export function applyIndentToSelection(
   const before = root.innerHTML;
   blocks.forEach((block) => {
     const current = block.style.marginLeft;
-    if (!current) block.style.setProperty('margin-left', '2em');
+    if (current) {
+      const next = indentedMarginLeft(current, 1);
+      if (next) block.style.setProperty('margin-left', next);
+    } else {
+      block.style.setProperty('margin-left', '2em');
+    }
   });
   if (root.innerHTML === before) return { html, selection, changed: false };
 
@@ -1263,12 +1269,51 @@ export function applyOutdentToSelection(
 
   const before = root.innerHTML;
   blocks.forEach((block) => {
-    if (block.style.marginLeft) block.style.removeProperty('margin-left');
+    if (block.style.marginLeft) {
+      const next = indentedMarginLeft(block.style.marginLeft, -1);
+      if (next) {
+        block.style.setProperty('margin-left', next);
+      } else {
+        block.style.removeProperty('margin-left');
+      }
+    }
   });
   if (root.innerHTML === before) return { html, selection, changed: false };
 
   const finalized = finalizeRoot(root, selection, true);
   return { ...finalized, changed: true };
+}
+
+const INDENT_STEP_EM = 2;
+const DEFAULT_PX_PER_EM = 16;
+
+/**
+ * Returns the next indent margin for a 2em indent step. Em and pixel values
+ * are incremented/decremented in place; unrecognized values are left to the
+ * caller to handle (indent skips them, outdent removes them).
+ */
+function indentedMarginLeft(
+  current: string,
+  direction: 1 | -1,
+): string | null {
+  const raw = current.trim();
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return null;
+
+  if (/em$/i.test(raw)) {
+    const next = Math.max(0, value + direction * INDENT_STEP_EM);
+    return next === 0 ? null : `${next}em`;
+  }
+
+  if (/px$/i.test(raw)) {
+    const next = Math.max(
+      0,
+      value + direction * INDENT_STEP_EM * DEFAULT_PX_PER_EM,
+    );
+    return next === 0 ? null : `${next}px`;
+  }
+
+  return null;
 }
 
 function inlinePropertyInAncestors(
@@ -1415,11 +1460,10 @@ function readFormatStateAtPoint(
     root,
     'font-family',
   ) ?? fallbackLayout.fontFamily;
-  state.fontSize = inlinePropertyInAncestors(
-    point.node,
-    root,
-    'font-size',
-  ) ?? fallbackLayout.fontSize;
+  state.fontSize = normalizeDocumentFontSize(
+    window.getComputedStyle(element).fontSize,
+    fallbackLayout.fontSize,
+  );
   state.textColor = normalizeColorValue(
     inlinePropertyInAncestors(point.node, root, 'color') ?? '#000000',
   );

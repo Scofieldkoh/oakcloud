@@ -66,8 +66,10 @@ export interface A4EditorToolbarProps {
 
 const compactControlClass =
   'inline-flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-background-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:cursor-not-allowed disabled:opacity-50';
-const compactSelectClass =
-  'h-8 w-full rounded border border-border-primary bg-background-secondary px-2 text-xs text-text-secondary outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-border-focus disabled:cursor-not-allowed';
+const toolbarSelectClass =
+  'h-8 rounded border border-border-primary bg-background-secondary px-2 text-xs text-text-secondary outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-border-focus disabled:cursor-not-allowed disabled:opacity-50';
+const toolbarColorClass =
+  'h-8 w-9 shrink-0 cursor-pointer rounded border border-border-primary bg-background-secondary p-1 outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-border-focus disabled:cursor-not-allowed disabled:opacity-50';
 
 function useEscapeDismiss(
   isOpen: boolean,
@@ -249,7 +251,7 @@ export function A4EditorToolbar({
 }: A4EditorToolbarProps) {
   const blocked = disabled || mutationDisabled;
   const command = (nextCommand: EditorCommand) => () => onCommand(nextCommand);
-  const [openMenu, setOpenMenu] = useState<'tables' | 'formats' | null>(null);
+  const [openMenu, setOpenMenu] = useState<'tables' | null>(null);
 
   return (
     <div
@@ -279,6 +281,19 @@ export function A4EditorToolbar({
         <ToolbarButton label="Decrease indent" icon={Outdent} onSaveSelection={onSaveSelection} onClick={command({ type: 'outdent' })} disabled={blocked} />
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={blocked} />
       </ToolbarGroup>
+      <ToolbarGroup label="Font">
+        <select aria-label="Font family" title="Font Family" value={activeFormats.fontFamily} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('fontName', event.target.value)} className={cn(toolbarSelectClass, 'w-36')}>
+          {DOCUMENT_FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
+        </select>
+        <select aria-label="Font size" title="Font Size" value={activeFormats.fontSize} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('customFontSize', event.target.value)} className={cn(toolbarSelectClass, 'w-16')}>
+          {DOCUMENT_FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}
+        </select>
+        <select aria-label="Paragraph style" title="Paragraph Style" value={activeFormats.paragraphStyle} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('paragraphStyle', event.target.value)} className={cn(toolbarSelectClass, 'w-24')}>
+          <option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option>
+        </select>
+        <input type="color" aria-label="Text color" title="Text Color" value={activeFormats.textColor} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('textColor', event.target.value)} className={toolbarColorClass} />
+        <input type="color" aria-label="Highlight color" title="Highlight Color" value={activeFormats.highlightColor} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('highlightColor', event.target.value)} className={toolbarColorClass} />
+      </ToolbarGroup>
       <ToolbarGroup label="Insert">
         <ToolbarMenu label="Tables" disabled={disabled} isOpen={openMenu === 'tables'} onOpenChange={(open) => setOpenMenu(open ? 'tables' : null)}>
           <div role="group" aria-label="Insert actions">
@@ -294,37 +309,10 @@ export function A4EditorToolbar({
         <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={blocked || !canDeletePage} destructive />
       </ToolbarGroup>
       <ToolbarGroup label="View">
-        <ToolbarMenu label="Formats" disabled={disabled} isOpen={openMenu === 'formats'} onOpenChange={(open) => setOpenMenu(open ? 'formats' : null)}>
-          <div role="group" aria-label="View actions" className="grid grid-cols-2 gap-2">
-            <label className="flex h-8 self-end items-center gap-2 text-xs text-text-secondary">
-              <input type="checkbox" aria-label="Show page numbers" checked={showPageNumbers} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => onTogglePageNumbers(event.target.checked)} className="h-3.5 w-3.5 rounded border-border-primary text-oak-primary focus:ring-border-focus" />
-              Page #
-            </label>
-          </div>
-          <div role="group" aria-label="Advanced formatting" className="mt-3 grid grid-cols-2 gap-2 border-t border-border-primary pt-3">
-            <label className="text-xs font-medium text-text-secondary">Font family
-              <select aria-label="Font family" title="Font Family" value={activeFormats.fontFamily} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('fontName', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
-                {DOCUMENT_FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-text-secondary">Font size
-              <select aria-label="Font size" title="Font Size" value={activeFormats.fontSize} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('customFontSize', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
-                {DOCUMENT_FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-text-secondary">Paragraph style
-              <select aria-label="Paragraph style" title="Paragraph Style" value={activeFormats.paragraphStyle} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('paragraphStyle', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
-                <option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-text-secondary">Text color
-              <input type="color" aria-label="Text color" title="Text Color" value={activeFormats.textColor} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('textColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-border-primary bg-background-secondary p-1" />
-            </label>
-            <label className="text-xs font-medium text-text-secondary">Highlight color
-              <input type="color" aria-label="Highlight color" title="Highlight Color" value={activeFormats.highlightColor} disabled={blocked || !onLegacyCommand} onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('highlightColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-border-primary bg-background-secondary p-1" />
-            </label>
-          </div>
-        </ToolbarMenu>
+        <label className="flex h-8 items-center gap-1.5 text-xs text-text-secondary">
+          <input type="checkbox" aria-label="Show page numbers" checked={showPageNumbers} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => onTogglePageNumbers(event.target.checked)} className="h-3.5 w-3.5 rounded border-border-primary text-oak-primary focus:ring-border-focus" />
+          Page #
+        </label>
       </ToolbarGroup>
     </div>
   );

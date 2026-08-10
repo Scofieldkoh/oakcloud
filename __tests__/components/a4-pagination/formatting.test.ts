@@ -470,6 +470,60 @@ describe('A4 inline formatting transactions', () => {
     expect(state.highlightColor).toBe('#ffff00');
   });
 
+  it('normalizes pixel font sizes to the nearest supported point size', () => {
+    const html = hydrateFlowHtml(
+      '<p><span style="font-size: 16px">Text</span></p>',
+    );
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    const state = readLogicalFormatState(root, {
+      anchor: collapsedPoint(html, 0),
+      focus: collapsedPoint(html, 0),
+      collapsed: true,
+    });
+    expect(state.fontSize).toBe('12pt');
+  });
+
+  it('normalizes em-based font sizes to the nearest supported point size', () => {
+    const html = hydrateFlowHtml(
+      '<p><span style="font-size: 1.5em">Text</span></p>',
+    );
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    const state = readLogicalFormatState(root, {
+      anchor: collapsedPoint(html, 0),
+      focus: collapsedPoint(html, 0),
+      collapsed: true,
+    });
+    expect(state.fontSize).toBe('18pt');
+  });
+
+  it('reflects the computed font size when the block is styled by CSS', () => {
+    const style = document.createElement('style');
+    style.textContent = '.a4-page-content h1 { font-size: 24pt; }';
+    document.head.appendChild(style);
+    const root = document.createElement('div');
+    root.className = 'a4-page-content';
+    document.body.appendChild(root);
+    const html = hydrateFlowHtml('<h1>Heading</h1>');
+    root.innerHTML = html;
+    const flowId = root.querySelector<HTMLElement>(
+      '[data-flow-id]',
+    )!.dataset.flowId!;
+
+    try {
+      const state = readLogicalFormatState(root, {
+        anchor: { flowId, offset: 0 },
+        focus: { flowId, offset: 0 },
+        collapsed: true,
+      });
+      expect(state.fontSize).toBe('24pt');
+    } finally {
+      root.remove();
+      style.remove();
+    }
+  });
+
   it('applies a paragraph style to every intersected block and keeps the bookmark', () => {
     const html = hydrateFlowHtml('<p>One</p><p>Two</p>');
     const ids = parseBody(html).querySelectorAll<HTMLElement>('[data-flow-id]');
@@ -696,7 +750,63 @@ describe('A4 inline formatting transactions', () => {
     expect(body.textContent).toBe('Item');
   });
 
-  it('reports changed false when indent, outdent, or alignment is already at target', () => {
+  it('indents repeatedly in 2em steps and outdents back to no indent', () => {
+    const plain = hydrateFlowHtml('<ul><li>Item</li></ul>');
+    const liId = parseBody(plain).querySelector<HTMLElement>(
+      'li',
+    )!.dataset.flowId!;
+    const caret = {
+      anchor: { flowId: liId, offset: 0 },
+      focus: { flowId: liId, offset: 0 },
+      collapsed: true,
+    };
+
+    const first = applyIndentToSelection(plain, caret);
+    expect(first.changed).toBe(true);
+    expect(
+      parseBody(first.html).querySelector<HTMLElement>('ul > li > p')!
+        .style.marginLeft,
+    ).toBe('2em');
+
+    const second = applyIndentToSelection(first.html, caret);
+    expect(second.changed).toBe(true);
+    expect(
+      parseBody(second.html).querySelector<HTMLElement>('ul > li > p')!
+        .style.marginLeft,
+    ).toBe('4em');
+
+    const third = applyIndentToSelection(second.html, caret);
+    expect(third.changed).toBe(true);
+    expect(
+      parseBody(third.html).querySelector<HTMLElement>('ul > li > p')!
+        .style.marginLeft,
+    ).toBe('6em');
+
+    const outFirst = applyOutdentToSelection(third.html, caret);
+    expect(outFirst.changed).toBe(true);
+    expect(
+      parseBody(outFirst.html).querySelector<HTMLElement>('ul > li > p')!
+        .style.marginLeft,
+    ).toBe('4em');
+
+    const outSecond = applyOutdentToSelection(outFirst.html, caret);
+    expect(outSecond.changed).toBe(true);
+    expect(
+      parseBody(outSecond.html).querySelector<HTMLElement>('ul > li > p')!
+        .style.marginLeft,
+    ).toBe('2em');
+
+    const outThird = applyOutdentToSelection(outSecond.html, caret);
+    expect(outThird.changed).toBe(true);
+    expect(
+      parseBody(outThird.html).querySelector<HTMLElement>('ul > li > p')!
+        .style.marginLeft,
+    ).toBe('');
+
+    expect(applyOutdentToSelection(outThird.html, caret).changed).toBe(false);
+  });
+
+  it('reports changed false when alignment is already at target', () => {
     const html = hydrateFlowHtml(
       '<ul><li><p style="margin-left:2em;text-align:center">Item</p></li></ul>',
     );
@@ -709,24 +819,9 @@ describe('A4 inline formatting transactions', () => {
       collapsed: true,
     };
 
-    expect(applyIndentToSelection(html, caret).changed).toBe(false);
-    expect(applyOutdentToSelection(html, caret).changed).toBe(true);
     expect(applyBlockAlignmentToSelection(html, caret, 'center').changed).toBe(
       false,
     );
-
-    const plain = hydrateFlowHtml('<ul><li>Item</li></ul>');
-    const plainLiId = parseBody(plain).querySelector<HTMLElement>(
-      'li',
-    )!.dataset.flowId!;
-    const plainCaret = {
-      anchor: { flowId: plainLiId, offset: 0 },
-      focus: { flowId: plainLiId, offset: 0 },
-      collapsed: true,
-    };
-    const first = applyIndentToSelection(plain, plainCaret);
-    expect(first.changed).toBe(true);
-    expect(applyIndentToSelection(first.html, plainCaret).changed).toBe(false);
   });
 
   it('formats only text descendants when replacing with a block-rich fragment', () => {

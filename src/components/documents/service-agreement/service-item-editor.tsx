@@ -8,6 +8,7 @@ import type {
 } from '@/services/service-agreement';
 import { Button } from '@/components/ui/button';
 import { ServiceFeeEditor } from './service-fee-editor';
+import { createServiceAgreementClientKey } from './client-key';
 
 interface ServiceItemEditorProps {
   item: ServiceAgreementItemInput;
@@ -153,7 +154,7 @@ export function ServiceItemEditor({
                               displayOrder: 0,
                             }]
                         ).map((template, index) => ({
-                          clientKey: `${item.clientKey}-${entity.id}-${template.id}`,
+                          clientKey: createServiceAgreementClientKey(),
                           companyId: entity.id,
                           description: template.description,
                           amount: template.defaultAmount ?? '0.00',

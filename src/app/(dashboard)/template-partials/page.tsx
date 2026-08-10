@@ -363,11 +363,11 @@ function DocumentTemplatesTab({
 
   // Handlers - Navigate to editor page for create/edit
   const openCreateModal = () => {
-    router.push('/template-partials/editor');
+    router.push('/template-partials/editor?tab=templates');
   };
 
   const openEditModal = (template: DocumentTemplate) => {
-    router.push(`/template-partials/editor?id=${template.id}`);
+    router.push(`/template-partials/editor?id=${template.id}&tab=templates`);
   };
 
   const handleDelete = (reason?: string) => {
@@ -777,11 +777,11 @@ function TemplatePartialsTab({
 
   // Handlers - Navigate to editor page for create/edit (same as templates)
   const openCreate = () => {
-    router.push('/template-partials/editor?type=partial');
+    router.push('/template-partials/editor?type=partial&tab=partials');
   };
 
   const openEdit = (partial: TemplatePartialWithRelations) => {
-    router.push(`/template-partials/editor?type=partial&id=${partial.id}`);
+    router.push(`/template-partials/editor?type=partial&tab=partials&id=${partial.id}`);
   };
 
   const openDuplicate = (partial: TemplatePartialWithRelations) => {

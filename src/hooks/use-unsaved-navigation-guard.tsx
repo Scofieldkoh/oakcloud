@@ -141,6 +141,14 @@ export function useUnsavedNavigationGuard(
     }
   }, [pendingNavigation, router]);
 
+  const requestNavigation = useCallback((destination: string) => {
+    if (!armedRef.current) {
+      router.push(destination);
+      return;
+    }
+    setPendingNavigation({ type: 'route', destination });
+  }, [router]);
+
   const dialog = useMemo(() => (
     <ConfirmDialog
       isOpen={pendingNavigation !== null}
@@ -154,5 +162,5 @@ export function useUnsavedNavigationGuard(
     />
   ), [cancelNavigation, confirmNavigation, options, pendingNavigation]);
 
-  return { disarm, rearm, dialog };
+  return { disarm, rearm, requestNavigation, dialog };
 }

@@ -381,7 +381,7 @@ export function ServiceCatalogPanel({
                           {canUpdate ? (
                             <Link
                               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-medium text-text-primary transition-colors hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-7"
-                              href={`/template-partials/editor?type=partial&id=${variant.sowPartial.id}`}
+                              href={`/template-partials/editor?type=partial&tab=services&id=${variant.sowPartial.id}`}
                             >
                               <FilePenLine className="h-3.5 w-3.5" />
                               Edit wording

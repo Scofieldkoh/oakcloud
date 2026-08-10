@@ -3,6 +3,7 @@ import { createAuditLog } from '@/lib/audit';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+import { chooseContactDetail } from '@/lib/document-party';
 import { serviceAgreementDraftSchema } from '@/lib/validations/service-agreement';
 import { checkUserCompanyAccess } from '@/services/user-company.service';
 import type {
@@ -166,8 +167,8 @@ async function representativeSnapshot(
     id: relation.contact.id,
     name: relation.contact.fullName,
     role: relation.relationship || null,
-    email: details.find((detail) => detail.detailType === 'EMAIL')?.value ?? null,
-    phone: details.find((detail) => detail.detailType === 'PHONE')?.value ?? null,
+    email: chooseContactDetail(details, 'EMAIL', primaryCompanyId),
+    phone: chooseContactDetail(details, 'PHONE', primaryCompanyId),
   };
 }
 

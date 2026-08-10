@@ -150,16 +150,16 @@ describe('A4PageEditor page controls', () => {
       Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth),
     );
 
-    const formats = Array.from(host.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Formats',
+    const fontSize = document.querySelector<HTMLSelectElement>(
+      'select[aria-label="Font size"]',
     )!;
     const addPage = Array.from(host.querySelectorAll('button')).find(
       (button) => button.textContent?.trim() === 'Add Page',
     )!;
     await act(async () => {
-      formats.focus();
+      fontSize.focus();
     });
-    expect(document.activeElement).toBe(formats);
+    expect(document.activeElement).toBe(fontSize);
     await act(async () => {
       addPage.focus();
     });

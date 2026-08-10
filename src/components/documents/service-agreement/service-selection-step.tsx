@@ -9,6 +9,7 @@ import type {
 } from '@/services/service-agreement';
 import type { Company } from '../document-generation-wizard';
 import { ServiceItemEditor } from './service-item-editor';
+import { createServiceAgreementClientKey } from './client-key';
 
 interface ServiceSelectionStepProps {
   entities: Company[];
@@ -19,9 +20,6 @@ interface ServiceSelectionStepProps {
   onValidationErrorsChange?: (errors: string[]) => void;
   onChange: (items: ServiceAgreementItemInput[]) => void;
 }
-
-const clientKey = () =>
-  globalThis.crypto?.randomUUID?.() ?? `service-${Date.now()}-${Math.random()}`;
 
 export function ServiceSelectionStep({
   entities,
@@ -89,7 +87,7 @@ export function ServiceSelectionStep({
   const addItem = () => {
     const variant = variants.find((candidate) => candidate.id === selectedVariantId);
     if (!variant || entities.length === 0) return;
-    const key = clientKey();
+    const key = createServiceAgreementClientKey();
     const startDate = new Date().toISOString().slice(0, 10);
     const entityIds = entities.map((entity) => entity.id);
     const next: ServiceAgreementItemInput = {
@@ -113,7 +111,7 @@ export function ServiceSelectionStep({
               displayOrder: 0,
             }]
         ).map((fee, index) => ({
-          clientKey: `${key}-${companyId}-${fee.id}`,
+          clientKey: createServiceAgreementClientKey(),
           companyId,
           description: fee.description,
           amount: fee.defaultAmount ?? '0.00',
@@ -189,7 +187,7 @@ export function ServiceSelectionStep({
               })));
             }}
             onCopy={() => {
-              const copyKey = clientKey();
+              const copyKey = createServiceAgreementClientKey();
               const copy: ServiceAgreementItemInput = {
                 ...item,
                 id: undefined,
@@ -198,7 +196,7 @@ export function ServiceSelectionStep({
                 feeLines: item.feeLines.map((fee) => ({
                   ...fee,
                   id: undefined,
-                  clientKey: `${copyKey}-${clientKey()}`,
+                  clientKey: createServiceAgreementClientKey(),
                 })),
               };
               onChange([...items, copy]);

@@ -4,7 +4,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -211,35 +210,23 @@ describe('template editor page panel integration', () => {
 
       selectAll();
       act(() => {
-        fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
-      });
-      const formatsPopover = () =>
-        screen.getByRole('dialog', { name: 'Formats popover' });
-      selectAll();
-      act(() => {
-        fireEvent.change(
-          within(formatsPopover()).getByLabelText('Font family'),
-          {
-            target: { value: 'Georgia, serif' },
-          },
-        );
+        fireEvent.change(screen.getByTitle('Font Family'), {
+          target: { value: 'Georgia, serif' },
+        });
       });
       await waitForA4EditorIdle(surface);
       selectAll();
       act(() => {
-        fireEvent.change(within(formatsPopover()).getByLabelText('Font size'), {
+        fireEvent.change(screen.getByTitle('Font Size'), {
           target: { value: '14pt' },
         });
       });
       await waitForA4EditorIdle(surface);
       selectAll();
       act(() => {
-        fireEvent.change(
-          within(formatsPopover()).getByLabelText('Text color'),
-          {
-            target: { value: '#ff0000' },
-          },
-        );
+        fireEvent.change(screen.getByTitle('Text Color'), {
+          target: { value: '#ff0000' },
+        });
       });
       await waitForA4EditorIdle(surface);
 

@@ -217,6 +217,30 @@ describe('A4PageEditor real layout pagination', () => {
     expect(editorRef.current?.getContent()).toBe('<p>Short document</p>');
   });
 
+  it('never cuts a word across page boundaries when a paragraph exceeds the page', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const sentence =
+      'i)\tAttending to reporting of information and submitting documents and forms with other government agencies;';
+    const paragraph = Array.from({ length: 60 }, () => sentence).join(' ');
+
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={`<p>${paragraph}</p>`} />);
+    });
+    await waitForEditorIdle();
+
+    const pageContents = Array.from(
+      host.querySelectorAll<HTMLElement>('[data-testid^="a4-page-content-"]'),
+    );
+    expect(pageContents.length).toBeGreaterThan(1);
+
+    pageContents.slice(0, -1).forEach((pageContent, index) => {
+      const text = pageContent.textContent ?? '';
+      const nextText = pageContents[index + 1].textContent ?? '';
+      expect(text, `page ${index + 1} ends mid-word`).toMatch(/\s$/);
+      expect(nextText, `page ${index + 2} starts mid-word`).toMatch(/^\S/);
+    });
+  });
+
   it('reflows after typography changes without losing document text', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const paragraphs = Array.from(
@@ -526,6 +550,59 @@ describe('A4PageEditor real layout pagination', () => {
     });
   });
 
+  it('follows the caret to the next page when Enter fills page 1, without making pages scrollable', async () => {
+    host.style.height = '700px';
+    const editorRef = createRef<A4PageEditorRef>();
+    const paragraphs = Array.from(
+      { length: 90 },
+      (_, index) => `<p>Line ${index + 1}: fill page content marker.</p>`,
+    ).join('');
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={paragraphs} />);
+    });
+    await waitForEditorIdle();
+
+    const firstPage = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const scrollContainer = surface.parentElement!.parentElement!;
+    scrollContainer.parentElement!.style.height = '700px';
+    scrollContainer.style.height = '600px';
+    scrollContainer.style.overflow = 'auto';
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const lastParagraph = Array.from(firstPage.querySelectorAll('p')).at(-1)!;
+    const text = lastParagraph.firstChild!;
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const range = document.createRange();
+    range.setStart(text, text.textContent!.length);
+    range.collapse(true);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    scrollContainer.scrollTop = 200;
+    const previousScrollTop = scrollContainer.scrollTop;
+
+    await pressEnter();
+    await waitForEditorIdle();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
+    await waitForEditorIdle();
+
+    expect(selectedParagraphText()).toBe('');
+    expect(scrollContainer.scrollTop).toBeGreaterThan(previousScrollTop);
+    // A4 pages themselves stay fixed boxes; only the editor viewport scrolls.
+    expect(getComputedStyle(firstPage).overflowY).toBe('hidden');
+  });
+
   it('keeps a native mouse selection spanning two physical pages', async () => {
     host.style.zoom = '0.25';
     await page.viewport(1280, 900);
@@ -816,10 +893,6 @@ describe('A4PageEditor real layout pagination', () => {
       surface.focus();
     });
 
-    const formatsButton = () =>
-      Array.from(host.querySelectorAll('button')).find(
-        (button) => button.textContent?.trim() === 'Formats',
-      )!;
     const selectAll = () => {
       surface.dispatchEvent(
         new KeyboardEvent('keydown', {
@@ -832,10 +905,6 @@ describe('A4PageEditor real layout pagination', () => {
     const applyFormatting = async () => {
       await act(async () => {
         selectAll();
-        const button = formatsButton();
-        if (button.getAttribute('aria-expanded') !== 'true') {
-          await userEvent.click(button);
-        }
         await flushLayoutFrames();
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
@@ -1381,6 +1450,38 @@ describe('A4PageEditor real layout pagination', () => {
       selectBoth();
     });
     await act(async () => {
+      await userEvent.click(buttonByLabel('Increase indent'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
+        (paragraph) => paragraph.style.marginLeft === '4em',
+      ),
+    ).toBe(true);
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Decrease indent'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current!.getContent(), 'text/html')
+      .body;
+    expect(
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
+        (paragraph) => paragraph.style.marginLeft === '2em',
+      ),
+    ).toBe(true);
+
+    await act(async () => {
+      selectBoth();
+    });
+    await act(async () => {
       await userEvent.click(buttonByLabel('Numbered list'));
     });
     await waitForEditorIdle();
@@ -1558,12 +1659,6 @@ describe('A4PageEditor real layout pagination', () => {
     });
 
     await act(async () => {
-      const formats = Array.from(host.querySelectorAll('button')).find(
-        (button) => button.textContent?.trim() === 'Formats',
-      )!;
-      await userEvent.click(formats);
-    });
-    await act(async () => {
       const clear = Array.from(document.querySelectorAll('button')).find(
         (button) => button.getAttribute('aria-label') === 'Clear formatting',
       )!;
@@ -1603,12 +1698,6 @@ describe('A4PageEditor real layout pagination', () => {
       selection.addRange(range);
     });
     await act(async () => {
-      const formats = Array.from(host.querySelectorAll('button')).find(
-        (button) => button.textContent?.trim() === 'Formats',
-      )!;
-      await userEvent.click(formats);
-    });
-    await act(async () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
     });
 
@@ -1640,12 +1729,6 @@ describe('A4PageEditor real layout pagination', () => {
       selection.addRange(range);
     });
 
-    await act(async () => {
-      const formats = Array.from(host.querySelectorAll('button')).find(
-        (button) => button.textContent?.trim() === 'Formats',
-      )!;
-      await userEvent.click(formats);
-    });
     const styleSelect = document.querySelector<HTMLSelectElement>(
       'select[aria-label="Paragraph style"]',
     )!;

@@ -1053,6 +1053,74 @@ describe('Document generator service', () => {
     }));
   });
 
+  it('renders Service Agreement representative email/phone as blank when the snapshot omits them', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Service Agreement',
+      category: 'CONTRACT',
+      content: [
+        '<p>{{selectedContact.name}} {{selectedContact.detail}} ',
+        '{{selectedContact.email}} {{selectedContact.phone}}</p>',
+        '{{@agreement.serviceSections}}',
+        '{{@agreement.feeTable}}',
+        '{{@agreement.entityAppendix}}',
+      ].join(''),
+      version: 1,
+      isActive: true,
+      compositionType: 'SERVICE_AGREEMENT',
+      placeholders: [],
+    } as never);
+    serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue({
+      id: 'agreement-1',
+      generatedDocumentId: 'document-1',
+      primaryCompanyId: 'company-1',
+      authorizedContactId: 'contact-1',
+      authorizedRepresentativeSnapshot: {
+        id: 'contact-1',
+        name: 'Pinned Name',
+        role: 'Director',
+        email: null,
+        phone: null,
+      },
+      agreementDate: '2026-07-30',
+      effectiveDate: '2026-08-01',
+      termMonths: 12,
+      status: 'DRAFT',
+      entities: [{
+        id: 'entity-1',
+        companyId: 'company-1',
+        nameSnapshot: 'Alpha Pte. Ltd.',
+        uenSnapshot: '11111111A',
+        displayOrder: 0,
+      }],
+      items: [],
+      createdAt: '2026-07-30T00:00:00.000Z',
+      updatedAt: '2026-07-30T00:00:00.000Z',
+    });
+
+    const result = await renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      userId: 'user-1',
+      companyId: 'company-1',
+      templateId: 'template-1',
+      serviceAgreementId: 'agreement-1',
+      generatedDocumentId: 'document-1',
+      selectedContactId: 'contact-1',
+      contextOverride: {
+        company: { id: 'company-1', name: 'Alpha Pte. Ltd.', uen: '11111111A' },
+      },
+    });
+
+    expect(result.context.selectedContact).toEqual(expect.objectContaining({
+      id: 'contact-1',
+      name: 'Pinned Name',
+      detail: 'Director',
+      email: '',
+      phone: '',
+    }));
+  });
+
   it('refuses to persist a generated document with blocking diagnostics', async () => {
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
       id: 'template-1',

@@ -58,47 +58,44 @@ describe('A4EditorToolbar', () => {
     expect(screen.queryByLabelText('Uniform page margin')).not.toBeInTheDocument();
   });
 
-  it('keeps lower-frequency insert and view controls in the toolbar overflow menu', () => {
+  it('keeps insert controls in the overflow menu while font and view controls stay visible', () => {
     renderToolbar();
 
     expect(screen.getByLabelText('Document editor toolbar')).not.toHaveClass('flex-wrap');
-    expect(
-      within(screen.getByRole('group', { name: 'View' })).getByRole('button', {
-        name: 'Formats',
-      }),
-    ).toBeVisible();
     expect(
       within(screen.getByRole('group', { name: 'Insert' })).getByRole('button', {
         name: 'Tables',
       }),
     ).toBeVisible();
+    expect(
+      within(screen.getByRole('group', { name: 'View' })).getByLabelText(
+        'Show page numbers',
+      ),
+    ).toBeVisible();
+    expect(screen.getByLabelText('Font family')).toBeVisible();
+    expect(screen.getByLabelText('Font size')).toBeVisible();
+    expect(screen.getByLabelText('Paragraph style')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: 'Show page numbers' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Tables' }));
     expect(screen.getByRole('button', { name: 'Insert table' })).toBeVisible();
     expect(screen.getByRole('dialog', { name: 'Tables popover' }).parentElement).toBe(document.body);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
-    expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Show page numbers' })).toBeVisible();
   });
 
   it('dismisses an overflow menu with Escape and restores trigger focus', () => {
     renderToolbar();
 
-    const overflow = screen.getByRole('button', { name: 'Formats' });
+    const overflow = screen.getByRole('button', { name: 'Tables' });
     fireEvent.click(overflow);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
     expect(overflow).toHaveFocus();
   });
 
-  it('keeps font family and font size commands available in the accessible toolbar menu', () => {
+  it('keeps font family and font size commands available directly in the toolbar', () => {
     const onLegacyCommand = vi.fn();
     renderToolbar({ onLegacyCommand });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.change(screen.getByLabelText('Font family'), {
       target: { value: 'Georgia, serif' },
     });
@@ -110,10 +107,9 @@ describe('A4EditorToolbar', () => {
     expect(onLegacyCommand).toHaveBeenCalledWith('customFontSize', '14pt');
   });
 
-  it('keeps every shared typography option available through the Formats popover', () => {
+  it('keeps every shared typography option available in the toolbar', () => {
     renderToolbar({ onLegacyCommand: vi.fn() });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     const fontFamilySelect = screen.getByLabelText('Font family');
     const fontSizeSelect = screen.getByLabelText('Font size');
 
@@ -125,6 +121,28 @@ describe('A4EditorToolbar', () => {
       expect(within(fontSizeSelect).getByRole('option', { name: size.replace('pt', '') }))
         .toHaveValue(size);
     }
+  });
+
+  it('shows the active font size in the visible font size dropdown', () => {
+    renderToolbar({
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'none',
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: '14pt',
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+    });
+
+    expect(screen.getByLabelText('Font size')).toHaveValue('14pt');
+    expect(
+      screen.queryByRole('button', { name: 'Formats' }),
+    ).not.toBeInTheDocument();
   });
 
   it('saves the selection before formatting commands and dispatches page callbacks', () => {
@@ -175,8 +193,6 @@ describe('A4EditorToolbar', () => {
       onSaveSelection: vi.fn(),
     };
     const { rerender } = render(<A4EditorToolbar {...baseProps} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
 
     rerender(
       <A4EditorToolbar

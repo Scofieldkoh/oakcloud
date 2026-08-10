@@ -394,7 +394,6 @@ describe('A4PageEditor', () => {
     expect(screen.getByTestId('a4-page-number-1')).toBeInTheDocument();
     expect(screen.getByTestId('a4-page-number-2')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.click(screen.getByLabelText('Show page numbers'));
 
     expect(screen.queryByTestId('a4-page-number-1')).not.toBeInTheDocument();
@@ -701,7 +700,6 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.change(screen.getByTitle('Text Color'), {
       target: { value: '#ff0000' },
     });
@@ -749,7 +747,6 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.change(screen.getByTitle('Paragraph Style'), {
       target: { value: 'h1' },
     });
@@ -757,6 +754,27 @@ describe('A4PageEditor', () => {
     expect(editor.querySelector('h1')).not.toBeNull();
     expect(getComputedStyle(editor.querySelector('h1')!).fontSize).toBe('24pt');
     expect(getComputedStyle(editor.querySelector('h1')!).marginBottom).toBe('1em');
+  });
+
+  it('reflects the actual font size of heading text in the toolbar', () => {
+    render(<A4PageEditor value="<h1>Heading text</h1>" />);
+
+    const editor = screen.getByTestId('a4-page-content-1');
+    const textNode = editor.querySelector('h1')?.firstChild;
+    expect(textNode).toBeTruthy();
+
+    act(() => {
+      editor.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(textNode!, 0);
+      range.setEnd(textNode!, 12);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      fireEvent.focus(screen.getByTestId('a4-document-surface'));
+    });
+
+    expect(screen.getByLabelText('Font size')).toHaveValue('24pt');
   });
 
   it('inserts a basic table from the toolbar', async () => {
@@ -1280,7 +1298,6 @@ describe('A4PageEditor', () => {
         );
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
       fireEvent.change(screen.getByLabelText('Text color'), {
         target: { value: '#ff0000' },
       });
@@ -1991,6 +2008,57 @@ describe('A4PageEditor', () => {
     await waitFor(() => {
       expect(parse(editorRef.current!.getContent()).querySelector('ol')).not.toBeNull();
     });
+  });
+
+  it('increases indent across multiple levels and outdents step by step', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(<A4PageEditor ref={editorRef} value="<p>Item</p>" />);
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+    });
+
+    const placeCaretAtStart = () => {
+      const page = screen.getByTestId('a4-page-content-1');
+      const paragraph = page.querySelector('p')!;
+      act(() => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(paragraph.firstChild!, 0);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    };
+    const marginLeft = () =>
+      new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body.querySelector<HTMLElement>('p')!.style.marginLeft;
+    const waitIdle = () =>
+      waitFor(() => {
+        expect(surface).toHaveAttribute('aria-busy', 'false');
+      });
+
+    placeCaretAtStart();
+    fireEvent.click(screen.getByRole('button', { name: 'Increase indent' }));
+    await waitIdle();
+    await waitFor(() => expect(marginLeft()).toBe('2em'));
+
+    placeCaretAtStart();
+    fireEvent.click(screen.getByRole('button', { name: 'Increase indent' }));
+    await waitIdle();
+    await waitFor(() => expect(marginLeft()).toBe('4em'));
+
+    placeCaretAtStart();
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease indent' }));
+    await waitIdle();
+    await waitFor(() => expect(marginLeft()).toBe('2em'));
+
+    placeCaretAtStart();
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease indent' }));
+    await waitIdle();
+    await waitFor(() => expect(marginLeft()).toBe(''));
   });
 
   it('refuses insertion when the saved logical selection is stale', async () => {

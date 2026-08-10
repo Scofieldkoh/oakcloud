@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, Suspense, useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
@@ -34,6 +36,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
+  ArrowLeft,
   Loader2,
   AlertCircle,
   Building2,
@@ -876,6 +879,10 @@ function TemplateEditorContent() {
   const itemId = searchParams.get('id');
   const isEditMode = !!itemId;
   const isPartialMode = editorType === 'partial';
+  const editorTab = searchParams.get('tab');
+  const backTab = editorTab === 'services' || editorTab === 'partials' ? editorTab : isPartialMode ? 'partials' : null;
+  const backHref = backTab ? `/template-partials?tab=${backTab}` : '/template-partials';
+  const backLabel = backTab === 'services' ? 'Back to Services' : backTab === 'partials' ? 'Back to Partials' : 'Back to Templates';
 
   const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
@@ -915,6 +922,9 @@ function TemplateEditorContent() {
   // Panel states
   const [_activeTab, _setActiveTab] = useState<'details' | 'placeholders' | 'testdata' | 'ai'>('details');
   const [isDirty, setIsDirty] = useState(false);
+  const navigationGuard = useUnsavedNavigationGuard(isDirty, {
+    description: 'You have unsaved changes. Leave without saving them?',
+  });
   const [mockData, setMockData] = useState<MockDataValues>(DEFAULT_MOCK_DATA);
   const [previewContent, setPreviewContent] = useState('');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
@@ -1019,7 +1029,8 @@ function TemplateEditorContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       success('Template created successfully');
-      router.push('/template-partials');
+      navigationGuard.disarm();
+      router.push(backHref);
     },
     onError: (error: Error) => {
       setFormError(error.message);
@@ -1044,7 +1055,8 @@ function TemplateEditorContent() {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       queryClient.invalidateQueries({ queryKey: ['document-template', itemId] });
       success('Template updated successfully');
-      router.push('/template-partials');
+      navigationGuard.disarm();
+      router.push(backHref);
     },
     onError: (error: Error) => {
       setFormError(error.message);
@@ -1077,7 +1089,8 @@ function TemplateEditorContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['template-partials'] });
       success('Partial created successfully');
-      router.push('/template-partials?tab=partials');
+      navigationGuard.disarm();
+      router.push(backHref);
     },
     onError: (error: Error) => {
       setFormError(error.message);
@@ -1102,7 +1115,8 @@ function TemplateEditorContent() {
       queryClient.invalidateQueries({ queryKey: ['template-partials'] });
       queryClient.invalidateQueries({ queryKey: ['template-partial', itemId] });
       success('Partial updated successfully');
-      router.push('/template-partials?tab=partials');
+      navigationGuard.disarm();
+      router.push(backHref);
     },
     onError: (error: Error) => {
       setFormError(error.message);
@@ -1595,18 +1609,28 @@ function TemplateEditorContent() {
     <div className="h-screen flex flex-col bg-background-primary">
       {/* Header */}
       <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-secondary">
-        <div className="flex items-center gap-2">
-          {isPartialMode ? (
-            <Code className="w-5 h-5 text-accent-primary" />
-          ) : (
-            <FileText className="w-5 h-5 text-accent-primary" />
-          )}
-          <h1 className="text-lg font-semibold text-text-primary">
-            {isPartialMode
-              ? (isEditMode ? 'Edit Partial' : 'Create Partial')
-              : (isEditMode ? 'Edit Template' : 'Create Template')
-            }
-          </h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href={backHref}
+            className="inline-flex shrink-0 items-center gap-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Link>
+          <span className="h-5 w-px bg-border-primary" aria-hidden="true" />
+          <div className="flex items-center gap-2">
+            {isPartialMode ? (
+              <Code className="w-5 h-5 text-accent-primary" />
+            ) : (
+              <FileText className="w-5 h-5 text-accent-primary" />
+            )}
+            <h1 className="text-lg font-semibold text-text-primary">
+              {isPartialMode
+                ? (isEditMode ? 'Edit Partial' : 'Create Partial')
+                : (isEditMode ? 'Edit Template' : 'Create Template')
+              }
+            </h1>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1618,7 +1642,7 @@ function TemplateEditorContent() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => router.push(isPartialMode ? '/template-partials?tab=partials' : '/template-partials')}
+            onClick={() => navigationGuard.requestNavigation(backHref)}
             disabled={isSaving}
           >
             Cancel
@@ -1751,6 +1775,7 @@ function TemplateEditorContent() {
           />
         </div>
       </div>
+      {navigationGuard.dialog}
     </div>
   );
 }

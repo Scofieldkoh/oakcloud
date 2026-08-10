@@ -1,10 +1,23 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import Link from 'next/link';
 
 const routerPush = vi.hoisted(() => vi.fn());
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: routerPush }),
+}));
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+  }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
 }));
 
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
@@ -19,8 +32,11 @@ function Harness({ dirty = true, customCopy = false }: { dirty?: boolean; custom
 
   return (
     <>
-      <a href="/generated-documents">Documents</a>
+      <Link href="/generated-documents">Documents</Link>
       <button type="button" onClick={guard.disarm}>Disarm</button>
+      <button type="button" onClick={() => guard.requestNavigation('/generated-documents')}>
+        Programmatic navigation
+      </button>
       {guard.dialog}
     </>
   );
@@ -86,6 +102,31 @@ describe('useUnsavedNavigationGuard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Leave without saving' }));
     });
     expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  it('defers programmatic navigation until the user confirms', async () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Programmatic navigation' }));
+    expect(screen.getByText('Unsaved changes')).toBeVisible();
+    expect(routerPush).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
+    expect(routerPush).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Programmatic navigation' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Leave without saving' }));
+    });
+    expect(routerPush).toHaveBeenCalledWith('/generated-documents');
+  });
+
+  it('navigates immediately from requestNavigation when there are no unsaved changes', () => {
+    render(<Harness dirty={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Programmatic navigation' }));
+    expect(routerPush).toHaveBeenCalledWith('/generated-documents');
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
   });
 
   it('supports page-specific copy for other editing experiences', () => {

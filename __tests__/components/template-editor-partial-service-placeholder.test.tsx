@@ -30,11 +30,13 @@ vi.mock('@/components/documents/ai-sidebar', () => ({
   AISidebar: () => null,
   useAISidebar: () => ({ context: {} }),
 }));
-vi.mock('@/components/documents/a4-page-editor', () => ({
-  A4PageEditor: forwardRef(({ value }: { value: string }, _ref) => (
+vi.mock('@/components/documents/a4-page-editor', () => {
+  const A4PageEditorMock = forwardRef(({ value }: { value: string }, _ref) => (
     <div data-testid="editor-content">{value}</div>
-  )),
-}));
+  ));
+  A4PageEditorMock.displayName = 'A4PageEditorMock';
+  return { A4PageEditor: A4PageEditorMock };
+});
 vi.mock('@/components/documents/template-editor/placeholder-panel', () => ({
   PlaceholderPanel: () => null,
 }));
@@ -172,6 +174,57 @@ describe('partial editor service-placeholder integration', () => {
         'Placeholder "service.fields.undeclared" is not available',
       );
       expect(saveButton).toBeDisabled();
+    });
+  });
+
+  it('shows a return link and confirms before leaving with unsaved changes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/template-partials/partial-1')) {
+        return new Response(JSON.stringify({
+          id: 'partial-1',
+          name: 'accounting-sow',
+          displayName: 'Accounting SOW',
+          description: 'Reusable scope',
+          content: '<p>Hello</p>',
+          placeholders: [],
+        }), { status: 200 });
+      }
+      if (url.includes('/api/template-partials?')) {
+        return new Response(JSON.stringify({ partials: [] }), { status: 200 });
+      }
+      if (url.includes('/api/companies/options?')) {
+        return new Response(JSON.stringify({ options: [] }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TemplateEditorPage />
+      </QueryClientProvider>,
+    );
+
+    const backLink = await screen.findByRole('link', { name: 'Back to Partials' });
+    expect(backLink).toHaveAttribute('href', '/template-partials?tab=partials');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change display name' }));
+    fireEvent.click(backLink);
+
+    expect(await screen.findByText('Unsaved changes')).toBeVisible();
+    expect(navigation.push).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+
+    fireEvent.click(backLink);
+    fireEvent.click(await screen.findByRole('button', { name: 'Leave without saving' }));
+
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledWith('/template-partials?tab=partials');
     });
   });
 });
