@@ -94,6 +94,9 @@ describe('A4 deterministic pagination engine', () => {
     container.innerHTML = stripFlowMetadata(reassembled);
 
     expect(pages).toHaveLength(2);
+    expect(pages[1].content).toContain(
+      'data-flow-continuation-item="true"',
+    );
     expect(container.querySelectorAll('ul')).toHaveLength(1);
     expect(container.querySelectorAll('li')).toHaveLength(1);
     expect(container.textContent).toBe('123456789012345');
@@ -165,6 +168,40 @@ describe('A4 deterministic pagination engine', () => {
     const container = document.createElement('div');
     container.innerHTML = stripFlowMetadata(reassemblePageFragments(pages));
     expect(container.textContent).toBe('One123456789012345');
+  });
+
+  it('keeps nested counter state stable when one item spans several pages', () => {
+    const longText = Array.from(
+      { length: 80 },
+      (_, index) => `w${String(index + 1).padStart(3, '0')}`,
+    ).join(' ');
+    const canonical = hydrateFlowHtml(
+      `<ol start="3"><li><p>Confidentiality</p><ol>` +
+        `<li><p>${longText}</p></li>` +
+        '<li><p>Next sub-item</p></li></ol></li></ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 80);
+
+    expect(pages.length).toBeGreaterThan(2);
+    pages.slice(1).forEach((page) => {
+      const root = document.createElement('div');
+      root.innerHTML = page.content;
+      const outer = root.querySelector<HTMLElement>(':scope > ol');
+      const nested = outer?.querySelector<HTMLElement>('ol');
+      expect(outer?.style.getPropertyValue('--flow-list-start')).toBe('3');
+      expect(nested?.style.getPropertyValue('--flow-list-start')).toBe('1');
+    });
+
+    const last = document.createElement('div');
+    last.innerHTML = pages.at(-1)!.content;
+    const next = Array.from(last.querySelectorAll('li')).find(
+      (item) => item.textContent === 'Next sub-item',
+    );
+    expect(next).toBeDefined();
+    expect(next?.hasAttribute('data-flow-continuation-item')).toBe(false);
+    expect(
+      next?.parentElement?.style.getPropertyValue('--flow-list-start'),
+    ).toBe('1');
   });
 
   it('keeps a heading with the following block when they fit together', () => {

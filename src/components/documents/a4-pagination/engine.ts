@@ -178,8 +178,8 @@ function splitTextElement(
 
   fit.dataset.flowContinuation = 'start';
   overflow.dataset.flowContinuation = 'end';
-  if (element.tagName === 'OL') {
-    markOrderedListContinuation(element, fit, overflow);
+  if (element.tagName === 'OL' || element.tagName === 'UL') {
+    markListContinuation(element, fit, overflow);
   }
   return { fit, overflow };
 }
@@ -195,9 +195,7 @@ function splitListBetweenItems(
   measurer: HtmlMeasurer,
   maxHeight: number,
 ): ElementSplit | null {
-  const items = Array.from(element.children).filter(
-    (child) => child.tagName === 'LI',
-  );
+  const items = directListItems(element);
   if (items.length < 2) return null;
 
   let best = 0;
@@ -223,9 +221,7 @@ function splitListBetweenItems(
   fit.dataset.flowContinuation = 'start';
   overflow.dataset.flowContinuation = 'end';
   const runningStart = runningListStart(element);
-  const countedFitItems = items
-    .slice(0, best)
-    .filter((item) => !item.hasAttribute('data-flow-continuation-item')).length;
+  const countedFitItems = countLogicalListItems(items.slice(0, best));
   overflow.style.setProperty(
     '--flow-list-start',
     String(runningStart + countedFitItems),
@@ -241,7 +237,7 @@ function splitListBetweenItems(
  * so it renders without a new number, and records the counter position so
  * following items keep their original numbers.
  */
-function markOrderedListContinuation(
+function markListContinuation(
   source: HTMLElement,
   fit: HTMLElement,
   overflow: HTMLElement,
@@ -265,9 +261,10 @@ function markListContinuationLevel(
   if (fitItems.length === 0 || overflowItems.length === 0) return;
 
   const runningStart = runningListStart(sourceList);
+  const countedFitItems = countLogicalListItems(fitItems);
   overflowList.style.setProperty(
     '--flow-list-start',
-    String(runningStart + fitItems.length),
+    String(runningStart + countedFitItems),
   );
   if (runningStart > 0) {
     fitList.style.setProperty('--flow-list-start', String(runningStart));
@@ -305,6 +302,12 @@ function directListItems(list: HTMLElement): HTMLElement[] {
   return Array.from(list.children).filter(
     (child) => child.tagName === 'LI',
   ) as HTMLElement[];
+}
+
+function countLogicalListItems(items: HTMLElement[]): number {
+  return items.filter(
+    (item) => !item.hasAttribute('data-flow-continuation-item'),
+  ).length;
 }
 
 function firstListChild(item: HTMLElement): HTMLElement | null {

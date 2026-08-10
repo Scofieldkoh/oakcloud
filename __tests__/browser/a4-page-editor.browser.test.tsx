@@ -836,7 +836,7 @@ describe('A4PageEditor real layout pagination', () => {
     await act(async () => {
       root.render(
         <A4PageEditor
-          value={`<ol><li><p>Parent</p><ol><li><p>${longText}</p></li></ol></li></ol>`}
+          value={`<ol start="3"><li><p>Parent</p><ol><li><p>${longText}</p></li></ol></li></ol>`}
         />,
       );
     });
@@ -865,6 +865,13 @@ describe('A4PageEditor real layout pagination', () => {
     expect(continuationLists.length).toBeGreaterThanOrEqual(2);
     continuationLists.forEach((list) => {
       expect(list.style.getPropertyValue('--flow-list-start')).not.toBe('');
+    });
+
+    pageContents.slice(1).forEach((page) => {
+      const outer = page.querySelector<HTMLElement>(':scope > ol');
+      const nested = outer?.querySelector<HTMLElement>('ol');
+      expect(outer?.style.getPropertyValue('--flow-list-start')).toBe('3');
+      expect(nested?.style.getPropertyValue('--flow-list-start')).toBe('1');
     });
   });
 
