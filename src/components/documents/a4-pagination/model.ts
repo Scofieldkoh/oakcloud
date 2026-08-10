@@ -10,6 +10,7 @@ export { HARD_PAGE_BREAK_HTML } from '@/lib/document-page-breaks';
 const FLOW_ATTRIBUTE_NAMES = [
   'data-flow-id',
   'data-flow-continuation',
+  'data-flow-continuation-item',
   'data-flow-oversized',
 ] as const;
 
@@ -139,6 +140,9 @@ export function stripFlowMetadata(input: string): string {
       element.removeAttribute(attribute);
     });
   });
+  container.querySelectorAll('[style*="--flow-list-start"]').forEach((element) => {
+    removeFlowListStart(element as HTMLElement);
+  });
 
   container.querySelectorAll('.page-break').forEach((element) => {
     element.setAttribute('class', 'page-break');
@@ -182,6 +186,7 @@ function appendContinuation(target: HTMLElement, source: HTMLElement): void {
     (target.tagName === 'UL' || target.tagName === 'OL') &&
     target.tagName === source.tagName
   ) {
+    removeFlowListStart(target);
     while (source.firstElementChild) {
       const sourceItem = source.firstElementChild as HTMLElement;
       const targetItem = target.lastElementChild as HTMLElement | null;
@@ -201,6 +206,13 @@ function appendContinuation(target: HTMLElement, source: HTMLElement): void {
 
   while (source.firstChild) {
     target.appendChild(source.firstChild);
+  }
+}
+
+function removeFlowListStart(element: HTMLElement): void {
+  element.style.removeProperty('--flow-list-start');
+  if (element.getAttribute('style') === '') {
+    element.removeAttribute('style');
   }
 }
 

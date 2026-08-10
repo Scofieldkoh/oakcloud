@@ -61,6 +61,11 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     ol > li { counter-increment: item; }
     ol > li::before { content: counter(item) ". "; }
     ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }
+    ol[style*="--flow-list-start"] {
+      counter-reset: item var(--flow-list-start, 0);
+    }
+    ol > li[data-flow-continuation-item] { counter-increment: none; }
+    ol > li[data-flow-continuation-item]::before { content: none; }
     ol ol, ol ul, ul ol, ul ul { padding-left: 1.5em; }
     ol ol { counter-reset: item; }
     ol ol > li::before { content: counters(item, ".") " "; }

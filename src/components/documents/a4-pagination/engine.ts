@@ -113,6 +113,16 @@ function splitTextElement(
 ): ElementSplit | null {
   if (!SPLITTABLE_TEXT_TAGS.has(element.tagName)) return null;
 
+  if (element.tagName === 'OL' || element.tagName === 'UL') {
+    const betweenItems = splitListBetweenItems(
+      element,
+      prefixHtml,
+      measurer,
+      maxHeight,
+    );
+    if (betweenItems) return betweenItems;
+  }
+
   const host = document.createElement('div');
   host.appendChild(element.cloneNode(true));
   const textNodes = collectTextNodes(host);
@@ -168,7 +178,119 @@ function splitTextElement(
 
   fit.dataset.flowContinuation = 'start';
   overflow.dataset.flowContinuation = 'end';
+  if (element.tagName === 'OL') {
+    markOrderedListContinuation(element, fit, overflow);
+  }
   return { fit, overflow };
+}
+
+/**
+ * Splits a list at an item boundary so every page starts with a complete
+ * item. The continuation list records how many items were already rendered
+ * (`--flow-list-start`) so CSS counters continue instead of restarting.
+ */
+function splitListBetweenItems(
+  element: HTMLElement,
+  prefixHtml: string,
+  measurer: HtmlMeasurer,
+  maxHeight: number,
+): ElementSplit | null {
+  const items = Array.from(element.children).filter(
+    (child) => child.tagName === 'LI',
+  );
+  if (items.length < 2) return null;
+
+  let best = 0;
+  for (let count = 1; count < items.length; count += 1) {
+    const fitClone = element.cloneNode(false) as HTMLElement;
+    items
+      .slice(0, count)
+      .forEach((item) => fitClone.appendChild(item.cloneNode(true)));
+    if (measurer.measure(prefixHtml + htmlFor(fitClone)) > maxHeight) break;
+    best = count;
+  }
+  if (best === 0) return null;
+
+  const fit = element.cloneNode(false) as HTMLElement;
+  items
+    .slice(0, best)
+    .forEach((item) => fit.appendChild(item.cloneNode(true)));
+  const overflow = element.cloneNode(false) as HTMLElement;
+  items
+    .slice(best)
+    .forEach((item) => overflow.appendChild(item.cloneNode(true)));
+
+  fit.dataset.flowContinuation = 'start';
+  overflow.dataset.flowContinuation = 'end';
+  const runningStart = runningListStart(element);
+  overflow.style.setProperty(
+    '--flow-list-start',
+    String(runningStart + best),
+  );
+  if (runningStart > 0) {
+    fit.style.setProperty('--flow-list-start', String(runningStart));
+  }
+  return { fit, overflow };
+}
+
+/**
+ * For a mid-item split (oversized single item), marks the continuation half
+ * so it renders without a new number, and records the counter position so
+ * following items keep their original numbers.
+ */
+function markOrderedListContinuation(
+  source: HTMLElement,
+  fit: HTMLElement,
+  overflow: HTMLElement,
+): void {
+  const sourceItems = Array.from(source.children).filter(
+    (child) => child.tagName === 'LI',
+  );
+  const fitItems = Array.from(fit.children).filter(
+    (child) => child.tagName === 'LI',
+  );
+  const overflowItems = Array.from(overflow.children).filter(
+    (child) => child.tagName === 'LI',
+  );
+  if (fitItems.length === 0 || overflowItems.length === 0) return;
+
+  const sourceItem = sourceItems[fitItems.length - 1];
+  const fitLastText = fitItems[fitItems.length - 1].textContent ?? '';
+  const overflowFirstText = overflowItems[0].textContent ?? '';
+  const isMidItem =
+    sourceItem !== undefined &&
+    `${fitLastText}${overflowFirstText}` ===
+      (sourceItem.textContent ?? '') &&
+    fitLastText.length > 0 &&
+    overflowFirstText.length > 0;
+  if (isMidItem) {
+    overflowItems[0].setAttribute('data-flow-continuation-item', 'true');
+  }
+
+  const runningStart = runningListStart(source);
+  overflow.style.setProperty(
+    '--flow-list-start',
+    String(runningStart + fitItems.length),
+  );
+  if (runningStart > 0) {
+    fit.style.setProperty('--flow-list-start', String(runningStart));
+  }
+}
+
+/**
+ * The counter value already consumed by list items rendered on earlier
+ * pages. `--flow-list-start` is set by a previous split; otherwise the
+ * list's own `start` attribute is the base (start=N means N-1 items are
+ * already consumed before the first item increments).
+ */
+function runningListStart(element: HTMLElement): number {
+  const inherited = Number.parseFloat(
+    element.style.getPropertyValue('--flow-list-start'),
+  );
+  if (Number.isFinite(inherited)) return inherited;
+  const listStart =
+    Number.parseInt(element.getAttribute('start') ?? '1', 10) || 1;
+  return listStart - 1;
 }
 
 function cloneTableWithBodyRows(

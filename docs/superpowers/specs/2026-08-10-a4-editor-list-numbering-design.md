@@ -56,7 +56,7 @@ Deliberate divergence from Word: if a list already ends with an empty item and t
 
 ## Scope notes
 
-- Numbering restarts per printed page when one list spans multiple A4 pages. This is a pre-existing limitation of the pagination engine (native markers had it too) and is out of scope.
+- Numbering continues across printed pages: the pagination engine splits lists at item boundaries and records the running counter (`--flow-list-start`) on continuation fragments so CSS counters keep counting. When a single oversized item must split mid-item, its continuation half renders without a new marker (`data-flow-continuation-item`) and the following items keep their original numbers.
 - Sink/lift and Start-at operate on the selected items/lists only; no document-wide numbering settings.
 
 ## Testing

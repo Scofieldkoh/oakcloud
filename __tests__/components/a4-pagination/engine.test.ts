@@ -99,6 +99,52 @@ describe('A4 deterministic pagination engine', () => {
     expect(container.textContent).toBe('123456789012345');
   });
 
+  it('continues ordered list numbering across pages', () => {
+    const canonical = hydrateFlowHtml(
+      '<ol><li><p>One</p></li><li><p>Two</p></li><li><p>Three</p></li></ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 5);
+
+    expect(pages.length).toBeGreaterThan(1);
+    const numberedPages = pages.filter((page) => page.content.includes('<ol'));
+    expect(numberedPages.length).toBeGreaterThan(1);
+    numberedPages.slice(1).forEach((page) => {
+      expect(page.content).toContain('--flow-list-start:');
+    });
+    expect(pages[1].content).toContain('--flow-list-start: 1');
+    expect(stripFlowMetadata(reassemblePageFragments(pages))).toBe(
+      '<ol><li><p>One</p></li><li><p>Two</p></li><li><p>Three</p></li></ol>',
+    );
+  });
+
+  it('continues numbering from a custom start value across pages', () => {
+    const canonical = hydrateFlowHtml(
+      '<ol start="3"><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 5);
+
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages[1].content).toContain('--flow-list-start: 3');
+    expect(stripFlowMetadata(reassemblePageFragments(pages))).toBe(
+      '<ol start="3"><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+  });
+
+  it('marks an oversized list item continuation without restarting numbering', () => {
+    const canonical = hydrateFlowHtml(
+      '<ol><li><p>123456789012345</p></li></ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+
+    expect(pages).toHaveLength(2);
+    expect(pages[1].content).toContain('data-flow-continuation-item="true"');
+    expect(pages[1].content).toContain('--flow-list-start: 1');
+    const container = document.createElement('div');
+    container.innerHTML = stripFlowMetadata(reassemblePageFragments(pages));
+    expect(container.querySelectorAll('ol > li')).toHaveLength(1);
+    expect(container.textContent).toBe('123456789012345');
+  });
+
   it('keeps a heading with the following block when they fit together', () => {
     const blockMeasurer: HtmlMeasurer = {
       measure(html) {

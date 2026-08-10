@@ -60,4 +60,17 @@ describe('shared A4 print styles', () => {
       'ol ol > li::before { content: counters(item, ".") " "; }',
     );
   });
+
+  it('continues list counters on paginated continuation fragments', () => {
+    const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
+    expect(css).toContain(
+      'ol[style*="--flow-list-start"] {\n      counter-reset: item var(--flow-list-start, 0);\n    }',
+    );
+    expect(css).toContain(
+      'ol > li[data-flow-continuation-item] { counter-increment: none; }',
+    );
+    expect(css).toContain(
+      'ol > li[data-flow-continuation-item]::before { content: none; }',
+    );
+  });
 });

@@ -153,6 +153,7 @@ function sanitizeHtml(html: string): string {
       'data-break-type',
       'data-flow-id',
       'data-flow-continuation',
+      'data-flow-continuation-item',
       'data-flow-oversized',
     ],
     ALLOWED_URI_REGEXP:
@@ -2540,6 +2541,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           }
           .a4-page-content ol.list-alpha > li::before {
             content: counter(item, lower-alpha) ") ";
+          }
+          .a4-page-content ol[style*="--flow-list-start"] {
+            counter-reset: item var(--flow-list-start, 0);
+          }
+          .a4-page-content ol > li[data-flow-continuation-item] {
+            counter-increment: none;
+          }
+          .a4-page-content ol > li[data-flow-continuation-item]::before {
+            content: none;
           }
           .a4-page-content ol ol,
           .a4-page-content ol ul,

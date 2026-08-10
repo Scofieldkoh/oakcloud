@@ -731,6 +731,43 @@ describe('A4PageEditor real layout pagination', () => {
     ).toContain('counter(item)');
   });
 
+  it('continues numbered list markers across soft pages', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const items = Array.from(
+      { length: 60 },
+      (_, index) =>
+        `<li><p>Item ${index + 1}: enough content to wrap and fill several A4 pages.</p></li>`,
+    ).join('');
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={`<ol>${items}</ol>`} />);
+    });
+    await waitForEditorIdle();
+
+    const pageContents = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        '[data-testid^="a4-page-content-"]',
+      ),
+    );
+    expect(pageContents.length).toBeGreaterThan(1);
+
+    const continuations = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        'ol[data-flow-continuation="end"]',
+      ),
+    );
+    expect(continuations.length).toBeGreaterThan(0);
+    continuations.forEach((list) => {
+      expect(list.style.getPropertyValue('--flow-list-start')).not.toBe('');
+    });
+    expect(
+      continuations.every((list) =>
+        Array.from(list.querySelectorAll('li')).every(
+          (item) => !item.hasAttribute('data-flow-continuation-item'),
+        ),
+      ),
+    ).toBe(true);
+  });
+
   it('keeps committed pages mounted while Enter repaginates', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const paragraphs = Array.from(
