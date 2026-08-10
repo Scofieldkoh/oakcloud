@@ -5,14 +5,18 @@ import {
   applyBlockFormatToSelection,
   applyIndentToSelection,
   applyListToSelection,
+  applyListStartToSelection,
   applyOutdentToSelection,
   clearInlineFormatting,
   insertTextWithFormat,
+  liftSelectionFromSubList,
   normalizeColorValue,
   normalizeFormattingSpans,
   readInlineToggleState,
   readLogicalFormatState,
   replaceFormattedSelection,
+  sinkSelectionToSubList,
+  toggleNestedListSelection,
 } from '@/components/documents/a4-pagination/formatting';
 import { hydrateFlowHtml } from '@/components/documents/a4-pagination/model';
 
@@ -524,6 +528,34 @@ describe('A4 inline formatting transactions', () => {
     }
   });
 
+  it('detects alpha lists and custom start values in format state', () => {
+    const alphaHtml = hydrateFlowHtml(
+      '<ol class="list-alpha"><li><p>Alpha</p></li></ol>',
+    );
+    const alphaRoot = document.createElement('div');
+    alphaRoot.innerHTML = alphaHtml;
+    const alphaState = readLogicalFormatState(alphaRoot, {
+      anchor: collapsedPoint(alphaHtml, 0),
+      focus: collapsedPoint(alphaHtml, 0),
+      collapsed: true,
+    });
+    expect(alphaState.list).toBe('alpha');
+    expect(alphaState.listStart).toBe(1);
+
+    const startHtml = hydrateFlowHtml(
+      '<ol start="3"><li><p>Three</p></li></ol>',
+    );
+    const startRoot = document.createElement('div');
+    startRoot.innerHTML = startHtml;
+    const startState = readLogicalFormatState(startRoot, {
+      anchor: collapsedPoint(startHtml, 0),
+      focus: collapsedPoint(startHtml, 0),
+      collapsed: true,
+    });
+    expect(startState.list).toBe('ordered');
+    expect(startState.listStart).toBe(3);
+  });
+
   it('applies a paragraph style to every intersected block and keeps the bookmark', () => {
     const html = hydrateFlowHtml('<p>One</p><p>Two</p>');
     const ids = parseBody(html).querySelectorAll<HTMLElement>('[data-flow-id]');
@@ -695,6 +727,221 @@ describe('A4 inline formatting transactions', () => {
     );
   });
 
+  it('creates, converts, and toggles alphabetical lists', () => {
+    const html = hydrateFlowHtml('<p>One</p><p>Two</p>');
+    const ids = parseBody(html).querySelectorAll<HTMLElement>('[data-flow-id]');
+    const selection = {
+      anchor: { flowId: ids[0].dataset.flowId!, offset: 0 },
+      focus: { flowId: ids[1].dataset.flowId!, offset: 3 },
+      collapsed: false,
+    };
+
+    const alpha = applyListToSelection(html, selection, 'alpha');
+    const alphaBody = parseBody(alpha.html);
+    expect(alphaBody.querySelectorAll(':scope > ol.list-alpha')).toHaveLength(
+      1,
+    );
+    expect(alphaBody.querySelectorAll('ol > li > p')).toHaveLength(2);
+
+    const decimal = applyListToSelection(
+      alpha.html,
+      alpha.selection!,
+      'ordered',
+    );
+    const decimalBody = parseBody(decimal.html);
+    expect(decimalBody.querySelectorAll(':scope > ol.list-alpha')).toHaveLength(
+      0,
+    );
+    expect(decimalBody.querySelectorAll(':scope > ol')).toHaveLength(1);
+
+    const off = applyListToSelection(
+      decimal.html,
+      decimal.selection!,
+      'ordered',
+    );
+    expect(Array.from(parseBody(off.html).children, (node) => node.tagName))
+      .toEqual(['P', 'P']);
+  });
+
+  it('converts a bullet list to alpha and toggles alpha off in place', () => {
+    const html = hydrateFlowHtml('<ul><li><p>Item</p></li></ul>');
+    const liId = parseBody(html).querySelector<HTMLElement>(
+      'li',
+    )!.dataset.flowId!;
+    const caret = {
+      anchor: { flowId: liId, offset: 0 },
+      focus: { flowId: liId, offset: 0 },
+      collapsed: true,
+    };
+
+    const alpha = applyListToSelection(html, caret, 'alpha');
+    const alphaBody = parseBody(alpha.html);
+    expect(alphaBody.querySelectorAll(':scope > ol.list-alpha')).toHaveLength(
+      1,
+    );
+    expect(alphaBody.querySelector('ol > li > p')!.textContent).toBe('Item');
+
+    const off = applyListToSelection(alpha.html, caret, 'alpha');
+    expect(Array.from(parseBody(off.html).children, (node) => node.tagName))
+      .toEqual(['P']);
+  });
+
+  it('sinks the second list item into a nested sub list', () => {
+    const html = hydrateFlowHtml(
+      '<ol><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+    const ids = parseBody(html).querySelectorAll<HTMLElement>('li');
+    const caret = {
+      anchor: { flowId: ids[1].dataset.flowId!, offset: 0 },
+      focus: { flowId: ids[1].dataset.flowId!, offset: 0 },
+      collapsed: true,
+    };
+
+    const result = sinkSelectionToSubList(html, caret);
+    const body = parseBody(result.html);
+    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(1);
+    expect(body.querySelectorAll(':scope > ol > li > ol > li > p')).toHaveLength(
+      1,
+    );
+    expect(
+      body.querySelector(':scope > ol > li > ol > li > p')!.textContent,
+    ).toBe('Two');
+    expect(result.changed).toBe(true);
+  });
+
+  it('appends consecutive sinks to the same nested sub list', () => {
+    const html = hydrateFlowHtml(
+      '<ol><li><p>One</p></li><li><p>Two</p></li><li><p>Three</p></li></ol>',
+    );
+    const ids = parseBody(html).querySelectorAll<HTMLElement>('li');
+    const selection = {
+      anchor: { flowId: ids[1].dataset.flowId!, offset: 0 },
+      focus: { flowId: ids[2].dataset.flowId!, offset: 5 },
+      collapsed: false,
+    };
+
+    const result = sinkSelectionToSubList(html, selection);
+    const body = parseBody(result.html);
+    const nested = body.querySelectorAll(':scope > ol > li > ol > li');
+    expect(nested).toHaveLength(2);
+    expect(
+      Array.from(nested, (li) => li.textContent),
+    ).toEqual(['Two', 'Three']);
+  });
+
+  it('lifts a nested item back to the parent list and removes the empty sub list', () => {
+    const html = hydrateFlowHtml(
+      '<ol><li><p>One</p><ol><li><p>Two</p></li></ol></li></ol>',
+    );
+    const nestedLi = parseBody(html).querySelector<HTMLElement>(
+      'ol li ol li',
+    )!;
+    const caret = {
+      anchor: { flowId: nestedLi.dataset.flowId!, offset: 0 },
+      focus: { flowId: nestedLi.dataset.flowId!, offset: 0 },
+      collapsed: true,
+    };
+
+    const result = liftSelectionFromSubList(html, caret);
+    const body = parseBody(result.html);
+    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(2);
+    expect(body.querySelectorAll('ol > li > ol')).toHaveLength(0);
+    expect(
+      Array.from(body.querySelectorAll(':scope > ol > li > p'), (p) => p.textContent),
+    ).toEqual(['One', 'Two']);
+  });
+
+  it('does not sink the first list item', () => {
+    const html = hydrateFlowHtml(
+      '<ol><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+    const ids = parseBody(html).querySelectorAll<HTMLElement>('li');
+    const caret = {
+      anchor: { flowId: ids[0].dataset.flowId!, offset: 0 },
+      focus: { flowId: ids[0].dataset.flowId!, offset: 0 },
+      collapsed: true,
+    };
+    const result = sinkSelectionToSubList(html, caret);
+    expect(result.changed).toBe(false);
+  });
+
+  it('inherits the alpha class when sinking an alpha list', () => {
+    const html = hydrateFlowHtml(
+      '<ol class="list-alpha"><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+    const ids = parseBody(html).querySelectorAll<HTMLElement>('li');
+    const caret = {
+      anchor: { flowId: ids[1].dataset.flowId!, offset: 0 },
+      focus: { flowId: ids[1].dataset.flowId!, offset: 0 },
+      collapsed: true,
+    };
+    const result = sinkSelectionToSubList(html, caret);
+    const body = parseBody(result.html);
+    expect(
+      body.querySelectorAll(':scope > ol.list-alpha > li > ol.list-alpha'),
+    ).toHaveLength(1);
+  });
+
+  it('toggles sink on a top-level item and lift on a nested item', () => {
+    const html = hydrateFlowHtml(
+      '<ol><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+    const second = parseBody(html).querySelectorAll<HTMLElement>('li')[1];
+    const sink = toggleNestedListSelection(html, {
+      anchor: { flowId: second.dataset.flowId!, offset: 0 },
+      focus: { flowId: second.dataset.flowId!, offset: 0 },
+      collapsed: true,
+    });
+    expect(sink.changed).toBe(true);
+    expect(parseBody(sink.html).querySelectorAll('ol > li > ol > li'))
+      .toHaveLength(1);
+
+    const nested = parseBody(sink.html).querySelector<HTMLElement>(
+      'ol > li > ol > li',
+    )!;
+    const lift = toggleNestedListSelection(sink.html, {
+      anchor: { flowId: nested.dataset.flowId!, offset: 0 },
+      focus: { flowId: nested.dataset.flowId!, offset: 0 },
+      collapsed: true,
+    });
+    expect(lift.changed).toBe(true);
+    expect(parseBody(lift.html).querySelectorAll(':scope > ol > li'))
+      .toHaveLength(2);
+    expect(parseBody(lift.html).querySelectorAll('ol > li > ol'))
+      .toHaveLength(0);
+  });
+
+  it('sets and clears a custom list start value', () => {
+    const html = hydrateFlowHtml('<ol><li><p>One</p></li></ol>');
+    const liId = parseBody(html).querySelector<HTMLElement>(
+      'li',
+    )!.dataset.flowId!;
+    const caret = {
+      anchor: { flowId: liId, offset: 0 },
+      focus: { flowId: liId, offset: 0 },
+      collapsed: true,
+    };
+
+    const set = applyListStartToSelection(html, caret, 3);
+    const setBody = parseBody(set.html);
+    expect(setBody.querySelector('ol')!.getAttribute('start')).toBe('3');
+    expect(
+      setBody.querySelector<HTMLElement>('ol')!.style.getPropertyValue(
+        '--list-start',
+      ),
+    ).toBe('2');
+
+    const clear = applyListStartToSelection(set.html, caret, 1);
+    const clearBody = parseBody(clear.html);
+    expect(clearBody.querySelector('ol')!.hasAttribute('start')).toBe(false);
+    expect(
+      clearBody.querySelector<HTMLElement>('ol')!.style.getPropertyValue(
+        '--list-start',
+      ),
+    ).toBe('');
+    expect(clear.changed).toBe(true);
+  });
+
   it('applies alignment, indent, outdent, and paragraph style inside list items', () => {
     const html = hydrateFlowHtml('<ul><li>Item</li></ul>');
     const liId = parseBody(html).querySelector<HTMLElement>(
@@ -713,13 +960,13 @@ describe('A4 inline formatting transactions', () => {
       indentedBody.querySelector<HTMLElement>('ul > li > p')!.style.textAlign,
     ).toBe('center');
     expect(
-      indentedBody.querySelector<HTMLElement>('ul > li > p')!.style.marginLeft,
+      indentedBody.querySelector<HTMLElement>('ul > li')!.style.marginLeft,
     ).toBe('2em');
 
     const outdented = applyOutdentToSelection(indented.html, caret);
     const outdentedBody = parseBody(outdented.html);
     expect(
-      outdentedBody.querySelector<HTMLElement>('ul > li > p')!.style.marginLeft,
+      outdentedBody.querySelector<HTMLElement>('ul > li')!.style.marginLeft,
     ).toBe('');
     expect(outdentedBody.querySelector('ul')).not.toBeNull();
 
@@ -764,35 +1011,35 @@ describe('A4 inline formatting transactions', () => {
     const first = applyIndentToSelection(plain, caret);
     expect(first.changed).toBe(true);
     expect(
-      parseBody(first.html).querySelector<HTMLElement>('ul > li > p')!
+      parseBody(first.html).querySelector<HTMLElement>('ul > li')!
         .style.marginLeft,
     ).toBe('2em');
 
     const second = applyIndentToSelection(first.html, caret);
     expect(second.changed).toBe(true);
     expect(
-      parseBody(second.html).querySelector<HTMLElement>('ul > li > p')!
+      parseBody(second.html).querySelector<HTMLElement>('ul > li')!
         .style.marginLeft,
     ).toBe('4em');
 
     const third = applyIndentToSelection(second.html, caret);
     expect(third.changed).toBe(true);
     expect(
-      parseBody(third.html).querySelector<HTMLElement>('ul > li > p')!
+      parseBody(third.html).querySelector<HTMLElement>('ul > li')!
         .style.marginLeft,
     ).toBe('6em');
 
     const outFirst = applyOutdentToSelection(third.html, caret);
     expect(outFirst.changed).toBe(true);
     expect(
-      parseBody(outFirst.html).querySelector<HTMLElement>('ul > li > p')!
+      parseBody(outFirst.html).querySelector<HTMLElement>('ul > li')!
         .style.marginLeft,
     ).toBe('4em');
 
     const outSecond = applyOutdentToSelection(outFirst.html, caret);
     expect(outSecond.changed).toBe(true);
     expect(
-      parseBody(outSecond.html).querySelector<HTMLElement>('ul > li > p')!
+      parseBody(outSecond.html).querySelector<HTMLElement>('ul > li')!
         .style.marginLeft,
     ).toBe('2em');
 

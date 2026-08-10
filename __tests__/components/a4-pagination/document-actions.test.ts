@@ -445,6 +445,57 @@ describe('A4 canonical document actions', () => {
         Array.from(body.querySelectorAll('ol > li > p'), (p) => p.textContent),
       ).toEqual(['A', 'C']);
     });
+
+    it('forwards a fast second Enter at the end of an item to the trailing empty item', () => {
+      const html = hydrateFlowHtml(
+        '<ol><li><p>ABCD</p></li><li><p><br></p></li></ol>',
+      );
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li:nth-of-type(1)'), 4),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(body.querySelectorAll('ol > li')).toHaveLength(1);
+      expect(body.querySelector('ol')!.nextElementSibling?.tagName).toBe('P');
+      expect(result.selection?.collapsed).toBe(true);
+      expect(result.selection?.anchor.offset).toBe(0);
+    });
+
+    it('splits normally when the trailing item is not empty', () => {
+      const html = hydrateFlowHtml(
+        '<ol><li><p>AB</p></li><li><p>CD</p></li></ol>',
+      );
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li:nth-of-type(1)'), 2),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(
+        Array.from(body.querySelectorAll('ol > li > p'), (p) => p.textContent),
+      ).toEqual(['AB', '', 'CD']);
+    });
+
+    it('does not forward when the caret is mid-item', () => {
+      const html = hydrateFlowHtml(
+        '<ol><li><p>ABCD</p></li><li><p><br></p></li></ol>',
+      );
+      const result = insertParagraphAtSelection(
+        html,
+        collapsed(listItemFlowId(html, 'ol li:nth-of-type(1)'), 2),
+      );
+
+      const body = new DOMParser()
+        .parseFromString(result.html, 'text/html')
+        .body;
+      expect(body.querySelectorAll('ol > li')).toHaveLength(3);
+      expect(body.querySelector('ol')!.nextElementSibling).toBeNull();
+    });
   });
 
   it('inserts block clipboard nodes at block boundaries without nesting', () => {
@@ -531,6 +582,21 @@ describe('A4 canonical document actions', () => {
       expect(result.html.match(/Two/g)).toHaveLength(1);
     },
   );
+
+  it('preserves a custom start value on a pasted ordered list', () => {
+    const html = hydrateFlowHtml('<p>AlphaBeta</p>');
+    const flowId = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.querySelector<HTMLElement>('[data-flow-id]')!.dataset.flowId!;
+    const result = replaceLogicalSelection(
+      html,
+      collapsed(flowId, 5),
+      '<ol start="3"><li>One</li></ol>',
+    );
+    const body = new DOMParser().parseFromString(result.html, 'text/html')
+      .body;
+    expect(body.querySelector('ol')?.getAttribute('start')).toBe('3');
+  });
 
   it('replaces a forward selection with a list in canonical structure', () => {
     const html = hydrateFlowHtml('<p>AlphaBeta</p>');

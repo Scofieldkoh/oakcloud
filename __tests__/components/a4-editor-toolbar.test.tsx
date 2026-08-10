@@ -20,6 +20,7 @@ function renderToolbar(overrides: Partial<A4EditorToolbarProps> = {}) {
       underline: false,
       alignment: 'left',
       list: 'none',
+      listStart: 1,
       paragraphStyle: 'p',
       fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
       fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -131,6 +132,7 @@ describe('A4EditorToolbar', () => {
         underline: false,
         alignment: 'left',
         list: 'none',
+        listStart: 1,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: '14pt',
@@ -176,6 +178,7 @@ describe('A4EditorToolbar', () => {
         underline: false,
         alignment: 'left',
         list: 'none',
+        listStart: 1,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -203,6 +206,7 @@ describe('A4EditorToolbar', () => {
           underline: true,
           alignment: 'center',
           list: 'ordered',
+          listStart: 1,
           paragraphStyle: 'h1',
           fontFamily: 'Georgia, serif',
           fontSize: '14pt',
@@ -246,5 +250,94 @@ describe('A4EditorToolbar', () => {
     expect(screen.getByRole('button', { name: 'Add blank page' })).toBeDisabled();
     expect(screen.queryByLabelText('Line spacing')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Page margins')).not.toBeInTheDocument();
+  });
+
+  it('shows alphabetical and nested list actions in the paragraph group', () => {
+    renderToolbar();
+    const group = screen.getByRole('group', { name: 'Paragraph' });
+    expect(
+      within(group).getByRole('button', { name: 'Alphabetical list' }),
+    ).toBeVisible();
+    expect(within(group).getByRole('button', { name: 'Nested list' }))
+      .toBeVisible();
+  });
+
+  it('shows the start-at input only inside ordered and alpha lists', () => {
+    const ordered = renderToolbar({
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'ordered',
+        listStart: 2,
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+    });
+    expect(ordered.getByLabelText('List start number')).toHaveValue(2);
+    ordered.unmount();
+
+    const alpha = renderToolbar({
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'alpha',
+        listStart: 1,
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+    });
+    expect(alpha.getByLabelText('List start number')).toBeVisible();
+    alpha.unmount();
+
+    const bullet = renderToolbar({
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'unordered',
+        listStart: 1,
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+    });
+    expect(bullet.queryByLabelText('List start number')).not.toBeInTheDocument();
+  });
+
+  it('dispatches list-start commands from the start-at input', () => {
+    const onCommand = vi.fn();
+    const view = renderToolbar({
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'ordered',
+        listStart: 1,
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+      onCommand,
+    });
+    fireEvent.change(view.getByLabelText('List start number'), {
+      target: { value: '5' },
+    });
+    expect(onCommand).toHaveBeenCalledWith({ type: 'list-start', value: 5 });
   });
 });

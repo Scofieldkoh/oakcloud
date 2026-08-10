@@ -57,6 +57,7 @@ import {
   applyInlineFormat,
   applyIndentToSelection,
   applyListToSelection,
+  applyListStartToSelection,
   applyOutdentToSelection,
   clearInlineFormatting,
   insertTextWithFormat,
@@ -65,6 +66,7 @@ import {
   readInlineToggleState,
   readUniformFormatState,
   replaceFormattedSelection,
+  toggleNestedListSelection,
   type InlineFormatPatch,
 } from './a4-pagination/formatting';
 import {
@@ -143,6 +145,7 @@ function sanitizeHtml(html: string): string {
       'colspan',
       'rowspan',
       'scope',
+      'start',
       'align',
       'valign',
       'width',
@@ -672,6 +675,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       underline: false,
       alignment: 'left',
       list: 'none',
+      listStart: 1,
       paragraphStyle: 'p',
       fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
       fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -2366,6 +2370,20 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
+        if (command.type === 'list-start') {
+          applySelectionTransaction((html, bookmark) =>
+            applyListStartToSelection(html, bookmark, command.value),
+          );
+          return;
+        }
+
+        if (command.type === 'nest-list') {
+          applySelectionTransaction((html, bookmark) =>
+            toggleNestedListSelection(html, bookmark),
+          );
+          return;
+        }
+
         const commandMap = {
           undo: 'undo',
           redo: 'redo',
@@ -2504,14 +2522,36 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             font-size: 14pt;
           }
           .a4-page-content ul {
-            list-style-type: disc;
+            list-style: disc inside;
             margin: 0 0 ${paragraphSpacing} 0;
-            padding-left: 1.5em;
+            padding-left: 0;
           }
           .a4-page-content ol {
-            list-style-type: decimal;
+            list-style: none;
             margin: 0 0 ${paragraphSpacing} 0;
+            padding-left: 0;
+            counter-reset: item var(--list-start, 0);
+          }
+          .a4-page-content ol > li {
+            counter-increment: item;
+          }
+          .a4-page-content ol > li::before {
+            content: counter(item) ". ";
+          }
+          .a4-page-content ol.list-alpha > li::before {
+            content: counter(item, lower-alpha) ") ";
+          }
+          .a4-page-content ol ol,
+          .a4-page-content ol ul,
+          .a4-page-content ul ol,
+          .a4-page-content ul ul {
             padding-left: 1.5em;
+          }
+          .a4-page-content ol ol {
+            counter-reset: item;
+          }
+          .a4-page-content ol ol > li::before {
+            content: counters(item, ".") " ";
           }
           .a4-page-content li {
             display: list-item;

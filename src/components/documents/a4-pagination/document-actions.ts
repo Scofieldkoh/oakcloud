@@ -92,6 +92,7 @@ export function sanitizeReplacementHtml(html: string): string {
       'colspan',
       'rowspan',
       'scope',
+      'start',
       'align',
       'valign',
       'width',
@@ -257,6 +258,24 @@ function exitEmptyListItem(listItem: HTMLElement): HTMLParagraphElement | null {
   list.after(paragraph);
   paragraph.after(continuation);
   return paragraph;
+}
+
+function finalizeListExit(
+  root: HTMLElement,
+  paragraph: HTMLParagraphElement,
+): DocumentTransactionResult {
+  hydrateFlowContainer(root);
+  normalizeEditedFlowIds(root);
+  const paragraphFlowId = paragraph.dataset.flowId;
+  const selectionPoint = paragraphFlowId
+    ? flowPointAtElementStart(root, paragraph)
+    : null;
+  const finalized = finalizeDocumentRoot(
+    root,
+    selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
+    true,
+  );
+  return { ...finalized, changed: true };
 }
 
 /**
@@ -762,18 +781,28 @@ export function insertParagraphAtSelection(
   if (emptyListItem && !hasSubstantiveContent(emptyListItem)) {
     const paragraph = exitEmptyListItem(emptyListItem);
     if (paragraph) {
-      hydrateFlowContainer(root);
-      normalizeEditedFlowIds(root);
-      const paragraphFlowId = paragraph.dataset.flowId;
-      const selectionPoint = paragraphFlowId
-        ? flowPointAtElementStart(root, paragraph)
-        : null;
-      const finalized = finalizeDocumentRoot(
-        root,
-        selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
-        true,
-      );
-      return { ...finalized, changed: true };
+      return finalizeListExit(root, paragraph);
+    }
+  }
+
+  // A fast second Enter can arrive before repagination moves the caret into
+  // the empty item the first Enter created. If the caret is at the very end
+  // of a non-empty item whose list already ends in an empty item, treat this
+  // press as Enter on that empty item so the user exits the list (Word-style
+  // "Enter twice") instead of inserting another numbered item.
+  if (emptyListItem && hasSubstantiveContent(emptyListItem)) {
+    const itemLength = emptyListItem.textContent?.length ?? 0;
+    const next = emptyListItem.nextElementSibling as HTMLElement | null;
+    const list = emptyListItem.parentElement;
+    const hasEmptyTrailingItem =
+      next?.tagName === 'LI' &&
+      next === list?.lastElementChild &&
+      !hasSubstantiveContent(next);
+    if (selection.anchor.offset >= itemLength && hasEmptyTrailingItem) {
+      const paragraph = exitEmptyListItem(next);
+      if (paragraph) {
+        return finalizeListExit(root, paragraph);
+      }
     }
   }
 

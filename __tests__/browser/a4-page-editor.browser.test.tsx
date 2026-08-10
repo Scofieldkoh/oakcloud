@@ -516,6 +516,221 @@ describe('A4PageEditor real layout pagination', () => {
     });
   });
 
+  it('exits the list with two rapid Enter presses at the end of an item', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor ref={editorRef} value="<ol><li><p>ABCD</p></li></ol>" />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const text = host.querySelector('ol li p')!.firstChild!;
+    await act(async () => {
+      surface.focus();
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(text, 4);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => pressEnter());
+    await act(async () => pressEnter());
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelectorAll('ol > li')).toHaveLength(1);
+    expect(body.querySelector('ol')?.nextElementSibling?.tagName).toBe('P');
+    expect(
+      getComputedStyle(host.querySelector('ol > li')!, '::before').content,
+    ).toContain('counter(item)');
+  });
+
+  it('creates an alphabetical list from the toolbar with a), b) markers', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor ref={editorRef} value="<p>Alpha</p><p>Beta</p>" />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const buttonByLabel = (label: string) =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === label,
+      )!;
+    const paragraphs = Array.from(
+      host.querySelectorAll('[data-testid="a4-page-content-1"] p'),
+    );
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(paragraphs[0].firstChild!, 0);
+    range.setEnd(
+      paragraphs[1].firstChild!,
+      paragraphs[1].textContent!.length,
+    );
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Alphabetical list'));
+    });
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelectorAll('ol.list-alpha > li > p')).toHaveLength(2);
+    expect(
+      getComputedStyle(
+        host.querySelector('ol.list-alpha > li')!,
+        '::before',
+      ).content,
+    ).toContain('counter(item, lower-alpha)');
+    expect(
+      getComputedStyle(
+        host.querySelectorAll('ol.list-alpha > li')[1],
+        '::before',
+      ).content,
+    ).toContain('counter(item, lower-alpha)');
+  });
+
+  it('nests a list item with the toolbar button and lifts it back', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value="<ol><li><p>One</p></li><li><p>Two</p></li></ol>"
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const buttonByLabel = (label: string) =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === label,
+      )!;
+    const secondItemText = host.querySelectorAll('ol > li')[1]!.firstChild!
+      .firstChild!;
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(secondItemText, 0);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Nested list'));
+    });
+    await waitForEditorIdle();
+
+    let body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelectorAll('ol > li > ol > li > p')).toHaveLength(1);
+    expect(
+      getComputedStyle(
+        host.querySelector('ol > li > ol > li')!,
+        '::before',
+      ).content,
+    ).toContain('counters(item, ".")');
+
+    const nestedItemText = host.querySelector(
+      'ol > li > ol > li > p',
+    )!.firstChild!;
+    const nestedRange = document.createRange();
+    nestedRange.setStart(nestedItemText, 0);
+    nestedRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(nestedRange);
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Nested list'));
+    });
+    await waitForEditorIdle();
+
+    body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(2);
+    expect(body.querySelectorAll('ol > li > ol')).toHaveLength(0);
+  });
+
+  it('sets a custom start value from the toolbar and renders 2., 3.', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor ref={editorRef} value="<ol><li><p>One</p></li></ol>" />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const itemText = host.querySelector('ol li p')!.firstChild!;
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(itemText, 0);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(
+          host.querySelector('[aria-label="List start number"]'),
+        ).not.toBeNull();
+      });
+    });
+    const input = host.querySelector<HTMLInputElement>(
+      '[aria-label="List start number"]',
+    )!;
+    await act(async () => {
+      await userEvent.clear(input);
+      await userEvent.type(input, '2');
+    });
+    await waitForEditorIdle();
+
+    const body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelector('ol')?.getAttribute('start')).toBe('2');
+    expect(
+      body.querySelector<HTMLElement>('ol')!.style.getPropertyValue(
+        '--list-start',
+      ),
+    ).toBe('1');
+    expect(
+      getComputedStyle(host.querySelector('ol > li')!, '::before').content,
+    ).toContain('counter(item)');
+  });
+
   it('keeps committed pages mounted while Enter repaginates', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const paragraphs = Array.from(
@@ -1656,8 +1871,8 @@ describe('A4PageEditor real layout pagination', () => {
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
     expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
-        (paragraph) => paragraph.style.marginLeft === '2em',
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
+        (listItem) => listItem.style.marginLeft === '2em',
       ),
     ).toBe(true);
 
@@ -1672,8 +1887,8 @@ describe('A4PageEditor real layout pagination', () => {
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
     expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
-        (paragraph) => paragraph.style.marginLeft === '4em',
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
+        (listItem) => listItem.style.marginLeft === '4em',
       ),
     ).toBe(true);
 
@@ -1688,8 +1903,8 @@ describe('A4PageEditor real layout pagination', () => {
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
     expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li > p')).every(
-        (paragraph) => paragraph.style.marginLeft === '2em',
+      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
+        (listItem) => listItem.style.marginLeft === '2em',
       ),
     ).toBe(true);
 

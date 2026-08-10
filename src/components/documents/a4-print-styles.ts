@@ -52,9 +52,18 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     h2 { font-size: 18pt; }
     h3 { font-size: 14pt; }
     br { margin: 0; }
-    ul, ol { margin: 0 0 ${normalized.paragraphSpacing} 0; padding-left: 1.5em; }
-    ul { list-style-type: disc; }
-    ol { list-style-type: decimal; }
+    ul, ol { margin: 0 0 ${normalized.paragraphSpacing} 0; padding-left: 0; }
+    ul { list-style: disc inside; }
+    ol {
+      list-style: none;
+      counter-reset: item var(--list-start, 0);
+    }
+    ol > li { counter-increment: item; }
+    ol > li::before { content: counter(item) ". "; }
+    ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }
+    ol ol, ol ul, ul ol, ul ul { padding-left: 1.5em; }
+    ol ol { counter-reset: item; }
+    ol ol > li::before { content: counters(item, ".") " "; }
     li { display: list-item; margin: 0 0 0.25em 0; }
     blockquote { margin: 0 0 ${normalized.paragraphSpacing} 40px; padding: 0; }
     table {

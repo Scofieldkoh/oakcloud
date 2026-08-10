@@ -26,7 +26,8 @@ export interface EditorFormatState {
   italic: boolean;
   underline: boolean;
   alignment: 'left' | 'center' | 'right' | 'justify';
-  list: 'none' | 'ordered' | 'unordered';
+  list: 'none' | 'ordered' | 'unordered' | 'alpha';
+  listStart: number;
   paragraphStyle: 'p' | 'h1' | 'h2' | 'h3' | 'blockquote';
   fontFamily: string;
   fontSize: string;
@@ -70,6 +71,7 @@ function defaultFormatState(
     underline: false,
     alignment: 'left',
     list: 'none',
+    listStart: 1,
     paragraphStyle: 'p',
     fontFamily: layout.fontFamily,
     fontSize: layout.fontSize,
@@ -1122,12 +1124,30 @@ export function applyBlockAlignmentToSelection(
   return { ...finalized, changed: true };
 }
 
+function orderedListMatches(
+  list: HTMLElement,
+  tag: string,
+  isAlpha: boolean,
+): boolean {
+  return (
+    list.tagName === tag &&
+    (tag !== 'OL' || list.classList.contains('list-alpha') === isAlpha)
+  );
+}
+
+function createListElement(tag: string, isAlpha: boolean): HTMLElement {
+  const list = document.createElement(tag);
+  if (isAlpha) list.className = 'list-alpha';
+  return list;
+}
+
 export function applyListToSelection(
   html: string,
   selection: FlowSelectionBookmark,
-  listType: 'ordered' | 'unordered',
+  listType: 'ordered' | 'unordered' | 'alpha',
 ): DocumentTransactionResult {
-  const tag = listType === 'ordered' ? 'OL' : 'UL';
+  const isAlpha = listType === 'alpha';
+  const tag = listType === 'unordered' ? 'UL' : 'OL';
   const root = document.createElement('div');
   root.innerHTML = html;
   const blocks = editableBlocksForSelection(root, selection);
@@ -1141,14 +1161,14 @@ export function applyListToSelection(
   );
   const lists = selectedListItemsByList(inListBlocks);
   const allListsMatch = Array.from(lists.keys()).every(
-    (list) => list.tagName === tag,
+    (list) => orderedListMatches(list, tag, isAlpha),
   );
   let changed = false;
 
   if (outsideBlocks.length > 0) {
     for (const list of lists.keys()) {
-      if (list.tagName === tag) continue;
-      const replacement = document.createElement(tag);
+      if (orderedListMatches(list, tag, isAlpha)) continue;
+      const replacement = createListElement(tag, isAlpha);
       while (list.firstChild) replacement.appendChild(list.firstChild);
       list.replaceWith(replacement);
       changed = true;
@@ -1163,11 +1183,18 @@ export function applyListToSelection(
       const nextSibling = last.nextElementSibling as HTMLElement | null;
       const previousList =
         previousSibling?.tagName === tag &&
+        (tag !== 'OL' ||
+          (previousSibling as HTMLElement).classList.contains('list-alpha') ===
+            isAlpha) &&
         previousSibling.parentElement === parent
           ? (previousSibling as HTMLElement)
           : null;
       const nextList =
-        nextSibling?.tagName === tag && nextSibling.parentElement === parent
+        nextSibling?.tagName === tag &&
+        (tag !== 'OL' ||
+          (nextSibling as HTMLElement).classList.contains('list-alpha') ===
+            isAlpha) &&
+        nextSibling.parentElement === parent
           ? (nextSibling as HTMLElement)
           : null;
 
@@ -1201,7 +1228,7 @@ export function applyListToSelection(
         return;
       }
 
-      const list = document.createElement(tag);
+      const list = createListElement(tag, isAlpha);
       group.forEach((block) => {
         const listItem = document.createElement('li');
         copyBlockAttributes(block, listItem);
@@ -1219,8 +1246,8 @@ export function applyListToSelection(
     changed = toggleOffSelectedListItems(lists);
   } else {
     for (const list of lists.keys()) {
-      if (list.tagName === tag) continue;
-      const replacement = document.createElement(tag);
+      if (orderedListMatches(list, tag, isAlpha)) continue;
+      const replacement = createListElement(tag, isAlpha);
       while (list.firstChild) replacement.appendChild(list.firstChild);
       list.replaceWith(replacement);
       changed = true;
@@ -1244,12 +1271,14 @@ export function applyIndentToSelection(
 
   const before = root.innerHTML;
   blocks.forEach((block) => {
-    const current = block.style.marginLeft;
+    const target =
+      block.parentElement?.tagName === 'LI' ? block.parentElement : block;
+    const current = target.style.marginLeft;
     if (current) {
       const next = indentedMarginLeft(current, 1);
-      if (next) block.style.setProperty('margin-left', next);
+      if (next) target.style.setProperty('margin-left', next);
     } else {
-      block.style.setProperty('margin-left', '2em');
+      target.style.setProperty('margin-left', '2em');
     }
   });
   if (root.innerHTML === before) return { html, selection, changed: false };
@@ -1269,17 +1298,204 @@ export function applyOutdentToSelection(
 
   const before = root.innerHTML;
   blocks.forEach((block) => {
-    if (block.style.marginLeft) {
-      const next = indentedMarginLeft(block.style.marginLeft, -1);
+    const target =
+      block.parentElement?.tagName === 'LI' ? block.parentElement : block;
+    if (target.style.marginLeft) {
+      const next = indentedMarginLeft(target.style.marginLeft, -1);
       if (next) {
-        block.style.setProperty('margin-left', next);
+        target.style.setProperty('margin-left', next);
       } else {
-        block.style.removeProperty('margin-left');
+        target.style.removeProperty('margin-left');
       }
     }
   });
   if (root.innerHTML === before) return { html, selection, changed: false };
 
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+function selectedListItems(
+  root: HTMLElement,
+  selection: FlowSelectionBookmark,
+): HTMLElement[] {
+  const items = new Set<HTMLElement>();
+  editableBlocksForSelection(root, selection).forEach((block) => {
+    if (block.parentElement?.tagName === 'LI') {
+      items.add(block.parentElement);
+    }
+  });
+  const innermost = Array.from(items).filter(
+    (item) => !Array.from(items).some((other) => other !== item && item.contains(other)),
+  );
+  return innermost.sort((left, right) =>
+    compareDomPoints({ node: left, offset: 0 }, { node: right, offset: 0 }),
+  );
+}
+
+/**
+ * Sinks the selected list items under their previous items, creating a real
+ * nested list so sub-numbering (1.1) applies. Selected items keep their flow
+ * ids, so the bookmark remains valid after the move.
+ */
+export function sinkSelectionToSubList(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const items = selectedListItems(root, selection);
+  if (items.length === 0) return { html, selection, changed: false };
+
+  let changed = false;
+  items.forEach((item) => {
+    const list = item.parentElement;
+    if (!list || (list.tagName !== 'OL' && list.tagName !== 'UL')) return;
+    const previous = item.previousElementSibling as HTMLElement | null;
+    if (!previous || previous.tagName !== 'LI') return;
+
+    const isAlpha =
+      list.tagName === 'OL' && list.classList.contains('list-alpha');
+    const trailing = previous.lastElementChild as HTMLElement | null;
+    const reuseTrailingList =
+      trailing &&
+      trailing.tagName === list.tagName &&
+      (list.tagName !== 'OL' ||
+        trailing.classList.contains('list-alpha') === isAlpha);
+    const nested = reuseTrailingList
+      ? trailing
+      : (() => {
+          const created = document.createElement(list.tagName);
+          if (isAlpha) created.className = 'list-alpha';
+          previous.appendChild(created);
+          return created;
+        })();
+    nested.appendChild(item);
+    changed = true;
+  });
+
+  if (!changed) return { html, selection, changed: false };
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+/**
+ * Lifts the selected items out of a nested list back to the parent list.
+ * Empty nested lists are removed. Items are processed in reverse so
+ * contiguous selections keep their original order.
+ */
+export function liftSelectionFromSubList(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const items = selectedListItems(root, selection);
+  if (items.length === 0) return { html, selection, changed: false };
+
+  let changed = false;
+  Array.from(items)
+    .reverse()
+    .forEach((item) => {
+      const nestedList = item.parentElement;
+      if (
+        !nestedList ||
+        (nestedList.tagName !== 'OL' && nestedList.tagName !== 'UL')
+      ) {
+        return;
+      }
+      const ownerItem = nestedList.parentElement;
+      if (!ownerItem || ownerItem.tagName !== 'LI') return;
+      const outerList = ownerItem.parentElement;
+      if (
+        !outerList ||
+        (outerList.tagName !== 'OL' && outerList.tagName !== 'UL')
+      ) {
+        return;
+      }
+
+      outerList.insertBefore(item, ownerItem.nextSibling);
+      if (!nestedList.hasChildNodes()) nestedList.remove();
+      changed = true;
+    });
+
+  if (!changed) return { html, selection, changed: false };
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
+/**
+ * Sinks selected top-level items or lifts nested items, depending on where
+ * the selection sits. Used by the Nested list toolbar toggle.
+ */
+export function toggleNestedListSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  const items = selectedListItems(root, selection);
+  if (items.length === 0) return { html, selection, changed: false };
+
+  const parentList = items[0].parentElement;
+  const isNested =
+    parentList !== null &&
+    (parentList.tagName === 'OL' || parentList.tagName === 'UL') &&
+    parentList.parentElement?.tagName === 'LI';
+  return isNested
+    ? liftSelectionFromSubList(html, selection)
+    : sinkSelectionToSubList(html, selection);
+}
+
+/**
+ * Sets the starting number of every ordered list intersecting the selection.
+ * `start` is persisted as the `start` attribute plus a `--list-start` style
+ * so CSS counters can begin at the requested value. A value of 1 removes
+ * both, keeping the canonical HTML clean.
+ */
+export function applyListStartToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+  start: number,
+): DocumentTransactionResult {
+  const safeStart = Math.max(1, Math.floor(start) || 1);
+  const root = document.createElement('div');
+  root.innerHTML = html;
+
+  const lists = new Set<HTMLElement>();
+  editableBlocksForSelection(root, selection).forEach((block) => {
+    const list = block.parentElement?.closest<HTMLElement>('ol');
+    if (list) lists.add(list);
+  });
+  if (lists.size === 0) return { html, selection, changed: false };
+
+  let changed = false;
+  lists.forEach((list) => {
+    if (safeStart === 1) {
+      if (
+        list.hasAttribute('start') ||
+        list.style.getPropertyValue('--list-start') !== ''
+      ) {
+        list.removeAttribute('start');
+        list.style.removeProperty('--list-start');
+        changed = true;
+      }
+      return;
+    }
+
+    const currentAttr = list.getAttribute('start');
+    const currentVar = list.style.getPropertyValue('--list-start');
+    if (
+      currentAttr !== String(safeStart) ||
+      currentVar !== String(safeStart - 1)
+    ) {
+      list.setAttribute('start', String(safeStart));
+      list.style.setProperty('--list-start', String(safeStart - 1));
+      changed = true;
+    }
+  });
+
+  if (!changed) return { html, selection, changed: false };
   const finalized = finalizeRoot(root, selection, true);
   return { ...finalized, changed: true };
 }
@@ -1451,8 +1667,14 @@ function readFormatStateAtPoint(
 
   const listItem = element.closest<HTMLElement>('li');
   if (listItem) {
-    const list = listItem.closest('ol,ul');
-    state.list = list?.tagName === 'OL' ? 'ordered' : 'unordered';
+    const list = listItem.closest<HTMLElement>('ol,ul');
+    if (list?.tagName === 'OL') {
+      state.list = list.classList.contains('list-alpha') ? 'alpha' : 'ordered';
+      const start = Number.parseInt(list.getAttribute('start') ?? '', 10);
+      state.listStart = Number.isFinite(start) && start > 0 ? start : 1;
+    } else {
+      state.list = 'unordered';
+    }
   }
 
   state.fontFamily = inlinePropertyInAncestors(
@@ -1507,6 +1729,7 @@ function formatStateKey(state: EditorFormatState): string {
     state.underline,
     state.alignment,
     state.list,
+    state.listStart,
     state.paragraphStyle,
     state.fontFamily,
     state.fontSize,

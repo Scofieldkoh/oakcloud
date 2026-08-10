@@ -1990,15 +1990,15 @@ describe('A4PageEditor', () => {
     await waitIdle();
     body = parse(editorRef.current!.getContent());
     expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ol > li > p')).every(
-        (paragraph) => paragraph.style.marginLeft === '2em',
+      Array.from(body.querySelectorAll<HTMLElement>('ol > li')).every(
+        (listItem) => listItem.style.marginLeft === '2em',
       ),
     ).toBe(true);
     fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
     await waitFor(() => {
       expect(
-        Array.from(parse(editorRef.current!.getContent()).querySelectorAll('p')).every(
-          (paragraph) => paragraph.style.marginLeft === '',
+        Array.from(parse(editorRef.current!.getContent()).querySelectorAll('li')).every(
+          (listItem) => listItem.style.marginLeft === '',
         ),
       ).toBe(true);
     });
