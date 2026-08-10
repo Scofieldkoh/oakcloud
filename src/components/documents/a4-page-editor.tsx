@@ -66,6 +66,7 @@ import {
   readInlineToggleState,
   readUniformFormatState,
   replaceFormattedSelection,
+  toggleBoldListMarkersToSelection,
   toggleNestedListSelection,
   type InlineFormatPatch,
 } from './a4-pagination/formatting';
@@ -677,6 +678,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       alignment: 'left',
       list: 'none',
       listStart: 1,
+      listMarkersBold: false,
       paragraphStyle: 'p',
       fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
       fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -2385,6 +2387,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
+        if (command.type === 'list-bold-numbers') {
+          applySelectionTransaction((html, bookmark) =>
+            toggleBoldListMarkersToSelection(html, bookmark),
+          );
+          return;
+        }
+
         const commandMap = {
           undo: 'undo',
           redo: 'redo',
@@ -2557,6 +2566,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             left: 0;
             top: 0;
           }
+          .a4-page-content ol.list-bold-numbers > li::before {
+            font-weight: 700;
+          }
           .a4-page-content ol.list-alpha > li::before {
             content: counter(item, lower-alpha) ") ";
           }
@@ -2573,7 +2585,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           .a4-page-content ol ul,
           .a4-page-content ul ol,
           .a4-page-content ul ul {
-            padding-left: 1.5em;
+            padding-left: 0;
           }
           .a4-page-content ol ol {
             counter-reset: item;

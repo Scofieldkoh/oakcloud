@@ -16,6 +16,7 @@ import {
   readLogicalFormatState,
   replaceFormattedSelection,
   sinkSelectionToSubList,
+  toggleBoldListMarkersToSelection,
   toggleNestedListSelection,
 } from '@/components/documents/a4-pagination/formatting';
 import { hydrateFlowHtml } from '@/components/documents/a4-pagination/model';
@@ -541,6 +542,7 @@ describe('A4 inline formatting transactions', () => {
     });
     expect(alphaState.list).toBe('alpha');
     expect(alphaState.listStart).toBe(1);
+    expect(alphaState.listMarkersBold).toBe(false);
 
     const startHtml = hydrateFlowHtml(
       '<ol start="3"><li><p>Three</p></li></ol>',
@@ -554,6 +556,18 @@ describe('A4 inline formatting transactions', () => {
     });
     expect(startState.list).toBe('ordered');
     expect(startState.listStart).toBe(3);
+
+    const boldHtml = hydrateFlowHtml(
+      '<ol class="list-bold-numbers"><li><p>Bold</p></li></ol>',
+    );
+    const boldRoot = document.createElement('div');
+    boldRoot.innerHTML = boldHtml;
+    const boldState = readLogicalFormatState(boldRoot, {
+      anchor: collapsedPoint(boldHtml, 0),
+      focus: collapsedPoint(boldHtml, 0),
+      collapsed: true,
+    });
+    expect(boldState.listMarkersBold).toBe(true);
   });
 
   it('applies a paragraph style to every intersected block and keeps the bookmark', () => {
@@ -940,6 +954,55 @@ describe('A4 inline formatting transactions', () => {
       ),
     ).toBe('');
     expect(clear.changed).toBe(true);
+  });
+
+  it('indents only the nested item, not its parent list item', () => {
+    const html = hydrateFlowHtml(
+      '<ol><li><p>One</p><ol><li><p>Sub</p></li></ol></li></ol>',
+    );
+    const subLi = parseBody(html).querySelector<HTMLElement>('ol li ol li')!;
+    const caret = {
+      anchor: { flowId: subLi.dataset.flowId!, offset: 0 },
+      focus: { flowId: subLi.dataset.flowId!, offset: 0 },
+      collapsed: true,
+    };
+
+    const result = applyIndentToSelection(html, caret);
+    const body = parseBody(result.html);
+    expect(
+      body.querySelector<HTMLElement>(':scope > ol > li')!.style.marginLeft,
+    ).toBe('');
+    expect(
+      body.querySelector<HTMLElement>('ol li ol li')!.style.marginLeft,
+    ).toBe('2em');
+  });
+
+  it('toggles bold list markers on and off', () => {
+    const html = hydrateFlowHtml('<ol><li><p>One</p></li></ol>');
+    const liId = parseBody(html).querySelector<HTMLElement>(
+      'li',
+    )!.dataset.flowId!;
+    const caret = {
+      anchor: { flowId: liId, offset: 0 },
+      focus: { flowId: liId, offset: 0 },
+      collapsed: true,
+    };
+
+    const on = toggleBoldListMarkersToSelection(html, caret);
+    expect(on.changed).toBe(true);
+    expect(
+      parseBody(on.html)
+        .querySelector('ol')!
+        .classList.contains('list-bold-numbers'),
+    ).toBe(true);
+
+    const off = toggleBoldListMarkersToSelection(on.html, caret);
+    expect(off.changed).toBe(true);
+    expect(
+      parseBody(off.html)
+        .querySelector('ol')!
+        .classList.contains('list-bold-numbers'),
+    ).toBe(false);
   });
 
   it('applies alignment, indent, outdent, and paragraph style inside list items', () => {

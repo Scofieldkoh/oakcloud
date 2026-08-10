@@ -28,6 +28,7 @@ export interface EditorFormatState {
   alignment: 'left' | 'center' | 'right' | 'justify';
   list: 'none' | 'ordered' | 'unordered' | 'alpha';
   listStart: number;
+  listMarkersBold: boolean;
   paragraphStyle: 'p' | 'h1' | 'h2' | 'h3' | 'blockquote';
   fontFamily: string;
   fontSize: string;
@@ -72,6 +73,7 @@ function defaultFormatState(
     alignment: 'left',
     list: 'none',
     listStart: 1,
+    listMarkersBold: false,
     paragraphStyle: 'p',
     fontFamily: layout.fontFamily,
     fontSize: layout.fontSize,
@@ -1266,13 +1268,11 @@ export function applyIndentToSelection(
 ): DocumentTransactionResult {
   const root = document.createElement('div');
   root.innerHTML = html;
-  const blocks = editableBlocksForSelection(root, selection);
-  if (blocks.length === 0) return { html, selection, changed: false };
+  const targets = indentTargetsForSelection(root, selection);
+  if (targets.length === 0) return { html, selection, changed: false };
 
   const before = root.innerHTML;
-  blocks.forEach((block) => {
-    const target =
-      block.parentElement?.tagName === 'LI' ? block.parentElement : block;
+  targets.forEach((target) => {
     const current = target.style.marginLeft;
     if (current) {
       const next = indentedMarginLeft(current, 1);
@@ -1293,13 +1293,11 @@ export function applyOutdentToSelection(
 ): DocumentTransactionResult {
   const root = document.createElement('div');
   root.innerHTML = html;
-  const blocks = editableBlocksForSelection(root, selection);
-  if (blocks.length === 0) return { html, selection, changed: false };
+  const targets = indentTargetsForSelection(root, selection);
+  if (targets.length === 0) return { html, selection, changed: false };
 
   const before = root.innerHTML;
-  blocks.forEach((block) => {
-    const target =
-      block.parentElement?.tagName === 'LI' ? block.parentElement : block;
+  targets.forEach((target) => {
     if (target.style.marginLeft) {
       const next = indentedMarginLeft(target.style.marginLeft, -1);
       if (next) {
@@ -1313,6 +1311,31 @@ export function applyOutdentToSelection(
 
   const finalized = finalizeRoot(root, selection, true);
   return { ...finalized, changed: true };
+}
+
+/**
+ * Resolves the blocks a plain indent/outdent should move: list items become
+ * `li` targets, and when the caret sits in a nested item, only the innermost
+ * `li` is targeted so the parent list never shifts.
+ */
+function indentTargetsForSelection(
+  root: HTMLElement,
+  selection: FlowSelectionBookmark,
+): HTMLElement[] {
+  const targets: HTMLElement[] = [];
+  editableBlocksForSelection(root, selection).forEach((block) => {
+    const target =
+      block.parentElement?.tagName === 'LI' ? block.parentElement : block;
+    if (!targets.includes(target)) targets.push(target);
+  });
+  return targets.filter(
+    (target) =>
+      target.tagName !== 'LI' ||
+      !targets.some(
+        (other) =>
+          other !== target && other.tagName === 'LI' && target.contains(other),
+      ),
+  );
 }
 
 function selectedListItems(
@@ -1500,6 +1523,44 @@ export function applyListStartToSelection(
   return { ...finalized, changed: true };
 }
 
+/**
+ * Toggles bold rendering of ordered-list markers for every list intersecting
+ * the selection. Persisted as the `list-bold-numbers` class on each `ol`.
+ */
+export function toggleBoldListMarkersToSelection(
+  html: string,
+  selection: FlowSelectionBookmark,
+): DocumentTransactionResult {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+
+  const lists = new Set<HTMLElement>();
+  editableBlocksForSelection(root, selection).forEach((block) => {
+    const list = block.parentElement?.closest<HTMLElement>('ol');
+    if (list) lists.add(list);
+  });
+  if (lists.size === 0) return { html, selection, changed: false };
+
+  const allBold = Array.from(lists).every((list) =>
+    list.classList.contains('list-bold-numbers'),
+  );
+  let changed = false;
+  lists.forEach((list) => {
+    const isBold = list.classList.contains('list-bold-numbers');
+    if (allBold && isBold) {
+      list.classList.remove('list-bold-numbers');
+      changed = true;
+    } else if (!allBold && !isBold) {
+      list.classList.add('list-bold-numbers');
+      changed = true;
+    }
+  });
+
+  if (!changed) return { html, selection, changed: false };
+  const finalized = finalizeRoot(root, selection, true);
+  return { ...finalized, changed: true };
+}
+
 const INDENT_STEP_EM = 2;
 const DEFAULT_PX_PER_EM = 16;
 
@@ -1670,6 +1731,7 @@ function readFormatStateAtPoint(
     const list = listItem.closest<HTMLElement>('ol,ul');
     if (list?.tagName === 'OL') {
       state.list = list.classList.contains('list-alpha') ? 'alpha' : 'ordered';
+      state.listMarkersBold = list.classList.contains('list-bold-numbers');
       const start = Number.parseInt(list.getAttribute('start') ?? '', 10);
       state.listStart = Number.isFinite(start) && start > 0 ? start : 1;
     } else {
@@ -1730,6 +1792,7 @@ function formatStateKey(state: EditorFormatState): string {
     state.alignment,
     state.list,
     state.listStart,
+    state.listMarkersBold,
     state.paragraphStyle,
     state.fontFamily,
     state.fontSize,

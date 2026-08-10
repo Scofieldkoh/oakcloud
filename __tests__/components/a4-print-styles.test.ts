@@ -50,6 +50,9 @@ describe('shared A4 print styles', () => {
       'ol > li::before {\n      content: counter(item) ". ";\n      position: absolute;\n      left: 0;\n      top: 0;\n    }',
     );
     expect(css).toContain(
+      'ol.list-bold-numbers > li::before { font-weight: 700; }',
+    );
+    expect(css).toContain(
       'ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }',
     );
     expect(css).toContain('ul > li, ol > li {');
@@ -59,9 +62,9 @@ describe('shared A4 print styles', () => {
     expect(css).toContain('position: absolute;');
   });
 
-  it('keeps nested list indentation and 1.1 counter numbering', () => {
+  it('keeps nested lists flush with parent content and 1.1 counter numbering', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
-    expect(css).toContain('ol ol, ol ul, ul ol, ul ul { padding-left: 1.5em; }');
+    expect(css).toContain('ol ol, ol ul, ul ol, ul ul { padding-left: 0; }');
     expect(css).toContain('ol ol { counter-reset: item; }');
     expect(css).toContain(
       'ol ol > li::before { content: counters(item, ".") " "; }',

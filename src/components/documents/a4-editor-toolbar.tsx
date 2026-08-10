@@ -17,6 +17,7 @@ import {
   AlignRight,
   Bold,
   CaseLower,
+  Hash,
   Indent,
   Italic,
   List,
@@ -49,6 +50,7 @@ export type EditorCommand =
   | { type: 'list'; value: EditorFormatState['list'] }
   | { type: 'list-start'; value: number }
   | { type: 'nest-list' }
+  | { type: 'list-bold-numbers' }
   | { type: 'indent' | 'outdent' | 'insert-table' };
 
 export interface A4EditorToolbarProps {
@@ -289,31 +291,30 @@ export function A4EditorToolbar({
         <ToolbarButton label="Numbered list" icon={ListOrdered} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'ordered' })} disabled={blocked} pressed={activeFormats.list === 'ordered'} />
         <ToolbarButton label="Alphabetical list" icon={CaseLower} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'alpha' })} disabled={blocked} pressed={activeFormats.list === 'alpha'} />
         <ToolbarButton label="Nested list" icon={ListTree} onSaveSelection={onSaveSelection} onClick={command({ type: 'nest-list' })} disabled={blocked} />
-        {(activeFormats.list === 'ordered' || activeFormats.list === 'alpha') && (
-          <label
-            className="flex h-8 items-center gap-1 text-xs text-text-secondary"
-            onPointerDown={onSaveSelection}
-          >
-            Start at
-            <input
-              type="number"
-              min={1}
-              aria-label="List start number"
-              value={startDraft}
-              disabled={blocked}
-              onChange={(event) => {
-                const value = event.target.value;
-                setStartDraft(value);
-                const parsed = Number.parseInt(value, 10);
-                if (value !== '' && Number.isFinite(parsed) && parsed >= 1) {
-                  onCommand({ type: 'list-start', value: parsed });
-                }
-              }}
-              onBlur={() => setStartDraft(String(activeFormats.listStart))}
-              className={cn(toolbarSelectClass, 'w-14')}
-            />
-          </label>
-        )}
+        <ToolbarButton label="Bold list numbers" icon={Hash} onSaveSelection={onSaveSelection} onClick={command({ type: 'list-bold-numbers' })} disabled={blocked || (activeFormats.list !== 'ordered' && activeFormats.list !== 'alpha')} pressed={activeFormats.listMarkersBold} />
+        <label
+          className="flex h-8 items-center gap-1 text-xs text-text-secondary"
+          onPointerDown={onSaveSelection}
+        >
+          Start at
+          <input
+            type="number"
+            min={1}
+            aria-label="List start number"
+            value={startDraft}
+            disabled={blocked || (activeFormats.list !== 'ordered' && activeFormats.list !== 'alpha')}
+            onChange={(event) => {
+              const value = event.target.value;
+              setStartDraft(value);
+              const parsed = Number.parseInt(value, 10);
+              if (value !== '' && Number.isFinite(parsed) && parsed >= 1) {
+                onCommand({ type: 'list-start', value: parsed });
+              }
+            }}
+            onBlur={() => setStartDraft(String(activeFormats.listStart))}
+            className={cn(toolbarSelectClass, 'w-14')}
+          />
+        </label>
         <ToolbarButton label="Decrease indent" icon={Outdent} onSaveSelection={onSaveSelection} onClick={command({ type: 'outdent' })} disabled={blocked} />
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={blocked} />
       </ToolbarGroup>

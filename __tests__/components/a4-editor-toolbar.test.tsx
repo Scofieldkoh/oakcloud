@@ -21,6 +21,7 @@ function renderToolbar(overrides: Partial<A4EditorToolbarProps> = {}) {
       alignment: 'left',
       list: 'none',
       listStart: 1,
+      listMarkersBold: false,
       paragraphStyle: 'p',
       fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
       fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -133,6 +134,7 @@ describe('A4EditorToolbar', () => {
         alignment: 'left',
         list: 'none',
         listStart: 1,
+        listMarkersBold: false,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: '14pt',
@@ -179,6 +181,7 @@ describe('A4EditorToolbar', () => {
         alignment: 'left',
         list: 'none',
         listStart: 1,
+        listMarkersBold: false,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -207,6 +210,7 @@ describe('A4EditorToolbar', () => {
           alignment: 'center',
           list: 'ordered',
           listStart: 1,
+          listMarkersBold: false,
           paragraphStyle: 'h1',
           fontFamily: 'Georgia, serif',
           fontSize: '14pt',
@@ -260,9 +264,12 @@ describe('A4EditorToolbar', () => {
     ).toBeVisible();
     expect(within(group).getByRole('button', { name: 'Nested list' }))
       .toBeVisible();
+    expect(
+      within(group).getByRole('button', { name: 'Bold list numbers' }),
+    ).toBeVisible();
   });
 
-  it('shows the start-at input only inside ordered and alpha lists', () => {
+  it('keeps the start-at input visible but enabled only inside ordered and alpha lists', () => {
     const ordered = renderToolbar({
       activeFormats: {
         bold: false,
@@ -271,6 +278,7 @@ describe('A4EditorToolbar', () => {
         alignment: 'left',
         list: 'ordered',
         listStart: 2,
+        listMarkersBold: false,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -279,6 +287,7 @@ describe('A4EditorToolbar', () => {
       },
     });
     expect(ordered.getByLabelText('List start number')).toHaveValue(2);
+    expect(ordered.getByLabelText('List start number')).toBeEnabled();
     ordered.unmount();
 
     const alpha = renderToolbar({
@@ -289,6 +298,7 @@ describe('A4EditorToolbar', () => {
         alignment: 'left',
         list: 'alpha',
         listStart: 1,
+        listMarkersBold: false,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -297,6 +307,7 @@ describe('A4EditorToolbar', () => {
       },
     });
     expect(alpha.getByLabelText('List start number')).toBeVisible();
+    expect(alpha.getByLabelText('List start number')).toBeEnabled();
     alpha.unmount();
 
     const bullet = renderToolbar({
@@ -307,6 +318,7 @@ describe('A4EditorToolbar', () => {
         alignment: 'left',
         list: 'unordered',
         listStart: 1,
+        listMarkersBold: false,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
@@ -314,7 +326,37 @@ describe('A4EditorToolbar', () => {
         highlightColor: '#ffffff',
       },
     });
-    expect(bullet.queryByLabelText('List start number')).not.toBeInTheDocument();
+    expect(bullet.getByLabelText('List start number')).toBeVisible();
+    expect(bullet.getByLabelText('List start number')).toBeDisabled();
+    expect(
+      bullet.getByRole('button', { name: 'Bold list numbers' }),
+    ).toBeDisabled();
+  });
+
+  it('dispatches list-bold-numbers commands and reflects the pressed state', () => {
+    const onCommand = vi.fn();
+    const view = renderToolbar({
+      activeFormats: {
+        bold: false,
+        italic: false,
+        underline: false,
+        alignment: 'left',
+        list: 'ordered',
+        listStart: 1,
+        listMarkersBold: true,
+        paragraphStyle: 'p',
+        fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+        fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,
+        textColor: '#000000',
+        highlightColor: '#ffffff',
+      },
+      onCommand,
+    });
+    const button = view.getByRole('button', { name: 'Bold list numbers' });
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.pointerDown(button);
+    fireEvent.click(button);
+    expect(onCommand).toHaveBeenCalledWith({ type: 'list-bold-numbers' });
   });
 
   it('dispatches list-start commands from the start-at input', () => {
@@ -327,6 +369,7 @@ describe('A4EditorToolbar', () => {
         alignment: 'left',
         list: 'ordered',
         listStart: 1,
+        listMarkersBold: false,
         paragraphStyle: 'p',
         fontFamily: DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
         fontSize: DEFAULT_A4_DOCUMENT_LAYOUT.fontSize,

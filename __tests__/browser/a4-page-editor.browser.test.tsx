@@ -729,6 +729,66 @@ describe('A4PageEditor real layout pagination', () => {
     expect(
       getComputedStyle(host.querySelector('ol > li')!, '::before').content,
     ).toContain('counter(item)');
+    const renderedCounterReset = getComputedStyle(
+      host.querySelector('ol')!,
+    ).counterReset;
+    expect(
+      renderedCounterReset,
+      `rendered counter-reset (style="${host.querySelector('ol')?.getAttribute('style')}")`,
+    ).toContain('1');
+  });
+
+  it('bolds list numbers from the toolbar and toggles them off', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor ref={editorRef} value="<ol><li><p>One</p></li></ol>" />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    const page = host.querySelector('[data-testid="a4-page-content-1"]')!;
+    const itemText = page.querySelector('ol li p')!.firstChild!;
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(itemText, 0);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const buttonByLabel = (label: string) =>
+      Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === label,
+      )!;
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Bold list numbers'));
+    });
+    await waitForEditorIdle();
+
+    let body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelector('ol')?.classList.contains('list-bold-numbers'))
+      .toBe(true);
+    const listItem = page.querySelector('ol > li')!;
+    expect(getComputedStyle(listItem, '::before').fontWeight).toBe('700');
+
+    await act(async () => {
+      await userEvent.click(buttonByLabel('Bold list numbers'));
+    });
+    await waitForEditorIdle();
+    body = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(body.querySelector('ol')?.classList.contains('list-bold-numbers'))
+      .toBe(false);
   });
 
   it('continues numbered list markers across soft pages', async () => {
