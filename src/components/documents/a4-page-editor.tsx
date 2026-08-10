@@ -2545,11 +2545,19 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           .a4-page-content ul > li,
           .a4-page-content ol > li {
             position: relative;
-            padding-left: 3ch;
             margin: 0 0 0.25em 0;
           }
           .a4-page-content ul > li {
             padding-left: 2ch;
+          }
+          .a4-page-content ol > li {
+            padding-left: 5ch;
+          }
+          .a4-page-content ol ol > li {
+            padding-left: 6ch;
+          }
+          .a4-page-content ol ol ol > li {
+            padding-left: 8ch;
           }
           .a4-page-content ul > li::before {
             content: "•";

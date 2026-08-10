@@ -906,6 +906,30 @@ describe('A4PageEditor real layout pagination', () => {
     );
   });
 
+  it('reserves marker space for two-digit sub-item numbers', async () => {
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value="<ol><li><p>Parent</p><ol><li><p>Sub content</p></li></ol></li></ol>"
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const page = host.querySelector('[data-testid="a4-page-content-1"]')!;
+    const nestedItem = page.querySelector('ol ol > li')!;
+    const nestedContent = page.querySelector('ol ol > li > p')!;
+    const paddingPx = Number.parseFloat(
+      getComputedStyle(nestedItem).paddingLeft,
+    );
+    expect(paddingPx).toBeGreaterThan(40);
+    const itemRect = nestedItem.getBoundingClientRect();
+    const contentRect = nestedContent.getBoundingClientRect();
+    expect(contentRect.left - itemRect.left).toBeGreaterThan(
+      paddingPx * 0.8,
+    );
+  });
+
   it('keeps wrapped list content aligned under the marker text', async () => {
     await act(async () => {
       root.render(

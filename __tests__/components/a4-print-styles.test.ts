@@ -57,7 +57,9 @@ describe('shared A4 print styles', () => {
     );
     expect(css).toContain('ul > li, ol > li {');
     expect(css).toContain('position: relative;');
-    expect(css).toContain('padding-left: 3ch;');
+    expect(css).toContain('ol > li { padding-left: 5ch; }');
+    expect(css).toContain('ol ol > li { padding-left: 6ch; }');
+    expect(css).toContain('ol ol ol > li { padding-left: 8ch; }');
     expect(css).toContain('ul > li::before {');
     expect(css).toContain('position: absolute;');
   });

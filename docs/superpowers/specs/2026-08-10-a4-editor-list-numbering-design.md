@@ -28,7 +28,7 @@ Replace native browser list markers with CSS counters for ordered lists. This gi
 - Custom start values persist as `start="N"` on the `ol`, plus an inline `--list-start: N-1` style. `start` is added to every sanitizer allowlist so it survives save, paste, and export.
 - The Start-at field is always visible in the toolbar (enabled only when the caret is inside an ordered or alpha list).
 - `ul` renders its bullet via `::before` (`content: "•"`) with zero left padding for flush alignment.
-- Markers use a hanging indent: each `li` is `position: relative` with `padding-left: 3ch`, and the `::before` marker is absolutely positioned at `left: 0`. The marker and the first content line share the same line, and wrapped continuation lines align under the content (not under the marker). Bullets use the same pattern with `padding-left: 2ch`.
+- Markers use a hanging indent: each `li` is `position: relative` with the `::before` marker absolutely positioned at `left: 0`. The marker and the first content line share the same line, and wrapped continuation lines align under the content (not under the marker). Marker columns: bullets `2ch`, top-level numbers `5ch`, two-digit sub-numbers `6ch` (covers `XX.XX`), deeper nesting `8ch`.
 - Nested lists have no default padding (`padding-left: 0`), so sub-item markers align with the parent item's content.
 - Plain indent applies `margin-left` to only the innermost `li`, so indenting a sub-item never shifts the parent list.
 - A **Bold list numbers** toolbar toggle adds `list-bold-numbers` to the `ol`, rendering markers with `font-weight: 700`.

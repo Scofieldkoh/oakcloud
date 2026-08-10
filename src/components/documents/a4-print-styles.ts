@@ -60,10 +60,12 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     }
     ul > li, ol > li {
       position: relative;
-      padding-left: 3ch;
       margin: 0 0 0.25em 0;
     }
     ul > li { padding-left: 2ch; }
+    ol > li { padding-left: 5ch; }
+    ol ol > li { padding-left: 6ch; }
+    ol ol ol > li { padding-left: 8ch; }
     ul > li::before {
       content: "•";
       position: absolute;
