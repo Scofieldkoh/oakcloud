@@ -829,6 +829,7 @@ describe('A4PageEditor real layout pagination', () => {
   });
 
   it('does not repeat the marker when a nested list item splits across pages', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
     const longText = Array.from(
       { length: 200 },
       () => 'long nested item content that keeps wrapping onto additional lines',
@@ -836,7 +837,8 @@ describe('A4PageEditor real layout pagination', () => {
     await act(async () => {
       root.render(
         <A4PageEditor
-          value={`<ol start="3"><li><p>Parent</p><ol><li><p>${longText}</p></li></ol></li></ol>`}
+          ref={editorRef}
+          value={`<ol start="3"><li><p>Parent</p><ol><li><p>${longText}</p></li><li><p>Next sub-item</p></li></ol></li></ol>`}
         />,
       );
     });
@@ -873,6 +875,30 @@ describe('A4PageEditor real layout pagination', () => {
       expect(outer?.style.getPropertyValue('--flow-list-start')).toBe('3');
       expect(nested?.style.getPropertyValue('--flow-list-start')).toBe('1');
     });
+
+    const canonical = new DOMParser()
+      .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+      .body;
+    expect(canonical.querySelectorAll('ol ol')).toHaveLength(1);
+    expect(canonical.querySelectorAll('ol ol > li')).toHaveLength(2);
+
+    const nextParagraph = Array.from(host.querySelectorAll('p')).find(
+      (paragraph) => paragraph.textContent === 'Next sub-item',
+    )!;
+    const continuedNestedList = nextParagraph.closest('ol') as HTMLElement;
+    const directItems = Array.from(continuedNestedList.children).filter(
+      (child) => child.tagName === 'LI',
+    );
+    expect(continuedNestedList.style.getPropertyValue('--flow-list-start')).toBe(
+      '1',
+    );
+    expect(directItems).toHaveLength(2);
+    expect(directItems[0].hasAttribute('data-flow-continuation-item')).toBe(
+      true,
+    );
+    expect(directItems[1].hasAttribute('data-flow-continuation-item')).toBe(
+      false,
+    );
   });
 
   it('renders the list marker on the same line as the item content', async () => {

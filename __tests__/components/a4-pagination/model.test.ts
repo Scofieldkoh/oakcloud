@@ -92,6 +92,60 @@ describe('A4 pagination canonical model', () => {
     );
   });
 
+  it('recursively merges a proven nested-list continuation', () => {
+    const reassembled = reassemblePageFragments([
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="outer-list"><li data-flow-id="outer-item">' +
+          '<p>Parent</p><ol><li data-flow-id="nested-item"><p>First</p></li></ol>' +
+          '</li></ol>',
+      },
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="outer-list" data-flow-continuation="end">' +
+          '<li data-flow-id="outer-item" data-flow-continuation-item="true">' +
+          '<ol style="--flow-list-start: 1">' +
+          '<li data-flow-id="nested-item" data-flow-continuation-item="true"><p>Second</p></li>' +
+          '<li data-flow-id="next-item"><p>Next</p></li>' +
+          '</ol></li></ol>',
+      },
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = reassembled;
+
+    expect(root.querySelectorAll('ol')).toHaveLength(2);
+    expect(root.querySelectorAll('ol ol')).toHaveLength(1);
+    expect(root.querySelectorAll('ol ol > li')).toHaveLength(2);
+    expect(root.querySelector('ol ol')?.textContent).toBe('FirstSecondNext');
+  });
+
+  it('keeps adjacent nested lists separate without a shared boundary flow id', () => {
+    const reassembled = reassemblePageFragments([
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="outer-list"><li data-flow-id="outer-item">' +
+          '<ol><li data-flow-id="first-list-item"><p>First list</p></li></ol>' +
+          '</li></ol>',
+      },
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="outer-list" data-flow-continuation="end">' +
+          '<li data-flow-id="outer-item" data-flow-continuation-item="true">' +
+          '<ol><li data-flow-id="second-list-item"><p>Second list</p></li></ol>' +
+          '</li></ol>',
+      },
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = reassembled;
+
+    expect(root.querySelectorAll('ol ol')).toHaveLength(2);
+    expect(root.querySelectorAll('ol ol > li')).toHaveLength(2);
+  });
+
   it('keeps hard page boundaries while reassembling page fragments', () => {
     const canonical = reassemblePageFragments([
       {

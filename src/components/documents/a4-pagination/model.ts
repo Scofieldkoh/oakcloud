@@ -173,6 +173,41 @@ function appendTableContinuation(
   }
 }
 
+function isListElement(element: Element | null): element is HTMLElement {
+  return element?.tagName === 'OL' || element?.tagName === 'UL';
+}
+
+function mergeBoundaryListContinuation(
+  targetItem: HTMLElement,
+  sourceItem: HTMLElement,
+): void {
+  const targetList = targetItem.lastElementChild;
+  const sourceList = sourceItem.firstElementChild;
+  if (
+    !isListElement(targetList) ||
+    !isListElement(sourceList) ||
+    targetList.tagName !== sourceList.tagName
+  ) {
+    return;
+  }
+
+  const targetBoundary = targetList.lastElementChild as HTMLElement | null;
+  const sourceBoundary = sourceList.firstElementChild as HTMLElement | null;
+  if (!targetBoundary || !sourceBoundary) return;
+
+  const boundaryFlowId = targetBoundary.dataset.flowId;
+  if (
+    !boundaryFlowId ||
+    sourceBoundary.dataset.flowId !== boundaryFlowId ||
+    targetBoundary.tagName !== sourceBoundary.tagName
+  ) {
+    return;
+  }
+
+  appendContinuation(targetList, sourceList);
+  sourceList.remove();
+}
+
 function appendContinuation(target: HTMLElement, source: HTMLElement): void {
   if (target.tagName === 'TABLE' && source.tagName === 'TABLE') {
     appendTableContinuation(
@@ -195,6 +230,7 @@ function appendContinuation(target: HTMLElement, source: HTMLElement): void {
         targetItem?.dataset.flowId === sourceItem.dataset.flowId &&
         targetItem.tagName === sourceItem.tagName
       ) {
+        mergeBoundaryListContinuation(targetItem, sourceItem);
         appendContinuation(targetItem, sourceItem);
         sourceItem.remove();
       } else {

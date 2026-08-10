@@ -202,6 +202,23 @@ describe('A4 deterministic pagination engine', () => {
     expect(
       next?.parentElement?.style.getPropertyValue('--flow-list-start'),
     ).toBe('1');
+
+    const reassembled = reassemblePageFragments(pages);
+    const reassembledRoot = document.createElement('div');
+    reassembledRoot.innerHTML = reassembled;
+    expect(reassembledRoot.querySelectorAll(':scope > ol')).toHaveLength(1);
+    expect(reassembledRoot.querySelectorAll('ol ol')).toHaveLength(1);
+    expect(reassembledRoot.querySelectorAll('ol ol > li')).toHaveLength(2);
+
+    const repaginated = paginateFlowHtml(
+      reassembled,
+      characterMeasurer,
+      80,
+    );
+    const secondRoot = document.createElement('div');
+    secondRoot.innerHTML = reassemblePageFragments(repaginated);
+    expect(secondRoot.querySelectorAll('ol ol')).toHaveLength(1);
+    expect(secondRoot.querySelectorAll('ol ol > li')).toHaveLength(2);
   });
 
   it('keeps a heading with the following block when they fit together', () => {
