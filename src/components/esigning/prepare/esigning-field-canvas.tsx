@@ -54,8 +54,8 @@ type CanvasInteraction =
     };
 
 const SNAP_THRESHOLD = 0.01;
-const NUDGE_STEP = 0.005;
-const LARGE_NUDGE_STEP = 0.02;
+export const NUDGE_STEP = 0.005;
+export const LARGE_NUDGE_STEP = 0.02;
 
 const DEFAULT_FIELD_SIZES: Record<EsigningFieldType, { w: number; h: number }> = {
   SIGNATURE: { w: 0.24, h: 0.08 },
@@ -436,6 +436,23 @@ export function EsigningFieldCanvas({
   );
   const overlapsByField = useMemo(() => detectFieldOverlaps(fields), [fields]);
 
+  function canvasOwnsKeyboard(): boolean {
+    return Boolean(containerRef.current?.contains(document.activeElement));
+  }
+
+  useEffect(() => {
+    const visibleFieldIds = new Set(fieldsOnPage.map((field) => field.localId));
+
+    setSelectedFieldIdsInternal((current) => {
+      const next = current.filter((fieldId) => visibleFieldIds.has(fieldId));
+      return next.length === current.length ? current : next;
+    });
+
+    if (selectedFieldId && !visibleFieldIds.has(selectedFieldId)) {
+      onFieldSelect(null);
+    }
+  }, [fieldsOnPage, onFieldSelect, selectedDocumentId, selectedFieldId, viewerPage]);
+
   useEffect(() => {
     if (!selectedFieldId) {
       setSelectedFieldIdsInternal([]);
@@ -789,31 +806,43 @@ export function EsigningFieldCanvas({
         return;
       }
 
+      const ownsKeyboard = canvasOwnsKeyboard();
+      const visibleSelectedFieldIds = selectedFieldIdsInternal.filter((fieldId) =>
+        fieldsOnPage.some((field) => field.localId === fieldId)
+      );
+      const hasVisibleSelection = ownsKeyboard && visibleSelectedFieldIds.length > 0;
+
       const nudgeDistance = event.shiftKey ? LARGE_NUDGE_STEP : NUDGE_STEP;
       if (event.key === 'ArrowLeft') {
+        if (!hasVisibleSelection) return;
         event.preventDefault();
         moveSelectedFields(-nudgeDistance, 0);
         return;
       }
       if (event.key === 'ArrowRight') {
+        if (!hasVisibleSelection) return;
         event.preventDefault();
         moveSelectedFields(nudgeDistance, 0);
         return;
       }
       if (event.key === 'ArrowUp') {
+        if (!hasVisibleSelection) return;
         event.preventDefault();
         moveSelectedFields(0, -nudgeDistance);
         return;
       }
       if (event.key === 'ArrowDown') {
+        if (!hasVisibleSelection) return;
         event.preventDefault();
         moveSelectedFields(0, nudgeDistance);
         return;
       }
 
-      if ((event.key === 'Backspace' || event.key === 'Delete') && selectedFieldIdsInternal.length > 0) {
+      if ((event.key === 'Backspace' || event.key === 'Delete') && hasVisibleSelection) {
         event.preventDefault();
-        onFieldsChange(fields.filter((field) => !selectedFieldIdsInternal.includes(field.localId)));
+        onFieldsChange(
+          fields.filter((field) => !visibleSelectedFieldIds.includes(field.localId))
+        );
         setSelectedFieldIdsInternal([]);
         onFieldSelect(null);
         return;
@@ -825,12 +854,14 @@ export function EsigningFieldCanvas({
       }
 
       const key = event.key.toLowerCase();
-      if (key === 'c' && selectedFieldIdsInternal.length > 0) {
+      if (key === 'c' && hasVisibleSelection) {
         event.preventDefault();
-        clipboardRef.current = fields.filter((field) => selectedFieldIdsInternal.includes(field.localId));
+        clipboardRef.current = fields.filter((field) =>
+          visibleSelectedFieldIds.includes(field.localId)
+        );
       }
 
-      if (key === 'v' && clipboardRef.current.length > 0 && selectedDocumentId) {
+      if (key === 'v' && ownsKeyboard && clipboardRef.current.length > 0 && selectedDocumentId) {
         event.preventDefault();
         const nextFields = cloneFieldsForPaste(clipboardRef.current);
         onFieldsChange([...fields, ...nextFields]);
@@ -838,9 +869,11 @@ export function EsigningFieldCanvas({
         onFieldSelect(nextFields[0]?.localId ?? null);
       }
 
-      if (key === 'd' && selectedFieldIdsInternal.length > 0 && selectedDocumentId) {
+      if (key === 'd' && hasVisibleSelection && selectedDocumentId) {
         event.preventDefault();
-        const sourceFields = fields.filter((field) => selectedFieldIdsInternal.includes(field.localId));
+        const sourceFields = fields.filter((field) =>
+          visibleSelectedFieldIds.includes(field.localId)
+        );
         const nextFields = cloneFieldsForPaste(sourceFields);
         clipboardRef.current = sourceFields;
         onFieldsChange([...fields, ...nextFields]);
@@ -855,6 +888,7 @@ export function EsigningFieldCanvas({
     canEdit,
     cloneFieldsForPaste,
     fields,
+    fieldsOnPage,
     moveSelectedFields,
     onFieldSelect,
     onFieldsChange,
