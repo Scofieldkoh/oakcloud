@@ -142,7 +142,7 @@ function getSuggestedFieldValue(
     case 'DATE_SIGNED':
       return getLocalDateInputValue();
     default:
-      return field.placeholder ?? null;
+      return null;
   }
 }
 
@@ -179,17 +179,17 @@ function normalizeSigningError(
     };
   }
 
-  if (normalizedMessage.includes('expired')) {
-    return {
-      kind: 'expired',
-      message: 'This envelope expired before your signing session could finish.',
-    };
-  }
-
   if (normalizedMessage.includes('session expired')) {
     return {
       kind: 'session-expired',
       message: 'Your signing session expired. Resume signing to continue from your saved progress.',
+    };
+  }
+
+  if (normalizedMessage.includes('expired')) {
+    return {
+      kind: 'expired',
+      message: 'This envelope expired before your signing session could finish.',
     };
   }
 
@@ -270,6 +270,8 @@ export function EsigningSignPage() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftValuesRef = useRef<Record<string, DraftValue>>({});
   const savePromiseRef = useRef<Promise<EsigningSigningSessionDto> | null>(null);
+  const dirtyRevisionRef = useRef(0);
+  const savedRevisionRef = useRef(0);
 
   // ==========================================================================
   // Derived state
@@ -323,10 +325,19 @@ export function EsigningSignPage() {
     }
 
     const autoDateValue = getLocalDateInputValue();
-    let hasChanges = false;
+    const currentValues = latestDraftValuesRef.current;
+    const needsDateInsertion = fields.some(
+      (field) => field.type === 'DATE_SIGNED' && !currentValues[field.id]?.value
+    );
+    if (!needsDateInsertion) {
+      return;
+    }
+
+    dirtyRevisionRef.current += 1;
 
     setDraftValues((current) => {
       const next = { ...current };
+      let hasChanges = false;
 
       for (const field of fields) {
         if (field.type !== 'DATE_SIGNED') {
@@ -554,6 +565,7 @@ export function EsigningSignPage() {
   // ==========================================================================
 
   function setDraft(fieldDefinitionId: string, patch: Partial<DraftValue>) {
+    dirtyRevisionRef.current += 1;
     setDraftValues((current) => ({
       ...current,
       [fieldDefinitionId]: {
@@ -735,10 +747,24 @@ export function EsigningSignPage() {
 
   async function saveProgress(values: Record<string, DraftValue> = latestDraftValuesRef.current) {
     let nextValues = values;
+    if (dirtyRevisionRef.current === savedRevisionRef.current) {
+      return;
+    }
+
     if (savePromiseRef.current) {
       await savePromiseRef.current.catch(() => undefined);
       nextValues = latestDraftValuesRef.current;
+      if (dirtyRevisionRef.current === savedRevisionRef.current) {
+        return;
+      }
     }
+
+    const serializedValues = serializeValues(nextValues);
+    if (serializedValues.length === 0) {
+      return;
+    }
+
+    const savingRevision = dirtyRevisionRef.current;
 
     const requestPromise = (async () => {
       setIsSaving(true);
@@ -749,7 +775,7 @@ export function EsigningSignPage() {
           const response = await fetch('/api/esigning/sign/session/fields', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: serializeValues(nextValues) }),
+            body: JSON.stringify({ values: serializedValues }),
           });
           const result = (await response.json().catch(() => ({}))) as EsigningSigningSessionDto & {
             error?: string;
@@ -797,7 +823,9 @@ export function EsigningSignPage() {
 
     savePromiseRef.current = requestPromise;
     try {
-      return await requestPromise;
+      const result = await requestPromise;
+      savedRevisionRef.current = savingRevision;
+      return result;
     } finally {
       if (savePromiseRef.current === requestPromise) {
         savePromiseRef.current = null;
@@ -852,7 +880,7 @@ export function EsigningSignPage() {
     }
   }
 
-  async function recordConsent() {
+  async function recordConsent(): Promise<boolean> {
     setIsConsenting(true);
     try {
       const response = await fetch('/api/esigning/sign/session/consent', {
@@ -864,8 +892,12 @@ export function EsigningSignPage() {
       if (!response.ok) {
         throw new Error(result.error || 'Failed to record consent');
       }
+      if (!result.recipient?.consentedAt) {
+        throw new Error('Consent was not confirmed by the server');
+      }
       setSession(result);
       setSaveError(null);
+      return true;
     } catch (error) {
       const normalizedError = normalizeSigningError(error, 'Failed to record consent');
       if (
@@ -876,10 +908,11 @@ export function EsigningSignPage() {
       ) {
         setErrorState(normalizedError);
         setFlowState('error');
-        return;
+        return false;
       }
 
       toast.error(normalizedError.message);
+      return false;
     } finally {
       setIsConsenting(false);
     }
@@ -1010,8 +1043,9 @@ export function EsigningSignPage() {
         documents={session.documents.map((d) => ({ id: d.id, fileName: d.fileName }))}
         isSubmitting={isConsenting}
         onConsent={async () => {
-          await recordConsent();
-          setFlowState('signing');
+          if (await recordConsent()) {
+            setFlowState('signing');
+          }
         }}
         onDecline={() => setIsDeclineModalOpen(true)}
       />
@@ -1073,7 +1107,7 @@ export function EsigningSignPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-background-primary">
+    <div data-testid="signing-document" className="min-h-screen bg-background-primary">
       {/* Sticky header */}
       <EsigningSigningHeader
         envelopeTitle={session.envelope.title}
@@ -1222,6 +1256,7 @@ export function EsigningSignPage() {
         initialValue={
           activeInputField ? draftValues[activeInputField.id]?.value ?? null : null
         }
+        placeholder={activeInputField?.placeholder ?? undefined}
         suggestedValue={
           activeInputField && session ? getSuggestedFieldValue(activeInputField, session) : null
         }

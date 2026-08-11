@@ -10,6 +10,7 @@ interface EsigningFieldInputModalProps {
   field: EsigningFieldDefinitionDto | null;
   isOpen: boolean;
   initialValue: string | null;
+  placeholder?: string;
   suggestedValue?: string | null;
   onClose: () => void;
   onSave: (value: string | null) => void;
@@ -57,6 +58,7 @@ export function EsigningFieldInputModal({
   field,
   isOpen,
   initialValue,
+  placeholder: placeholderOverride,
   suggestedValue,
   onClose,
   onSave,
@@ -64,7 +66,7 @@ export function EsigningFieldInputModal({
   const [value, setValue] = useState('');
   const isDateField = field?.type === 'DATE_SIGNED';
   const title = getFieldTitle(field);
-  const placeholder = getFieldPlaceholder(field);
+  const placeholder = placeholderOverride ?? getFieldPlaceholder(field);
 
   useEffect(() => {
     if (!isOpen) return;
