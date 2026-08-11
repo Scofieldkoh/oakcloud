@@ -681,7 +681,7 @@ export function EsigningStepUpload({
     }
   }
 
-  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+  function handleDragOver(e: React.DragEvent<HTMLButtonElement>) {
     e.preventDefault();
     setIsDragging(true);
   }
@@ -690,7 +690,7 @@ export function EsigningStepUpload({
     setIsDragging(false);
   }
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+  function handleDrop(e: React.DragEvent<HTMLButtonElement>) {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files.length > 0) {
@@ -1087,13 +1087,16 @@ async function applyMixedGroupChange(
         </div>
 
         {/* Drop zone */}
-        <div
+        <button
+          type="button"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => !isUploading && fileInputRef.current?.click()}
+          disabled={isUploading}
+          aria-describedby="esigning-upload-help"
           className={cn(
-            'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors',
+            'flex min-h-[44px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70',
             isUploading
               ? 'cursor-wait border-oak-primary bg-oak-primary/5'
               : isDragging
@@ -1115,10 +1118,10 @@ async function applyMixedGroupChange(
                   ? 'Drop PDF or Word documents here'
                   : 'Drop PDF documents here'}
           </p>
-          <p className="text-xs text-text-muted mt-0.5">
+          <span id="esigning-upload-help" className="text-xs text-text-muted mt-0.5">
             {wordUploadEnabled ? 'PDF, DOCX, or DOC' : 'PDF only'} - max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
-          </p>
-        </div>
+          </span>
+        </button>
         <input
           ref={fileInputRef}
           type="file"

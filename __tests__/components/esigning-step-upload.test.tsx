@@ -218,6 +218,7 @@ describe('EsigningStepUpload', () => {
       onUpdateSettings?: ReturnType<typeof vi.fn>;
       onReorderRecipients?: ReturnType<typeof vi.fn>;
       onNext?: ReturnType<typeof vi.fn>;
+      isUploading?: boolean;
     } = {}
   ) {
     const onUpdateSettings = propOverrides.onUpdateSettings ?? vi.fn().mockResolvedValue(undefined);
@@ -225,14 +226,14 @@ describe('EsigningStepUpload', () => {
       propOverrides.onReorderRecipients ?? vi.fn().mockResolvedValue(undefined);
     const onNext = propOverrides.onNext ?? vi.fn();
 
-    render(
+    const { container } = render(
       <EsigningStepUpload
         envelope={makeEnvelope(envelopeOverrides)}
         currentUser={null}
         onUpdateSettings={onUpdateSettings}
         isUpdating={false}
         onUploadDocuments={vi.fn()}
-        isUploading={false}
+        isUploading={propOverrides.isUploading ?? false}
         onDeleteDocument={vi.fn()}
         onAddRecipient={vi.fn()}
         onReorderRecipients={onReorderRecipients}
@@ -246,12 +247,38 @@ describe('EsigningStepUpload', () => {
       />
     );
 
-    return { onUpdateSettings, onReorderRecipients, onNext };
+    return { onUpdateSettings, onReorderRecipients, onNext, container };
   }
 
   function nextButton() {
     return screen.getByRole('button', { name: /Next/i });
   }
+
+  it('is a keyboard-operable upload control with a 44px mobile target', async () => {
+    const user = userEvent.setup();
+    const { container } = renderUpload();
+
+    const uploadButton = screen.getByRole('button', { name: /Drop PDF documents here/i });
+    expect(uploadButton).toHaveAccessibleName();
+    expect(uploadButton.className).toContain('min-h-[44px]');
+
+    const fileInput = container.querySelector('input[type="file"]');
+    expect(fileInput).not.toBeNull();
+    const clickSpy = vi.spyOn(fileInput as HTMLInputElement, 'click').mockImplementation(() => undefined);
+
+    uploadButton.focus();
+    await user.keyboard('{Enter}');
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    await user.keyboard(' ');
+    expect(clickSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('disables the upload control while uploading', () => {
+    renderUpload({}, { isUploading: true });
+
+    const uploadButton = screen.getByRole('button', { name: /Uploading/i });
+    expect(uploadButton).toBeDisabled();
+  });
 
   it('sends null when a saved message is cleared', async () => {
     const user = userEvent.setup();

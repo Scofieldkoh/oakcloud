@@ -177,6 +177,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const duplicateEnvelope = useDuplicateEsigningEnvelope();
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const wizardContentRef = useRef<HTMLDivElement>(null);
   const [manualLinks, setManualLinks] = useState<EsigningManualLinkDto[]>([]);
 
   // Modal state
@@ -199,6 +200,15 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const [fieldRedoStack, setFieldRedoStack] = useState<PlacedField[][]>([]);
   const fieldDraftsRef = useRef<PlacedField[]>([]);
   const lastSyncedEnvelopeIdRef = useRef<string | null>(null);
+
+  const goToDraftStep = useCallback((step: WizardStep) => {
+    setCurrentStep(step);
+    requestAnimationFrame(() => {
+      wizardContentRef.current?.scrollTo({ top: 0, left: 0 });
+      window.scrollTo({ top: 0, left: 0 });
+      document.getElementById(`esigning-step-${step}-heading`)?.focus();
+    });
+  }, []);
 
   // Recipient hooks (keyed by action IDs)
   const addRecipient = useAddEsigningRecipient(envelopeId);
@@ -754,7 +764,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 currentStep={currentStep}
                 canProceedToStep2={canProceedToStep2}
                 canProceedToStep3={canProceedToStep3}
-                onStepClick={setCurrentStep}
+                onStepClick={goToDraftStep}
               />
             </div>
             {/* Mobile-only spacer mirrors the back-button width so the indicator is visually centered. */}
@@ -776,85 +786,115 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         </div>
 
         {/* Step content */}
-        <div className={currentStep === 2 ? 'flex flex-1 min-h-0 flex-col overflow-hidden' : 'flex-1 overflow-auto'}>
+        <div
+          ref={wizardContentRef}
+          className={currentStep === 2 ? 'flex flex-1 min-h-0 flex-col overflow-hidden' : 'flex-1 overflow-auto'}
+        >
           {currentStep === 1 && (
-            <EsigningStepUpload
-              envelope={envelope}
-              currentUser={sessionQuery.data ? {
-                firstName: sessionQuery.data.firstName,
-                lastName: sessionQuery.data.lastName,
-                email: sessionQuery.data.email,
-              } : null}
-              onUpdateSettings={async (settings) => {
-                await updateEnvelope.mutateAsync(settings);
-              }}
-              isUpdating={updateEnvelope.isPending}
-              onUploadDocuments={async (files) => { await uploadFiles(files); }}
-              isUploading={uploadDocument.isPending}
-              onDeleteDocument={(docId) => {
-                setDocumentActionId(docId);
-                setIsDeleteDocumentOpen(true);
-              }}
-              onAddRecipient={async (data) => {
-                await addRecipient.mutateAsync(data);
-                toast.success('Recipient added');
-              }}
-              onReorderRecipients={async (payload) => {
-                await reorderRecipients.mutateAsync(payload);
-              }}
-              isReorderingRecipients={reorderRecipients.isPending}
-              onEditRecipient={openEditRecipient}
-              onRemoveRecipient={(id) => {
-                setRecipientActionId(id);
-                setIsDeleteRecipientOpen(true);
-              }}
-              companies={(companiesQuery.data?.companies ?? []).map((c) => ({
-                id: c.id,
-                name: c.name,
-                uen: c.uen,
-              }))}
-              companiesLoading={companiesQuery.isLoading}
-              onNext={() => setCurrentStep(2)}
-              onBack={() => router.push(returnHref)}
-            />
+            <>
+              <h1
+                id="esigning-step-1-heading"
+                tabIndex={-1}
+                className="px-4 pt-4 text-xl font-semibold text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:px-6 sm:pt-6"
+              >
+                Upload documents
+              </h1>
+              <EsigningStepUpload
+                envelope={envelope}
+                currentUser={sessionQuery.data ? {
+                  firstName: sessionQuery.data.firstName,
+                  lastName: sessionQuery.data.lastName,
+                  email: sessionQuery.data.email,
+                } : null}
+                onUpdateSettings={async (settings) => {
+                  await updateEnvelope.mutateAsync(settings);
+                }}
+                isUpdating={updateEnvelope.isPending}
+                onUploadDocuments={async (files) => { await uploadFiles(files); }}
+                isUploading={uploadDocument.isPending}
+                onDeleteDocument={(docId) => {
+                  setDocumentActionId(docId);
+                  setIsDeleteDocumentOpen(true);
+                }}
+                onAddRecipient={async (data) => {
+                  await addRecipient.mutateAsync(data);
+                  toast.success('Recipient added');
+                }}
+                onReorderRecipients={async (payload) => {
+                  await reorderRecipients.mutateAsync(payload);
+                }}
+                isReorderingRecipients={reorderRecipients.isPending}
+                onEditRecipient={openEditRecipient}
+                onRemoveRecipient={(id) => {
+                  setRecipientActionId(id);
+                  setIsDeleteRecipientOpen(true);
+                }}
+                companies={(companiesQuery.data?.companies ?? []).map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  uen: c.uen,
+                }))}
+                companiesLoading={companiesQuery.isLoading}
+                onNext={() => goToDraftStep(2)}
+                onBack={() => router.push(returnHref)}
+              />
+            </>
           )}
           {currentStep === 2 && (
-            <EsigningStepFields
-              envelope={envelope}
-              fields={fieldDrafts}
-              onFieldsChange={updateFieldDrafts}
-              onSaveFields={persistFields}
-              isSaving={saveFields.isPending}
-              canUndo={fieldUndoStack.length > 0}
-              canRedo={fieldRedoStack.length > 0}
-              onUndo={undoFieldDrafts}
-              onRedo={redoFieldDrafts}
-              onNext={() => setCurrentStep(3)}
-              onBack={() => setCurrentStep(1)}
-              canEdit={envelope.canEdit && can.updateEsigning}
-            />
+            <>
+              <h1
+                id="esigning-step-2-heading"
+                tabIndex={-1}
+                className="px-4 pt-4 text-xl font-semibold text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:px-6 sm:pt-6"
+              >
+                Place fields
+              </h1>
+              <EsigningStepFields
+                envelope={envelope}
+                fields={fieldDrafts}
+                onFieldsChange={updateFieldDrafts}
+                onSaveFields={persistFields}
+                isSaving={saveFields.isPending}
+                canUndo={fieldUndoStack.length > 0}
+                canRedo={fieldRedoStack.length > 0}
+                onUndo={undoFieldDrafts}
+                onRedo={redoFieldDrafts}
+                onNext={() => goToDraftStep(3)}
+                onBack={() => goToDraftStep(1)}
+                canEdit={envelope.canEdit && can.updateEsigning}
+              />
+            </>
           )}
           {currentStep === 3 && (
-            <EsigningStepReview
-              envelope={envelope}
-              fields={fieldDrafts}
-              onSend={async () => {
-                try {
-                  await persistFields({ silent: true });
-                  const result = await sendEnvelope.mutateAsync(taskContext);
-                  if (result.manualLinks.length > 0) {
-                    setManualLinks(result.manualLinks);
-                    setIsLinksModalOpen(true);
+            <>
+              <h1
+                id="esigning-step-3-heading"
+                tabIndex={-1}
+                className="px-4 pt-4 text-xl font-semibold text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:px-6 sm:pt-6"
+              >
+                Review and send
+              </h1>
+              <EsigningStepReview
+                envelope={envelope}
+                fields={fieldDrafts}
+                onSend={async () => {
+                  try {
+                    await persistFields({ silent: true });
+                    const result = await sendEnvelope.mutateAsync(taskContext);
+                    if (result.manualLinks.length > 0) {
+                      setManualLinks(result.manualLinks);
+                      setIsLinksModalOpen(true);
+                    }
+                    toast.success('Envelope sent');
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : 'Failed to send envelope');
                   }
-                  toast.success('Envelope sent');
-                } catch (error) {
-                  toast.error(error instanceof Error ? error.message : 'Failed to send envelope');
-                }
-              }}
-              isSending={sendEnvelope.isPending}
-              onBack={() => setCurrentStep(2)}
-              manualLinks={manualLinks}
-            />
+                }}
+                isSending={sendEnvelope.isPending}
+                onBack={() => goToDraftStep(2)}
+                manualLinks={manualLinks}
+              />
+            </>
           )}
         </div>
 
