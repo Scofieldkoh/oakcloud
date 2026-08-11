@@ -8,6 +8,7 @@ import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/gener
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
 import type { EsigningRecipientInput } from '@/lib/validations/esigning';
+import { updateEsigningEnvelopeSchema } from '@/lib/validations/esigning';
 import type { PDFPageProxy } from 'pdfjs-dist';
 import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
 import {
@@ -21,6 +22,7 @@ import {
   useEsigningWordUploadAvailability,
 } from '@/components/esigning/esigning-upload-files';
 import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 import { FormInput } from '@/components/ui/form-input';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
@@ -87,7 +89,7 @@ function parseOptionalWholeNumber(value: string): number | null {
     return null;
   }
 
-  const parsed = Number.parseInt(trimmed, 10);
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -474,6 +476,13 @@ export function EsigningStepUpload({
   const [reminderStartDays, setReminderStartDays] = useState('');
   const [expiryWarningDays, setExpiryWarningDays] = useState('');
   const [isSettingsDirty, setIsSettingsDirty] = useState(false);
+  const [settingsErrors, setSettingsErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const reminderFrequencyRef = useRef<HTMLInputElement>(null);
+  const reminderStartRef = useRef<HTMLInputElement>(null);
+  const expiryWarningRef = useRef<HTMLInputElement>(null);
 
   // Recipient state
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
@@ -505,6 +514,12 @@ export function EsigningStepUpload({
     setIsSettingsDirty(false);
     lastSyncedEnvelopeIdRef.current = envelope.id;
   }, [envelope, isSettingsDirty]);
+
+  useEffect(() => {
+    if (isSettingsDirty) {
+      setSubmitError(null);
+    }
+  }, [isSettingsDirty]);
 
   const signerRecipients = useMemo(
     () => envelope.recipients.filter((recipient) => recipient.type === 'SIGNER'),
@@ -594,25 +609,76 @@ export function EsigningStepUpload({
   }
 
   async function handleNext() {
-    await onUpdateSettings({
+    const payload: UpdateEsigningEnvelopeInput = {
       title: title.trim(),
-      message: message.trim() || undefined,
+      message: message.trim() || null,
       companyId: companyId || null,
       signingOrder,
       expiresAt: dateInputValueToIso(expiresAt),
       reminderFrequencyDays: parseOptionalWholeNumber(reminderFrequencyDays),
       reminderStartDays: parseOptionalWholeNumber(reminderStartDays),
       expiryWarningDays: parseOptionalWholeNumber(expiryWarningDays),
-    });
-    setIsSettingsDirty(false);
-    if (
-      signingOrder !== 'PARALLEL' &&
-      orderedSignerRecipients.length > 0 &&
-      (envelope.signingOrder !== signingOrder || !signerGroupsEqual(reconciledPendingSignerGroups, persistedSignerGroups))
-    ) {
-      await onReorderRecipients(buildReorderRecipientsPayload(reconciledPendingSignerGroups, signingOrder));
+    };
+
+    const parsed = updateEsigningEnvelopeSchema.safeParse(payload);
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        if (!fieldErrors[key]) {
+          fieldErrors[key] = issue.message;
+        }
+      }
+      setSettingsErrors(fieldErrors);
+      if (
+        fieldErrors.reminderFrequencyDays ||
+        fieldErrors.reminderStartDays ||
+        fieldErrors.expiryWarningDays ||
+        fieldErrors.expiresAt
+      ) {
+        setAdvancedOpen(true);
+      }
+      setSubmitError('Please correct the highlighted settings before continuing.');
+      requestAnimationFrame(() => {
+        const firstInvalidField = ['title', 'message', 'reminderFrequencyDays', 'reminderStartDays', 'expiryWarningDays']
+          .find((key) => fieldErrors[key]);
+        if (firstInvalidField === 'title') {
+          titleRef.current?.focus();
+        } else if (firstInvalidField === 'message') {
+          messageRef.current?.focus();
+        } else if (firstInvalidField === 'reminderFrequencyDays') {
+          reminderFrequencyRef.current?.focus();
+        } else if (firstInvalidField === 'reminderStartDays') {
+          reminderStartRef.current?.focus();
+        } else if (firstInvalidField === 'expiryWarningDays') {
+          expiryWarningRef.current?.focus();
+        }
+      });
+      return;
     }
-    onNext();
+
+    setSettingsErrors({});
+    setSubmitError(null);
+
+    try {
+      await onUpdateSettings(payload);
+      setIsSettingsDirty(false);
+      if (
+        signingOrder !== 'PARALLEL' &&
+        orderedSignerRecipients.length > 0 &&
+        (envelope.signingOrder !== signingOrder ||
+          !signerGroupsEqual(reconciledPendingSignerGroups, persistedSignerGroups))
+      ) {
+        await onReorderRecipients(
+          buildReorderRecipientsPayload(reconciledPendingSignerGroups, signingOrder)
+        );
+      }
+      onNext();
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : 'Failed to save settings. Please try again.'
+      );
+    }
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -1601,16 +1667,19 @@ async function applyMixedGroupChange(
         <FormInput
           label="Subject"
           value={title}
+          ref={titleRef}
           onChange={(e) => {
             setTitle(e.target.value);
             setIsSettingsDirty(true);
           }}
           disabled={!envelope.canEdit}
+          error={settingsErrors.title}
         />
 
         <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
           <span>Message</span>
           <textarea
+            ref={messageRef}
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
@@ -1618,8 +1687,12 @@ async function applyMixedGroupChange(
             }}
             disabled={!envelope.canEdit}
             rows={4}
+            aria-invalid={settingsErrors.message ? 'true' : 'false'}
             className="rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 disabled:opacity-60"
           />
+          {settingsErrors.message ? (
+            <span className="text-xs text-red-400">{settingsErrors.message}</span>
+          ) : null}
         </label>
       </section>
 
@@ -1649,6 +1722,7 @@ async function applyMixedGroupChange(
               <FormInput
                 label="Reminder every"
                 type="number"
+                ref={reminderFrequencyRef}
                 min={1}
                 max={30}
                 value={reminderFrequencyDays}
@@ -1658,10 +1732,12 @@ async function applyMixedGroupChange(
                 }}
                 disabled={!envelope.canEdit}
                 hint="Days between reminder emails."
+                error={settingsErrors.reminderFrequencyDays}
               />
               <FormInput
                 label="Start reminders after"
                 type="number"
+                ref={reminderStartRef}
                 min={0}
                 max={90}
                 value={reminderStartDays}
@@ -1671,10 +1747,12 @@ async function applyMixedGroupChange(
                 }}
                 disabled={!envelope.canEdit}
                 hint="Days after send before reminders begin."
+                error={settingsErrors.reminderStartDays}
               />
               <FormInput
                 label="Warn before expiry"
                 type="number"
+                ref={expiryWarningRef}
                 min={0}
                 max={30}
                 value={expiryWarningDays}
@@ -1684,6 +1762,7 @@ async function applyMixedGroupChange(
                 }}
                 disabled={!envelope.canEdit}
                 hint="Days before expiry to notify the sender."
+                error={settingsErrors.expiryWarningDays}
               />
             </div>
 
@@ -1705,7 +1784,12 @@ async function applyMixedGroupChange(
         </details>
       </section>
 
-      {/* ——— Bottom bar ——— */}
+      {submitError ? (
+        <Alert variant="error" className="mt-4">
+          {submitError}
+        </Alert>
+      ) : null}
+
       <div className="flex flex-col gap-2 rounded-2xl border border-border-primary bg-background-secondary px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
         <Button variant="secondary" className="w-full sm:w-auto" onClick={onBack}>
           Back

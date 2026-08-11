@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EsigningStepUpload } from '@/components/esigning/prepare/esigning-step-upload';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
@@ -209,5 +210,135 @@ describe('EsigningStepUpload', () => {
 
     await waitFor(() => expect(onUpdateSettings).toHaveBeenCalled());
     expect(onUpdateSettings.mock.calls[0][0].expiresAt).toBe(new Date('2026-08-15T00:00').toISOString());
+  });
+
+  function renderUpload(
+    envelopeOverrides: Partial<EsigningEnvelopeDetailDto> = {},
+    propOverrides: {
+      onUpdateSettings?: ReturnType<typeof vi.fn>;
+      onReorderRecipients?: ReturnType<typeof vi.fn>;
+      onNext?: ReturnType<typeof vi.fn>;
+    } = {}
+  ) {
+    const onUpdateSettings = propOverrides.onUpdateSettings ?? vi.fn().mockResolvedValue(undefined);
+    const onReorderRecipients =
+      propOverrides.onReorderRecipients ?? vi.fn().mockResolvedValue(undefined);
+    const onNext = propOverrides.onNext ?? vi.fn();
+
+    render(
+      <EsigningStepUpload
+        envelope={makeEnvelope(envelopeOverrides)}
+        currentUser={null}
+        onUpdateSettings={onUpdateSettings}
+        isUpdating={false}
+        onUploadDocuments={vi.fn()}
+        isUploading={false}
+        onDeleteDocument={vi.fn()}
+        onAddRecipient={vi.fn()}
+        onReorderRecipients={onReorderRecipients}
+        isReorderingRecipients={false}
+        onEditRecipient={vi.fn()}
+        onRemoveRecipient={vi.fn()}
+        companies={[]}
+        companiesLoading={false}
+        onNext={onNext}
+        onBack={vi.fn()}
+      />
+    );
+
+    return { onUpdateSettings, onReorderRecipients, onNext };
+  }
+
+  function nextButton() {
+    return screen.getByRole('button', { name: /Next/i });
+  }
+
+  it('sends null when a saved message is cleared', async () => {
+    const user = userEvent.setup();
+    const { onUpdateSettings, onNext } = renderUpload({ message: 'Sensitive old text' });
+
+    await user.clear(screen.getByRole('textbox', { name: 'Message' }));
+    await user.click(nextButton());
+
+    await waitFor(() => expect(onUpdateSettings).toHaveBeenCalled());
+    expect(onUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ message: null }));
+    expect(onNext).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['blank subject', '', 'String must contain at least 1 character(s)'],
+    ['overlong subject', 'x'.repeat(161), 'String must contain at most 160 character(s)'],
+  ] as const)('blocks %s and focuses the subject field', async (_label, value, message) => {
+    const user = userEvent.setup();
+    const { onUpdateSettings, onNext } = renderUpload();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Subject' }), {
+      target: { value },
+    });
+    await user.click(nextButton());
+
+    expect(onNext).not.toHaveBeenCalled();
+    expect(onUpdateSettings).not.toHaveBeenCalled();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Subject' })).toHaveFocus()
+    );
+  });
+
+  it('blocks an overlong message and focuses it', async () => {
+    const user = userEvent.setup();
+    const { onNext } = renderUpload();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'x'.repeat(4001) },
+    });
+    await user.click(nextButton());
+
+    expect(onNext).not.toHaveBeenCalled();
+    expect(screen.getByText(/at most 4000 character/)).toBeInTheDocument();
+    await waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'));
+  });
+
+  it.each([
+    ['out-of-range reminder', '0'],
+    ['fractional reminder', '1.5'],
+  ] as const)('blocks %s and focuses the first invalid advanced field', async (_label, value) => {
+    const user = userEvent.setup();
+    const { onNext } = renderUpload();
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Reminder every' }), {
+      target: { value },
+    });
+    await user.click(nextButton());
+
+    expect(onNext).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByRole('spinbutton', { name: 'Reminder every' })).toHaveFocus()
+    );
+  });
+
+  it('keeps the step mounted and announces a rejected settings update', async () => {
+    const user = userEvent.setup();
+    const onUpdateSettings = vi.fn().mockRejectedValue(new Error('Server rejected title'));
+    const { onNext } = renderUpload({}, { onUpdateSettings });
+
+    await user.click(nextButton());
+
+    await waitFor(() => expect(onUpdateSettings).toHaveBeenCalled());
+    expect(onNext).not.toHaveBeenCalled();
+    expect(screen.getByText('Server rejected title')).toBeInTheDocument();
+  });
+
+  it('keeps the step mounted and announces a rejected recipient reorder', async () => {
+    const user = userEvent.setup();
+    const onReorderRecipients = vi.fn().mockRejectedValue(new Error('Server rejected reorder'));
+    const { onNext } = renderUpload({}, { onReorderRecipients });
+
+    await user.click(screen.getByRole('button', { name: /Order: Parallel/i }));
+    await user.click(nextButton());
+
+    await waitFor(() => expect(onReorderRecipients).toHaveBeenCalled());
+    expect(onNext).not.toHaveBeenCalled();
+    expect(screen.getByText('Server rejected reorder')).toBeInTheDocument();
   });
 });
