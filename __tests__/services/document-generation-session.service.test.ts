@@ -194,6 +194,99 @@ describe('generation session persistence', () => {
     });
   });
 
+  it('copies the template layout into the draft session on create', async () => {
+    const templateSession = {
+      ...emptySession,
+      templateId: '33333333-3333-4333-8333-333333333333',
+    };
+    const templateLayout = {
+      version: 1,
+      layout: {
+        version: 1,
+        fontSize: '12pt',
+        marginsMm: { top: 15, right: 20, bottom: 15, left: 20 },
+      },
+    };
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: templateSession.templateId,
+      name: 'Resolution',
+      contentJson: templateLayout,
+    });
+    prismaMock.generatedDocument.create.mockResolvedValue({
+      id: 'draft-1',
+      updatedAt: new Date('2026-07-18T01:00:00Z'),
+      metadata: { generationSession: templateSession },
+    });
+
+    await createGenerationSession(templateSession, tenantParams);
+
+    expect(prismaMock.generatedDocument.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ contentJson: templateLayout }),
+    });
+  });
+
+  it('copies the template layout into the draft session on update', async () => {
+    const templateId = '33333333-3333-4333-8333-333333333333';
+    const templateLayout = {
+      version: 1,
+      layout: {
+        version: 1,
+        fontSize: '12pt',
+        marginsMm: { top: 15, right: 20, bottom: 15, left: 20 },
+      },
+    };
+    prismaMock.generatedDocument.findFirst.mockResolvedValue({
+      id: 'draft-1',
+      tenantId: tenantParams.tenantId,
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: { generationSession: emptySession },
+    });
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: templateId,
+      name: 'Resolution',
+      compositionType: 'STANDARD',
+      contentJson: templateLayout,
+    });
+    prismaMock.generatedDocument.update.mockResolvedValue({
+      id: 'draft-1',
+      updatedAt: new Date('2026-07-18T03:00:00Z'),
+      metadata: { generationSession: { ...emptySession, templateId } },
+    });
+
+    await updateGenerationSession('draft-1', { ...emptySession, templateId }, tenantParams);
+
+    expect(prismaMock.generatedDocument.update).toHaveBeenCalledWith({
+      where: { id: 'draft-1' },
+      data: expect.objectContaining({ contentJson: templateLayout }),
+    });
+  });
+
+  it('prefers an explicit editedContentJson over the template layout', async () => {
+    const templateId = '33333333-3333-4333-8333-333333333333';
+    const customJson = { version: 1, layout: { fontSize: '14pt' } };
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: templateId,
+      name: 'Resolution',
+      compositionType: 'STANDARD',
+      contentJson: { version: 1, layout: { fontSize: '12pt' } },
+    });
+    prismaMock.generatedDocument.create.mockResolvedValue({
+      id: 'draft-1',
+      updatedAt: new Date('2026-07-18T01:00:00Z'),
+      metadata: { generationSession: { ...emptySession, templateId } },
+    });
+
+    await createGenerationSession(
+      { ...emptySession, templateId, editedContentJson: customJson },
+      tenantParams,
+    );
+
+    expect(prismaMock.generatedDocument.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ contentJson: customJson }),
+    });
+  });
+
   it('updates only an active session in the current workspace', async () => {
     prismaMock.generatedDocument.findFirst.mockResolvedValue({
       id: 'draft-1',

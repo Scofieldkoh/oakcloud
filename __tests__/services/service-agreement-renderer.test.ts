@@ -138,6 +138,83 @@ describe('service agreement renderer', () => {
     expect(result.itemDiagnostics).toEqual([]);
   });
 
+  it('strips baked-in typography styles but preserves list indent and formatting', () => {
+    const styledAgreement = structuredClone(agreement);
+    styledAgreement.items[1].partialContentSnapshot = [
+      '<h2 style="font-size: 18pt; font-family: Georgia, serif; color: rgb(0, 0, 0); text-align: center;">',
+      '{{service.variantName}}</h2>',
+      '<p style="font-size: 14.6667px; font-family: Arial, Helvetica, sans-serif; white-space: pre-wrap;',
+      ' line-height: 1.8; margin-left: 2em; display: inline !important;">',
+      '{{service.fields.software}}</p>',
+      '<ul class="list-alpha"><li style="margin-left: 2em; font-size: 10pt;">',
+      '<b>Bold</b> <u>Underline</u></li></ul>',
+    ].join('');
+
+    const result = assembleServiceAgreementTemplate({
+      templateContent,
+      agreement: styledAgreement,
+    });
+    const section =
+      result.content.match(
+        /<section[^>]*data-service-agreement-item-id="item-1"[\s\S]*?<\/section>/,
+      )?.[0] ?? '';
+
+    expect(section).toContain('Monthly Accounting');
+    expect(section).toContain('Xero');
+    expect(section).toContain('text-align: center');
+    expect(section).toContain('<b>Bold</b>');
+    expect(section).toContain('<u>Underline</u>');
+    expect(section).toContain('class="list-alpha"');
+    expect(section).toContain('margin-left: 2em');
+    expect(section).toContain('white-space: pre-wrap');
+    expect(section).toContain('display: inline !important');
+    expect(section).toContain('font-size: 18pt');
+    expect(section).toContain('font-size: 10pt');
+    expect(section).not.toContain('font-size: 14.6667px');
+    expect(section).not.toContain('font-family');
+    expect(section).not.toContain('line-height');
+  });
+
+  it('normalizes only the baked-in default font size and keeps deliberate sizes', () => {
+    const styledAgreement = structuredClone(agreement);
+    styledAgreement.items[1].partialContentSnapshot = [
+      '<p style="font-size: 11pt;">Body at editor default</p>',
+      '<p style="font-size: 14.6667px;">Word-pasted body at 11pt</p>',
+      '<p style="font-size: 9pt;">Footnote</p>',
+      '<p style="font-size: 12pt;">Deliberately larger body</p>',
+    ].join('');
+
+    const result = assembleServiceAgreementTemplate({
+      templateContent,
+      agreement: styledAgreement,
+    });
+    const section =
+      result.content.match(
+        /<section[^>]*data-service-agreement-item-id="item-1"[\s\S]*?<\/section>/,
+      )?.[0] ?? '';
+
+    expect(section).toContain('Body at editor default');
+    expect(section).toContain('Word-pasted body at 11pt');
+    expect(section).toContain('Footnote');
+    expect(section).toContain('Deliberately larger body');
+    expect(section).toContain('font-size: 9pt');
+    expect(section).toContain('font-size: 12pt');
+    expect(section).not.toContain('font-size: 11pt');
+    expect(section).not.toContain('font-size: 14.6667px');
+  });
+
+  it('leaves plain partial wording untouched when it has no inline layout styles', () => {
+    const result = assembleServiceAgreementTemplate({ templateContent, agreement });
+    const section =
+      result.content.match(
+        /<section[^>]*data-service-agreement-item-id="item-1"[\s\S]*?<\/section>/,
+      )?.[0] ?? '';
+
+    expect(section).toContain('Monthly Accounting');
+    expect(section).toContain('Xero');
+    expect(section).not.toContain('style=');
+  });
+
   it('rejects a missing or duplicate reserved slot', () => {
     expect(() =>
       assembleServiceAgreementTemplate({

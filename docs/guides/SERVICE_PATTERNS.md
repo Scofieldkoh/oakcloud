@@ -421,6 +421,17 @@ const company = await prisma.company.findFirst({
 - Assemble `serviceSections`, `feeTable`, and `entityAppendix` exactly once,
   in that order, before normal template partial and placeholder resolution.
   A SOW receives only its local `service` context.
+- Normalize inline typography in pinned SOW wording when assembling
+  `serviceSections`: always drop `font-family` and `line-height`, and drop
+  `font-size` only when it matches the partial editor's default (11pt,
+  including pixel equivalents) so the wording inherits the master template's
+  global font settings. Preserve deliberate per-text sizes (e.g. footnotes),
+  list structure and indentation (margins/padding), numbering classes,
+  bold/italic/underline tags, colors, and alignment.
+- Mirror the selected template's `contentJson` layout (font family/size, line
+  spacing, page margins) onto generation-session drafts on create and update,
+  so previews, edits, and exports respect the template's global settings even
+  before final generation.
 - Refresh wording only through the optimistic version-checked refresh route.
   Preserve dates, entity assignments, fields, and fees during refresh.
 - Full-editor changes affect document HTML only. Display the divergence warning

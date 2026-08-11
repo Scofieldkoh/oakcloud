@@ -1,5 +1,9 @@
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
 import {
+  DEFAULT_DOCUMENT_FONT_SIZE,
+  normalizeDocumentFontSize,
+} from '@/components/documents/document-typography';
+import {
   SERVICE_AGREEMENT_SLOTS,
   findServiceAgreementSlotViolations,
 } from '@/lib/service-agreement-template';
@@ -48,6 +52,55 @@ function valueAtPath(value: unknown, path: string): unknown {
     if (!current || typeof current !== 'object') return undefined;
     return (current as Record<string, unknown>)[key];
   }, value);
+}
+
+/**
+ * Inline CSS properties that would override the master template's global
+ * typography settings (font family, line spacing). Service partial wording is
+ * authored or pasted into the partial editor and can carry baked-in typography
+ * that would otherwise override the template's global settings when rendered.
+ * Font family and line height are always normalized to the template; font size
+ * is normalized only when it matches the partial editor's default size (11pt),
+ * so deliberate per-text sizes (e.g. footnotes or sub-headings) are preserved.
+ * List structure, indentation (margins/padding), numbering classes,
+ * bold/italic/underline tags, colors, and alignment are preserved as authored.
+ */
+const GLOBAL_TYPOGRAPHY_STYLE_PROPERTIES = new Set([
+  'font-family',
+  'line-height',
+]);
+
+/**
+ * True when an inline font-size declaration is just the partial editor's
+ * baked-in default (11pt, including pixel equivalents such as 14.6667px from
+ * Word pastes). Those are stripped so the wording inherits the master
+ * template's global font size; any other size is an explicit authoring choice
+ * and is kept.
+ */
+function isBakedDefaultFontSize(declaration: string): boolean {
+  const value = declaration.slice(declaration.indexOf(':') + 1).trim();
+  return normalizeDocumentFontSize(value) === DEFAULT_DOCUMENT_FONT_SIZE;
+}
+
+function normalizePartialWordingStyles(html: string): string {
+  return html.replace(
+    /\sstyle\s*=\s*(["'])([\s\S]*?)\1/gi,
+    (_match, _quote, styleValue: string) => {
+      const kept = styleValue
+        .split(';')
+        .map((declaration) => declaration.trim())
+        .filter(Boolean)
+        .filter((declaration) => {
+          const property = declaration.split(':', 1)[0].trim().toLowerCase();
+          if (property === 'font-size') {
+            return !isBakedDefaultFontSize(declaration);
+          }
+          return !GLOBAL_TYPOGRAPHY_STYLE_PROPERTIES.has(property);
+        })
+        .join('; ');
+      return kept ? ` style="${kept}"` : '';
+    },
+  );
 }
 
 export function assembleServiceAgreementTemplate(input: {
@@ -117,7 +170,7 @@ export function assembleServiceAgreementTemplate(input: {
       return [
         index > 0 ? '<div class="page-break"></div>' : '',
         `<section data-service-agreement-item-id="${escapeHtml(item.id)}">`,
-        rendered.resolved,
+        normalizePartialWordingStyles(rendered.resolved),
         '</section>',
       ].join('');
     })

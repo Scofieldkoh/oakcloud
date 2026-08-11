@@ -19,6 +19,7 @@ import type { GenerationSessionState } from '@/lib/validations/generated-documen
 interface SessionReferences {
   templateName: string | null;
   compositionType: 'STANDARD' | 'SERVICE_AGREEMENT' | null;
+  templateContentJson?: unknown;
 }
 
 function metadataRecord(metadata: unknown): Record<string, unknown> {
@@ -55,21 +56,38 @@ function sessionState(input: SaveGenerationSessionInput): GenerationSessionState
   return state;
 }
 
+/**
+ * Session drafts mirror the selected template's layout (font family/size,
+ * line spacing, page margins) so previews and exports follow the template's
+ * global settings even before final generation. An explicit editedContentJson
+ * from the caller wins; otherwise the template's persisted layout is used.
+ */
+function sessionContentJson(
+  input: SaveGenerationSessionInput,
+  templateContentJson: unknown,
+): Prisma.InputJsonValue {
+  return (
+    input.editedContentJson ?? templateContentJson ?? Prisma.JsonNull
+  ) as Prisma.InputJsonValue;
+}
+
 async function validateSessionReferences(
   input: SaveGenerationSessionInput,
   tenantId: string,
 ): Promise<SessionReferences> {
   let templateName: string | null = null;
   let compositionType: SessionReferences['compositionType'] = null;
+  let templateContentJson: unknown = undefined;
 
   if (input.templateId) {
     const template = await prisma.documentTemplate.findFirst({
       where: { id: input.templateId, tenantId, deletedAt: null },
-      select: { id: true, name: true, compositionType: true },
+      select: { id: true, name: true, compositionType: true, contentJson: true },
     });
     if (!template) throw new NotFoundError('Template not found');
     templateName = template.name;
     compositionType = template.compositionType;
+    templateContentJson = template.contentJson;
   }
 
   if (input.companyId) {
@@ -106,7 +124,7 @@ async function validateSessionReferences(
     throw new ValidationError('Service Agreement details are required after Setup');
   }
 
-  return { templateName, compositionType };
+  return { templateName, compositionType, templateContentJson };
 }
 
 function generationSessionMetadata(
@@ -147,6 +165,7 @@ export async function createGenerationSession(
           companyId: input.companyId,
           title,
           content: input.editedContent ?? input.previewContent ?? '',
+          contentJson: sessionContentJson(input, references.templateContentJson),
           status: 'DRAFT',
           useLetterhead: input.useLetterhead,
           metadata: generationSessionMetadata(
@@ -179,6 +198,7 @@ export async function createGenerationSession(
       companyId: input.companyId,
       title,
       content: input.editedContent ?? input.previewContent ?? '',
+      contentJson: sessionContentJson(input, references.templateContentJson),
       status: 'DRAFT',
       useLetterhead: input.useLetterhead,
       metadata: generationSessionMetadata(state, undefined, taskIntegrationContext),
@@ -286,6 +306,7 @@ export async function updateGenerationSession(
           companyId: input.companyId,
           title: sessionTitle(input, references.templateName),
           content: input.editedContent ?? input.previewContent ?? '',
+          contentJson: sessionContentJson(input, references.templateContentJson),
           useLetterhead: input.useLetterhead,
           metadata: generationSessionMetadata(state, existing.metadata),
         },
@@ -306,6 +327,7 @@ export async function updateGenerationSession(
           companyId: input.companyId,
           title: sessionTitle(input, references.templateName),
           content: input.editedContent ?? input.previewContent ?? '',
+          contentJson: sessionContentJson(input, references.templateContentJson),
           useLetterhead: input.useLetterhead,
           metadata: generationSessionMetadata(state, existing.metadata),
         },
@@ -320,6 +342,7 @@ export async function updateGenerationSession(
       companyId: input.companyId,
       title: sessionTitle(input, references.templateName),
       content: input.editedContent ?? input.previewContent ?? '',
+      contentJson: sessionContentJson(input, references.templateContentJson),
       useLetterhead: input.useLetterhead,
       metadata: generationSessionMetadata(state, existing.metadata),
     },
