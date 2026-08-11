@@ -435,6 +435,8 @@ export const ModelName = {
   EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
   EsigningDocumentFieldValue: 'EsigningDocumentFieldValue',
   EsigningEnvelopeEvent: 'EsigningEnvelopeEvent',
+  EsigningEmailDelivery: 'EsigningEmailDelivery',
+  EsigningEmailDeliveryAttempt: 'EsigningEmailDeliveryAttempt',
   ProcessingDocument: 'ProcessingDocument',
   DocumentLink: 'DocumentLink',
   DocumentTag: 'DocumentTag',
@@ -502,7 +504,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4277,6 +4279,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EsigningEnvelopeEventCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeEventCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningEmailDelivery: {
+      payload: Prisma.$EsigningEmailDeliveryPayload<ExtArgs>
+      fields: Prisma.EsigningEmailDeliveryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningEmailDeliveryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningEmailDeliveryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningEmailDeliveryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningEmailDeliveryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningEmailDeliveryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningEmailDeliveryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningEmailDeliveryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningEmailDeliveryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningEmailDeliveryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>
+        }
+        update: {
+          args: Prisma.EsigningEmailDeliveryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningEmailDeliveryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningEmailDeliveryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningEmailDeliveryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningEmailDeliveryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningEmailDeliveryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningEmailDelivery>
+        }
+        groupBy: {
+          args: Prisma.EsigningEmailDeliveryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEmailDeliveryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningEmailDeliveryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEmailDeliveryCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningEmailDeliveryAttempt: {
+      payload: Prisma.$EsigningEmailDeliveryAttemptPayload<ExtArgs>
+      fields: Prisma.EsigningEmailDeliveryAttemptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningEmailDeliveryAttemptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningEmailDeliveryAttemptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningEmailDeliveryAttemptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningEmailDeliveryAttemptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningEmailDeliveryAttemptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningEmailDeliveryAttemptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningEmailDeliveryAttemptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningEmailDeliveryAttemptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningEmailDeliveryAttemptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>
+        }
+        update: {
+          args: Prisma.EsigningEmailDeliveryAttemptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningEmailDeliveryAttemptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningEmailDeliveryAttemptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningEmailDeliveryAttemptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningEmailDeliveryAttemptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEmailDeliveryAttemptPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningEmailDeliveryAttemptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningEmailDeliveryAttempt>
+        }
+        groupBy: {
+          args: Prisma.EsigningEmailDeliveryAttemptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEmailDeliveryAttemptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningEmailDeliveryAttemptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEmailDeliveryAttemptCountAggregateOutputType> | number
         }
       }
     }
@@ -9052,6 +9202,12 @@ export const EsigningEnvelopeScalarFieldEnum = {
   pdfGenerationAttempts: 'pdfGenerationAttempts',
   pdfGenerationClaimedAt: 'pdfGenerationClaimedAt',
   pdfGenerationError: 'pdfGenerationError',
+  autoFilingStatus: 'autoFilingStatus',
+  autoFilingAttempts: 'autoFilingAttempts',
+  autoFilingAvailableAt: 'autoFilingAvailableAt',
+  autoFilingClaimedAt: 'autoFilingClaimedAt',
+  autoFilingLeaseExpiresAt: 'autoFilingLeaseExpiresAt',
+  autoFilingError: 'autoFilingError',
   consentVersion: 'consentVersion',
   consentDisclosureSnapshot: 'consentDisclosureSnapshot',
   metadata: 'metadata',
@@ -9167,6 +9323,45 @@ export const EsigningEnvelopeEventScalarFieldEnum = {
 } as const
 
 export type EsigningEnvelopeEventScalarFieldEnum = (typeof EsigningEnvelopeEventScalarFieldEnum)[keyof typeof EsigningEnvelopeEventScalarFieldEnum]
+
+
+export const EsigningEmailDeliveryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  recipientId: 'recipientId',
+  audience: 'audience',
+  kind: 'kind',
+  targetKey: 'targetKey',
+  toEmail: 'toEmail',
+  subject: 'subject',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  availableAt: 'availableAt',
+  claimedAt: 'claimedAt',
+  leaseExpiresAt: 'leaseExpiresAt',
+  lastAttemptedAt: 'lastAttemptedAt',
+  sentAt: 'sentAt',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningEmailDeliveryScalarFieldEnum = (typeof EsigningEmailDeliveryScalarFieldEnum)[keyof typeof EsigningEmailDeliveryScalarFieldEnum]
+
+
+export const EsigningEmailDeliveryAttemptScalarFieldEnum = {
+  id: 'id',
+  deliveryId: 'deliveryId',
+  toEmail: 'toEmail',
+  subject: 'subject',
+  succeeded: 'succeeded',
+  providerMessageId: 'providerMessageId',
+  error: 'error',
+  attemptedAt: 'attemptedAt'
+} as const
+
+export type EsigningEmailDeliveryAttemptScalarFieldEnum = (typeof EsigningEmailDeliveryAttemptScalarFieldEnum)[keyof typeof EsigningEmailDeliveryAttemptScalarFieldEnum]
 
 
 export const ProcessingDocumentScalarFieldEnum = {
@@ -10683,6 +10878,20 @@ export type ListEnumEsigningPdfGenerationStatusFieldRefInput<$PrismaModel> = Fie
 
 
 /**
+ * Reference to a field of type 'EsigningPostCompletionStatus'
+ */
+export type EnumEsigningPostCompletionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningPostCompletionStatus'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningPostCompletionStatus[]'
+ */
+export type ListEnumEsigningPostCompletionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningPostCompletionStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'EsigningRecipientType'
  */
 export type EnumEsigningRecipientTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientType'>
@@ -10763,6 +10972,48 @@ export type EnumEsigningEnvelopeEventActionFieldRefInput<$PrismaModel> = FieldRe
  * Reference to a field of type 'EsigningEnvelopeEventAction[]'
  */
 export type ListEnumEsigningEnvelopeEventActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeEventAction[]'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningEmailDeliveryAudience'
+ */
+export type EnumEsigningEmailDeliveryAudienceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEmailDeliveryAudience'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningEmailDeliveryAudience[]'
+ */
+export type ListEnumEsigningEmailDeliveryAudienceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEmailDeliveryAudience[]'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningEmailDeliveryKind'
+ */
+export type EnumEsigningEmailDeliveryKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEmailDeliveryKind'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningEmailDeliveryKind[]'
+ */
+export type ListEnumEsigningEmailDeliveryKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEmailDeliveryKind[]'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningEmailDeliveryStatus'
+ */
+export type EnumEsigningEmailDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEmailDeliveryStatus'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningEmailDeliveryStatus[]'
+ */
+export type ListEnumEsigningEmailDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEmailDeliveryStatus[]'>
 
 
 
@@ -11597,6 +11848,8 @@ export type GlobalOmitConfig = {
   esigningDocumentFieldDefinition?: Prisma.EsigningDocumentFieldDefinitionOmit
   esigningDocumentFieldValue?: Prisma.EsigningDocumentFieldValueOmit
   esigningEnvelopeEvent?: Prisma.EsigningEnvelopeEventOmit
+  esigningEmailDelivery?: Prisma.EsigningEmailDeliveryOmit
+  esigningEmailDeliveryAttempt?: Prisma.EsigningEmailDeliveryAttemptOmit
   processingDocument?: Prisma.ProcessingDocumentOmit
   documentLink?: Prisma.DocumentLinkOmit
   documentTag?: Prisma.DocumentTagOmit

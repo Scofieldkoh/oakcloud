@@ -47,6 +47,7 @@ model Workspace {
   formUploads                 FormUpload[]
   forms                       Form[]
   generatedDocuments          GeneratedDocument[]
+  esigningEmailDeliveries     EsigningEmailDelivery[]
   esigningEnvelopes           EsigningEnvelope[]
   taskEsigningPreparations    TaskEsigningPreparation[]
   roles                       Role[]
@@ -1273,6 +1274,12 @@ model EsigningEnvelope {
   pdfGenerationAttempts     Int                               @default(0)
   pdfGenerationClaimedAt    DateTime?
   pdfGenerationError        String?
+  autoFilingStatus          EsigningPostCompletionStatus     @default(NOT_REQUIRED)
+  autoFilingAttempts        Int                               @default(0)
+  autoFilingAvailableAt     DateTime?
+  autoFilingClaimedAt       DateTime?
+  autoFilingLeaseExpiresAt  DateTime?
+  autoFilingError           String?
   consentVersion            String                            @default("1.0")
   consentDisclosureSnapshot Json?
   metadata                  Json?
@@ -1286,6 +1293,7 @@ model EsigningEnvelope {
   events                    EsigningEnvelopeEvent[]
   fieldDefinitions          EsigningDocumentFieldDefinition[]
   recipients                EsigningEnvelopeRecipient[]
+  emailDeliveries           EsigningEmailDelivery[]
   taskStageOutcomes         TaskStageOutcome[]
   taskEsigningPreparations  TaskEsigningPreparation[]
 
@@ -1297,6 +1305,7 @@ model EsigningEnvelope {
   @@index([tenantId, status, expiresAt])
   @@index([status, updatedAt])
   @@index([tenantId, status, updatedAt])
+  @@index([autoFilingStatus, autoFilingAvailableAt])
   @@map("esigning_envelopes")
 }
 
@@ -1356,6 +1365,7 @@ model EsigningEnvelopeRecipient {
   events           EsigningEnvelopeEvent[]
   fieldDefinitions EsigningDocumentFieldDefinition[]
   fieldValues      EsigningDocumentFieldValue[]
+  emailDeliveries  EsigningEmailDelivery[]
 
   @@unique([envelopeId, email, type])
   @@index([envelopeId, signingOrder])
@@ -1433,6 +1443,53 @@ model EsigningEnvelopeEvent {
   @@index([recipientId])
   @@index([tenantId, envelopeId])
   @@map("esigning_envelope_events")
+}
+
+model EsigningEmailDelivery {
+  id               String                       @id @default(uuid())
+  tenantId         String
+  envelopeId       String
+  recipientId      String?
+  audience         EsigningEmailDeliveryAudience
+  kind             EsigningEmailDeliveryKind
+  targetKey        String
+  toEmail          String
+  subject          String
+  status           EsigningEmailDeliveryStatus  @default(PENDING)
+  attemptCount     Int                          @default(0)
+  availableAt      DateTime                     @default(now())
+  claimedAt        DateTime?
+  leaseExpiresAt   DateTime?
+  lastAttemptedAt  DateTime?
+  sentAt           DateTime?
+  lastError        String?
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+  tenant           Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  envelope         EsigningEnvelope             @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  recipient        EsigningEnvelopeRecipient?   @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+  deliveryAttempts EsigningEmailDeliveryAttempt[]
+
+  @@unique([envelopeId, kind, targetKey])
+  @@index([status, availableAt])
+  @@index([status, leaseExpiresAt])
+  @@index([tenantId, envelopeId])
+  @@map("esigning_email_deliveries")
+}
+
+model EsigningEmailDeliveryAttempt {
+  id                String                 @id @default(uuid())
+  deliveryId        String
+  toEmail           String
+  subject           String
+  succeeded         Boolean
+  providerMessageId String?
+  error             String?
+  attemptedAt       DateTime               @default(now())
+  delivery          EsigningEmailDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId, attemptedAt])
+  @@map("esigning_email_delivery_attempts")
 }
 
 model ProcessingDocument {
@@ -3368,6 +3425,39 @@ enum EsigningEnvelopeEventAction {
   REMINDER_SENT
   EXPIRED
   PDF_GENERATION_FAILED
+}
+
+enum EsigningPostCompletionStatus {
+  NOT_REQUIRED
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+}
+
+enum EsigningEmailDeliveryKind {
+  REQUEST
+  REMINDER
+  COMPLETION
+  DECLINED
+  PDF_FAILURE
+  EXPIRY_WARNING
+  EXPIRED
+  VOIDED
+}
+
+enum EsigningEmailDeliveryAudience {
+  RECIPIENT
+  SENDER
+}
+
+enum EsigningEmailDeliveryStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
 }
 
 enum ClientRequestStatus {

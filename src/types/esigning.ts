@@ -3,11 +3,34 @@ import type {
   EsigningEnvelopeStatus,
   EsigningFieldType,
   EsigningPdfGenerationStatus,
+  EsigningPostCompletionStatus,
   EsigningRecipientAccessMode,
   EsigningRecipientStatus,
   EsigningRecipientType,
   EsigningSigningOrder,
 } from '@/generated/prisma';
+
+export type EsigningCopyDeliveryStatusDto =
+  | 'AWAITING_COMPLETION'
+  | 'PENDING'
+  | 'RETRYING'
+  | 'SENT'
+  | 'FAILED'
+  | 'NOT_TRACKED';
+
+export type EsigningCompletionDeliveryStatusDto =
+  | 'PENDING'
+  | 'RETRYING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'NOT_TRACKED';
+
+export interface EsigningPostCompletionDto {
+  artifactStatus: EsigningPdfGenerationStatus | null;
+  autoFilingStatus: EsigningPostCompletionStatus;
+  completionDeliveryStatus: EsigningCompletionDeliveryStatusDto;
+  failedCompletionDeliveryCount: number;
+}
 
 export interface EsigningEnvelopeListItem {
   id: string;
@@ -31,6 +54,7 @@ export interface EsigningEnvelopeListItem {
   canResend: boolean;
   canRetryPdf: boolean;
   emailDelivery: EsigningEmailDeliveryHealthDto;
+  postCompletion: EsigningPostCompletionDto;
   resendableRecipientCount: number;
   recipientCount: number;
   signerCount: number;
@@ -42,11 +66,13 @@ export interface EsigningEnvelopeListItem {
     type: EsigningRecipientType;
     status: EsigningRecipientStatus;
     signingOrder: number | null;
+    copyDeliveryStatus: EsigningCopyDeliveryStatusDto;
   }>;
 }
 
 export interface EsigningEmailDeliveryFailureDto {
   kind: string;
+  targetKey: string;
   to: string;
   subject: string;
   error: string;
@@ -91,6 +117,7 @@ export interface EsigningEnvelopeRecipientDto {
   fieldsAssigned: number;
   requiredFieldsAssigned: number;
   signatureFieldsAssigned: number;
+  copyDeliveryStatus: EsigningCopyDeliveryStatusDto;
 }
 
 export interface EsigningFieldDefinitionDto {
@@ -167,6 +194,7 @@ export interface EsigningEnvelopeDetailDto {
   canDuplicate: boolean;
   canRetryPdf: boolean;
   emailDelivery: EsigningEmailDeliveryHealthDto;
+  postCompletion: EsigningPostCompletionDto;
   documentCount: number;
   signerCount: number;
   recipientCount: number;
@@ -199,6 +227,8 @@ export interface EsigningSigningSessionDto {
     senderName: string;
     completedAt: string | null;
     expiresAt: string | null;
+    autoFilingStatus: EsigningPostCompletionStatus;
+    completionDeliveryStatus: EsigningCompletionDeliveryStatusDto;
   };
   recipient: {
     id: string;
@@ -224,6 +254,7 @@ export interface EsigningSigningSessionDto {
   fields: EsigningFieldDefinitionDto[];
   fieldValues: EsigningFieldValueDto[];
   downloadToken: string | null;
+  currentRecipientDeliveryStatus: EsigningCopyDeliveryStatusDto;
 }
 
 export interface EsigningSigningSessionStatusDto {
@@ -231,10 +262,16 @@ export interface EsigningSigningSessionStatusDto {
     id: string;
     status: EsigningEnvelopeStatus;
     expiresAt: string | null;
+    pdfGenerationStatus: EsigningPdfGenerationStatus | null;
+    autoFilingStatus: EsigningPostCompletionStatus;
+    completionDeliveryStatus: EsigningCompletionDeliveryStatusDto;
   };
   recipient: {
     id: string;
     status: EsigningRecipientStatus;
     signedAt: string | null;
   };
+  currentRecipientDeliveryStatus: EsigningCopyDeliveryStatusDto;
+  remainingSignerCount: number;
+  terminal: boolean;
 }

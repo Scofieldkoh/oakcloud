@@ -277,7 +277,18 @@ export function serializeEnvelopeDetail(input: {
       envelope.status === 'COMPLETED' &&
       envelope.pdfGenerationStatus === 'FAILED' &&
       (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
-    emailDelivery: getEsigningEmailDeliveryHealth(envelope.metadata),
+    emailDelivery: getEsigningEmailDeliveryHealth([], envelope.metadata),
+    postCompletion: {
+      artifactStatus: envelope.pdfGenerationStatus ?? null,
+      autoFilingStatus: envelope.autoFilingStatus ?? 'NOT_REQUIRED',
+      completionDeliveryStatus:
+        envelope.status === 'COMPLETED'
+          ? envelope.pdfGenerationStatus === 'COMPLETED'
+            ? 'NOT_TRACKED'
+            : 'PENDING'
+          : 'NOT_TRACKED',
+      failedCompletionDeliveryCount: 0,
+    },
     documentCount: envelope.documents.length,
     signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
     recipientCount: envelope.recipients.length,
@@ -312,6 +323,8 @@ export function serializeEnvelopeDetail(input: {
         fieldsAssigned: counts.total,
         requiredFieldsAssigned: counts.required,
         signatureFieldsAssigned: counts.signature,
+        copyDeliveryStatus:
+          envelope.status === 'COMPLETED' ? 'NOT_TRACKED' : 'AWAITING_COMPLETION',
       } satisfies EsigningEnvelopeRecipientDto;
     }),
     fields: envelope.fieldDefinitions.map((field) => ({

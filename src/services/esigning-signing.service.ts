@@ -23,7 +23,10 @@ import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
 import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelope.service';
-import { recordEsigningEnvelopeEmailDeliveryResults } from '@/services/esigning-email-delivery.service';
+import {
+  recordEsigningEnvelopeEmailDeliveryResults,
+  withEsigningDeliveryTarget,
+} from '@/services/esigning-email-delivery.service';
 import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
 import { safelyReconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
@@ -277,6 +280,13 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
       senderName,
       completedAt: toIsoString(context.envelope.completedAt),
       expiresAt: toIsoString(context.envelope.expiresAt),
+      autoFilingStatus: context.envelope.autoFilingStatus ?? 'NOT_REQUIRED',
+      completionDeliveryStatus:
+        context.envelope.status === 'COMPLETED'
+          ? context.envelope.pdfGenerationStatus === 'COMPLETED'
+            ? 'NOT_TRACKED'
+            : 'PENDING'
+          : 'NOT_TRACKED',
     },
     recipient: {
       id: context.recipient.id,
@@ -327,6 +337,12 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
       placeholder: field.placeholder,
       sortOrder: field.sortOrder,
     })),
+    currentRecipientDeliveryStatus:
+      context.envelope.status === 'COMPLETED'
+        ? context.envelope.pdfGenerationStatus === 'COMPLETED'
+          ? 'NOT_TRACKED'
+          : 'PENDING'
+        : 'AWAITING_COMPLETION',
     fieldValues: await Promise.all(
       context.fieldValues.map(async (value) => ({
         id: value.id,
@@ -593,6 +609,8 @@ export async function getEsigningSigningSessionStatus(): Promise<EsigningSigning
           id: true,
           status: true,
           expiresAt: true,
+          pdfGenerationStatus: true,
+          autoFilingStatus: true,
         },
       },
     },
@@ -613,12 +631,19 @@ export async function getEsigningSigningSessionStatus(): Promise<EsigningSigning
       id: recipient.envelope.id,
       status: recipient.envelope.status,
       expiresAt: toIsoString(recipient.envelope.expiresAt),
+      pdfGenerationStatus: recipient.envelope.pdfGenerationStatus ?? null,
+      autoFilingStatus: recipient.envelope.autoFilingStatus ?? 'NOT_REQUIRED',
+      completionDeliveryStatus: 'NOT_TRACKED',
     },
     recipient: {
       id: recipient.id,
       status: recipient.status,
       signedAt: toIsoString(recipient.signedAt),
     },
+    currentRecipientDeliveryStatus:
+      recipient.envelope.status === 'COMPLETED' ? 'NOT_TRACKED' : 'AWAITING_COMPLETION',
+    remainingSignerCount: 0,
+    terminal: false,
   };
 }
 
@@ -934,7 +959,13 @@ export async function declineEsigningSigningSession(input: {
     recipientName: context.recipient.name,
     declineReason: input.reason,
   });
-  await recordEsigningEnvelopeEmailDeliveryResults(context.envelope.id, [deliveryResult]);
+  await recordEsigningEnvelopeEmailDeliveryResults(context.envelope.id, [
+    withEsigningDeliveryTarget(deliveryResult, {
+      tenantId: context.envelope.tenantId,
+      targetKey: `sender:${context.envelope.createdById}`,
+      audience: 'SENDER',
+    }),
+  ]);
 }
 
 export async function downloadEsigningSessionDocument(input: {

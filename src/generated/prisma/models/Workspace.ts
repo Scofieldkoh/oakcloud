@@ -352,6 +352,7 @@ export type WorkspaceWhereInput = {
   formUploads?: Prisma.FormUploadListRelationFilter
   forms?: Prisma.FormListRelationFilter
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryListRelationFilter
   esigningEnvelopes?: Prisma.EsigningEnvelopeListRelationFilter
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
   roles?: Prisma.RoleListRelationFilter
@@ -420,6 +421,7 @@ export type WorkspaceOrderByWithRelationInput = {
   formUploads?: Prisma.FormUploadOrderByRelationAggregateInput
   forms?: Prisma.FormOrderByRelationAggregateInput
   generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryOrderByRelationAggregateInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeOrderByRelationAggregateInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationOrderByRelationAggregateInput
   roles?: Prisma.RoleOrderByRelationAggregateInput
@@ -491,6 +493,7 @@ export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
   formUploads?: Prisma.FormUploadListRelationFilter
   forms?: Prisma.FormListRelationFilter
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryListRelationFilter
   esigningEnvelopes?: Prisma.EsigningEnvelopeListRelationFilter
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
   roles?: Prisma.RoleListRelationFilter
@@ -611,6 +614,7 @@ export type WorkspaceCreateInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -679,6 +683,7 @@ export type WorkspaceUncheckedCreateInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -747,6 +752,7 @@ export type WorkspaceUpdateInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -815,6 +821,7 @@ export type WorkspaceUncheckedUpdateInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -1397,6 +1404,20 @@ export type WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutEsigningEnvelopesInput, Prisma.WorkspaceUpdateWithoutEsigningEnvelopesInput>, Prisma.WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput>
 }
 
+export type WorkspaceCreateNestedOneWithoutEsigningEmailDeliveriesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutEsigningEmailDeliveriesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutEsigningEmailDeliveriesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutEsigningEmailDeliveriesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutEsigningEmailDeliveriesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUpdateWithoutEsigningEmailDeliveriesInput>, Prisma.WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput>
+}
+
 export type WorkspaceCreateNestedOneWithoutExchangeRatesInput = {
   create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutExchangeRatesInput, Prisma.WorkspaceUncheckedCreateWithoutExchangeRatesInput>
   connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutExchangeRatesInput
@@ -1721,6 +1742,7 @@ export type WorkspaceCreateWithoutRolesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
@@ -1788,6 +1810,7 @@ export type WorkspaceUncheckedCreateWithoutRolesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
@@ -1871,6 +1894,7 @@ export type WorkspaceUpdateWithoutRolesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
@@ -1938,6 +1962,7 @@ export type WorkspaceUncheckedUpdateWithoutRolesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
@@ -2005,6 +2030,7 @@ export type WorkspaceCreateWithoutUsersInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -2072,6 +2098,7 @@ export type WorkspaceUncheckedCreateWithoutUsersInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -2155,6 +2182,7 @@ export type WorkspaceUpdateWithoutUsersInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -2222,6 +2250,7 @@ export type WorkspaceUncheckedUpdateWithoutUsersInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -2288,6 +2317,7 @@ export type WorkspaceCreateWithoutCompaniesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -2355,6 +2385,7 @@ export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -2438,6 +2469,7 @@ export type WorkspaceUpdateWithoutCompaniesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -2505,6 +2537,7 @@ export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -2572,6 +2605,7 @@ export type WorkspaceCreateWithoutContactsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -2639,6 +2673,7 @@ export type WorkspaceUncheckedCreateWithoutContactsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -2722,6 +2757,7 @@ export type WorkspaceUpdateWithoutContactsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -2789,6 +2825,7 @@ export type WorkspaceUncheckedUpdateWithoutContactsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -2856,6 +2893,7 @@ export type WorkspaceCreateWithoutContactDetailsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -2923,6 +2961,7 @@ export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -3006,6 +3045,7 @@ export type WorkspaceUpdateWithoutContactDetailsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -3073,6 +3113,7 @@ export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -3140,6 +3181,7 @@ export type WorkspaceCreateWithoutDocumentsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -3207,6 +3249,7 @@ export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -3290,6 +3333,7 @@ export type WorkspaceUpdateWithoutDocumentsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -3357,6 +3401,7 @@ export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -3424,6 +3469,7 @@ export type WorkspaceCreateWithoutAuditLogsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -3491,6 +3537,7 @@ export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -3574,6 +3621,7 @@ export type WorkspaceUpdateWithoutAuditLogsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -3641,6 +3689,7 @@ export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -3708,6 +3757,7 @@ export type WorkspaceCreateWithoutConnectorsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -3775,6 +3825,7 @@ export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -3858,6 +3909,7 @@ export type WorkspaceUpdateWithoutConnectorsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -3925,6 +3977,7 @@ export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -3993,6 +4046,7 @@ export type WorkspaceCreateWithoutConnectorAccessInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -4060,6 +4114,7 @@ export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -4143,6 +4198,7 @@ export type WorkspaceUpdateWithoutConnectorAccessInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -4210,6 +4266,7 @@ export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -4276,6 +4333,7 @@ export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -4343,6 +4401,7 @@ export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -4426,6 +4485,7 @@ export type WorkspaceUpdateWithoutConnectorUsageLogsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -4493,6 +4553,7 @@ export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -4560,6 +4621,7 @@ export type WorkspaceCreateWithoutDocumentTemplatesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -4627,6 +4689,7 @@ export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -4710,6 +4773,7 @@ export type WorkspaceUpdateWithoutDocumentTemplatesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -4777,6 +4841,7 @@ export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -4844,6 +4909,7 @@ export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -4911,6 +4977,7 @@ export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -4994,6 +5061,7 @@ export type WorkspaceUpdateWithoutGeneratedDocumentsInput = {
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -5061,6 +5129,7 @@ export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -5129,6 +5198,7 @@ export type WorkspaceCreateWithoutLetterheadInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -5196,6 +5266,7 @@ export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -5279,6 +5350,7 @@ export type WorkspaceUpdateWithoutLetterheadInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -5346,6 +5418,7 @@ export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -5413,6 +5486,7 @@ export type WorkspaceCreateWithoutTemplatePartialsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -5480,6 +5554,7 @@ export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -5563,6 +5638,7 @@ export type WorkspaceUpdateWithoutTemplatePartialsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -5630,6 +5706,7 @@ export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -5697,6 +5774,7 @@ export type WorkspaceCreateWithoutServiceFamiliesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -5764,6 +5842,7 @@ export type WorkspaceUncheckedCreateWithoutServiceFamiliesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -5847,6 +5926,7 @@ export type WorkspaceUpdateWithoutServiceFamiliesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -5914,6 +5994,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceFamiliesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -5981,6 +6062,7 @@ export type WorkspaceCreateWithoutServiceVariantsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -6048,6 +6130,7 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -6131,6 +6214,7 @@ export type WorkspaceUpdateWithoutServiceVariantsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -6198,6 +6282,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -6265,6 +6350,7 @@ export type WorkspaceCreateWithoutServiceVariantFeeTemplatesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -6332,6 +6418,7 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantFeeTemplatesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -6415,6 +6502,7 @@ export type WorkspaceUpdateWithoutServiceVariantFeeTemplatesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -6482,6 +6570,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantFeeTemplatesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -6549,6 +6638,7 @@ export type WorkspaceCreateWithoutServiceAgreementsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -6616,6 +6706,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -6699,6 +6790,7 @@ export type WorkspaceUpdateWithoutServiceAgreementsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -6766,6 +6858,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -6833,6 +6926,7 @@ export type WorkspaceCreateWithoutServiceAgreementEntitiesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -6900,6 +6994,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -6983,6 +7078,7 @@ export type WorkspaceUpdateWithoutServiceAgreementEntitiesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -7050,6 +7146,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -7117,6 +7214,7 @@ export type WorkspaceCreateWithoutServiceAgreementItemsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -7184,6 +7282,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -7267,6 +7366,7 @@ export type WorkspaceUpdateWithoutServiceAgreementItemsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -7334,6 +7434,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -7401,6 +7502,7 @@ export type WorkspaceCreateWithoutServiceAgreementItemEntitiesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -7468,6 +7570,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemEntitiesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -7551,6 +7654,7 @@ export type WorkspaceUpdateWithoutServiceAgreementItemEntitiesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -7618,6 +7722,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemEntitiesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -7685,6 +7790,7 @@ export type WorkspaceCreateWithoutServiceAgreementFeeLinesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -7752,6 +7858,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementFeeLinesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -7835,6 +7942,7 @@ export type WorkspaceUpdateWithoutServiceAgreementFeeLinesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -7902,6 +8010,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -7969,6 +8078,7 @@ export type WorkspaceCreateWithoutClientServicesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -8036,6 +8146,7 @@ export type WorkspaceUncheckedCreateWithoutClientServicesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -8119,6 +8230,7 @@ export type WorkspaceUpdateWithoutClientServicesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -8186,6 +8298,7 @@ export type WorkspaceUncheckedUpdateWithoutClientServicesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -8253,6 +8366,7 @@ export type WorkspaceCreateWithoutClientServiceFeeLinesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -8320,6 +8434,7 @@ export type WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -8403,6 +8518,7 @@ export type WorkspaceUpdateWithoutClientServiceFeeLinesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -8470,6 +8586,7 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -8536,6 +8653,7 @@ export type WorkspaceCreateWithoutAiConversationsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -8603,6 +8721,7 @@ export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -8686,6 +8805,7 @@ export type WorkspaceUpdateWithoutAiConversationsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -8753,6 +8873,7 @@ export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -8821,6 +8942,7 @@ export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
@@ -8888,6 +9010,7 @@ export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
@@ -8971,6 +9094,7 @@ export type WorkspaceUpdateWithoutEsigningEnvelopesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
@@ -9038,6 +9162,295 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutEsigningEmailDeliveriesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutEsigningEmailDeliveriesInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput>
+}
+
+export type WorkspaceUpsertWithoutEsigningEmailDeliveriesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutEsigningEmailDeliveriesInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutEsigningEmailDeliveriesInput, Prisma.WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput>
+}
+
+export type WorkspaceUpdateWithoutEsigningEmailDeliveriesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
@@ -9104,6 +9517,7 @@ export type WorkspaceCreateWithoutExchangeRatesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -9171,6 +9585,7 @@ export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -9254,6 +9669,7 @@ export type WorkspaceUpdateWithoutExchangeRatesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -9321,6 +9737,7 @@ export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -9388,6 +9805,7 @@ export type WorkspaceCreateWithoutFormsInput = {
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -9455,6 +9873,7 @@ export type WorkspaceUncheckedCreateWithoutFormsInput = {
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -9538,6 +9957,7 @@ export type WorkspaceUpdateWithoutFormsInput = {
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -9605,6 +10025,7 @@ export type WorkspaceUncheckedUpdateWithoutFormsInput = {
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -9672,6 +10093,7 @@ export type WorkspaceCreateWithoutFormFieldsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -9739,6 +10161,7 @@ export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -9822,6 +10245,7 @@ export type WorkspaceUpdateWithoutFormFieldsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -9889,6 +10313,7 @@ export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -9956,6 +10381,7 @@ export type WorkspaceCreateWithoutFormOptionPresetsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -10023,6 +10449,7 @@ export type WorkspaceUncheckedCreateWithoutFormOptionPresetsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -10106,6 +10533,7 @@ export type WorkspaceUpdateWithoutFormOptionPresetsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -10173,6 +10601,7 @@ export type WorkspaceUncheckedUpdateWithoutFormOptionPresetsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -10240,6 +10669,7 @@ export type WorkspaceCreateWithoutFormUrlHealthInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -10307,6 +10737,7 @@ export type WorkspaceUncheckedCreateWithoutFormUrlHealthInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -10390,6 +10821,7 @@ export type WorkspaceUpdateWithoutFormUrlHealthInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -10457,6 +10889,7 @@ export type WorkspaceUncheckedUpdateWithoutFormUrlHealthInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -10524,6 +10957,7 @@ export type WorkspaceCreateWithoutFormSubmissionsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -10591,6 +11025,7 @@ export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -10674,6 +11109,7 @@ export type WorkspaceUpdateWithoutFormSubmissionsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -10741,6 +11177,7 @@ export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -10808,6 +11245,7 @@ export type WorkspaceCreateWithoutFormDraftsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -10875,6 +11313,7 @@ export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -10958,6 +11397,7 @@ export type WorkspaceUpdateWithoutFormDraftsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -11025,6 +11465,7 @@ export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -11092,6 +11533,7 @@ export type WorkspaceCreateWithoutFormUploadsInput = {
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -11159,6 +11601,7 @@ export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -11242,6 +11685,7 @@ export type WorkspaceUpdateWithoutFormUploadsInput = {
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -11309,6 +11753,7 @@ export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -11377,6 +11822,7 @@ export type WorkspaceCreateWithoutBackupsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -11444,6 +11890,7 @@ export type WorkspaceUncheckedCreateWithoutBackupsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -11527,6 +11974,7 @@ export type WorkspaceUpdateWithoutBackupsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -11594,6 +12042,7 @@ export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -11660,6 +12109,7 @@ export type WorkspaceCreateWithoutBackupScheduleInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -11727,6 +12177,7 @@ export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -11810,6 +12261,7 @@ export type WorkspaceUpdateWithoutBackupScheduleInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -11877,6 +12329,7 @@ export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -11944,6 +12397,7 @@ export type WorkspaceCreateWithoutChartOfAccountsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -12011,6 +12465,7 @@ export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -12094,6 +12549,7 @@ export type WorkspaceUpdateWithoutChartOfAccountsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -12161,6 +12617,7 @@ export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -12229,6 +12686,7 @@ export type WorkspaceCreateWithoutTaskPipelinesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -12296,6 +12754,7 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -12379,6 +12838,7 @@ export type WorkspaceUpdateWithoutTaskPipelinesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -12446,6 +12906,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -12513,6 +12974,7 @@ export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -12580,6 +13042,7 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -12663,6 +13126,7 @@ export type WorkspaceUpdateWithoutTaskPipelineVersionsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -12730,6 +13194,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -12797,6 +13262,7 @@ export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -12864,6 +13330,7 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -12947,6 +13414,7 @@ export type WorkspaceUpdateWithoutTaskPipelineStagesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -13014,6 +13482,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -13081,6 +13550,7 @@ export type WorkspaceCreateWithoutTasksInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -13148,6 +13618,7 @@ export type WorkspaceUncheckedCreateWithoutTasksInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -13231,6 +13702,7 @@ export type WorkspaceUpdateWithoutTasksInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -13298,6 +13770,7 @@ export type WorkspaceUncheckedUpdateWithoutTasksInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -13365,6 +13838,7 @@ export type WorkspaceCreateWithoutTaskStagesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -13432,6 +13906,7 @@ export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -13515,6 +13990,7 @@ export type WorkspaceUpdateWithoutTaskStagesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -13582,6 +14058,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -13649,6 +14126,7 @@ export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -13716,6 +14194,7 @@ export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -13799,6 +14278,7 @@ export type WorkspaceUpdateWithoutTaskStageChecklistItemsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -13866,6 +14346,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -13933,6 +14414,7 @@ export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -14000,6 +14482,7 @@ export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -14083,6 +14566,7 @@ export type WorkspaceUpdateWithoutTaskStageOutcomesInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -14150,6 +14634,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -14217,6 +14702,7 @@ export type WorkspaceCreateWithoutTaskEsigningPreparationsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
@@ -14284,6 +14770,7 @@ export type WorkspaceUncheckedCreateWithoutTaskEsigningPreparationsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
   templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
@@ -14367,6 +14854,7 @@ export type WorkspaceUpdateWithoutTaskEsigningPreparationsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
@@ -14434,6 +14922,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
   templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
@@ -14501,6 +14990,7 @@ export type WorkspaceCreateWithoutTaskCompanyRecoveryContextsInput = {
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
@@ -14568,6 +15058,7 @@ export type WorkspaceUncheckedCreateWithoutTaskCompanyRecoveryContextsInput = {
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
   forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
@@ -14651,6 +15142,7 @@ export type WorkspaceUpdateWithoutTaskCompanyRecoveryContextsInput = {
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
@@ -14718,6 +15210,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskCompanyRecoveryContextsInput = {
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
   forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
   esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
   roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
@@ -14770,6 +15263,7 @@ export type WorkspaceCountOutputType = {
   formUploads: number
   forms: number
   generatedDocuments: number
+  esigningEmailDeliveries: number
   esigningEnvelopes: number
   taskEsigningPreparations: number
   roles: number
@@ -14817,6 +15311,7 @@ export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   formUploads?: boolean | WorkspaceCountOutputTypeCountFormUploadsArgs
   forms?: boolean | WorkspaceCountOutputTypeCountFormsArgs
   generatedDocuments?: boolean | WorkspaceCountOutputTypeCountGeneratedDocumentsArgs
+  esigningEmailDeliveries?: boolean | WorkspaceCountOutputTypeCountEsigningEmailDeliveriesArgs
   esigningEnvelopes?: boolean | WorkspaceCountOutputTypeCountEsigningEnvelopesArgs
   taskEsigningPreparations?: boolean | WorkspaceCountOutputTypeCountTaskEsigningPreparationsArgs
   roles?: boolean | WorkspaceCountOutputTypeCountRolesArgs
@@ -14985,6 +15480,13 @@ export type WorkspaceCountOutputTypeCountFormsArgs<ExtArgs extends runtime.Types
  */
 export type WorkspaceCountOutputTypeCountGeneratedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.GeneratedDocumentWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
+export type WorkspaceCountOutputTypeCountEsigningEmailDeliveriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EsigningEmailDeliveryWhereInput
 }
 
 /**
@@ -15203,6 +15705,7 @@ export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   formUploads?: boolean | Prisma.Workspace$formUploadsArgs<ExtArgs>
   forms?: boolean | Prisma.Workspace$formsArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.Workspace$generatedDocumentsArgs<ExtArgs>
+  esigningEmailDeliveries?: boolean | Prisma.Workspace$esigningEmailDeliveriesArgs<ExtArgs>
   esigningEnvelopes?: boolean | Prisma.Workspace$esigningEnvelopesArgs<ExtArgs>
   taskEsigningPreparations?: boolean | Prisma.Workspace$taskEsigningPreparationsArgs<ExtArgs>
   roles?: boolean | Prisma.Workspace$rolesArgs<ExtArgs>
@@ -15320,6 +15823,7 @@ export type WorkspaceInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   formUploads?: boolean | Prisma.Workspace$formUploadsArgs<ExtArgs>
   forms?: boolean | Prisma.Workspace$formsArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.Workspace$generatedDocumentsArgs<ExtArgs>
+  esigningEmailDeliveries?: boolean | Prisma.Workspace$esigningEmailDeliveriesArgs<ExtArgs>
   esigningEnvelopes?: boolean | Prisma.Workspace$esigningEnvelopesArgs<ExtArgs>
   taskEsigningPreparations?: boolean | Prisma.Workspace$taskEsigningPreparationsArgs<ExtArgs>
   roles?: boolean | Prisma.Workspace$rolesArgs<ExtArgs>
@@ -15374,6 +15878,7 @@ export type $WorkspacePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     formUploads: Prisma.$FormUploadPayload<ExtArgs>[]
     forms: Prisma.$FormPayload<ExtArgs>[]
     generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
+    esigningEmailDeliveries: Prisma.$EsigningEmailDeliveryPayload<ExtArgs>[]
     esigningEnvelopes: Prisma.$EsigningEnvelopePayload<ExtArgs>[]
     taskEsigningPreparations: Prisma.$TaskEsigningPreparationPayload<ExtArgs>[]
     roles: Prisma.$RolePayload<ExtArgs>[]
@@ -15835,6 +16340,7 @@ export interface Prisma__WorkspaceClient<T, Null = never, ExtArgs extends runtim
   formUploads<T extends Prisma.Workspace$formUploadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formUploadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormUploadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   forms<T extends Prisma.Workspace$formsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   generatedDocuments<T extends Prisma.Workspace$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  esigningEmailDeliveries<T extends Prisma.Workspace$esigningEmailDeliveriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$esigningEmailDeliveriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEmailDeliveryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   esigningEnvelopes<T extends Prisma.Workspace$esigningEnvelopesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$esigningEnvelopesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskEsigningPreparations<T extends Prisma.Workspace$taskEsigningPreparationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskEsigningPreparationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskEsigningPreparationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   roles<T extends Prisma.Workspace$rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -16769,6 +17275,30 @@ export type Workspace$generatedDocumentsArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
+}
+
+/**
+ * Workspace.esigningEmailDeliveries
+ */
+export type Workspace$esigningEmailDeliveriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EsigningEmailDelivery
+   */
+  select?: Prisma.EsigningEmailDeliverySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EsigningEmailDelivery
+   */
+  omit?: Prisma.EsigningEmailDeliveryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EsigningEmailDeliveryInclude<ExtArgs> | null
+  where?: Prisma.EsigningEmailDeliveryWhereInput
+  orderBy?: Prisma.EsigningEmailDeliveryOrderByWithRelationInput | Prisma.EsigningEmailDeliveryOrderByWithRelationInput[]
+  cursor?: Prisma.EsigningEmailDeliveryWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EsigningEmailDeliveryScalarFieldEnum | Prisma.EsigningEmailDeliveryScalarFieldEnum[]
 }
 
 /**

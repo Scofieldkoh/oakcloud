@@ -295,6 +295,16 @@ export type EsigningDocumentFieldValue = Prisma.EsigningDocumentFieldValueModel
  */
 export type EsigningEnvelopeEvent = Prisma.EsigningEnvelopeEventModel
 /**
+ * Model EsigningEmailDelivery
+ *
+ */
+export type EsigningEmailDelivery = Prisma.EsigningEmailDeliveryModel
+/**
+ * Model EsigningEmailDeliveryAttempt
+ *
+ */
+export type EsigningEmailDeliveryAttempt = Prisma.EsigningEmailDeliveryAttemptModel
+/**
  * Model ProcessingDocument
  *
  */

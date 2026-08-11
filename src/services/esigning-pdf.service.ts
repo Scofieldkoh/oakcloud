@@ -21,6 +21,7 @@ import {
 } from '@/services/esigning-notification.service';
 import {
   recordEsigningEnvelopeEmailDeliveryResults,
+  withEsigningDeliveryTarget,
   type EsigningEmailDeliveryResult,
 } from '@/services/esigning-email-delivery.service';
 
@@ -944,7 +945,7 @@ async function generateEnvelopeArtifacts(
         })),
       });
 
-      deliveryResults.push(await sendEsigningCompletionEmail({
+      const completionResult = await sendEsigningCompletionEmail({
         to: recipient.email,
         recipientName: recipient.name,
         envelopeTitle: envelope.title,
@@ -952,6 +953,12 @@ async function generateEnvelopeArtifacts(
         documentLinks,
         attachments,
         actorType: 'recipient',
+      });
+      deliveryResults.push(withEsigningDeliveryTarget(completionResult, {
+        tenantId: envelope.tenantId,
+        targetKey: `recipient:${recipient.id}`,
+        audience: 'RECIPIENT',
+        recipientId: recipient.id,
       }));
     }
 
@@ -964,7 +971,7 @@ async function generateEnvelopeArtifacts(
       })),
     });
 
-    deliveryResults.push(await sendEsigningCompletionEmail({
+    const senderCompletionResult = await sendEsigningCompletionEmail({
       to: envelope.createdBy.email,
       recipientName: senderName,
       envelopeTitle: envelope.title,
@@ -972,6 +979,11 @@ async function generateEnvelopeArtifacts(
       documentLinks: senderDocumentLinks,
       attachments,
       actorType: 'sender',
+    });
+    deliveryResults.push(withEsigningDeliveryTarget(senderCompletionResult, {
+      tenantId: envelope.tenantId,
+      targetKey: `sender:${envelope.createdById}`,
+      audience: 'SENDER',
     }));
 
     await recordEsigningEnvelopeEmailDeliveryResults(envelope.id, deliveryResults);
@@ -1114,7 +1126,13 @@ async function markEnvelopePdfFailure(envelopeId: string, error: unknown): Promi
     envelopeTitle: envelope.title,
     errorMessage: message,
   });
-  await recordEsigningEnvelopeEmailDeliveryResults(envelopeId, [deliveryResult]);
+  await recordEsigningEnvelopeEmailDeliveryResults(envelopeId, [
+    withEsigningDeliveryTarget(deliveryResult, {
+      tenantId: envelope.tenantId,
+      targetKey: `sender:${envelope.createdById}`,
+      audience: 'SENDER',
+    }),
+  ]);
 }
 
 export async function generateEsigningEnvelopeArtifactsNow(input: {

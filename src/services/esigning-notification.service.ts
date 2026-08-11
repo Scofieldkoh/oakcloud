@@ -174,6 +174,7 @@ async function safeSendEmail(
     subject: input.subject,
     attemptedAt,
     error: result.success ? undefined : result.error,
+    providerMessageId: result.success ? result.messageId : null,
   };
 }
 

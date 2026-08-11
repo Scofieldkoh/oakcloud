@@ -102,6 +102,8 @@ export const ModelName = {
   EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
   EsigningDocumentFieldValue: 'EsigningDocumentFieldValue',
   EsigningEnvelopeEvent: 'EsigningEnvelopeEvent',
+  EsigningEmailDelivery: 'EsigningEmailDelivery',
+  EsigningEmailDeliveryAttempt: 'EsigningEmailDeliveryAttempt',
   ProcessingDocument: 'ProcessingDocument',
   DocumentLink: 'DocumentLink',
   DocumentTag: 'DocumentTag',
@@ -1057,6 +1059,12 @@ export const EsigningEnvelopeScalarFieldEnum = {
   pdfGenerationAttempts: 'pdfGenerationAttempts',
   pdfGenerationClaimedAt: 'pdfGenerationClaimedAt',
   pdfGenerationError: 'pdfGenerationError',
+  autoFilingStatus: 'autoFilingStatus',
+  autoFilingAttempts: 'autoFilingAttempts',
+  autoFilingAvailableAt: 'autoFilingAvailableAt',
+  autoFilingClaimedAt: 'autoFilingClaimedAt',
+  autoFilingLeaseExpiresAt: 'autoFilingLeaseExpiresAt',
+  autoFilingError: 'autoFilingError',
   consentVersion: 'consentVersion',
   consentDisclosureSnapshot: 'consentDisclosureSnapshot',
   metadata: 'metadata',
@@ -1172,6 +1180,45 @@ export const EsigningEnvelopeEventScalarFieldEnum = {
 } as const
 
 export type EsigningEnvelopeEventScalarFieldEnum = (typeof EsigningEnvelopeEventScalarFieldEnum)[keyof typeof EsigningEnvelopeEventScalarFieldEnum]
+
+
+export const EsigningEmailDeliveryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  recipientId: 'recipientId',
+  audience: 'audience',
+  kind: 'kind',
+  targetKey: 'targetKey',
+  toEmail: 'toEmail',
+  subject: 'subject',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  availableAt: 'availableAt',
+  claimedAt: 'claimedAt',
+  leaseExpiresAt: 'leaseExpiresAt',
+  lastAttemptedAt: 'lastAttemptedAt',
+  sentAt: 'sentAt',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningEmailDeliveryScalarFieldEnum = (typeof EsigningEmailDeliveryScalarFieldEnum)[keyof typeof EsigningEmailDeliveryScalarFieldEnum]
+
+
+export const EsigningEmailDeliveryAttemptScalarFieldEnum = {
+  id: 'id',
+  deliveryId: 'deliveryId',
+  toEmail: 'toEmail',
+  subject: 'subject',
+  succeeded: 'succeeded',
+  providerMessageId: 'providerMessageId',
+  error: 'error',
+  attemptedAt: 'attemptedAt'
+} as const
+
+export type EsigningEmailDeliveryAttemptScalarFieldEnum = (typeof EsigningEmailDeliveryAttemptScalarFieldEnum)[keyof typeof EsigningEmailDeliveryAttemptScalarFieldEnum]
 
 
 export const ProcessingDocumentScalarFieldEnum = {

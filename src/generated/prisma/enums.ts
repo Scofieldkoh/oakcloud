@@ -893,6 +893,51 @@ export const EsigningEnvelopeEventAction = {
 export type EsigningEnvelopeEventAction = (typeof EsigningEnvelopeEventAction)[keyof typeof EsigningEnvelopeEventAction]
 
 
+export const EsigningPostCompletionStatus = {
+  NOT_REQUIRED: 'NOT_REQUIRED',
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT'
+} as const
+
+export type EsigningPostCompletionStatus = (typeof EsigningPostCompletionStatus)[keyof typeof EsigningPostCompletionStatus]
+
+
+export const EsigningEmailDeliveryKind = {
+  REQUEST: 'REQUEST',
+  REMINDER: 'REMINDER',
+  COMPLETION: 'COMPLETION',
+  DECLINED: 'DECLINED',
+  PDF_FAILURE: 'PDF_FAILURE',
+  EXPIRY_WARNING: 'EXPIRY_WARNING',
+  EXPIRED: 'EXPIRED',
+  VOIDED: 'VOIDED'
+} as const
+
+export type EsigningEmailDeliveryKind = (typeof EsigningEmailDeliveryKind)[keyof typeof EsigningEmailDeliveryKind]
+
+
+export const EsigningEmailDeliveryAudience = {
+  RECIPIENT: 'RECIPIENT',
+  SENDER: 'SENDER'
+} as const
+
+export type EsigningEmailDeliveryAudience = (typeof EsigningEmailDeliveryAudience)[keyof typeof EsigningEmailDeliveryAudience]
+
+
+export const EsigningEmailDeliveryStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT'
+} as const
+
+export type EsigningEmailDeliveryStatus = (typeof EsigningEmailDeliveryStatus)[keyof typeof EsigningEmailDeliveryStatus]
+
+
 export const ClientRequestStatus = {
   REQUEST_PENDING: 'REQUEST_PENDING',
   REQUEST_IN_PROGRESS: 'REQUEST_IN_PROGRESS',

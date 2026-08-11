@@ -1,4 +1,7 @@
-import type { Prisma } from '@/generated/prisma';
+import type {
+  EsigningEmailDeliveryAudience,
+  EsigningEmailDeliveryKind as PrismaEsigningEmailDeliveryKind,
+} from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 
 const EMAIL_DELIVERY_FAILURE_LIMIT = 10;
@@ -20,10 +23,19 @@ export interface EsigningEmailDeliveryResult {
   subject: string;
   attemptedAt: string;
   error?: string;
+  providerMessageId?: string | null;
+}
+
+export interface RecordedEsigningEmailDeliveryResult extends EsigningEmailDeliveryResult {
+  tenantId: string;
+  targetKey: string;
+  audience: EsigningEmailDeliveryAudience;
+  recipientId?: string | null;
 }
 
 export interface EsigningEmailDeliveryFailure {
   kind: EsigningEmailDeliveryKind;
+  targetKey: string;
   to: string;
   subject: string;
   error: string;
@@ -36,13 +48,75 @@ export interface EsigningEmailDeliveryHealth {
   failures: EsigningEmailDeliveryFailure[];
 }
 
+export interface EsigningLedgerDeliverySnapshot {
+  kind: string;
+  targetKey: string;
+  toEmail: string;
+  subject: string;
+  status: string;
+  lastError: string | null;
+  lastAttemptedAt: Date | string | null;
+}
+
+export function withEsigningDeliveryTarget(
+  result: EsigningEmailDeliveryResult,
+  target: {
+    tenantId: string;
+    targetKey: string;
+    audience: EsigningEmailDeliveryAudience;
+    recipientId?: string | null;
+  }
+): RecordedEsigningEmailDeliveryResult {
+  return {
+    ...result,
+    tenantId: target.tenantId,
+    targetKey: target.targetKey,
+    audience: target.audience,
+    recipientId: target.recipientId ?? null,
+  };
+}
+
+export function normalizeEsigningEmailAddress(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+export function toPrismaEsigningEmailDeliveryKind(
+  kind: EsigningEmailDeliveryKind
+): PrismaEsigningEmailDeliveryKind {
+  switch (kind) {
+    case 'request':
+      return 'REQUEST';
+    case 'reminder':
+      return 'REMINDER';
+    case 'completion':
+      return 'COMPLETION';
+    case 'declined':
+      return 'DECLINED';
+    case 'pdf_failure':
+      return 'PDF_FAILURE';
+    case 'expiry_warning':
+      return 'EXPIRY_WARNING';
+    case 'expired':
+      return 'EXPIRED';
+    case 'voided':
+      return 'VOIDED';
+  }
+}
+
+function toIsoString(value: Date | string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  return value instanceof Date ? value.toISOString() : value;
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? { ...(value as Record<string, unknown>) }
     : {};
 }
 
-function parseFailures(value: unknown): EsigningEmailDeliveryFailure[] {
+function parseLegacyFailures(value: unknown): EsigningEmailDeliveryFailure[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -62,8 +136,13 @@ function parseFailures(value: unknown): EsigningEmailDeliveryFailure[] {
       return [];
     }
 
+    const kind = record.kind as EsigningEmailDeliveryKind;
     return [{
-      kind: record.kind as EsigningEmailDeliveryKind,
+      kind,
+      targetKey:
+        typeof record.targetKey === 'string'
+          ? record.targetKey
+          : `legacy:${kind}:${normalizeEsigningEmailAddress(record.to)}`,
       to: record.to,
       subject: record.subject,
       error: record.error,
@@ -72,16 +151,19 @@ function parseFailures(value: unknown): EsigningEmailDeliveryFailure[] {
   });
 }
 
-export function getEsigningEmailDeliveryHealth(metadata: unknown): EsigningEmailDeliveryHealth {
+export function getLegacyEsigningEmailDeliveryHealth(
+  metadata: unknown
+): EsigningEmailDeliveryHealth {
   const emailDelivery = asRecord(asRecord(metadata).emailDelivery);
-  const failures = parseFailures(emailDelivery.failures);
+  const failures = parseLegacyFailures(emailDelivery.failures);
 
   if (emailDelivery.status === 'failed' && failures.length > 0) {
     return {
       status: 'failed',
-      lastFailureAt: typeof emailDelivery.lastFailureAt === 'string'
-        ? emailDelivery.lastFailureAt
-        : failures[0]?.attemptedAt ?? null,
+      lastFailureAt:
+        typeof emailDelivery.lastFailureAt === 'string'
+          ? emailDelivery.lastFailureAt
+          : failures[0]?.attemptedAt ?? null,
       failures,
     };
   }
@@ -93,68 +175,97 @@ export function getEsigningEmailDeliveryHealth(metadata: unknown): EsigningEmail
   };
 }
 
-export function applyEsigningEmailDeliveryResults(
-  metadata: unknown,
-  results: EsigningEmailDeliveryResult[]
-): Record<string, unknown> {
-  const nextMetadata = asRecord(metadata);
-  if (results.length === 0) {
-    return nextMetadata;
-  }
+export function getEsigningEmailDeliveryHealth(
+  deliveries: EsigningLedgerDeliverySnapshot[],
+  legacyMetadata: unknown
+): EsigningEmailDeliveryHealth {
+  const ledgerFailures = (deliveries ?? []).flatMap((delivery) => {
+    if (delivery.status !== 'FAILED_RETRYABLE' && delivery.status !== 'FAILED_PERMANENT') {
+      return [];
+    }
 
-  const failures = results
-    .filter((result) => !result.ok)
-    .map((result) => ({
-      kind: result.kind,
-      to: result.to,
-      subject: result.subject,
-      error: result.error || 'Email provider did not accept the message',
-      attemptedAt: result.attemptedAt,
-    }));
+    return [{
+      kind: delivery.kind.toLowerCase() as EsigningEmailDeliveryKind,
+      targetKey: delivery.targetKey,
+      to: delivery.toEmail,
+      subject: delivery.subject,
+      error: delivery.lastError || 'Email provider did not accept the message',
+      attemptedAt: toIsoString(delivery.lastAttemptedAt) ?? new Date(0).toISOString(),
+    }];
+  });
 
-  if (failures.length === 0) {
-    nextMetadata.emailDelivery = {
-      status: 'ok',
-      lastFailureAt: null,
-      failures: [],
+  if (ledgerFailures.length > 0) {
+    return {
+      status: 'failed',
+      lastFailureAt: ledgerFailures[0]?.attemptedAt ?? null,
+      failures: ledgerFailures.slice(0, EMAIL_DELIVERY_FAILURE_LIMIT),
     };
-    return nextMetadata;
   }
 
-  const existing = getEsigningEmailDeliveryHealth(nextMetadata).failures;
-  const allFailures = [...failures, ...existing].slice(0, EMAIL_DELIVERY_FAILURE_LIMIT);
-  nextMetadata.emailDelivery = {
-    status: 'failed',
-    lastFailureAt: failures[0]?.attemptedAt ?? null,
-    failures: allFailures,
-  };
-  return nextMetadata;
+  return getLegacyEsigningEmailDeliveryHealth(legacyMetadata);
 }
 
 export async function recordEsigningEnvelopeEmailDeliveryResults(
   envelopeId: string,
-  results: EsigningEmailDeliveryResult[]
+  results: RecordedEsigningEmailDeliveryResult[]
 ): Promise<void> {
   if (results.length === 0) {
     return;
   }
 
-  const envelope = await prisma.esigningEnvelope.findUnique({
-    where: { id: envelopeId },
-    select: { metadata: true },
-  });
+  await prisma.$transaction(async (tx) => {
+    for (const result of results) {
+      const kind = toPrismaEsigningEmailDeliveryKind(result.kind);
+      const attemptedAt = new Date(result.attemptedAt);
+      const failureError = result.error || 'Email provider did not accept the message';
 
-  if (!envelope) {
-    return;
-  }
+      const delivery = await tx.esigningEmailDelivery.upsert({
+        where: {
+          envelopeId_kind_targetKey: {
+            envelopeId,
+            kind,
+            targetKey: result.targetKey,
+          },
+        },
+        create: {
+          tenantId: result.tenantId,
+          envelopeId,
+          recipientId: result.recipientId ?? null,
+          audience: result.audience,
+          kind,
+          targetKey: result.targetKey,
+          toEmail: result.to,
+          subject: result.subject,
+          status: result.ok ? 'SUCCEEDED' : 'FAILED_RETRYABLE',
+          attemptCount: 1,
+          availableAt: attemptedAt,
+          lastAttemptedAt: attemptedAt,
+          sentAt: result.ok ? attemptedAt : null,
+          lastError: result.ok ? null : failureError,
+        },
+        update: {
+          toEmail: result.to,
+          subject: result.subject,
+          status: result.ok ? 'SUCCEEDED' : 'FAILED_RETRYABLE',
+          attemptCount: { increment: 1 },
+          availableAt: attemptedAt,
+          lastAttemptedAt: attemptedAt,
+          sentAt: result.ok ? attemptedAt : null,
+          lastError: result.ok ? null : failureError,
+        },
+      });
 
-  await prisma.esigningEnvelope.update({
-    where: { id: envelopeId },
-    data: {
-      metadata: applyEsigningEmailDeliveryResults(
-        envelope.metadata,
-        results
-      ) as Prisma.InputJsonValue,
-    },
+      await tx.esigningEmailDeliveryAttempt.create({
+        data: {
+          deliveryId: delivery.id,
+          toEmail: result.to,
+          subject: result.subject,
+          succeeded: result.ok,
+          providerMessageId: result.providerMessageId ?? null,
+          error: result.ok ? null : failureError,
+          attemptedAt,
+        },
+      });
+    }
   });
 }
