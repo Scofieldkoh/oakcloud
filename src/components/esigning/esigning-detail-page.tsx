@@ -788,6 +788,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         {/* Step content */}
         <div
           ref={wizardContentRef}
+          data-wizard-main="true"
           className={currentStep === 2 ? 'flex flex-1 min-h-0 flex-col overflow-hidden' : 'flex-1 overflow-auto'}
         >
           {currentStep === 1 && (
