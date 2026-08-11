@@ -16,6 +16,7 @@ export interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
+  placement?: 'center' | 'bottom';
   className?: string;
   ariaLabelledBy?: string;
   ariaDescribedBy?: string;
@@ -55,6 +56,7 @@ export function Modal({
   showCloseButton = true,
   closeOnOverlayClick = true,
   closeOnEscape = true,
+  placement = 'center',
   className,
   ariaLabelledBy,
   ariaDescribedBy,
@@ -144,7 +146,10 @@ export function Modal({
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className={cn(
+        'fixed inset-0 z-50 flex justify-center bg-black/60 backdrop-blur-sm animate-fade-in',
+        placement === 'bottom' ? 'items-end' : 'items-center p-4'
+      )}
       role="dialog"
       aria-modal="true"
       aria-labelledby={ariaLabelledBy ?? (title ? titleId : undefined)}
@@ -156,6 +161,8 @@ export function Modal({
         className={cn(
           'w-full bg-background-secondary border border-border-primary rounded-2xl shadow-elevation-3 outline-none',
           'transform transition-all duration-150',
+          placement === 'bottom' &&
+            'max-h-[80vh] overflow-y-auto rounded-b-none border-b-0',
           sizeClasses[size],
           className
         )}

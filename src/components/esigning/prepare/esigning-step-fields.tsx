@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ChevronLeft, ChevronRight, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, List, Palette, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { useIsMobile, useIsTablet } from '@/hooks/use-media-query';
 import type { EsigningFieldType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
+import { Modal } from '@/components/ui/modal';
 import { DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS } from '@/components/processing/document-page-viewer';
 import { ESIGNING_FIELD_TYPE_LABELS } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
@@ -76,6 +77,7 @@ export function EsigningStepFields({
   const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_PANEL_WIDTH);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<'palette' | 'details' | null>(null);
   const [activeResizePanel, setActiveResizePanel] = useState<'left' | 'right' | null>(null);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
@@ -90,6 +92,7 @@ export function EsigningStepFields({
     if (isMobile) {
       setLeftPanelCollapsed(true);
       setRightPanelCollapsed(true);
+      setMobilePanel(null);
       return;
     }
     if (isTablet) {
@@ -99,6 +102,13 @@ export function EsigningStepFields({
       setRightPanelCollapsed(true);
     }
   }, [isMobile, isTablet]);
+
+  function handleMobilePlacementTypeSelect(type: EsigningFieldType | null) {
+    setActivePlacementType(type);
+    if (type) {
+      setMobilePanel(null);
+    }
+  }
 
   const recipientFieldSummary = useMemo(() => {
     const map = new Map<string, { required: number; optional: number; hasSignature: boolean }>();
@@ -526,7 +536,85 @@ export function EsigningStepFields({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={layoutRef} className="flex flex-1 overflow-hidden">
+      {isMobile ? (
+        <>
+          <div className="relative flex-1 overflow-hidden">
+            <EsigningFieldCanvas
+              documents={envelope.documents}
+              selectedDocumentId={selectedDocumentId}
+              onDocumentChange={(documentId) => {
+                setSelectedDocumentId(documentId);
+                setViewerPage(1);
+              }}
+              fields={fields}
+              onFieldsChange={onFieldsChange}
+              selectedFieldId={selectedFieldId}
+              onFieldSelect={setSelectedFieldId}
+              placementType={activePlacementType}
+              placementRecipientId={selectedRecipientId}
+              recipients={envelope.recipients}
+              viewerPage={viewerPage}
+              onPageChange={setViewerPage}
+              zoomLevel={preparationZoom}
+              onZoomLevelChange={setPreparationZoom}
+              canEdit={canEdit}
+            />
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2 border-t border-border-primary bg-background-secondary px-3 py-2">
+            <button
+              type="button"
+              onClick={() => setMobilePanel('palette')}
+              aria-label="Open field palette"
+              className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-xl border border-border-primary bg-background-primary text-text-primary hover:bg-background-tertiary"
+            >
+              <Palette className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobilePanel('details')}
+              aria-label="Open field details"
+              className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-xl border border-border-primary bg-background-primary text-text-primary hover:bg-background-tertiary"
+            >
+              <List className="h-5 w-5" />
+            </button>
+            <div className="ml-auto truncate text-xs text-text-secondary">
+              {activePlacementType
+                ? `Placing: ${ESIGNING_FIELD_TYPE_LABELS[activePlacementType]}`
+                : 'No field selected'}
+            </div>
+          </div>
+
+          <Modal
+            isOpen={mobilePanel === 'palette'}
+            onClose={() => setMobilePanel(null)}
+            title="Field palette"
+            placement="bottom"
+            size="full"
+          >
+            <div className="max-h-[70vh] overflow-y-auto">
+              <EsigningFieldPalette
+                recipients={envelope.recipients}
+                selectedRecipientId={selectedRecipientId}
+                onRecipientChange={setSelectedRecipientId}
+                activePlacementType={activePlacementType}
+                onPlacementTypeSelect={handleMobilePlacementTypeSelect}
+                recipientFieldSummary={recipientFieldSummary}
+              />
+            </div>
+          </Modal>
+
+          <Modal
+            isOpen={mobilePanel === 'details'}
+            onClose={() => setMobilePanel(null)}
+            title="Field details"
+            placement="bottom"
+            size="full"
+          >
+            <div className="max-h-[70vh] overflow-y-auto p-4">{rightPanelContent}</div>
+          </Modal>
+        </>
+      ) : (
+        <div ref={layoutRef} className="flex flex-1 overflow-hidden">
         <div
           className={cn(
             'relative flex-shrink-0 overflow-hidden transition-[width] duration-200',
@@ -646,7 +734,8 @@ export function EsigningStepFields({
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       <div className="flex flex-shrink-0 items-center justify-between gap-2 border-t border-border-primary bg-background-secondary px-3 py-2 sm:gap-4 sm:px-6 sm:py-3">
         <Button variant="secondary" size="sm" onClick={onBack}>
