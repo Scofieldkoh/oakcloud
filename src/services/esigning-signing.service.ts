@@ -29,6 +29,7 @@ import {
 } from '@/services/esigning-email-delivery.service';
 import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
+import { queueEsigningCompletionWork } from '@/services/esigning-completion.service';
 import { safelyReconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
 import {
   processQueuedServiceAgreementActivations,
@@ -84,6 +85,11 @@ export async function finalizeEsigningEnvelopeCompletion(
       },
     });
     await queueServiceAgreementActivationsForEnvelope(tx, input.envelopeId, input.completedAt);
+    await queueEsigningCompletionWork(tx, {
+      tenantId: input.tenantId,
+      envelopeId: input.envelopeId,
+      completedAt: input.completedAt,
+    });
     return true;
   }
 
