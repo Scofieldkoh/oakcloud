@@ -828,6 +828,129 @@ describe('A4PageEditor real layout pagination', () => {
     ).toBe(true);
   });
 
+  it('does not overlap the final word when a nested list continues with the next item', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const filler = Array.from(
+      { length: 25 },
+      (_, index) => `<p>Filler line ${index + 1}</p>`,
+    ).join('');
+    const fifthClause =
+      'We accept no liability to anyone, other than you, in connection with the Services, unless otherwise agreed by us in writing. You agree to reimburse us, other Oaktree entities, directors, employees, and subcontractors for any liability (including legal costs) that any such party in connection with any claim by anyone else in relation to the Services.';
+    const list =
+      '<ol start="7"><li><p>Liability</p><ol>' +
+      '<li><p>Our liability for loss or damages arising in relation to the Services is limited to the fees paid by you for the relevant Services.</p></li>' +
+      '<li><p></p><p>We will not be liable for indirect loss, loss of profits or revenue, business interruption, loss of data, or loss of opportunity.</p></li>' +
+      '<li><p></p><p>Our liability shall be limited to that proportion of the total damage after taking into account the responsibility of all who contributed to your loss.</p></li>' +
+      '<li><p></p><p>Where we agree in writing to accept liability to more than one party, it is up to the parties how they share it.</p></li>' +
+      `<li><p></p><p>${fifthClause}</p></li>` +
+      '</ol></li></ol>';
+    const value = filler + list;
+
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={value} />);
+    });
+    await waitForEditorIdle();
+
+    const pageContents = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        '[data-testid^="a4-page-content-"]',
+      ),
+    );
+    expect(pageContents.length).toBeGreaterThan(1);
+
+    const fifthParagraph = Array.from(host.querySelectorAll('p')).find(
+      (paragraph) => paragraph.textContent?.startsWith('We accept no liability'),
+    )!;
+    const continuationPage = fifthParagraph.closest<HTMLElement>(
+      '[data-testid^="a4-page-content-"]',
+    )!;
+    expect(continuationPage).not.toBe(pageContents[0]);
+    const pageBeforeContinuation = pageContents.at(
+      pageContents.indexOf(continuationPage) - 1,
+    );
+    expect(
+      `${pageBeforeContinuation?.textContent ?? ''}${continuationPage.textContent ?? ''}`,
+    ).toContain(
+      'it is up to the parties how they share it.We accept no liability',
+    );
+    expect(
+      fifthParagraph
+        .closest<HTMLElement>('ol')
+        ?.style.getPropertyValue('--flow-list-start'),
+    ).toBe('4');
+
+    const expectedText = new DOMParser().parseFromString(value, 'text/html')
+      .body.textContent;
+    expect(pageContents.map((pageContent) => pageContent.textContent).join(''))
+      .toBe(expectedText);
+    expect(
+      new DOMParser().parseFromString(
+        editorRef.current?.getContent() ?? '',
+        'text/html',
+      ).body.textContent,
+    ).toBe(expectedText);
+  });
+
+  it('uses the remaining page space before continuing the next nested section', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const invoiceDetail = Array.from(
+      { length: 30 },
+      () =>
+        'If you fail to satisfy any undisputed invoice as it falls due, we may suspend the Services until the outstanding amounts are satisfied.',
+    ).join(' ');
+    const value =
+      '<ol start="8">' +
+      '<li><p><b>Oaktree Individuals</b></p><ol>' +
+      '<li><p>You agree not to bring any claim against any of our employees personally in connection with the Services. This clause is for the benefit of Oaktree Individuals.</p></li>' +
+      '<li><p></p><p>During the term of this Agreement and for 12 months thereafter, you shall not directly or indirectly solicit or employ any of our employees.</p></li>' +
+      '</ol></li>' +
+      '<li><p><b>Fees and Payments</b></p><ol>' +
+      '<li><p>Fees for the Services will be charged on the basis set out in the relevant Statement of Work.</p></li>' +
+      '<li><p></p><p>Where the actual time spent is substantially more than agreed, we will mutually agree with you on a revised fee.</p></li>' +
+      '<li><p></p><p>All fees are exclusive of expenses such as government fees, travel, subsistence, communication and document handling costs.</p></li>' +
+      '<li><p></p><p>All fees are net of taxes or similar charges, customs, duties, and tariffs imposed in respect of the Services.</p></li>' +
+      `<li><p></p><p>All invoices will be due for payment within 30 days of the date of the invoice. ${invoiceDetail}</p></li>` +
+      '<li><p></p><p>During the term of this Agreement, we may increase the fees for each Service annually after providing prior written notice.</p></li>' +
+      '</ol></li></ol>';
+
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={value}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: '10pt',
+            marginsMm: { top: 15, right: 20, bottom: 15, left: 20 },
+          }}
+        />,
+      );
+    });
+    await waitForEditorIdle();
+
+    const pageContents = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        '[data-testid^="a4-page-content-"]',
+      ),
+    );
+    expect(pageContents.length).toBeGreaterThan(1);
+    expect(pageContents[0].textContent).toContain('Oaktree Individuals');
+    expect(pageContents[0].textContent).toContain('Fees and Payments');
+    expect(pageContents[1].textContent).toContain('outstanding amounts');
+
+    const expectedText = new DOMParser().parseFromString(value, 'text/html')
+      .body.textContent;
+    expect(pageContents.map((pageContent) => pageContent.textContent).join(''))
+      .toBe(expectedText);
+    expect(
+      new DOMParser().parseFromString(
+        editorRef.current?.getContent() ?? '',
+        'text/html',
+      ).body.textContent,
+    ).toBe(expectedText);
+  });
+
   it('does not repeat the marker when a nested list item splits across pages', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const longText = Array.from(
@@ -881,6 +1004,9 @@ describe('A4PageEditor real layout pagination', () => {
       .body;
     expect(canonical.querySelectorAll('ol ol')).toHaveLength(1);
     expect(canonical.querySelectorAll('ol ol > li')).toHaveLength(2);
+    const canonicalLongItem = canonical.querySelector('ol ol > li')!;
+    expect(canonicalLongItem.querySelectorAll(':scope > p')).toHaveLength(1);
+    expect(canonicalLongItem.querySelector('p')?.textContent).toBe(longText);
 
     const nextParagraph = Array.from(host.querySelectorAll('p')).find(
       (paragraph) => paragraph.textContent === 'Next sub-item',

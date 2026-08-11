@@ -53,6 +53,13 @@ function nextFlowId(): string {
   return `a4-flow-${fallbackFlowId}`;
 }
 
+export function ensureFlowId(element: HTMLElement): string {
+  if (!element.dataset.flowId) {
+    element.dataset.flowId = nextFlowId();
+  }
+  return element.dataset.flowId;
+}
+
 export function normalizeCanonicalHtml(input: string): string {
   return normalizeLegacySoftPageBreaks(input).replace(
     HARD_PAGE_BREAK_REGEX,
@@ -82,13 +89,9 @@ export function hydrateFlowContainer(container: HTMLElement): void {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
       if (element.classList.contains('page-break')) return;
-      if (!element.dataset.flowId) {
-        element.dataset.flowId = nextFlowId();
-      }
+      ensureFlowId(element);
       element.querySelectorAll<HTMLElement>('li, tr').forEach((nestedBlock) => {
-        if (!nestedBlock.dataset.flowId) {
-          nestedBlock.dataset.flowId = nextFlowId();
-        }
+        ensureFlowId(nestedBlock);
       });
       return;
     }
@@ -191,6 +194,13 @@ function mergeBoundaryListContinuation(
     return;
   }
 
+  const listFlowId = targetList.dataset.flowId;
+  if (listFlowId && sourceList.dataset.flowId === listFlowId) {
+    appendContinuation(targetList, sourceList);
+    sourceList.remove();
+    return;
+  }
+
   const targetBoundary = targetList.lastElementChild as HTMLElement | null;
   const sourceBoundary = sourceList.firstElementChild as HTMLElement | null;
   if (!targetBoundary || !sourceBoundary) return;
@@ -206,6 +216,127 @@ function mergeBoundaryListContinuation(
 
   appendContinuation(targetList, sourceList);
   sourceList.remove();
+}
+
+function mergeBoundaryFlowContinuation(
+  target: HTMLElement,
+  source: HTMLElement,
+): void {
+  const targetBoundary = target.lastElementChild as HTMLElement | null;
+  const sourceBoundary = source.firstElementChild as HTMLElement | null;
+  if (!targetBoundary || !sourceBoundary) return;
+
+  const boundaryFlowId = targetBoundary.dataset.flowId;
+  if (
+    !boundaryFlowId ||
+    sourceBoundary.dataset.flowId !== boundaryFlowId ||
+    targetBoundary.tagName !== sourceBoundary.tagName
+  ) {
+    return;
+  }
+
+  appendContinuation(targetBoundary, sourceBoundary);
+  sourceBoundary.remove();
+}
+
+const LEGACY_TEXT_BOUNDARY_TAGS = new Set([
+  'P',
+  'DIV',
+  'BLOCKQUOTE',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+]);
+
+function isWordCharacter(character: string | undefined): boolean {
+  return Boolean(character && /[\p{L}\p{N}_]/u.test(character));
+}
+
+function boundaryTextOverlap(targetText: string, sourceText: string): number {
+  const maximum = Math.min(targetText.length, sourceText.length);
+
+  for (let length = maximum; length >= 2; length -= 1) {
+    const overlap = sourceText.slice(0, length);
+    if (!/[\p{L}\p{N}]/u.test(overlap) || !targetText.endsWith(overlap)) {
+      continue;
+    }
+
+    const targetStart = targetText.length - length;
+    if (
+      !isWordCharacter(targetText[targetStart - 1]) &&
+      !isWordCharacter(sourceText[length])
+    ) {
+      return length;
+    }
+  }
+
+  return 0;
+}
+
+function removeTextPrefix(element: HTMLElement, length: number): void {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let remaining = length;
+  let node: Node | null;
+
+  while (remaining > 0 && (node = walker.nextNode())) {
+    const text = node.textContent ?? '';
+    if (remaining >= text.length) {
+      remaining -= text.length;
+      node.textContent = '';
+      continue;
+    }
+
+    node.textContent = text.slice(remaining);
+    remaining = 0;
+  }
+}
+
+/**
+ * Older pagination builds could leave the same tail word in both halves of a
+ * continued list item. Only repair an exact word-boundary overlap when the
+ * list item is explicitly marked as a continuation and its boundary blocks
+ * either share a flow id or predate nested-block flow ids entirely.
+ */
+function repairLegacyBoundaryTextOverlap(
+  target: HTMLElement,
+  source: HTMLElement,
+): void {
+  if (!source.hasAttribute('data-flow-continuation-item')) return;
+
+  const targetBoundary = target.lastElementChild as HTMLElement | null;
+  const sourceBoundary = source.firstElementChild as HTMLElement | null;
+  if (
+    !targetBoundary ||
+    !sourceBoundary ||
+    targetBoundary.tagName !== sourceBoundary.tagName ||
+    !LEGACY_TEXT_BOUNDARY_TAGS.has(targetBoundary.tagName)
+  ) {
+    return;
+  }
+
+  const targetFlowId = targetBoundary.dataset.flowId;
+  const sourceFlowId = sourceBoundary.dataset.flowId;
+  const provenCurrentContinuation =
+    Boolean(targetFlowId) && targetFlowId === sourceFlowId;
+  const legacyContinuation = !targetFlowId && !sourceFlowId;
+  if (!provenCurrentContinuation && !legacyContinuation) return;
+
+  const overlap = boundaryTextOverlap(
+    targetBoundary.textContent ?? '',
+    sourceBoundary.textContent ?? '',
+  );
+  if (overlap === 0) return;
+
+  removeTextPrefix(sourceBoundary, overlap);
+  if (
+    !(sourceBoundary.textContent ?? '').length &&
+    !sourceBoundary.querySelector('br,hr,img,table,ul,ol')
+  ) {
+    sourceBoundary.remove();
+  }
 }
 
 function appendContinuation(target: HTMLElement, source: HTMLElement): void {
@@ -239,6 +370,9 @@ function appendContinuation(target: HTMLElement, source: HTMLElement): void {
     }
     return;
   }
+
+  repairLegacyBoundaryTextOverlap(target, source);
+  mergeBoundaryFlowContinuation(target, source);
 
   while (source.firstChild) {
     target.appendChild(source.firstChild);

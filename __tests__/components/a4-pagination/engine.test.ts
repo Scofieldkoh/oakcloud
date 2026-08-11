@@ -102,6 +102,21 @@ describe('A4 deterministic pagination engine', () => {
     expect(container.textContent).toBe('123456789012345');
   });
 
+  it('reassembles split list-item paragraphs without creating fragment blocks', () => {
+    const canonical = hydrateFlowHtml(
+      '<ol><li><p>alpha beta gamma delta</p><p>Following paragraph</p></li></ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+    const container = document.createElement('div');
+    container.innerHTML = stripFlowMetadata(reassemblePageFragments(pages));
+
+    expect(pages.length).toBeGreaterThan(2);
+    expect(container.innerHTML).toBe(
+      '<ol><li><p>alpha beta gamma delta</p><p>Following paragraph</p></li></ol>',
+    );
+    expect(container.querySelectorAll('ol > li > p')).toHaveLength(2);
+  });
+
   it('continues ordered list numbering across pages', () => {
     const canonical = hydrateFlowHtml(
       '<ol><li><p>One</p></li><li><p>Two</p></li><li><p>Three</p></li></ol>',
@@ -130,6 +145,25 @@ describe('A4 deterministic pagination engine', () => {
     expect(pages[1].content).toContain('--flow-list-start: 3');
     expect(stripFlowMetadata(reassemblePageFragments(pages))).toBe(
       '<ol start="3"><li><p>One</p></li><li><p>Two</p></li></ol>',
+    );
+  });
+
+  it('uses remaining page space before continuing a nested section item', () => {
+    const canonical = hydrateFlowHtml(
+      '<ol>' +
+        '<li><p>Previous</p></li>' +
+        '<li><p>Fees</p><ol>' +
+        '<li><p>one two</p></li>' +
+        '<li><p>three four</p></li>' +
+        '</ol></li>' +
+        '</ol>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 19);
+
+    expect(visibleText(pages[0].content)).toBe('PreviousFeesone two');
+    expect(visibleText(pages[1].content)).toBe('three four');
+    expect(stripFlowMetadata(reassemblePageFragments(pages))).toBe(
+      '<ol><li><p>Previous</p></li><li><p>Fees</p><ol><li><p>one two</p></li><li><p>three four</p></li></ol></li></ol>',
     );
   });
 

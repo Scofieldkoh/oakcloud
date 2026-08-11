@@ -1,4 +1,5 @@
 import {
+  ensureFlowId,
   hydrateFlowHtml,
   splitHardSections,
   type PageFragment,
@@ -67,6 +68,15 @@ function textPosition(
   return last
     ? { node: last, offset: last.textContent?.length ?? 0 }
     : null;
+}
+
+function splitBoundaryBlock(root: HTMLElement, node: Node): HTMLElement | null {
+  let element = node.parentElement;
+  while (element && element !== root) {
+    if (SPLITTABLE_TEXT_TAGS.has(element.tagName)) return element;
+    element = element.parentElement;
+  }
+  return null;
 }
 
 /**
@@ -160,6 +170,8 @@ function splitTextElement(
 
   const position = textPosition(textNodes, splitOffset);
   if (!position) return null;
+  const boundaryBlock = splitBoundaryBlock(host, position.node);
+  if (boundaryBlock) ensureFlowId(boundaryBlock);
   const fitWrapper = document.createElement('div');
   fitWrapper.innerHTML = rangeHtml(
     host,
@@ -208,6 +220,17 @@ function splitListBetweenItems(
     best = count;
   }
   if (best === 0) return null;
+  ensureFlowId(element);
+
+  const partialItem = splitNextListItem(
+    element,
+    items,
+    best,
+    prefixHtml,
+    measurer,
+    maxHeight,
+  );
+  if (partialItem) return partialItem;
 
   const fit = element.cloneNode(false) as HTMLElement;
   items
@@ -229,6 +252,98 @@ function splitListBetweenItems(
   if (runningStart > 0) {
     fit.style.setProperty('--flow-list-start', String(runningStart));
   }
+  return { fit, overflow };
+}
+
+function cloneWithChildren(
+  element: HTMLElement,
+  children: HTMLElement[],
+): HTMLElement {
+  const clone = element.cloneNode(false) as HTMLElement;
+  children.forEach((child) => clone.appendChild(child.cloneNode(true)));
+  return clone;
+}
+
+function splitNextListItem(
+  sourceList: HTMLElement,
+  sourceItems: HTMLElement[],
+  completeItemCount: number,
+  prefixHtml: string,
+  measurer: HtmlMeasurer,
+  maxHeight: number,
+): ElementSplit | null {
+  const sourceItem = sourceItems[completeItemCount];
+  if (!sourceItem) return null;
+
+  const completeItems = sourceItems.slice(0, completeItemCount);
+  const itemMeasurer: HtmlMeasurer = {
+    measure(itemHtml) {
+      const candidateList = cloneWithChildren(sourceList, completeItems);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = itemHtml;
+      const candidateItem = wrapper.firstElementChild;
+      if (candidateItem) candidateList.appendChild(candidateItem);
+      return measurer.measure(prefixHtml + htmlFor(candidateList));
+    },
+  };
+  const sourceChildren = Array.from(sourceItem.children) as HTMLElement[];
+  if (
+    !sourceChildren.some(
+      (child) => child.tagName === 'OL' || child.tagName === 'UL',
+    )
+  ) {
+    return null;
+  }
+
+  let completeChildCount = 0;
+  for (let count = 1; count < sourceChildren.length; count += 1) {
+    const candidateItem = cloneWithChildren(
+      sourceItem,
+      sourceChildren.slice(0, count),
+    );
+    if (itemMeasurer.measure(htmlFor(candidateItem)) > maxHeight) break;
+    completeChildCount = count;
+  }
+
+  const overflowingChild = sourceChildren[completeChildCount];
+  if (!overflowingChild) return null;
+  const completeChildren = sourceChildren.slice(0, completeChildCount);
+  const childMeasurer: HtmlMeasurer = {
+    measure(childHtml) {
+      const candidateItem = cloneWithChildren(sourceItem, completeChildren);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = childHtml;
+      const candidateChild = wrapper.firstElementChild;
+      if (candidateChild) candidateItem.appendChild(candidateChild);
+      return itemMeasurer.measure(htmlFor(candidateItem));
+    },
+  };
+  const childSplit = splitElement(
+    overflowingChild,
+    '',
+    childMeasurer,
+    maxHeight,
+  );
+  if (!childSplit) return null;
+
+  const fitItem = cloneWithChildren(sourceItem, completeChildren);
+  fitItem.appendChild(childSplit.fit);
+  const overflowItem = sourceItem.cloneNode(false) as HTMLElement;
+  overflowItem.appendChild(childSplit.overflow);
+  sourceChildren
+    .slice(completeChildCount + 1)
+    .forEach((child) => overflowItem.appendChild(child.cloneNode(true)));
+
+  const fit = cloneWithChildren(sourceList, completeItems);
+  fit.appendChild(fitItem);
+  const overflow = sourceList.cloneNode(false) as HTMLElement;
+  overflow.appendChild(overflowItem);
+  sourceItems
+    .slice(completeItemCount + 1)
+    .forEach((item) => overflow.appendChild(item.cloneNode(true)));
+  fit.dataset.flowContinuation = 'start';
+  overflow.dataset.flowContinuation = 'end';
+  markListContinuation(sourceList, fit, overflow);
   return { fit, overflow };
 }
 

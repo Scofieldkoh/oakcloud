@@ -121,6 +121,92 @@ describe('A4 pagination canonical model', () => {
     expect(root.querySelector('ol ol')?.textContent).toBe('FirstSecondNext');
   });
 
+  it('merges a proven paragraph continuation inside a list item', () => {
+    const reassembled = reassemblePageFragments([
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="list"><li data-flow-id="item">' +
+          '<p data-flow-id="paragraph">First </p></li></ol>',
+      },
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="list" data-flow-continuation="end">' +
+          '<li data-flow-id="item" data-flow-continuation-item="true">' +
+          '<p data-flow-id="paragraph">second</p>' +
+          '<p>Independent paragraph</p></li></ol>',
+      },
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = reassembled;
+
+    expect(root.querySelectorAll('ol > li > p')).toHaveLength(2);
+    expect(root.querySelector('ol > li > p')?.textContent).toBe('First second');
+    expect(root.querySelector('ol > li')?.lastElementChild?.textContent).toBe(
+      'Independent paragraph',
+    );
+  });
+
+  it('repairs an overlapping legacy paragraph at a nested-list page boundary', () => {
+    const reassembled = reassemblePageFragments([
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="outer-list"><li data-flow-id="outer-item">' +
+          '<p>Liability</p><ol>' +
+          '<li data-flow-id="clause-4"><p>It is up to the parties how they share it.</p></li>' +
+          '</ol></li></ol>',
+      },
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="outer-list" data-flow-continuation="end">' +
+          '<li data-flow-id="outer-item" data-flow-continuation-item="true">' +
+          '<ol style="--flow-list-start: 1">' +
+          '<li data-flow-id="clause-4" data-flow-continuation-item="true"><p>it.</p></li>' +
+          '<li data-flow-id="clause-5"><p>We accept no liability.</p></li>' +
+          '</ol></li></ol>',
+      },
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = reassembled;
+
+    expect(root.querySelector('ol ol')?.textContent).toBe(
+      'It is up to the parties how they share it.We accept no liability.',
+    );
+    expect(root.querySelectorAll('ol ol > li')).toHaveLength(2);
+    expect(root.querySelectorAll('ol ol > li:first-child > p')).toHaveLength(1);
+    expect(
+      (root.querySelector('ol ol') as HTMLElement).style.getPropertyValue(
+        '--flow-list-start',
+      ),
+    ).toBe('');
+  });
+
+  it('preserves repeated text in independently identified paragraphs', () => {
+    const reassembled = reassemblePageFragments([
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="list"><li data-flow-id="item">' +
+          '<p data-flow-id="paragraph-1">Repeat.</p></li></ol>',
+      },
+      {
+        hardBreakBefore: false,
+        content:
+          '<ol data-flow-id="list" data-flow-continuation="end">' +
+          '<li data-flow-id="item" data-flow-continuation-item="true">' +
+          '<p data-flow-id="paragraph-2">Repeat.</p></li></ol>',
+      },
+    ]);
+    const root = document.createElement('div');
+    root.innerHTML = reassembled;
+
+    expect(root.querySelector('ol > li')?.textContent).toBe('Repeat.Repeat.');
+    expect(root.querySelectorAll('ol > li > p')).toHaveLength(2);
+  });
+
   it('keeps adjacent nested lists separate without a shared boundary flow id', () => {
     const reassembled = reassemblePageFragments([
       {

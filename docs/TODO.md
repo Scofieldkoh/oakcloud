@@ -1,6 +1,6 @@
 # TODO / Roadmap
 
-> **Last Updated**: 2026-08-10
+> **Last Updated**: 2026-08-11
 
 This document tracks known issues, planned features, and completed work for Oakcloud.
 
@@ -59,6 +59,12 @@ Key principles:
 | ID | Priority | Status | Description | Notes |
 |----|----------|--------|-------------|-------|
 | UI-001 | P2 | Open | Mobile responsiveness improvements | General responsive issues across modules |
+
+### Developer Tooling
+
+| ID | Priority | Status | Description | Notes |
+|----|----------|--------|-------------|-------|
+| DEV-001 | P2 | Open | Repository typecheck is blocked by stale renderer verification types | `npx.cmd tsc --noEmit --pretty false` reports pre-existing DTO and date/type mismatches in `tmp/verify-renderer.ts` |
 
 ### Forms
 
