@@ -359,6 +359,15 @@ Opening the newly created draft in the production build logged minified React er
 
 Because the production bundle removes the useful component diff, this should be reproduced in a development build and traced to the first mismatched node before changing code. Candidate causes should not be accepted without that dev-build evidence.
 
+**Isolation result (2026-08-11):** Not reproduced with deterministic data. A permanent
+`renderToString` + `hydrateRoot` regression was added in
+`__tests__/components/esigning-detail-hydration.test.tsx` covering both a newly opened draft
+(DRAFT wizard, `EsigningDetailPage`) and a completed envelope detail. Both render identical
+server/client trees with zero `onRecoverableError` hydration reports across the tested matrix
+(mock-backed deterministic session/query data at desktop and 390 px). No product code was
+changed speculatively; the observation remains open pending a development-build reproduction
+that identifies the exact mismatched node.
+
 ## Verification performed
 
 ### Automated checks
