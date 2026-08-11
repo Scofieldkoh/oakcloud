@@ -1,10 +1,7 @@
 import { PDFDocument, PDFPage, StandardFonts, rgb } from 'pdf-lib';
-import { v5 as uuidv5 } from 'uuid';
 import { prisma } from '@/lib/prisma';
 import { hashBlake3 } from '@/lib/encryption';
 import { storage, StorageKeys } from '@/lib/storage';
-import { createLogger } from '@/lib/logger';
-import { createAuditLog } from '@/lib/audit';
 import { Prisma } from '@/generated/prisma';
 import {
   buildEsigningDeliveryDownloadUrl,
@@ -16,19 +13,12 @@ import {
   summarizeEsigningUserAgent,
 } from '@/services/esigning-evidence';
 import {
-  sendEsigningCompletionEmail,
   sendEsigningPdfFailureEmailToSender,
 } from '@/services/esigning-notification.service';
-import {
-  recordEsigningEnvelopeEmailDeliveryResults,
-  withEsigningDeliveryTarget,
-  type EsigningEmailDeliveryResult,
-} from '@/services/esigning-email-delivery.service';
+import { recordEsigningEnvelopeEmailDeliveryResults, withEsigningDeliveryTarget } from '@/services/esigning-email-delivery.service';
 
-const log = createLogger('esigning-pdf');
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
 const MAX_EMAIL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-const AUTO_FILE_NAMESPACE = '0ab5455a-3dcf-4660-8dfe-c6bc1d495301';
 const ESIGNING_ARTIFACT_VERSION = 4;
 
 function toPdfBounds(input: {
@@ -501,7 +491,7 @@ async function buildCertificatePdf(input: {
   return Buffer.from(await certificatePdf.save());
 }
 
-function buildEmailAttachments(input: {
+export function buildEmailAttachments(input: {
   documents: Array<{
     fileName: string;
     signedBuffer: Buffer;
@@ -555,12 +545,6 @@ function withEnvelopeArtifactVersion(metadata: Prisma.JsonValue | null | undefin
   } satisfies Prisma.InputJsonValue;
 }
 
-function buildSignedPackageFileName(fileName: string): string {
-  return fileName.toLowerCase().endsWith('.pdf')
-    ? fileName.replace(/\.pdf$/i, '-signed.pdf')
-    : `${fileName}-signed.pdf`;
-}
-
 async function mergePdfBuffers(buffers: Buffer[]): Promise<Buffer> {
   const mergedPdf = await PDFDocument.create();
 
@@ -573,7 +557,7 @@ async function mergePdfBuffers(buffers: Buffer[]): Promise<Buffer> {
   return Buffer.from(await mergedPdf.save());
 }
 
-async function buildDeliveryDocumentLinks(input: {
+export async function buildDeliveryDocumentLinks(input: {
   envelopeId: string;
   actorType: 'recipient' | 'sender';
   recipientId?: string;
@@ -669,118 +653,15 @@ async function loadEnvelopeForPdf(envelopeId: string) {
   };
 }
 
-async function autoFileCompletedEnvelopeDocuments(input: {
-  envelope: Awaited<ReturnType<typeof loadEnvelopeForPdf>>;
-  documents: Array<{
-    id: string;
-    fileName: string;
-    signedBuffer: Buffer;
-  }>;
-}): Promise<void> {
-  const { envelope } = input;
-  if (!envelope.companyId) {
-    return;
-  }
-
-  for (const document of input.documents) {
-    const companyDocumentId = uuidv5(
-      `${envelope.id}:${document.id}:signed-package`,
-      AUTO_FILE_NAMESPACE
-    );
-    const fileName = `${companyDocumentId}.pdf`;
-    const originalFileName = buildSignedPackageFileName(document.fileName);
-    const storageKey = StorageKeys.documentOriginal(
-      envelope.tenantId,
-      envelope.companyId,
-      companyDocumentId,
-      '.pdf'
-    );
-    const fileSize = document.signedBuffer.byteLength;
-    const now = new Date();
-
-    await storage.upload(storageKey, document.signedBuffer, {
-      contentType: 'application/pdf',
-      metadata: {
-        tenantId: envelope.tenantId,
-        companyId: envelope.companyId,
-        envelopeId: envelope.id,
-        envelopeDocumentId: document.id,
-        certificateId: envelope.certificateId,
-        originalFileName,
-      },
-    });
-
-    await prisma.document.upsert({
-      where: { id: companyDocumentId },
-      update: {
-        tenantId: envelope.tenantId,
-        companyId: envelope.companyId,
-        uploadedById: envelope.createdById,
-        documentType: 'E_SIGNED_PACKAGE',
-        fileName,
-        originalFileName,
-        storageKey,
-        fileSize,
-        mimeType: 'application/pdf',
-        extractionStatus: 'COMPLETED',
-        extractedAt: now,
-        isLatest: true,
-        deletedAt: null,
-        deletedReason: null,
-      },
-      create: {
-        id: companyDocumentId,
-        tenantId: envelope.tenantId,
-        companyId: envelope.companyId,
-        uploadedById: envelope.createdById,
-        documentType: 'E_SIGNED_PACKAGE',
-        fileName,
-        originalFileName,
-        storageKey,
-        fileSize,
-        mimeType: 'application/pdf',
-        version: 1,
-        isLatest: true,
-        extractionStatus: 'COMPLETED',
-        extractedAt: now,
-      },
-    });
-
-    await createAuditLog({
-      tenantId: envelope.tenantId,
-      userId: envelope.createdById,
-      companyId: envelope.companyId,
-      action: 'UPLOAD',
-      entityType: 'Document',
-      entityId: companyDocumentId,
-      entityName: originalFileName,
-      summary: `Auto-filed signed package "${originalFileName}" from e-signing envelope "${envelope.title}"`,
-      changeSource: 'SYSTEM',
-      metadata: {
-        envelopeId: envelope.id,
-        envelopeDocumentId: document.id,
-        certificateId: envelope.certificateId,
-      },
-    });
-  }
-}
-
 async function generateEnvelopeArtifacts(
-  envelopeId: string,
-  options?: {
-    sendNotifications?: boolean;
-  }
+  envelopeId: string
 ): Promise<void> {
   const envelope = await loadEnvelopeForPdf(envelopeId);
-  const sendNotifications = options?.sendNotifications ?? true;
 
   if (envelope.status !== 'COMPLETED') {
     throw new Error('Only completed envelopes can generate signed PDFs');
   }
 
-  const senderName =
-    [envelope.createdBy.firstName, envelope.createdBy.lastName].filter(Boolean).join(' ').trim() ||
-    envelope.createdBy.email;
   const fieldValuesByDefinitionId = new Map(
     envelope.fieldValues.map((value) => [value.fieldDefinitionId, value])
   );
@@ -924,70 +805,6 @@ async function generateEnvelopeArtifacts(
       metadata: withEnvelopeArtifactVersion(envelope.metadata),
     },
   });
-
-  await autoFileCompletedEnvelopeDocuments({
-    envelope,
-    documents: generatedDocuments,
-  });
-
-  if (sendNotifications) {
-    const attachments = buildEmailAttachments({ documents: generatedDocuments });
-    const deliveryResults: EsigningEmailDeliveryResult[] = [];
-
-    for (const recipient of envelope.recipients) {
-      const documentLinks = await buildDeliveryDocumentLinks({
-        envelopeId: envelope.id,
-        actorType: 'recipient',
-        recipientId: recipient.id,
-        documents: generatedDocuments.map((document) => ({
-          id: document.id,
-          fileName: document.fileName,
-        })),
-      });
-
-      const completionResult = await sendEsigningCompletionEmail({
-        to: recipient.email,
-        recipientName: recipient.name,
-        envelopeTitle: envelope.title,
-        certificateId: envelope.certificateId,
-        documentLinks,
-        attachments,
-        actorType: 'recipient',
-      });
-      deliveryResults.push(withEsigningDeliveryTarget(completionResult, {
-        tenantId: envelope.tenantId,
-        targetKey: `recipient:${recipient.id}`,
-        audience: 'RECIPIENT',
-        recipientId: recipient.id,
-      }));
-    }
-
-    const senderDocumentLinks = await buildDeliveryDocumentLinks({
-      envelopeId: envelope.id,
-      actorType: 'sender',
-      documents: generatedDocuments.map((document) => ({
-        id: document.id,
-        fileName: document.fileName,
-      })),
-    });
-
-    const senderCompletionResult = await sendEsigningCompletionEmail({
-      to: envelope.createdBy.email,
-      recipientName: senderName,
-      envelopeTitle: envelope.title,
-      certificateId: envelope.certificateId,
-      documentLinks: senderDocumentLinks,
-      attachments,
-      actorType: 'sender',
-    });
-    deliveryResults.push(withEsigningDeliveryTarget(senderCompletionResult, {
-      tenantId: envelope.tenantId,
-      targetKey: `sender:${envelope.createdById}`,
-      audience: 'SENDER',
-    }));
-
-    await recordEsigningEnvelopeEmailDeliveryResults(envelope.id, deliveryResults);
-  }
 }
 
 export async function ensureEsigningEnvelopeArtifacts(input: {
@@ -1066,7 +883,7 @@ export async function ensureEsigningEnvelopeArtifacts(input: {
   });
 
   try {
-    await generateEnvelopeArtifacts(envelope.id, { sendNotifications: false });
+    await generateEnvelopeArtifacts(envelope.id);
   } catch (error) {
     await markEnvelopePdfFailure(envelope.id, error);
     throw error;
@@ -1194,81 +1011,6 @@ export async function generateEsigningEnvelopeArtifactsNow(input: {
     await markEnvelopePdfFailure(input.envelopeId, error);
     throw error;
   }
-}
-
-export async function processQueuedEsigningPdfGeneration(input?: {
-  limit?: number;
-}): Promise<{
-  processed: number;
-  completed: number;
-  failed: number;
-}> {
-  const now = new Date();
-  const staleBefore = new Date(now.getTime() - PROCESSING_LEASE_MS);
-  const limit = input?.limit ?? 5;
-
-  const candidates = await prisma.esigningEnvelope.findMany({
-    where: {
-      status: 'COMPLETED',
-      OR: [
-        { pdfGenerationStatus: 'PENDING' },
-        {
-          pdfGenerationStatus: 'PROCESSING',
-          pdfGenerationClaimedAt: { lt: staleBefore },
-        },
-      ],
-    },
-    orderBy: { updatedAt: 'asc' },
-    take: limit,
-    select: {
-      id: true,
-    },
-  });
-
-  let completed = 0;
-  let failed = 0;
-
-  for (const candidate of candidates) {
-    const claim = await prisma.esigningEnvelope.updateMany({
-      where: {
-        id: candidate.id,
-        status: 'COMPLETED',
-        OR: [
-          { pdfGenerationStatus: 'PENDING' },
-          {
-            pdfGenerationStatus: 'PROCESSING',
-            pdfGenerationClaimedAt: { lt: staleBefore },
-          },
-        ],
-      },
-      data: {
-        pdfGenerationStatus: 'PROCESSING',
-        pdfGenerationClaimedAt: now,
-      },
-    });
-
-    if (claim.count === 0) {
-      continue;
-    }
-
-    try {
-      await generateEnvelopeArtifacts(candidate.id);
-      completed += 1;
-    } catch (error) {
-      failed += 1;
-      log.error('Failed to generate signed e-signing PDFs', {
-        envelopeId: candidate.id,
-        error,
-      });
-      await markEnvelopePdfFailure(candidate.id, error);
-    }
-  }
-
-  return {
-    processed: completed + failed,
-    completed,
-    failed,
-  };
 }
 
 export async function downloadEsigningEnvelopePackage(input: {

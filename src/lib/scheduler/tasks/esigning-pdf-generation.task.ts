@@ -3,31 +3,31 @@ import type { TaskRegistration, TaskResult } from '../types';
 
 const log = createLogger('esigning-pdf-generation-task');
 
-let esigningPdfServiceInstance: typeof import('@/services/esigning-pdf.service') | null = null;
+let esigningCompletionServiceInstance: typeof import('@/services/esigning-completion.service') | null = null;
 
-async function getEsigningPdfService(): Promise<typeof import('@/services/esigning-pdf.service')> {
-  if (!esigningPdfServiceInstance) {
-    esigningPdfServiceInstance = await import('../../../services/esigning-pdf.service');
+async function getEsigningCompletionService(): Promise<typeof import('@/services/esigning-completion.service')> {
+  if (!esigningCompletionServiceInstance) {
+    esigningCompletionServiceInstance = await import('../../../services/esigning-completion.service');
   }
 
-  return esigningPdfServiceInstance;
+  return esigningCompletionServiceInstance;
 }
 
 async function executeEsigningPdfGenerationTask(): Promise<TaskResult> {
-  log.info('Processing queued e-signing PDF generation jobs...');
+  log.info('Processing queued e-signing completion jobs...');
 
   try {
-    const service = await getEsigningPdfService();
-    const result = await service.processQueuedEsigningPdfGeneration({ limit: 5 });
+    const service = await getEsigningCompletionService();
+    const result = await service.processQueuedEsigningCompletionWork({ limit: 5 });
 
     return {
       success: true,
-      message: `Processed ${result.processed} e-signing PDF job(s)`,
+      message: `Processed ${result.processed} e-signing completion stage(s)`,
       data: result,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to process queued e-signing PDF generation jobs', error);
+    log.error('Failed to process queued e-signing completion jobs', error);
 
     return {
       success: false,
@@ -38,8 +38,8 @@ async function executeEsigningPdfGenerationTask(): Promise<TaskResult> {
 
 export const esigningPdfGenerationTask: TaskRegistration = {
   id: 'esigning-pdf-generation',
-  name: 'E-Signing PDF Generation Queue',
-  description: 'Processes completed envelopes and generates signed PDF artifacts',
+  name: 'E-Signing Completion Processing Queue',
+  description: 'Processes signed PDF artifacts, company auto-filing, and completion email delivery',
   defaultCronPattern: '*/1 * * * *',
   execute: executeEsigningPdfGenerationTask,
 };
