@@ -175,11 +175,20 @@ export function getLegacyEsigningEmailDeliveryHealth(
   };
 }
 
+function deliveryIdentity(input: { kind: string; to: string }): string {
+  return `${input.kind.toLowerCase()}:${normalizeEsigningEmailAddress(input.to)}`;
+}
+
 export function getEsigningEmailDeliveryHealth(
   deliveries: EsigningLedgerDeliverySnapshot[],
   legacyMetadata: unknown
 ): EsigningEmailDeliveryHealth {
-  const ledgerFailures = (deliveries ?? []).flatMap((delivery) => {
+  const ledgerRows = deliveries ?? [];
+  const ledgerIdentities = new Set(
+    ledgerRows.map((delivery) => deliveryIdentity({ kind: delivery.kind, to: delivery.toEmail }))
+  );
+
+  const ledgerFailures = ledgerRows.flatMap((delivery) => {
     if (delivery.status !== 'FAILED_RETRYABLE' && delivery.status !== 'FAILED_PERMANENT') {
       return [];
     }
@@ -194,15 +203,22 @@ export function getEsigningEmailDeliveryHealth(
     }];
   });
 
-  if (ledgerFailures.length > 0) {
-    return {
-      status: 'failed',
-      lastFailureAt: ledgerFailures[0]?.attemptedAt ?? null,
-      failures: ledgerFailures.slice(0, EMAIL_DELIVERY_FAILURE_LIMIT),
-    };
-  }
+  const legacyFailures = getLegacyEsigningEmailDeliveryHealth(legacyMetadata).failures.filter(
+    (failure) => !ledgerIdentities.has(deliveryIdentity({ kind: failure.kind, to: failure.to }))
+  );
 
-  return getLegacyEsigningEmailDeliveryHealth(legacyMetadata);
+  const failures = [...ledgerFailures, ...legacyFailures]
+    .sort(
+      (left, right) =>
+        new Date(right.attemptedAt).getTime() - new Date(left.attemptedAt).getTime()
+    )
+    .slice(0, EMAIL_DELIVERY_FAILURE_LIMIT);
+
+  return {
+    status: failures.length > 0 ? 'failed' : 'ok',
+    lastFailureAt: failures[0]?.attemptedAt ?? null,
+    failures,
+  };
 }
 
 export async function recordEsigningEnvelopeEmailDeliveryResults(

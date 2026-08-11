@@ -417,9 +417,13 @@ export async function listEsigningEnvelopes(
         },
         emailDeliveries: {
           select: {
-            status: true,
             kind: true,
             targetKey: true,
+            toEmail: true,
+            subject: true,
+            status: true,
+            lastError: true,
+            lastAttemptedAt: true,
           },
         },
         documents: {
@@ -535,10 +539,11 @@ export async function listEsigningEnvelopes(
         (envelope.pdfGenerationStatus === 'FAILED' ||
           ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(envelope.autoFilingStatus ?? '') ||
           (envelope.emailDeliveries ?? []).some((delivery) =>
+            delivery.kind === 'COMPLETION' &&
             ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(delivery.status)
           )) &&
         (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
-      emailDelivery: getEsigningEmailDeliveryHealth([], envelope.metadata),
+      emailDelivery: getEsigningEmailDeliveryHealth(envelope.emailDeliveries ?? [], envelope.metadata),
       postCompletion: getEsigningPostCompletionSummary(envelope, envelope.emailDeliveries ?? []),
       resendableRecipientCount: envelope.recipients.filter(
         (recipient) =>
@@ -2729,6 +2734,7 @@ export async function retryEsigningEnvelopeCompletionProcessing(
         autoFilingAvailableAt: new Date(),
         autoFilingClaimedAt: null,
         autoFilingLeaseExpiresAt: null,
+        autoFilingClaimToken: null,
         autoFilingError: null,
       },
     });
@@ -2744,6 +2750,7 @@ export async function retryEsigningEnvelopeCompletionProcessing(
         availableAt: new Date(),
         claimedAt: null,
         leaseExpiresAt: null,
+        claimToken: null,
         lastError: null,
       },
     });

@@ -202,9 +202,13 @@ export async function getEnvelopeAggregate(envelopeId: string, tenantId?: string
         },
         emailDeliveries: {
           select: {
-            status: true,
             kind: true,
             targetKey: true,
+            toEmail: true,
+            subject: true,
+            status: true,
+            lastError: true,
+            lastAttemptedAt: true,
           },
         },
       },
@@ -289,10 +293,11 @@ export function serializeEnvelopeDetail(input: {
       (envelope.pdfGenerationStatus === 'FAILED' ||
         ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(envelope.autoFilingStatus ?? '') ||
         (envelope.emailDeliveries ?? []).some((delivery) =>
+          delivery.kind === 'COMPLETION' &&
           ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(delivery.status)
         )) &&
       (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
-    emailDelivery: getEsigningEmailDeliveryHealth([], envelope.metadata),
+    emailDelivery: getEsigningEmailDeliveryHealth(envelope.emailDeliveries ?? [], envelope.metadata),
     postCompletion: getEsigningPostCompletionSummary(envelope, envelope.emailDeliveries ?? []),
     documentCount: envelope.documents.length,
     signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,

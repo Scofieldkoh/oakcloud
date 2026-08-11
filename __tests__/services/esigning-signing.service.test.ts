@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   finalizeEsigningEnvelopeCompletion,
   getEsigningSigningSessionStatus,
+  saveEsigningSigningFieldValues,
 } from '@/services/esigning-signing.service';
 import { getEsigningPostCompletionSummary } from '@/services/esigning-completion.service';
 import { retryEsigningEnvelopeCompletionProcessing } from '@/services/esigning-envelope.service';
@@ -25,9 +26,25 @@ const sessionMocks = vi.hoisted(() => ({
   getEsigningSessionClaims: vi.fn(),
 }));
 
+const rbacMocks = vi.hoisted(() => ({
+  hasPermission: vi.fn(),
+}));
+
+const fieldServiceMocks = vi.hoisted(() => ({
+  saveRecipientFieldValues: vi.fn(),
+}));
+
 vi.mock('@/services/service-agreement', () => serviceAgreementMock);
 vi.mock('@/lib/esigning-session', () => sessionMocks);
 vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
+vi.mock('@/lib/rbac', () => ({ hasPermission: rbacMocks.hasPermission }));
+vi.mock('@/services/esigning-field.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/esigning-field.service')>();
+  return {
+    ...actual,
+    saveRecipientFieldValues: fieldServiceMocks.saveRecipientFieldValues,
+  };
+});
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     esigningDocumentFieldValue: {
@@ -331,20 +348,26 @@ describe('e-signing completion status serialization', () => {
 
     expect(
       getEsigningPostCompletionSummary(envelope, [
-        { status: 'PENDING' },
-        { status: 'SUCCEEDED' },
+        { kind: 'COMPLETION', status: 'PENDING' },
+        { kind: 'COMPLETION', status: 'SUCCEEDED' },
       ]).completionDeliveryStatus
     ).toBe('PENDING');
     expect(
-      getEsigningPostCompletionSummary(envelope, [{ status: 'FAILED_RETRYABLE' }])
+      getEsigningPostCompletionSummary(envelope, [
+        { kind: 'COMPLETION', status: 'FAILED_RETRYABLE' },
+      ])
         .completionDeliveryStatus
     ).toBe('RETRYING');
     expect(
-      getEsigningPostCompletionSummary(envelope, [{ status: 'FAILED_PERMANENT' }])
+      getEsigningPostCompletionSummary(envelope, [
+        { kind: 'COMPLETION', status: 'FAILED_PERMANENT' },
+      ])
         .completionDeliveryStatus
     ).toBe('FAILED');
     expect(
-      getEsigningPostCompletionSummary(envelope, [{ status: 'SUCCEEDED' }])
+      getEsigningPostCompletionSummary(envelope, [
+        { kind: 'COMPLETION', status: 'SUCCEEDED' },
+      ])
         .completionDeliveryStatus
     ).toBe('COMPLETED');
     expect(getEsigningPostCompletionSummary(envelope, []).completionDeliveryStatus).toBe(
@@ -356,6 +379,7 @@ describe('e-signing completion status serialization', () => {
 describe('e-signing completion retry', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    rbacMocks.hasPermission.mockResolvedValue(false);
     prismaMocks.findFirstEnvelope.mockResolvedValue({
       id: 'envelope-1',
       status: 'COMPLETED',
@@ -454,6 +478,184 @@ describe('e-signing completion retry', () => {
           status: { in: ['FAILED_RETRYABLE', 'FAILED_PERMANENT'] },
         }),
         data: expect.objectContaining({ status: 'PENDING' }),
+      })
+    );
+  });
+
+  it('allows an update-scoped creator to retry their own failed completion work', async () => {
+    rbacMocks.hasPermission.mockImplementation(
+      async (_userId: string, _resource: string, permission: string) => permission === 'update'
+    );
+    const now = new Date('2026-08-11T00:00:00.000Z');
+    prismaMocks.findFirstEnvelope
+      .mockResolvedValueOnce({
+        id: 'envelope-1',
+        status: 'COMPLETED',
+        title: 'NDA',
+        companyId: 'company-1',
+        createdById: 'user-1',
+        pdfGenerationStatus: 'FAILED',
+        autoFilingStatus: 'FAILED_RETRYABLE',
+      })
+      .mockResolvedValueOnce({
+        id: 'envelope-1',
+        tenantId: 'tenant-1',
+        title: 'NDA',
+        message: null,
+        status: 'COMPLETED',
+        signingOrder: 'PARALLEL',
+        expiresAt: null,
+        reminderFrequencyDays: null,
+        reminderStartDays: null,
+        expiryWarningDays: null,
+        companyId: 'company-1',
+        company: { id: 'company-1', name: 'Acme' },
+        certificateId: 'certificate-1',
+        completedAt: now,
+        createdAt: now,
+        updatedAt: now,
+        voidedAt: null,
+        voidReason: null,
+        pdfGenerationStatus: 'PENDING',
+        pdfGenerationError: null,
+        autoFilingStatus: 'PENDING',
+        createdById: 'user-1',
+        createdBy: { id: 'user-1', firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+        documents: [],
+        recipients: [],
+        fieldDefinitions: [],
+        events: [],
+        emailDeliveries: [],
+      });
+
+    await retryEsigningEnvelopeCompletionProcessing(
+      {
+        id: 'user-1',
+        tenantId: 'tenant-1',
+        isSuperAdmin: false,
+        isWorkspaceAdmin: false,
+      } as never,
+      'tenant-1',
+      'envelope-1'
+    );
+
+    expect(prismaMocks.envelopeUpdateMany).toHaveBeenCalled();
+  });
+
+  it('forbids a non-creator without broader object access from retrying', async () => {
+    rbacMocks.hasPermission.mockImplementation(
+      async (_userId: string, _resource: string, permission: string) => permission === 'read'
+    );
+    prismaMocks.findFirstEnvelope.mockResolvedValue({
+      id: 'envelope-1',
+      status: 'COMPLETED',
+      title: 'NDA',
+      companyId: 'company-1',
+      createdById: 'user-1',
+      pdfGenerationStatus: 'FAILED',
+      autoFilingStatus: 'FAILED_RETRYABLE',
+    });
+
+    await expect(
+      retryEsigningEnvelopeCompletionProcessing(
+        {
+          id: 'user-2',
+          tenantId: 'tenant-1',
+          isSuperAdmin: false,
+          isWorkspaceAdmin: false,
+        } as never,
+        'tenant-1',
+        'envelope-1'
+      )
+    ).rejects.toThrow('Forbidden');
+
+    expect(prismaMocks.envelopeUpdateMany).not.toHaveBeenCalled();
+    expect(prismaMocks.transaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('e-signing field-value save consent enforcement', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionMocks.getEsigningSessionClaims.mockResolvedValue({
+      recipientId: 'recipient-1',
+      envelopeId: 'envelope-1',
+      sessionVersion: 1,
+      sessionId: null,
+    });
+    fieldServiceMocks.saveRecipientFieldValues.mockResolvedValue(undefined);
+  });
+
+  function makeContextEnvelope(consentedAt: Date | null) {
+    return {
+      id: 'envelope-1',
+      tenantId: 'tenant-1',
+      tenant: { id: 'tenant-1', name: 'Acme Pte Ltd' },
+      company: null,
+      title: 'NDA',
+      message: null,
+      status: 'IN_PROGRESS',
+      pdfGenerationStatus: null,
+      certificateId: 'certificate-1',
+      createdById: 'user-1',
+      createdBy: { firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+      completedAt: null,
+      expiresAt: null,
+      autoFilingStatus: 'NOT_REQUIRED',
+      consentVersion: '1.0',
+      documents: [],
+      recipients: [
+        {
+          id: 'recipient-1',
+          name: 'Signer',
+          email: 'signer@example.com',
+          type: 'SIGNER',
+          status: 'VIEWED',
+          sessionVersion: 1,
+          accessMode: 'EMAIL_LINK',
+          consentedAt,
+          viewedAt: new Date('2026-08-11T08:00:00.000Z'),
+          signedAt: null,
+          colorTag: '#06b6d4',
+        },
+      ],
+      fieldDefinitions: [],
+    };
+  }
+
+  it('rejects every field save before stored consent exists', async () => {
+    prismaMocks.findFirstEnvelope.mockResolvedValue(makeContextEnvelope(null));
+    prismaMocks.fieldValueFindMany.mockResolvedValue([]);
+
+    await expect(
+      saveEsigningSigningFieldValues([{ fieldDefinitionId: 'field-1', value: 'value' }])
+    ).rejects.toThrow('Consent is required before saving signing fields');
+
+    expect(fieldServiceMocks.saveRecipientFieldValues).not.toHaveBeenCalled();
+    expect(prismaMocks.envelopeUpdateMany).not.toHaveBeenCalled();
+    expect(prismaMocks.deliveryUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it('persists field values normally once the recipient has consented', async () => {
+    const consentedAt = new Date('2026-08-11T08:00:00.000Z');
+    prismaMocks.findFirstEnvelope
+      .mockResolvedValueOnce(makeContextEnvelope(consentedAt))
+      .mockResolvedValueOnce(makeContextEnvelope(consentedAt));
+    prismaMocks.fieldValueFindMany.mockResolvedValue([]);
+
+    await expect(
+      saveEsigningSigningFieldValues([{ fieldDefinitionId: 'field-1', value: 'value' }])
+    ).resolves.toMatchObject({
+      envelope: { id: 'envelope-1', status: 'IN_PROGRESS' },
+      recipient: { id: 'recipient-1', consentedAt: '2026-08-11T08:00:00.000Z' },
+    });
+
+    expect(fieldServiceMocks.saveRecipientFieldValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        envelopeId: 'envelope-1',
+        recipientId: 'recipient-1',
+        values: [{ fieldDefinitionId: 'field-1', value: 'value' }],
       })
     );
   });

@@ -11,6 +11,7 @@
     "test:run": "vitest run",
     "test:a4:smoke": "node scripts/run-a4-editor-smoke.mjs",
     "test:stage3:postgres": "vitest run __tests__/integration/service-agreement-activation.postgres.test.ts",
+    "test:esigning:postgres": "vitest run __tests__/integration/esigning-completion-worker.postgres.test.ts",
     "test:client-services:postgres": "vitest run __tests__/integration/client-service-manual-creation.postgres.test.ts",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage",

@@ -9,6 +9,10 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
 }));
 
+const rbacMocks = vi.hoisted(() => ({
+  hasPermission: vi.fn(),
+}));
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     esigningEnvelope: {
@@ -21,6 +25,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     $transaction: mocks.transaction,
   },
+}));
+
+vi.mock('@/lib/rbac', () => ({
+  hasPermission: rbacMocks.hasPermission,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -158,5 +166,203 @@ describe('e-signing envelope list company filtering', () => {
         }),
       })
     );
+  });
+
+  it('serializes the real ledger snapshot for delivery health and completion status', async () => {
+    mocks.findMany.mockResolvedValue([
+      {
+        id: 'envelope-1',
+        tenantId: 'tenant-1',
+        title: 'NDA',
+        message: null,
+        status: 'COMPLETED',
+        signingOrder: 'PARALLEL',
+        expiresAt: null,
+        reminderFrequencyDays: null,
+        reminderStartDays: null,
+        expiryWarningDays: null,
+        companyId: null,
+        company: null,
+        certificateId: 'certificate-1',
+        completedAt: new Date('2026-08-01T00:00:00.000Z'),
+        createdAt: new Date('2026-08-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+        voidedAt: null,
+        voidReason: null,
+        pdfGenerationStatus: 'COMPLETED',
+        pdfGenerationError: null,
+        autoFilingStatus: 'COMPLETED',
+        createdById: 'user-1',
+        createdBy: { id: 'user-1', firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+        documents: [],
+        recipients: [],
+        emailDeliveries: [
+          {
+            kind: 'REQUEST',
+            targetKey: 'recipient:recipient-1',
+            toEmail: 'signer@example.com',
+            subject: 'Signature requested',
+            status: 'FAILED_RETRYABLE',
+            lastError: 'SMTP rejected recipient',
+            lastAttemptedAt: new Date('2026-08-01T01:00:00.000Z'),
+          },
+        ],
+        metadata: null,
+      },
+    ]);
+
+    const result = await listEsigningEnvelopes(session, 'tenant-1', {
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    expect(result.envelopes[0].emailDelivery).toMatchObject({
+      status: 'failed',
+      failures: [
+        expect.objectContaining({
+          kind: 'request',
+          to: 'signer@example.com',
+          error: 'SMTP rejected recipient',
+        }),
+      ],
+    });
+    expect(result.envelopes[0].postCompletion).toMatchObject({
+      completionDeliveryStatus: 'NOT_TRACKED',
+      failedCompletionDeliveryCount: 0,
+    });
+    expect(result.envelopes[0].canRetryCompletionProcessing).toBe(false);
+  });
+
+  it('derives completed copy delivery from COMPLETION rows only', async () => {
+    mocks.findMany.mockResolvedValue([
+      {
+        id: 'envelope-1',
+        tenantId: 'tenant-1',
+        title: 'NDA',
+        message: null,
+        status: 'COMPLETED',
+        signingOrder: 'PARALLEL',
+        expiresAt: null,
+        reminderFrequencyDays: null,
+        reminderStartDays: null,
+        expiryWarningDays: null,
+        companyId: null,
+        company: null,
+        certificateId: 'certificate-1',
+        completedAt: new Date('2026-08-01T00:00:00.000Z'),
+        createdAt: new Date('2026-08-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+        voidedAt: null,
+        voidReason: null,
+        pdfGenerationStatus: 'COMPLETED',
+        pdfGenerationError: null,
+        autoFilingStatus: 'COMPLETED',
+        createdById: 'user-1',
+        createdBy: { id: 'user-1', firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+        documents: [],
+        recipients: [],
+        emailDeliveries: [
+          {
+            kind: 'REQUEST',
+            targetKey: 'recipient:recipient-1',
+            toEmail: 'signer@example.com',
+            subject: 'Signature requested',
+            status: 'SUCCEEDED',
+            lastError: null,
+            lastAttemptedAt: new Date('2026-08-01T01:00:00.000Z'),
+          },
+          {
+            kind: 'COMPLETION',
+            targetKey: 'recipient:recipient-1',
+            toEmail: 'signer@example.com',
+            subject: 'Completed: NDA',
+            status: 'SUCCEEDED',
+            lastError: null,
+            lastAttemptedAt: new Date('2026-08-01T02:00:00.000Z'),
+          },
+        ],
+        metadata: null,
+      },
+    ]);
+
+    const result = await listEsigningEnvelopes(session, 'tenant-1', {
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    expect(result.envelopes[0].emailDelivery.status).toBe('ok');
+    expect(result.envelopes[0].postCompletion).toMatchObject({
+      completionDeliveryStatus: 'COMPLETED',
+      failedCompletionDeliveryCount: 0,
+    });
+  });
+
+  it('matches canRetryCompletionProcessing to update-scope object authorization', async () => {
+    rbacMocks.hasPermission.mockImplementation(
+      async (_userId: string, _resource: string, permission: string) => permission === 'update'
+    );
+    const actor = {
+      id: 'user-1',
+      tenantId: 'tenant-1',
+      isSuperAdmin: false,
+      isWorkspaceAdmin: false,
+    } as never;
+    const failedCompletion = {
+      kind: 'COMPLETION',
+      targetKey: 'recipient:recipient-1',
+      toEmail: 'signer@example.com',
+      subject: 'Completed: NDA',
+      status: 'FAILED_RETRYABLE',
+      lastError: 'SMTP rejected recipient',
+      lastAttemptedAt: new Date('2026-08-01T02:00:00.000Z'),
+    };
+    mocks.findMany.mockResolvedValue([
+      {
+        id: 'envelope-1',
+        tenantId: 'tenant-1',
+        title: 'NDA',
+        message: null,
+        status: 'COMPLETED',
+        signingOrder: 'PARALLEL',
+        expiresAt: null,
+        reminderFrequencyDays: null,
+        reminderStartDays: null,
+        expiryWarningDays: null,
+        companyId: null,
+        company: null,
+        certificateId: 'certificate-1',
+        completedAt: new Date('2026-08-01T00:00:00.000Z'),
+        createdAt: new Date('2026-08-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+        voidedAt: null,
+        voidReason: null,
+        pdfGenerationStatus: 'COMPLETED',
+        pdfGenerationError: null,
+        autoFilingStatus: 'COMPLETED',
+        createdById: 'user-1',
+        createdBy: { id: 'user-1', firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+        documents: [],
+        recipients: [],
+        emailDeliveries: [failedCompletion],
+        metadata: null,
+      },
+    ]);
+
+    const result = await listEsigningEnvelopes(actor, 'tenant-1', {
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    expect(result.envelopes[0].canRetryCompletionProcessing).toBe(true);
+    expect(result.envelopes[0].postCompletion.completionDeliveryStatus).toBe('RETRYING');
   });
 });

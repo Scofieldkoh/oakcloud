@@ -802,6 +802,10 @@ export function EsigningFieldCanvas({
     }
 
     function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented) {
+        return;
+      }
+
       if (shouldIgnoreShortcut(event.target)) {
         return;
       }
@@ -1071,6 +1075,7 @@ export function EsigningFieldCanvas({
               highlights={canEdit ? [] : highlights}
               onPageChange={onPageChange}
               className="h-full w-full"
+              keyboardShortcutScope="focused"
             />
 
             {canEdit && canvasBounds.width > 0 && canvasBounds.height > 0 ? (
@@ -1089,7 +1094,7 @@ export function EsigningFieldCanvas({
                   aria-label={
                     canEdit && placementType
                       ? `Place ${ESIGNING_FIELD_TYPE_LABELS[placementType]} field`
-                      : undefined
+                      : 'Document field canvas. Select a field to use arrow keys.'
                   }
                   onPointerDown={placementType ? handlePlacementPointerDown : undefined}
                   onPointerMove={placementType ? handlePlacementPointerMove : undefined}

@@ -408,6 +408,35 @@ The passing suites cover preparation, upload, overlap detection, list actions, e
 - Did not send the draft, invoke recipient email delivery, or alter existing completed envelopes.
 - Permanently deleted the exact temporary draft and its uploaded investigation document after reproduction.
 
+## Follow-up: implementation review remediation (2026-08-11)
+
+The [implementation review remediation plan](../../superpowers/plans/2026-08-11-esigning-implementation-review-remediation.md)
+reviewed the 16 committed changes in `origin/main..HEAD` (`7359093..93d6cf6`) and found eight
+follow-up findings, ESG-F01 through ESG-F08. All eight are resolved and verified:
+
+| ID | Finding | Resolution |
+|---|---|---|
+| ESG-F01 | Completion deliveries were claimed by the scheduler and then rejected by a second per-row claim | One claim boundary: the scheduler claims eligible rows with a fresh `claimToken`; the processor never claims again and finalizes only while it owns the token. |
+| ESG-F02 | Provider `ok: false` was persisted as `SUCCEEDED` | Delivery outcome now branches on the provider result; `ok: false` and thrown transport errors record a failed attempt, advance retry state, and leave `sentAt` unset. Only `ok: true` writes success. |
+| ESG-F03 | Due times, prerequisites, and lease reclaim were inconsistent | Claim SQL now requires `status = COMPLETED` and `pdfGenerationStatus = COMPLETED`, honors `availableAt`/`autoFilingAvailableAt`, reclaims only expired `leaseExpiresAt`/`autoFilingLeaseExpiresAt` rows, and counts lost/skipped claims truthfully. |
+| ESG-F04 | List/detail health ignored the delivery ledger and completion status used non-completion rows | List and detail now pass the real ledger snapshot; legacy failures are superseded only by a matching `{kind, normalized recipient}` ledger row; post-completion aggregation and retry capability consider `COMPLETION` rows only. |
+| ESG-F05 | Terminal status was committed before the full session reload succeeded | A sticky pending-refresh flag keeps polling active; terminal status and the completion screen commit only after a successful session hydration, and a transient error is shown without clearing drafts. |
+| ESG-F06 | The PDF viewer intercepted left/right keys globally and conflicted with field nudging | The viewer has an explicit `global`/`focused`/`disabled` shortcut scope, both owners honor `defaultPrevented`, the E-Signing canvas uses focused ownership, and the focusable field surface has a stable accessible label. |
+| ESG-F07 | Retry UI/service allowed `esigning:update` but the route required `esigning:manage` | The route now requires `esigning:update` and resolves the tenant through `resolveWorkspaceId`, matching the other mutation routes while the service retains object/tenant authorization. |
+| ESG-F08 | Field saves did not require stored consent | `saveEsigningSigningFieldValues()` rejects every save until `recipient.consentedAt` is stored, before any field-value write or signature asset mutation. |
+
+### Verification record
+
+- Focused unit/service/component regression set: 15 files, 119 tests passed.
+- Browser preparation suite (Chromium): 10 tests passed, with the PDF thumbnail source stubbed and unexpected thumbnail console errors asserted absent.
+- PostgreSQL concurrency suite: 7 tests passed against an isolated disposable database (migrations applied, database dropped afterward), covering single-claim overlap, token-guarded finalization, lease reclaim, future-dated retries, PDF-prerequisite gating, and one auto-file document/audit under overlap.
+- `npx.cmd prisma validate`: passed.
+- Targeted ESLint over every modified TypeScript/TSX file: passed.
+- `npx.cmd tsc --noEmit --pretty false`: only the pre-existing `tmp/verify-renderer.ts` baseline errors remain (Service Agreement renderer verification types); no E-Signing diagnostic was emitted.
+- `git diff --check`: passed.
+
+The original investigation history above is preserved; this section is a dated follow-up and does not rewrite the earlier evidence.
+
 ## Recommended remediation order
 
 1. **Protect signing integrity:** fix ESIGN-01 and ESIGN-06, then add consent/value regression tests.

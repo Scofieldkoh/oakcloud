@@ -60,6 +60,122 @@ describe('e-signing email delivery health', () => {
     ]);
   });
 
+  it('shows a failed ledger delivery even when legacy metadata is empty', () => {
+    const health = getEsigningEmailDeliveryHealth([
+      delivery({ kind: 'REQUEST', status: 'FAILED_RETRYABLE', lastError: 'SMTP rejected recipient' }),
+    ], null);
+
+    expect(health.status).toBe('failed');
+    expect(health.failures).toEqual([
+      expect.objectContaining({
+        kind: 'request',
+        to: 'signer-1@example.com',
+        error: 'SMTP rejected recipient',
+      }),
+    ]);
+    expect(health.lastFailureAt).toBe('2026-06-30T10:00:00.000Z');
+  });
+
+  it('a successful ledger row clears only the matching legacy failure', () => {
+    const legacy = {
+      emailDelivery: {
+        status: 'failed',
+        lastFailureAt: '2026-06-29T09:00:00.000Z',
+        failures: [
+          {
+            kind: 'request',
+            to: 'SIGNER-1@example.com',
+            subject: 'Signature requested',
+            error: 'legacy SMTP failure',
+            attemptedAt: '2026-06-29T09:00:00.000Z',
+          },
+          {
+            kind: 'reminder',
+            to: 'other@example.com',
+            subject: 'Reminder',
+            error: 'legacy reminder failure',
+            attemptedAt: '2026-06-29T09:05:00.000Z',
+          },
+        ],
+      },
+    };
+
+    const health = getEsigningEmailDeliveryHealth([
+      delivery({ kind: 'REQUEST', toEmail: 'signer-1@example.com', status: 'SUCCEEDED' }),
+    ], legacy);
+
+    expect(health.status).toBe('failed');
+    expect(health.failures).toEqual([
+      expect.objectContaining({ kind: 'reminder', to: 'other@example.com' }),
+    ]);
+  });
+
+  it('an unrelated ledger failure does not hide unmatched legacy failures', () => {
+    const legacy = {
+      emailDelivery: {
+        status: 'failed',
+        lastFailureAt: '2026-06-29T09:00:00.000Z',
+        failures: [
+          {
+            kind: 'request',
+            to: 'signer-1@example.com',
+            subject: 'Signature requested',
+            error: 'legacy failure',
+            attemptedAt: '2026-06-29T09:00:00.000Z',
+          },
+        ],
+      },
+    };
+
+    const health = getEsigningEmailDeliveryHealth([
+      delivery({ kind: 'REMINDER', status: 'FAILED_RETRYABLE', lastError: 'ledger failure' }),
+    ], legacy);
+
+    expect(health.status).toBe('failed');
+    expect(health.failures).toHaveLength(2);
+    expect(health.failures).toEqual([
+      expect.objectContaining({ kind: 'reminder' }),
+      expect.objectContaining({ kind: 'request', to: 'signer-1@example.com' }),
+    ]);
+  });
+
+  it('merges failures newest-first, limits to ten, and derives lastFailureAt', () => {
+    const legacyFailures = Array.from({ length: 6 }, (_, index) => ({
+      kind: 'request' as const,
+      to: `legacy-${index}@example.com`,
+      subject: 'Signature requested',
+      error: `legacy ${index}`,
+      attemptedAt: `2026-06-29T09:0${index}:00.000Z`,
+    }));
+    const ledgerFailures = Array.from({ length: 6 }, (_, index) =>
+      delivery({
+        kind: 'REMINDER',
+        toEmail: `ledger-${index}@example.com`,
+        status: 'FAILED_RETRYABLE',
+        lastError: `ledger ${index}`,
+        lastAttemptedAt: `2026-06-30T1${index}:00:00.000Z`,
+      })
+    );
+
+    const health = getEsigningEmailDeliveryHealth(ledgerFailures, {
+      emailDelivery: {
+        status: 'failed',
+        lastFailureAt: '2026-06-29T09:05:00.000Z',
+        failures: legacyFailures,
+      },
+    });
+
+    expect(health.failures).toHaveLength(10);
+    expect(health.failures[0]).toEqual(expect.objectContaining({
+      kind: 'reminder',
+      to: 'ledger-5@example.com',
+      attemptedAt: '2026-06-30T15:00:00.000Z',
+    }));
+    const times = health.failures.map((failure) => new Date(failure.attemptedAt).getTime());
+    expect(times).toEqual([...times].sort((left, right) => right - left));
+    expect(health.lastFailureAt).toBe('2026-06-30T15:00:00.000Z');
+  });
+
   it('clears only the matching request failure after a successful retry', () => {
     const health = getEsigningEmailDeliveryHealth([
       delivery({ kind: 'REQUEST', targetKey: 'recipient:signer-1', status: 'SUCCEEDED' }),

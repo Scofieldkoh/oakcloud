@@ -107,6 +107,13 @@ interface DocumentPageViewerProps {
   focusedHighlightLabel?: string;
   /** Optional retry handler when using a direct pdfUrl prop and loading fails. */
   onRetry?: () => void;
+  /**
+   * Keyboard shortcut ownership policy:
+   * - 'global' (default): page/zoom keys apply anywhere outside editable controls.
+   * - 'focused': page keys apply only while focus is inside the scroll container.
+   * - 'disabled': the viewer never consumes keyboard events.
+   */
+  keyboardShortcutScope?: 'global' | 'focused' | 'disabled';
 }
 
 // =============================================================================
@@ -360,6 +367,7 @@ export function DocumentPageViewer({
   renderHighlightContent,
   focusedHighlightLabel,
   onRetry,
+  keyboardShortcutScope = 'global',
 }: DocumentPageViewerProps) {
   // Stable references
   const stableHighlights = highlights ?? EMPTY_HIGHLIGHTS;
@@ -840,9 +848,17 @@ export function DocumentPageViewer({
   // Up/Down arrows are NOT captured to allow natural scrolling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (keyboardShortcutScope === 'disabled') return;
       if (e.target instanceof HTMLInputElement ||
           e.target instanceof HTMLSelectElement ||
           e.target instanceof HTMLTextAreaElement) return;
+      if (
+        keyboardShortcutScope === 'focused' &&
+        !scrollContainerRef.current?.contains(e.target as Node)
+      ) {
+        return;
+      }
 
       // Left/Right arrows for page navigation
       if (e.key === 'ArrowLeft') {
@@ -881,7 +897,7 @@ export function DocumentPageViewer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut]);
+  }, [handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut, keyboardShortcutScope]);
 
   // Auto-focus scroll container when PDF loads to enable keyboard scrolling
   useEffect(() => {

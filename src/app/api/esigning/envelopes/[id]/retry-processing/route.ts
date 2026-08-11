@@ -12,7 +12,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const session = await requireAuth();
-    await requirePermission(session, 'esigning', 'manage');
+    await requirePermission(session, 'esigning', 'update');
 
     const body = await request.json().catch(() => ({}));
     const tenantId = resolveWorkspaceId(session, body.tenantId);

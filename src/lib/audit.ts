@@ -16,6 +16,7 @@ import { getAuditRequestContext } from './request-context';
 // ============================================================================
 
 export interface AuditLogParams {
+  id?: string;
   tenantId?: string;
   userId?: string;
   companyId?: string;
@@ -88,30 +89,41 @@ export async function createAuditLog(
 
   const db = tx ?? prisma;
 
-  return db.auditLog.create({
-    data: {
-      tenantId: params.tenantId,
-      userId: params.userId,
-      companyId: params.companyId,
-      action: params.action,
-      entityType: params.entityType,
-      entityId: params.entityId,
-      changeSource: params.changeSource || 'MANUAL',
-      changes: params.changes
-        ? (params.changes as Prisma.InputJsonValue)
-        : Prisma.JsonNull,
-      reason: params.reason,
-      summary: params.summary,
-      entityName: params.entityName,
-      metadata: params.metadata
-        ? (params.metadata as Prisma.InputJsonValue)
-        : Prisma.JsonNull,
-      ipAddress: requestContext.ipAddress || params.ipAddress,
-      userAgent: requestContext.userAgent || params.userAgent,
-      requestId: requestContext.requestId || params.requestId,
-      sessionId: params.sessionId,
-    },
-  });
+  const data = {
+    tenantId: params.tenantId,
+    userId: params.userId,
+    companyId: params.companyId,
+    action: params.action,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    changeSource: params.changeSource || 'MANUAL',
+    changes: params.changes
+      ? (params.changes as Prisma.InputJsonValue)
+      : Prisma.JsonNull,
+    reason: params.reason,
+    summary: params.summary,
+    entityName: params.entityName,
+    metadata: params.metadata
+      ? (params.metadata as Prisma.InputJsonValue)
+      : Prisma.JsonNull,
+    ipAddress: requestContext.ipAddress || params.ipAddress,
+    userAgent: requestContext.userAgent || params.userAgent,
+    requestId: requestContext.requestId || params.requestId,
+    sessionId: params.sessionId,
+  };
+
+  if (params.id) {
+    return db.auditLog.upsert({
+      where: { id: params.id },
+      create: {
+        ...data,
+        id: params.id,
+      },
+      update: data,
+    });
+  }
+
+  return db.auditLog.create({ data });
 }
 
 /**

@@ -136,6 +136,28 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
   DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5],
 }));
 
+const pdfjsMocks = vi.hoisted(() => ({
+  getDocument: vi.fn(),
+}));
+
+vi.mock('pdfjs-dist', () => ({
+  GlobalWorkerOptions: {},
+  getDocument: pdfjsMocks.getDocument,
+}));
+
+function makeFakePdf() {
+  const page = {
+    getViewport: () => ({ width: 800, height: 1000 }),
+    render: () => ({ promise: Promise.resolve(), cancel: vi.fn() }),
+    getTextContent: async () => ({ items: [] }),
+  };
+  return {
+    numPages: 1,
+    getPage: vi.fn(async () => page),
+    destroy: vi.fn(),
+  };
+}
+
 async function waitUntil(check: () => boolean, timeout = 4000) {
   const started = Date.now();
   while (!check()) {
@@ -452,6 +474,8 @@ describe('E-signing preparation browser matrix', () => {
   let host: HTMLDivElement;
   let root: Root;
   let queryClient: QueryClient;
+  let consoleErrors: string[];
+  const originalConsoleError = console.error;
   const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const previousActEnvironment = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
 
@@ -472,12 +496,45 @@ describe('E-signing preparation browser matrix', () => {
     });
     hookMocks.envelope = makeLongEnvelope();
     await page.viewport(390, 844);
+
+    consoleErrors = [];
+    console.error = (...args: unknown[]) => {
+      consoleErrors.push(args.map(String).join(' '));
+      originalConsoleError(...args);
+    };
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith('.pdf')) {
+          return new Response(new Uint8Array([37, 80, 68, 70]).buffer, {
+            status: 200,
+            headers: { 'Content-Type': 'application/pdf' },
+          });
+        }
+        return originalFetch(input);
+      })
+    );
+    pdfjsMocks.getDocument.mockReturnValue({
+      promise: Promise.resolve(makeFakePdf()),
+      destroy: vi.fn(),
+    });
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
     queryClient.clear();
     host.remove();
+    console.error = originalConsoleError;
+    vi.unstubAllGlobals();
+    const thumbnailErrors = consoleErrors.filter(
+      (message) =>
+        message.includes('e-signing thumbnail') ||
+        message.includes('thumbnail source') ||
+        message.includes('Failed to fetch PDF')
+    );
+    expect(thumbnailErrors).toEqual([]);
   });
 
   async function renderWizard() {
@@ -631,14 +688,15 @@ describe('E-signing preparation browser matrix', () => {
     await renderFields();
     document.body.focus();
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowDown',
-      bubbles: true,
-      cancelable: true,
-    });
-    document.body.dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(false);
+    for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) {
+      const event = new KeyboardEvent('keydown', {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      document.body.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    }
   });
 
 });

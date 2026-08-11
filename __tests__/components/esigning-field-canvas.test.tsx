@@ -10,8 +10,12 @@ import {
 import type { EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 
 vi.mock('@/components/processing/document-page-viewer', () => ({
-  DocumentPageViewer: () => (
-    <div data-document-scroll-container="true" style={{ width: 800, height: 1000 }}>
+  DocumentPageViewer: (props: { keyboardShortcutScope?: string }) => (
+    <div
+      data-document-scroll-container="true"
+      data-keyboard-scope={props.keyboardShortcutScope ?? 'global'}
+      style={{ width: 800, height: 1000 }}
+    >
       <canvas
         data-main-pdf-canvas="true"
         tabIndex={0}
@@ -252,6 +256,72 @@ describe('EsigningFieldCanvas keyboard ownership', () => {
     expect(screen.getByTestId('harness-selection').getAttribute('data-selection')).toBe('');
     const fieldsJson = screen.getByTestId('harness-fields').getAttribute('data-fields') ?? '';
     expect(JSON.parse(fieldsJson)).toHaveLength(1);
+  });
+
+  it('ignores an arrow event already claimed by the PDF viewer', () => {
+    render(
+      <CanvasHarness
+        initialFields={[makeField()]}
+        initialPage={1}
+        initialSelection="field-a"
+      />
+    );
+
+    act(() => canvasElement().focus());
+    const claimedEvent = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      bubbles: true,
+      cancelable: true,
+    });
+    claimedEvent.preventDefault();
+    act(() => document.body.dispatchEvent(claimedEvent));
+    expect(claimedEvent.defaultPrevented).toBe(true);
+
+    const fieldsJson = screen.getByTestId('harness-fields').getAttribute('data-fields') ?? '';
+    const fieldEntry = JSON.parse(fieldsJson).find(
+      (entry: [string, number, number]) => entry[0] === 'field-a'
+    ) as [string, number, number];
+    expect(fieldEntry[2]).toBeCloseTo(0.5, 6);
+  });
+
+  it('configures the viewer with focused shortcut ownership', () => {
+    render(<CanvasHarness initialFields={[makeField()]} />);
+
+    expect(
+      document
+        .querySelector('[data-document-scroll-container="true"]')
+        ?.getAttribute('data-keyboard-scope')
+    ).toBe('focused');
+  });
+
+  it('gives the focusable canvas surface a stable accessible label outside placement mode', async () => {
+    render(<CanvasHarness initialFields={[makeField()]} />);
+
+    const canvas = canvasElement();
+    const container = canvas.closest('.relative.flex-1.overflow-hidden');
+    if (!container) throw new Error('Canvas container missing');
+    const rect = {
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 1000,
+      right: 800,
+      bottom: 1000,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+    vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(rect as DOMRect);
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue(rect as DOMRect);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    });
+
+    const surface = document.querySelector(
+      '[aria-label="Document field canvas. Select a field to use arrow keys."]'
+    );
+    expect(surface).not.toBeNull();
+    expect(surface?.getAttribute('tabindex')).toBe('0');
   });
 
   it('reconciles selection when the page or document changes and does not resurrect it', () => {

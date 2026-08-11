@@ -49,6 +49,7 @@ export type EsigningEmailDeliveryMinAggregateOutputType = {
   availableAt: Date | null
   claimedAt: Date | null
   leaseExpiresAt: Date | null
+  claimToken: string | null
   lastAttemptedAt: Date | null
   sentAt: Date | null
   lastError: string | null
@@ -71,6 +72,7 @@ export type EsigningEmailDeliveryMaxAggregateOutputType = {
   availableAt: Date | null
   claimedAt: Date | null
   leaseExpiresAt: Date | null
+  claimToken: string | null
   lastAttemptedAt: Date | null
   sentAt: Date | null
   lastError: string | null
@@ -93,6 +95,7 @@ export type EsigningEmailDeliveryCountAggregateOutputType = {
   availableAt: number
   claimedAt: number
   leaseExpiresAt: number
+  claimToken: number
   lastAttemptedAt: number
   sentAt: number
   lastError: number
@@ -125,6 +128,7 @@ export type EsigningEmailDeliveryMinAggregateInputType = {
   availableAt?: true
   claimedAt?: true
   leaseExpiresAt?: true
+  claimToken?: true
   lastAttemptedAt?: true
   sentAt?: true
   lastError?: true
@@ -147,6 +151,7 @@ export type EsigningEmailDeliveryMaxAggregateInputType = {
   availableAt?: true
   claimedAt?: true
   leaseExpiresAt?: true
+  claimToken?: true
   lastAttemptedAt?: true
   sentAt?: true
   lastError?: true
@@ -169,6 +174,7 @@ export type EsigningEmailDeliveryCountAggregateInputType = {
   availableAt?: true
   claimedAt?: true
   leaseExpiresAt?: true
+  claimToken?: true
   lastAttemptedAt?: true
   sentAt?: true
   lastError?: true
@@ -278,6 +284,7 @@ export type EsigningEmailDeliveryGroupByOutputType = {
   availableAt: Date
   claimedAt: Date | null
   leaseExpiresAt: Date | null
+  claimToken: string | null
   lastAttemptedAt: Date | null
   sentAt: Date | null
   lastError: string | null
@@ -323,6 +330,7 @@ export type EsigningEmailDeliveryWhereInput = {
   availableAt?: Prisma.DateTimeFilter<"EsigningEmailDelivery"> | Date | string
   claimedAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   leaseExpiresAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
+  claimToken?: Prisma.StringNullableFilter<"EsigningEmailDelivery"> | string | null
   lastAttemptedAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   lastError?: Prisma.StringNullableFilter<"EsigningEmailDelivery"> | string | null
@@ -349,6 +357,7 @@ export type EsigningEmailDeliveryOrderByWithRelationInput = {
   availableAt?: Prisma.SortOrder
   claimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   leaseExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  claimToken?: Prisma.SortOrderInput | Prisma.SortOrder
   lastAttemptedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sentAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -379,6 +388,7 @@ export type EsigningEmailDeliveryWhereUniqueInput = Prisma.AtLeast<{
   availableAt?: Prisma.DateTimeFilter<"EsigningEmailDelivery"> | Date | string
   claimedAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   leaseExpiresAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
+  claimToken?: Prisma.StringNullableFilter<"EsigningEmailDelivery"> | string | null
   lastAttemptedAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   lastError?: Prisma.StringNullableFilter<"EsigningEmailDelivery"> | string | null
@@ -405,6 +415,7 @@ export type EsigningEmailDeliveryOrderByWithAggregationInput = {
   availableAt?: Prisma.SortOrder
   claimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   leaseExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  claimToken?: Prisma.SortOrderInput | Prisma.SortOrder
   lastAttemptedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sentAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -435,6 +446,7 @@ export type EsigningEmailDeliveryScalarWhereWithAggregatesInput = {
   availableAt?: Prisma.DateTimeWithAggregatesFilter<"EsigningEmailDelivery"> | Date | string
   claimedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEmailDelivery"> | Date | string | null
   leaseExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEmailDelivery"> | Date | string | null
+  claimToken?: Prisma.StringNullableWithAggregatesFilter<"EsigningEmailDelivery"> | string | null
   lastAttemptedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEmailDelivery"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEmailDelivery"> | Date | string | null
   lastError?: Prisma.StringNullableWithAggregatesFilter<"EsigningEmailDelivery"> | string | null
@@ -454,6 +466,7 @@ export type EsigningEmailDeliveryCreateInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -480,6 +493,7 @@ export type EsigningEmailDeliveryUncheckedCreateInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -500,6 +514,7 @@ export type EsigningEmailDeliveryUpdateInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -526,6 +541,7 @@ export type EsigningEmailDeliveryUncheckedUpdateInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -549,6 +565,7 @@ export type EsigningEmailDeliveryCreateManyInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -568,6 +585,7 @@ export type EsigningEmailDeliveryUpdateManyMutationInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -590,6 +608,7 @@ export type EsigningEmailDeliveryUncheckedUpdateManyInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -628,6 +647,7 @@ export type EsigningEmailDeliveryCountOrderByAggregateInput = {
   availableAt?: Prisma.SortOrder
   claimedAt?: Prisma.SortOrder
   leaseExpiresAt?: Prisma.SortOrder
+  claimToken?: Prisma.SortOrder
   lastAttemptedAt?: Prisma.SortOrder
   sentAt?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
@@ -654,6 +674,7 @@ export type EsigningEmailDeliveryMaxOrderByAggregateInput = {
   availableAt?: Prisma.SortOrder
   claimedAt?: Prisma.SortOrder
   leaseExpiresAt?: Prisma.SortOrder
+  claimToken?: Prisma.SortOrder
   lastAttemptedAt?: Prisma.SortOrder
   sentAt?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
@@ -676,6 +697,7 @@ export type EsigningEmailDeliveryMinOrderByAggregateInput = {
   availableAt?: Prisma.SortOrder
   claimedAt?: Prisma.SortOrder
   leaseExpiresAt?: Prisma.SortOrder
+  claimToken?: Prisma.SortOrder
   lastAttemptedAt?: Prisma.SortOrder
   sentAt?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
@@ -856,6 +878,7 @@ export type EsigningEmailDeliveryCreateWithoutTenantInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -880,6 +903,7 @@ export type EsigningEmailDeliveryUncheckedCreateWithoutTenantInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -932,6 +956,7 @@ export type EsigningEmailDeliveryScalarWhereInput = {
   availableAt?: Prisma.DateTimeFilter<"EsigningEmailDelivery"> | Date | string
   claimedAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   leaseExpiresAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
+  claimToken?: Prisma.StringNullableFilter<"EsigningEmailDelivery"> | string | null
   lastAttemptedAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableFilter<"EsigningEmailDelivery"> | Date | string | null
   lastError?: Prisma.StringNullableFilter<"EsigningEmailDelivery"> | string | null
@@ -951,6 +976,7 @@ export type EsigningEmailDeliveryCreateWithoutEnvelopeInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -975,6 +1001,7 @@ export type EsigningEmailDeliveryUncheckedCreateWithoutEnvelopeInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1021,6 +1048,7 @@ export type EsigningEmailDeliveryCreateWithoutRecipientInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1045,6 +1073,7 @@ export type EsigningEmailDeliveryUncheckedCreateWithoutRecipientInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1091,6 +1120,7 @@ export type EsigningEmailDeliveryCreateWithoutDeliveryAttemptsInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1116,6 +1146,7 @@ export type EsigningEmailDeliveryUncheckedCreateWithoutDeliveryAttemptsInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1151,6 +1182,7 @@ export type EsigningEmailDeliveryUpdateWithoutDeliveryAttemptsInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1176,6 +1208,7 @@ export type EsigningEmailDeliveryUncheckedUpdateWithoutDeliveryAttemptsInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1197,6 +1230,7 @@ export type EsigningEmailDeliveryCreateManyTenantInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1216,6 +1250,7 @@ export type EsigningEmailDeliveryUpdateWithoutTenantInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1240,6 +1275,7 @@ export type EsigningEmailDeliveryUncheckedUpdateWithoutTenantInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1262,6 +1298,7 @@ export type EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1283,6 +1320,7 @@ export type EsigningEmailDeliveryCreateManyEnvelopeInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1302,6 +1340,7 @@ export type EsigningEmailDeliveryUpdateWithoutEnvelopeInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1326,6 +1365,7 @@ export type EsigningEmailDeliveryUncheckedUpdateWithoutEnvelopeInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1348,6 +1388,7 @@ export type EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1369,6 +1410,7 @@ export type EsigningEmailDeliveryCreateManyRecipientInput = {
   availableAt?: Date | string
   claimedAt?: Date | string | null
   leaseExpiresAt?: Date | string | null
+  claimToken?: string | null
   lastAttemptedAt?: Date | string | null
   sentAt?: Date | string | null
   lastError?: string | null
@@ -1388,6 +1430,7 @@ export type EsigningEmailDeliveryUpdateWithoutRecipientInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1412,6 +1455,7 @@ export type EsigningEmailDeliveryUncheckedUpdateWithoutRecipientInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1434,6 +1478,7 @@ export type EsigningEmailDeliveryUncheckedUpdateManyWithoutRecipientInput = {
   availableAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAttemptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1487,6 +1532,7 @@ export type EsigningEmailDeliverySelect<ExtArgs extends runtime.Types.Extensions
   availableAt?: boolean
   claimedAt?: boolean
   leaseExpiresAt?: boolean
+  claimToken?: boolean
   lastAttemptedAt?: boolean
   sentAt?: boolean
   lastError?: boolean
@@ -1514,6 +1560,7 @@ export type EsigningEmailDeliverySelectCreateManyAndReturn<ExtArgs extends runti
   availableAt?: boolean
   claimedAt?: boolean
   leaseExpiresAt?: boolean
+  claimToken?: boolean
   lastAttemptedAt?: boolean
   sentAt?: boolean
   lastError?: boolean
@@ -1539,6 +1586,7 @@ export type EsigningEmailDeliverySelectUpdateManyAndReturn<ExtArgs extends runti
   availableAt?: boolean
   claimedAt?: boolean
   leaseExpiresAt?: boolean
+  claimToken?: boolean
   lastAttemptedAt?: boolean
   sentAt?: boolean
   lastError?: boolean
@@ -1564,6 +1612,7 @@ export type EsigningEmailDeliverySelectScalar = {
   availableAt?: boolean
   claimedAt?: boolean
   leaseExpiresAt?: boolean
+  claimToken?: boolean
   lastAttemptedAt?: boolean
   sentAt?: boolean
   lastError?: boolean
@@ -1571,7 +1620,7 @@ export type EsigningEmailDeliverySelectScalar = {
   updatedAt?: boolean
 }
 
-export type EsigningEmailDeliveryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "envelopeId" | "recipientId" | "audience" | "kind" | "targetKey" | "toEmail" | "subject" | "status" | "attemptCount" | "availableAt" | "claimedAt" | "leaseExpiresAt" | "lastAttemptedAt" | "sentAt" | "lastError" | "createdAt" | "updatedAt", ExtArgs["result"]["esigningEmailDelivery"]>
+export type EsigningEmailDeliveryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "envelopeId" | "recipientId" | "audience" | "kind" | "targetKey" | "toEmail" | "subject" | "status" | "attemptCount" | "availableAt" | "claimedAt" | "leaseExpiresAt" | "claimToken" | "lastAttemptedAt" | "sentAt" | "lastError" | "createdAt" | "updatedAt", ExtArgs["result"]["esigningEmailDelivery"]>
 export type EsigningEmailDeliveryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   envelope?: boolean | Prisma.EsigningEnvelopeDefaultArgs<ExtArgs>
@@ -1613,6 +1662,7 @@ export type $EsigningEmailDeliveryPayload<ExtArgs extends runtime.Types.Extensio
     availableAt: Date
     claimedAt: Date | null
     leaseExpiresAt: Date | null
+    claimToken: string | null
     lastAttemptedAt: Date | null
     sentAt: Date | null
     lastError: string | null
@@ -2059,6 +2109,7 @@ export interface EsigningEmailDeliveryFieldRefs {
   readonly availableAt: Prisma.FieldRef<"EsigningEmailDelivery", 'DateTime'>
   readonly claimedAt: Prisma.FieldRef<"EsigningEmailDelivery", 'DateTime'>
   readonly leaseExpiresAt: Prisma.FieldRef<"EsigningEmailDelivery", 'DateTime'>
+  readonly claimToken: Prisma.FieldRef<"EsigningEmailDelivery", 'String'>
   readonly lastAttemptedAt: Prisma.FieldRef<"EsigningEmailDelivery", 'DateTime'>
   readonly sentAt: Prisma.FieldRef<"EsigningEmailDelivery", 'DateTime'>
   readonly lastError: Prisma.FieldRef<"EsigningEmailDelivery", 'String'>

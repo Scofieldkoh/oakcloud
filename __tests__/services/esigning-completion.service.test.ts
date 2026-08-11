@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  getEsigningPostCompletionSummary,
   processEsigningAutoFileJob,
   processEsigningCompletionDelivery,
   processQueuedEsigningCompletionWork,
@@ -10,13 +11,16 @@ const mocks = vi.hoisted(() => ({
   findManyEnvelope: vi.fn(),
   updateManyEnvelope: vi.fn(),
   findUniqueEnvelope: vi.fn(),
+  findFirstEnvelope: vi.fn(),
   updateEnvelope: vi.fn(),
   updateManyDelivery: vi.fn(),
   findUniqueDelivery: vi.fn(),
+  findFirstDelivery: vi.fn(),
   updateDelivery: vi.fn(),
   createDelivery: vi.fn(),
   createDeliveryAttempt: vi.fn(),
   documentUpsert: vi.fn(),
+  auditLogUpsert: vi.fn(),
   transaction: vi.fn(),
   queryRaw: vi.fn(),
   download: vi.fn(),
@@ -35,11 +39,13 @@ vi.mock('@/lib/prisma', () => ({
       findMany: mocks.findManyEnvelope,
       updateMany: mocks.updateManyEnvelope,
       findUnique: mocks.findUniqueEnvelope,
+      findFirst: mocks.findFirstEnvelope,
       update: mocks.updateEnvelope,
     },
     esigningEmailDelivery: {
       updateMany: mocks.updateManyDelivery,
       findUnique: mocks.findUniqueDelivery,
+      findFirst: mocks.findFirstDelivery,
       update: mocks.updateDelivery,
       create: mocks.createDelivery,
     },
@@ -48,6 +54,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     document: {
       upsert: mocks.documentUpsert,
+    },
+    auditLog: {
+      upsert: mocks.auditLogUpsert,
     },
     $transaction: mocks.transaction,
   },
@@ -122,6 +131,7 @@ function makeDelivery(overrides: Record<string, unknown> = {}) {
     targetKey: 'recipient:recipient-1',
     toEmail: 'signer@example.com',
     subject: 'Completed: NDA',
+    attemptCount: 0,
     envelope: {
       id: 'envelope-1',
       tenantId: 'tenant-1',
@@ -142,6 +152,29 @@ function makeDelivery(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function transactionClient() {
+  return {
+    $queryRaw: mocks.queryRaw,
+    esigningEnvelope: {
+      updateMany: mocks.updateManyEnvelope,
+      findFirst: mocks.findFirstEnvelope,
+    },
+    esigningEmailDelivery: {
+      updateMany: mocks.updateManyDelivery,
+      findFirst: mocks.findFirstDelivery,
+    },
+    esigningEmailDeliveryAttempt: {
+      create: mocks.createDeliveryAttempt,
+    },
+    document: {
+      upsert: mocks.documentUpsert,
+    },
+    auditLog: {
+      upsert: mocks.auditLogUpsert,
+    },
+  };
+}
+
 describe('e-signing completion worker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -151,6 +184,7 @@ describe('e-signing completion worker', () => {
     mocks.updateDelivery.mockResolvedValue({});
     mocks.createDeliveryAttempt.mockResolvedValue({});
     mocks.documentUpsert.mockResolvedValue({});
+    mocks.auditLogUpsert.mockResolvedValue({});
     mocks.upload.mockResolvedValue(undefined);
     mocks.download.mockResolvedValue(Buffer.from('signed-pdf'));
     mocks.exists.mockResolvedValue(true);
@@ -171,31 +205,49 @@ describe('e-signing completion worker', () => {
     }]);
     mocks.buildAttachments.mockReturnValue([]);
     mocks.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
-      return callback({
-        $queryRaw: mocks.queryRaw,
-        esigningEmailDelivery: { update: mocks.updateDelivery },
-      });
+      return callback(transactionClient());
     });
-    mocks.queryRaw.mockResolvedValue([{ id: 'delivery-1' }]);
+    mocks.findFirstEnvelope.mockImplementation(async ({ select }: { select?: Record<string, unknown> }) => {
+      if (select?.documents) {
+        return makeAutoFileEnvelope();
+      }
+      if (select?.autoFilingAttempts) {
+        return { autoFilingAttempts: 4 };
+      }
+      return { id: 'envelope-1' };
+    });
+    mocks.findFirstDelivery.mockImplementation(async ({ select }: { select?: Record<string, unknown> }) => {
+      if (select?.attemptCount) {
+        return { attemptCount: 0, toEmail: 'signer@example.com', subject: 'Completed: NDA' };
+      }
+      return makeDelivery();
+    });
   });
 
-  it('continues downstream work when the artifact is already complete', async () => {
-    mocks.findManyEnvelope
-      .mockResolvedValueOnce([]) // artifact stage
-      .mockResolvedValueOnce([{ id: 'envelope-1' }]); // auto-file stage
-    mocks.findUniqueEnvelope.mockResolvedValue(makeAutoFileEnvelope());
-    mocks.findUniqueDelivery.mockResolvedValue(makeDelivery());
+  it('processes batch-claimed deliveries without a second claim and reports real outcomes', async () => {
+    mocks.findManyEnvelope.mockResolvedValue([]); // artifact stage
+    mocks.queryRaw
+      .mockResolvedValueOnce([{ id: 'envelope-1', tenantId: 'tenant-1' }]) // auto-file claim
+      .mockResolvedValueOnce([{ id: 'delivery-1', tenantId: 'tenant-1', envelopeId: 'envelope-1' }]); // delivery claim
 
     const result = await processQueuedEsigningCompletionWork({ limit: 5, concurrency: 2 });
 
     expect(mocks.generateArtifactsNow).not.toHaveBeenCalled();
     expect(mocks.documentUpsert).toHaveBeenCalledTimes(1);
     expect(mocks.sendCompletion).toHaveBeenCalledTimes(1);
+    expect(mocks.updateManyDelivery).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: 'PENDING' }) })
+    );
     expect(result).toMatchObject({
       autoFiled: 1,
+      autoFileNotRequired: 0,
+      autoFileStale: 0,
       deliveriesSent: 1,
+      deliveryStale: 0,
       artifactsCompleted: 0,
       artifactsFailed: 0,
+      artifactsSkipped: 0,
+      processed: 2,
     });
   });
 
@@ -225,93 +277,170 @@ describe('e-signing completion worker', () => {
     expect(mocks.createDeliveryAttempt).not.toHaveBeenCalled();
   });
 
-  it('reclaims stale auto-file leases and never claims fresh delivery leases', async () => {
-    mocks.findUniqueEnvelope.mockResolvedValue(makeAutoFileEnvelope({ companyId: null }));
+  it('claims only completed envelopes with due times and completed PDF prerequisites', async () => {
+    mocks.findManyEnvelope.mockResolvedValue([]);
+    mocks.queryRaw.mockResolvedValue([]);
 
-    await processEsigningAutoFileJob('envelope-1');
+    await processQueuedEsigningCompletionWork({ limit: 5, concurrency: 1 });
 
-    expect(mocks.updateManyEnvelope).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({
-        OR: expect.arrayContaining([
-          { autoFilingStatus: 'PENDING' },
-          { autoFilingStatus: 'FAILED_RETRYABLE' },
-          expect.objectContaining({ autoFilingStatus: 'PROCESSING' }),
-        ]),
+    const autoFileSql = String(mocks.queryRaw.mock.calls[0][0].strings.join('?'));
+    const deliverySql = String(mocks.queryRaw.mock.calls[1][0].strings.join('?'));
+    expect(autoFileSql).toContain('"autoFilingStatus" IN (\'PENDING\', \'FAILED_RETRYABLE\')');
+    expect(autoFileSql).toContain('"autoFilingAvailableAt" IS NOT NULL');
+    expect(autoFileSql).toContain('"autoFilingAvailableAt" <= ');
+    expect(autoFileSql).toContain('"autoFilingLeaseExpiresAt" IS NOT NULL');
+    expect(autoFileSql).toContain('"autoFilingLeaseExpiresAt" <= ');
+    expect(deliverySql).toContain('e."status" = \'COMPLETED\'');
+    expect(deliverySql).toContain('e."pdfGenerationStatus" = \'COMPLETED\'');
+    expect(deliverySql).toContain('"availableAt" <= ');
+    expect(deliverySql).toContain('"leaseExpiresAt" <= ');
+    expect(deliverySql).toContain('FOR UPDATE SKIP LOCKED');
+  });
+
+  it('reclaims expired leases with a fresh claim token', async () => {
+    mocks.findManyEnvelope.mockResolvedValue([]);
+    mocks.queryRaw
+      .mockResolvedValueOnce([{ id: 'envelope-1', tenantId: 'tenant-1' }])
+      .mockResolvedValueOnce([{ id: 'delivery-1', tenantId: 'tenant-1', envelopeId: 'envelope-1' }]);
+
+    await processQueuedEsigningCompletionWork({ limit: 5, concurrency: 1 });
+
+    const envelopeClaim = mocks.updateManyEnvelope.mock.calls.find(
+      (call) => call[0]?.data?.autoFilingStatus === 'PROCESSING'
+    );
+    expect(envelopeClaim?.[0]).toEqual(expect.objectContaining({
+      data: expect.objectContaining({
+        autoFilingStatus: 'PROCESSING',
+        autoFilingClaimToken: expect.any(String),
       }),
-      data: expect.objectContaining({ autoFilingStatus: 'PROCESSING' }),
     }));
 
-    mocks.updateManyDelivery.mockResolvedValue({ count: 0 });
-    await expect(processEsigningCompletionDelivery('delivery-1')).resolves.toBe('not-claimed');
-    expect(mocks.updateManyDelivery).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({
-        OR: expect.arrayContaining([
-          { status: 'PENDING' },
-          { status: 'FAILED_RETRYABLE' },
-          expect.objectContaining({ status: 'PROCESSING' }),
-        ]),
+    const deliveryClaim = mocks.updateManyDelivery.mock.calls.find(
+      (call) => call[0]?.data?.status === 'PROCESSING' && call[0]?.data?.claimToken
+    );
+    expect(deliveryClaim?.[0]).toEqual(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'PROCESSING',
+        claimToken: expect.any(String),
       }),
     }));
   });
 
-  it('deterministic auto-file reruns do not create a second company document', async () => {
-    mocks.findUniqueEnvelope.mockResolvedValue(makeAutoFileEnvelope());
+  it('does not count not-claimed, already-processing, or stale-worker work as success', async () => {
+    mocks.findManyEnvelope.mockResolvedValue([{ id: 'envelope-1' }]);
+    mocks.generateArtifactsNow.mockResolvedValue('already-processing');
+    mocks.queryRaw.mockResolvedValue([]); // no auto-file or delivery claims
 
-    await processEsigningAutoFileJob('envelope-1');
-    await processEsigningAutoFileJob('envelope-1');
+    const result = await processQueuedEsigningCompletionWork({ limit: 5, concurrency: 1 });
+
+    expect(result).toMatchObject({
+      processed: 0,
+      artifactsCompleted: 0,
+      artifactsFailed: 0,
+      artifactsSkipped: 1,
+      autoFiled: 0,
+      autoFileFailed: 0,
+      autoFileStale: 0,
+      deliveriesSent: 0,
+      deliveryFailed: 0,
+      deliveryStale: 0,
+    });
+  });
+
+  it('counts a stale delivery owner separately from sent and failed work', async () => {
+    mocks.findManyEnvelope.mockResolvedValue([]);
+    mocks.queryRaw
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'delivery-1', tenantId: 'tenant-1', envelopeId: 'envelope-1' }]);
+    mocks.findFirstDelivery.mockResolvedValue(null); // ownership was taken over
+
+    const result = await processQueuedEsigningCompletionWork({ limit: 5, concurrency: 1 });
+
+    expect(result).toMatchObject({
+      processed: 0,
+      deliveriesSent: 0,
+      deliveryFailed: 0,
+      deliveryStale: 1,
+    });
+  });
+
+  it('deterministic auto-file reruns reuse the same document and audit ids', async () => {
+    const claim = { envelopeId: 'envelope-1', tenantId: 'tenant-1', claimToken: 'token-1' };
+
+    await processEsigningAutoFileJob(claim);
+    await processEsigningAutoFileJob(claim);
 
     expect(mocks.documentUpsert).toHaveBeenCalledTimes(2);
     const firstCall = mocks.documentUpsert.mock.calls[0][0] as { where: { id: string }; create: { id: string } };
     const secondCall = mocks.documentUpsert.mock.calls[1][0] as { where: { id: string }; create: { id: string } };
     expect(secondCall.where.id).toBe(firstCall.where.id);
     expect(secondCall.create.id).toBe(firstCall.create.id);
+    expect(mocks.createAuditLog).toHaveBeenCalledTimes(2);
+    const firstAuditId = (mocks.createAuditLog.mock.calls[0][0] as { id: string }).id;
+    const secondAuditId = (mocks.createAuditLog.mock.calls[1][0] as { id: string }).id;
+    expect(secondAuditId).toBe(firstAuditId);
   });
 
-  it('moves auto-filing to FAILED_PERMANENT after attempt exhaustion', async () => {
-    mocks.findUniqueEnvelope
-      .mockResolvedValueOnce(makeAutoFileEnvelope())
-      .mockResolvedValueOnce({ autoFilingAttempts: 4 });
+  it('moves auto-filing to FAILED_PERMANENT after attempt exhaustion without throwing', async () => {
     mocks.download.mockRejectedValue(new Error('storage unavailable'));
 
-    await expect(processEsigningAutoFileJob('envelope-1')).rejects.toThrow('storage unavailable');
+    const outcome = await processEsigningAutoFileJob({
+      envelopeId: 'envelope-1',
+      tenantId: 'tenant-1',
+      claimToken: 'token-1',
+    });
 
-    expect(mocks.updateEnvelope).toHaveBeenCalledWith({
-      where: { id: 'envelope-1' },
+    expect(outcome).toEqual({ status: 'permanent-failure', error: 'storage unavailable' });
+    expect(mocks.updateManyEnvelope).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: 'envelope-1',
+        autoFilingStatus: 'PROCESSING',
+        autoFilingClaimToken: 'token-1',
+      }),
       data: expect.objectContaining({
         autoFilingStatus: 'FAILED_PERMANENT',
         autoFilingAttempts: 5,
         autoFilingAvailableAt: null,
+        autoFilingClaimToken: null,
         autoFilingError: 'storage unavailable',
       }),
     });
   });
 
-  it('moves delivery to FAILED_PERMANENT after attempt exhaustion', async () => {
-    mocks.findUniqueDelivery
-      .mockResolvedValueOnce(makeDelivery({
+  it('moves delivery to FAILED_PERMANENT after attempt exhaustion without throwing', async () => {
+    mocks.findFirstDelivery.mockImplementation(async ({ select }: { select?: Record<string, unknown> }) => {
+      if (select?.attemptCount) {
+        return { attemptCount: 4, toEmail: 'signer@example.com', subject: 'Completed: NDA' };
+      }
+      return makeDelivery({
         envelope: {
           ...makeDelivery().envelope,
-          documents: [
-            { id: 'document-1', fileName: 'nda.pdf', signedStoragePath: null },
-          ],
+          documents: [{ id: 'document-1', fileName: 'nda.pdf', signedStoragePath: null }],
         },
-      }))
-      .mockResolvedValueOnce({
-        attemptCount: 4,
-        toEmail: 'signer@example.com',
-        subject: 'Completed: NDA',
       });
+    });
 
-    await expect(processEsigningCompletionDelivery('delivery-1')).rejects.toThrow(
-      'Signed artifacts are not ready for delivery'
-    );
+    const outcome = await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'token-1',
+    });
 
-    expect(mocks.updateDelivery).toHaveBeenCalledWith({
-      where: { id: 'delivery-1' },
+    expect(outcome).toEqual({
+      status: 'permanent-failure',
+      error: 'Signed artifacts are not ready for delivery',
+    });
+    expect(mocks.updateManyDelivery).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: 'delivery-1',
+        status: 'PROCESSING',
+        claimToken: 'token-1',
+      }),
       data: expect.objectContaining({
         status: 'FAILED_PERMANENT',
         attemptCount: 5,
-        availableAt: expect.any(Date),
+        claimToken: null,
       }),
     });
     expect(mocks.createDeliveryAttempt).toHaveBeenCalledWith(expect.objectContaining({
@@ -320,5 +449,162 @@ describe('e-signing completion worker', () => {
         succeeded: false,
       }),
     }));
+  });
+
+  it('records a provider rejection as a retryable failure instead of success', async () => {
+    mocks.sendCompletion.mockResolvedValue({
+      ok: false,
+      kind: 'completion',
+      to: 'signer@example.com',
+      subject: 'Completed: NDA',
+      attemptedAt: '2026-08-11T00:00:00.000Z',
+      error: 'SMTP rejected recipient',
+    });
+
+    const outcome = await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'token-1',
+    });
+
+    expect(outcome).toEqual({ status: 'retryable-failure', error: 'SMTP rejected recipient' });
+    expect(mocks.updateManyDelivery).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: 'delivery-1', claimToken: 'token-1' }),
+      data: expect.objectContaining({
+        status: 'FAILED_RETRYABLE',
+        attemptCount: 1,
+        lastError: 'SMTP rejected recipient',
+        availableAt: expect.any(Date),
+      }),
+    });
+    const failureData = mocks.updateManyDelivery.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(failureData.data).not.toHaveProperty('sentAt');
+    expect(mocks.createDeliveryAttempt).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        succeeded: false,
+        error: 'SMTP rejected recipient',
+      }),
+    }));
+  });
+
+  it('routes a thrown transport error through the same failure persistence', async () => {
+    mocks.sendCompletion.mockRejectedValue(new Error('transport offline'));
+
+    const outcome = await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'token-1',
+    });
+
+    expect(outcome).toEqual({ status: 'retryable-failure', error: 'transport offline' });
+    expect(mocks.updateManyDelivery).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'FAILED_RETRYABLE',
+        lastError: 'transport offline',
+      }),
+    }));
+    const failureData = mocks.updateManyDelivery.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(failureData.data).not.toHaveProperty('sentAt');
+    expect(mocks.createDeliveryAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes one successful attempt and clears the claim only for provider success', async () => {
+    const outcome = await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'token-1',
+    });
+
+    expect(outcome).toEqual({ status: 'sent' });
+    expect(mocks.updateManyDelivery).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: 'delivery-1',
+        status: 'PROCESSING',
+        claimToken: 'token-1',
+      }),
+      data: expect.objectContaining({
+        status: 'SUCCEEDED',
+        sentAt: expect.any(Date),
+        claimToken: null,
+        leaseExpiresAt: null,
+        lastError: null,
+      }),
+    });
+    expect(mocks.createDeliveryAttempt).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        succeeded: true,
+        providerMessageId: 'graph-1',
+      }),
+    }));
+    expect(mocks.createDeliveryAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns stale-worker when an obsolete token cannot finalize', async () => {
+    mocks.findFirstDelivery.mockResolvedValue(null);
+
+    const outcome = await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'obsolete-token',
+    });
+
+    expect(outcome).toEqual({ status: 'stale-worker' });
+    expect(mocks.createDeliveryAttempt).not.toHaveBeenCalled();
+  });
+});
+
+describe('e-signing post-completion summary scoping', () => {
+  const envelope = {
+    status: 'COMPLETED',
+    pdfGenerationStatus: 'COMPLETED',
+    autoFilingStatus: 'COMPLETED',
+  };
+
+  it('ignores non-completion successes when deriving completion delivery status', () => {
+    const summary = getEsigningPostCompletionSummary(envelope, [
+      { kind: 'REQUEST', status: 'SUCCEEDED' },
+      { kind: 'REMINDER', status: 'SUCCEEDED' },
+    ]);
+
+    expect(summary.completionDeliveryStatus).toBe('NOT_TRACKED');
+    expect(summary.failedCompletionDeliveryCount).toBe(0);
+  });
+
+  it('ignores non-completion failures in post-completion health', () => {
+    const summary = getEsigningPostCompletionSummary(envelope, [
+      { kind: 'REQUEST', status: 'FAILED_PERMANENT' },
+      { kind: 'REMINDER', status: 'FAILED_RETRYABLE' },
+    ]);
+
+    expect(summary.completionDeliveryStatus).toBe('NOT_TRACKED');
+    expect(summary.failedCompletionDeliveryCount).toBe(0);
+  });
+
+  it('reports NOT_TRACKED for a completed envelope with no completion rows', () => {
+    expect(getEsigningPostCompletionSummary(envelope, []).completionDeliveryStatus).toBe(
+      'NOT_TRACKED'
+    );
+  });
+
+  it('reports pending, retrying, and failed states from completion rows only', () => {
+    expect(getEsigningPostCompletionSummary(envelope, [
+      { kind: 'COMPLETION', status: 'PROCESSING' },
+    ]).completionDeliveryStatus).toBe('PENDING');
+    expect(getEsigningPostCompletionSummary(envelope, [
+      { kind: 'COMPLETION', status: 'FAILED_RETRYABLE' },
+    ]).completionDeliveryStatus).toBe('RETRYING');
+    expect(getEsigningPostCompletionSummary(envelope, [
+      { kind: 'COMPLETION', status: 'FAILED_PERMANENT' },
+    ])).toMatchObject({
+      completionDeliveryStatus: 'FAILED',
+      failedCompletionDeliveryCount: 1,
+    });
+    expect(getEsigningPostCompletionSummary(envelope, [
+      { kind: 'COMPLETION', status: 'SUCCEEDED' },
+    ]).completionDeliveryStatus).toBe('COMPLETED');
   });
 });

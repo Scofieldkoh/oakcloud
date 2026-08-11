@@ -286,6 +286,7 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
             kind: 'COMPLETION',
           },
           select: {
+            kind: true,
             status: true,
             recipientId: true,
             targetKey: true,
@@ -815,6 +816,10 @@ export async function saveEsigningSigningFieldValues(
 ): Promise<EsigningSigningSessionDto> {
   const claims = await requireSigningSession();
   const context = await getSigningContext(claims);
+
+  if (!context.recipient.consentedAt) {
+    throw new Error('Consent is required before saving signing fields');
+  }
 
   if (context.recipient.status === 'SIGNED' || context.recipient.status === 'DECLINED') {
     throw new Error('This signing session is already complete');

@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EsigningSignPage } from '@/components/esigning/esigning-sign-page';
@@ -88,6 +88,7 @@ let fieldsHandler: ((init?: RequestInit) => Promise<Response> | Response) | null
 let currentSession: EsigningSigningSessionDto;
 let statusHandler: (() => Promise<Response> | Response) | null = null;
 let statusRequestCount = 0;
+let sessionLoadHandler: (() => Promise<Response> | Response) | null = null;
 
 function makeSession(
   overrides: Partial<EsigningSigningSessionDto> = {}
@@ -232,6 +233,7 @@ function stubSigningFetch(session: EsigningSigningSessionDto) {
   currentSession = session;
   statusHandler = null;
   statusRequestCount = 0;
+  sessionLoadHandler = null;
 
   vi.stubGlobal(
     'fetch',
@@ -242,7 +244,9 @@ function stubSigningFetch(session: EsigningSigningSessionDto) {
         return jsonResponse({ requiresAccessCode: false });
       }
       if (url.endsWith('/api/public-bootstrap/esigning/session')) {
-        return jsonResponse({ session: currentSession });
+        return sessionLoadHandler
+          ? sessionLoadHandler()
+          : jsonResponse({ session: currentSession });
       }
       if (url.endsWith('/api/esigning/sign/session/view')) {
         return jsonResponse(currentSession);
@@ -741,5 +745,61 @@ describe('EsigningSignPage completion polling', () => {
     document.dispatchEvent(new Event('visibilitychange'));
     await advance(100);
     expect(statusRequestCount).toBe(1);
+  });
+
+  it('recovers terminal hydration after a failed full-session reload', async () => {
+    vi.useFakeTimers();
+    const base = makeSigningSession(makeField({ type: 'TEXT' }));
+    const completedSession: EsigningSigningSessionDto = {
+      ...base,
+      envelope: {
+        ...base.envelope,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'PENDING',
+        autoFilingStatus: 'NOT_REQUIRED',
+        completionDeliveryStatus: 'PENDING',
+      },
+      recipient: {
+        ...base.recipient,
+        status: 'SIGNED',
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+      currentRecipientDeliveryStatus: 'PENDING',
+    };
+    stubSigningFetch(base);
+
+    render(<EsigningSignPage />);
+    await advance(100);
+    expect(screen.getByTestId('signing-document')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Fill In/i }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Draft kept' } });
+    expect(screen.getByRole('textbox')).toHaveValue('Draft kept');
+
+    let reloadCount = 0;
+    sessionLoadHandler = () => {
+      reloadCount += 1;
+      if (reloadCount === 1) {
+        return jsonResponse({ error: 'Failed to load signing session' }, 500);
+      }
+      return jsonResponse({ session: currentSession });
+    };
+    statusHandler = () => {
+      currentSession = completedSession;
+      return jsonResponse({ ...statusForSession(completedSession), terminal: true });
+    };
+
+    await advance(30_100);
+    expect(screen.getByText('Failed to load signing session')).toBeInTheDocument();
+    expect(screen.getByTestId('signing-document')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Completed' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox')).toHaveValue('Draft kept');
+
+    await advance(30_100);
+    expect(screen.getByRole('heading', { name: 'Completed' })).toBeInTheDocument();
+
+    await advance(90_000);
+    expect(statusRequestCount).toBe(2);
+    expect(reloadCount).toBe(2);
   });
 });

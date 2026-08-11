@@ -274,6 +274,8 @@ export function EsigningSignPage() {
   const savedRevisionRef = useRef(0);
   const flowStateRef = useRef<SigningFlowState>('loading');
   const latestStatusRef = useRef<EsigningSigningSessionStatusDto | null>(null);
+  const needsSessionRefreshRef = useRef(false);
+  const sessionReloadPromiseRef = useRef<Promise<EsigningSigningSessionDto> | null>(null);
   const [isCompletionTerminal, setIsCompletionTerminal] = useState(false);
 
   useEffect(() => {
@@ -449,6 +451,22 @@ export function EsigningSignPage() {
     []
   );
 
+  const reloadSession = useCallback(
+    (options?: { recordView?: boolean; preserveDrafts?: boolean }) => {
+      if (sessionReloadPromiseRef.current) {
+        return sessionReloadPromiseRef.current;
+      }
+      const promise = loadSession(options).finally(() => {
+        if (sessionReloadPromiseRef.current === promise) {
+          sessionReloadPromiseRef.current = null;
+        }
+      });
+      sessionReloadPromiseRef.current = promise;
+      return promise;
+    },
+    [loadSession]
+  );
+
   const refreshSigningStatus = useCallback(async () => {
     const response = await fetch('/api/esigning/sign/session/status');
     const responseBody = (await response.json().catch(() => ({}))) as
@@ -464,8 +482,6 @@ export function EsigningSignPage() {
     const result = responseBody as EsigningSigningSessionStatusDto;
     setSaveError(null);
     const previousStatus = latestStatusRef.current;
-    latestStatusRef.current = result;
-    setIsCompletionTerminal(result.terminal);
 
     const statusChanged =
       !previousStatus ||
@@ -476,17 +492,44 @@ export function EsigningSignPage() {
         result.envelope.completionDeliveryStatus ||
       previousStatus.currentRecipientDeliveryStatus !==
         result.currentRecipientDeliveryStatus ||
-      previousStatus.remainingSignerCount !== result.remainingSignerCount;
+      previousStatus.remainingSignerCount !== result.remainingSignerCount ||
+      previousStatus.recipient.signedAt !== result.recipient.signedAt;
 
-    if (result.recipient.signedAt) {
-      if (statusChanged || flowStateRef.current !== 'completed') {
-        await loadSession({ preserveDrafts: true });
+    const mustHydrate = statusChanged || needsSessionRefreshRef.current;
+    if (mustHydrate) {
+      needsSessionRefreshRef.current = true;
+      try {
+        await reloadSession({ preserveDrafts: true });
+      } catch (error) {
+        const normalizedError = normalizeSigningError(
+          error,
+          'Failed to refresh signing session'
+        );
+        if (
+          normalizedError.kind === 'session-expired' ||
+          normalizedError.kind === 'expired' ||
+          normalizedError.kind === 'cancelled'
+        ) {
+          throw error;
+        }
+        setSaveError(normalizedError.message);
+        return;
+      }
+      latestStatusRef.current = result;
+      needsSessionRefreshRef.current = false;
+      setIsCompletionTerminal(result.terminal);
+      if (result.recipient.signedAt) {
         setFlowState('completed');
       }
-    } else if (statusChanged) {
-      await loadSession({ preserveDrafts: true });
+      return;
     }
-  }, [loadSession]);
+
+    latestStatusRef.current = result;
+    setIsCompletionTerminal(result.terminal);
+    if (result.recipient.signedAt && flowStateRef.current !== 'completed') {
+      setFlowState('completed');
+    }
+  }, [reloadSession]);
 
   // ==========================================================================
   // Bootstrap

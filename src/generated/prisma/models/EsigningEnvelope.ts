@@ -68,6 +68,7 @@ export type EsigningEnvelopeMinAggregateOutputType = {
   autoFilingAvailableAt: Date | null
   autoFilingClaimedAt: Date | null
   autoFilingLeaseExpiresAt: Date | null
+  autoFilingClaimToken: string | null
   autoFilingError: string | null
   consentVersion: string | null
   createdAt: Date | null
@@ -101,6 +102,7 @@ export type EsigningEnvelopeMaxAggregateOutputType = {
   autoFilingAvailableAt: Date | null
   autoFilingClaimedAt: Date | null
   autoFilingLeaseExpiresAt: Date | null
+  autoFilingClaimToken: string | null
   autoFilingError: string | null
   consentVersion: string | null
   createdAt: Date | null
@@ -134,6 +136,7 @@ export type EsigningEnvelopeCountAggregateOutputType = {
   autoFilingAvailableAt: number
   autoFilingClaimedAt: number
   autoFilingLeaseExpiresAt: number
+  autoFilingClaimToken: number
   autoFilingError: number
   consentVersion: number
   consentDisclosureSnapshot: number
@@ -187,6 +190,7 @@ export type EsigningEnvelopeMinAggregateInputType = {
   autoFilingAvailableAt?: true
   autoFilingClaimedAt?: true
   autoFilingLeaseExpiresAt?: true
+  autoFilingClaimToken?: true
   autoFilingError?: true
   consentVersion?: true
   createdAt?: true
@@ -220,6 +224,7 @@ export type EsigningEnvelopeMaxAggregateInputType = {
   autoFilingAvailableAt?: true
   autoFilingClaimedAt?: true
   autoFilingLeaseExpiresAt?: true
+  autoFilingClaimToken?: true
   autoFilingError?: true
   consentVersion?: true
   createdAt?: true
@@ -253,6 +258,7 @@ export type EsigningEnvelopeCountAggregateInputType = {
   autoFilingAvailableAt?: true
   autoFilingClaimedAt?: true
   autoFilingLeaseExpiresAt?: true
+  autoFilingClaimToken?: true
   autoFilingError?: true
   consentVersion?: true
   consentDisclosureSnapshot?: true
@@ -375,6 +381,7 @@ export type EsigningEnvelopeGroupByOutputType = {
   autoFilingAvailableAt: Date | null
   autoFilingClaimedAt: Date | null
   autoFilingLeaseExpiresAt: Date | null
+  autoFilingClaimToken: string | null
   autoFilingError: string | null
   consentVersion: string
   consentDisclosureSnapshot: runtime.JsonValue | null
@@ -433,6 +440,7 @@ export type EsigningEnvelopeWhereInput = {
   autoFilingAvailableAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingClaimedAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
+  autoFilingClaimToken?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   autoFilingError?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   consentVersion?: Prisma.StringFilter<"EsigningEnvelope"> | string
   consentDisclosureSnapshot?: Prisma.JsonNullableFilter<"EsigningEnvelope">
@@ -478,6 +486,7 @@ export type EsigningEnvelopeOrderByWithRelationInput = {
   autoFilingAvailableAt?: Prisma.SortOrderInput | Prisma.SortOrder
   autoFilingClaimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   autoFilingLeaseExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  autoFilingClaimToken?: Prisma.SortOrderInput | Prisma.SortOrder
   autoFilingError?: Prisma.SortOrderInput | Prisma.SortOrder
   consentVersion?: Prisma.SortOrder
   consentDisclosureSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -526,6 +535,7 @@ export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
   autoFilingAvailableAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingClaimedAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
+  autoFilingClaimToken?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   autoFilingError?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   consentVersion?: Prisma.StringFilter<"EsigningEnvelope"> | string
   consentDisclosureSnapshot?: Prisma.JsonNullableFilter<"EsigningEnvelope">
@@ -571,6 +581,7 @@ export type EsigningEnvelopeOrderByWithAggregationInput = {
   autoFilingAvailableAt?: Prisma.SortOrderInput | Prisma.SortOrder
   autoFilingClaimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   autoFilingLeaseExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  autoFilingClaimToken?: Prisma.SortOrderInput | Prisma.SortOrder
   autoFilingError?: Prisma.SortOrderInput | Prisma.SortOrder
   consentVersion?: Prisma.SortOrder
   consentDisclosureSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -614,6 +625,7 @@ export type EsigningEnvelopeScalarWhereWithAggregatesInput = {
   autoFilingAvailableAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingClaimedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEnvelope"> | Date | string | null
+  autoFilingClaimToken?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelope"> | string | null
   autoFilingError?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelope"> | string | null
   consentVersion?: Prisma.StringWithAggregatesFilter<"EsigningEnvelope"> | string
   consentDisclosureSnapshot?: Prisma.JsonNullableWithAggregatesFilter<"EsigningEnvelope">
@@ -646,6 +658,7 @@ export type EsigningEnvelopeCreateInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -691,6 +704,7 @@ export type EsigningEnvelopeUncheckedCreateInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -730,6 +744,7 @@ export type EsigningEnvelopeUpdateInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -775,6 +790,7 @@ export type EsigningEnvelopeUncheckedUpdateInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -817,6 +833,7 @@ export type EsigningEnvelopeCreateManyInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -849,6 +866,7 @@ export type EsigningEnvelopeUpdateManyMutationInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -884,6 +902,7 @@ export type EsigningEnvelopeUncheckedUpdateManyInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -929,6 +948,7 @@ export type EsigningEnvelopeCountOrderByAggregateInput = {
   autoFilingAvailableAt?: Prisma.SortOrder
   autoFilingClaimedAt?: Prisma.SortOrder
   autoFilingLeaseExpiresAt?: Prisma.SortOrder
+  autoFilingClaimToken?: Prisma.SortOrder
   autoFilingError?: Prisma.SortOrder
   consentVersion?: Prisma.SortOrder
   consentDisclosureSnapshot?: Prisma.SortOrder
@@ -972,6 +992,7 @@ export type EsigningEnvelopeMaxOrderByAggregateInput = {
   autoFilingAvailableAt?: Prisma.SortOrder
   autoFilingClaimedAt?: Prisma.SortOrder
   autoFilingLeaseExpiresAt?: Prisma.SortOrder
+  autoFilingClaimToken?: Prisma.SortOrder
   autoFilingError?: Prisma.SortOrder
   consentVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -1005,6 +1026,7 @@ export type EsigningEnvelopeMinOrderByAggregateInput = {
   autoFilingAvailableAt?: Prisma.SortOrder
   autoFilingClaimedAt?: Prisma.SortOrder
   autoFilingLeaseExpiresAt?: Prisma.SortOrder
+  autoFilingClaimToken?: Prisma.SortOrder
   autoFilingError?: Prisma.SortOrder
   consentVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -1297,6 +1319,7 @@ export type EsigningEnvelopeCreateWithoutTenantInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1340,6 +1363,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTenantInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1411,6 +1435,7 @@ export type EsigningEnvelopeScalarWhereInput = {
   autoFilingAvailableAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingClaimedAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
+  autoFilingClaimToken?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   autoFilingError?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   consentVersion?: Prisma.StringFilter<"EsigningEnvelope"> | string
   consentDisclosureSnapshot?: Prisma.JsonNullableFilter<"EsigningEnvelope">
@@ -1443,6 +1468,7 @@ export type EsigningEnvelopeCreateWithoutCreatedByInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1486,6 +1512,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCreatedByInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1551,6 +1578,7 @@ export type EsigningEnvelopeCreateWithoutCompanyInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1594,6 +1622,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCompanyInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1659,6 +1688,7 @@ export type EsigningEnvelopeCreateWithoutDocumentsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1703,6 +1733,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutDocumentsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1757,6 +1788,7 @@ export type EsigningEnvelopeUpdateWithoutDocumentsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1801,6 +1833,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1839,6 +1872,7 @@ export type EsigningEnvelopeCreateWithoutRecipientsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1883,6 +1917,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutRecipientsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1937,6 +1972,7 @@ export type EsigningEnvelopeUpdateWithoutRecipientsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1981,6 +2017,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutRecipientsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2019,6 +2056,7 @@ export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2063,6 +2101,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutFieldDefinitionsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2117,6 +2156,7 @@ export type EsigningEnvelopeUpdateWithoutFieldDefinitionsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2161,6 +2201,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutFieldDefinitionsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2199,6 +2240,7 @@ export type EsigningEnvelopeCreateWithoutEventsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2243,6 +2285,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEventsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2297,6 +2340,7 @@ export type EsigningEnvelopeUpdateWithoutEventsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2341,6 +2385,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEventsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2379,6 +2424,7 @@ export type EsigningEnvelopeCreateWithoutEmailDeliveriesInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2423,6 +2469,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEmailDeliveriesInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2477,6 +2524,7 @@ export type EsigningEnvelopeUpdateWithoutEmailDeliveriesInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2521,6 +2569,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEmailDeliveriesInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2559,6 +2608,7 @@ export type EsigningEnvelopeCreateWithoutTaskStageOutcomesInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2603,6 +2653,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2657,6 +2708,7 @@ export type EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2701,6 +2753,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2739,6 +2792,7 @@ export type EsigningEnvelopeCreateWithoutTaskEsigningPreparationsInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2783,6 +2837,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTaskEsigningPreparationsInput 
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2837,6 +2892,7 @@ export type EsigningEnvelopeUpdateWithoutTaskEsigningPreparationsInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2881,6 +2937,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTaskEsigningPreparationsInput 
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2921,6 +2978,7 @@ export type EsigningEnvelopeCreateManyTenantInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2953,6 +3011,7 @@ export type EsigningEnvelopeUpdateWithoutTenantInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2996,6 +3055,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTenantInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3037,6 +3097,7 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutTenantInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3071,6 +3132,7 @@ export type EsigningEnvelopeCreateManyCreatedByInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3103,6 +3165,7 @@ export type EsigningEnvelopeUpdateWithoutCreatedByInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3146,6 +3209,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCreatedByInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3187,6 +3251,7 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3221,6 +3286,7 @@ export type EsigningEnvelopeCreateManyCompanyInput = {
   autoFilingAvailableAt?: Date | string | null
   autoFilingClaimedAt?: Date | string | null
   autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
   autoFilingError?: string | null
   consentVersion?: string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3253,6 +3319,7 @@ export type EsigningEnvelopeUpdateWithoutCompanyInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3296,6 +3363,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCompanyInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3337,6 +3405,7 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutCompanyInput = {
   autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
   consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3457,6 +3526,7 @@ export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.Inte
   autoFilingAvailableAt?: boolean
   autoFilingClaimedAt?: boolean
   autoFilingLeaseExpiresAt?: boolean
+  autoFilingClaimToken?: boolean
   autoFilingError?: boolean
   consentVersion?: boolean
   consentDisclosureSnapshot?: boolean
@@ -3503,6 +3573,7 @@ export type EsigningEnvelopeSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   autoFilingAvailableAt?: boolean
   autoFilingClaimedAt?: boolean
   autoFilingLeaseExpiresAt?: boolean
+  autoFilingClaimToken?: boolean
   autoFilingError?: boolean
   consentVersion?: boolean
   consentDisclosureSnapshot?: boolean
@@ -3541,6 +3612,7 @@ export type EsigningEnvelopeSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   autoFilingAvailableAt?: boolean
   autoFilingClaimedAt?: boolean
   autoFilingLeaseExpiresAt?: boolean
+  autoFilingClaimToken?: boolean
   autoFilingError?: boolean
   consentVersion?: boolean
   consentDisclosureSnapshot?: boolean
@@ -3579,6 +3651,7 @@ export type EsigningEnvelopeSelectScalar = {
   autoFilingAvailableAt?: boolean
   autoFilingClaimedAt?: boolean
   autoFilingLeaseExpiresAt?: boolean
+  autoFilingClaimToken?: boolean
   autoFilingError?: boolean
   consentVersion?: boolean
   consentDisclosureSnapshot?: boolean
@@ -3588,7 +3661,7 @@ export type EsigningEnvelopeSelectScalar = {
   deletedAt?: boolean
 }
 
-export type EsigningEnvelopeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "createdById" | "title" | "message" | "status" | "signingOrder" | "expiresAt" | "reminderFrequencyDays" | "reminderStartDays" | "expiryWarningDays" | "companyId" | "certificateId" | "completedAt" | "voidedAt" | "voidReason" | "pdfGenerationStatus" | "pdfGenerationAttempts" | "pdfGenerationClaimedAt" | "pdfGenerationError" | "autoFilingStatus" | "autoFilingAttempts" | "autoFilingAvailableAt" | "autoFilingClaimedAt" | "autoFilingLeaseExpiresAt" | "autoFilingError" | "consentVersion" | "consentDisclosureSnapshot" | "metadata" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["esigningEnvelope"]>
+export type EsigningEnvelopeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "createdById" | "title" | "message" | "status" | "signingOrder" | "expiresAt" | "reminderFrequencyDays" | "reminderStartDays" | "expiryWarningDays" | "companyId" | "certificateId" | "completedAt" | "voidedAt" | "voidReason" | "pdfGenerationStatus" | "pdfGenerationAttempts" | "pdfGenerationClaimedAt" | "pdfGenerationError" | "autoFilingStatus" | "autoFilingAttempts" | "autoFilingAvailableAt" | "autoFilingClaimedAt" | "autoFilingLeaseExpiresAt" | "autoFilingClaimToken" | "autoFilingError" | "consentVersion" | "consentDisclosureSnapshot" | "metadata" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["esigningEnvelope"]>
 export type EsigningEnvelopeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -3653,6 +3726,7 @@ export type $EsigningEnvelopePayload<ExtArgs extends runtime.Types.Extensions.In
     autoFilingAvailableAt: Date | null
     autoFilingClaimedAt: Date | null
     autoFilingLeaseExpiresAt: Date | null
+    autoFilingClaimToken: string | null
     autoFilingError: string | null
     consentVersion: string
     consentDisclosureSnapshot: runtime.JsonValue | null
@@ -4118,6 +4192,7 @@ export interface EsigningEnvelopeFieldRefs {
   readonly autoFilingAvailableAt: Prisma.FieldRef<"EsigningEnvelope", 'DateTime'>
   readonly autoFilingClaimedAt: Prisma.FieldRef<"EsigningEnvelope", 'DateTime'>
   readonly autoFilingLeaseExpiresAt: Prisma.FieldRef<"EsigningEnvelope", 'DateTime'>
+  readonly autoFilingClaimToken: Prisma.FieldRef<"EsigningEnvelope", 'String'>
   readonly autoFilingError: Prisma.FieldRef<"EsigningEnvelope", 'String'>
   readonly consentVersion: Prisma.FieldRef<"EsigningEnvelope", 'String'>
   readonly consentDisclosureSnapshot: Prisma.FieldRef<"EsigningEnvelope", 'Json'>
