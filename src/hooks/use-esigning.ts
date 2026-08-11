@@ -16,6 +16,7 @@ import type {
   UpdateEsigningRecipientInput,
 } from '@/lib/validations/esigning';
 import type {
+  EsigningCompanyFilterOptionDto,
   EsigningEnvelopeDetailDto,
   EsigningEnvelopeListItem,
   EsigningManualLinkDto,
@@ -27,6 +28,7 @@ export type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 
 interface EsigningListResult {
   envelopes: EsigningEnvelopeListItem[];
+  companyOptions: EsigningCompanyFilterOptionDto[];
   total: number;
   page: number;
   limit: number;

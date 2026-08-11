@@ -70,6 +70,12 @@ export interface EsigningEnvelopeListItem {
   }>;
 }
 
+export interface EsigningCompanyFilterOptionDto {
+  id: string;
+  name: string;
+  count: number;
+}
+
 export interface EsigningEmailDeliveryFailureDto {
   kind: string;
   targetKey: string;

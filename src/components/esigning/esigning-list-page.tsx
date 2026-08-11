@@ -272,7 +272,7 @@ export function EsigningListPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isDraggingOnHero, setIsDraggingOnHero] = useState(false);
   const [compactView, setCompactView] = useState(true);
-  const [companyFilter, setCompanyFilter] = useState<string>('');
+  const [companyId, setCompanyId] = useState<string>('');
   const [deleteTarget, setDeleteTarget] = useState<EsigningEnvelopeListItem | null>(null);
   const [voidTarget, setVoidTarget] = useState<EsigningEnvelopeListItem | null>(null);
   const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
@@ -285,6 +285,7 @@ export function EsigningListPage() {
   const envelopesQuery = useEsigningEnvelopes({
     query: query || undefined,
     statuses: activeStatuses.length > 0 ? activeStatuses : undefined,
+    companyId: companyId || undefined,
     page,
     limit,
   });
@@ -323,23 +324,10 @@ export function EsigningListPage() {
 
   useEffect(() => {
     setPage(1);
-    setCompanyFilter('');
+    setCompanyId('');
   }, [activeTab, query]);
 
-  const uniqueCompanies = useMemo(() => {
-    const names = envelopes
-      .map((e) => e.companyName)
-      .filter((name): name is string => Boolean(name));
-    return [...new Set(names)].sort();
-  }, [envelopes]);
-
-  const displayedEnvelopes = useMemo(
-    () =>
-      companyFilter
-        ? envelopes.filter((e) => e.companyName === companyFilter)
-        : envelopes,
-    [envelopes, companyFilter]
-  );
+  const companyOptions = envelopesQuery.data?.companyOptions ?? [];
 
   const tabCounts = useMemo<Record<TabKey, number>>(
     () => ({
@@ -696,33 +684,40 @@ export function EsigningListPage() {
               <LayoutList className="h-4 w-4" />
             </button>
           </div>
-          {uniqueCompanies.length > 0 && (
+          {companyOptions.length > 0 && (
             <div className="flex flex-wrap gap-1.5 px-4 pb-3">
               <button
                 type="button"
-                onClick={() => setCompanyFilter('')}
+                onClick={() => {
+                  setCompanyId('');
+                  setPage(1);
+                }}
                 className={cn(
                   'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                  !companyFilter
+                  !companyId
                     ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
                     : 'border-border-primary text-text-muted hover:bg-background-tertiary'
                 )}
               >
                 All companies
               </button>
-              {uniqueCompanies.map((company) => (
+              {companyOptions.map((company) => (
                 <button
-                  key={company}
+                  key={company.id}
                   type="button"
-                  onClick={() => setCompanyFilter(companyFilter === company ? '' : company)}
+                  onClick={() => {
+                    setCompanyId(companyId === company.id ? '' : company.id);
+                    setPage(1);
+                  }}
                   className={cn(
                     'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                    companyFilter === company
+                    companyId === company.id
                       ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
                       : 'border-border-primary text-text-muted hover:bg-background-tertiary'
                   )}
                 >
-                  {company}
+                  {company.name}
+                  <span className="ml-1 text-[10px] opacity-70">{company.count}</span>
                 </button>
               ))}
             </div>
@@ -736,7 +731,7 @@ export function EsigningListPage() {
         ) : null}
 
         <section className="grid gap-2">
-          {displayedEnvelopes.map((envelope) =>
+          {envelopes.map((envelope) =>
             compactView ? (
               <article
                 key={envelope.id}
@@ -916,7 +911,7 @@ export function EsigningListPage() {
             </div>
           ) : null}
 
-          {!envelopesQuery.isLoading && displayedEnvelopes.length === 0 ? (
+          {!envelopesQuery.isLoading && envelopes.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center sm:rounded-3xl sm:p-10">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
                 <FileSignature className="h-6 w-6" />

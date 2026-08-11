@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EmailDeliveryWarningBadge,
@@ -13,6 +14,21 @@ const mocks = vi.hoisted(() => ({
   deleteEnvelope: vi.fn(),
   uploadDocument: vi.fn(),
   locationSpy: vi.fn(),
+  lastListParams: null as Partial<import('@/lib/validations/esigning').EsigningListQueryInput> | null,
+  listData: {
+    envelopes: [],
+    companyOptions: [],
+    total: 0,
+    statusCounts: {
+      DRAFT: 0,
+      SENT: 0,
+      IN_PROGRESS: 0,
+      COMPLETED: 0,
+      VOIDED: 0,
+      DECLINED: 0,
+      EXPIRED: 0,
+    },
+  } as Record<string, unknown>,
   preparation: null as null | Record<string, unknown>,
   ensurePreparation: vi.fn(async () => ({
     id: 'preparation-1',
@@ -81,21 +97,10 @@ vi.mock('@/hooks/use-esigning', () => ({
   useCreateEsigningEnvelope: () => ({ mutateAsync: mocks.createEnvelope }),
   useDeleteEsigningEnvelope: () => ({ mutateAsync: mocks.deleteEnvelope }),
   useDuplicateEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
-  useEsigningEnvelopes: () => ({
-    data: {
-      envelopes: [],
-      total: 0,
-      statusCounts: {
-        DRAFT: 0,
-        SENT: 0,
-        IN_PROGRESS: 0,
-        COMPLETED: 0,
-        VOIDED: 0,
-        DECLINED: 0,
-        EXPIRED: 0,
-      },
-    },
-  }),
+  useEsigningEnvelopes: (params: Partial<import('@/lib/validations/esigning').EsigningListQueryInput>) => {
+    mocks.lastListParams = params;
+    return { data: mocks.listData, isLoading: false };
+  },
   useResendEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
   useRetryEsigningEnvelopeProcessing: () => ({ mutateAsync: vi.fn() }),
   uploadEsigningDocumentRequest: mocks.uploadDocument,
@@ -332,5 +337,39 @@ describe('EsigningListPage initial upload compensation', () => {
     await waitFor(() => expect(mocks.createEnvelope).toHaveBeenCalled());
     expect(mocks.deleteEnvelope).not.toHaveBeenCalled();
     expect(mocks.locationSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('EsigningListPage company filter query', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    navigationMocks.searchParams = new URLSearchParams();
+    mocks.lastListParams = null;
+    mocks.listData = {
+      envelopes: [],
+      companyOptions: [{ id: 'company-2', name: 'Acme Pte Ltd', count: 5 }],
+      total: 0,
+      statusCounts: {
+        DRAFT: 0,
+        SENT: 0,
+        IN_PROGRESS: 0,
+        COMPLETED: 0,
+        VOIDED: 0,
+        DECLINED: 0,
+        EXPIRED: 0,
+      },
+    };
+  });
+
+  it('passes the selected company to the server query and resets the page', async () => {
+    render(<EsigningListPage />);
+
+    await waitFor(() => expect(mocks.lastListParams).not.toBeNull());
+    expect(mocks.lastListParams?.companyId).toBeUndefined();
+
+    await userEvent.click(screen.getByRole('button', { name: /Acme Pte Ltd/ }));
+
+    await waitFor(() => expect(mocks.lastListParams?.companyId).toBe('company-2'));
+    expect(mocks.lastListParams?.page).toBe(1);
   });
 });

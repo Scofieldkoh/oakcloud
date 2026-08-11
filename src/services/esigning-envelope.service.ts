@@ -324,6 +324,7 @@ export async function listEsigningEnvelopes(
   query: EsigningListQueryInput
 ): Promise<{
   envelopes: EsigningEnvelopeListItem[];
+  companyOptions: Array<{ id: string; name: string; count: number }>;
   total: number;
   page: number;
   limit: number;
@@ -333,40 +334,55 @@ export async function listEsigningEnvelopes(
   >;
 }> {
   const scope = await resolveEsigningActorScope(session, tenantId);
-  const baseWhere: Prisma.EsigningEnvelopeWhereInput = {
+  const scopeWhere: Prisma.EsigningEnvelopeWhereInput = {
     tenantId,
     deletedAt: null,
   };
 
-  if (query.companyId) {
-    baseWhere.companyId = query.companyId;
-  }
   if (query.query) {
-    baseWhere.OR = [
+    scopeWhere.OR = [
       { title: { contains: query.query, mode: 'insensitive' } },
       { recipients: { some: { name: { contains: query.query, mode: 'insensitive' } } } },
       { recipients: { some: { email: { contains: query.query, mode: 'insensitive' } } } },
     ];
   }
   if (!scope.canReadAll || query.createdBy === 'me') {
-    baseWhere.createdById = session.id;
+    scopeWhere.createdById = session.id;
   }
 
-  const where: Prisma.EsigningEnvelopeWhereInput = { ...baseWhere };
+  const resultWhere: Prisma.EsigningEnvelopeWhereInput = { ...scopeWhere };
   if (query.statuses?.length) {
-    where.status = { in: query.statuses };
+    resultWhere.status = { in: query.statuses };
   } else if (query.status) {
-    where.status = query.status;
+    resultWhere.status = query.status;
+  }
+  if (query.companyId) {
+    resultWhere.companyId = query.companyId;
+  }
+
+  const statusCountWhere: Prisma.EsigningEnvelopeWhereInput = { ...scopeWhere };
+  if (query.companyId) {
+    statusCountWhere.companyId = query.companyId;
+  }
+
+  const companyOptionWhere: Prisma.EsigningEnvelopeWhereInput = {
+    ...scopeWhere,
+    companyId: { not: null },
+  };
+  if (query.statuses?.length) {
+    companyOptionWhere.status = { in: query.statuses };
+  } else if (query.status) {
+    companyOptionWhere.status = query.status;
   }
 
   const page = query.page ?? 1;
   const limit = query.limit ?? 20;
   const skip = (page - 1) * limit;
 
-  const [total, envelopes, groupedStatusCounts] = await prisma.$transaction([
-    prisma.esigningEnvelope.count({ where }),
+  const [total, envelopes, groupedStatusCounts, groupedCompanyCounts] = await prisma.$transaction([
+    prisma.esigningEnvelope.count({ where: resultWhere }),
     prisma.esigningEnvelope.findMany({
-      where,
+      where: resultWhere,
       orderBy: getEnvelopeOrderBy(query),
       skip,
       take: limit,
@@ -413,12 +429,19 @@ export async function listEsigningEnvelopes(
     }),
     prisma.esigningEnvelope.groupBy({
       by: ['status'],
-      where: baseWhere,
+      where: statusCountWhere,
       orderBy: {
         status: 'asc',
       },
       _count: {
         status: true,
+      },
+    }),
+    prisma.esigningEnvelope.groupBy({
+      by: ['companyId'],
+      where: companyOptionWhere,
+      _count: {
+        _all: true,
       },
     }),
   ]);
@@ -440,6 +463,40 @@ export async function listEsigningEnvelopes(
         : 0;
     statusCounts[entry.status] = count;
   });
+
+  const companyIds = groupedCompanyCounts
+    .map((entry) => entry.companyId)
+    .filter((id): id is string => Boolean(id));
+  const companyRows =
+    companyIds.length > 0
+      ? await prisma.company.findMany({
+          where: {
+            id: { in: companyIds },
+            tenantId,
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        })
+      : [];
+  const companyNameById = new Map(companyRows.map((company) => [company.id, company.name]));
+  const companyOptions = groupedCompanyCounts
+    .flatMap((entry) => {
+      if (!entry.companyId) {
+        return [];
+      }
+      const name = companyNameById.get(entry.companyId);
+      if (!name) {
+        return [];
+      }
+      const count =
+        typeof entry._count === 'object' && entry._count
+          ? (entry._count._all ?? 0)
+          : 0;
+      return [{ id: entry.companyId, name, count }];
+    })
+    .sort((left, right) => left.name.localeCompare(right.name));
 
   return {
     envelopes: envelopes.map((envelope) => ({
@@ -509,6 +566,7 @@ export async function listEsigningEnvelopes(
         };
       }),
     })),
+    companyOptions,
     total,
     page,
     limit,
