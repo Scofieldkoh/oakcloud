@@ -369,23 +369,51 @@ export function EsigningListPage() {
       return;
     }
 
+    let createdEnvelope: { id: string } | null = null;
     try {
       setIsStarting(true);
       const title = file ? getEnvelopeTitleFromFile(file) : 'New Envelope';
       const expiresAt = Number.isInteger(expiresInDays) && expiresInDays > 0
         ? new Date(Date.now() + expiresInDays * 86_400_000).toISOString()
         : undefined;
-      const envelope = await createEnvelope.mutateAsync({
+      createdEnvelope = await createEnvelope.mutateAsync({
         title,
         signingOrder,
         expiresAt,
         taskContext,
         generatedDocumentId,
       });
-      const destination = withTaskLaunchContext(`/esigning/${envelope.id}`, taskContext);
+      const destination = withTaskLaunchContext(
+        `/esigning/${createdEnvelope.id}`,
+        taskContext
+      );
 
       if (file) {
-        await uploadEsigningDocumentRequest(envelope.id, file, activeTenantId);
+        try {
+          await uploadEsigningDocumentRequest(createdEnvelope.id, file, activeTenantId);
+        } catch (uploadError) {
+          let compensationFailed = false;
+          try {
+            await deleteEnvelope.mutateAsync(createdEnvelope.id);
+          } catch (deleteError) {
+            compensationFailed = true;
+            toast.error(
+              deleteError instanceof Error
+                ? `Upload failed and the new draft could not be removed: ${deleteError.message}`
+                : 'Upload failed and the new draft could not be removed.'
+            );
+          }
+
+          if (compensationFailed) {
+            toast.error(
+              uploadError instanceof Error
+                ? `Opening the draft so you can recover it. ${uploadError.message}`
+                : 'Opening the draft so you can recover it.'
+            );
+            window.location.assign(destination);
+          }
+          throw uploadError;
+        }
       }
 
       window.location.assign(destination);
@@ -397,6 +425,7 @@ export function EsigningListPage() {
   }, [
     activeTenantId,
     createEnvelope,
+    deleteEnvelope,
     expiresInDays,
     generatedDocumentId,
     isStarting,

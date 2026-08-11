@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EmailDeliveryWarningBadge,
@@ -10,6 +10,9 @@ import type { EsigningEnvelopeListItem } from '@/types/esigning';
 
 const mocks = vi.hoisted(() => ({
   createEnvelope: vi.fn(() => new Promise(() => undefined)),
+  deleteEnvelope: vi.fn(),
+  uploadDocument: vi.fn(),
+  locationSpy: vi.fn(),
   preparation: null as null | Record<string, unknown>,
   ensurePreparation: vi.fn(async () => ({
     id: 'preparation-1',
@@ -27,12 +30,16 @@ const mocks = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('next/navigation', () => ({
-  useSearchParams: () => new URLSearchParams({
+const navigationMocks = vi.hoisted(() => ({
+  searchParams: new URLSearchParams({
     taskId: '11111111-1111-4111-8111-111111111111',
     taskStageId: '22222222-2222-4222-8222-222222222222',
     returnTo: '/tasks',
   }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => navigationMocks.searchParams,
 }));
 
 vi.mock('@/hooks/use-auth', () => ({
@@ -72,7 +79,7 @@ vi.mock('@/components/esigning/esigning-upload-files', () => ({
 
 vi.mock('@/hooks/use-esigning', () => ({
   useCreateEsigningEnvelope: () => ({ mutateAsync: mocks.createEnvelope }),
-  useDeleteEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
+  useDeleteEsigningEnvelope: () => ({ mutateAsync: mocks.deleteEnvelope }),
   useDuplicateEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
   useEsigningEnvelopes: () => ({
     data: {
@@ -91,7 +98,7 @@ vi.mock('@/hooks/use-esigning', () => ({
   }),
   useResendEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
   useRetryEsigningEnvelopeProcessing: () => ({ mutateAsync: vi.fn() }),
-  uploadEsigningDocumentRequest: vi.fn(),
+  uploadEsigningDocumentRequest: mocks.uploadDocument,
   useVoidEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
 }));
 
@@ -263,5 +270,67 @@ describe('EsigningListPage task launch', () => {
 
     expect(screen.getByRole('button', { name: 'Retry preparation' })).toBeInTheDocument();
     expect(screen.getByText('Temporary storage failure')).toBeInTheDocument();
+  });
+});
+
+describe('EsigningListPage initial upload compensation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    navigationMocks.searchParams = new URLSearchParams();
+    mocks.createEnvelope.mockResolvedValue({ id: 'new-envelope-id' });
+    mocks.deleteEnvelope.mockResolvedValue(undefined);
+    mocks.uploadDocument.mockRejectedValue(new Error('storage failure'));
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { assign: mocks.locationSpy },
+    });
+  });
+
+  function dropStartFile() {
+    const hero = screen.getByText('Sign or get signatures').closest('section');
+    expect(hero).not.toBeNull();
+    fireEvent.drop(hero!, {
+      dataTransfer: {
+        files: [new File(['pdf'], 'nda.pdf', { type: 'application/pdf' })],
+      },
+    });
+  }
+
+  it('deletes only the exact newly created draft when the first upload fails', async () => {
+    render(<EsigningListPage />);
+    dropStartFile();
+
+    await waitFor(() => expect(mocks.uploadDocument).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.deleteEnvelope).toHaveBeenCalled());
+
+    expect(mocks.deleteEnvelope).toHaveBeenCalledWith('new-envelope-id');
+    expect(mocks.deleteEnvelope).not.toHaveBeenCalledWith(
+      expect.not.stringMatching(/^new-envelope-id$/)
+    );
+    expect(mocks.locationSpy).not.toHaveBeenCalled();
+  });
+
+  it('navigates into the draft and reports both failures when compensation fails', async () => {
+    mocks.deleteEnvelope.mockRejectedValue(new Error('delete failure'));
+    render(<EsigningListPage />);
+    dropStartFile();
+
+    await waitFor(() => expect(mocks.deleteEnvelope).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.locationSpy).toHaveBeenCalled());
+
+    expect(mocks.locationSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/esigning/new-envelope-id')
+    );
+    expect(mocks.uploadDocument).toHaveBeenCalledWith('new-envelope-id', expect.any(File), 'workspace-1');
+  });
+
+  it('never deletes a draft when envelope creation fails', async () => {
+    mocks.createEnvelope.mockRejectedValue(new Error('create failure'));
+    render(<EsigningListPage />);
+    dropStartFile();
+
+    await waitFor(() => expect(mocks.createEnvelope).toHaveBeenCalled());
+    expect(mocks.deleteEnvelope).not.toHaveBeenCalled();
+    expect(mocks.locationSpy).not.toHaveBeenCalled();
   });
 });
