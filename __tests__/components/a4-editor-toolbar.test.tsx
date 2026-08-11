@@ -30,11 +30,13 @@ function renderToolbar(overrides: Partial<A4EditorToolbarProps> = {}) {
     },
     showPageNumbers: true,
     canDeletePage: true,
+    canRemovePageBreak: true,
     onCommand: vi.fn(),
     onLayoutChange: vi.fn(),
     onInsertPageBreak: vi.fn(),
     onAddBlankPage: vi.fn(),
     onDeleteCurrentPage: vi.fn(),
+    onRemovePageBreak: vi.fn(),
     onTogglePageNumbers: vi.fn(),
     onSaveSelection: vi.fn(),
     ...overrides,
@@ -50,6 +52,7 @@ describe('A4EditorToolbar', () => {
     expect(screen.getByRole('button', { name: 'Insert page break' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add blank page' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Delete current page' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove page break' })).toBeVisible();
   });
 
   it('leaves document layout controls to the template side panel', () => {
@@ -170,6 +173,20 @@ describe('A4EditorToolbar', () => {
     expect(screen.getByRole('button', { name: 'Delete current page' })).toBeDisabled();
   });
 
+  it('disables the remove page break action when the active page starts no hard section', () => {
+    renderToolbar({ canRemovePageBreak: false });
+
+    expect(screen.getByRole('button', { name: 'Remove page break' })).toBeDisabled();
+  });
+
+  it('dispatches the remove page break action from the toolbar', () => {
+    const onRemovePageBreak = vi.fn();
+    const view = renderToolbar({ onRemovePageBreak });
+
+    fireEvent.click(view.getByRole('button', { name: 'Remove page break' }));
+    expect(onRemovePageBreak).toHaveBeenCalledOnce();
+  });
+
   it('reflects changed active formatting in every controlled control', () => {
     const baseProps: A4EditorToolbarProps = {
       disabled: false,
@@ -190,11 +207,13 @@ describe('A4EditorToolbar', () => {
       },
       showPageNumbers: true,
       canDeletePage: true,
+      canRemovePageBreak: true,
       onCommand: vi.fn(),
       onLayoutChange: vi.fn(),
       onInsertPageBreak: vi.fn(),
       onAddBlankPage: vi.fn(),
       onDeleteCurrentPage: vi.fn(),
+      onRemovePageBreak: vi.fn(),
       onTogglePageNumbers: vi.fn(),
       onSaveSelection: vi.fn(),
     };

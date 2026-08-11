@@ -33,6 +33,7 @@ import {
   Trash2,
   Underline,
   Undo2,
+  Unlink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { A4DocumentLayout } from './a4-pagination/layout';
@@ -60,11 +61,13 @@ export interface A4EditorToolbarProps {
   activeFormats: EditorFormatState;
   showPageNumbers: boolean;
   canDeletePage: boolean;
+  canRemovePageBreak: boolean;
   onCommand(command: EditorCommand): void;
   onLayoutChange(layout: A4DocumentLayout): void;
   onInsertPageBreak(): void;
   onAddBlankPage(): void;
   onDeleteCurrentPage(): void;
+  onRemovePageBreak(): void;
   onTogglePageNumbers(value: boolean): void;
   onSaveSelection(): void;
   onLegacyCommand?(command: string, value?: string): void;
@@ -247,10 +250,12 @@ export function A4EditorToolbar({
   activeFormats,
   showPageNumbers,
   canDeletePage,
+  canRemovePageBreak,
   onCommand,
   onInsertPageBreak,
   onAddBlankPage,
   onDeleteCurrentPage,
+  onRemovePageBreak,
   onTogglePageNumbers,
   onSaveSelection,
   onLegacyCommand,
@@ -343,6 +348,7 @@ export function A4EditorToolbar({
       <ToolbarGroup label="Page">
         <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={blocked} />
         <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={blocked} />
+        <ToolbarButton label="Remove page break" title="Remove the page break before the current page" icon={Unlink} onSaveSelection={onSaveSelection} onClick={onRemovePageBreak} disabled={blocked || !canRemovePageBreak} />
         <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={blocked || !canDeletePage} destructive />
       </ToolbarGroup>
       <ToolbarGroup label="View">

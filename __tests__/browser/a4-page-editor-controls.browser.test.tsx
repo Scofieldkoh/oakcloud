@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import {
   afterAll,
   afterEach,
@@ -90,6 +90,131 @@ describe('A4PageEditor page controls', () => {
       expect(controlBounds.right).toBeLessThanOrEqual(pageBounds.right);
       expect(controlBounds.left).toBeGreaterThanOrEqual(pageBounds.left);
     });
+  });
+
+  it('removes a hard page break from the visible break control and keeps the content', async () => {
+    const onChange = vi.fn();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={
+            '<p>First page</p><div class="page-break" data-break-type="hard"></div><p>Second page</p>'
+          }
+          onChange={onChange}
+        />,
+      );
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    const removeBreak = Array.from(host.querySelectorAll('button')).find(
+      (button) =>
+        button.getAttribute('aria-label') ===
+        'Remove page break before page 2',
+    );
+    expect(removeBreak).toBeTruthy();
+    expect(
+      Array.from(host.querySelectorAll('button')).some(
+        (button) =>
+          button.getAttribute('aria-label') ===
+          'Remove page break before page 1',
+      ),
+    ).toBe(false);
+
+    await act(async () => userEvent.click(removeBreak!));
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    expect(
+      host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+    ).toBe(1);
+    expect(
+      new DOMParser()
+        .parseFromString(
+          host.querySelector(
+            '[data-testid="a4-page-content-1"]',
+          )!.innerHTML,
+          'text/html',
+        )
+        .body.textContent,
+    ).toBe('First pageSecond page');
+    expect(
+      onChange.mock.calls.at(-1)?.[0],
+    ).not.toContain('page-break');
+  });
+
+  it('hides the remove-break control for soft pagination and in preview mode', async () => {
+    host.style.zoom = '0.25';
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={Array.from(
+            { length: 120 },
+            (_, index) => `<p>Soft page marker ${index + 1}</p>`,
+          ).join('')}
+        />,
+      );
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    expect(
+      host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+    ).toBeGreaterThan(1);
+    expect(
+      Array.from(host.querySelectorAll('button')).some((button) =>
+        button
+          .getAttribute('aria-label')
+          ?.startsWith('Remove page break before page'),
+      ),
+    ).toBe(false);
+
+    await act(async () => root.unmount());
+    host.remove();
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    root = createRoot(host);
+
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={
+            '<p>First page</p><div class="page-break" data-break-type="hard"></div><p>Second page</p>'
+          }
+          readOnly
+        />,
+      );
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    expect(
+      Array.from(host.querySelectorAll('button')).some((button) =>
+        button
+          .getAttribute('aria-label')
+          ?.startsWith('Remove page break before page'),
+      ),
+    ).toBe(false);
   });
 
   it('hides page-chrome deletion and disables Delete Current Page for soft-only pagination', async () => {

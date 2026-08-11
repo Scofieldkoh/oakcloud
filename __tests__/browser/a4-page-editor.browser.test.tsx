@@ -1433,6 +1433,211 @@ describe('A4PageEditor real layout pagination', () => {
     });
   });
 
+  it('deletes a hard page break with Backspace at the start of the next page', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={
+            '<p>First page</p><div class="page-break" data-break-type="hard"></div><p>Second page</p>'
+          }
+        />,
+      );
+    });
+    await waitForEditorIdle();
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(
+          host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+        ).toBe(2);
+      });
+    });
+
+    const secondPage = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-2"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(secondPage.querySelector('p')!.firstChild!, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      await userEvent.keyboard('{Backspace}');
+    });
+    await waitForEditorIdle();
+
+    const canonical = editorRef.current?.getContent() ?? '';
+    expect(canonical).not.toContain('page-break');
+    expect(
+      new DOMParser().parseFromString(canonical, 'text/html').body.textContent,
+    ).toBe('First pageSecond page');
+    expect(
+      host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+    ).toBe(1);
+  });
+
+  it('deletes a hard page break with Delete at the end of the previous page', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={
+            '<p>First page</p><div class="page-break" data-break-type="hard"></div><p>Second page</p>'
+          }
+        />,
+      );
+    });
+    await waitForEditorIdle();
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(
+          host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+        ).toBe(2);
+      });
+    });
+
+    const firstPage = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(
+        firstPage.querySelector('p')!.firstChild!,
+        firstPage.querySelector('p')!.textContent!.length,
+      );
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      await userEvent.keyboard('{Delete}');
+    });
+    await waitForEditorIdle();
+
+    const canonical = editorRef.current?.getContent() ?? '';
+    expect(canonical).not.toContain('page-break');
+    expect(
+      new DOMParser().parseFromString(canonical, 'text/html').body.textContent,
+    ).toBe('First pageSecond page');
+    expect(
+      host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+    ).toBe(1);
+  });
+
+  it('deletes a hard page break when the next section starts with a list', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={
+            '<p>First page</p><div class="page-break" data-break-type="hard"></div><ul><li>Second page</li></ul>'
+          }
+        />,
+      );
+    });
+    await waitForEditorIdle();
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(
+          host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+        ).toBe(2);
+      });
+    });
+
+    const secondPage = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-2"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(secondPage.querySelector('ul li')!.firstChild!, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      await userEvent.keyboard('{Backspace}');
+    });
+    await waitForEditorIdle();
+
+    const canonical = editorRef.current?.getContent() ?? '';
+    expect(canonical).not.toContain('page-break');
+    expect(
+      new DOMParser().parseFromString(canonical, 'text/html').body.textContent,
+    ).toBe('First pageSecond page');
+  });
+
+  it('deletes a hard page break with the caret at the page content boundary', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={
+            '<p>First page</p><div class="page-break" data-break-type="hard"></div><p>Second page</p>'
+          }
+        />,
+      );
+    });
+    await waitForEditorIdle();
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(
+          host.querySelectorAll('[data-testid^="a4-page-content-"]').length,
+        ).toBe(2);
+      });
+    });
+
+    const secondPage = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-2"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    await act(async () => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(secondPage, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await act(async () => {
+      await userEvent.keyboard('{Backspace}');
+    });
+    await waitForEditorIdle();
+
+    const canonical = editorRef.current?.getContent() ?? '';
+    expect(canonical).not.toContain('page-break');
+    expect(
+      new DOMParser().parseFromString(canonical, 'text/html').body.textContent,
+    ).toBe('First pageSecond page');
+  });
+
   it('routes native cross-page text replacement through the canonical document', async () => {
     host.style.zoom = '0.25';
     await page.viewport(1280, 900);

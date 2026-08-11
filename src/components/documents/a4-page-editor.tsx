@@ -24,7 +24,9 @@ import {
   Loader2,
   Plus,
   Printer,
+  SeparatorHorizontal,
   Trash2,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -78,6 +80,7 @@ import {
   insertTableColumnAtSelection,
   insertTableRowAtSelection,
   insertParagraphAtSelection,
+  removeHardPageBreak,
   replaceLogicalSelection,
   type DocumentTransactionResult,
 } from './a4-pagination/document-actions';
@@ -175,20 +178,20 @@ function fragmentToHtml(fragment: DocumentFragment): string {
 function hasMeaningfulContentBeforeCaret(html: string): boolean {
   if (!html) return false;
 
-  const textContent = html
+  const container = document.createElement('div');
+  container.innerHTML = html
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/<br\s*\/?>/gi, '')
-    .replace(/<[^>]+>/g, '')
-    .trim();
+    .replace(/&nbsp;/gi, ' ');
+
+  const textContent = (container.textContent ?? '').trim();
 
   if (textContent.length > 0) {
     return true;
   }
 
-  return /<(img|svg|object|embed|video|audio|canvas|table|tr|td|th|li|ul|ol|hr)\b/i.test(
+  return /<(img|svg|object|embed|video|audio|canvas|hr|iframe|input|textarea|select)\b/i.test(
     html,
   );
 }
@@ -582,6 +585,7 @@ function PageChrome({
   isPreviewMode,
   canDelete,
   onDelete,
+  onRemoveBreak,
   placeholder,
   pageLayout,
   fontFamily,
@@ -595,6 +599,7 @@ function PageChrome({
   isPreviewMode: boolean;
   canDelete: boolean;
   onDelete(id: string): void;
+  onRemoveBreak(id: string): void;
   placeholder?: string;
   pageLayout: PageLayout;
   fontFamily: string;
@@ -608,6 +613,19 @@ function PageChrome({
       <div className="absolute -top-6 left-1/2 z-10 -translate-x-1/2 rounded-t-md bg-gray-700 px-3 py-1 text-xs text-white">
         Page {pageNumber} of {totalPages}
       </div>
+      {page.hardBreakBefore && !isPreviewMode ? (
+        <button
+          type="button"
+          onClick={() => onRemoveBreak(page.id)}
+          className="pointer-events-auto absolute left-8 top-[-16px] z-20 flex items-center gap-1 rounded-full border border-border-primary bg-background-elevated px-2 py-0.5 text-[10px] font-medium text-text-muted shadow-sm transition-colors hover:border-status-error hover:text-status-error"
+          title="Remove the page break and merge this page with the previous one"
+          aria-label={`Remove page break before page ${pageNumber}`}
+        >
+          <SeparatorHorizontal className="h-3 w-3" aria-hidden="true" />
+          Page break
+          <X className="h-3 w-3" aria-hidden="true" />
+        </button>
+      ) : null}
       {canDelete && !isPreviewMode ? (
         <button
           type="button"
@@ -1297,6 +1315,24 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (sectionIndex === null) return;
         commitUserTransaction(
           deleteHardPageSection(
+            canonicalPagesHtml(currentPages),
+            sectionIndex,
+          ),
+        );
+      },
+      [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
+    );
+
+    const handleRemovePageBreak = useCallback(
+      (id: string) => {
+        if (effectivePreviewMode) return;
+        const currentPages = pagesRef.current;
+        const pageIndex = currentPages.findIndex((page) => page.id === id);
+        if (pageIndex < 0) return;
+        const sectionIndex = hardSectionIndexForFragment(currentPages, pageIndex);
+        if (sectionIndex === null || sectionIndex < 1) return;
+        commitUserTransaction(
+          removeHardPageBreak(
             canonicalPagesHtml(currentPages),
             sectionIndex,
           ),
@@ -2741,9 +2777,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             onLayoutChange={updateLayout}
             showPageNumbers={showPageNumbers}
             canDeletePage={hardSectionCount > 1}
+            canRemovePageBreak={
+              displayPages[currentPageIdx]?.hardBreakBefore === true
+            }
             onInsertPageBreak={splitActivePageAtSelection}
             onAddBlankPage={handleAddPage}
             onDeleteCurrentPage={() => handleDeletePage(activePageId)}
+            onRemovePageBreak={() => handleRemovePageBreak(activePageId)}
             onTogglePageNumbers={setShowPageNumbers}
             onLegacyCommand={handleCommand}
             disabled={effectivePreviewMode}
@@ -2817,6 +2857,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 totalPages={displayPages.length}
                 isPreviewMode={effectivePreviewMode}
                 onDelete={handleDeletePage}
+                onRemoveBreak={handleRemovePageBreak}
                 canDelete={
                   hardSectionCount > 1 &&
                   !readOnly &&

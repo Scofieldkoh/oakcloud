@@ -401,7 +401,11 @@ pagination engine splits those sections into soft physical fragments, and page
 deletion always targets an owning hard section (see
 `hardSectionIndexForFragment`). Backspace and forward Delete at soft or hard
 boundaries both use the same logical delete transaction, so they are
-symmetric.
+symmetric. Removing a break without deleting content is a separate action:
+`removeHardPageBreak` deletes the break element before a section and merges
+that section into the previous one, and the editor surfaces it as a visible
+"Page break" control on hard-starting pages plus a toolbar action, so authors
+do not have to rely on keyboard position alone.
 
 The Fields panel and template validation share one standard-field catalog in
 `template-editor/template-field-catalog.ts`. Legacy `custom.*` references found

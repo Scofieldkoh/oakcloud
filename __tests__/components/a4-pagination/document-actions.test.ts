@@ -6,6 +6,7 @@ import {
   hardSectionIndexForFragment,
   insertHardPageAtSelection,
   insertParagraphAtSelection,
+  removeHardPageBreak,
   replaceLogicalSelection,
 } from '@/components/documents/a4-pagination/document-actions';
 import {
@@ -196,6 +197,61 @@ describe('A4 canonical document actions', () => {
       `<p>A</p>${HARD_PAGE_BREAK_HTML}<p>C</p>`,
     );
     expect(result.changed).toBe(true);
+  });
+
+  it('removes the hard break before the requested section and merges its content', () => {
+    const result = removeHardPageBreak(
+      `<p>A</p>${HARD_PAGE_BREAK_HTML}<p>B</p>${HARD_PAGE_BREAK_HTML}<p>C</p>`,
+      1,
+    );
+
+    expect(stripFlowMetadata(result.html)).toBe(
+      `<p>A</p><p>B</p>${HARD_PAGE_BREAK_HTML}<p>C</p>`,
+    );
+    expect(result.changed).toBe(true);
+  });
+
+  it('removes the last hard break and joins every section into one', () => {
+    const result = removeHardPageBreak(
+      `<p>A</p>${HARD_PAGE_BREAK_HTML}<p>B</p>${HARD_PAGE_BREAK_HTML}<p>C</p>`,
+      2,
+    );
+
+    expect(stripFlowMetadata(result.html)).toBe(
+      `<p>A</p>${HARD_PAGE_BREAK_HTML}<p>B</p><p>C</p>`,
+    );
+    expect(result.changed).toBe(true);
+  });
+
+  it('keeps an editable paragraph when removing the break between empty sections', () => {
+    const result = removeHardPageBreak(
+      `<p><br></p>${HARD_PAGE_BREAK_HTML}<p><br></p>`,
+      1,
+    );
+
+    expect(stripFlowMetadata(result.html)).toBe('<p><br></p>');
+    expect(result.html).toMatch(/data-flow-id="[^"]+"/);
+    expect(result.changed).toBe(true);
+  });
+
+  it('does not change the document for an invalid hard break index', () => {
+    const html = `<p>A</p>${HARD_PAGE_BREAK_HTML}<p>B</p>`;
+
+    expect(removeHardPageBreak(html, 0)).toEqual({
+      html,
+      selection: null,
+      changed: false,
+    });
+    expect(removeHardPageBreak(html, 2)).toEqual({
+      html,
+      selection: null,
+      changed: false,
+    });
+    expect(removeHardPageBreak(html, 1.5)).toEqual({
+      html,
+      selection: null,
+      changed: false,
+    });
   });
 
   it('retains an editable blank document when deleting its only section', () => {

@@ -1032,6 +1032,42 @@ export function deleteHardPageSection(
   return { ...finalized, changed: true };
 }
 
+/**
+ * Removes the explicit hard break before the requested section, merging that
+ * section's content into the previous one without deleting any text. The
+ * caret is placed at the start of the merged section's first flow block.
+ */
+export function removeHardPageBreak(
+  html: string,
+  sectionIndex: number,
+): DocumentTransactionResult {
+  if (!Number.isInteger(sectionIndex) || sectionIndex < 1) {
+    return { html, selection: null, changed: false };
+  }
+
+  const root = createContainer(html);
+  const breakElements = Array.from(
+    root.querySelectorAll<HTMLElement>('.page-break'),
+  );
+  const breakElement = breakElements[sectionIndex - 1];
+  if (!breakElement) {
+    return { html, selection: null, changed: false };
+  }
+
+  const sectionStart = breakElement.nextElementSibling as HTMLElement | null;
+  breakElement.remove();
+  hydrateFlowContainer(root);
+  const selectionPoint = sectionStart?.dataset.flowId
+    ? flowPointAtElementStart(root, sectionStart)
+    : null;
+  const finalized = finalizeDocumentRoot(
+    root,
+    selectionPoint ? collapsedFlowSelection(selectionPoint) : null,
+    true,
+  );
+  return { ...finalized, changed: true };
+}
+
 export function hardSectionIndexForFragment(
   fragments: PageFragment[],
   fragmentIndex: number,
