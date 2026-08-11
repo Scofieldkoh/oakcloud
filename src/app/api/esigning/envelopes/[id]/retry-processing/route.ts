@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
-import { retryEsigningEnvelopePdfGeneration } from '@/services/esigning-envelope.service';
+import { retryEsigningEnvelopeCompletionProcessing } from '@/services/esigning-envelope.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json().catch(() => ({}));
     const tenantId = resolveWorkspaceId(session, body.tenantId);
 
-    const result = await retryEsigningEnvelopePdfGeneration(session, tenantId, id);
+    const result = await retryEsigningEnvelopeCompletionProcessing(session, tenantId, id);
     return NextResponse.json(result);
   } catch (error) {
     return createErrorResponse(error);

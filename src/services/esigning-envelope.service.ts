@@ -46,8 +46,11 @@ import {
   withEsigningDeliveryTarget,
   type EsigningEmailDeliveryResult,
 } from '@/services/esigning-email-delivery.service';
+import {
+  getEsigningPostCompletionSummary,
+  toEsigningCopyDeliveryDtoStatus,
+} from '@/services/esigning-completion.service';
 import { detectEsigningFieldOverlapWarnings } from '@/services/esigning-field.service';
-import { generateEsigningEnvelopeArtifactsNow } from '@/services/esigning-pdf.service';
 import { exportToPDF } from '@/services/document-export.service';
 import {
   buildRecipientSigningOrder,
@@ -396,6 +399,13 @@ export async function listEsigningEnvelopes(
             signingOrder: true,
           },
         },
+        emailDeliveries: {
+          select: {
+            status: true,
+            kind: true,
+            targetKey: true,
+          },
+        },
         documents: {
           select: { id: true },
         },
@@ -460,22 +470,16 @@ export async function listEsigningEnvelopes(
           (recipient) =>
             recipient.type === 'SIGNER' && ['NOTIFIED', 'VIEWED'].includes(recipient.status)
         ),
-      canRetryPdf:
+      canRetryCompletionProcessing:
         envelope.status === 'COMPLETED' &&
-        envelope.pdfGenerationStatus !== 'COMPLETED' &&
+        (envelope.pdfGenerationStatus === 'FAILED' ||
+          ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(envelope.autoFilingStatus ?? '') ||
+          (envelope.emailDeliveries ?? []).some((delivery) =>
+            ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(delivery.status)
+          )) &&
         (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
       emailDelivery: getEsigningEmailDeliveryHealth([], envelope.metadata),
-      postCompletion: {
-        artifactStatus: envelope.pdfGenerationStatus ?? null,
-        autoFilingStatus: envelope.autoFilingStatus ?? 'NOT_REQUIRED',
-        completionDeliveryStatus:
-          envelope.status === 'COMPLETED'
-            ? envelope.pdfGenerationStatus === 'COMPLETED'
-              ? 'NOT_TRACKED'
-              : 'PENDING'
-            : 'NOT_TRACKED',
-        failedCompletionDeliveryCount: 0,
-      },
+      postCompletion: getEsigningPostCompletionSummary(envelope, envelope.emailDeliveries ?? []),
       resendableRecipientCount: envelope.recipients.filter(
         (recipient) =>
           recipient.type === 'SIGNER' && ['NOTIFIED', 'VIEWED'].includes(recipient.status)
@@ -483,16 +487,27 @@ export async function listEsigningEnvelopes(
       recipientCount: envelope.recipients.length,
       signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
       documentCount: envelope.documents.length,
-      recipients: envelope.recipients.map((recipient) => ({
-        id: recipient.id,
-        name: recipient.name,
-        email: recipient.email,
-        type: recipient.type,
-        status: recipient.status,
-        signingOrder: recipient.signingOrder,
-        copyDeliveryStatus:
-          envelope.status === 'COMPLETED' ? 'NOT_TRACKED' : 'AWAITING_COMPLETION',
-      })),
+      recipients: envelope.recipients.map((recipient) => {
+        const copyDelivery = (envelope.emailDeliveries ?? []).find(
+          (delivery) =>
+            delivery.kind === 'COMPLETION' &&
+            delivery.targetKey === `recipient:${recipient.id}`
+        );
+        return {
+          id: recipient.id,
+          name: recipient.name,
+          email: recipient.email,
+          type: recipient.type,
+          status: recipient.status,
+          signingOrder: recipient.signingOrder,
+          copyDeliveryStatus:
+            envelope.status === 'COMPLETED'
+              ? copyDelivery
+                ? toEsigningCopyDeliveryDtoStatus(copyDelivery.status)
+                : 'NOT_TRACKED'
+              : 'AWAITING_COMPLETION',
+        };
+      }),
     })),
     total,
     page,
@@ -2597,7 +2612,7 @@ export async function voidEsigningEnvelope(
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
-export async function retryEsigningEnvelopePdfGeneration(
+export async function retryEsigningEnvelopeCompletionProcessing(
   session: SessionUser,
   tenantId: string,
   envelopeId: string
@@ -2612,6 +2627,7 @@ export async function retryEsigningEnvelopePdfGeneration(
       companyId: true,
       createdById: true,
       pdfGenerationStatus: true,
+      autoFilingStatus: true,
     },
   });
 
@@ -2619,20 +2635,56 @@ export async function retryEsigningEnvelopePdfGeneration(
     throw new Error('Envelope not found');
   }
   if (envelope.status !== 'COMPLETED') {
-    throw new Error('Only completed envelopes can retry signed PDF generation');
-  }
-  if (envelope.pdfGenerationStatus === 'COMPLETED') {
-    throw new Error('This envelope already has a completed signed package');
+    throw new Error('Only completed envelopes can retry completion processing');
   }
   if (!scope.canManage && !canMutateEnvelope(scope, session, envelope.createdById)) {
     throw new Error('Forbidden');
   }
 
-  const actionLabel =
-    envelope.pdfGenerationStatus === 'FAILED' ? 'Retried' : 'Triggered';
-
-  await generateEsigningEnvelopeArtifactsNow({
-    envelopeId,
+  await prisma.$transaction(async (tx) => {
+    await tx.esigningEnvelope.updateMany({
+      where: {
+        id: envelopeId,
+        tenantId,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'FAILED',
+      },
+      data: {
+        pdfGenerationStatus: 'PENDING',
+        pdfGenerationClaimedAt: null,
+        pdfGenerationError: null,
+      },
+    });
+    await tx.esigningEnvelope.updateMany({
+      where: {
+        id: envelopeId,
+        tenantId,
+        status: 'COMPLETED',
+        autoFilingStatus: { in: ['FAILED_RETRYABLE', 'FAILED_PERMANENT'] },
+      },
+      data: {
+        autoFilingStatus: 'PENDING',
+        autoFilingAvailableAt: new Date(),
+        autoFilingClaimedAt: null,
+        autoFilingLeaseExpiresAt: null,
+        autoFilingError: null,
+      },
+    });
+    await tx.esigningEmailDelivery.updateMany({
+      where: {
+        envelopeId,
+        tenantId,
+        kind: 'COMPLETION',
+        status: { in: ['FAILED_RETRYABLE', 'FAILED_PERMANENT'] },
+      },
+      data: {
+        status: 'PENDING',
+        availableAt: new Date(),
+        claimedAt: null,
+        leaseExpiresAt: null,
+        lastError: null,
+      },
+    });
   });
 
   await createAuditLog({
@@ -2643,7 +2695,7 @@ export async function retryEsigningEnvelopePdfGeneration(
     entityType: 'EsigningEnvelope',
     entityId: envelopeId,
     entityName: envelope.title,
-    summary: `${actionLabel} signed PDF generation for "${envelope.title}"`,
+    summary: `Retried completion processing for "${envelope.title}"`,
   });
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);

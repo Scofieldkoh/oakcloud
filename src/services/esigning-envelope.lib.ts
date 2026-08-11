@@ -12,6 +12,10 @@ import type {
 } from '@/types/esigning';
 import type { EsigningListQueryInput } from '@/lib/validations/esigning';
 import { getEsigningEmailDeliveryHealth } from '@/services/esigning-email-delivery.service';
+import {
+  getEsigningPostCompletionSummary,
+  toEsigningCopyDeliveryDtoStatus,
+} from '@/services/esigning-completion.service';
 
 export interface EsigningActorScope {
   tenantId: string;
@@ -196,6 +200,13 @@ export async function getEnvelopeAggregate(envelopeId: string, tenantId?: string
             },
           },
         },
+        emailDeliveries: {
+          select: {
+            status: true,
+            kind: true,
+            targetKey: true,
+          },
+        },
       },
     }),
     prisma.esigningDocumentFieldValue.findMany({
@@ -273,22 +284,16 @@ export function serializeEnvelopeDetail(input: {
     canSend: envelope.status === 'DRAFT' && canMutateEnvelope(scope, session, envelope.createdById),
     canVoid: ['SENT', 'IN_PROGRESS'].includes(envelope.status) && (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
     canDuplicate: scope.canCreate && canReadEnvelope(scope, session, envelope.createdById),
-    canRetryPdf:
+    canRetryCompletionProcessing:
       envelope.status === 'COMPLETED' &&
-      envelope.pdfGenerationStatus === 'FAILED' &&
+      (envelope.pdfGenerationStatus === 'FAILED' ||
+        ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(envelope.autoFilingStatus ?? '') ||
+        (envelope.emailDeliveries ?? []).some((delivery) =>
+          ['FAILED_RETRYABLE', 'FAILED_PERMANENT'].includes(delivery.status)
+        )) &&
       (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
     emailDelivery: getEsigningEmailDeliveryHealth([], envelope.metadata),
-    postCompletion: {
-      artifactStatus: envelope.pdfGenerationStatus ?? null,
-      autoFilingStatus: envelope.autoFilingStatus ?? 'NOT_REQUIRED',
-      completionDeliveryStatus:
-        envelope.status === 'COMPLETED'
-          ? envelope.pdfGenerationStatus === 'COMPLETED'
-            ? 'NOT_TRACKED'
-            : 'PENDING'
-          : 'NOT_TRACKED',
-      failedCompletionDeliveryCount: 0,
-    },
+    postCompletion: getEsigningPostCompletionSummary(envelope, envelope.emailDeliveries ?? []),
     documentCount: envelope.documents.length,
     signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
     recipientCount: envelope.recipients.length,
@@ -305,6 +310,11 @@ export function serializeEnvelopeDetail(input: {
       }) satisfies EsigningEnvelopeDocumentDto),
     recipients: envelope.recipients.map((recipient) => {
       const counts = fieldCountByRecipient.get(recipient.id) ?? { total: 0, required: 0, signature: 0 };
+      const copyDelivery = (envelope.emailDeliveries ?? []).find(
+        (delivery) =>
+          delivery.kind === 'COMPLETION' &&
+          delivery.targetKey === `recipient:${recipient.id}`
+      );
       return {
         id: recipient.id,
         name: recipient.name,
@@ -324,7 +334,11 @@ export function serializeEnvelopeDetail(input: {
         requiredFieldsAssigned: counts.required,
         signatureFieldsAssigned: counts.signature,
         copyDeliveryStatus:
-          envelope.status === 'COMPLETED' ? 'NOT_TRACKED' : 'AWAITING_COMPLETION',
+          envelope.status === 'COMPLETED'
+            ? copyDelivery
+              ? toEsigningCopyDeliveryDtoStatus(copyDelivery.status)
+              : 'NOT_TRACKED'
+            : 'AWAITING_COMPLETION',
       } satisfies EsigningEnvelopeRecipientDto;
     }),
     fields: envelope.fieldDefinitions.map((field) => ({

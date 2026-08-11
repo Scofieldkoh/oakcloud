@@ -52,7 +52,7 @@ export interface EsigningEnvelopeListItem {
   canVoid: boolean;
   canDuplicate: boolean;
   canResend: boolean;
-  canRetryPdf: boolean;
+  canRetryCompletionProcessing: boolean;
   emailDelivery: EsigningEmailDeliveryHealthDto;
   postCompletion: EsigningPostCompletionDto;
   resendableRecipientCount: number;
@@ -192,7 +192,7 @@ export interface EsigningEnvelopeDetailDto {
   canSend: boolean;
   canVoid: boolean;
   canDuplicate: boolean;
-  canRetryPdf: boolean;
+  canRetryCompletionProcessing: boolean;
   emailDelivery: EsigningEmailDeliveryHealthDto;
   postCompletion: EsigningPostCompletionDto;
   documentCount: number;

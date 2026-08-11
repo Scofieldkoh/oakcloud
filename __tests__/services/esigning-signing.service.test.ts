@@ -1,12 +1,52 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { finalizeEsigningEnvelopeCompletion } from '@/services/esigning-signing.service';
+import {
+  finalizeEsigningEnvelopeCompletion,
+  getEsigningSigningSessionStatus,
+} from '@/services/esigning-signing.service';
+import { getEsigningPostCompletionSummary } from '@/services/esigning-completion.service';
+import { retryEsigningEnvelopeCompletionProcessing } from '@/services/esigning-envelope.service';
 
 const serviceAgreementMock = vi.hoisted(() => ({
   processQueuedServiceAgreementActivations: vi.fn(),
   queueServiceAgreementActivationsForEnvelope: vi.fn().mockResolvedValue(0),
 }));
 
+const prismaMocks = vi.hoisted(() => ({
+  findFirstRecipient: vi.fn(),
+  countRecipients: vi.fn(),
+  findFirstEnvelope: vi.fn(),
+  fieldValueFindMany: vi.fn(),
+  transaction: vi.fn(),
+  envelopeUpdateMany: vi.fn(),
+  deliveryUpdateMany: vi.fn(),
+}));
+
+const sessionMocks = vi.hoisted(() => ({
+  getEsigningSessionClaims: vi.fn(),
+}));
+
 vi.mock('@/services/service-agreement', () => serviceAgreementMock);
+vi.mock('@/lib/esigning-session', () => sessionMocks);
+vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    esigningDocumentFieldValue: {
+      findMany: prismaMocks.fieldValueFindMany,
+    },
+    esigningEnvelopeRecipient: {
+      findFirst: prismaMocks.findFirstRecipient,
+      count: prismaMocks.countRecipients,
+    },
+    esigningEnvelope: {
+      findFirst: prismaMocks.findFirstEnvelope,
+      updateMany: prismaMocks.envelopeUpdateMany,
+    },
+    esigningEmailDelivery: {
+      updateMany: prismaMocks.deliveryUpdateMany,
+    },
+    $transaction: prismaMocks.transaction,
+  },
+}));
 
 function makeEnvelope(overrides: Record<string, unknown> = {}) {
   return {
@@ -160,5 +200,261 @@ describe('e-signing completion queueing', () => {
       remainingSignerCount: 0,
       completedAt,
     })).rejects.toThrow('database unavailable');
+  });
+});
+
+describe('e-signing completion status serialization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionMocks.getEsigningSessionClaims.mockResolvedValue({
+      recipientId: 'recipient-1',
+      envelopeId: 'envelope-1',
+      sessionVersion: 1,
+      sessionId: null,
+    });
+  });
+
+  it('reports an earlier signer as non-terminal with remaining signers', async () => {
+    prismaMocks.findFirstRecipient.mockResolvedValue({
+      id: 'recipient-1',
+      status: 'NOTIFIED',
+      signedAt: null,
+      sessionVersion: 1,
+      envelope: {
+        id: 'envelope-1',
+        status: 'IN_PROGRESS',
+        expiresAt: null,
+        pdfGenerationStatus: null,
+        autoFilingStatus: 'NOT_REQUIRED',
+        emailDeliveries: [],
+      },
+    });
+    prismaMocks.countRecipients.mockResolvedValue(2);
+
+    const status = await getEsigningSigningSessionStatus();
+
+    expect(status.remainingSignerCount).toBe(2);
+    expect(status.terminal).toBe(false);
+    expect(status.currentRecipientDeliveryStatus).toBe('AWAITING_COMPLETION');
+  });
+
+  it('treats a final signer with a pending PDF as non-terminal', async () => {
+    prismaMocks.findFirstRecipient.mockResolvedValue({
+      id: 'recipient-1',
+      status: 'SIGNED',
+      signedAt: new Date('2026-08-11T08:00:00.000Z'),
+      sessionVersion: 1,
+      envelope: {
+        id: 'envelope-1',
+        status: 'COMPLETED',
+        expiresAt: null,
+        pdfGenerationStatus: 'PENDING',
+        autoFilingStatus: 'NOT_REQUIRED',
+        emailDeliveries: [
+          {
+            status: 'PENDING',
+            kind: 'COMPLETION',
+            targetKey: 'recipient:recipient-1',
+            recipientId: 'recipient-1',
+          },
+        ],
+      },
+    });
+    prismaMocks.countRecipients.mockResolvedValue(0);
+
+    const status = await getEsigningSigningSessionStatus();
+
+    expect(status.terminal).toBe(false);
+    expect(status.currentRecipientDeliveryStatus).toBe('PENDING');
+  });
+
+  it('treats a failed PDF as terminal for public polling', async () => {
+    prismaMocks.findFirstRecipient.mockResolvedValue({
+      id: 'recipient-1',
+      status: 'SIGNED',
+      signedAt: new Date('2026-08-11T08:00:00.000Z'),
+      sessionVersion: 1,
+      envelope: {
+        id: 'envelope-1',
+        status: 'COMPLETED',
+        expiresAt: null,
+        pdfGenerationStatus: 'FAILED',
+        autoFilingStatus: 'COMPLETED',
+        emailDeliveries: [],
+      },
+    });
+    prismaMocks.countRecipients.mockResolvedValue(0);
+
+    const status = await getEsigningSigningSessionStatus();
+
+    expect(status.terminal).toBe(true);
+    expect(status.currentRecipientDeliveryStatus).toBe('NOT_TRACKED');
+  });
+
+  it('keeps polling while auto-file or delivery is retryable', async () => {
+    prismaMocks.findFirstRecipient.mockResolvedValue({
+      id: 'recipient-1',
+      status: 'SIGNED',
+      signedAt: new Date('2026-08-11T08:00:00.000Z'),
+      sessionVersion: 1,
+      envelope: {
+        id: 'envelope-1',
+        status: 'COMPLETED',
+        expiresAt: null,
+        pdfGenerationStatus: 'COMPLETED',
+        autoFilingStatus: 'FAILED_RETRYABLE',
+        emailDeliveries: [
+          {
+            status: 'FAILED_RETRYABLE',
+            kind: 'COMPLETION',
+            targetKey: 'recipient:recipient-1',
+            recipientId: 'recipient-1',
+          },
+        ],
+      },
+    });
+    prismaMocks.countRecipients.mockResolvedValue(0);
+
+    const status = await getEsigningSigningSessionStatus();
+
+    expect(status.terminal).toBe(false);
+    expect(status.currentRecipientDeliveryStatus).toBe('RETRYING');
+    expect(status.envelope.completionDeliveryStatus).toBe('RETRYING');
+  });
+
+  it('maps delivery DTO statuses from the ledger', () => {
+    const envelope = {
+      status: 'COMPLETED',
+      pdfGenerationStatus: 'COMPLETED',
+      autoFilingStatus: 'COMPLETED',
+    };
+
+    expect(
+      getEsigningPostCompletionSummary(envelope, [
+        { status: 'PENDING' },
+        { status: 'SUCCEEDED' },
+      ]).completionDeliveryStatus
+    ).toBe('PENDING');
+    expect(
+      getEsigningPostCompletionSummary(envelope, [{ status: 'FAILED_RETRYABLE' }])
+        .completionDeliveryStatus
+    ).toBe('RETRYING');
+    expect(
+      getEsigningPostCompletionSummary(envelope, [{ status: 'FAILED_PERMANENT' }])
+        .completionDeliveryStatus
+    ).toBe('FAILED');
+    expect(
+      getEsigningPostCompletionSummary(envelope, [{ status: 'SUCCEEDED' }])
+        .completionDeliveryStatus
+    ).toBe('COMPLETED');
+    expect(getEsigningPostCompletionSummary(envelope, []).completionDeliveryStatus).toBe(
+      'NOT_TRACKED'
+    );
+  });
+});
+
+describe('e-signing completion retry', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMocks.findFirstEnvelope.mockResolvedValue({
+      id: 'envelope-1',
+      status: 'COMPLETED',
+      title: 'NDA',
+      companyId: 'company-1',
+      createdById: 'user-1',
+      pdfGenerationStatus: 'FAILED',
+      autoFilingStatus: 'FAILED_RETRYABLE',
+    });
+    prismaMocks.transaction.mockImplementation(
+      async (callback: (tx: unknown) => Promise<unknown>) => {
+        return callback({
+          esigningEnvelope: { updateMany: prismaMocks.envelopeUpdateMany },
+          esigningEmailDelivery: { updateMany: prismaMocks.deliveryUpdateMany },
+        });
+      }
+    );
+    prismaMocks.envelopeUpdateMany.mockResolvedValue({ count: 1 });
+    prismaMocks.deliveryUpdateMany.mockResolvedValue({ count: 1 });
+    prismaMocks.fieldValueFindMany.mockResolvedValue([]);
+  });
+
+  it('resets only failed completion stages', async () => {
+    const now = new Date('2026-08-11T00:00:00.000Z');
+    prismaMocks.findFirstEnvelope
+      .mockResolvedValueOnce({
+        id: 'envelope-1',
+        status: 'COMPLETED',
+        title: 'NDA',
+        companyId: 'company-1',
+        createdById: 'user-1',
+        pdfGenerationStatus: 'FAILED',
+        autoFilingStatus: 'FAILED_RETRYABLE',
+      })
+      .mockResolvedValueOnce({
+        id: 'envelope-1',
+        tenantId: 'tenant-1',
+        title: 'NDA',
+        message: null,
+        status: 'COMPLETED',
+        signingOrder: 'PARALLEL',
+        expiresAt: null,
+        reminderFrequencyDays: null,
+        reminderStartDays: null,
+        expiryWarningDays: null,
+        companyId: 'company-1',
+        company: { id: 'company-1', name: 'Acme' },
+        certificateId: 'certificate-1',
+        completedAt: now,
+        createdAt: now,
+        updatedAt: now,
+        voidedAt: null,
+        voidReason: null,
+        pdfGenerationStatus: 'PENDING',
+        pdfGenerationError: null,
+        autoFilingStatus: 'PENDING',
+        createdById: 'user-1',
+        createdBy: { id: 'user-1', firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+        documents: [],
+        recipients: [],
+        fieldDefinitions: [],
+        events: [],
+        emailDeliveries: [],
+      });
+
+    await retryEsigningEnvelopeCompletionProcessing(
+      {
+        id: 'user-1',
+        tenantId: 'tenant-1',
+        isSuperAdmin: true,
+        isWorkspaceAdmin: true,
+      } as never,
+      'tenant-1',
+      'envelope-1'
+    );
+
+    expect(prismaMocks.envelopeUpdateMany).toHaveBeenCalledTimes(2);
+    expect(prismaMocks.envelopeUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ pdfGenerationStatus: 'FAILED' }),
+        data: expect.objectContaining({ pdfGenerationStatus: 'PENDING' }),
+      })
+    );
+    expect(prismaMocks.envelopeUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          autoFilingStatus: { in: ['FAILED_RETRYABLE', 'FAILED_PERMANENT'] },
+        }),
+        data: expect.objectContaining({ autoFilingStatus: 'PENDING' }),
+      })
+    );
+    expect(prismaMocks.deliveryUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          kind: 'COMPLETION',
+          status: { in: ['FAILED_RETRYABLE', 'FAILED_PERMANENT'] },
+        }),
+        data: expect.objectContaining({ status: 'PENDING' }),
+      })
+    );
   });
 });

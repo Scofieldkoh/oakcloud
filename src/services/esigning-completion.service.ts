@@ -4,6 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
+import type {
+  EsigningCompletionDeliveryStatusDto,
+  EsigningCopyDeliveryStatusDto,
+  EsigningPostCompletionDto,
+} from '@/types/esigning';
 import { sendEsigningCompletionEmail } from '@/services/esigning-notification.service';
 import {
   buildDeliveryDocumentLinks,
@@ -38,6 +43,85 @@ export function isTerminalEsigningEmailDeliveryStatus(
   status: string | null | undefined
 ): boolean {
   return ['SUCCEEDED', 'FAILED_PERMANENT'].includes(status ?? '');
+}
+
+export function toEsigningCompletionDeliveryDtoStatus(
+  status: string | null | undefined
+): EsigningCompletionDeliveryStatusDto {
+  switch (status) {
+    case 'PENDING':
+    case 'PROCESSING':
+      return 'PENDING';
+    case 'FAILED_RETRYABLE':
+      return 'RETRYING';
+    case 'FAILED_PERMANENT':
+      return 'FAILED';
+    case 'SUCCEEDED':
+      return 'COMPLETED';
+    default:
+      return 'NOT_TRACKED';
+  }
+}
+
+export function toEsigningCopyDeliveryDtoStatus(
+  status: string | null | undefined
+): EsigningCopyDeliveryStatusDto {
+  switch (status) {
+    case 'PENDING':
+    case 'PROCESSING':
+      return 'PENDING';
+    case 'FAILED_RETRYABLE':
+      return 'RETRYING';
+    case 'FAILED_PERMANENT':
+      return 'FAILED';
+    case 'SUCCEEDED':
+      return 'SENT';
+    default:
+      return 'NOT_TRACKED';
+  }
+}
+
+export function getEsigningPostCompletionSummary(
+  envelope: {
+    status: string;
+    pdfGenerationStatus: string | null | undefined;
+    autoFilingStatus: string | null | undefined;
+  },
+  deliveries: Array<{ status: string }>
+): EsigningPostCompletionDto {
+  const completionDeliveries = deliveries.filter(
+    (delivery) =>
+      delivery.status === 'PENDING' ||
+      delivery.status === 'PROCESSING' ||
+      delivery.status === 'SUCCEEDED' ||
+      delivery.status === 'FAILED_RETRYABLE' ||
+      delivery.status === 'FAILED_PERMANENT'
+  );
+
+  const completionDeliveryStatus: EsigningCompletionDeliveryStatusDto =
+    envelope.status !== 'COMPLETED'
+      ? 'NOT_TRACKED'
+      : completionDeliveries.length === 0
+        ? 'NOT_TRACKED'
+        : completionDeliveries.some(
+            (delivery) => delivery.status === 'PENDING' || delivery.status === 'PROCESSING'
+          )
+          ? 'PENDING'
+          : completionDeliveries.some((delivery) => delivery.status === 'FAILED_RETRYABLE')
+            ? 'RETRYING'
+            : completionDeliveries.some((delivery) => delivery.status === 'FAILED_PERMANENT')
+              ? 'FAILED'
+              : 'COMPLETED';
+
+  return {
+    artifactStatus: envelope.pdfGenerationStatus ?? null,
+    autoFilingStatus: (envelope.autoFilingStatus ?? 'NOT_REQUIRED') as EsigningPostCompletionDto['autoFilingStatus'],
+    completionDeliveryStatus,
+    failedCompletionDeliveryCount: completionDeliveries.filter(
+      (delivery) =>
+        delivery.status === 'FAILED_RETRYABLE' || delivery.status === 'FAILED_PERMANENT'
+    ).length,
+  };
 }
 
 export async function queueEsigningCompletionWork(

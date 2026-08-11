@@ -29,7 +29,13 @@ import {
 } from '@/services/esigning-email-delivery.service';
 import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
-import { queueEsigningCompletionWork } from '@/services/esigning-completion.service';
+import {
+  getEsigningPostCompletionSummary,
+  isTerminalEsigningEmailDeliveryStatus,
+  isTerminalPostCompletionStatus,
+  queueEsigningCompletionWork,
+  toEsigningCopyDeliveryDtoStatus,
+} from '@/services/esigning-completion.service';
 import { safelyReconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
 import {
   processQueuedServiceAgreementActivations,
@@ -617,6 +623,14 @@ export async function getEsigningSigningSessionStatus(): Promise<EsigningSigning
           expiresAt: true,
           pdfGenerationStatus: true,
           autoFilingStatus: true,
+          emailDeliveries: {
+            select: {
+              status: true,
+              kind: true,
+              targetKey: true,
+              recipientId: true,
+            },
+          },
         },
       },
     },
@@ -632,14 +646,35 @@ export async function getEsigningSigningSessionStatus(): Promise<EsigningSigning
     throw new Error(`This envelope is ${recipient.envelope.status.toLowerCase()}`);
   }
 
+  const envelope = recipient.envelope;
+  const currentRecipientDelivery = envelope.emailDeliveries.find(
+    (delivery) =>
+      delivery.kind === 'COMPLETION' && delivery.recipientId === claims.recipientId
+  );
+  const summary = getEsigningPostCompletionSummary(envelope, envelope.emailDeliveries);
+  const remainingSignerCount = await prisma.esigningEnvelopeRecipient.count({
+    where: {
+      envelopeId: claims.envelopeId,
+      type: 'SIGNER',
+      status: { not: 'SIGNED' },
+    },
+  });
+  const currentDeliveryStatus = currentRecipientDelivery?.status ?? 'NOT_TRACKED';
+  const terminal =
+    envelope.status === 'COMPLETED' &&
+    ['COMPLETED', 'FAILED'].includes(envelope.pdfGenerationStatus ?? '') &&
+    isTerminalPostCompletionStatus(envelope.autoFilingStatus) &&
+    (isTerminalEsigningEmailDeliveryStatus(currentDeliveryStatus) ||
+      currentDeliveryStatus === 'NOT_TRACKED');
+
   return {
     envelope: {
-      id: recipient.envelope.id,
-      status: recipient.envelope.status,
-      expiresAt: toIsoString(recipient.envelope.expiresAt),
-      pdfGenerationStatus: recipient.envelope.pdfGenerationStatus ?? null,
-      autoFilingStatus: recipient.envelope.autoFilingStatus ?? 'NOT_REQUIRED',
-      completionDeliveryStatus: 'NOT_TRACKED',
+      id: envelope.id,
+      status: envelope.status,
+      expiresAt: toIsoString(envelope.expiresAt),
+      pdfGenerationStatus: envelope.pdfGenerationStatus ?? null,
+      autoFilingStatus: envelope.autoFilingStatus ?? 'NOT_REQUIRED',
+      completionDeliveryStatus: summary.completionDeliveryStatus,
     },
     recipient: {
       id: recipient.id,
@@ -647,9 +682,13 @@ export async function getEsigningSigningSessionStatus(): Promise<EsigningSigning
       signedAt: toIsoString(recipient.signedAt),
     },
     currentRecipientDeliveryStatus:
-      recipient.envelope.status === 'COMPLETED' ? 'NOT_TRACKED' : 'AWAITING_COMPLETION',
-    remainingSignerCount: 0,
-    terminal: false,
+      envelope.status === 'COMPLETED'
+        ? currentRecipientDelivery
+          ? toEsigningCopyDeliveryDtoStatus(currentRecipientDelivery.status)
+          : 'NOT_TRACKED'
+        : 'AWAITING_COMPLETION',
+    remainingSignerCount,
+    terminal,
   };
 }
 
