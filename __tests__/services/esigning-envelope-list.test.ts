@@ -57,6 +57,8 @@ describe('e-signing envelope list company filtering', () => {
       page: 3,
       limit: 20,
       createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
     });
 
     expect(mocks.count).toHaveBeenCalledWith({
@@ -109,6 +111,8 @@ describe('e-signing envelope list company filtering', () => {
       page: 1,
       limit: 20,
       createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
     });
 
     expect(result.envelopes).toHaveLength(1);
@@ -131,6 +135,8 @@ describe('e-signing envelope list company filtering', () => {
       page: 1,
       limit: 20,
       createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
     });
 
     expect(mocks.groupBy).toHaveBeenNthCalledWith(

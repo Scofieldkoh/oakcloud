@@ -47,6 +47,27 @@ This report records 15 source-confirmed findings and one production-console obse
 | ESIGN-15 | P2 | Error handling | Upload-step validation/server errors have no handled user-facing failure path. |
 | OBS-01 | P3 | Hydration | Opening a new draft produced React hydration error `#418` in the production console. |
 
+## Resolution status
+
+| ID | Status | Implementing commit(s) | Focused regression |
+| --- | --- | --- | --- |
+| ESIGN-01 | Resolved | `8b8d1ab` | `EsigningSignPage consent` (consent failure matrix, 8 cases) |
+| ESIGN-02 | Resolved | `0a457c8`, `25fc453` | `EsigningSignPage completion polling` (5 transitions) |
+| ESIGN-03 | Resolved | `75542d5`, `13cecef`, `f57fbcb`, `0a457c8` | `esigning-completion.service.test.ts`, `esigning-signing.service.test.ts` (queue/worker/status) |
+| ESIGN-04 | Resolved | `75542d5`, `f57fbcb` | `esigning-email-delivery.test.ts` (target isolation, 5 cases) |
+| ESIGN-05 | Resolved | `8b8d1ab` | `EsigningSignPage autosave and field values` (untouched signature-only, in-flight edit) |
+| ESIGN-06 | Resolved | `8b8d1ab` | `does not adopt a TEXT/TITLE placeholder as a value` |
+| ESIGN-07 | Resolved | `b063287` | `sends null when a saved message is cleared` |
+| ESIGN-08 | Resolved | `53d689a` | `esigning-envelope-list.test.ts` (3 service cases) + company filter query test |
+| ESIGN-09 | Resolved | `f5d5402` | `EsigningListPage initial upload compensation` (3 cases) |
+| ESIGN-10 | Resolved | `5394fbc`, `a692e84` | `E-signing preparation browser matrix` (scroll/focus transitions at 390 px) |
+| ESIGN-11 | Resolved | `f9c20be`, `a692e84` | browser matrix (320/390 overlay vs 768 tablet panels) |
+| ESIGN-12 | Resolved | `5394fbc`, `a692e84` | `is a keyboard-operable upload control...` + browser keyboard upload |
+| ESIGN-13 | Resolved | `539ac94`, `a692e84` | `esigning-field-canvas.test.tsx` (6 cases) + browser arrow-key check |
+| ESIGN-14 | Resolved | `75542d5`, `25fc453` | `CopyDeliveryStatusBadge` cases + list icon aria labels |
+| ESIGN-15 | Resolved | `b063287` | `blocks ...` / `keeps the step mounted ...` upload-step failure cases |
+| OBS-01 | Not reproduced (documented) | `cf69ca4` | `esigning-detail-hydration.test.tsx` (draft + completed detail, zero hydration errors) |
+
 ## Detailed findings
 
 ### ESIGN-01 - Failed consent still advances to signing

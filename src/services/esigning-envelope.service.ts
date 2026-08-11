@@ -44,7 +44,7 @@ import {
   getEsigningEmailDeliveryHealth,
   recordEsigningEnvelopeEmailDeliveryResults,
   withEsigningDeliveryTarget,
-  type EsigningEmailDeliveryResult,
+  type RecordedEsigningEmailDeliveryResult,
 } from '@/services/esigning-email-delivery.service';
 import {
   getEsigningPostCompletionSummary,
@@ -229,7 +229,7 @@ async function deliverPreparedNotifications(input: {
   kind?: 'request' | 'reminder';
   reminderOccurrenceIso?: string;
 }): Promise<void> {
-  const deliveryResults: EsigningEmailDeliveryResult[] = [];
+  const deliveryResults: RecordedEsigningEmailDeliveryResult[] = [];
   for (const notification of input.notifications) {
     if (notification.accessMode === 'MANUAL_LINK') {
       continue;
@@ -440,6 +440,9 @@ export async function listEsigningEnvelopes(
     prisma.esigningEnvelope.groupBy({
       by: ['companyId'],
       where: companyOptionWhere,
+      orderBy: {
+        companyId: 'asc',
+      },
       _count: {
         _all: true,
       },
@@ -2214,6 +2217,7 @@ export async function sendEsigningEnvelope(
   );
   await deliverPreparedNotifications({
     envelopeId: envelope.id,
+    tenantId: envelope.tenantId,
     senderName,
     envelopeTitle: envelope.title,
     message: envelope.message,
@@ -2649,7 +2653,7 @@ export async function voidEsigningEnvelope(
     ['QUEUED', 'NOTIFIED', 'VIEWED'].includes(recipient.status)
   );
 
-  const deliveryResults: EsigningEmailDeliveryResult[] = [];
+  const deliveryResults: RecordedEsigningEmailDeliveryResult[] = [];
   for (const recipient of recipientsToNotify) {
     const result = await sendEsigningVoidedEmailToRecipient({
       to: recipient.email,

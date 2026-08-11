@@ -5,8 +5,8 @@ import { AlertTriangle, CheckCircle2, Clock, Download, ExternalLink, Loader2 } f
 import type {
   EsigningCompletionDeliveryStatusDto,
   EsigningCopyDeliveryStatusDto,
-  EsigningPostCompletionStatus,
 } from '@/types/esigning';
+import type { EsigningPostCompletionStatus } from '@/generated/prisma';
 import { formatEsigningDateTime } from '@/components/esigning/esigning-shared';
 
 interface EsigningCompletionScreenProps {

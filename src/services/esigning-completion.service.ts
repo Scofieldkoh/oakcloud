@@ -9,6 +9,7 @@ import type {
   EsigningCopyDeliveryStatusDto,
   EsigningPostCompletionDto,
 } from '@/types/esigning';
+import type { EsigningPdfGenerationStatus } from '@/generated/prisma';
 import { sendEsigningCompletionEmail } from '@/services/esigning-notification.service';
 import {
   buildDeliveryDocumentLinks,
@@ -114,7 +115,7 @@ export function getEsigningPostCompletionSummary(
               : 'COMPLETED';
 
   return {
-    artifactStatus: envelope.pdfGenerationStatus ?? null,
+    artifactStatus: (envelope.pdfGenerationStatus ?? null) as EsigningPdfGenerationStatus | null,
     autoFilingStatus: (envelope.autoFilingStatus ?? 'NOT_REQUIRED') as EsigningPostCompletionDto['autoFilingStatus'],
     completionDeliveryStatus,
     failedCompletionDeliveryCount: completionDeliveries.filter(
@@ -566,7 +567,7 @@ export async function processEsigningCompletionDelivery(
       data: {
         status: 'SUCCEEDED',
         attemptCount: { increment: 1 },
-        availableAt: null,
+        availableAt: now,
         claimedAt: null,
         leaseExpiresAt: null,
         lastAttemptedAt: now,
@@ -603,7 +604,7 @@ export async function processEsigningCompletionDelivery(
         availableAt:
           status === 'FAILED_RETRYABLE'
             ? new Date(Date.now() + retryDelay(attemptCount))
-            : null,
+            : new Date(),
         claimedAt: null,
         leaseExpiresAt: null,
         lastAttemptedAt: now,

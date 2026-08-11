@@ -311,7 +311,7 @@ describe('e-signing completion worker', () => {
       data: expect.objectContaining({
         status: 'FAILED_PERMANENT',
         attemptCount: 5,
-        availableAt: null,
+        availableAt: expect.any(Date),
       }),
     });
     expect(mocks.createDeliveryAttempt).toHaveBeenCalledWith(expect.objectContaining({

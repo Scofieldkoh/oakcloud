@@ -105,6 +105,8 @@ function makeSession(
       senderName: 'Sender',
       completedAt: null,
       expiresAt: null,
+      autoFilingStatus: 'NOT_REQUIRED',
+      completionDeliveryStatus: 'NOT_TRACKED',
     },
     recipient: {
       id: 'recipient-1',
@@ -123,6 +125,7 @@ function makeSession(
     fields: [],
     fieldValues: [],
     downloadToken: null,
+    currentRecipientDeliveryStatus: 'AWAITING_COMPLETION',
     ...overrides,
   };
 }

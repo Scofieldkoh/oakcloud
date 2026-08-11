@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EsigningStepUpload } from '@/components/esigning/prepare/esigning-step-upload';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
+import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
+import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
@@ -215,9 +217,9 @@ describe('EsigningStepUpload', () => {
   function renderUpload(
     envelopeOverrides: Partial<EsigningEnvelopeDetailDto> = {},
     propOverrides: {
-      onUpdateSettings?: ReturnType<typeof vi.fn>;
-      onReorderRecipients?: ReturnType<typeof vi.fn>;
-      onNext?: ReturnType<typeof vi.fn>;
+      onUpdateSettings?: (settings: UpdateEsigningEnvelopeInput) => Promise<void>;
+      onReorderRecipients?: (payload: ReorderEsigningRecipientsPayload) => Promise<void>;
+      onNext?: () => void;
       isUploading?: boolean;
     } = {}
   ) {
