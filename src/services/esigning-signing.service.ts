@@ -278,6 +278,27 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
           sessionVersion: context.recipient.sessionVersion,
         })
       : null;
+  const completionDeliveries =
+    context.envelope.status === 'COMPLETED'
+      ? await prisma.esigningEmailDelivery.findMany({
+          where: {
+            envelopeId: context.envelope.id,
+            kind: 'COMPLETION',
+          },
+          select: {
+            status: true,
+            recipientId: true,
+            targetKey: true,
+          },
+        })
+      : [];
+  const currentRecipientDelivery = completionDeliveries.find(
+    (delivery) => delivery.recipientId === context.recipient.id
+  );
+  const completionSummary = getEsigningPostCompletionSummary(
+    context.envelope,
+    completionDeliveries
+  );
 
   return {
     envelope: {
@@ -293,12 +314,7 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
       completedAt: toIsoString(context.envelope.completedAt),
       expiresAt: toIsoString(context.envelope.expiresAt),
       autoFilingStatus: context.envelope.autoFilingStatus ?? 'NOT_REQUIRED',
-      completionDeliveryStatus:
-        context.envelope.status === 'COMPLETED'
-          ? context.envelope.pdfGenerationStatus === 'COMPLETED'
-            ? 'NOT_TRACKED'
-            : 'PENDING'
-          : 'NOT_TRACKED',
+      completionDeliveryStatus: completionSummary.completionDeliveryStatus,
     },
     recipient: {
       id: context.recipient.id,
@@ -351,9 +367,9 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
     })),
     currentRecipientDeliveryStatus:
       context.envelope.status === 'COMPLETED'
-        ? context.envelope.pdfGenerationStatus === 'COMPLETED'
-          ? 'NOT_TRACKED'
-          : 'PENDING'
+        ? currentRecipientDelivery
+          ? toEsigningCopyDeliveryDtoStatus(currentRecipientDelivery.status)
+          : 'NOT_TRACKED'
         : 'AWAITING_COMPLETION',
     fieldValues: await Promise.all(
       context.fieldValues.map(async (value) => ({

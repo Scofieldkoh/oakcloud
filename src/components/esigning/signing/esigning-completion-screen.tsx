@@ -1,7 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, Clock, Download, ExternalLink, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Download, ExternalLink, Loader2 } from 'lucide-react';
+import type {
+  EsigningCompletionDeliveryStatusDto,
+  EsigningCopyDeliveryStatusDto,
+  EsigningPostCompletionStatus,
+} from '@/types/esigning';
 import { formatEsigningDateTime } from '@/components/esigning/esigning-shared';
 
 interface EsigningCompletionScreenProps {
@@ -12,6 +17,9 @@ interface EsigningCompletionScreenProps {
   remainingSignerCount: number;
   expiresAt: string | null;
   pdfGenerationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | null;
+  autoFilingStatus: EsigningPostCompletionStatus;
+  completionDeliveryStatus: EsigningCompletionDeliveryStatusDto;
+  currentRecipientDeliveryStatus: EsigningCopyDeliveryStatusDto;
   documents: Array<{ id: string; fileName: string; signedPdfUrl: string | null }>;
   downloadToken: string | null;
   certificateId: string;
@@ -25,13 +33,50 @@ export function EsigningCompletionScreen({
   remainingSignerCount,
   expiresAt,
   pdfGenerationStatus,
+  currentRecipientDeliveryStatus,
   documents,
   certificateId,
 }: EsigningCompletionScreenProps) {
   const signedDocs = documents.filter((d) => d.signedPdfUrl);
   const hasPendingSigners = !isAllPartiesDone && remainingSignerCount > 0;
-  const isSignedCopyReady = isAllPartiesDone && pdfGenerationStatus === 'COMPLETED' && signedDocs.length > 0;
-  const isSignedCopyPreparing = isAllPartiesDone && pdfGenerationStatus !== 'COMPLETED';
+  const isSignedCopyReady =
+    isAllPartiesDone && pdfGenerationStatus === 'COMPLETED' && signedDocs.length > 0;
+  const isSignedCopyPreparing =
+    isAllPartiesDone &&
+    (pdfGenerationStatus === 'PENDING' || pdfGenerationStatus === 'PROCESSING');
+  const isSignedCopyFailed = isAllPartiesDone && pdfGenerationStatus === 'FAILED';
+
+  function getCompletionCopyMessage(): string {
+    if (currentRecipientDeliveryStatus === 'SENT') {
+      return 'A completed copy of the signed documents has been emailed to you.';
+    }
+    if (currentRecipientDeliveryStatus === 'PENDING') {
+      return 'A completed copy is being prepared and will be emailed to you.';
+    }
+    if (currentRecipientDeliveryStatus === 'RETRYING') {
+      return 'We are retrying to send your completed copy. No action is needed.';
+    }
+    if (currentRecipientDeliveryStatus === 'FAILED') {
+      return 'We could not email your completed copy. Please contact the sender.';
+    }
+    return 'The signed documents are available for download below.';
+  }
+
+  function getTimelineCompletionLabel(): string {
+    if (currentRecipientDeliveryStatus === 'SENT') {
+      return 'Completed — your copy has been sent';
+    }
+    if (
+      currentRecipientDeliveryStatus === 'PENDING' ||
+      currentRecipientDeliveryStatus === 'RETRYING'
+    ) {
+      return 'Completed — your copy is on its way';
+    }
+    if (currentRecipientDeliveryStatus === 'FAILED') {
+      return 'Completed — copy delivery needs attention';
+    }
+    return 'Completed — signed documents ready';
+  }
 
   return (
     <div className="min-h-screen bg-background-primary px-4 pt-8 pb-8 sm:pt-16 sm:pb-12">
@@ -40,8 +85,18 @@ export function EsigningCompletionScreen({
         <div className="rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm text-center sm:p-8">
           {/* Icon */}
           <div className="flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 sm:h-20 sm:w-20">
-              <CheckCircle2 className="h-8 w-8 text-emerald-500 sm:h-10 sm:w-10" />
+            <div
+              className={
+                isSignedCopyFailed
+                  ? 'flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 border border-rose-200 sm:h-20 sm:w-20'
+                  : 'flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 sm:h-20 sm:w-20'
+              }
+            >
+              {isSignedCopyFailed ? (
+                <AlertTriangle className="h-8 w-8 text-rose-500 sm:h-10 sm:w-10" />
+              ) : (
+                <CheckCircle2 className="h-8 w-8 text-emerald-500 sm:h-10 sm:w-10" />
+              )}
             </div>
           </div>
 
@@ -51,7 +106,7 @@ export function EsigningCompletionScreen({
           </h1>
           <p className="mt-2 text-sm text-text-secondary">
             {isAllPartiesDone
-              ? 'All parties will receive a completed copy of the signed documents.'
+              ? getCompletionCopyMessage()
               : 'The sender has been notified. Waiting for other signers to complete their part.'}
           </p>
           {hasPendingSigners || expiresAt ? (
@@ -118,7 +173,7 @@ export function EsigningCompletionScreen({
               <div>
                 <p className="text-sm font-medium text-text-primary">
                   {isAllPartiesDone
-                    ? 'Completed — all parties received a copy'
+                    ? getTimelineCompletionLabel()
                     : 'Waiting for other signers'}
                 </p>
                 {!isAllPartiesDone && (
@@ -141,6 +196,19 @@ export function EsigningCompletionScreen({
             </div>
             <p className="mt-1.5 text-xs text-text-muted">
               This usually takes less than a minute. A copy will be emailed to you once ready.
+            </p>
+          </div>
+        ) : null}
+
+        {/* PDF failed state */}
+        {isSignedCopyFailed ? (
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-center">
+            <div className="flex items-center justify-center gap-2 text-sm font-medium text-rose-700">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Signed document could not be prepared</span>
+            </div>
+            <p className="mt-1.5 text-xs text-rose-600/80">
+              Please contact the sender so they can resolve this and retry delivery.
             </p>
           </div>
         ) : null}

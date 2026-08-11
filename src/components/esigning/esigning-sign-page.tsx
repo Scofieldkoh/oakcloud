@@ -272,6 +272,13 @@ export function EsigningSignPage() {
   const savePromiseRef = useRef<Promise<EsigningSigningSessionDto> | null>(null);
   const dirtyRevisionRef = useRef(0);
   const savedRevisionRef = useRef(0);
+  const flowStateRef = useRef<SigningFlowState>('loading');
+  const latestStatusRef = useRef<EsigningSigningSessionStatusDto | null>(null);
+  const [isCompletionTerminal, setIsCompletionTerminal] = useState(false);
+
+  useEffect(() => {
+    flowStateRef.current = flowState;
+  }, [flowState]);
 
   // ==========================================================================
   // Derived state
@@ -456,10 +463,28 @@ export function EsigningSignPage() {
 
     const result = responseBody as EsigningSigningSessionStatusDto;
     setSaveError(null);
+    const previousStatus = latestStatusRef.current;
+    latestStatusRef.current = result;
+    setIsCompletionTerminal(result.terminal);
+
+    const statusChanged =
+      !previousStatus ||
+      previousStatus.envelope.status !== result.envelope.status ||
+      previousStatus.envelope.pdfGenerationStatus !== result.envelope.pdfGenerationStatus ||
+      previousStatus.envelope.autoFilingStatus !== result.envelope.autoFilingStatus ||
+      previousStatus.envelope.completionDeliveryStatus !==
+        result.envelope.completionDeliveryStatus ||
+      previousStatus.currentRecipientDeliveryStatus !==
+        result.currentRecipientDeliveryStatus ||
+      previousStatus.remainingSignerCount !== result.remainingSignerCount;
 
     if (result.recipient.signedAt) {
+      if (statusChanged || flowStateRef.current !== 'completed') {
+        await loadSession({ preserveDrafts: true });
+        setFlowState('completed');
+      }
+    } else if (statusChanged) {
       await loadSession({ preserveDrafts: true });
-      setFlowState('completed');
     }
   }, [loadSession]);
 
@@ -524,7 +549,9 @@ export function EsigningSignPage() {
   }, [draftValues, flowState]);
 
   useEffect(() => {
-    if (flowState !== 'signing') {
+    const shouldPoll =
+      flowState === 'signing' || (flowState === 'completed' && !isCompletionTerminal);
+    if (!shouldPoll) {
       return;
     }
 
@@ -558,7 +585,7 @@ export function EsigningSignPage() {
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [flowState, refreshSigningStatus]);
+  }, [flowState, isCompletionTerminal, refreshSigningStatus]);
 
   // ==========================================================================
   // Draft helpers
@@ -1057,18 +1084,20 @@ export function EsigningSignPage() {
   // ==========================================================================
 
   if (flowState === 'completed' && session) {
-    const isAllPartiesDone = session.envelope.status === 'COMPLETED';
     return (
       <EsigningCompletionScreen
         envelopeTitle={session.envelope.title}
         recipientName={session.recipient.name}
         signedAt={session.recipient.signedAt}
-        isAllPartiesDone={isAllPartiesDone}
+        isAllPartiesDone={session.envelope.status === 'COMPLETED'}
         remainingSignerCount={session.recipients.filter(
           (recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED'
         ).length}
         expiresAt={session.envelope.expiresAt}
         pdfGenerationStatus={session.envelope.pdfGenerationStatus}
+        autoFilingStatus={session.envelope.autoFilingStatus}
+        completionDeliveryStatus={session.envelope.completionDeliveryStatus}
+        currentRecipientDeliveryStatus={session.currentRecipientDeliveryStatus}
         documents={session.documents}
         downloadToken={session.downloadToken}
         certificateId={session.envelope.certificateId}

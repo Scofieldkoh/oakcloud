@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EsigningSignPage } from '@/components/esigning/esigning-sign-page';
@@ -69,10 +69,6 @@ vi.mock('@/components/esigning/signing/esigning-signing-header', () => ({
   EsigningSigningHeader: () => null,
 }));
 
-vi.mock('@/components/esigning/signing/esigning-completion-screen', () => ({
-  EsigningCompletionScreen: () => <div data-testid="completion-screen" />,
-}));
-
 vi.mock('@/components/esigning/signing/esigning-signature-modal', () => ({
   EsigningSignatureModal: () => null,
 }));
@@ -89,6 +85,9 @@ let consentHandler: () => Promise<Response> | Response;
 let consentRequestCount = 0;
 let fieldSaveRequests: RequestInit[] = [];
 let fieldsHandler: ((init?: RequestInit) => Promise<Response> | Response) | null = null;
+let currentSession: EsigningSigningSessionDto;
+let statusHandler: (() => Promise<Response> | Response) | null = null;
+let statusRequestCount = 0;
 
 function makeSession(
   overrides: Partial<EsigningSigningSessionDto> = {}
@@ -200,10 +199,36 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+function statusForSession(session: EsigningSigningSessionDto): EsigningSigningSessionStatusDto {
+  return {
+    envelope: {
+      id: session.envelope.id,
+      status: session.envelope.status,
+      expiresAt: session.envelope.expiresAt,
+      pdfGenerationStatus: session.envelope.pdfGenerationStatus,
+      autoFilingStatus: session.envelope.autoFilingStatus,
+      completionDeliveryStatus: session.envelope.completionDeliveryStatus,
+    },
+    recipient: {
+      id: session.recipient.id,
+      status: session.recipient.status,
+      signedAt: session.recipient.signedAt,
+    },
+    currentRecipientDeliveryStatus: session.currentRecipientDeliveryStatus,
+    remainingSignerCount: session.recipients.filter(
+      (recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED'
+    ).length,
+    terminal: false,
+  };
+}
+
 function stubSigningFetch(session: EsigningSigningSessionDto) {
   consentRequestCount = 0;
   fieldSaveRequests = [];
   fieldsHandler = null;
+  currentSession = session;
+  statusHandler = null;
+  statusRequestCount = 0;
 
   vi.stubGlobal(
     'fetch',
@@ -214,29 +239,22 @@ function stubSigningFetch(session: EsigningSigningSessionDto) {
         return jsonResponse({ requiresAccessCode: false });
       }
       if (url.endsWith('/api/public-bootstrap/esigning/session')) {
-        return jsonResponse({ session });
+        return jsonResponse({ session: currentSession });
       }
       if (url.endsWith('/api/esigning/sign/session/view')) {
-        return jsonResponse(session);
+        return jsonResponse(currentSession);
       }
       if (url.endsWith('/api/esigning/sign/session/consent')) {
         consentRequestCount += 1;
         return consentHandler();
       }
       if (url.endsWith('/api/esigning/sign/session/status')) {
-        const status: EsigningSigningSessionStatusDto = {
-          envelope: { id: session.envelope.id, status: session.envelope.status, expiresAt: session.envelope.expiresAt },
-          recipient: {
-            id: session.recipient.id,
-            status: session.recipient.status,
-            signedAt: session.recipient.signedAt,
-          },
-        };
-        return jsonResponse(status);
+        statusRequestCount += 1;
+        return statusHandler ? statusHandler() : jsonResponse(statusForSession(currentSession));
       }
       if (url.endsWith('/api/esigning/sign/session/fields')) {
         fieldSaveRequests.push(init ?? {});
-        return fieldsHandler ? fieldsHandler(init) : jsonResponse(session);
+        return fieldsHandler ? fieldsHandler(init) : jsonResponse(currentSession);
       }
 
       throw new Error(`Unexpected fetch in test: ${url}`);
@@ -468,5 +486,257 @@ describe('EsigningSignPage autosave and field values', () => {
       values: Array<{ value: string }>;
     };
     expect(secondBody.values[0].value).toBe('Final');
+  });
+});
+
+describe('EsigningSignPage completion polling', () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  });
+
+  async function advance(ms: number) {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ms);
+    });
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('refreshes to the completion view when the envelope completes without reload', async () => {
+    vi.useFakeTimers();
+    const initial = makeSigningSession(makeField({ type: 'SIGNATURE' }));
+    stubSigningFetch(initial);
+
+    const completedSession: EsigningSigningSessionDto = {
+      ...initial,
+      envelope: {
+        ...initial.envelope,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'PENDING',
+        autoFilingStatus: 'NOT_REQUIRED',
+        completionDeliveryStatus: 'PENDING',
+      },
+      recipient: {
+        ...initial.recipient,
+        status: 'SIGNED',
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+      currentRecipientDeliveryStatus: 'PENDING',
+    };
+    let index = 0;
+    statusHandler = () => {
+      index += 1;
+      if (index >= 1) {
+        currentSession = completedSession;
+      }
+      return jsonResponse({ ...statusForSession(completedSession), terminal: false });
+    };
+
+    render(<EsigningSignPage />);
+    await advance(100);
+    expect(screen.getByTestId('signing-document')).toBeInTheDocument();
+
+    await advance(30_100);
+    expect(screen.getByRole('heading', { name: 'Completed' })).toBeInTheDocument();
+    expect(screen.getByText(/completed copy is being prepared/i)).toBeInTheDocument();
+  });
+
+  it('shows signed links after PDF completion and stops polling when terminal', async () => {
+    vi.useFakeTimers();
+    const base = makeSigningSession(makeField({ type: 'SIGNATURE' }));
+    const pendingSession: EsigningSigningSessionDto = {
+      ...base,
+      envelope: {
+        ...base.envelope,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'PENDING',
+        autoFilingStatus: 'NOT_REQUIRED',
+        completionDeliveryStatus: 'PENDING',
+      },
+      recipient: {
+        ...base.recipient,
+        status: 'SIGNED',
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+      currentRecipientDeliveryStatus: 'PENDING',
+    };
+    stubSigningFetch(pendingSession);
+
+    const completeSession: EsigningSigningSessionDto = {
+      ...pendingSession,
+      envelope: {
+        ...pendingSession.envelope,
+        pdfGenerationStatus: 'COMPLETED',
+        completionDeliveryStatus: 'COMPLETED',
+      },
+      documents: [
+        {
+          id: 'document-1',
+          fileName: 'nda.pdf',
+          pageCount: 1,
+          sortOrder: 1,
+          fileSize: 1024,
+          originalHash: 'original-hash',
+          signedHash: 'signed-hash',
+          pdfUrl: '/nda.pdf',
+          signedPdfUrl: '/signed.pdf',
+        },
+      ],
+      currentRecipientDeliveryStatus: 'SENT',
+    };
+
+    let statusIndex = 0;
+    statusHandler = () => {
+      statusIndex += 1;
+      if (statusIndex === 1) {
+        return jsonResponse({ ...statusForSession(pendingSession), terminal: false });
+      }
+      currentSession = completeSession;
+      return jsonResponse({ ...statusForSession(completeSession), terminal: true });
+    };
+
+    render(<EsigningSignPage />);
+    await advance(100);
+    expect(screen.getByText(/Preparing your signed document/i)).toBeInTheDocument();
+
+    await advance(30_100);
+    await advance(30_100);
+    expect(screen.getByRole('link', { name: /Save a Copy/i })).toBeInTheDocument();
+    expect(screen.getByText(/has been emailed to you/i)).toBeInTheDocument();
+
+    await advance(90_000);
+    expect(statusRequestCount).toBe(2);
+  });
+
+  it('renders a PDF failure instead of a permanent spinner', async () => {
+    vi.useFakeTimers();
+    const base = makeSigningSession(makeField({ type: 'SIGNATURE' }));
+    const failedSession: EsigningSigningSessionDto = {
+      ...base,
+      envelope: {
+        ...base.envelope,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'FAILED',
+        autoFilingStatus: 'NOT_REQUIRED',
+        completionDeliveryStatus: 'NOT_TRACKED',
+      },
+      recipient: {
+        ...base.recipient,
+        status: 'SIGNED',
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+      currentRecipientDeliveryStatus: 'NOT_TRACKED',
+    };
+    stubSigningFetch(failedSession);
+    statusHandler = () => jsonResponse({ ...statusForSession(failedSession), terminal: true });
+
+    render(<EsigningSignPage />);
+    await advance(100);
+
+    expect(screen.getByText(/Signed document could not be prepared/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Preparing your signed document/i)).not.toBeInTheDocument();
+  });
+
+  it('tracks copy delivery transitions through retrying and failure', async () => {
+    vi.useFakeTimers();
+    const base = makeSigningSession(makeField({ type: 'SIGNATURE' }));
+    const retryingSession: EsigningSigningSessionDto = {
+      ...base,
+      envelope: {
+        ...base.envelope,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'COMPLETED',
+        autoFilingStatus: 'COMPLETED',
+        completionDeliveryStatus: 'RETRYING',
+      },
+      recipient: {
+        ...base.recipient,
+        status: 'SIGNED',
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+      currentRecipientDeliveryStatus: 'RETRYING',
+    };
+    stubSigningFetch(retryingSession);
+
+    let deliveryIndex = 0;
+    statusHandler = () => {
+      deliveryIndex += 1;
+      if (deliveryIndex === 1) {
+        return jsonResponse({ ...statusForSession(retryingSession), terminal: false });
+      }
+      currentSession = {
+        ...retryingSession,
+        envelope: {
+          ...retryingSession.envelope,
+          completionDeliveryStatus: 'FAILED',
+        },
+        currentRecipientDeliveryStatus: 'FAILED',
+      };
+      return jsonResponse({
+        ...statusForSession({
+          ...retryingSession,
+          envelope: { ...retryingSession.envelope, completionDeliveryStatus: 'FAILED' },
+          currentRecipientDeliveryStatus: 'FAILED',
+        }),
+        terminal: true,
+      });
+    };
+
+    render(<EsigningSignPage />);
+    await advance(100);
+    expect(screen.getByText(/retrying to send your completed copy/i)).toBeInTheDocument();
+
+    await advance(30_100);
+    await advance(30_100);
+    expect(screen.getByText(/could not email your completed copy/i)).toBeInTheDocument();
+  });
+
+  it('refreshes immediately when the tab becomes visible while non-terminal', async () => {
+    vi.useFakeTimers();
+    const base = makeSigningSession(makeField({ type: 'SIGNATURE' }));
+    const pendingSession: EsigningSigningSessionDto = {
+      ...base,
+      envelope: {
+        ...base.envelope,
+        status: 'COMPLETED',
+        pdfGenerationStatus: 'PENDING',
+        autoFilingStatus: 'NOT_REQUIRED',
+        completionDeliveryStatus: 'PENDING',
+      },
+      recipient: {
+        ...base.recipient,
+        status: 'SIGNED',
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+      currentRecipientDeliveryStatus: 'PENDING',
+    };
+    stubSigningFetch(pendingSession);
+    statusHandler = () => jsonResponse({ ...statusForSession(pendingSession), terminal: false });
+
+    render(<EsigningSignPage />);
+    await advance(100);
+    expect(screen.getByRole('heading', { name: 'Completed' })).toBeInTheDocument();
+    expect(statusRequestCount).toBe(0);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    await advance(100);
+    expect(statusRequestCount).toBe(1);
   });
 });

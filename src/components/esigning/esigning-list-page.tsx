@@ -148,7 +148,7 @@ export function EnvelopeActionsDropdown({
     envelope.canDelete ||
     envelope.canDuplicate ||
     envelope.canVoid ||
-    envelope.canRetryPdf ||
+    envelope.canRetryCompletionProcessing ||
     envelope.status === 'COMPLETED';
 
   if (!hasActions) {
@@ -208,12 +208,14 @@ export function EnvelopeActionsDropdown({
           </DropdownItem>
         ) : null}
 
-        {envelope.canRetryPdf ? (
+        {envelope.canRetryCompletionProcessing ? (
           <DropdownItem
             icon={<RefreshCw className="h-4 w-4" />}
             onClick={() => onRetryPdf(envelope.id)}
           >
-            {envelope.pdfGenerationStatus === 'FAILED' ? 'Retry PDF generation' : 'Generate PDF now'}
+            {envelope.pdfGenerationStatus === 'FAILED'
+              ? 'Retry processing'
+              : 'Resume processing'}
           </DropdownItem>
         ) : null}
 
@@ -798,29 +800,55 @@ export function EsigningListPage() {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {envelope.recipients.slice(0, 4).map((recipient) => {
+                    const isCc = recipient.type === 'CC';
+                    const copyStatus = recipient.copyDeliveryStatus;
                     const StatusIcon =
                       recipient.status === 'SIGNED'
                         ? CheckCircle2
                         : recipient.status === 'DECLINED'
                           ? XCircle
-                          : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                            ? Clock
-                            : recipient.type === 'CC'
-                              ? Minus
-                              : Circle;
+                          : isCc && (copyStatus === 'SENT' || copyStatus === 'FAILED')
+                            ? copyStatus === 'SENT'
+                              ? CheckCircle2
+                              : XCircle
+                            : isCc && (copyStatus === 'PENDING' || copyStatus === 'RETRYING')
+                              ? Clock
+                              : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
+                                ? Clock
+                                : isCc
+                                  ? Minus
+                                  : Circle;
 
                     const iconColor =
                       recipient.status === 'SIGNED'
                         ? 'text-green-500'
                         : recipient.status === 'DECLINED'
                           ? 'text-rose-500'
-                          : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                            ? 'text-blue-500'
-                            : 'text-text-muted';
+                          : isCc && copyStatus === 'SENT'
+                            ? 'text-green-500'
+                            : isCc && copyStatus === 'FAILED'
+                              ? 'text-rose-500'
+                              : isCc && (copyStatus === 'PENDING' || copyStatus === 'RETRYING')
+                                ? 'text-amber-500'
+                                : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
+                                  ? 'text-blue-500'
+                                  : 'text-text-muted';
+
+                    const recipientStatusLabel = isCc
+                      ? {
+                          AWAITING_COMPLETION: 'Copy after completion',
+                          PENDING: 'Copy pending',
+                          RETRYING: 'Retrying copy',
+                          SENT: 'Copy sent',
+                          FAILED: 'Copy failed',
+                          NOT_TRACKED: 'Delivery not tracked',
+                        }[copyStatus]
+                      : recipient.status.replace('_', ' ');
 
                     return (
                       <span
                         key={recipient.id}
+                        aria-label={`${recipient.name}: ${recipientStatusLabel}`}
                         className="inline-flex items-center gap-1.5 rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary"
                       >
                         <StatusIcon className={cn('h-3 w-3 flex-shrink-0', iconColor)} />

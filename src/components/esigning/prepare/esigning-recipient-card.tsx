@@ -5,6 +5,7 @@ import type { EsigningSigningOrder } from '@/generated/prisma';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import { Button } from '@/components/ui/button';
 import {
+  CopyDeliveryStatusBadge,
   ESIGNING_ACCESS_MODE_LABELS,
   ESIGNING_RECIPIENT_TYPE_LABELS,
   RecipientStatusBadge,
@@ -68,7 +69,11 @@ export function EsigningRecipientCard({
                   />
                 )}
                 <span className="font-semibold text-text-primary truncate">{recipient.name}</span>
-                <RecipientStatusBadge status={recipient.status} />
+                {recipient.type === 'CC' ? (
+                  <CopyDeliveryStatusBadge status={recipient.copyDeliveryStatus} />
+                ) : (
+                  <RecipientStatusBadge status={recipient.status} />
+                )}
                 <span
                   className={cn(
                     'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',

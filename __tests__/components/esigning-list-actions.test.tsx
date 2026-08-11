@@ -5,6 +5,7 @@ import {
   EnvelopeActionsDropdown,
   EsigningListPage,
 } from '@/components/esigning/esigning-list-page';
+import { CopyDeliveryStatusBadge } from '@/components/esigning/esigning-shared';
 import type { EsigningEnvelopeListItem } from '@/types/esigning';
 
 const mocks = vi.hoisted(() => ({
@@ -140,11 +141,17 @@ function envelope(overrides: Partial<EsigningEnvelopeListItem> = {}): EsigningEn
     canVoid: false,
     canDuplicate: true,
     canResend: false,
-    canRetryPdf: false,
+    canRetryCompletionProcessing: false,
     emailDelivery: {
       status: 'ok',
       lastFailureAt: null,
       failures: [],
+    },
+    postCompletion: {
+      artifactStatus: 'COMPLETED',
+      autoFilingStatus: 'COMPLETED',
+      completionDeliveryStatus: 'NOT_TRACKED',
+      failedCompletionDeliveryCount: 0,
     },
     resendableRecipientCount: 0,
     recipientCount: 1,
@@ -172,7 +179,7 @@ describe('EnvelopeActionsDropdown', () => {
     expect(screen.getByRole('button', { name: 'Duplicate envelope' })).toBeInTheDocument();
   });
 
-  it('shows an email failure badge when envelope email delivery failed', () => {
+  it('keeps an unrelated request failure visible after a successful reminder', () => {
     render(<EmailDeliveryWarningBadge envelope={envelope({
       emailDelivery: {
         status: 'failed',
@@ -180,6 +187,7 @@ describe('EnvelopeActionsDropdown', () => {
         failures: [
           {
             kind: 'request',
+            targetKey: 'recipient:signer-1',
             to: 'signer@example.com',
             subject: '[Oakcloud] Signature requested',
             error: 'SMTP rejected recipient',
@@ -190,6 +198,14 @@ describe('EnvelopeActionsDropdown', () => {
     })} />);
 
     expect(screen.getByText('Email failed')).toBeInTheDocument();
+  });
+
+  it('renders CC copy delivery as an independent outcome', () => {
+    render(<CopyDeliveryStatusBadge status="SENT" />);
+    expect(screen.getByText('Copy sent')).toBeInTheDocument();
+
+    render(<CopyDeliveryStatusBadge status="FAILED" />);
+    expect(screen.getByText('Copy failed')).toBeInTheDocument();
   });
 });
 

@@ -993,7 +993,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   </Button>
                 </>
               ) : null}
-              {envelope.canRetryPdf ? (
+              {envelope.canRetryCompletionProcessing ? (
                 <Button
                   className="w-full sm:w-auto"
                   variant="secondary"
@@ -1002,18 +1002,20 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                       await retryProcessing.mutateAsync();
                       toast.success(
                         envelope.pdfGenerationStatus === 'FAILED'
-                          ? 'PDF generation retried'
-                          : 'PDF generation triggered'
+                          ? 'Processing retried'
+                          : 'Processing resumed'
                       );
                     } catch (error) {
                       toast.error(
-                        error instanceof Error ? error.message : 'Failed to trigger PDF generation'
+                        error instanceof Error ? error.message : 'Failed to retry processing'
                       );
                     }
                   }}
                   isLoading={retryProcessing.isPending}
                 >
-                  {envelope.pdfGenerationStatus === 'FAILED' ? 'Retry PDF' : 'Generate PDF now'}
+                  {envelope.pdfGenerationStatus === 'FAILED'
+                    ? 'Retry processing'
+                    : 'Resume processing'}
                 </Button>
               ) : null}
             </div>

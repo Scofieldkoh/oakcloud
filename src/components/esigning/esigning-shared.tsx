@@ -10,7 +10,11 @@ import type {
   EsigningRecipientType,
   EsigningSigningOrder,
 } from '@/generated/prisma';
-import type { EsigningEnvelopeRecipientDto, EsigningFieldDefinitionDto } from '@/types/esigning';
+import type {
+  EsigningCopyDeliveryStatusDto,
+  EsigningEnvelopeRecipientDto,
+  EsigningFieldDefinitionDto,
+} from '@/types/esigning';
 import type { BoundingBox } from '@/components/processing/document-page-viewer';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +44,24 @@ const PDF_STATUS_STYLES: Record<EsigningPdfGenerationStatus, string> = {
   PROCESSING: 'border-sky-200 bg-sky-100 text-sky-700',
   COMPLETED: 'border-emerald-200 bg-emerald-100 text-emerald-700',
   FAILED: 'border-rose-200 bg-rose-100 text-rose-700',
+};
+
+const COPY_DELIVERY_STATUS_LABELS: Record<EsigningCopyDeliveryStatusDto, string> = {
+  AWAITING_COMPLETION: 'Copy after completion',
+  PENDING: 'Copy pending',
+  RETRYING: 'Retrying copy',
+  SENT: 'Copy sent',
+  FAILED: 'Copy failed',
+  NOT_TRACKED: 'Delivery not tracked',
+};
+
+const COPY_DELIVERY_STATUS_STYLES: Record<EsigningCopyDeliveryStatusDto, string> = {
+  AWAITING_COMPLETION: 'border-slate-200 bg-slate-100 text-slate-600',
+  PENDING: 'border-amber-200 bg-amber-100 text-amber-700',
+  RETRYING: 'border-orange-200 bg-orange-100 text-orange-700',
+  SENT: 'border-emerald-200 bg-emerald-100 text-emerald-700',
+  FAILED: 'border-rose-200 bg-rose-100 text-rose-700',
+  NOT_TRACKED: 'border-slate-200 bg-slate-100 text-slate-500',
 };
 
 export const ESIGNING_SIGNING_ORDER_LABELS: Record<EsigningSigningOrder, string> = {
@@ -132,6 +154,18 @@ export function RecipientStatusBadge({ status }: { status: EsigningRecipientStat
   return <Pill className={RECIPIENT_STATUS_STYLES[status]}>{status.replace('_', ' ')}</Pill>;
 }
 
+export function CopyDeliveryStatusBadge({
+  status,
+}: {
+  status: EsigningCopyDeliveryStatusDto;
+}) {
+  return (
+    <Pill className={COPY_DELIVERY_STATUS_STYLES[status]}>
+      {COPY_DELIVERY_STATUS_LABELS[status]}
+    </Pill>
+  );
+}
+
 export function PdfGenerationBadge({ status }: { status: EsigningPdfGenerationStatus }) {
   return <Pill className={PDF_STATUS_STYLES[status]}>{status}</Pill>;
 }
@@ -172,4 +206,3 @@ export function buildFieldHighlights(
       color: field.id === activeFieldId ? '#f97316' : recipientColorMap.get(field.recipientId) ?? '#1d4ed8',
     }));
 }
-
