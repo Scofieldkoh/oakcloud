@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { useState, type ReactNode } from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EsigningFieldCanvas,
@@ -10,18 +10,29 @@ import {
 import type { EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 
 vi.mock('@/components/processing/document-page-viewer', () => ({
-  DocumentPageViewer: (props: { keyboardShortcutScope?: string }) => (
+  DocumentPageViewer: (props: {
+    keyboardShortcutScope?: string;
+    viewMode?: string;
+    renderPageOverlay?: (context: { pageNumber: number; width: number; height: number }) => ReactNode;
+  }) => (
     <div
       data-document-scroll-container="true"
       data-keyboard-scope={props.keyboardShortcutScope ?? 'global'}
-      style={{ width: 800, height: 1000 }}
+      data-view-mode={props.viewMode ?? 'single'}
+      style={{ width: 800, height: 1000, overflow: 'auto' }}
     >
-      <canvas
-        data-main-pdf-canvas="true"
-        tabIndex={0}
-        aria-label="PDF canvas"
-        style={{ width: 800, height: 1000 }}
-      />
+      {[1, 2].map((pageNumber) => (
+        <div key={pageNumber} data-document-page-number={pageNumber} style={{ position: 'relative' }}>
+          <canvas
+            data-main-pdf-canvas="true"
+            data-page-number={pageNumber}
+            tabIndex={0}
+            aria-label={`PDF canvas page ${pageNumber}`}
+            style={{ width: 800, height: 1000 }}
+          />
+          {props.renderPageOverlay?.({ pageNumber, width: 800, height: 1000 })}
+        </div>
+      ))}
     </div>
   ),
 }));
@@ -98,11 +109,13 @@ function CanvasHarness({
   initialDocumentId = 'document-1',
   initialPage = 1,
   initialSelection = null,
+  placementType = null,
 }: {
   initialFields: PlacedField[];
   initialDocumentId?: string;
   initialPage?: number;
   initialSelection?: string | null;
+  placementType?: PlacedField['type'] | null;
 }) {
   const [fields, setFields] = useState(initialFields);
   const [documentId, setDocumentId] = useState(initialDocumentId);
@@ -114,6 +127,7 @@ function CanvasHarness({
       <div data-testid="harness-selection" data-selection={selection ?? ''} />
       <div
         data-testid="harness-fields"
+        data-field-pages={JSON.stringify(fields.map((field) => field.pageNumber))}
         data-fields={JSON.stringify(
           fields.map((field) => [field.localId, field.xPercent, field.yPercent])
         )}
@@ -132,7 +146,7 @@ function CanvasHarness({
         onFieldsChange={setFields}
         selectedFieldId={selection}
         onFieldSelect={setSelection}
-        placementType={null}
+        placementType={placementType}
         placementRecipientId="recipient-1"
         recipients={recipients}
         viewerPage={page}
@@ -292,6 +306,58 @@ describe('EsigningFieldCanvas keyboard ownership', () => {
         .querySelector('[data-document-scroll-container="true"]')
         ?.getAttribute('data-keyboard-scope')
     ).toBe('focused');
+  });
+
+  it('renders fields from every page in the continuous document surface', () => {
+    render(
+      <CanvasHarness
+        initialFields={[
+          makeField({ localId: 'field-page-1', pageNumber: 1 }),
+          makeField({ localId: 'field-page-2', pageNumber: 2 }),
+        ]}
+      />
+    );
+
+    const pageOneOverlay = document.querySelector('[data-esigning-page-overlay="1"]');
+    const pageTwoOverlay = document.querySelector('[data-esigning-page-overlay="2"]');
+    expect(pageOneOverlay).not.toBeNull();
+    expect(pageTwoOverlay).not.toBeNull();
+    expect(pageOneOverlay?.textContent).toContain('Text');
+    expect(pageTwoOverlay?.textContent).toContain('Text');
+  });
+
+  it('places a field on the continuous page that was clicked', () => {
+    render(<CanvasHarness initialFields={[]} placementType="TEXT" />);
+
+    const pageTwoSurface = screen.getByRole('button', {
+      name: 'Place Text field on page 2',
+    });
+    vi.spyOn(pageTwoSurface, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 1000,
+      right: 800,
+      bottom: 1000,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    fireEvent.pointerDown(pageTwoSurface, {
+      button: 0,
+      pointerId: 7,
+      clientX: 400,
+      clientY: 500,
+    });
+    fireEvent.pointerUp(pageTwoSurface, {
+      button: 0,
+      pointerId: 7,
+      clientX: 400,
+      clientY: 500,
+    });
+
+    expect(screen.getByTestId('harness-fields')).toHaveAttribute('data-field-pages', '[2]');
   });
 
   it('gives the focusable canvas surface a stable accessible label outside placement mode', async () => {

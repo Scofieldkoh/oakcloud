@@ -785,4 +785,3 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
 export {
   SignaturePad as default
 };
-//# sourceMappingURL=signature_pad.js.map

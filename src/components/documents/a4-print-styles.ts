@@ -37,7 +37,6 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
       word-break: break-word;
       min-height: ${contentHeight};
     }
-    p:empty, div:empty { min-height: 1em; }
     p { margin: 0 0 ${normalized.paragraphSpacing} 0; }
     p, div, span, li, blockquote, th, td {
       line-height: inherit;

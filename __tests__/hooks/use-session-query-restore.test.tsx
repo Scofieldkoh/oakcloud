@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useQuery } from '@tanstack/react-query';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import {
@@ -165,5 +167,59 @@ describe('session list restore cache', () => {
     await waitFor(() => {
       expect(result.current.data).toEqual({ ...SNAPSHOT, refreshed: true });
     });
+  });
+
+  it('hydrates the server loading state before restoring a session snapshot', async () => {
+    writeSessionListSnapshot(QUERY_KEY, SNAPSHOT);
+
+    function RestoreProbe({ queryClient }: { queryClient: QueryClient }) {
+      const { initialData, restoredFromSession } = useSessionListRestore(
+        queryClient,
+        QUERY_KEY,
+      );
+      const { data } = useQuery({
+        queryKey: QUERY_KEY,
+        queryFn: () => new Promise<typeof SNAPSHOT>(() => {}),
+        initialData,
+        initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
+      });
+      return <div>{data ? 'Restored companies' : 'Loading companies'}</div>;
+    }
+
+    function makeTree(queryClient: QueryClient) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <RestoreProbe queryClient={queryClient} />
+        </QueryClientProvider>
+      );
+    }
+
+    const serverQueryClient = new QueryClient();
+    let serverHtml = '';
+    vi.stubGlobal('window', undefined);
+    try {
+      serverHtml = renderToString(makeTree(serverQueryClient));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    const clientQueryClient = new QueryClient();
+    const container = document.createElement('div');
+    container.innerHTML = serverHtml;
+    const recoverableErrors: Error[] = [];
+    let root!: ReturnType<typeof hydrateRoot>;
+
+    await act(async () => {
+      root = hydrateRoot(container, makeTree(clientQueryClient), {
+        onRecoverableError: (error) => recoverableErrors.push(error as Error),
+      });
+    });
+
+    await waitFor(() => {
+      expect(container).toHaveTextContent('Restored companies');
+    });
+    expect(recoverableErrors).toHaveLength(0);
+
+    await act(async () => root.unmount());
   });
 });

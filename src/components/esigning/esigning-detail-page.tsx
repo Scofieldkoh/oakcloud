@@ -747,7 +747,14 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   // ——— DRAFT: 3-step wizard ———
   if (envelope.status === 'DRAFT') {
     return (
-      <div className="min-h-screen bg-background-primary flex flex-col">
+      <div
+        className={cn(
+          'flex flex-col bg-background-primary',
+          currentStep === 2
+            ? 'h-[calc(100dvh-3rem)] overflow-hidden md:h-dvh'
+            : 'min-h-screen'
+        )}
+      >
         {/* Header */}
         <div className="border-b border-border-primary bg-background-secondary px-3 py-3 flex-shrink-0 sm:px-6 sm:py-3">
           <div className="flex items-center gap-2 sm:gap-4">

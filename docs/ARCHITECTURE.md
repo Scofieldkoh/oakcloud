@@ -421,7 +421,9 @@ publish pages or clear the busy state, so rapid layout changes coalesce.
 
 Editor, preview, browser print, HTML export, and PDF export consume the same
 print stylesheet built by `a4-print-styles.ts`, including identical typography,
-spacing, margins, `<br>` behavior, and page-content height. Oversized
+spacing, margins, `<br>` behavior, and page-content height. Empty paragraphs
+and divs collapse consistently across those surfaces; intentional blank lines
+are represented by `<br>`. Oversized
 unsplittable blocks are represented once: the engine marks the fragment
 `oversized`, the editor shows an accessible warning and makes the page content
 scrollable, and print/export render the block a single time with

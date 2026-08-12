@@ -30,16 +30,31 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
   DocumentPageViewer: ({
     renderHighlightContent,
     highlights,
+    initialPage,
+    viewMode,
   }: {
-    renderHighlightContent: (highlight: { label: string }, pixelRect: unknown, index: number) => React.ReactNode;
-    highlights: Array<{ label: string }>;
-  }) => (
-    <div data-testid="document-page-viewer">
-      {(highlights ?? []).map((highlight, index) => (
+    renderHighlightContent: (
+      highlight: { label: string; pageNumber: number },
+      pixelRect: unknown,
+      index: number
+    ) => React.ReactNode;
+    highlights: Array<{ label: string; pageNumber: number }>;
+    initialPage?: number;
+    viewMode?: 'single' | 'continuous';
+  }) => {
+    const visibleHighlights =
+      viewMode === 'continuous'
+        ? highlights
+        : highlights.filter((highlight) => highlight.pageNumber === (initialPage ?? 1));
+
+    return (
+      <div data-testid="document-page-viewer">
+        {visibleHighlights.map((highlight, index) => (
         <div key={highlight.label}>{renderHighlightContent(highlight, null, index)}</div>
-      ))}
-    </div>
-  ),
+        ))}
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/components/esigning/signing/esigning-consent-screen', () => ({
@@ -493,6 +508,36 @@ describe('EsigningSignPage autosave and field values', () => {
       values: Array<{ value: string }>;
     };
     expect(secondBody.values[0].value).toBe('Final');
+  });
+});
+
+describe('EsigningSignPage document navigation', () => {
+  beforeEach(() => {
+    mocks.toastError.mockClear();
+    mocks.toastSuccess.mockClear();
+    consentHandler = () => jsonResponse(makeSession());
+  });
+
+  it('shows signing fields from every page in one continuous document surface', async () => {
+    const signatureField = makeField({ id: 'signature-field', type: 'SIGNATURE', pageNumber: 1 });
+    const dateField = makeField({ id: 'date-field', type: 'DATE_SIGNED', pageNumber: 2 });
+    const session = makeSigningSession(signatureField, {
+      documents: [
+        {
+          ...makeSigningSession(signatureField).documents[0],
+          pageCount: 2,
+        },
+      ],
+      fields: [signatureField, dateField],
+    });
+
+    stubSigningFetch(session);
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('signing-document');
+
+    expect(screen.getByRole('button', { name: 'Sign Here' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument();
   });
 });
 

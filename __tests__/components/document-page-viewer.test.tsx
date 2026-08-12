@@ -158,4 +158,139 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
     expect(screen.getByRole('spinbutton')).toHaveValue(2);
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
+
+  it('renders every PDF page in one scrollable surface in continuous mode', async () => {
+    render(
+      <DocumentPageViewer
+        pdfUrl="/continuous.pdf"
+        {...({ viewMode: 'continuous' } as Record<string, unknown>)}
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('canvas[data-main-pdf-canvas="true"]')).toHaveLength(2);
+    });
+
+    expect(
+      [...document.querySelectorAll('canvas[data-main-pdf-canvas="true"]')].map((canvas) =>
+        canvas.getAttribute('data-page-number')
+      )
+    ).toEqual(['1', '2']);
+  });
+
+  it('renders page-relative overlay content for every continuous page', async () => {
+    render(
+      <DocumentPageViewer
+        pdfUrl="/continuous-overlays.pdf"
+        {...({
+          viewMode: 'continuous',
+          renderPageOverlay: ({ pageNumber }: { pageNumber: number }) => (
+            <span>Fields for page {pageNumber}</span>
+          ),
+        } as Record<string, unknown>)}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Fields for page 1')).toBeInTheDocument();
+      expect(screen.getByText('Fields for page 2')).toBeInTheDocument();
+    });
+  });
+
+  it('scrolls a focused highlight on a continuous page into the viewer viewport', async () => {
+    const scrollTo = vi.fn();
+    const originalScrollTo = HTMLElement.prototype.scrollTo;
+    const clientWidthSpy = vi
+      .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.matches('[data-document-scroll-container="true"]') ? 800 : 0;
+      });
+    const clientHeightSpy = vi
+      .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.matches('[data-document-scroll-container="true"]') ? 600 : 0;
+      });
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        if (this.matches('[data-document-scroll-container="true"]')) {
+          return {
+            x: 0,
+            y: 0,
+            top: 0,
+            right: 800,
+            bottom: 600,
+            left: 0,
+            width: 800,
+            height: 600,
+            toJSON: () => ({}),
+          };
+        }
+        if (this.matches('canvas[data-page-number="2"]')) {
+          return {
+            x: 0,
+            y: 1020,
+            top: 1020,
+            right: 800,
+            bottom: 2020,
+            left: 0,
+            width: 800,
+            height: 1000,
+            toJSON: () => ({}),
+          };
+        }
+        return {
+          x: 0,
+          y: 0,
+          top: 0,
+          right: 800,
+          bottom: 1000,
+          left: 0,
+          width: 800,
+          height: 1000,
+          toJSON: () => ({}),
+        };
+      });
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      value: scrollTo,
+    });
+
+    try {
+      render(
+        <DocumentPageViewer
+          pdfUrl="/continuous-focus.pdf"
+          viewMode="continuous"
+          initialPage={2}
+          focusedHighlightLabel="page-two-field"
+          highlights={[
+            {
+              pageNumber: 2,
+              x: 0.25,
+              y: 0.5,
+              width: 0.2,
+              height: 0.1,
+              label: 'page-two-field',
+            },
+          ]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(scrollTo).toHaveBeenCalledWith({
+          left: 0,
+          top: 1270,
+          behavior: 'smooth',
+        });
+      });
+    } finally {
+      rectSpy.mockRestore();
+      clientWidthSpy.mockRestore();
+      clientHeightSpy.mockRestore();
+      Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+        configurable: true,
+        value: originalScrollTo,
+      });
+    }
+  });
 });

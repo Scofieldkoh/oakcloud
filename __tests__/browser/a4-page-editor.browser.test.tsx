@@ -16,6 +16,7 @@ import {
   type A4PageEditorRef,
 } from '@/components/documents/a4-page-editor';
 import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
+import { buildA4PrintCss } from '@/components/documents/a4-print-styles';
 
 let mouseX = 0;
 let mouseY = 0;
@@ -182,6 +183,39 @@ describe('A4PageEditor real layout pagination', () => {
     consoleError.mockRestore();
     await act(async () => root.unmount());
     host.remove();
+  });
+
+  it('matches editor empty-block height while preserving explicit line breaks', () => {
+    const fixture = document.createElement('div');
+    fixture.innerHTML = `
+      <style>${buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT)}</style>
+      <div class="document-content">
+        <p data-testid="empty-paragraph"></p>
+        <div data-testid="empty-div"></div>
+        <p data-testid="explicit-line"><br></p>
+      </div>
+    `;
+    document.body.appendChild(fixture);
+
+    try {
+      const contentHeight = (selector: string) => {
+        const element = fixture.querySelector<HTMLElement>(selector)!;
+        const style = getComputedStyle(element);
+        return (
+          element.getBoundingClientRect().height -
+          Number.parseFloat(style.paddingTop) -
+          Number.parseFloat(style.paddingBottom) -
+          Number.parseFloat(style.borderTopWidth) -
+          Number.parseFloat(style.borderBottomWidth)
+        );
+      };
+
+      expect(contentHeight('[data-testid="empty-paragraph"]')).toBe(0);
+      expect(contentHeight('[data-testid="empty-div"]')).toBe(0);
+      expect(contentHeight('[data-testid="explicit-line"]')).toBeGreaterThan(0);
+    } finally {
+      fixture.remove();
+    }
   });
 
   it('flows forward and backward without serializing soft pages', async () => {

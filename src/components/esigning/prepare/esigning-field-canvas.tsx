@@ -5,7 +5,10 @@ import type { EsigningFieldType } from '@/generated/prisma';
 import type { EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { EsigningFieldDefinitionInput } from '@/lib/validations/esigning';
 import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
-import { DocumentPageViewer } from '@/components/processing/document-page-viewer';
+import {
+  DocumentPageViewer,
+  type DocumentPageOverlayContext,
+} from '@/components/processing/document-page-viewer';
 import { buildFieldHighlights, ESIGNING_FIELD_TYPE_LABELS } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
 
@@ -14,13 +17,6 @@ export interface PlacedField extends EsigningFieldDefinitionInput {
 }
 
 type ResizeHandle = 'nw' | 'ne' | 'se' | 'sw';
-
-interface CanvasBounds {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
 
 interface CanvasGuides {
   vertical: number[];
@@ -39,6 +35,8 @@ type CanvasInteraction =
       startClientX: number;
       startClientY: number;
       fieldSnapshot: PlacedField;
+      canvasWidth: number;
+      canvasHeight: number;
       selectedFieldIds: string[];
       selectionSnapshots: PlacedField[];
       allFieldsSnapshot: PlacedField[];
@@ -50,6 +48,8 @@ type CanvasInteraction =
       startClientX: number;
       startClientY: number;
       fieldSnapshot: PlacedField;
+      canvasWidth: number;
+      canvasHeight: number;
       allFieldsSnapshot: PlacedField[];
     };
 
@@ -391,25 +391,22 @@ export function EsigningFieldCanvas({
   const interactionPreviewRef = useRef<PlacedField[] | null>(null);
   const placementPointerStateRef = useRef<{
     pointerId: number;
+    pageNumber: number;
     startClientX: number;
     startClientY: number;
     startScrollLeft: number;
     startScrollTop: number;
     moved: boolean;
   } | null>(null);
-  const [canvasBounds, setCanvasBounds] = useState<CanvasBounds>({
-    left: 0,
-    top: 0,
-    width: 0,
-    height: 0,
-  });
   const [interaction, setInteraction] = useState<CanvasInteraction | null>(null);
   const [selectedFieldIdsInternal, setSelectedFieldIdsInternal] = useState<string[]>(
     selectedFieldId ? [selectedFieldId] : []
   );
-  const [ghostPosition, setGhostPosition] = useState<{ xPercent: number; yPercent: number } | null>(
-    null
-  );
+  const [ghostPosition, setGhostPosition] = useState<{
+    pageNumber: number;
+    xPercent: number;
+    yPercent: number;
+  } | null>(null);
   const [snapGuides, setSnapGuides] = useState<CanvasGuides>({ vertical: [], horizontal: [] });
 
   const selectedDocument =
@@ -474,61 +471,6 @@ export function EsigningFieldCanvas({
   }, [placementType]);
 
   useEffect(() => {
-    if (!containerRef.current) {
-      return;
-    }
-
-    const container = containerRef.current;
-    let canvasObserver: ResizeObserver | null = null;
-
-    const syncCanvasBounds = () => {
-      const canvas = container.querySelector('[data-main-pdf-canvas="true"]');
-      if (!(canvas instanceof HTMLCanvasElement)) {
-        setCanvasBounds((current) =>
-          current.width === 0 && current.height === 0
-            ? current
-            : { left: 0, top: 0, width: 0, height: 0 }
-        );
-        return;
-      }
-
-      const containerRect = container.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
-      setCanvasBounds({
-        left: canvasRect.left - containerRect.left,
-        top: canvasRect.top - containerRect.top,
-        width: canvasRect.width,
-        height: canvasRect.height,
-      });
-
-      if (!canvasObserver) {
-        canvasObserver = new ResizeObserver(syncCanvasBounds);
-        canvasObserver.observe(canvas);
-      }
-    };
-
-    const resizeObserver = new ResizeObserver(syncCanvasBounds);
-    resizeObserver.observe(container);
-
-    const mutationObserver = new MutationObserver(syncCanvasBounds);
-    mutationObserver.observe(container, {
-      childList: true,
-      subtree: true,
-    });
-
-    const timeoutId = window.setTimeout(syncCanvasBounds, 0);
-    window.addEventListener('resize', syncCanvasBounds);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      resizeObserver.disconnect();
-      mutationObserver.disconnect();
-      canvasObserver?.disconnect();
-      window.removeEventListener('resize', syncCanvasBounds);
-    };
-  }, [selectedDocumentId, viewerPage]);
-
-  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setInteraction(null);
@@ -543,7 +485,7 @@ export function EsigningFieldCanvas({
   }, [onFieldSelect]);
 
   useEffect(() => {
-    if (!interaction || canvasBounds.width <= 0 || canvasBounds.height <= 0) {
+    if (!interaction || interaction.canvasWidth <= 0 || interaction.canvasHeight <= 0) {
       return;
     }
 
@@ -562,10 +504,13 @@ export function EsigningFieldCanvas({
 
     function onPointerMove(event: PointerEvent) {
       if (activeInteraction.kind === 'drag') {
-        const deltaX = (event.clientX - activeInteraction.startClientX) / canvasBounds.width;
-        const deltaY = (event.clientY - activeInteraction.startClientY) / canvasBounds.height;
+        const deltaX = (event.clientX - activeInteraction.startClientX) / activeInteraction.canvasWidth;
+        const deltaY = (event.clientY - activeInteraction.startClientY) / activeInteraction.canvasHeight;
         const otherFields = activeInteraction.allFieldsSnapshot.filter(
-          (field) => !activeInteraction.selectedFieldIds.includes(field.localId)
+          (field) =>
+            !activeInteraction.selectedFieldIds.includes(field.localId) &&
+            field.documentId === activeInteraction.fieldSnapshot.documentId &&
+            field.pageNumber === activeInteraction.fieldSnapshot.pageNumber
         );
         const snappedPrimary = snapFieldToGuides({
           field: {
@@ -609,8 +554,8 @@ export function EsigningFieldCanvas({
         return;
       }
 
-      const deltaX = (event.clientX - activeInteraction.startClientX) / canvasBounds.width;
-      const deltaY = (event.clientY - activeInteraction.startClientY) / canvasBounds.height;
+      const deltaX = (event.clientX - activeInteraction.startClientX) / activeInteraction.canvasWidth;
+      const deltaY = (event.clientY - activeInteraction.startClientY) / activeInteraction.canvasHeight;
       const field = activeInteraction.fieldSnapshot;
       const nextField = { ...field };
 
@@ -659,7 +604,10 @@ export function EsigningFieldCanvas({
       const snapped = snapFieldToGuides({
         field: nextField,
         otherFields: activeInteraction.allFieldsSnapshot.filter(
-          (entry) => entry.localId !== activeInteraction.fieldId
+          (entry) =>
+            entry.localId !== activeInteraction.fieldId &&
+            entry.documentId === activeInteraction.fieldSnapshot.documentId &&
+            entry.pageNumber === activeInteraction.fieldSnapshot.pageNumber
         ),
       });
       setSnapGuides(snapped.guides);
@@ -688,11 +636,17 @@ export function EsigningFieldCanvas({
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [canvasBounds.height, canvasBounds.width, interaction, onFieldsChange]);
+  }, [interaction, onFieldsChange]);
 
-  function beginDrag(event: React.PointerEvent<HTMLDivElement>, field: PlacedField) {
+  function beginDrag(
+    event: React.PointerEvent<HTMLDivElement>,
+    field: PlacedField,
+    canvasWidth: number,
+    canvasHeight: number
+  ) {
     event.preventDefault();
     event.stopPropagation();
+    onPageChange(field.pageNumber);
     interactionPreviewRef.current = null;
     const selectedFieldIds = selectedFieldIdsInternal.includes(field.localId)
       ? selectedFieldIdsInternal
@@ -705,6 +659,8 @@ export function EsigningFieldCanvas({
       startClientX: event.clientX,
       startClientY: event.clientY,
       fieldSnapshot: field,
+      canvasWidth,
+      canvasHeight,
       selectedFieldIds,
       selectionSnapshots: fields.filter((entry) => selectedFieldIds.includes(entry.localId)),
       allFieldsSnapshot: fields,
@@ -714,10 +670,13 @@ export function EsigningFieldCanvas({
   function beginResize(
     event: React.PointerEvent<HTMLButtonElement>,
     field: PlacedField,
-    handle: ResizeHandle
+    handle: ResizeHandle,
+    canvasWidth: number,
+    canvasHeight: number
   ) {
     event.preventDefault();
     event.stopPropagation();
+    onPageChange(field.pageNumber);
     interactionPreviewRef.current = null;
     onFieldSelect(field.localId);
     setInteraction({
@@ -727,6 +686,8 @@ export function EsigningFieldCanvas({
       startClientX: event.clientX,
       startClientY: event.clientY,
       fieldSnapshot: field,
+      canvasWidth,
+      canvasHeight,
       allFieldsSnapshot: fields,
     });
   }
@@ -901,7 +862,7 @@ export function EsigningFieldCanvas({
     viewerPage,
   ]);
 
-  function placeFieldAt(xPercent: number, yPercent: number) {
+  function placeFieldAt(pageNumber: number, xPercent: number, yPercent: number) {
     if (!canEdit || !placementType || !placementRecipientId || !selectedDocumentId) {
       setSelectedFieldIdsInternal([]);
       onFieldSelect(null);
@@ -914,7 +875,7 @@ export function EsigningFieldCanvas({
       documentId: selectedDocumentId,
       recipientId: placementRecipientId,
       type: placementType,
-      pageNumber: viewerPage,
+      pageNumber,
       xPercent: xPercent - size.w / 2,
       yPercent: yPercent - size.h / 2,
       widthPercent: size.w,
@@ -930,9 +891,15 @@ export function EsigningFieldCanvas({
     onFieldSelect(newField.localId);
   }
 
-  function updateGhostPositionFromClient(target: HTMLDivElement, clientX: number, clientY: number) {
+  function updateGhostPositionFromClient(
+    target: HTMLDivElement,
+    pageNumber: number,
+    clientX: number,
+    clientY: number
+  ) {
     const rect = target.getBoundingClientRect();
     setGhostPosition({
+      pageNumber,
       xPercent: clamp((clientX - rect.left) / rect.width, 0, 1),
       yPercent: clamp((clientY - rect.top) / rect.height, 0, 1),
     });
@@ -943,16 +910,21 @@ export function EsigningFieldCanvas({
     return scrollContainer instanceof HTMLDivElement ? scrollContainer : null;
   }
 
-  function handlePlacementPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+  function handlePlacementPointerDown(
+    event: React.PointerEvent<HTMLDivElement>,
+    pageNumber: number
+  ) {
     if (!canEdit || !placementType || event.button !== 0) {
       return;
     }
 
-    updateGhostPositionFromClient(event.currentTarget, event.clientX, event.clientY);
+    onPageChange(pageNumber);
+    updateGhostPositionFromClient(event.currentTarget, pageNumber, event.clientX, event.clientY);
 
     const scrollContainer = getViewerScrollContainer();
     placementPointerStateRef.current = {
       pointerId: event.pointerId,
+      pageNumber,
       startClientX: event.clientX,
       startClientY: event.clientY,
       startScrollLeft: scrollContainer?.scrollLeft ?? 0,
@@ -962,12 +934,15 @@ export function EsigningFieldCanvas({
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
 
-  function handlePlacementPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+  function handlePlacementPointerMove(
+    event: React.PointerEvent<HTMLDivElement>,
+    pageNumber: number
+  ) {
     if (!canEdit || !placementType) {
       return;
     }
 
-    updateGhostPositionFromClient(event.currentTarget, event.clientX, event.clientY);
+    updateGhostPositionFromClient(event.currentTarget, pageNumber, event.clientX, event.clientY);
 
     const pointerState = placementPointerStateRef.current;
     if (!pointerState || pointerState.pointerId !== event.pointerId) {
@@ -1005,25 +980,29 @@ export function EsigningFieldCanvas({
     if (!pointerState.moved) {
       const rect = event.currentTarget.getBoundingClientRect();
       placeFieldAt(
+        pointerState.pageNumber,
         (event.clientX - rect.left) / rect.width,
         (event.clientY - rect.top) / rect.height
       );
     }
   }
 
-  function handleKeyboardPlacement() {
+  function handleKeyboardPlacement(pageNumber: number) {
     if (!canEdit || !placementType || !placementRecipientId || !selectedDocumentId) {
       return;
     }
 
     const size = DEFAULT_FIELD_SIZES[placementType];
-    const ghost = ghostPosition ?? { xPercent: 0.5, yPercent: 0.5 };
+    const ghost =
+      ghostPosition?.pageNumber === pageNumber
+        ? ghostPosition
+        : { pageNumber, xPercent: 0.5, yPercent: 0.5 };
     const newField = normalizeFieldPosition({
       localId: crypto.randomUUID(),
       documentId: selectedDocumentId,
       recipientId: placementRecipientId,
       type: placementType,
-      pageNumber: viewerPage,
+      pageNumber: ghost.pageNumber,
       xPercent: ghost.xPercent - size.w / 2,
       yPercent: ghost.yPercent - size.h / 2,
       widthPercent: size.w,
@@ -1037,6 +1016,145 @@ export function EsigningFieldCanvas({
     onFieldsChange([...fields, newField]);
     setSelectedFieldIdsInternal([newField.localId]);
     onFieldSelect(newField.localId);
+  }
+
+  function renderPageFields({ pageNumber, width, height }: DocumentPageOverlayContext) {
+    const pageFields = fields.filter(
+      (field) => field.documentId === selectedDocumentId && field.pageNumber === pageNumber
+    );
+    const showGhost = placementType && ghostPosition?.pageNumber === pageNumber;
+    const showGuides = interaction?.fieldSnapshot.pageNumber === pageNumber;
+
+    return (
+      <div
+        data-esigning-page-overlay={pageNumber}
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        {canEdit ? (
+          <div
+            role={placementType ? 'button' : undefined}
+            tabIndex={pageNumber === viewerPage ? 0 : -1}
+            aria-label={
+              placementType
+                ? `Place ${ESIGNING_FIELD_TYPE_LABELS[placementType]} field on page ${pageNumber}`
+                : pageNumber === viewerPage
+                  ? 'Document field canvas. Select a field to use arrow keys.'
+                  : `Document field canvas, page ${pageNumber}`
+            }
+            onFocus={() => onPageChange(pageNumber)}
+            onPointerDown={
+              placementType
+                ? (event) => handlePlacementPointerDown(event, pageNumber)
+                : undefined
+            }
+            onPointerMove={
+              placementType
+                ? (event) => handlePlacementPointerMove(event, pageNumber)
+                : undefined
+            }
+            onPointerUp={placementType ? handlePlacementPointerEnd : undefined}
+            onPointerCancel={placementType ? handlePlacementPointerEnd : undefined}
+            onMouseMove={
+              placementType
+                ? undefined
+                : () => {
+                    setGhostPosition(null);
+                  }
+            }
+            onMouseLeave={() => {
+              if (!placementPointerStateRef.current) {
+                setGhostPosition(null);
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onPageChange(pageNumber);
+                handleKeyboardPlacement(pageNumber);
+              }
+            }}
+            className={cn(
+              'absolute inset-0',
+              placementType
+                ? 'pointer-events-auto cursor-crosshair'
+                : 'pointer-events-none cursor-default'
+            )}
+          />
+        ) : null}
+
+        {showGhost ? (
+          <div
+            className="pointer-events-none absolute rounded border border-dashed border-oak-primary bg-oak-primary/10"
+            style={{
+              left:
+                clamp(
+                  ghostPosition.xPercent - DEFAULT_FIELD_SIZES[placementType].w / 2,
+                  0,
+                  1 - DEFAULT_FIELD_SIZES[placementType].w
+                ) * width,
+              top:
+                clamp(
+                  ghostPosition.yPercent - DEFAULT_FIELD_SIZES[placementType].h / 2,
+                  0,
+                  1 - DEFAULT_FIELD_SIZES[placementType].h
+                ) * height,
+              width: DEFAULT_FIELD_SIZES[placementType].w * width,
+              height: DEFAULT_FIELD_SIZES[placementType].h * height,
+            }}
+          />
+        ) : null}
+
+        {showGuides
+          ? snapGuides.vertical.map((guide) => (
+              <div
+                key={`vertical-${guide}`}
+                className="pointer-events-none absolute top-0 w-px bg-oak-primary/60"
+                style={{ left: guide * width, height }}
+              />
+            ))
+          : null}
+        {showGuides
+          ? snapGuides.horizontal.map((guide) => (
+              <div
+                key={`horizontal-${guide}`}
+                className="pointer-events-none absolute left-0 h-px bg-oak-primary/60"
+                style={{ top: guide * height, width }}
+              />
+            ))
+          : null}
+
+        {pageFields.map((field) => (
+          <PlacedFieldChip
+            key={field.localId}
+            field={field}
+            canvasWidth={width}
+            canvasHeight={height}
+            isSelected={selectedFieldIdsInternal.includes(field.localId)}
+            hasOverlap={overlapsByField.has(field.localId)}
+            canEdit={canEdit}
+            recipients={recipients}
+            onSelect={(event) => {
+              onPageChange(pageNumber);
+              updateSelection(
+                field.localId,
+                event.shiftKey || event.metaKey || event.ctrlKey
+              );
+            }}
+            onDelete={() => {
+              onFieldsChange(fields.filter((entry) => entry.localId !== field.localId));
+              setSelectedFieldIdsInternal((current) =>
+                current.filter((entry) => entry !== field.localId)
+              );
+              onFieldSelect(null);
+            }}
+            onBeginDrag={(event) => beginDrag(event, field, width, height)}
+            onBeginResize={(event, handle) =>
+              beginResize(event, field, handle, width, height)
+            }
+          />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -1066,133 +1184,18 @@ export function EsigningFieldCanvas({
 
       <div className="relative flex-1 overflow-hidden" ref={containerRef}>
         {selectedDocument ? (
-          <>
-            <DocumentPageViewer
-              pdfUrl={selectedDocument.pdfUrl}
-              initialPage={viewerPage}
-              zoomLevel={zoomLevel}
-              onZoomLevelChange={onZoomLevelChange}
-              highlights={canEdit ? [] : highlights}
-              onPageChange={onPageChange}
-              className="h-full w-full"
-              keyboardShortcutScope="focused"
-            />
-
-            {canEdit && canvasBounds.width > 0 && canvasBounds.height > 0 ? (
-              <div
-                className="pointer-events-none absolute z-20 overflow-hidden"
-                style={{
-                  left: canvasBounds.left,
-                  top: canvasBounds.top,
-                  width: canvasBounds.width,
-                  height: canvasBounds.height,
-                }}
-              >
-                <div
-                  role={canEdit && placementType ? 'button' : undefined}
-                  tabIndex={canEdit ? 0 : -1}
-                  aria-label={
-                    canEdit && placementType
-                      ? `Place ${ESIGNING_FIELD_TYPE_LABELS[placementType]} field`
-                      : 'Document field canvas. Select a field to use arrow keys.'
-                  }
-                  onPointerDown={placementType ? handlePlacementPointerDown : undefined}
-                  onPointerMove={placementType ? handlePlacementPointerMove : undefined}
-                  onPointerUp={placementType ? handlePlacementPointerEnd : undefined}
-                  onPointerCancel={placementType ? handlePlacementPointerEnd : undefined}
-                  onMouseMove={
-                    placementType
-                      ? undefined
-                      : () => {
-                          setGhostPosition(null);
-                        }
-                  }
-                  onMouseLeave={() => {
-                    if (!placementPointerStateRef.current) {
-                      setGhostPosition(null);
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      handleKeyboardPlacement();
-                    }
-                  }}
-                  className={cn(
-                    'absolute inset-0',
-                    placementType
-                      ? 'pointer-events-auto cursor-crosshair'
-                      : 'pointer-events-none cursor-default'
-                  )}
-                />
-
-                {placementType && ghostPosition ? (
-                  <div
-                    className="pointer-events-none absolute rounded border border-dashed border-oak-primary bg-oak-primary/10"
-                    style={{
-                      left:
-                        clamp(
-                          ghostPosition.xPercent - DEFAULT_FIELD_SIZES[placementType].w / 2,
-                          0,
-                          1 - DEFAULT_FIELD_SIZES[placementType].w
-                        ) * canvasBounds.width,
-                      top:
-                        clamp(
-                          ghostPosition.yPercent - DEFAULT_FIELD_SIZES[placementType].h / 2,
-                          0,
-                          1 - DEFAULT_FIELD_SIZES[placementType].h
-                        ) * canvasBounds.height,
-                      width: DEFAULT_FIELD_SIZES[placementType].w * canvasBounds.width,
-                      height: DEFAULT_FIELD_SIZES[placementType].h * canvasBounds.height,
-                    }}
-                  />
-                ) : null}
-
-                {snapGuides.vertical.map((guide) => (
-                  <div
-                    key={`vertical-${guide}`}
-                    className="pointer-events-none absolute top-0 w-px bg-oak-primary/60"
-                    style={{ left: guide * canvasBounds.width, height: canvasBounds.height }}
-                  />
-                ))}
-                {snapGuides.horizontal.map((guide) => (
-                  <div
-                    key={`horizontal-${guide}`}
-                    className="pointer-events-none absolute left-0 h-px bg-oak-primary/60"
-                    style={{ top: guide * canvasBounds.height, width: canvasBounds.width }}
-                  />
-                ))}
-
-                {fieldsOnPage.map((field) => (
-                  <PlacedFieldChip
-                    key={field.localId}
-                    field={field}
-                    canvasWidth={canvasBounds.width}
-                    canvasHeight={canvasBounds.height}
-                    isSelected={selectedFieldIdsInternal.includes(field.localId)}
-                    hasOverlap={overlapsByField.has(field.localId)}
-                    canEdit={canEdit}
-                    recipients={recipients}
-                    onSelect={(event) =>
-                      updateSelection(
-                        field.localId,
-                        event.shiftKey || event.metaKey || event.ctrlKey
-                      )
-                    }
-                    onDelete={() => {
-                      onFieldsChange(fields.filter((entry) => entry.localId !== field.localId));
-                      setSelectedFieldIdsInternal((current) =>
-                        current.filter((entry) => entry !== field.localId)
-                      );
-                      onFieldSelect(null);
-                    }}
-                    onBeginDrag={(event) => beginDrag(event, field)}
-                    onBeginResize={(event, handle) => beginResize(event, field, handle)}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </>
+          <DocumentPageViewer
+            pdfUrl={selectedDocument.pdfUrl}
+            initialPage={viewerPage}
+            zoomLevel={zoomLevel}
+            onZoomLevelChange={onZoomLevelChange}
+            highlights={canEdit ? [] : highlights}
+            onPageChange={onPageChange}
+            viewMode="continuous"
+            renderPageOverlay={canEdit ? renderPageFields : undefined}
+            className="h-full w-full"
+            keyboardShortcutScope="focused"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-text-muted">
             No documents uploaded yet.

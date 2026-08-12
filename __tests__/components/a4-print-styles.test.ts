@@ -9,6 +9,13 @@ describe('shared A4 print styles', () => {
     expect(css).toContain('br { margin: 0; }');
   });
 
+  it('does not add print-only height to empty blocks', () => {
+    const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
+    expect(css).not.toContain('p:empty');
+    expect(css).not.toContain('div:empty');
+    expect(css).toContain('br { margin: 0; }');
+  });
+
   it('uses the saved margins, typography, and paragraph spacing', () => {
     const css = buildA4PrintCss({
       ...DEFAULT_A4_DOCUMENT_LAYOUT,

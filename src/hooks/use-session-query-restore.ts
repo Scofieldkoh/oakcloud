@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 
 /**
@@ -18,6 +18,11 @@ import type { QueryClient, QueryKey } from '@tanstack/react-query';
 const CACHE_PREFIX = 'oakcloud:list-cache';
 const CACHE_VERSION = 1;
 const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024; // 2 MB guard against quota errors
+// This external-store gate keeps SSR and hydration on the same snapshot, then
+// permits browser-only sessionStorage reads immediately after hydration.
+const subscribeToHydration = () => () => {};
+const getClientHydrationSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
 /**
  * Deterministic serialization that is insensitive to object key order, so the
@@ -82,9 +87,14 @@ export function useSessionListRestore<T>(
 ): { initialData: T | undefined; restoredFromSession: boolean } {
   const { enabled = true, validate } = options;
   const serializedKey = stableSerialize(queryKey);
+  const canReadSessionSnapshot = useSyncExternalStore(
+    subscribeToHydration,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot,
+  );
 
   return useMemo(() => {
-    if (!enabled) {
+    if (!enabled || !canReadSessionSnapshot) {
       return { initialData: undefined, restoredFromSession: false };
     }
     if (queryClient.getQueryData<T>(queryKey) !== undefined) {
@@ -98,7 +108,7 @@ export function useSessionListRestore<T>(
     };
     // queryKey contents are captured through serializedKey.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, serializedKey, validate, queryClient]);
+  }, [enabled, serializedKey, validate, queryClient, canReadSessionSnapshot]);
 }
 
 /**

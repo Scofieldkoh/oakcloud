@@ -1,4 +1,4 @@
-import { act, useState } from 'react';
+import { act, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -126,12 +126,35 @@ vi.mock('@/components/ui/contact-search-select', () => ({
 }));
 
 vi.mock('@/components/processing/document-page-viewer', () => ({
-  DocumentPageViewer: () => (
+  DocumentPageViewer: ({
+    viewMode,
+    renderPageOverlay,
+  }: {
+    viewMode?: string;
+    renderPageOverlay?: (context: { pageNumber: number; width: number; height: number }) => ReactNode;
+  }) => (
     <div
-      data-main-pdf-canvas="true"
       data-document-scroll-container="true"
-      style={{ width: '100%', height: 600 }}
-    />
+      data-view-mode={viewMode ?? 'single'}
+      style={{ width: '100%', height: 600, overflow: 'auto' }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        {[1, 2, 3].map((pageNumber) => (
+          <div
+            key={pageNumber}
+            data-document-page-number={pageNumber}
+            style={{ position: 'relative', width: 600, height: 800, flexShrink: 0 }}
+          >
+            <div
+              data-main-pdf-canvas="true"
+              data-page-number={pageNumber}
+              style={{ width: 600, height: 800 }}
+            />
+            {renderPageOverlay?.({ pageNumber, width: 600, height: 800 })}
+          </div>
+        ))}
+      </div>
+    </div>
   ),
   DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5],
 }));
@@ -625,6 +648,22 @@ describe('E-signing preparation browser matrix', () => {
     expect(document.activeElement?.textContent).toContain('Upload documents');
   });
 
+  it('keeps the fields workspace inside the viewport instead of creating an outer scrollbar', async () => {
+    await page.viewport(1440, 640);
+    await renderWizard();
+
+    const nextButton = [...document.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('Next')
+    );
+    if (!nextButton) throw new Error('Next button missing');
+    await act(async () => nextButton.click());
+    await waitUntil(
+      () => document.querySelector('#esigning-step-2-heading') === document.activeElement
+    );
+
+    expect(document.documentElement.scrollHeight).toBeLessThanOrEqual(window.innerHeight + 1);
+  });
+
   it.each([320, 390] as const)(
     'keeps the canvas full width and uses overlay panels at %ipx',
     async (width) => {
@@ -648,6 +687,30 @@ describe('E-signing preparation browser matrix', () => {
       await page.screenshot({ path: `__screenshots__/esigning-preparation-${width}.png` });
     }
   );
+
+  it('stacks every PDF page inside the viewer scroll area at desktop size', async () => {
+    await page.viewport(1440, 640);
+    await renderWizard();
+
+    const nextButton = [...document.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('Next')
+    );
+    if (!nextButton) throw new Error('Next button missing');
+    await act(async () => nextButton.click());
+    await waitUntil(
+      () => document.querySelector('#esigning-step-2-heading') === document.activeElement
+    );
+
+    const scrollContainer = document.querySelector<HTMLElement>(
+      '[data-document-scroll-container="true"]'
+    );
+    if (!scrollContainer) throw new Error('Document scroll container missing');
+
+    expect(scrollContainer.getAttribute('data-view-mode')).toBe('continuous');
+    expect(document.querySelectorAll('[data-esigning-page-overlay]')).toHaveLength(3);
+    expect(scrollContainer.scrollHeight).toBeGreaterThan(scrollContainer.clientHeight);
+    expect(document.documentElement.scrollHeight).toBeLessThanOrEqual(window.innerHeight + 1);
+  });
 
   it('uses tablet panels with a usable center canvas at 768px', async () => {
     await page.viewport(768, 1024);

@@ -77,6 +77,12 @@ interface CanvasDimensions {
   height: number;
 }
 
+export type DocumentPageViewMode = 'single' | 'continuous';
+
+export interface DocumentPageOverlayContext extends CanvasDimensions {
+  pageNumber: number;
+}
+
 interface DocumentPageViewerProps {
   /** Document ID to fetch PDF from (used with useDocumentPages hook) */
   documentId?: string;
@@ -107,6 +113,10 @@ interface DocumentPageViewerProps {
   focusedHighlightLabel?: string;
   /** Optional retry handler when using a direct pdfUrl prop and loading fails. */
   onRetry?: () => void;
+  /** Render one page at a time (default) or stack every page in a continuous scroll surface. */
+  viewMode?: DocumentPageViewMode;
+  /** Optional page-relative content rendered over each PDF canvas. */
+  renderPageOverlay?: (context: DocumentPageOverlayContext) => React.ReactNode;
   /**
    * Keyboard shortcut ownership policy:
    * - 'global' (default): page/zoom keys apply anywhere outside editable controls.
@@ -341,6 +351,83 @@ function findTextInLayer(
   return null;
 }
 
+function DocumentHighlightOverlay({
+  highlights,
+  dimensions,
+  onHighlightClick,
+  renderHighlightContent,
+}: {
+  highlights: BoundingBox[];
+  dimensions: CanvasDimensions;
+  onHighlightClick?: (index: number, highlight: BoundingBox) => void;
+  renderHighlightContent?: (
+    highlight: BoundingBox,
+    pixelRect: { x: number; y: number; width: number; height: number },
+    index: number
+  ) => React.ReactNode;
+}) {
+  if (highlights.length === 0 || dimensions.width <= 0 || dimensions.height <= 0) {
+    return null;
+  }
+
+  return (
+    <svg
+      className={cn(
+        'absolute left-0 top-0',
+        !(onHighlightClick || renderHighlightContent) && 'pointer-events-none'
+      )}
+      style={{ width: dimensions.width, height: dimensions.height }}
+      viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+      preserveAspectRatio="none"
+    >
+      {highlights.map((highlight, index) => {
+        const x = highlight.x * dimensions.width;
+        const y = highlight.y * dimensions.height;
+        const width = highlight.width * dimensions.width;
+        const height = highlight.height * dimensions.height;
+        const color = highlight.color || '#93C5FD';
+
+        return (
+          <g key={index}>
+            <rect
+              x={x}
+              y={y}
+              width={width}
+              height={height}
+              fill={`${color}30`}
+              stroke={color}
+              strokeWidth="1.5"
+              rx="4"
+              {...(onHighlightClick
+                ? {
+                    onClick: () => onHighlightClick(index, highlight),
+                    style: { cursor: 'pointer' },
+                    pointerEvents: 'auto' as const,
+                  }
+                : {})}
+            />
+            {renderHighlightContent ? (
+              <foreignObject
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                style={{ pointerEvents: 'auto' }}
+              >
+                {renderHighlightContent(
+                  highlight,
+                  { x, y, width, height },
+                  index
+                )}
+              </foreignObject>
+            ) : null}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // =============================================================================
 // Main Component
 // =============================================================================
@@ -367,6 +454,8 @@ export function DocumentPageViewer({
   renderHighlightContent,
   focusedHighlightLabel,
   onRetry,
+  viewMode = 'single',
+  renderPageOverlay,
   keyboardShortcutScope = 'global',
 }: DocumentPageViewerProps) {
   // Stable references
@@ -390,6 +479,15 @@ export function DocumentPageViewer({
   const [isPdfLoading, setIsPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({ width: 0, height: 0 });
+  const [continuousCanvasDimensions, setContinuousCanvasDimensions] = useState<
+    Record<number, CanvasDimensions>
+  >({});
+  const [continuousRenderedPages, setContinuousRenderedPages] = useState<Set<number>>(
+    () => new Set()
+  );
+  const [continuousPageRotations, setContinuousPageRotations] = useState<Record<number, number>>(
+    {}
+  );
   const [textLayerItems, setTextLayerItems] = useState<TextLayerItem[]>([]);
   const [textLayerHighlights, setTextLayerHighlights] = useState<BoundingBox[]>([]);
   const [showHighlightsInternal, setShowHighlightsInternal] = useState(true);
@@ -421,6 +519,9 @@ export function DocumentPageViewer({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
+  const continuousCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const continuousRenderTasksRef = useRef<Map<number, { cancel: () => void }>>(new Map());
+  const scrollFrameRef = useRef<number | null>(null);
   const zoomIndexRef = useRef(zoomIndex);
   const pinchStartDistanceRef = useRef<number | null>(null);
   const pinchStartZoomIndexRef = useRef(zoomIndex);
@@ -467,13 +568,42 @@ export function DocumentPageViewer({
     }
   }, [showHighlights, onShowHighlightsChange]);
 
+  const navigateToPage = useCallback(
+    (pageNumber: number, behavior: ScrollBehavior = 'smooth') => {
+      const nextPage = Math.min(Math.max(pageNumber, 1), Math.max(pageCount, 1));
+      setCurrentPage(nextPage);
+
+      if (viewMode !== 'continuous') {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        const scrollContainer = scrollContainerRef.current;
+        const pageElement = scrollContainer?.querySelector<HTMLElement>(
+          `[data-document-page-number="${nextPage}"]`
+        );
+        if (!scrollContainer || !pageElement) {
+          return;
+        }
+
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const pageRect = pageElement.getBoundingClientRect();
+        scrollContainer.scrollTo({
+          top: Math.max(0, scrollContainer.scrollTop + pageRect.top - containerRect.top - 16),
+          behavior,
+        });
+      });
+    },
+    [pageCount, viewMode]
+  );
+
   const handlePrevPage = useCallback(() => {
-    setCurrentPage((prev) => Math.max(1, prev - 1));
-  }, []);
+    navigateToPage(currentPage - 1);
+  }, [currentPage, navigateToPage]);
 
   const handleNextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(pageCount, prev + 1));
-  }, [pageCount]);
+    navigateToPage(currentPage + 1);
+  }, [currentPage, navigateToPage]);
 
   const handleZoomIn = useCallback(() => {
     setResolvedZoomIndex((prev) => prev + 1);
@@ -545,30 +675,45 @@ export function DocumentPageViewer({
     []
   );
 
+  const activeRotation =
+    viewMode === 'continuous'
+      ? (continuousPageRotations[currentPage] ?? initialRotation)
+      : rotation;
+
   const handleRotateCW = useCallback(() => {
-    setRotation((prev) => {
-      const newRotation = (prev + 90) % 360;
-      onRotationChange?.(newRotation, currentPage);
-      return newRotation;
-    });
-  }, [currentPage, onRotationChange]);
+    const newRotation = (activeRotation + 90) % 360;
+    if (viewMode === 'continuous') {
+      setContinuousPageRotations((current) => ({
+        ...current,
+        [currentPage]: newRotation,
+      }));
+    } else {
+      setRotation(newRotation);
+    }
+    onRotationChange?.(newRotation, currentPage);
+  }, [activeRotation, currentPage, onRotationChange, viewMode]);
 
   const handleRotateCCW = useCallback(() => {
-    setRotation((prev) => {
-      const newRotation = (prev - 90 + 360) % 360;
-      onRotationChange?.(newRotation, currentPage);
-      return newRotation;
-    });
-  }, [currentPage, onRotationChange]);
+    const newRotation = (activeRotation - 90 + 360) % 360;
+    if (viewMode === 'continuous') {
+      setContinuousPageRotations((current) => ({
+        ...current,
+        [currentPage]: newRotation,
+      }));
+    } else {
+      setRotation(newRotation);
+    }
+    onRotationChange?.(newRotation, currentPage);
+  }, [activeRotation, currentPage, onRotationChange, viewMode]);
 
   const handlePageInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = parseInt(e.target.value, 10);
       if (!isNaN(value) && value >= 1 && value <= pageCount) {
-        setCurrentPage(value);
+        navigateToPage(value);
       }
     },
-    [pageCount]
+    [navigateToPage, pageCount]
   );
 
   const toggleFullscreen = useCallback(() => {
@@ -701,6 +846,23 @@ export function DocumentPageViewer({
         setPageCount(pdf.numPages);
         onPageCountChange?.(pdf.numPages);
 
+        if (viewMode === 'continuous') {
+          setContinuousCanvasDimensions({});
+          setContinuousRenderedPages(new Set());
+          setContinuousPageRotations(
+            Object.fromEntries(
+              Array.from({ length: pdf.numPages }, (_, index) => {
+                const pageNumber = index + 1;
+                const savedRotation =
+                  data?.pages?.find((pageInfo) => pageInfo.pageNumber === pageNumber)?.rotation ??
+                  initialRotation;
+                return [pageNumber, savedRotation];
+              })
+            )
+          );
+          return;
+        }
+
         // Get saved rotation from pages data if available
         const pageInfo = data?.pages?.find((p) => p.pageNumber === currentPage);
         const savedRotation = pageInfo?.rotation ?? rotation;
@@ -736,10 +898,172 @@ export function DocumentPageViewer({
 
   // Re-render page on page/zoom/rotation change (also when loading completes)
   useEffect(() => {
-    if (pdfDocRef.current && !isPdfLoading) {
+    if (viewMode === 'single' && pdfDocRef.current && !isPdfLoading) {
       renderPage(pdfDocRef.current, currentPage, rotation);
     }
-  }, [currentPage, zoom, rotation, isPdfLoading, renderPage]);
+  }, [currentPage, zoom, rotation, isPdfLoading, renderPage, viewMode]);
+
+  useEffect(() => {
+    if (
+      viewMode !== 'continuous' ||
+      !pdfDocRef.current ||
+      isPdfLoading ||
+      pageCount === 0
+    ) {
+      return;
+    }
+
+    const pdf = pdfDocRef.current;
+    const renderTasks = continuousRenderTasksRef.current;
+    let cancelled = false;
+
+    renderTasks.forEach((task) => task.cancel());
+    renderTasks.clear();
+    setContinuousRenderedPages(new Set());
+
+    async function renderAllPages() {
+      try {
+        const pages = await Promise.all(
+          Array.from({ length: pageCount }, (_, index) => pdf.getPage(index + 1))
+        );
+        if (cancelled) {
+          return;
+        }
+
+        const renderEntries = pages.map((page, index) => {
+          const pageNumber = index + 1;
+          const viewport = page.getViewport({
+            scale: zoom,
+            rotation: continuousPageRotations[pageNumber] ?? initialRotation,
+          });
+          return { page, pageNumber, viewport };
+        });
+
+        setContinuousCanvasDimensions(
+          Object.fromEntries(
+            renderEntries.map(({ pageNumber, viewport }) => [
+              pageNumber,
+              { width: viewport.width, height: viewport.height },
+            ])
+          )
+        );
+
+        for (const { page, pageNumber, viewport } of renderEntries) {
+          if (cancelled) {
+            return;
+          }
+
+          const canvas = continuousCanvasRefs.current.get(pageNumber);
+          const context = canvas?.getContext('2d');
+          if (!canvas || !context) {
+            continue;
+          }
+
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          const renderTask = page.render({ canvas, canvasContext: context, viewport });
+          renderTasks.set(pageNumber, renderTask);
+
+          try {
+            await renderTask.promise;
+          } catch (error) {
+            if (!(error instanceof Error && error.name === 'RenderingCancelledException')) {
+              throw error;
+            }
+            return;
+          } finally {
+            if (renderTasks.get(pageNumber) === renderTask) {
+              renderTasks.delete(pageNumber);
+            }
+          }
+
+          if (cancelled) {
+            return;
+          }
+
+          setContinuousRenderedPages((current) => {
+            const next = new Set(current);
+            next.add(pageNumber);
+            return next;
+          });
+
+          try {
+            const textItems = await extractTextLayer(page);
+            if (!cancelled) {
+              onTextLayerReady?.(textItems, pageNumber);
+            }
+          } catch (textError) {
+            console.warn(`Failed to extract text layer for page ${pageNumber}:`, textError);
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Error rendering continuous PDF pages:', error);
+        }
+      }
+    }
+
+    void renderAllPages();
+
+    return () => {
+      cancelled = true;
+      renderTasks.forEach((task) => task.cancel());
+      renderTasks.clear();
+    };
+  }, [
+    continuousPageRotations,
+    initialRotation,
+    isPdfLoading,
+    onTextLayerReady,
+    pageCount,
+    viewMode,
+    zoom,
+  ]);
+
+  const handleContinuousScroll = useCallback(() => {
+    if (viewMode !== 'continuous' || scrollFrameRef.current !== null) {
+      return;
+    }
+
+    scrollFrameRef.current = window.requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const scrollContainer = scrollContainerRef.current;
+      if (!scrollContainer) {
+        return;
+      }
+
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const viewportCenter = containerRect.top + containerRect.height / 2;
+      const pageElements = scrollContainer.querySelectorAll<HTMLElement>(
+        '[data-document-page-number]'
+      );
+      let closestPage = 1;
+      let closestDistance = Number.POSITIVE_INFINITY;
+
+      pageElements.forEach((pageElement) => {
+        const pageNumber = Number(pageElement.dataset.documentPageNumber);
+        const pageRect = pageElement.getBoundingClientRect();
+        const pageCenter = pageRect.top + pageRect.height / 2;
+        const distance = Math.abs(pageCenter - viewportCenter);
+        if (Number.isFinite(pageNumber) && distance < closestDistance) {
+          closestPage = pageNumber;
+          closestDistance = distance;
+        }
+      });
+
+      setCurrentPage((current) => (current === closestPage ? current : closestPage));
+    });
+  }, [viewMode]);
+
+  useEffect(
+    () => () => {
+      if (scrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(scrollFrameRef.current);
+      }
+    },
+    []
+  );
 
   // Keep latest zoom index for gesture handlers without re-binding event listeners.
   useEffect(() => {
@@ -787,29 +1111,42 @@ export function DocumentPageViewer({
   }, [textLayerItems, stableFieldValues, currentPage]);
 
   useEffect(() => {
-    if (!focusedHighlightLabel || isPdfLoading || canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
+    if (!focusedHighlightLabel || isPdfLoading) {
       return;
     }
 
     const targetHighlight = stableHighlights.find(
-      (highlight) => highlight.label === focusedHighlightLabel && highlight.pageNumber === currentPage
+      (highlight) =>
+        highlight.label === focusedHighlightLabel &&
+        (viewMode === 'continuous' || highlight.pageNumber === currentPage)
     );
     if (!targetHighlight) {
       return;
     }
 
+    const targetDimensions =
+      viewMode === 'continuous'
+        ? continuousCanvasDimensions[targetHighlight.pageNumber]
+        : canvasDimensions;
+    if (!targetDimensions || targetDimensions.width <= 0 || targetDimensions.height <= 0) {
+      return;
+    }
+
     const focusKey = [
       focusedHighlightLabel,
-      currentPage,
-      Math.round(canvasDimensions.width),
-      Math.round(canvasDimensions.height),
+      targetHighlight.pageNumber,
+      Math.round(targetDimensions.width),
+      Math.round(targetDimensions.height),
     ].join(':');
     if (lastFocusedHighlightKeyRef.current === focusKey) {
       return;
     }
 
     const scrollContainer = scrollContainerRef.current;
-    const canvas = canvasRef.current;
+    const canvas =
+      viewMode === 'continuous'
+        ? continuousCanvasRefs.current.get(targetHighlight.pageNumber)
+        : canvasRef.current;
     if (!scrollContainer || !canvas) {
       return;
     }
@@ -819,11 +1156,11 @@ export function DocumentPageViewer({
     const targetCenterX =
       scrollContainer.scrollLeft +
       (canvasRect.left - containerRect.left) +
-      (targetHighlight.x + targetHighlight.width / 2) * canvasDimensions.width;
+      (targetHighlight.x + targetHighlight.width / 2) * targetDimensions.width;
     const targetCenterY =
       scrollContainer.scrollTop +
       (canvasRect.top - containerRect.top) +
-      (targetHighlight.y + targetHighlight.height / 2) * canvasDimensions.height;
+      (targetHighlight.y + targetHighlight.height / 2) * targetDimensions.height;
 
     const nextScrollLeft = Math.max(0, targetCenterX - scrollContainer.clientWidth / 2);
     const nextScrollTop = Math.max(0, targetCenterY - scrollContainer.clientHeight / 2);
@@ -835,12 +1172,13 @@ export function DocumentPageViewer({
     });
     lastFocusedHighlightKeyRef.current = focusKey;
   }, [
-    canvasDimensions.height,
-    canvasDimensions.width,
+    canvasDimensions,
+    continuousCanvasDimensions,
     currentPage,
     focusedHighlightLabel,
     isPdfLoading,
     stableHighlights,
+    viewMode,
   ]);
 
   // Keyboard navigation for PDF pages and zoom
@@ -1177,7 +1515,7 @@ export function DocumentPageViewer({
           <PageThumbnailSidebar
             pages={thumbnailPages}
             currentPage={currentPage}
-            onPageSelect={setCurrentPage}
+            onPageSelect={navigateToPage}
             pdfUrl={effectivePdfUrl ?? undefined}
             documentId={documentId}
             documentStatus={documentStatus}
@@ -1214,88 +1552,118 @@ export function DocumentPageViewer({
             onPointerMove={handleScrollContainerPointerMove}
             onPointerUp={handleScrollContainerPointerEnd}
             onPointerCancel={handleScrollContainerPointerEnd}
+            onScroll={handleContinuousScroll}
             className={cn(
               'flex-1 overflow-auto p-4 bg-background-secondary focus:outline-none',
               isPanning ? 'cursor-grabbing' : 'cursor-grab'
             )}
             tabIndex={0}
           >
-            <div className="inline-flex min-w-full min-h-full items-center justify-center">
-              <div className="relative">
-                {isPdfLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background-tertiary rounded z-10 min-w-[260px] min-h-[360px] sm:min-w-[600px] sm:min-h-[800px]">
-                    <RefreshCw className="w-6 h-6 animate-spin text-text-muted" />
-                    <span className="ml-3 text-text-secondary">Loading PDF...</span>
+            {viewMode === 'continuous' ? (
+              <div className="flex min-w-full flex-col items-center gap-4">
+                {pageCount === 0 ? (
+                  <div className="flex min-h-96 items-center justify-center text-text-secondary">
+                    <RefreshCw className="h-6 w-6 animate-spin text-text-muted" />
+                    <span className="ml-3">Loading PDF...</span>
                   </div>
-                )}
+                ) : (
+                  Array.from({ length: pageCount }, (_, index) => {
+                    const pageNumber = index + 1;
+                    const dimensions = continuousCanvasDimensions[pageNumber];
+                    const pageHighlights = stableHighlights.filter(
+                      (highlight) => highlight.pageNumber === pageNumber
+                    );
+                    const isRendered = continuousRenderedPages.has(pageNumber);
 
-                <canvas
-                  ref={canvasRef}
-                  data-main-pdf-canvas="true"
-                  className={cn(
-                    'shadow-lg rounded border border-border-primary',
-                    isPdfLoading && 'opacity-0'
-                  )}
-                />
+                    return (
+                      <div
+                        key={pageNumber}
+                        data-document-page-number={pageNumber}
+                        className="relative flex-shrink-0 bg-background-tertiary"
+                        style={
+                          dimensions
+                            ? { width: dimensions.width, height: dimensions.height }
+                            : { width: 600, minHeight: 800 }
+                        }
+                      >
+                        {!isRendered ? (
+                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-tertiary">
+                            <RefreshCw className="h-6 w-6 animate-spin text-text-muted" />
+                            <span className="ml-3 text-text-secondary">Loading page {pageNumber}...</span>
+                          </div>
+                        ) : null}
 
-                {/* SVG overlay for highlights */}
-                {showHighlights && !isPdfLoading && currentHighlights.length > 0 && canvasDimensions.width > 0 && (
-                  <svg
-                    className={cn(
-                      'absolute top-0 left-0',
-                      !(onHighlightClick || renderHighlightContent) && 'pointer-events-none'
-                    )}
-                    style={{
-                      width: canvasDimensions.width,
-                      height: canvasDimensions.height,
-                    }}
-                    viewBox={`0 0 ${canvasDimensions.width} ${canvasDimensions.height}`}
-                    preserveAspectRatio="none"
-                  >
-                    {currentHighlights.map((highlight, idx) => {
-                      const x = highlight.x * canvasDimensions.width;
-                      const y = highlight.y * canvasDimensions.height;
-                      const w = highlight.width * canvasDimensions.width;
-                      const h = highlight.height * canvasDimensions.height;
-                      const color = highlight.color || '#93C5FD';
-
-                      return (
-                        <g key={idx}>
-                          <rect
-                            x={x}
-                            y={y}
-                            width={w}
-                            height={h}
-                            fill={`${color}30`}
-                            stroke={color}
-                            strokeWidth="1.5"
-                            rx="4"
-                            {...(onHighlightClick
-                              ? {
-                                  onClick: () => onHighlightClick(idx, highlight),
-                                  style: { cursor: 'pointer' },
-                                  pointerEvents: 'auto' as const,
-                                }
-                              : {})}
-                          />
-                          {renderHighlightContent && (
-                            <foreignObject
-                              x={x}
-                              y={y}
-                              width={w}
-                              height={h}
-                              style={{ pointerEvents: 'auto' }}
-                            >
-                              {renderHighlightContent(highlight, { x, y, width: w, height: h }, idx)}
-                            </foreignObject>
+                        <canvas
+                          ref={(canvas) => {
+                            if (canvas) {
+                              continuousCanvasRefs.current.set(pageNumber, canvas);
+                            } else {
+                              continuousCanvasRefs.current.delete(pageNumber);
+                            }
+                          }}
+                          data-main-pdf-canvas="true"
+                          data-page-number={pageNumber}
+                          className={cn(
+                            'rounded border border-border-primary shadow-lg',
+                            !isRendered && 'opacity-0'
                           )}
-                        </g>
-                      );
-                    })}
-                  </svg>
+                        />
+
+                        {showHighlights && dimensions ? (
+                          <DocumentHighlightOverlay
+                            highlights={pageHighlights}
+                            dimensions={dimensions}
+                            onHighlightClick={onHighlightClick}
+                            renderHighlightContent={renderHighlightContent}
+                          />
+                        ) : null}
+
+                        {dimensions && renderPageOverlay ? (
+                          <div className="absolute inset-0 z-20">
+                            {renderPageOverlay({ pageNumber, ...dimensions })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })
                 )}
               </div>
-            </div>
+            ) : (
+              <div className="inline-flex min-h-full min-w-full items-center justify-center">
+                <div className="relative">
+                  {isPdfLoading ? (
+                    <div className="absolute inset-0 z-10 flex min-h-[360px] min-w-[260px] items-center justify-center rounded bg-background-tertiary sm:min-h-[800px] sm:min-w-[600px]">
+                      <RefreshCw className="h-6 w-6 animate-spin text-text-muted" />
+                      <span className="ml-3 text-text-secondary">Loading PDF...</span>
+                    </div>
+                  ) : null}
+
+                  <canvas
+                    ref={canvasRef}
+                    data-main-pdf-canvas="true"
+                    className={cn(
+                      'rounded border border-border-primary shadow-lg',
+                      isPdfLoading && 'opacity-0'
+                    )}
+                  />
+
+                  {showHighlights && !isPdfLoading ? (
+                    <DocumentHighlightOverlay
+                      highlights={currentHighlights}
+                      dimensions={canvasDimensions}
+                      onHighlightClick={onHighlightClick}
+                      renderHighlightContent={renderHighlightContent}
+                    />
+                  ) : null}
+
+                  {!isPdfLoading && renderPageOverlay ? (
+                    <div className="absolute inset-0 z-20">
+                      {renderPageOverlay({ pageNumber: currentPage, ...canvasDimensions })}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right navigation bar - sticky full height */}
