@@ -74,3 +74,10 @@ export class BadRequestError extends ApiError {
     this.name = 'BadRequestError';
   }
 }
+
+export class UnprocessableEntityError extends ApiError {
+  constructor(message: string, details?: unknown) {
+    super(ErrorCodes.VALIDATION_ERROR, message, 422, details);
+    this.name = 'UnprocessableEntityError';
+  }
+}

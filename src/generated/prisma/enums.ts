@@ -9,6 +9,29 @@
 * 🟢 You can import this file directly.
 */
 
+export const DocumentGenerationBatchStatus = {
+  DRAFT: 'DRAFT',
+  PARTIAL: 'PARTIAL',
+  COMPLETED: 'COMPLETED'
+} as const
+
+export type DocumentGenerationBatchStatus = (typeof DocumentGenerationBatchStatus)[keyof typeof DocumentGenerationBatchStatus]
+
+
+export const DocumentGenerationBatchItemStatus = {
+  NOT_STARTED: 'NOT_STARTED',
+  NEEDS_INPUT: 'NEEDS_INPUT',
+  PREVIEWED: 'PREVIEWED',
+  READY: 'READY',
+  GENERATING: 'GENERATING',
+  GENERATED: 'GENERATED',
+  FAILED: 'FAILED',
+  BLOCKED: 'BLOCKED'
+} as const
+
+export type DocumentGenerationBatchItemStatus = (typeof DocumentGenerationBatchItemStatus)[keyof typeof DocumentGenerationBatchItemStatus]
+
+
 export const ClientServiceSource = {
   AGREEMENT: 'AGREEMENT',
   MANUAL: 'MANUAL'

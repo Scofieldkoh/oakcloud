@@ -291,6 +291,7 @@ export type DocumentTemplateWhereInput = {
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemListRelationFilter
 }
 
 export type DocumentTemplateOrderByWithRelationInput = {
@@ -312,6 +313,7 @@ export type DocumentTemplateOrderByWithRelationInput = {
   createdBy?: Prisma.UserOrderByWithRelationInput
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemOrderByRelationAggregateInput
 }
 
 export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
@@ -336,6 +338,7 @@ export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemListRelationFilter
 }, "id">
 
 export type DocumentTemplateOrderByWithAggregationInput = {
@@ -399,6 +402,7 @@ export type DocumentTemplateCreateInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateInput = {
@@ -418,6 +422,7 @@ export type DocumentTemplateUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUpdateInput = {
@@ -437,6 +442,7 @@ export type DocumentTemplateUpdateInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateInput = {
@@ -456,6 +462,7 @@ export type DocumentTemplateUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateCreateManyInput = {
@@ -583,6 +590,11 @@ export type DocumentTemplateNullableScalarRelationFilter = {
   isNot?: Prisma.DocumentTemplateWhereInput | null
 }
 
+export type DocumentTemplateScalarRelationFilter = {
+  is?: Prisma.DocumentTemplateWhereInput
+  isNot?: Prisma.DocumentTemplateWhereInput
+}
+
 export type DocumentTemplateCreateNestedManyWithoutTenantInput = {
   create?: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutTenantInput, Prisma.DocumentTemplateUncheckedCreateWithoutTenantInput> | Prisma.DocumentTemplateCreateWithoutTenantInput[] | Prisma.DocumentTemplateUncheckedCreateWithoutTenantInput[]
   connectOrCreate?: Prisma.DocumentTemplateCreateOrConnectWithoutTenantInput | Prisma.DocumentTemplateCreateOrConnectWithoutTenantInput[]
@@ -691,6 +703,20 @@ export type DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentTemplateUpdateToOneWithWhereWithoutGeneratedDocumentsInput, Prisma.DocumentTemplateUpdateWithoutGeneratedDocumentsInput>, Prisma.DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput>
 }
 
+export type DocumentTemplateCreateNestedOneWithoutGenerationBatchItemsInput = {
+  create?: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput>
+  connectOrCreate?: Prisma.DocumentTemplateCreateOrConnectWithoutGenerationBatchItemsInput
+  connect?: Prisma.DocumentTemplateWhereUniqueInput
+}
+
+export type DocumentTemplateUpdateOneRequiredWithoutGenerationBatchItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput>
+  connectOrCreate?: Prisma.DocumentTemplateCreateOrConnectWithoutGenerationBatchItemsInput
+  upsert?: Prisma.DocumentTemplateUpsertWithoutGenerationBatchItemsInput
+  connect?: Prisma.DocumentTemplateWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentTemplateUpdateToOneWithWhereWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUpdateWithoutGenerationBatchItemsInput>, Prisma.DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput>
+}
+
 export type DocumentTemplateCreateWithoutTenantInput = {
   id?: string
   name: string
@@ -707,6 +733,7 @@ export type DocumentTemplateCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutTenantInput = {
@@ -725,6 +752,7 @@ export type DocumentTemplateUncheckedCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutTenantInput = {
@@ -790,6 +818,7 @@ export type DocumentTemplateCreateWithoutCreatedByInput = {
   deletedAt?: Date | string | null
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutCreatedByInput = {
@@ -808,6 +837,7 @@ export type DocumentTemplateUncheckedCreateWithoutCreatedByInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutCreatedByInput = {
@@ -852,6 +882,7 @@ export type DocumentTemplateCreateWithoutGeneratedDocumentsInput = {
   deletedAt?: Date | string | null
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -870,6 +901,7 @@ export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -904,6 +936,7 @@ export type DocumentTemplateUpdateWithoutGeneratedDocumentsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -922,6 +955,99 @@ export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
+}
+
+export type DocumentTemplateCreateWithoutGenerationBatchItemsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  category?: $Enums.DocumentTemplateCategory
+  compositionType?: $Enums.DocumentTemplateCompositionType
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isActive?: boolean
+  version?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
+}
+
+export type DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput = {
+  id?: string
+  tenantId: string
+  name: string
+  description?: string | null
+  category?: $Enums.DocumentTemplateCategory
+  compositionType?: $Enums.DocumentTemplateCompositionType
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isActive?: boolean
+  version?: number
+  createdById: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
+}
+
+export type DocumentTemplateCreateOrConnectWithoutGenerationBatchItemsInput = {
+  where: Prisma.DocumentTemplateWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput>
+}
+
+export type DocumentTemplateUpsertWithoutGenerationBatchItemsInput = {
+  update: Prisma.XOR<Prisma.DocumentTemplateUpdateWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput>
+  create: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput>
+  where?: Prisma.DocumentTemplateWhereInput
+}
+
+export type DocumentTemplateUpdateToOneWithWhereWithoutGenerationBatchItemsInput = {
+  where?: Prisma.DocumentTemplateWhereInput
+  data: Prisma.XOR<Prisma.DocumentTemplateUpdateWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput>
+}
+
+export type DocumentTemplateUpdateWithoutGenerationBatchItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumDocumentTemplateCategoryFieldUpdateOperationsInput | $Enums.DocumentTemplateCategory
+  compositionType?: Prisma.EnumDocumentTemplateCompositionTypeFieldUpdateOperationsInput | $Enums.DocumentTemplateCompositionType
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
+}
+
+export type DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumDocumentTemplateCategoryFieldUpdateOperationsInput | $Enums.DocumentTemplateCategory
+  compositionType?: Prisma.EnumDocumentTemplateCompositionTypeFieldUpdateOperationsInput | $Enums.DocumentTemplateCompositionType
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateCreateManyTenantInput = {
@@ -957,6 +1083,7 @@ export type DocumentTemplateUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutTenantInput = {
@@ -975,6 +1102,7 @@ export type DocumentTemplateUncheckedUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateManyWithoutTenantInput = {
@@ -1027,6 +1155,7 @@ export type DocumentTemplateUpdateWithoutCreatedByInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutCreatedByInput = {
@@ -1045,6 +1174,7 @@ export type DocumentTemplateUncheckedUpdateWithoutCreatedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateManyWithoutCreatedByInput = {
@@ -1071,10 +1201,12 @@ export type DocumentTemplateUncheckedUpdateManyWithoutCreatedByInput = {
 
 export type DocumentTemplateCountOutputType = {
   generatedDocuments: number
+  generationBatchItems: number
 }
 
 export type DocumentTemplateCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   generatedDocuments?: boolean | DocumentTemplateCountOutputTypeCountGeneratedDocumentsArgs
+  generationBatchItems?: boolean | DocumentTemplateCountOutputTypeCountGenerationBatchItemsArgs
 }
 
 /**
@@ -1092,6 +1224,13 @@ export type DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs extends runtime.T
  */
 export type DocumentTemplateCountOutputTypeCountGeneratedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.GeneratedDocumentWhereInput
+}
+
+/**
+ * DocumentTemplateCountOutputType without action
+ */
+export type DocumentTemplateCountOutputTypeCountGenerationBatchItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentGenerationBatchItemWhereInput
 }
 
 
@@ -1114,6 +1253,7 @@ export type DocumentTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>
+  generationBatchItems?: boolean | Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentTemplate"]>
 
@@ -1180,6 +1320,7 @@ export type DocumentTemplateInclude<ExtArgs extends runtime.Types.Extensions.Int
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>
+  generationBatchItems?: boolean | Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentTemplateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1197,6 +1338,7 @@ export type $DocumentTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     createdBy: Prisma.$UserPayload<ExtArgs>
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
+    generationBatchItems: Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1611,6 +1753,7 @@ export interface Prisma__DocumentTemplateClient<T, Null = never, ExtArgs extends
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   generatedDocuments<T extends Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  generationBatchItems<T extends Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2072,6 +2215,30 @@ export type DocumentTemplate$generatedDocumentsArgs<ExtArgs extends runtime.Type
   take?: number
   skip?: number
   distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
+}
+
+/**
+ * DocumentTemplate.generationBatchItems
+ */
+export type DocumentTemplate$generationBatchItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentGenerationBatchItem
+   */
+  select?: Prisma.DocumentGenerationBatchItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentGenerationBatchItem
+   */
+  omit?: Prisma.DocumentGenerationBatchItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentGenerationBatchItemInclude<ExtArgs> | null
+  where?: Prisma.DocumentGenerationBatchItemWhereInput
+  orderBy?: Prisma.DocumentGenerationBatchItemOrderByWithRelationInput | Prisma.DocumentGenerationBatchItemOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentGenerationBatchItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentGenerationBatchItemScalarFieldEnum | Prisma.DocumentGenerationBatchItemScalarFieldEnum[]
 }
 
 /**

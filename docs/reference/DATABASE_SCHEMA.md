@@ -1540,6 +1540,70 @@ stale.
 
 ---
 
+### document_generation_batches
+
+One aggregate per resumable multi-template generation workspace.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (CASCADE) |
+| primary_company_id | UUID | Yes | FK to companies (RESTRICT) |
+| created_by_id | UUID | No | FK to users (RESTRICT) |
+| active_item_id | UUID | Yes | FK to document_generation_batch_items (SET NULL) |
+| current_stage | INT | No | 0..3 stage index |
+| revision | INT | No | Optimistic-lock revision, incremented per mutation |
+| status | ENUM | No | DRAFT, PARTIAL, or COMPLETED |
+| master_field_values | JSONB | No | Values keyed by master-field ID |
+| task_context | JSONB | Yes | Task launch context |
+| created_at / updated_at / deleted_at | TIMESTAMP | — | Lifecycle timestamps |
+
+### document_generation_batch_items
+
+One ordered item per selected template, owning one hidden generated document.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants (CASCADE) |
+| batch_id | UUID | No | FK to document_generation_batches (CASCADE) |
+| template_id | UUID | No | FK to document_templates (RESTRICT) |
+| generated_document_id | UUID | No | Unique FK to generated_documents (CASCADE) |
+| template_version | INT | No | Configured template version |
+| display_order | INT | No | Order within the batch |
+| status | ENUM | No | NOT_STARTED, NEEDS_INPUT, READY, GENERATING, GENERATED, FAILED, BLOCKED |
+| configuration | JSONB | No | Versioned item configuration |
+| preview_content / edited_content | TEXT | Yes | Rendered and edited HTML |
+| edited_content_json | JSONB | Yes | Structured editor content |
+| preview_fingerprint / reviewed_fingerprint | VARCHAR(64) | Yes | Content-bound hashes |
+| validation_diagnostics / last_error | JSONB | Yes | Safe structured diagnostics |
+| generation_attempt_id | VARCHAR(36) | Yes | Claim token |
+| generation_claimed_at | TIMESTAMP | Yes | Claim time (15-minute staleness) |
+
+Unique constraints: `(batch_id, template_id)`, `(batch_id, display_order)`, and
+`generated_document_id`. Indexes cover `(tenant_id, batch_id, display_order)`
+and `(tenant_id, status, generation_claimed_at)`.
+
+### DocumentGenerationBatchStatus
+```sql
+DRAFT
+PARTIAL
+COMPLETED
+```
+
+### DocumentGenerationBatchItemStatus
+```sql
+NOT_STARTED
+NEEDS_INPUT
+READY
+GENERATING
+GENERATED
+FAILED
+BLOCKED
+```
+
+---
+
 ### document_sections
 
 Navigation sections for generated documents.

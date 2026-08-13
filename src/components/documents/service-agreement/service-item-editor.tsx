@@ -1,6 +1,6 @@
 'use client';
 
-import type { Company } from '../document-generation-wizard';
+import type { Company } from '@/types/document-generation';
 import type { ServiceVariantDto } from '@/services/service-catalog/types';
 import type {
   ServiceAgreementItemDto,

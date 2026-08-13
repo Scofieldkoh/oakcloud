@@ -53,6 +53,7 @@ Key principles:
 | GEN-004 | P2 | Open | Share button issues | Format, comment, and notification problems |
 | GEN-005 | P3 | Open | Export details without line items | Option to exclude AI extraction data |
 | GEN-006 | P2 | Open | A4 editor blank-page browser test is flaky | `adds and removes a persistent blank page with one action` intermittently fails at the add or remove step under real Chromium layout; unrelated to list editing, likely tied to in-progress pagination reflow changes |
+| GEN-007 | P1 | Implemented | Multi-template document generation batches | One unified four-stage workspace (Documents, Shared setup, Configure, Review & generate) replaces the single-template wizard and split steppers; resumable batches, server-derived master fields, per-item overrides, editable review, partial success, and targeted retry are implemented |
 
 ### UI/UX
 
@@ -104,6 +105,7 @@ Key principles:
 | ID | Completed | Description |
 |----|-----------|-------------|
 | TASKS-001 | 2026-07-27 | Replaced the retired Workflow/Projects module with Tasks and Pipelines, including a complete legacy data reset and tenant-aware Client Onboarding seed |
+| GEN-007 | 2026-08-12 | Replaced the one-document-at-a-time wizard and split Service Agreement stepper with the unified batch workspace |
 | FORMS-001 | 2026-03-10 | Implemented the Forms module with builder, public links, draft save/resume/email, uploads, response review, response PDF export, and queued AI review |
 
 ## Notes

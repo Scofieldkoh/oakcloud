@@ -3,7 +3,6 @@ import {
   generationSessionStateV2Schema,
   type GenerationSessionState,
 } from '@/lib/validations/generated-document';
-import { normalizeDocumentGenerationStage } from '@/components/documents/document-generation-stage';
 import type { ServiceAgreementDraftDto } from '@/services/service-agreement/types';
 
 export interface GenerationSessionEnvelope {
@@ -24,10 +23,16 @@ export function readActiveGenerationSession(metadata: unknown): GenerationSessio
 
   const legacy = generationSessionStateV1Schema.safeParse(stored);
   if (!legacy.success) return null;
+  const legacyStep = legacy.data.currentStep;
+  const normalizedStep = (!Number.isFinite(legacyStep) || legacyStep <= 1)
+    ? 0
+    : legacyStep <= 3
+      ? 1
+      : 2;
   return {
     ...legacy.data,
     version: 2,
-    currentStep: normalizeDocumentGenerationStage(legacy.data.currentStep),
+    currentStep: normalizedStep,
     serviceAgreementId: null,
   };
 }

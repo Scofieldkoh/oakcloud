@@ -281,6 +281,29 @@ the server render. HTML edits never reverse-sync to the relational agreement,
 and later operational Services must consume the structured rows rather than
 parse document content.
 
+### Multi-template document generation batches
+
+Document generation is orchestrated by a first-class `DocumentGenerationBatch`
+aggregate with ordered `DocumentGenerationBatchItem` rows. Every item owns one
+hidden `GeneratedDocument` child that becomes a normal document only when the
+item reaches `GENERATED`; incomplete children are excluded from ordinary
+document search and direct document access.
+
+Rendering, preview fingerprints, review approval, and generation remain
+server-authoritative. The server derives shared master fields from the
+normalized custom placeholder keys and canonical types of all selected
+templates; item overrides win over batch master values, which win over template
+defaults. Service Agreement services, fees, terms, representative, and entities
+stay item-specific and persist transactionally through the existing
+`ServiceAgreement` lifecycle.
+
+Generation claims items with conditional `READY -> GENERATING` updates carrying
+an attempt ID and claim time. Claims older than 15 minutes are reclaimable.
+Preflight is all-or-nothing, execution commits each item independently, and
+retry never regenerates successful items. Task context is copied into every
+child; because `TaskStageOutcome.taskStageId` is unique, the first successful
+item by display order is the authoritative task-stage outcome.
+
 ### Signed agreement activation and operational Services
 
 Signing activates the relational agreement data, never the rendered HTML. One

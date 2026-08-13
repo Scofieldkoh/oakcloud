@@ -1,6 +1,7 @@
 'use client';
 
-import type { Company, DocumentContact } from '../document-generation-wizard';
+import type { Company, DocumentContact } from '@/types/document-generation';
+import { DocumentContactSelect } from '@/components/documents/document-contact-select';
 
 interface ServiceAgreementSetupProps {
   primaryCompany: Company | null;
@@ -32,24 +33,17 @@ export function ServiceAgreementSetup({
       <p className="mt-1 text-xs text-text-muted">
         Select the authorised representative and every entity covered by this agreement.
       </p>
-      <label className="mt-4 block text-xs font-medium text-text-secondary">
-        Authorised representative
-        <select
-          aria-label="Authorised representative"
+      <div className="mt-4">
+        <DocumentContactSelect
+          id="authorized-contact"
+          label="Authorised representative"
+          contacts={contacts}
           value={authorizedContactId}
-          onChange={(event) => onAuthorizedContactIdChange(event.target.value)}
-          className="mt-1 h-11 w-full rounded-md border border-border-primary bg-background-primary px-2 text-sm sm:h-9"
-        >
-          <option value="">Select a contact</option>
-          {contacts.map((contact) => (
-            <option key={contact.id} value={contact.id}>
-              {[contact.fullName, contact.designation, contact.email, contact.phone]
-                .filter(Boolean)
-                .join(' · ')}
-            </option>
-          ))}
-        </select>
-      </label>
+          onChange={onAuthorizedContactIdChange}
+          required
+          hint="The contact who signs on behalf of the agreement."
+        />
+      </div>
       <fieldset className="mt-4">
         <legend className="text-xs font-medium text-text-secondary">Agreement entities</legend>
         {onSearchCompanies ? (
@@ -83,9 +77,14 @@ export function ServiceAgreementSetup({
                     onEntityIdsChange([...next]);
                   }}
                 />
-                <span>
+                <span className="min-w-0 flex-1 truncate">
                   {company.name} <span className="text-text-muted">({company.uen})</span>
                 </span>
+                {isPrimary ? (
+                  <span className="shrink-0 rounded-full bg-oak-primary/10 px-2 py-0.5 text-xs font-medium text-oak-primary">
+                    Primary
+                  </span>
+                ) : null}
               </label>
             );
           })}

@@ -176,8 +176,10 @@ describe("modular task schema reset", () => {
     expect(snapshotGuardsMigration).toMatch(
       /ALTER TYPE "TaskStageStatus" RENAME VALUE 'BLOCKED' TO 'WAITING'/,
     );
-    expect(generatedEnums).toMatch(/WAITING: 'WAITING'/);
-    expect(generatedEnums).not.toMatch(/BLOCKED: 'BLOCKED'/);
+    const generatedTaskStageStatus =
+      generatedEnums.match(/export const TaskStageStatus = \{[\s\S]*?\} as const/)?.[0] ?? '';
+    expect(generatedTaskStageStatus).toMatch(/WAITING: 'WAITING'/);
+    expect(generatedTaskStageStatus).not.toMatch(/BLOCKED/);
   });
 
   it("covers the full task schema reset in the migration, including ordered constraints and indexes", () => {

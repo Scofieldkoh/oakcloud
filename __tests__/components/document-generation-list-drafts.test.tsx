@@ -70,6 +70,16 @@ describe('DocumentTable generation drafts', () => {
     expect(screen.queryByRole('link', { name: 'Resume Board resolution draft' })).not.toBeInTheDocument();
   });
 
+  it('does not offer resume actions for hidden batch children without a legacy session', () => {
+    render(<DocumentTable documents={[{
+      ...baseDocument,
+      metadata: { batchItem: true },
+    }]} />);
+
+    expect(screen.queryByRole('link', { name: 'Resume Board resolution draft' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Edit Board resolution draft' }).length).toBeGreaterThan(0);
+  });
+
   it('respects update and delete permissions for generation-session actions', () => {
     render(<DocumentTable
       documents={[baseDocument]}

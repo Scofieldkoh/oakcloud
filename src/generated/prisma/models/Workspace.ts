@@ -379,6 +379,8 @@ export type WorkspaceWhereInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemListRelationFilter
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextListRelationFilter
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemListRelationFilter
 }
 
 export type WorkspaceOrderByWithRelationInput = {
@@ -448,6 +450,8 @@ export type WorkspaceOrderByWithRelationInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemOrderByRelationAggregateInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextOrderByRelationAggregateInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchOrderByRelationAggregateInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemOrderByRelationAggregateInput
 }
 
 export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
@@ -520,6 +524,8 @@ export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemListRelationFilter
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextListRelationFilter
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemListRelationFilter
 }, "id" | "slug">
 
 export type WorkspaceOrderByWithAggregationInput = {
@@ -641,6 +647,8 @@ export type WorkspaceCreateInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateInput = {
@@ -710,6 +718,8 @@ export type WorkspaceUncheckedCreateInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUpdateInput = {
@@ -779,6 +789,8 @@ export type WorkspaceUpdateInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateInput = {
@@ -848,6 +860,8 @@ export type WorkspaceUncheckedUpdateInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateManyInput = {
@@ -1206,6 +1220,34 @@ export type WorkspaceUpdateOneRequiredWithoutGeneratedDocumentsNestedInput = {
   upsert?: Prisma.WorkspaceUpsertWithoutGeneratedDocumentsInput
   connect?: Prisma.WorkspaceWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutGeneratedDocumentsInput, Prisma.WorkspaceUpdateWithoutGeneratedDocumentsInput>, Prisma.WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutDocumentGenerationBatchesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDocumentGenerationBatchesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutDocumentGenerationBatchesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDocumentGenerationBatchesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutDocumentGenerationBatchesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUpdateWithoutDocumentGenerationBatchesInput>, Prisma.WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchesInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutDocumentGenerationBatchItemsInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDocumentGenerationBatchItemsInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutDocumentGenerationBatchItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDocumentGenerationBatchItemsInput
+  upsert?: Prisma.WorkspaceUpsertWithoutDocumentGenerationBatchItemsInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUpdateWithoutDocumentGenerationBatchItemsInput>, Prisma.WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchItemsInput>
 }
 
 export type WorkspaceCreateNestedOneWithoutLetterheadInput = {
@@ -1768,6 +1810,8 @@ export type WorkspaceCreateWithoutRolesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutRolesInput = {
@@ -1836,6 +1880,8 @@ export type WorkspaceUncheckedCreateWithoutRolesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutRolesInput = {
@@ -1920,6 +1966,8 @@ export type WorkspaceUpdateWithoutRolesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutRolesInput = {
@@ -1988,6 +2036,8 @@ export type WorkspaceUncheckedUpdateWithoutRolesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutUsersInput = {
@@ -2056,6 +2106,8 @@ export type WorkspaceCreateWithoutUsersInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutUsersInput = {
@@ -2124,6 +2176,8 @@ export type WorkspaceUncheckedCreateWithoutUsersInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutUsersInput = {
@@ -2208,6 +2262,8 @@ export type WorkspaceUpdateWithoutUsersInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutUsersInput = {
@@ -2276,6 +2332,8 @@ export type WorkspaceUncheckedUpdateWithoutUsersInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutCompaniesInput = {
@@ -2344,6 +2402,8 @@ export type WorkspaceCreateWithoutCompaniesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
@@ -2412,6 +2472,8 @@ export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutCompaniesInput = {
@@ -2496,6 +2558,8 @@ export type WorkspaceUpdateWithoutCompaniesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
@@ -2564,6 +2628,8 @@ export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutContactsInput = {
@@ -2632,6 +2698,8 @@ export type WorkspaceCreateWithoutContactsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutContactsInput = {
@@ -2700,6 +2768,8 @@ export type WorkspaceUncheckedCreateWithoutContactsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutContactsInput = {
@@ -2784,6 +2854,8 @@ export type WorkspaceUpdateWithoutContactsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutContactsInput = {
@@ -2852,6 +2924,8 @@ export type WorkspaceUncheckedUpdateWithoutContactsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutContactDetailsInput = {
@@ -2920,6 +2994,8 @@ export type WorkspaceCreateWithoutContactDetailsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
@@ -2988,6 +3064,8 @@ export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutContactDetailsInput = {
@@ -3072,6 +3150,8 @@ export type WorkspaceUpdateWithoutContactDetailsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
@@ -3140,6 +3220,8 @@ export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutDocumentsInput = {
@@ -3208,6 +3290,8 @@ export type WorkspaceCreateWithoutDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
@@ -3276,6 +3360,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutDocumentsInput = {
@@ -3360,6 +3446,8 @@ export type WorkspaceUpdateWithoutDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
@@ -3428,6 +3516,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutAuditLogsInput = {
@@ -3496,6 +3586,8 @@ export type WorkspaceCreateWithoutAuditLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
@@ -3564,6 +3656,8 @@ export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutAuditLogsInput = {
@@ -3648,6 +3742,8 @@ export type WorkspaceUpdateWithoutAuditLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
@@ -3716,6 +3812,8 @@ export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutConnectorsInput = {
@@ -3784,6 +3882,8 @@ export type WorkspaceCreateWithoutConnectorsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
@@ -3852,6 +3952,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutConnectorsInput = {
@@ -3936,6 +4038,8 @@ export type WorkspaceUpdateWithoutConnectorsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
@@ -4004,6 +4108,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutConnectorAccessInput = {
@@ -4072,6 +4178,8 @@ export type WorkspaceCreateWithoutConnectorAccessInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
@@ -4140,6 +4248,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutConnectorAccessInput = {
@@ -4224,6 +4334,8 @@ export type WorkspaceUpdateWithoutConnectorAccessInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
@@ -4292,6 +4404,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
@@ -4360,6 +4474,8 @@ export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -4428,6 +4544,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -4512,6 +4630,8 @@ export type WorkspaceUpdateWithoutConnectorUsageLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -4580,6 +4700,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutDocumentTemplatesInput = {
@@ -4648,6 +4770,8 @@ export type WorkspaceCreateWithoutDocumentTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
@@ -4716,6 +4840,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutDocumentTemplatesInput = {
@@ -4800,6 +4926,8 @@ export type WorkspaceUpdateWithoutDocumentTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
@@ -4868,6 +4996,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
@@ -4936,6 +5066,8 @@ export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -5004,6 +5136,8 @@ export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -5088,6 +5222,8 @@ export type WorkspaceUpdateWithoutGeneratedDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -5156,6 +5292,600 @@ export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutDocumentGenerationBatchesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutDocumentGenerationBatchesInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput>
+}
+
+export type WorkspaceUpsertWithoutDocumentGenerationBatchesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutDocumentGenerationBatchesInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutDocumentGenerationBatchesInput, Prisma.WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchesInput>
+}
+
+export type WorkspaceUpdateWithoutDocumentGenerationBatchesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutDocumentGenerationBatchItemsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutDocumentGenerationBatchItemsInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput>
+}
+
+export type WorkspaceUpsertWithoutDocumentGenerationBatchItemsInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchItemsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutDocumentGenerationBatchItemsInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutDocumentGenerationBatchItemsInput, Prisma.WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchItemsInput>
+}
+
+export type WorkspaceUpdateWithoutDocumentGenerationBatchItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutLetterheadInput = {
@@ -5224,6 +5954,8 @@ export type WorkspaceCreateWithoutLetterheadInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
@@ -5292,6 +6024,8 @@ export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutLetterheadInput = {
@@ -5376,6 +6110,8 @@ export type WorkspaceUpdateWithoutLetterheadInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
@@ -5444,6 +6180,8 @@ export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTemplatePartialsInput = {
@@ -5512,6 +6250,8 @@ export type WorkspaceCreateWithoutTemplatePartialsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
@@ -5580,6 +6320,8 @@ export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTemplatePartialsInput = {
@@ -5664,6 +6406,8 @@ export type WorkspaceUpdateWithoutTemplatePartialsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
@@ -5732,6 +6476,8 @@ export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceFamiliesInput = {
@@ -5800,6 +6546,8 @@ export type WorkspaceCreateWithoutServiceFamiliesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceFamiliesInput = {
@@ -5868,6 +6616,8 @@ export type WorkspaceUncheckedCreateWithoutServiceFamiliesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceFamiliesInput = {
@@ -5952,6 +6702,8 @@ export type WorkspaceUpdateWithoutServiceFamiliesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceFamiliesInput = {
@@ -6020,6 +6772,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceFamiliesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceVariantsInput = {
@@ -6088,6 +6842,8 @@ export type WorkspaceCreateWithoutServiceVariantsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceVariantsInput = {
@@ -6156,6 +6912,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceVariantsInput = {
@@ -6240,6 +6998,8 @@ export type WorkspaceUpdateWithoutServiceVariantsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceVariantsInput = {
@@ -6308,6 +7068,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceVariantFeeTemplatesInput = {
@@ -6376,6 +7138,8 @@ export type WorkspaceCreateWithoutServiceVariantFeeTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceVariantFeeTemplatesInput = {
@@ -6444,6 +7208,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantFeeTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceVariantFeeTemplatesInput = {
@@ -6528,6 +7294,8 @@ export type WorkspaceUpdateWithoutServiceVariantFeeTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceVariantFeeTemplatesInput = {
@@ -6596,6 +7364,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantFeeTemplatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceAgreementsInput = {
@@ -6664,6 +7434,8 @@ export type WorkspaceCreateWithoutServiceAgreementsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceAgreementsInput = {
@@ -6732,6 +7504,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceAgreementsInput = {
@@ -6816,6 +7590,8 @@ export type WorkspaceUpdateWithoutServiceAgreementsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceAgreementsInput = {
@@ -6884,6 +7660,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceAgreementEntitiesInput = {
@@ -6952,6 +7730,8 @@ export type WorkspaceCreateWithoutServiceAgreementEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceAgreementEntitiesInput = {
@@ -7020,6 +7800,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceAgreementEntitiesInput = {
@@ -7104,6 +7886,8 @@ export type WorkspaceUpdateWithoutServiceAgreementEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
@@ -7172,6 +7956,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceAgreementItemsInput = {
@@ -7240,6 +8026,8 @@ export type WorkspaceCreateWithoutServiceAgreementItemsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceAgreementItemsInput = {
@@ -7308,6 +8096,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceAgreementItemsInput = {
@@ -7392,6 +8182,8 @@ export type WorkspaceUpdateWithoutServiceAgreementItemsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemsInput = {
@@ -7460,6 +8252,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceAgreementItemEntitiesInput = {
@@ -7528,6 +8322,8 @@ export type WorkspaceCreateWithoutServiceAgreementItemEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceAgreementItemEntitiesInput = {
@@ -7596,6 +8392,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceAgreementItemEntitiesInput = {
@@ -7680,6 +8478,8 @@ export type WorkspaceUpdateWithoutServiceAgreementItemEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemEntitiesInput = {
@@ -7748,6 +8548,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemEntitiesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutServiceAgreementFeeLinesInput = {
@@ -7816,6 +8618,8 @@ export type WorkspaceCreateWithoutServiceAgreementFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutServiceAgreementFeeLinesInput = {
@@ -7884,6 +8688,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutServiceAgreementFeeLinesInput = {
@@ -7968,6 +8774,8 @@ export type WorkspaceUpdateWithoutServiceAgreementFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput = {
@@ -8036,6 +8844,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutClientServicesInput = {
@@ -8104,6 +8914,8 @@ export type WorkspaceCreateWithoutClientServicesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutClientServicesInput = {
@@ -8172,6 +8984,8 @@ export type WorkspaceUncheckedCreateWithoutClientServicesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutClientServicesInput = {
@@ -8256,6 +9070,8 @@ export type WorkspaceUpdateWithoutClientServicesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutClientServicesInput = {
@@ -8324,6 +9140,8 @@ export type WorkspaceUncheckedUpdateWithoutClientServicesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutClientServiceFeeLinesInput = {
@@ -8392,6 +9210,8 @@ export type WorkspaceCreateWithoutClientServiceFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput = {
@@ -8460,6 +9280,8 @@ export type WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutClientServiceFeeLinesInput = {
@@ -8544,6 +9366,8 @@ export type WorkspaceUpdateWithoutClientServiceFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput = {
@@ -8612,6 +9436,8 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutAiConversationsInput = {
@@ -8680,6 +9506,8 @@ export type WorkspaceCreateWithoutAiConversationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
@@ -8748,6 +9576,8 @@ export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutAiConversationsInput = {
@@ -8832,6 +9662,8 @@ export type WorkspaceUpdateWithoutAiConversationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
@@ -8900,6 +9732,8 @@ export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
@@ -8968,6 +9802,8 @@ export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -9036,6 +9872,8 @@ export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -9120,6 +9958,8 @@ export type WorkspaceUpdateWithoutEsigningEnvelopesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -9188,6 +10028,8 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutEsigningEmailDeliveriesInput = {
@@ -9256,6 +10098,8 @@ export type WorkspaceCreateWithoutEsigningEmailDeliveriesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput = {
@@ -9324,6 +10168,8 @@ export type WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutEsigningEmailDeliveriesInput = {
@@ -9408,6 +10254,8 @@ export type WorkspaceUpdateWithoutEsigningEmailDeliveriesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput = {
@@ -9476,6 +10324,8 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutExchangeRatesInput = {
@@ -9544,6 +10394,8 @@ export type WorkspaceCreateWithoutExchangeRatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
@@ -9612,6 +10464,8 @@ export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutExchangeRatesInput = {
@@ -9696,6 +10550,8 @@ export type WorkspaceUpdateWithoutExchangeRatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
@@ -9764,6 +10620,8 @@ export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormsInput = {
@@ -9832,6 +10690,8 @@ export type WorkspaceCreateWithoutFormsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormsInput = {
@@ -9900,6 +10760,8 @@ export type WorkspaceUncheckedCreateWithoutFormsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormsInput = {
@@ -9984,6 +10846,8 @@ export type WorkspaceUpdateWithoutFormsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormsInput = {
@@ -10052,6 +10916,8 @@ export type WorkspaceUncheckedUpdateWithoutFormsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormFieldsInput = {
@@ -10120,6 +10986,8 @@ export type WorkspaceCreateWithoutFormFieldsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
@@ -10188,6 +11056,8 @@ export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormFieldsInput = {
@@ -10272,6 +11142,8 @@ export type WorkspaceUpdateWithoutFormFieldsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
@@ -10340,6 +11212,8 @@ export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormOptionPresetsInput = {
@@ -10408,6 +11282,8 @@ export type WorkspaceCreateWithoutFormOptionPresetsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormOptionPresetsInput = {
@@ -10476,6 +11352,8 @@ export type WorkspaceUncheckedCreateWithoutFormOptionPresetsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormOptionPresetsInput = {
@@ -10560,6 +11438,8 @@ export type WorkspaceUpdateWithoutFormOptionPresetsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormOptionPresetsInput = {
@@ -10628,6 +11508,8 @@ export type WorkspaceUncheckedUpdateWithoutFormOptionPresetsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormUrlHealthInput = {
@@ -10696,6 +11578,8 @@ export type WorkspaceCreateWithoutFormUrlHealthInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormUrlHealthInput = {
@@ -10764,6 +11648,8 @@ export type WorkspaceUncheckedCreateWithoutFormUrlHealthInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormUrlHealthInput = {
@@ -10848,6 +11734,8 @@ export type WorkspaceUpdateWithoutFormUrlHealthInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormUrlHealthInput = {
@@ -10916,6 +11804,8 @@ export type WorkspaceUncheckedUpdateWithoutFormUrlHealthInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormSubmissionsInput = {
@@ -10984,6 +11874,8 @@ export type WorkspaceCreateWithoutFormSubmissionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
@@ -11052,6 +11944,8 @@ export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormSubmissionsInput = {
@@ -11136,6 +12030,8 @@ export type WorkspaceUpdateWithoutFormSubmissionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
@@ -11204,6 +12100,8 @@ export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormDraftsInput = {
@@ -11272,6 +12170,8 @@ export type WorkspaceCreateWithoutFormDraftsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
@@ -11340,6 +12240,8 @@ export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormDraftsInput = {
@@ -11424,6 +12326,8 @@ export type WorkspaceUpdateWithoutFormDraftsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
@@ -11492,6 +12396,8 @@ export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormUploadsInput = {
@@ -11560,6 +12466,8 @@ export type WorkspaceCreateWithoutFormUploadsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
@@ -11628,6 +12536,8 @@ export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormUploadsInput = {
@@ -11712,6 +12622,8 @@ export type WorkspaceUpdateWithoutFormUploadsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
@@ -11780,6 +12692,8 @@ export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutBackupsInput = {
@@ -11848,6 +12762,8 @@ export type WorkspaceCreateWithoutBackupsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutBackupsInput = {
@@ -11916,6 +12832,8 @@ export type WorkspaceUncheckedCreateWithoutBackupsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutBackupsInput = {
@@ -12000,6 +12918,8 @@ export type WorkspaceUpdateWithoutBackupsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
@@ -12068,6 +12988,8 @@ export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutBackupScheduleInput = {
@@ -12136,6 +13058,8 @@ export type WorkspaceCreateWithoutBackupScheduleInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
@@ -12204,6 +13128,8 @@ export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutBackupScheduleInput = {
@@ -12288,6 +13214,8 @@ export type WorkspaceUpdateWithoutBackupScheduleInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
@@ -12356,6 +13284,8 @@ export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutChartOfAccountsInput = {
@@ -12424,6 +13354,8 @@ export type WorkspaceCreateWithoutChartOfAccountsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
@@ -12492,6 +13424,8 @@ export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutChartOfAccountsInput = {
@@ -12576,6 +13510,8 @@ export type WorkspaceUpdateWithoutChartOfAccountsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -12644,6 +13580,8 @@ export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskPipelinesInput = {
@@ -12712,6 +13650,8 @@ export type WorkspaceCreateWithoutTaskPipelinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
@@ -12780,6 +13720,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskPipelinesInput = {
@@ -12864,6 +13806,8 @@ export type WorkspaceUpdateWithoutTaskPipelinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
@@ -12932,6 +13876,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
@@ -13000,6 +13946,8 @@ export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
@@ -13068,6 +14016,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskPipelineVersionsInput = {
@@ -13152,6 +14102,8 @@ export type WorkspaceUpdateWithoutTaskPipelineVersionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
@@ -13220,6 +14172,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
@@ -13288,6 +14242,8 @@ export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
@@ -13356,6 +14312,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskPipelineStagesInput = {
@@ -13440,6 +14398,8 @@ export type WorkspaceUpdateWithoutTaskPipelineStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
@@ -13508,6 +14468,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTasksInput = {
@@ -13576,6 +14538,8 @@ export type WorkspaceCreateWithoutTasksInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTasksInput = {
@@ -13644,6 +14608,8 @@ export type WorkspaceUncheckedCreateWithoutTasksInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTasksInput = {
@@ -13728,6 +14694,8 @@ export type WorkspaceUpdateWithoutTasksInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTasksInput = {
@@ -13796,6 +14764,8 @@ export type WorkspaceUncheckedUpdateWithoutTasksInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskStagesInput = {
@@ -13864,6 +14834,8 @@ export type WorkspaceCreateWithoutTaskStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
@@ -13932,6 +14904,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskStagesInput = {
@@ -14016,6 +14990,8 @@ export type WorkspaceUpdateWithoutTaskStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
@@ -14084,6 +15060,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
@@ -14152,6 +15130,8 @@ export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
   taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
@@ -14220,6 +15200,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
   taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskStageChecklistItemsInput = {
@@ -14304,6 +15286,8 @@ export type WorkspaceUpdateWithoutTaskStageChecklistItemsInput = {
   taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
@@ -14372,6 +15356,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
   taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
@@ -14440,6 +15426,8 @@ export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
   taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -14508,6 +15496,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
   taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -14592,6 +15582,8 @@ export type WorkspaceUpdateWithoutTaskStageOutcomesInput = {
   taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -14660,6 +15652,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
   taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskEsigningPreparationsInput = {
@@ -14728,6 +15722,8 @@ export type WorkspaceCreateWithoutTaskEsigningPreparationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskEsigningPreparationsInput = {
@@ -14796,6 +15792,8 @@ export type WorkspaceUncheckedCreateWithoutTaskEsigningPreparationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskEsigningPreparationsInput = {
@@ -14880,6 +15878,8 @@ export type WorkspaceUpdateWithoutTaskEsigningPreparationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
@@ -14948,6 +15948,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
   taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTaskCompanyRecoveryContextsInput = {
@@ -15016,6 +16018,8 @@ export type WorkspaceCreateWithoutTaskCompanyRecoveryContextsInput = {
   taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTaskCompanyRecoveryContextsInput = {
@@ -15084,6 +16088,8 @@ export type WorkspaceUncheckedCreateWithoutTaskCompanyRecoveryContextsInput = {
   taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTaskCompanyRecoveryContextsInput = {
@@ -15168,6 +16174,8 @@ export type WorkspaceUpdateWithoutTaskCompanyRecoveryContextsInput = {
   taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTaskCompanyRecoveryContextsInput = {
@@ -15236,6 +16244,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskCompanyRecoveryContextsInput = {
   taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
   taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -15289,6 +16299,8 @@ export type WorkspaceCountOutputType = {
   taskStageChecklistItems: number
   taskStageOutcomes: number
   taskCompanyRecoveryContexts: number
+  documentGenerationBatches: number
+  documentGenerationBatchItems: number
 }
 
 export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -15337,6 +16349,8 @@ export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   taskStageChecklistItems?: boolean | WorkspaceCountOutputTypeCountTaskStageChecklistItemsArgs
   taskStageOutcomes?: boolean | WorkspaceCountOutputTypeCountTaskStageOutcomesArgs
   taskCompanyRecoveryContexts?: boolean | WorkspaceCountOutputTypeCountTaskCompanyRecoveryContextsArgs
+  documentGenerationBatches?: boolean | WorkspaceCountOutputTypeCountDocumentGenerationBatchesArgs
+  documentGenerationBatchItems?: boolean | WorkspaceCountOutputTypeCountDocumentGenerationBatchItemsArgs
 }
 
 /**
@@ -15664,6 +16678,20 @@ export type WorkspaceCountOutputTypeCountTaskCompanyRecoveryContextsArgs<ExtArgs
   where?: Prisma.TaskCompanyRecoveryContextWhereInput
 }
 
+/**
+ * WorkspaceCountOutputType without action
+ */
+export type WorkspaceCountOutputTypeCountDocumentGenerationBatchesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentGenerationBatchWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
+export type WorkspaceCountOutputTypeCountDocumentGenerationBatchItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentGenerationBatchItemWhereInput
+}
+
 
 export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -15732,6 +16760,8 @@ export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   taskStageChecklistItems?: boolean | Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs>
   taskStageOutcomes?: boolean | Prisma.Workspace$taskStageOutcomesArgs<ExtArgs>
   taskCompanyRecoveryContexts?: boolean | Prisma.Workspace$taskCompanyRecoveryContextsArgs<ExtArgs>
+  documentGenerationBatches?: boolean | Prisma.Workspace$documentGenerationBatchesArgs<ExtArgs>
+  documentGenerationBatchItems?: boolean | Prisma.Workspace$documentGenerationBatchItemsArgs<ExtArgs>
   _count?: boolean | Prisma.WorkspaceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workspace"]>
 
@@ -15850,6 +16880,8 @@ export type WorkspaceInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   taskStageChecklistItems?: boolean | Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs>
   taskStageOutcomes?: boolean | Prisma.Workspace$taskStageOutcomesArgs<ExtArgs>
   taskCompanyRecoveryContexts?: boolean | Prisma.Workspace$taskCompanyRecoveryContextsArgs<ExtArgs>
+  documentGenerationBatches?: boolean | Prisma.Workspace$documentGenerationBatchesArgs<ExtArgs>
+  documentGenerationBatchItems?: boolean | Prisma.Workspace$documentGenerationBatchItemsArgs<ExtArgs>
   _count?: boolean | Prisma.WorkspaceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type WorkspaceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -15905,6 +16937,8 @@ export type $WorkspacePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     taskStageChecklistItems: Prisma.$TaskStageChecklistItemPayload<ExtArgs>[]
     taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
     taskCompanyRecoveryContexts: Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>[]
+    documentGenerationBatches: Prisma.$DocumentGenerationBatchPayload<ExtArgs>[]
+    documentGenerationBatchItems: Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -16367,6 +17401,8 @@ export interface Prisma__WorkspaceClient<T, Null = never, ExtArgs extends runtim
   taskStageChecklistItems<T extends Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageChecklistItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskStageOutcomes<T extends Prisma.Workspace$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskCompanyRecoveryContexts<T extends Prisma.Workspace$taskCompanyRecoveryContextsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskCompanyRecoveryContextsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documentGenerationBatches<T extends Prisma.Workspace$documentGenerationBatchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$documentGenerationBatchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documentGenerationBatchItems<T extends Prisma.Workspace$documentGenerationBatchItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$documentGenerationBatchItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -17918,6 +18954,54 @@ export type Workspace$taskCompanyRecoveryContextsArgs<ExtArgs extends runtime.Ty
   take?: number
   skip?: number
   distinct?: Prisma.TaskCompanyRecoveryContextScalarFieldEnum | Prisma.TaskCompanyRecoveryContextScalarFieldEnum[]
+}
+
+/**
+ * Workspace.documentGenerationBatches
+ */
+export type Workspace$documentGenerationBatchesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentGenerationBatch
+   */
+  select?: Prisma.DocumentGenerationBatchSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentGenerationBatch
+   */
+  omit?: Prisma.DocumentGenerationBatchOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentGenerationBatchInclude<ExtArgs> | null
+  where?: Prisma.DocumentGenerationBatchWhereInput
+  orderBy?: Prisma.DocumentGenerationBatchOrderByWithRelationInput | Prisma.DocumentGenerationBatchOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentGenerationBatchWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentGenerationBatchScalarFieldEnum | Prisma.DocumentGenerationBatchScalarFieldEnum[]
+}
+
+/**
+ * Workspace.documentGenerationBatchItems
+ */
+export type Workspace$documentGenerationBatchItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentGenerationBatchItem
+   */
+  select?: Prisma.DocumentGenerationBatchItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentGenerationBatchItem
+   */
+  omit?: Prisma.DocumentGenerationBatchItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentGenerationBatchItemInclude<ExtArgs> | null
+  where?: Prisma.DocumentGenerationBatchItemWhereInput
+  orderBy?: Prisma.DocumentGenerationBatchItemOrderByWithRelationInput | Prisma.DocumentGenerationBatchItemOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentGenerationBatchItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentGenerationBatchItemScalarFieldEnum | Prisma.DocumentGenerationBatchItemScalarFieldEnum[]
 }
 
 /**

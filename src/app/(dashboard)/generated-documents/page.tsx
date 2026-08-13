@@ -33,7 +33,9 @@ import {
   type GeneratedDocumentSortField,
   type GeneratedDocumentSortOrder,
 } from '@/components/documents/document-table';
+import { GenerationBatchTable } from '@/components/documents/generation-batch';
 import { Pagination } from '@/components/ui/pagination';
+import type { DocumentGenerationBatchListItem } from '@/types/document-generation-batch';
 
 // ============================================================================
 // Types
@@ -151,6 +153,9 @@ export default function GeneratedDocumentsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [draftToDiscard, setDraftToDiscard] = useState<string | null>(null);
+  const [batches, setBatches] = useState<DocumentGenerationBatchListItem[]>([]);
+  const [batchesError, setBatchesError] = useState<string | null>(null);
+  const [isDiscardingBatch, setIsDiscardingBatch] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
@@ -248,6 +253,46 @@ export default function GeneratedDocumentsPage() {
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  const fetchBatches = useCallback(async () => {
+    setBatchesError(null);
+    try {
+      const response = await fetch('/api/document-generation-batches');
+      if (!response.ok) throw new Error('Failed to load resumable batches');
+      const data = await response.json();
+      setBatches(data.batches ?? []);
+    } catch (err) {
+      console.error('Fetch batches error:', err);
+      setBatchesError(err instanceof Error ? err.message : 'Failed to load resumable batches');
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchBatches();
+  }, [fetchBatches]);
+
+  const handleDiscardBatch = useCallback(async (batchId: string) => {
+    setIsDiscardingBatch(true);
+    try {
+      const response = await fetch(
+        `/api/document-generation-batches/${encodeURIComponent(batchId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        },
+      );
+      if (!response.ok) throw new Error('Failed to discard batch');
+      setBatches((previous) => previous.filter((batch) => batch.id !== batchId));
+      success('Unfinished batch discarded');
+      void fetchDocuments();
+    } catch (err) {
+      console.error('Discard batch error:', err);
+      toastError(err instanceof Error ? err.message : 'Failed to discard batch');
+    } finally {
+      setIsDiscardingBatch(false);
+    }
+  }, [fetchDocuments, success, toastError]);
 
   // Filter handlers
   const handleFilterChange = useCallback((patch: Partial<GeneratedDocumentFilters>) => {
@@ -605,6 +650,33 @@ export default function GeneratedDocumentsPage() {
             <p>{error}</p>
           </div>
         </div>
+      )}
+
+      {/* Draft batches */}
+      {batchesError && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-status-error/30 bg-status-error/5 p-3">
+          <p className="text-sm text-status-error">{batchesError}</p>
+          <Button variant="secondary" size="sm" onClick={() => void fetchBatches()}>
+            Retry
+          </Button>
+        </div>
+      )}
+      {batches.length > 0 && (
+        <section aria-labelledby="draft-batches-heading" className="mb-6">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 id="draft-batches-heading" className="text-base font-semibold text-text-primary">
+              Draft batches
+            </h2>
+            <span className="text-xs text-text-muted">
+              {batches.length} unfinished batch{batches.length === 1 ? '' : 'es'}
+            </span>
+          </div>
+          <GenerationBatchTable
+            batches={batches}
+            onDiscard={handleDiscardBatch}
+            isDiscarding={isDiscardingBatch}
+          />
+        </section>
       )}
 
       {/* Document Table */}

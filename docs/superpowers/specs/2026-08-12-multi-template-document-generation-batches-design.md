@@ -632,3 +632,23 @@ Update the existing sources of truth:
   in light and dark themes with keyboard and screen-reader semantics.
 - Affected tests, TypeScript, ESLint, production build, and browser verification
   pass.
+
+## Implementation Notes
+
+Reconciled implementation decisions that refine the approved design:
+
+- **Nullable draft company:** a stage-one batch may persist with
+  `primaryCompanyId = null`; Shared setup enforces a company before Configure
+  can be completed and before preflight/generation can run.
+- **Incomplete Service Agreement synchronization:** the resumable workspace
+  state is always persisted in item configuration. Only when the workspace
+  passes `serviceAgreementDraftSchema` is it synchronized into the relational
+  agreement inside the same save transaction; otherwise the item stays
+  `NEEDS_INPUT` with diagnostics and preflight refuses it.
+- **First-success task outcome:** because `TaskStageOutcome.taskStageId` is
+  unique, the first successful item by `displayOrder` is linked once per
+  task stage; retries never overwrite an already-linked outcome.
+- **Preview editor surface:** the batch review workspace keeps the A4 editor
+  contract (`value`/`onChange`/`readOnly`) and adds an explicit Refresh
+  preview action with a replace-manual-edits confirmation; stale content is
+  never silently regenerated.

@@ -74,6 +74,8 @@ model Workspace {
   taskStageChecklistItems     TaskStageChecklistItem[]
   taskStageOutcomes           TaskStageOutcome[]
   taskCompanyRecoveryContexts TaskCompanyRecoveryContext[]
+  documentGenerationBatches   DocumentGenerationBatch[]
+  documentGenerationBatchItems DocumentGenerationBatchItem[]
 
   @@index([slug])
   @@index([status])
@@ -181,6 +183,7 @@ model User {
   ownedTasks                        Task[]                    @relation("TaskOwner")
   assignedTaskStages                TaskStage[]               @relation("TaskStageAssignee")
   requestedServiceAgreementActivations ServiceAgreement[]     @relation("ServiceAgreementActivationRequester")
+  createdGenerationBatches             DocumentGenerationBatch[] @relation("DocumentGenerationBatchCreator")
 
   @@index([email])
   @@index([tenantId])
@@ -312,6 +315,7 @@ model Company {
   taskRecoveryContexts        TaskCompanyRecoveryContext[]
   primaryServiceAgreements    ServiceAgreement[]       @relation("ServiceAgreementPrimaryCompany")
   serviceAgreementEntities    ServiceAgreementEntity[]
+  primaryGenerationBatches    DocumentGenerationBatch[] @relation("DocumentGenerationBatchPrimaryCompany")
 
   @@unique([tenantId, uen])
   @@index([tenantId])
@@ -811,6 +815,7 @@ model DocumentTemplate {
   createdBy          User                            @relation("TemplateCreator", fields: [createdById], references: [id])
   tenant             Workspace                       @relation(fields: [tenantId], references: [id])
   generatedDocuments GeneratedDocument[]
+  generationBatchItems DocumentGenerationBatchItem[]
 
   @@index([tenantId])
   @@index([category])
@@ -851,6 +856,7 @@ model GeneratedDocument {
   esigningEnvelopeDocuments EsigningEnvelopeDocument[]
   taskEsigningPreparations  TaskEsigningPreparation[]
   serviceAgreement          ServiceAgreement?
+  batchItem                 DocumentGenerationBatchItem?
 
   @@index([tenantId])
   @@index([templateId])
@@ -862,6 +868,83 @@ model GeneratedDocument {
   @@index([tenantId, status, updatedAt])
   @@index([finalizedAt])
   @@map("generated_documents")
+}
+
+model DocumentGenerationBatch {
+  id                String                        @id @default(uuid())
+  tenantId          String                        @map("tenant_id")
+  primaryCompanyId  String?                       @map("primary_company_id")
+  createdById       String                        @map("created_by_id")
+  activeItemId      String?                       @map("active_item_id")
+  currentStage      Int                           @default(0) @map("current_stage")
+  revision          Int                           @default(0)
+  status            DocumentGenerationBatchStatus @default(DRAFT)
+  masterFieldValues Json                          @default("{}") @map("master_field_values")
+  taskContext       Json?                         @map("task_context")
+  createdAt         DateTime                      @default(now()) @map("created_at")
+  updatedAt         DateTime                      @updatedAt @map("updated_at")
+  deletedAt         DateTime?                     @map("deleted_at")
+  tenant            Workspace                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  primaryCompany    Company?                      @relation("DocumentGenerationBatchPrimaryCompany", fields: [primaryCompanyId], references: [id], onDelete: Restrict)
+  createdBy         User                          @relation("DocumentGenerationBatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  items             DocumentGenerationBatchItem[] @relation("DocumentGenerationBatchItems")
+  activeItem        DocumentGenerationBatchItem?  @relation("ActiveDocumentGenerationBatchItem", fields: [activeItemId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, updatedAt])
+  @@index([tenantId, primaryCompanyId])
+  @@index([tenantId, deletedAt])
+  @@map("document_generation_batches")
+}
+
+model DocumentGenerationBatchItem {
+  id                  String                            @id @default(uuid())
+  tenantId            String                            @map("tenant_id")
+  batchId             String                            @map("batch_id")
+  templateId          String                            @map("template_id")
+  generatedDocumentId String                            @unique @map("generated_document_id")
+  templateVersion     Int                               @map("template_version")
+  displayOrder        Int                               @map("display_order")
+  status              DocumentGenerationBatchItemStatus @default(NOT_STARTED)
+  configuration       Json                              @default("{}")
+  previewContent      String?                           @map("preview_content")
+  editedContent       String?                           @map("edited_content")
+  editedContentJson   Json?                             @map("edited_content_json")
+  previewFingerprint  String?                           @map("preview_fingerprint") @db.VarChar(64)
+  reviewedFingerprint String?                           @map("reviewed_fingerprint") @db.VarChar(64)
+  validationDiagnostics Json?                           @map("validation_diagnostics")
+  lastError           Json?                             @map("last_error")
+  generationAttemptId String?                           @map("generation_attempt_id") @db.VarChar(36)
+  generationClaimedAt DateTime?                         @map("generation_claimed_at")
+  createdAt           DateTime                          @default(now()) @map("created_at")
+  updatedAt           DateTime                          @updatedAt @map("updated_at")
+  tenant              Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batch               DocumentGenerationBatch           @relation("DocumentGenerationBatchItems", fields: [batchId], references: [id], onDelete: Cascade)
+  template            DocumentTemplate                  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  generatedDocument   GeneratedDocument                 @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
+  activeForBatches    DocumentGenerationBatch[]         @relation("ActiveDocumentGenerationBatchItem")
+
+  @@unique([batchId, templateId])
+  @@unique([batchId, displayOrder])
+  @@index([tenantId, batchId, displayOrder])
+  @@index([tenantId, status, generationClaimedAt])
+  @@map("document_generation_batch_items")
+}
+
+enum DocumentGenerationBatchStatus {
+  DRAFT
+  PARTIAL
+  COMPLETED
+}
+
+enum DocumentGenerationBatchItemStatus {
+  NOT_STARTED
+  NEEDS_INPUT
+  PREVIEWED
+  READY
+  GENERATING
+  GENERATED
+  FAILED
+  BLOCKED
 }
 
 model DocumentSection {

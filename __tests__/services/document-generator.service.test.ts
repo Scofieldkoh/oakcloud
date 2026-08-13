@@ -192,6 +192,35 @@ describe('Document generator service', () => {
     });
   });
 
+  it('excludes incomplete batch children from document search', async () => {
+    await searchGeneratedDocuments(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+      },
+      'workspace-1',
+    );
+
+    expect(prisma.generatedDocument.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] },
+          ]),
+        }),
+      }),
+    );
+    expect(prisma.generatedDocument.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        AND: expect.arrayContaining([
+          { OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] },
+        ]),
+      }),
+    });
+  });
+
   it('applies title, created-by and updated date filters to generated document search', async () => {
     await searchGeneratedDocuments(
       {

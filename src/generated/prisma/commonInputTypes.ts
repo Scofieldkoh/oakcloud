@@ -613,6 +613,40 @@ export type EnumGeneratedDocumentStatusWithAggregatesFilter<$PrismaModel = never
   _max?: Prisma.NestedEnumGeneratedDocumentStatusFilter<$PrismaModel>
 }
 
+export type EnumDocumentGenerationBatchStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchStatus | Prisma.EnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel> | $Enums.DocumentGenerationBatchStatus
+}
+
+export type EnumDocumentGenerationBatchStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchStatus | Prisma.EnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchStatusWithAggregatesFilter<$PrismaModel> | $Enums.DocumentGenerationBatchStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel>
+}
+
+export type EnumDocumentGenerationBatchItemStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchItemStatus | Prisma.EnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel> | $Enums.DocumentGenerationBatchItemStatus
+}
+
+export type EnumDocumentGenerationBatchItemStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchItemStatus | Prisma.EnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchItemStatusWithAggregatesFilter<$PrismaModel> | $Enums.DocumentGenerationBatchItemStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel>
+}
+
 export type EnumDocumentCommentStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.DocumentCommentStatus | Prisma.EnumDocumentCommentStatusFieldRefInput<$PrismaModel>
   in?: $Enums.DocumentCommentStatus[] | Prisma.ListEnumDocumentCommentStatusFieldRefInput<$PrismaModel>
@@ -2406,6 +2440,40 @@ export type NestedEnumGeneratedDocumentStatusWithAggregatesFilter<$PrismaModel =
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumGeneratedDocumentStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumGeneratedDocumentStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchStatus | Prisma.EnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel> | $Enums.DocumentGenerationBatchStatus
+}
+
+export type NestedEnumDocumentGenerationBatchStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchStatus | Prisma.EnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchStatus[] | Prisma.ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchStatusWithAggregatesFilter<$PrismaModel> | $Enums.DocumentGenerationBatchStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentGenerationBatchStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchItemStatus | Prisma.EnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel> | $Enums.DocumentGenerationBatchItemStatus
+}
+
+export type NestedEnumDocumentGenerationBatchItemStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DocumentGenerationBatchItemStatus | Prisma.EnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DocumentGenerationBatchItemStatus[] | Prisma.ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDocumentGenerationBatchItemStatusWithAggregatesFilter<$PrismaModel> | $Enums.DocumentGenerationBatchItemStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDocumentGenerationBatchItemStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumDocumentCommentStatusFilter<$PrismaModel = never> = {

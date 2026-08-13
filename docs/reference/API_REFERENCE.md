@@ -1521,6 +1521,100 @@ Get templates using this partial.
 
 ---
 
+## Document Generation Batch Endpoints
+
+Batch endpoints are tenant-scoped and require the existing
+`document:read`, `document:create`, `document:update`, or `document:delete`
+permissions. Client bodies never include tenant/user IDs, statuses,
+fingerprints, generated-document IDs, claim IDs, or diagnostics; all mutation
+endpoints accept `expectedRevision` and return `409 Conflict` with
+`details.currentRevision` on stale writes.
+
+### GET /api/document-generation-batches
+List active (`DRAFT`/`PARTIAL`) resumable batches. Permission: `document:read`.
+
+### POST /api/document-generation-batches
+Create a persisted batch, ordered items, and hidden child drafts. Permission:
+`document:create`. When the body contains `legacyDraftId`, exactly one item is
+required and the request routes to idempotent legacy-session adoption.
+
+**Request Body:**
+```json
+{
+  "items": [
+    { "templateId": "33333333-3333-4333-8333-333333333333" },
+    { "templateId": "44444444-4444-4444-8444-444444444444" }
+  ]
+}
+```
+
+### GET /api/document-generation-batches/[id]
+Resume one batch with its derived master-field catalogue. Permission:
+`document:read`.
+
+### PUT /api/document-generation-batches/[id]
+Save full shared and item state. Permission: `document:update`.
+
+**Request Body:**
+```json
+{
+  "expectedRevision": 3,
+  "currentStage": 2,
+  "primaryCompanyId": "55555555-5555-4555-8555-555555555555",
+  "activeItemId": "66666666-6666-4666-8666-666666666666",
+  "masterFieldValues": { "client_name::text": "Acme Pte. Ltd." },
+  "items": [
+    {
+      "id": "66666666-6666-4666-8666-666666666666",
+      "templateId": "33333333-3333-4333-8333-333333333333",
+      "displayOrder": 0,
+      "configuration": {
+        "version": 1,
+        "title": "Engagement Letter",
+        "contactIds": [],
+        "selectedDirectorId": null,
+        "selectedShareholderId": null,
+        "selectedContactId": null,
+        "itemValues": {},
+        "masterOverrides": {},
+        "useLetterhead": true,
+        "serviceAgreement": null
+      }
+    }
+  ]
+}
+```
+
+### DELETE /api/document-generation-batches/[id]
+Discard the aggregate and incomplete children; generated outputs are kept.
+Permission: `document:delete`.
+
+### POST /api/document-generation-batches/[id]/preflight
+Revalidate every remaining item without creating outputs. Permission:
+`document:update`. Returns `422` with `details.items` diagnostics when any item
+is not ready.
+
+### POST /api/document-generation-batches/[id]/generate
+Generate all ready, ungenerated items with concurrency at most three.
+Permissions: `document:create` + `document:update`. Execution preserves
+successes and returns per-item failures; retry never re-runs `GENERATED`
+items.
+
+### POST /api/document-generation-batches/[id]/items/[itemId]/preview
+Render and persist one item's current preview and fingerprint. Permission:
+`document:update`. Refreshing over manual edits requires
+`replaceEditedContent: true`.
+
+### POST /api/document-generation-batches/[id]/items/[itemId]/review
+Approve the exact current preview and persisted editor content. Permission:
+`document:update`. Stale previews return `409`.
+
+### POST /api/document-generation-batches/[id]/items/[itemId]/retry
+Revalidate and retry one failed or abandoned-claim item. Permissions:
+`document:create` + `document:update`.
+
+---
+
 ## Generated Document Endpoints
 
 ### GET /api/generated-documents

@@ -185,6 +185,16 @@ export type DocumentTemplate = Prisma.DocumentTemplateModel
  */
 export type GeneratedDocument = Prisma.GeneratedDocumentModel
 /**
+ * Model DocumentGenerationBatch
+ *
+ */
+export type DocumentGenerationBatch = Prisma.DocumentGenerationBatchModel
+/**
+ * Model DocumentGenerationBatchItem
+ *
+ */
+export type DocumentGenerationBatchItem = Prisma.DocumentGenerationBatchItemModel
+/**
  * Model DocumentSection
  *
  */

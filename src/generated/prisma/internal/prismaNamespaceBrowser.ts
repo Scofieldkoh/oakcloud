@@ -80,6 +80,8 @@ export const ModelName = {
   NoteTab: 'NoteTab',
   DocumentTemplate: 'DocumentTemplate',
   GeneratedDocument: 'GeneratedDocument',
+  DocumentGenerationBatch: 'DocumentGenerationBatch',
+  DocumentGenerationBatchItem: 'DocumentGenerationBatchItem',
   DocumentSection: 'DocumentSection',
   WorkspaceLetterhead: 'WorkspaceLetterhead',
   DocumentComment: 'DocumentComment',
@@ -737,6 +739,51 @@ export const GeneratedDocumentScalarFieldEnum = {
 } as const
 
 export type GeneratedDocumentScalarFieldEnum = (typeof GeneratedDocumentScalarFieldEnum)[keyof typeof GeneratedDocumentScalarFieldEnum]
+
+
+export const DocumentGenerationBatchScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  primaryCompanyId: 'primaryCompanyId',
+  createdById: 'createdById',
+  activeItemId: 'activeItemId',
+  currentStage: 'currentStage',
+  revision: 'revision',
+  status: 'status',
+  masterFieldValues: 'masterFieldValues',
+  taskContext: 'taskContext',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type DocumentGenerationBatchScalarFieldEnum = (typeof DocumentGenerationBatchScalarFieldEnum)[keyof typeof DocumentGenerationBatchScalarFieldEnum]
+
+
+export const DocumentGenerationBatchItemScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  batchId: 'batchId',
+  templateId: 'templateId',
+  generatedDocumentId: 'generatedDocumentId',
+  templateVersion: 'templateVersion',
+  displayOrder: 'displayOrder',
+  status: 'status',
+  configuration: 'configuration',
+  previewContent: 'previewContent',
+  editedContent: 'editedContent',
+  editedContentJson: 'editedContentJson',
+  previewFingerprint: 'previewFingerprint',
+  reviewedFingerprint: 'reviewedFingerprint',
+  validationDiagnostics: 'validationDiagnostics',
+  lastError: 'lastError',
+  generationAttemptId: 'generationAttemptId',
+  generationClaimedAt: 'generationClaimedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentGenerationBatchItemScalarFieldEnum = (typeof DocumentGenerationBatchItemScalarFieldEnum)[keyof typeof DocumentGenerationBatchItemScalarFieldEnum]
 
 
 export const DocumentSectionScalarFieldEnum = {

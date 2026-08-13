@@ -7,7 +7,7 @@ import type {
   ServiceAgreementItemDto,
   ServiceAgreementItemInput,
 } from '@/services/service-agreement';
-import type { Company } from '../document-generation-wizard';
+import type { Company } from '@/types/document-generation';
 import { ServiceItemEditor } from './service-item-editor';
 import { createServiceAgreementClientKey } from './client-key';
 

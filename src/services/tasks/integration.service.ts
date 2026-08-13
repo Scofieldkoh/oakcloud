@@ -127,6 +127,44 @@ export function safelyLinkGeneratedDocumentTaskOutcome(input: LinkTaskOutcomeInp
   );
 }
 
+/**
+ * Link the first successful batch output to a task stage.
+ *
+ * `TaskStageOutcome.taskStageId` is currently unique, so a batch may have at
+ * most one authoritative generated-document outcome per stage. The first
+ * successful item by display order wins; already-linked stages are left
+ * untouched so retries cannot overwrite an authoritative outcome.
+ */
+export async function linkFirstGeneratedDocumentTaskOutcomeForBatch(params: {
+  tenantId: string;
+  taskContext: TaskLaunchContext;
+  userId: string;
+  successes: Array<{ itemId: string; documentId: string; title: string }>;
+}) {
+  return safelyRunTaskCallback(
+    'batch generation outcome',
+    async () => {
+      const existing = await prisma.taskStageOutcome.findFirst({
+        where: {
+          tenantId: params.tenantId,
+          taskStageId: params.taskContext.taskStageId,
+          type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+        },
+        select: { id: true },
+      });
+      if (existing) return;
+      const first = params.successes[0];
+      if (!first) return;
+      await linkGeneratedDocumentTaskOutcome({
+        tenantId: params.tenantId,
+        context: params.taskContext,
+        authoritativeId: first.documentId,
+        userId: params.userId,
+      });
+    },
+  );
+}
+
 export function safelyLinkEsigningEnvelopeTaskOutcome(input: LinkTaskOutcomeInput) {
   return safelyRunTaskCallback(
     'e-signing envelope mutation',

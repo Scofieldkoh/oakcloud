@@ -31,19 +31,20 @@ export {
   type AutoSaveIndicatorProps,
 } from './draft-recovery-prompt';
 
-// Template Selector
-export { TemplateSelector, type TemplateSelectorProps, type DocumentTemplate } from './template-selector';
-
-// Document Generation Wizard
-export {
-  DocumentGenerationWizard,
-  type GenerationWizardProps,
-  type GenerateDocumentData,
-  type GeneratedDocumentResult,
-} from './document-generation-wizard';
-
 // Section Navigator
 export { SectionNavigator, type SectionNavigatorProps, type DocumentSection } from './section-navigator';
+
+// Document Generation Batch Workspace
+export {
+  DocumentGenerationBatchWorkspace,
+  BatchTemplatePicker,
+  BatchSharedSetup,
+  BatchDocumentQueue,
+  BatchItemConfigurator,
+  BatchReviewWorkspace,
+  BatchGenerationResults,
+  type DocumentGenerationBatchWorkspaceProps,
+} from './generation-batch';
 
 // Page Break Indicator
 export {

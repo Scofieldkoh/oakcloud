@@ -43,6 +43,7 @@ import {
   linkCompanyTaskOutcome,
   linkEsigningEnvelopeTaskOutcome,
   linkGeneratedDocumentTaskOutcome,
+  linkFirstGeneratedDocumentTaskOutcomeForBatch,
   parseTaskLaunchContext,
   reconcileEsigningEnvelopeTaskOutcomes,
   reconcileGeneratedDocumentTaskOutcomes,
@@ -178,6 +179,55 @@ describe('task module integration service', () => {
       select: { taskStageId: true },
     });
     expect(mocks.reconcileOutcome).toHaveBeenCalledTimes(2);
+  });
+
+  it('links only the first batch success when the stage has no generated-document outcome', async () => {
+    mocks.outcomeFindFirst.mockResolvedValue(null);
+
+    await linkFirstGeneratedDocumentTaskOutcomeForBatch({
+      tenantId: 'tenant-a',
+      taskContext: context,
+      userId: 'user-1',
+      successes: [
+        { itemId: 'item-1', documentId: '33333333-3333-4333-8333-333333333333', title: 'First' },
+        { itemId: 'item-2', documentId: '44444444-4444-4444-8444-444444444444', title: 'Second' },
+      ],
+    });
+
+    expect(mocks.outcomeFindFirst).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-a',
+        taskStageId: context.taskStageId,
+        type: 'GENERATED_DOCUMENT',
+      },
+      select: { id: true },
+    });
+    expect(mocks.linkOutcome).toHaveBeenCalledTimes(1);
+    expect(mocks.linkOutcome).toHaveBeenCalledWith(
+      'tenant-a',
+      context.taskStageId,
+      {
+        type: 'GENERATED_DOCUMENT',
+        generatedDocumentId: '33333333-3333-4333-8333-333333333333',
+      },
+      'user-1',
+      { protectAuthoritativeCompany: true },
+    );
+  });
+
+  it('never overwrites an already-linked generated-document outcome on retry', async () => {
+    mocks.outcomeFindFirst.mockResolvedValue({ id: 'outcome-1' });
+
+    await linkFirstGeneratedDocumentTaskOutcomeForBatch({
+      tenantId: 'tenant-a',
+      taskContext: context,
+      userId: 'user-1',
+      successes: [
+        { itemId: 'item-1', documentId: '33333333-3333-4333-8333-333333333333', title: 'First' },
+      ],
+    });
+
+    expect(mocks.linkOutcome).not.toHaveBeenCalled();
   });
 
   it('reconciles every linked e-signing stage within the tenant', async () => {

@@ -603,9 +603,23 @@ export async function renderTemplateForGeneration(
 // Create Document from Template
 // ============================================================================
 
-export async function createDocumentFromTemplate(
+export interface MaterializeDocumentTarget {
+  generatedDocumentId?: string;
+  expectedBatchItemId?: string;
+  serviceAgreementId?: string;
+}
+
+/**
+ * Materialize a template into an authorized generated-document record.
+ *
+ * Shared by the legacy single-document path (which creates a child) and batch
+ * generation (which updates the hidden child owned by a batch item). For
+ * batch targets the exact item/child ownership is verified before writing.
+ */
+export async function materializeDocumentFromTemplate(
   data: CreateDocumentFromTemplateInput,
   params: TenantAwareParams,
+  target: MaterializeDocumentTarget = {},
   taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocument> {
   const { tenantId, userId } = params;
@@ -619,20 +633,21 @@ export async function createDocumentFromTemplate(
     ? [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim()
     : undefined;
 
-  const generationDraft = data.draftId
-    ? await prisma.generatedDocument.findFirst({
-      where: { id: data.draftId, tenantId, deletedAt: null },
-    })
-    : null;
-  if (
-    data.draftId
-    && (
-      !generationDraft
-      || generationDraft.status !== 'DRAFT'
-      || !readActiveGenerationSession(generationDraft.metadata)
-    )
-  ) {
-    throw new NotFoundError('Document draft not found');
+  if (target.generatedDocumentId) {
+    const existingChild = await prisma.generatedDocument.findFirst({
+      where: { id: target.generatedDocumentId, tenantId, deletedAt: null },
+    });
+    if (!existingChild) throw new NotFoundError('Document draft not found');
+    if (target.expectedBatchItemId) {
+      const batchItem = await prisma.documentGenerationBatchItem.findFirst({
+        where: {
+          id: target.expectedBatchItemId,
+          tenantId,
+          generatedDocumentId: target.generatedDocumentId,
+        },
+      });
+      if (!batchItem) throw new NotFoundError('Batch item not found');
+    }
   }
   // Get template
   const template = await prisma.documentTemplate.findFirst({
@@ -646,8 +661,8 @@ export async function createDocumentFromTemplate(
   if (!template.isActive) {
     throw new Error('Template is not active');
   }
-  const attachedAgreement = data.draftId
-    ? await getServiceAgreementDraft(data.draftId, params)
+  const attachedAgreement = target.generatedDocumentId
+    ? await getServiceAgreementDraft(target.generatedDocumentId, params)
     : null;
   if (
     template.compositionType === 'STANDARD'
@@ -688,7 +703,7 @@ export async function createDocumentFromTemplate(
     generatedBy,
     mode: 'generate',
     serviceAgreementId: linkedAgreement?.id,
-    generatedDocumentId: data.draftId,
+    generatedDocumentId: target.generatedDocumentId,
   });
   if (rendered.blockingErrors.length > 0) {
     throw new ValidationError(rendered.blockingErrors.join('; '), {
@@ -744,17 +759,17 @@ export async function createDocumentFromTemplate(
     placeholderData: rendered.context as Prisma.InputJsonValue,
     metadata: generatedMetadata as Prisma.InputJsonValue,
   };
-  const document = data.draftId && attachedAgreement && template.compositionType === 'STANDARD'
+  const document = target.generatedDocumentId && attachedAgreement && template.compositionType === 'STANDARD'
     ? await prisma.$transaction(async (tx) => {
         await tx.serviceAgreement.delete({ where: { id: attachedAgreement.id } });
         return tx.generatedDocument.update({
-          where: { id: data.draftId },
+          where: { id: target.generatedDocumentId! },
           data: updateData,
         });
       })
-    : data.draftId
+    : target.generatedDocumentId
       ? await prisma.generatedDocument.update({
-      where: { id: data.draftId },
+      where: { id: target.generatedDocumentId },
       data: updateData,
     })
     : await prisma.generatedDocument.create({
@@ -795,6 +810,40 @@ export async function createDocumentFromTemplate(
   });
 
   return document;
+}
+
+/**
+ * Backward-compatible single-document creation.
+ *
+ * Validates the legacy generation-session draft when supplied and delegates
+ * rendering/writing to the shared materialization path.
+ */
+export async function createDocumentFromTemplate(
+  data: CreateDocumentFromTemplateInput,
+  params: TenantAwareParams,
+  taskIntegrationContext?: TaskLaunchContext,
+): Promise<GeneratedDocument> {
+  if (data.draftId) {
+    const generationDraft = await prisma.generatedDocument.findFirst({
+      where: { id: data.draftId, tenantId: params.tenantId, deletedAt: null },
+    });
+    if (
+      !generationDraft
+      || generationDraft.status !== 'DRAFT'
+      || !readActiveGenerationSession(generationDraft.metadata)
+    ) {
+      throw new NotFoundError('Document draft not found');
+    }
+  }
+  return materializeDocumentFromTemplate(
+    data,
+    params,
+    {
+      generatedDocumentId: data.draftId,
+      serviceAgreementId: data.serviceAgreementId,
+    },
+    taskIntegrationContext,
+  );
 }
 
 // ============================================================================
@@ -1242,6 +1291,9 @@ export async function getGeneratedDocumentById(
   if (!includeDeleted) {
     where.deletedAt = null;
   }
+  where.AND = [
+    { OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] },
+  ];
 
   return prisma.generatedDocument.findFirst({
     where,
@@ -1337,6 +1389,9 @@ export async function searchGeneratedDocuments(
     deletedAt: null,
     tenantId,
   };
+  where.AND = [
+    { OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] },
+  ];
 
   // Text search
   if (params.query) {

@@ -413,6 +413,8 @@ export const ModelName = {
   NoteTab: 'NoteTab',
   DocumentTemplate: 'DocumentTemplate',
   GeneratedDocument: 'GeneratedDocument',
+  DocumentGenerationBatch: 'DocumentGenerationBatch',
+  DocumentGenerationBatchItem: 'DocumentGenerationBatchItem',
   DocumentSection: 'DocumentSection',
   WorkspaceLetterhead: 'WorkspaceLetterhead',
   DocumentComment: 'DocumentComment',
@@ -504,7 +506,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2651,6 +2653,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.GeneratedDocumentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.GeneratedDocumentCountAggregateOutputType> | number
+        }
+      }
+    }
+    DocumentGenerationBatch: {
+      payload: Prisma.$DocumentGenerationBatchPayload<ExtArgs>
+      fields: Prisma.DocumentGenerationBatchFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentGenerationBatchFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentGenerationBatchFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentGenerationBatchFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentGenerationBatchFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>
+        }
+        findMany: {
+          args: Prisma.DocumentGenerationBatchFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>[]
+        }
+        create: {
+          args: Prisma.DocumentGenerationBatchCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>
+        }
+        createMany: {
+          args: Prisma.DocumentGenerationBatchCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentGenerationBatchCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentGenerationBatchDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>
+        }
+        update: {
+          args: Prisma.DocumentGenerationBatchUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentGenerationBatchDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentGenerationBatchUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentGenerationBatchUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentGenerationBatchUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchPayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentGenerationBatchAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentGenerationBatch>
+        }
+        groupBy: {
+          args: Prisma.DocumentGenerationBatchGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentGenerationBatchGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentGenerationBatchCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentGenerationBatchCountAggregateOutputType> | number
+        }
+      }
+    }
+    DocumentGenerationBatchItem: {
+      payload: Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>
+      fields: Prisma.DocumentGenerationBatchItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentGenerationBatchItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentGenerationBatchItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentGenerationBatchItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentGenerationBatchItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>
+        }
+        findMany: {
+          args: Prisma.DocumentGenerationBatchItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>[]
+        }
+        create: {
+          args: Prisma.DocumentGenerationBatchItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>
+        }
+        createMany: {
+          args: Prisma.DocumentGenerationBatchItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentGenerationBatchItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentGenerationBatchItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>
+        }
+        update: {
+          args: Prisma.DocumentGenerationBatchItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentGenerationBatchItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentGenerationBatchItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentGenerationBatchItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentGenerationBatchItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentGenerationBatchItemPayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentGenerationBatchItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentGenerationBatchItem>
+        }
+        groupBy: {
+          args: Prisma.DocumentGenerationBatchItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentGenerationBatchItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentGenerationBatchItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentGenerationBatchItemCountAggregateOutputType> | number
         }
       }
     }
@@ -8882,6 +9032,51 @@ export const GeneratedDocumentScalarFieldEnum = {
 export type GeneratedDocumentScalarFieldEnum = (typeof GeneratedDocumentScalarFieldEnum)[keyof typeof GeneratedDocumentScalarFieldEnum]
 
 
+export const DocumentGenerationBatchScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  primaryCompanyId: 'primaryCompanyId',
+  createdById: 'createdById',
+  activeItemId: 'activeItemId',
+  currentStage: 'currentStage',
+  revision: 'revision',
+  status: 'status',
+  masterFieldValues: 'masterFieldValues',
+  taskContext: 'taskContext',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type DocumentGenerationBatchScalarFieldEnum = (typeof DocumentGenerationBatchScalarFieldEnum)[keyof typeof DocumentGenerationBatchScalarFieldEnum]
+
+
+export const DocumentGenerationBatchItemScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  batchId: 'batchId',
+  templateId: 'templateId',
+  generatedDocumentId: 'generatedDocumentId',
+  templateVersion: 'templateVersion',
+  displayOrder: 'displayOrder',
+  status: 'status',
+  configuration: 'configuration',
+  previewContent: 'previewContent',
+  editedContent: 'editedContent',
+  editedContentJson: 'editedContentJson',
+  previewFingerprint: 'previewFingerprint',
+  reviewedFingerprint: 'reviewedFingerprint',
+  validationDiagnostics: 'validationDiagnostics',
+  lastError: 'lastError',
+  generationAttemptId: 'generationAttemptId',
+  generationClaimedAt: 'generationClaimedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentGenerationBatchItemScalarFieldEnum = (typeof DocumentGenerationBatchItemScalarFieldEnum)[keyof typeof DocumentGenerationBatchItemScalarFieldEnum]
+
+
 export const DocumentSectionScalarFieldEnum = {
   id: 'id',
   documentId: 'documentId',
@@ -10726,6 +10921,34 @@ export type ListEnumGeneratedDocumentStatusFieldRefInput<$PrismaModel> = FieldRe
 
 
 /**
+ * Reference to a field of type 'DocumentGenerationBatchStatus'
+ */
+export type EnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentGenerationBatchStatus'>
+
+
+
+/**
+ * Reference to a field of type 'DocumentGenerationBatchStatus[]'
+ */
+export type ListEnumDocumentGenerationBatchStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentGenerationBatchStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'DocumentGenerationBatchItemStatus'
+ */
+export type EnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentGenerationBatchItemStatus'>
+
+
+
+/**
+ * Reference to a field of type 'DocumentGenerationBatchItemStatus[]'
+ */
+export type ListEnumDocumentGenerationBatchItemStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentGenerationBatchItemStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'DocumentCommentStatus'
  */
 export type EnumDocumentCommentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentCommentStatus'>
@@ -11828,6 +12051,8 @@ export type GlobalOmitConfig = {
   noteTab?: Prisma.NoteTabOmit
   documentTemplate?: Prisma.DocumentTemplateOmit
   generatedDocument?: Prisma.GeneratedDocumentOmit
+  documentGenerationBatch?: Prisma.DocumentGenerationBatchOmit
+  documentGenerationBatchItem?: Prisma.DocumentGenerationBatchItemOmit
   documentSection?: Prisma.DocumentSectionOmit
   workspaceLetterhead?: Prisma.WorkspaceLetterheadOmit
   documentComment?: Prisma.DocumentCommentOmit
