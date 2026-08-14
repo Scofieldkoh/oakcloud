@@ -64,18 +64,31 @@ function props(overrides: Partial<BatchReviewWorkspaceProps> = {}): BatchReviewW
     onPreview: vi.fn(),
     onReview: vi.fn(),
     onEditContent: vi.fn(),
-    onGenerateAll: vi.fn(),
-    canGenerate: true,
     ...overrides,
   };
 }
 
 describe('BatchReviewWorkspace', () => {
-  it('requires every remaining item to be reviewed before Generate All', () => {
-    const p = props({ canGenerate: false });
+  it('names the documents blocking generation and jumps to them', async () => {
+    const user = userEvent.setup();
+    const p = props({
+      blockers: [{
+        itemKey: 'item-2',
+        title: 'KYC Checklist',
+        reason: 'Not approved yet',
+      }],
+    });
     const { unmount } = render(<BatchReviewWorkspace {...p} />);
-    expect(screen.getByRole('button', { name: /generate all/i })).toBeDisabled();
-    expect(screen.getByText(/1 document still needs review/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 document not ready/i)).toBeInTheDocument();
+    const reason = screen.getByText(/not approved yet/i);
+    await user.click(reason.closest('button') as HTMLButtonElement);
+    expect(p.onSelect).toHaveBeenCalledWith('item-2');
+    unmount();
+  });
+
+  it('reports how many documents still await approval', () => {
+    const { unmount } = render(<BatchReviewWorkspace {...props()} />);
+    expect(screen.getByText(/1 awaiting approval/i)).toBeInTheDocument();
     unmount();
   });
 
@@ -107,11 +120,12 @@ describe('BatchReviewWorkspace', () => {
     unmount();
   });
 
-  it('renders the active preview and shows reviewed state as non-editable', () => {
+  it('renders the active preview and replaces approval with a locked notice', () => {
     const p = props();
     const { unmount } = render(<BatchReviewWorkspace {...p} />);
     expect(screen.getByTestId('preview-content')).toHaveTextContent('Preview content');
-    expect(screen.getByRole('button', { name: /^reviewed$/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /approve for generation/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/approved for generation/i)).toBeInTheDocument();
     unmount();
   });
 

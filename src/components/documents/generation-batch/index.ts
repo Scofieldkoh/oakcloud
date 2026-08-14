@@ -3,7 +3,14 @@
  */
 
 export * from './batch-workspace-state';
+export * from './batch-completeness';
 export * from './use-document-generation-batch';
+export { BatchSection, type BatchSectionProps } from './batch-section';
+export {
+  ApplyToOthersMenu,
+  type ApplyToOthersMenuProps,
+  type ApplyScope,
+} from './apply-to-others-menu';
 export { BatchTemplatePicker, type BatchTemplatePickerProps } from './batch-template-picker';
 export { BatchSharedSetup, type BatchSharedSetupProps } from './batch-shared-setup';
 export { BatchDocumentQueue, type BatchDocumentQueueProps, ITEM_STATUS_LABELS } from './batch-document-queue';

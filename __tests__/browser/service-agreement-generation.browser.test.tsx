@@ -78,9 +78,37 @@ describe('Service Agreement batch generation browser workflow', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ directors: [], shareholders: [], contacts: [] }), { status: 200 }),
-    ));
+    // A fresh Response per call: the workspace also queries the option
+    // endpoints and a Response body can only be read once.
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/options')) {
+        return Promise.resolve(new Response(
+          JSON.stringify({ options: [] }),
+          { status: 200 },
+        ));
+      }
+      if (url.includes('/document-parties')) {
+        return Promise.resolve(new Response(JSON.stringify({
+          directors: [],
+          shareholders: [],
+          contacts: [{
+            id: 'party-contact-1',
+            contactId: 'contact-1',
+            name: 'Browser Signatory',
+            detail: 'Director',
+            email: null,
+            phone: null,
+            address: { letter: null, full: null },
+            contactType: 'INDIVIDUAL',
+          }],
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(
+        JSON.stringify({ directors: [], shareholders: [], contacts: [] }),
+        { status: 200 },
+      ));
+    }));
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -188,8 +216,10 @@ describe('Service Agreement batch generation browser workflow', () => {
 
     await act(async () => button(host, 'Configure').click());
     await waitUntil(() => host.textContent?.includes('Services and fees') ?? false);
-    expect(host.textContent).toContain('Related entities');
-    expect(host.textContent).toContain('Representative');
-    expect(host.querySelector('select[aria-label="Authorised representative"]')).toBeTruthy();
+    expect(host.textContent).toContain('Entities and representative');
+    expect(host.textContent).toContain('Agreement entities');
+    expect(host.textContent).toContain('Authorised representative');
+    expect(host.textContent).toContain('Browser Signatory');
+    expect(host.querySelector('input[type="radio"]')).toBeTruthy();
   });
 });

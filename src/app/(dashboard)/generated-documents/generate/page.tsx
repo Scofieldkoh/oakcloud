@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DocumentGenerationBatchWorkspace,
@@ -10,9 +10,10 @@ import {
   type EditableBatchItem,
 } from '@/components/documents/generation-batch';
 import {
-  normalizeStoredPlaceholders,
-  storageFormatToCustomPlaceholders,
-} from '@/lib/template-analysis';
+  mapCompanyOption,
+  mapContactOption,
+  mapTemplateSummary,
+} from '@/lib/document-generation-option-mappers';
 import { readTaskLaunchContext } from '@/lib/task-launch-context';
 import type {
   DocumentGenerationBatchDto,
@@ -27,47 +28,8 @@ import type { GenerationSessionEnvelope } from '@/lib/document-generation-sessio
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function mapTemplate(raw: Record<string, unknown>): DocumentTemplateSummary {
-  return {
-    id: String(raw.id),
-    name: String(raw.name),
-    description: raw.description ? String(raw.description) : null,
-    category: String(raw.category ?? 'OTHER'),
-    compositionType: raw.compositionType === 'SERVICE_AGREEMENT'
-      ? 'SERVICE_AGREEMENT'
-      : 'STANDARD',
-    version: Number(raw.version ?? 1),
-    isActive: raw.isActive !== false,
-    content: String(raw.content ?? ''),
-    contentJson: raw.contentJson ?? undefined,
-    placeholders: storageFormatToCustomPlaceholders(
-      normalizeStoredPlaceholders(raw.placeholders),
-    ),
-    createdAt: String(raw.createdAt ?? ''),
-    updatedAt: String(raw.updatedAt ?? ''),
-  };
-}
-
-function mapCompany(raw: Record<string, unknown>): Company {
-  return {
-    id: String(raw.id),
-    name: String(raw.name ?? ''),
-    uen: String(raw.uen ?? ''),
-    status: String(raw.status ?? ''),
-    registeredAddress: raw.registeredAddress ? String(raw.registeredAddress) : null,
-    incorporationDate: raw.incorporationDate ? String(raw.incorporationDate) : null,
-  };
-}
-
-function mapContact(raw: Record<string, unknown>): DocumentContact {
-  return {
-    id: String(raw.id),
-    fullName: String(raw.name ?? raw.fullName ?? ''),
-    email: raw.email ? String(raw.email) : null,
-    phone: raw.phone ? String(raw.phone) : null,
-    designation: raw.designation ? String(raw.designation) : null,
-  };
-}
+/** First page of options; the workspace searches the server from there. */
+const OPTION_SEED_LIMIT = 25;
 
 function dtoToEditableBatch(dto: DocumentGenerationBatchDto): EditableDocumentGenerationBatch {
   return {
@@ -165,6 +127,47 @@ function sessionToEditableItem(
   };
 }
 
+/**
+ * Mirrors the workspace chrome so the first paint does not shift layout once
+ * templates resolve.
+ */
+function WorkspaceSkeleton() {
+  return (
+    <div
+      className="mx-auto w-full max-w-[1800px] animate-pulse p-3 sm:p-5"
+      role="status"
+      aria-label="Loading document generation workspace"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-border-secondary pb-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-background-tertiary" />
+          <div className="space-y-2">
+            <div className="h-4 w-48 rounded bg-background-tertiary" />
+            <div className="h-3 w-32 rounded bg-background-tertiary" />
+          </div>
+        </div>
+        <div className="h-9 w-28 rounded-lg bg-background-tertiary" />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="h-14 rounded-lg bg-background-tertiary" />
+        ))}
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-2">
+          <div className="h-11 rounded-lg bg-background-tertiary" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+              <div key={index} className="h-20 rounded-lg bg-background-tertiary" />
+            ))}
+          </div>
+        </div>
+        <div className="h-64 rounded-lg bg-background-tertiary" />
+      </div>
+    </div>
+  );
+}
+
 function GenerateDocumentContent() {
   const searchParams = useSearchParams();
   const requestedBatchId = searchParams.get('batch');
@@ -200,12 +203,11 @@ function GenerateDocumentContent() {
           }
         }
         const templatesParams = new URLSearchParams({ isActive: 'true', limit: '100' });
-        const companiesParams = new URLSearchParams({ limit: '50' });
-        const contactsParams = new URLSearchParams({ limit: '50' });
+        const optionParams = new URLSearchParams({ limit: String(OPTION_SEED_LIMIT) });
         const [templatesData, companiesData, contactsData] = await Promise.all([
           fetchJson(`/api/document-templates?${templatesParams}`),
-          fetchJson(`/api/companies/options?${companiesParams}`),
-          fetchJson(`/api/contacts/options?${contactsParams}`),
+          fetchJson(`/api/companies/options?${optionParams}`),
+          fetchJson(`/api/contacts/options?${optionParams}`),
         ]);
         const rawTemplates = Array.isArray(templatesData.templates)
           ? templatesData.templates as Array<Record<string, unknown>>
@@ -216,12 +218,10 @@ function GenerateDocumentContent() {
         const rawContacts = Array.isArray(contactsData.options)
           ? contactsData.options as Array<Record<string, unknown>>
           : [];
-        const templateList = rawTemplates.map(mapTemplate);
-        const companyList = rawCompanies.map(mapCompany);
-        const contactList = rawContacts.map(mapContact);
+        const templateList = rawTemplates.map(mapTemplateSummary);
         setTemplates(templateList);
-        setCompanies(companyList);
-        setContacts(contactList);
+        setCompanies(rawCompanies.map(mapCompanyOption));
+        setContacts(rawContacts.map(mapContactOption));
 
         if (requestedBatchId) {
           const dto = await fetchJson(
@@ -236,17 +236,10 @@ function GenerateDocumentContent() {
             (candidate) => candidate.id === envelope.state.templateId,
           );
           if (!template) throw new Error('The saved draft template is unavailable.');
-          const company = envelope.state.companyId
-            ? companyList.find((candidate) => candidate.id === envelope.state.companyId) ?? null
-            : null;
-          setCompanies((current) => {
-            if (!company || current.some((entry) => entry.id === company.id)) return current;
-            return [...current, company];
-          });
           setInitialBatch({
             legacyDraftId: requestedDraftId,
             primaryCompanyId: envelope.state.companyId,
-            company,
+            company: null,
             activeItemId: template.id,
             currentStage: Math.min(envelope.state.currentStep, 3),
             status: 'DRAFT',
@@ -260,16 +253,9 @@ function GenerateDocumentContent() {
             (candidate) => candidate.id === requestedTemplateId,
           );
           if (!template) throw new Error('The linked template is unavailable.');
-          const company = requestedCompanyId
-            ? companyList.find((candidate) => candidate.id === requestedCompanyId) ?? null
-            : null;
-          setCompanies((current) => {
-            if (!company || current.some((entry) => entry.id === company.id)) return current;
-            return [...current, company];
-          });
           setInitialBatch({
-            primaryCompanyId: company?.id ?? null,
-            company,
+            primaryCompanyId: requestedCompanyId,
+            company: null,
             activeItemId: template.id,
             currentStage: 0,
             status: 'DRAFT',
@@ -317,50 +303,39 @@ function GenerateDocumentContent() {
     void load();
   }, [fetchJson, requestedBatchId, requestedDraftId, requestedTemplateId, requestedCompanyId, taskContext]);
 
-  return (
-    <div className="min-h-screen">
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center py-20" role="status">
-          <Loader2 className="h-8 w-8 animate-spin text-oak-primary" aria-hidden="true" />
-          <p className="mt-3 text-sm text-text-secondary">Loading templates and companies...</p>
-        </div>
-      )}
-      {!isLoading && error && (
-        <div className="mx-auto max-w-xl p-6" role="alert">
-          <div className="flex items-start gap-3 rounded-lg border border-status-error/30 bg-status-error/5 p-4">
-            <AlertCircle className="h-5 w-5 shrink-0 text-status-error" aria-hidden="true" />
-            <div className="flex-1">
-              <p className="font-medium text-status-error">Failed to load data</p>
-              <p className="mt-1 text-sm text-text-secondary">{error}</p>
-            </div>
-            <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
-              Retry
-            </Button>
+  if (isLoading) return <WorkspaceSkeleton />;
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-xl p-6" role="alert">
+        <div className="flex items-start gap-3 rounded-lg border border-status-error/30 bg-status-error/5 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-status-error" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-medium text-status-error">Failed to load data</p>
+            <p className="mt-1 text-sm text-text-secondary">{error}</p>
           </div>
+          <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
-      )}
-      {!isLoading && !error && (
-        <DocumentGenerationBatchWorkspace
-          initialBatch={initialBatch}
-          templates={templates}
-          companies={companies}
-          contacts={contacts}
-          backHref={backHref}
-        />
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <DocumentGenerationBatchWorkspace
+      initialBatch={initialBatch}
+      templates={templates}
+      companies={companies}
+      contacts={contacts}
+      backHref={backHref}
+    />
   );
 }
 
 export default function GenerateDocumentPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col items-center justify-center py-20" role="status">
-          <Loader2 className="h-8 w-8 animate-spin text-oak-primary" aria-hidden="true" />
-        </div>
-      }
-    >
+    <Suspense fallback={<WorkspaceSkeleton />}>
       <GenerateDocumentContent />
     </Suspense>
   );

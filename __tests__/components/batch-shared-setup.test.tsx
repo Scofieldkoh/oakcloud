@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
@@ -24,11 +24,14 @@ const catalogue: MasterFieldCatalogue = {
 
 function props(overrides: Partial<BatchSharedSetupProps> = {}): BatchSharedSetupProps {
   return {
-    companies: [
+    companyOptions: [
       { id: 'company-1', name: 'Acme Pte. Ltd.', uen: '202600001A', status: 'LIVE' },
       { id: 'company-2', name: 'Beta Pte. Ltd.', uen: '202600002B', status: 'LIVE' },
     ],
+    selectedCompany: null,
     primaryCompanyId: null,
+    companyQuery: '',
+    onCompanyQueryChange: vi.fn(),
     masterFields: catalogue,
     masterFieldValues: {},
     onCompanyChange: vi.fn(),
@@ -38,6 +41,26 @@ function props(overrides: Partial<BatchSharedSetupProps> = {}): BatchSharedSetup
 }
 
 describe('BatchSharedSetup', () => {
+  beforeEach(() => {
+    // The combobox popover is portalled and only renders once the trigger has
+    // a measurable width, which jsdom does not provide.
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 320,
+      height: 36,
+      top: 0,
+      left: 0,
+      bottom: 36,
+      right: 320,
+      x: 0,
+      y: 0,
+      toJSON: () => undefined,
+    } as unknown as DOMRect);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('shows only compatible shared fields used by at least two templates', () => {
     const { unmount } = render(<BatchSharedSetup {...props()} />);
     expect(screen.getByLabelText('Client legal name')).toBeInTheDocument();
@@ -47,16 +70,34 @@ describe('BatchSharedSetup', () => {
     unmount();
   });
 
-  it('selects the primary company and records master values', async () => {
+  it('searches companies on the server instead of filtering one fixed page', async () => {
     const user = userEvent.setup();
     const p = props();
     render(<BatchSharedSetup {...p} />);
 
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Primary company' }),
-      'company-1',
-    );
+    const search = screen.getByPlaceholderText(/search companies by name or uen/i);
+    await user.type(search, 'Acme');
+    expect(p.onCompanyQueryChange).toHaveBeenCalled();
+    await user.click(screen.getByText('Acme Pte. Ltd.'));
     expect(p.onCompanyChange).toHaveBeenCalledWith('company-1');
+  });
+
+  it('shows the selected company details and records master values', async () => {
+    const p = props({
+      primaryCompanyId: 'company-1',
+      selectedCompany: {
+        id: 'company-1',
+        name: 'Acme Pte. Ltd.',
+        uen: '202600001A',
+        status: 'LIVE',
+        registeredAddress: '1 Raffles Place',
+        incorporationDate: '2020-01-15',
+      },
+    });
+    render(<BatchSharedSetup {...p} />);
+
+    expect(screen.getByText('202600001A')).toBeInTheDocument();
+    expect(screen.getByText('1 Raffles Place')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Client legal name'), {
       target: { value: 'Acme Holdings' },
@@ -76,7 +117,7 @@ describe('BatchSharedSetup', () => {
     render(<BatchSharedSetup {...p} />);
 
     expect(screen.getByText(/incompatible types/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /2 documents override this value/i }));
+    await user.click(screen.getByRole('button', { name: /2 documents override this/i }));
     expect(p.onSelectOverridden).toHaveBeenCalledWith('client_name::text');
   });
 });

@@ -76,9 +76,9 @@ describe('BatchItemConfigurator', () => {
     const p = props();
     const { unmount } = render(<BatchItemConfigurator {...p} />);
     expect(screen.getByLabelText('Client legal name')).toHaveValue('Acme Pte. Ltd.');
-    expect(screen.getByText('Using shared value')).toBeInTheDocument();
+    expect(screen.getByText('Shared')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /override client legal name/i }));
+    await user.click(screen.getByRole('button', { name: /override for this document/i }));
     expect(p.onPatch).toHaveBeenCalledWith(expect.objectContaining({
       masterOverrides: expect.objectContaining({ 'client_name::text': 'Acme Pte. Ltd.' }),
     }));
@@ -89,8 +89,8 @@ describe('BatchItemConfigurator', () => {
     const p = props({ item: item('SERVICE_AGREEMENT') });
     const { unmount } = render(<BatchItemConfigurator {...p} />);
     expect(screen.getByRole('heading', { name: /services and fees/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /related entities/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /representative/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /entities and representative/i })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /authorised representative/i })).toBeInTheDocument();
     unmount();
   });
 
@@ -98,7 +98,7 @@ describe('BatchItemConfigurator', () => {
     const generated = item();
     generated.status = 'GENERATED';
     const { unmount } = render(<BatchItemConfigurator {...props({ item: generated })} />);
-    expect(screen.getByText(/generated and read-only/i)).toBeInTheDocument();
+    expect(screen.getByText(/generated and locked/i)).toBeInTheDocument();
     unmount();
   });
 

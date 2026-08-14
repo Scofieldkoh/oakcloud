@@ -48,6 +48,8 @@ export interface DocumentGenerationBatchCommands {
   generate: () => Promise<BatchGenerationResult>;
   retry: (itemId: string) => Promise<EditableDocumentGenerationBatch>;
   reload: () => Promise<EditableDocumentGenerationBatch>;
+  /** Re-saves local edits on top of the newer server revision. */
+  overwriteConflict: () => Promise<EditableDocumentGenerationBatch>;
   requestNavigation: (destination: string) => void;
   dialog: React.ReactNode;
 }
@@ -319,6 +321,19 @@ export function useDocumentGenerationBatch(
     }
   }, [commit, ensurePersisted, resolveItemId]);
 
+  const overwriteConflict = useCallback(async () => {
+    const conflict = stateRef.current.conflict;
+    if (conflict) {
+      dispatch({ type: 'conflict/accept-revision' });
+      stateRef.current = {
+        ...stateRef.current,
+        batch: { ...stateRef.current.batch, revision: conflict.currentRevision },
+        conflict: null,
+      };
+    }
+    return persist();
+  }, [persist]);
+
   const reload = useCallback(async () => {
     const current = stateRef.current;
     if (!current.batch.id) return current.batch;
@@ -337,6 +352,7 @@ export function useDocumentGenerationBatch(
     generate,
     retry,
     reload,
+    overwriteConflict,
     requestNavigation,
     dialog,
   };

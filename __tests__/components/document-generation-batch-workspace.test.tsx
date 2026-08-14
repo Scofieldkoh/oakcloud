@@ -133,9 +133,27 @@ describe('DocumentGenerationBatchWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.saveDocumentGenerationBatch.mockResolvedValue({ ...batch([], {}), revision: 2 });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ directors: [], shareholders: [], contacts: [] }), { status: 200 }),
-    ));
+    // A fresh Response per call: the workspace now also queries the company and
+    // contact option endpoints, and a Response body can only be read once.
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/companies/options')) {
+        return Promise.resolve(new Response(
+          JSON.stringify({ options: companies }),
+          { status: 200 },
+        ));
+      }
+      if (url.includes('/api/contacts/options')) {
+        return Promise.resolve(new Response(
+          JSON.stringify({ options: [] }),
+          { status: 200 },
+        ));
+      }
+      return Promise.resolve(new Response(
+        JSON.stringify({ directors: [], shareholders: [], contacts: [] }),
+        { status: 200 },
+      ));
+    }));
   });
 
   afterEach(() => {
@@ -181,7 +199,7 @@ describe('DocumentGenerationBatchWorkspace', () => {
     unmount();
   });
 
-  it('saves the draft from the sticky footer', () => {
+  it('saves the draft from the header action', () => {
     const initialBatch = batch([
       { key: 'item-a', templateId: 'template-a', templateName: 'Engagement Letter', kind: 'STANDARD' },
     ]);

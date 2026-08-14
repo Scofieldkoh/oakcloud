@@ -184,7 +184,7 @@ describe('GenerateDocumentPage', () => {
       expect(screen.getByTestId('document-generation-batch-workspace')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText('Legacy draft')).toBeInTheDocument();
+      expect(screen.getAllByText('Legacy draft').length).toBeGreaterThan(0);
     });
     const fetchMock = vi.mocked(fetch);
     const createCalls = fetchMock.mock.calls.filter(([url, init]) =>
@@ -216,6 +216,6 @@ describe('GenerateDocumentPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('document-generation-batch-workspace')).toBeInTheDocument();
     });
-    expect(screen.getByText('Engagement Letter')).toBeInTheDocument();
+    expect(screen.getAllByText('Engagement Letter').length).toBeGreaterThan(0);
   });
 });

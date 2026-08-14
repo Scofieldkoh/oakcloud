@@ -19,6 +19,12 @@ export interface DocumentContactChoiceListProps {
   onChange: (contacts: DocumentContact[]) => void;
   onSearch?: (query: string) => void | Promise<void>;
   isLoading?: boolean;
+  /**
+   * Set when `contacts` is already the result of a server-side query. Local
+   * filtering is then skipped so matches on fields the server searches but the
+   * client does not (identification number, UEN) stay visible.
+   */
+  serverFiltered?: boolean;
 }
 
 function contactMeta(contact: DocumentContact): string[] {
@@ -33,12 +39,13 @@ export function DocumentContactChoiceList({
   onChange,
   onSearch,
   isLoading = false,
+  serverFiltered = false,
 }: DocumentContactChoiceListProps) {
   const [query, setQuery] = useState('');
   const selectedIds = useMemo(() => new Set(selected.map((contact) => contact.id)), [selected]);
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const visibleContacts = useMemo(() => {
-    if (!normalizedQuery) return contacts;
+    if (!normalizedQuery || serverFiltered) return contacts;
 
     const matching = contacts.filter((contact) =>
       [contact.fullName, ...contactMeta(contact)]
@@ -48,7 +55,7 @@ export function DocumentContactChoiceList({
       (contact) => !matching.some((item) => item.id === contact.id),
     );
     return [...selectedOutsideQuery, ...matching];
-  }, [contacts, normalizedQuery, selected]);
+  }, [contacts, normalizedQuery, selected, serverFiltered]);
 
   const toggleContact = (contact: DocumentContact) => {
     onChange(
@@ -104,7 +111,7 @@ export function DocumentContactChoiceList({
         </div>
       ) : contacts.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border-primary p-4 text-sm text-text-muted">
-          No contacts are available.
+          {normalizedQuery ? 'No contacts match your search.' : 'No contacts are available.'}
         </div>
       ) : (
         <div className="max-h-[360px] overflow-y-auto rounded-lg border border-border-primary bg-background-primary">

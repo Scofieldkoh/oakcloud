@@ -60,8 +60,6 @@ describe('generated document layout', () => {
         onPreview={() => Promise.resolve()}
         onReview={() => Promise.resolve()}
         onEditContent={() => undefined}
-        onGenerateAll={() => Promise.resolve()}
-        canGenerate
       />,
     );
     expect(screen.getByTestId('preview-content')).toHaveTextContent('Layout preview');

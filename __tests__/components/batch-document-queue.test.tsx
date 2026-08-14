@@ -69,7 +69,7 @@ describe('BatchDocumentQueue', () => {
     const p = props(status);
     const { unmount } = render(<BatchDocumentQueue {...p} />);
     expect(screen.getByText(label)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /configure engagement letter/i }));
+    await user.click(screen.getByRole('button', { name: /engagement letter/i }));
     expect(p.onSelect).toHaveBeenCalledWith('item-1');
     unmount();
   });
@@ -79,10 +79,50 @@ describe('BatchDocumentQueue', () => {
     expect(screen.getByText('1 error')).toBeInTheDocument();
   });
 
-  it('highlights reviewed documents with a green background', () => {
+  it('reports derived completeness instead of action-derived status', () => {
+    render(<BatchDocumentQueue {...props('NOT_STARTED', {
+      completeness: {
+        'item-1': {
+          requiredTotal: 3,
+          requiredFilled: 1,
+          missing: [
+            { id: 'field:a', label: 'A' },
+            { id: 'field:b', label: 'B' },
+          ],
+          isComplete: false,
+        },
+      },
+    })} />);
+    expect(screen.getByText('1/3 fields')).toBeInTheDocument();
+    expect(screen.getByText('1 need input')).toBeInTheDocument();
+  });
+
+  it('highlights approved documents in review mode', () => {
     const reviewed = { ...item('READY'), reviewedFingerprint: 'reviewed-hash' };
-    render(<BatchDocumentQueue {...props('READY', { items: [reviewed] })} />);
-    const button = screen.getByRole('button', { name: /configure engagement letter/i });
-    expect(button.className).toContain('bg-status-success/10');
+    render(<BatchDocumentQueue {...props('READY', {
+      items: [reviewed],
+      mode: 'review',
+    })} />);
+    const button = screen.getByRole('button', { name: /engagement letter/i });
+    expect(button.className).toContain('bg-status-success/5');
+    expect(screen.getByText('All complete')).toBeInTheDocument();
+  });
+
+  it('offers a jump to the next incomplete document', async () => {
+    const user = userEvent.setup();
+    const onNextIncomplete = vi.fn();
+    render(<BatchDocumentQueue {...props('NOT_STARTED', {
+      completeness: {
+        'item-1': {
+          requiredTotal: 1,
+          requiredFilled: 0,
+          missing: [{ id: 'title', label: 'Document title' }],
+          isComplete: false,
+        },
+      },
+      onNextIncomplete,
+    })} />);
+    await user.click(screen.getByRole('button', { name: /next incomplete/i }));
+    expect(onNextIncomplete).toHaveBeenCalled();
   });
 });

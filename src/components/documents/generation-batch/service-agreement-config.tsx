@@ -1,7 +1,9 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import type { Company, DocumentContact } from '@/types/document-generation';
 import type {
+  BatchItemConfiguration,
   MasterFieldCatalogue,
   ServiceAgreementWorkspaceState,
 } from '@/types/document-generation-batch';
@@ -12,6 +14,8 @@ import type {
   EditableBatchItem,
 } from './batch-workspace-state';
 import { BatchCustomFieldForm } from './batch-custom-field-form';
+import { BatchSection } from './batch-section';
+import type { ItemCompleteness } from './batch-completeness';
 
 export interface ServiceAgreementConfigProps {
   item: EditableBatchItem;
@@ -21,8 +25,9 @@ export interface ServiceAgreementConfigProps {
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   templateFields?: CustomPlaceholderDefinition[];
-  onPatch: (patch: Partial<EditableBatchItem['configuration']>) => void;
+  onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
+  completeness?: ItemCompleteness;
 }
 
 function emptyWorkspace(primaryCompanyId: string | null): ServiceAgreementWorkspaceState {
@@ -46,6 +51,7 @@ export function ServiceAgreementConfig({
   templateFields = [],
   onPatch,
   disabled = false,
+  completeness,
 }: ServiceAgreementConfigProps) {
   const workspace = item.configuration.serviceAgreement
     ?? emptyWorkspace(primaryCompany?.id ?? null);
@@ -57,51 +63,88 @@ export function ServiceAgreementConfig({
   const entities = companies.filter((company) =>
     workspace.entityIds.includes(company.id));
 
+  const titleMissing = item.configuration.title.trim().length === 0;
+  const fieldMissing = completeness
+    ? completeness.missing.filter((entry) => entry.id.startsWith('field:')).length
+    : 0;
+  const requiredTemplateFields = templateFields.filter((field) => field.required).length;
+  const partiesComplete = Boolean(workspace.authorizedContactId)
+    && workspace.entityIds.length > 0;
+  const servicesComplete = workspace.items.length > 0;
+
   return (
-    <div className="space-y-5">
-      <label className="block max-w-xl">
-        <span className="text-sm font-medium text-text-primary">Document title</span>
-        <input
-          type="text"
-          value={item.configuration.title}
-          onChange={(event) => onPatch({ title: event.target.value })}
-          disabled={disabled}
-          aria-label="Document title"
-          className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-9"
+    <div className="space-y-3">
+      <BatchSection
+        title="Details"
+        status={{
+          complete: !titleMissing,
+          label: titleMissing ? 'Title required' : 'Complete',
+        }}
+        collapsible={false}
+      >
+        <label className="block max-w-xl">
+          <span className="text-sm font-medium text-text-primary">
+            Document title
+            <span className="ml-1 text-status-error" aria-hidden="true">*</span>
+          </span>
+          <input
+            type="text"
+            value={item.configuration.title}
+            onChange={(event) => onPatch({ title: event.target.value })}
+            disabled={disabled}
+            aria-label="Document title"
+            aria-required="true"
+            aria-invalid={titleMissing || undefined}
+            className={cn(
+              'mt-1 min-h-11 w-full rounded-lg border bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10',
+              titleMissing ? 'border-status-error/60' : 'border-border-primary',
+            )}
+          />
+        </label>
+      </BatchSection>
+
+      <BatchSection
+        title="Entities and representative"
+        description="Every entity covered by this agreement, plus who signs for them."
+        status={{
+          complete: partiesComplete,
+          label: partiesComplete
+            ? 'Complete'
+            : !workspace.authorizedContactId
+              ? 'Representative required'
+              : 'Entity required',
+        }}
+      >
+        <ServiceAgreementSetup
+          primaryCompany={primaryCompany}
+          companies={companies}
+          contacts={contacts}
+          entityIds={workspace.entityIds}
+          authorizedContactId={workspace.authorizedContactId ?? ''}
+          onEntityIdsChange={(entityIds) => updateWorkspace({ entityIds })}
+          onAuthorizedContactIdChange={(authorizedContactId) =>
+            updateWorkspace({ authorizedContactId: authorizedContactId || null })}
         />
-      </label>
+      </BatchSection>
 
-      <section aria-labelledby="related-entities-heading">
-        <h2 id="related-entities-heading" className="text-sm font-medium text-text-primary">Related entities</h2>
-        <h3 className="mt-1 text-xs font-medium text-text-secondary">Representative</h3>
-        <div className="mt-2">
-          <ServiceAgreementSetup
-            primaryCompany={primaryCompany}
-            companies={companies}
-            contacts={contacts}
-            entityIds={workspace.entityIds}
-            authorizedContactId={workspace.authorizedContactId ?? ''}
-            onEntityIdsChange={(entityIds) => updateWorkspace({ entityIds })}
-            onAuthorizedContactIdChange={(authorizedContactId) =>
-              updateWorkspace({ authorizedContactId: authorizedContactId || null })}
-          />
-        </div>
-      </section>
+      <BatchSection
+        title="Services and fees"
+        status={{
+          complete: servicesComplete,
+          label: servicesComplete
+            ? `${workspace.items.length} service${workspace.items.length === 1 ? '' : 's'}`
+            : 'At least one service required',
+        }}
+      >
+        <ServiceSelectionStep
+          entities={entities}
+          items={workspace.items}
+          onChange={(items) => updateWorkspace({ items })}
+        />
+      </BatchSection>
 
-      <section aria-labelledby="services-fees-heading">
-        <h2 id="services-fees-heading" className="text-sm font-medium text-text-primary">Services and fees</h2>
-        <div className="mt-2">
-          <ServiceSelectionStep
-            entities={entities}
-            items={workspace.items}
-            onChange={(items) => updateWorkspace({ items })}
-          />
-        </div>
-      </section>
-
-      <section aria-labelledby="agreement-details-heading">
-        <h2 id="agreement-details-heading" className="text-sm font-medium text-text-primary">Agreement details</h2>
-        <div className="mt-2 grid max-w-xl gap-3 sm:grid-cols-2">
+      <BatchSection title="Agreement details">
+        <div className="grid max-w-xl gap-3 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-text-primary">Agreement date</span>
             <input
@@ -110,7 +153,7 @@ export function ServiceAgreementConfig({
               onChange={(event) => updateWorkspace({ agreementDate: event.target.value })}
               disabled={disabled}
               aria-label="Agreement date"
-              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-9"
+              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10"
             />
           </label>
           <label className="block">
@@ -121,7 +164,7 @@ export function ServiceAgreementConfig({
               onChange={(event) => updateWorkspace({ effectiveDate: event.target.value || null })}
               disabled={disabled}
               aria-label="Effective date"
-              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-9"
+              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10"
             />
           </label>
           <label className="block">
@@ -135,31 +178,41 @@ export function ServiceAgreementConfig({
               })}
               disabled={disabled}
               aria-label="Term months"
-              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-9"
+              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10"
             />
           </label>
         </div>
-      </section>
+      </BatchSection>
 
-      <section aria-labelledby="sa-custom-fields-heading">
-        <h2 id="sa-custom-fields-heading" className="text-sm font-medium text-text-primary">Custom fields</h2>
-        <div className="mt-2">
-          <BatchCustomFieldForm
-            item={item}
-            fields={templateFields}
-            onPatch={onPatch}
-            disabled={disabled}
-          />
-        </div>
-      </section>
+      <BatchSection
+        title="Document fields"
+        status={requiredTemplateFields > 0
+          ? {
+              complete: fieldMissing === 0,
+              label: fieldMissing === 0 ? 'Complete' : `${fieldMissing} missing`,
+            }
+          : null}
+      >
+        <BatchCustomFieldForm
+          item={item}
+          fields={templateFields}
+          onPatch={onPatch}
+          disabled={disabled}
+        />
+      </BatchSection>
 
       {masterFields.fields.length > 0 && (
-        <section aria-labelledby="sa-shared-heading">
-          <h2 id="sa-shared-heading" className="text-sm font-medium text-text-primary">Shared values</h2>
-          <p className="mt-1 text-xs text-text-muted">Effective shared values for this document:</p>
-          <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+        <BatchSection
+          title="Shared values"
+          description="Effective shared values for this document."
+          defaultOpen={false}
+        >
+          <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {masterFields.fields.map((field) => (
-              <div key={field.id} className="rounded-lg border border-border-primary bg-background-primary p-3">
+              <div
+                key={field.id}
+                className="rounded-lg border border-border-primary bg-background-primary p-3"
+              >
                 <dt className="text-xs font-medium text-text-secondary">{field.label}</dt>
                 <dd className="mt-1 text-sm text-text-primary">
                   {effectiveMasterValues[field.key] || '—'}
@@ -167,7 +220,7 @@ export function ServiceAgreementConfig({
               </div>
             ))}
           </dl>
-        </section>
+        </BatchSection>
       )}
     </div>
   );

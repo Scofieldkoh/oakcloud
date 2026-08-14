@@ -85,8 +85,22 @@ describe('BatchGenerationResults', () => {
       items: [item(), item({ key: 'item-2', id: 'item-2', templateName: 'KYC Checklist' })],
     })} />);
     expect(screen.getByText(/batch complete/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /return to generated documents/i }))
+    expect(screen.getByRole('link', { name: /^generated documents$/i }))
       .toHaveAttribute('href', '/generated-documents');
+    unmount();
+  });
+
+  it('offers a bulk retry and a way back into the batch', async () => {
+    const user = userEvent.setup();
+    const onRetryAll = vi.fn();
+    const onBackToBatch = vi.fn();
+    const { unmount } = render(
+      <BatchGenerationResults {...props({ onRetryAll, onBackToBatch })} />,
+    );
+    await user.click(screen.getByRole('button', { name: /retry all failed/i }));
+    expect(onRetryAll).toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /back to batch/i }));
+    expect(onBackToBatch).toHaveBeenCalled();
     unmount();
   });
 

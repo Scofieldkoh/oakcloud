@@ -83,9 +83,12 @@ export type DocumentGenerationBatchAction =
   | { type: 'template/add'; template: DocumentTemplateSummary }
   | { type: 'template/remove'; itemId: string }
   | { type: 'template/reorder'; itemId: string; direction: -1 | 1 }
+  | { type: 'template/move'; itemId: string; toIndex: number }
   | { type: 'shared/company'; companyId: string | null }
   | { type: 'shared/masterValue'; fieldId: string; value: string }
   | { type: 'item/patch'; itemId: string; patch: Partial<BatchItemConfiguration> }
+  | { type: 'items/patch-many'; itemIds: string[]; patch: Partial<BatchItemConfiguration> }
+  | { type: 'conflict/accept-revision' }
   | { type: 'item/edit-content'; itemId: string; editedContent: string | null; editedContentJson: unknown | null }
   | { type: 'item/activate'; itemId: string }
   | { type: 'stage/navigate'; stage: BatchStage }
@@ -305,8 +308,8 @@ function reduceBatchState(
     }
     case 'template/remove': {
       if (!state.capabilities.canEditComposition) return state;
-      if (state.batch.items.length <= 1) return state;
       const items = state.batch.items.filter((item) => item.key !== action.itemId);
+      if (items.length === state.batch.items.length) return state;
       const batch = replaceBatchItems(state.batch, items);
       const activeItemId = state.activeItemId === action.itemId
         ? items[0]?.key ?? null
@@ -323,6 +326,22 @@ function reduceBatchState(
       const index = state.batch.items.findIndex((item) => item.key === action.itemId);
       const target = index + action.direction;
       if (index < 0 || target < 0 || target >= state.batch.items.length) return state;
+      const items = [...state.batch.items];
+      const [moved] = items.splice(index, 1);
+      items.splice(target, 0, moved);
+      const batch = replaceBatchItems(state.batch, items);
+      return {
+        ...state,
+        batch,
+        capabilities: deriveCapabilities(batch),
+      };
+    }
+    case 'template/move': {
+      if (!state.capabilities.canEditComposition) return state;
+      const index = state.batch.items.findIndex((item) => item.key === action.itemId);
+      if (index < 0) return state;
+      const target = Math.max(0, Math.min(action.toIndex, state.batch.items.length - 1));
+      if (target === index) return state;
       const items = [...state.batch.items];
       const [moved] = items.splice(index, 1);
       items.splice(target, 0, moved);
@@ -371,6 +390,31 @@ function reduceBatchState(
         ...state,
         batch,
         capabilities: deriveCapabilities(batch),
+      };
+    }
+    case 'items/patch-many': {
+      const targets = new Set(action.itemIds);
+      if (targets.size === 0) return state;
+      const items = state.batch.items.map((item) => {
+        if (!targets.has(item.key) || item.status === 'GENERATED') return item;
+        return invalidateItem({
+          ...item,
+          configuration: { ...item.configuration, ...action.patch },
+        });
+      });
+      const batch = replaceBatchItems(state.batch, items);
+      return {
+        ...state,
+        batch,
+        capabilities: deriveCapabilities(batch),
+      };
+    }
+    case 'conflict/accept-revision': {
+      if (!state.conflict) return state;
+      return {
+        ...state,
+        batch: { ...state.batch, revision: state.conflict.currentRevision },
+        conflict: null,
       };
     }
     case 'item/edit-content': {
@@ -456,9 +500,10 @@ export function selectCanEnterConfigure(state: BatchWorkspaceState): boolean {
 }
 
 export function selectCanRequestPreflight(state: BatchWorkspaceState): boolean {
-  return state.batch.items.every(
-    (item) => item.status === 'GENERATED' || item.status === 'READY',
-  );
+  return state.batch.items.length > 0
+    && state.batch.items.every(
+      (item) => item.status === 'GENERATED' || item.status === 'READY',
+    );
 }
 
 export function selectReadyCount(state: BatchWorkspaceState): {

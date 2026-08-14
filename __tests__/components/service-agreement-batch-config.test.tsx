@@ -61,7 +61,7 @@ describe('ServiceAgreementConfig', () => {
   it('renders item-specific agreement sections without a nested stepper', () => {
     const { unmount } = render(<ServiceAgreementConfig {...props()} />);
     expect(screen.getByRole('heading', { name: /services and fees/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /representative/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /entities and representative/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /agreement details/i })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /setup/i })).not.toBeInTheDocument();
     unmount();

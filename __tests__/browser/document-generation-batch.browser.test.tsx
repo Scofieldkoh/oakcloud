@@ -151,9 +151,21 @@ describe('document generation batch browser workflow', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ directors: [], shareholders: [], contacts: [] }), { status: 200 }),
-    ));
+    // A fresh Response per call: option endpoints are queried alongside the
+    // party options and a Response body can only be read once.
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/options')) {
+        return Promise.resolve(new Response(
+          JSON.stringify({ options: [] }),
+          { status: 200 },
+        ));
+      }
+      return Promise.resolve(new Response(
+        JSON.stringify({ directors: [], shareholders: [], contacts: [] }),
+        { status: 200 },
+      ));
+    }));
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -249,18 +261,24 @@ describe('document generation batch browser workflow', () => {
     });
 
     await waitUntil(() => host.textContent?.includes('Review & generate') ?? false);
-    const stageLabels = Array.from(host.querySelectorAll('ol[aria-label="Generation stages"] li'))
-      .map((node) => node.textContent?.trim() ?? '');
-    expect(stageLabels.map((label) => label.replace(/^\d/, ''))).toEqual([
+    const stageLabels = Array.from(
+      host.querySelectorAll('ol[aria-label="Generation stages"] [data-stage-label]'),
+    ).map((node) => node.textContent?.trim() ?? '');
+    expect(stageLabels).toEqual([
       'Documents',
       'Shared setup',
       'Configure',
       'Review & generate',
     ]);
 
-    await act(async () => button(host, 'Render preview').click());
-    await waitUntil(() => host.textContent?.includes('Generate All') ?? false);
+    // Previews are rendered automatically on entering the stage.
+    await waitUntil(() => !button(host, 'Generate All').disabled);
     await act(async () => button(host, 'Generate All').click());
+
+    // Generation is confirmed through the preflight summary dialog.
+    await waitUntil(() => Array.from(document.body.querySelectorAll('button'))
+      .some((candidate) => candidate.textContent?.trim() === 'Generate all'));
+    await act(async () => button(document.body, 'Generate all').click());
     await waitUntil(() => host.textContent?.includes('conversion failed') ?? false);
     expect(host.textContent).toContain('2 generated, 1 failed');
     expect(host.querySelector('a[href="/generated-documents/child-item-1"]')).toBeTruthy();

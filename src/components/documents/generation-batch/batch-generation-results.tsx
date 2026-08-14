@@ -1,47 +1,100 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, ExternalLink, RotateCcw, XCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Download,
+  ExternalLink,
+  RotateCcw,
+  XCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { EditableBatchItem } from './batch-workspace-state';
 import { ITEM_STATUS_LABELS } from './batch-document-queue';
 
 export interface BatchGenerationResultsProps {
   items: EditableBatchItem[];
   onRetry: (itemId: string) => void | Promise<void>;
+  /** Retries every failed item in sequence. */
+  onRetryAll?: () => void | Promise<void>;
+  /** Returns to the review stage without leaving the batch. */
+  onBackToBatch?: () => void;
+  pending?: boolean;
 }
 
 export function BatchGenerationResults({
   items,
   onRetry,
+  onRetryAll,
+  onBackToBatch,
+  pending = false,
 }: BatchGenerationResultsProps) {
   const generated = items.filter((item) => item.status === 'GENERATED').length;
-  const failed = items.filter((item) => item.status === 'FAILED').length;
+  const failedItems = items.filter((item) => item.status === 'FAILED');
+  const skipped = items.length - generated - failedItems.length;
   const completed = items.length > 0 && generated === items.length;
 
   return (
     <div className="space-y-4">
-      <header className="rounded-lg border border-border-primary bg-background-secondary p-4">
-        <h2 className="text-base font-semibold text-text-primary">
-          {completed ? 'Batch complete' : 'Generation results'}
-        </h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          {generated} generated
-          {failed > 0 ? `, ${failed} failed` : ''}
-          {' · '}{items.length} total
-        </p>
-      </header>
-
-      {completed && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-status-success/30 bg-status-success/5 p-4">
-          <p className="text-sm text-text-primary">
-            All documents were generated successfully.
-          </p>
-          <Link href="/generated-documents">
-            <Button variant="primary" size="sm">Return to Generated documents</Button>
-          </Link>
+      <header
+        className={cn(
+          'rounded-lg border p-4',
+          completed
+            ? 'border-status-success/30 bg-status-success/5'
+            : failedItems.length > 0
+              ? 'border-status-warning/40 bg-status-warning/5'
+              : 'border-border-primary bg-background-secondary',
+        )}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-text-primary">
+              {completed ? 'Batch complete' : 'Generation results'}
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {generated} generated
+              {failedItems.length > 0 ? `, ${failedItems.length} failed` : ''}
+              {skipped > 0 ? `, ${skipped} skipped` : ''}
+              {' · '}{items.length} total
+            </p>
+            {completed && (
+              <p className="mt-1 text-sm text-text-primary">
+                All documents were generated successfully.
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {onBackToBatch && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onBackToBatch}
+                leftIcon={<ArrowLeft className="h-4 w-4" aria-hidden="true" />}
+              >
+                Back to batch
+              </Button>
+            )}
+            {failedItems.length > 0 && onRetryAll && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void onRetryAll()}
+                disabled={pending}
+                leftIcon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
+              >
+                Retry all failed ({failedItems.length})
+              </Button>
+            )}
+            <Link href="/generated-documents">
+              <Button variant={completed ? 'primary' : 'secondary'} size="sm">
+                Generated documents
+              </Button>
+            </Link>
+          </div>
         </div>
-      )}
+      </header>
 
       <ul className="divide-y divide-border-secondary rounded-lg border border-border-primary bg-background-primary">
         {items.map((item) => (
@@ -51,11 +104,16 @@ export function BatchGenerationResults({
             ) : item.status === 'FAILED' ? (
               <XCircle className="h-5 w-5 shrink-0 text-status-error" aria-hidden="true" />
             ) : (
-              <span className="h-5 w-5 shrink-0 rounded-full border border-border-primary" aria-hidden="true" />
+              <span
+                className="h-5 w-5 shrink-0 rounded-full border border-border-primary"
+                aria-hidden="true"
+              />
             )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-text-primary">
-                {item.configuration.title || item.templateName}
+                {item.generatedDocumentTitle
+                  || item.configuration.title
+                  || item.templateName}
               </p>
               <p className="text-xs text-text-muted">
                 {item.templateName} · {ITEM_STATUS_LABELS[item.status]}
@@ -72,20 +130,31 @@ export function BatchGenerationResults({
               )}
             </div>
             {item.status === 'GENERATED' && item.generatedDocumentId && (
-              <Link
-                href={`/generated-documents/${item.generatedDocumentId}`}
-                className="inline-flex min-h-9 items-center gap-1 text-sm font-medium text-oak-primary transition-colors hover:text-oak-dark"
-                aria-label={`Open ${item.configuration.title || item.templateName}`}
-              >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                Open document
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={`/api/generated-documents/${item.generatedDocumentId}/export/pdf`}
+                  className="inline-flex min-h-9 items-center gap-1 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+                  aria-label={`Download ${item.configuration.title || item.templateName} as PDF`}
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  PDF
+                </a>
+                <Link
+                  href={`/generated-documents/${item.generatedDocumentId}`}
+                  className="inline-flex min-h-9 items-center gap-1 text-sm font-medium text-oak-primary transition-colors hover:text-oak-dark"
+                  aria-label={`Open ${item.configuration.title || item.templateName}`}
+                >
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                  Open
+                </Link>
+              </div>
             )}
             {item.status === 'FAILED' && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => void onRetry(item.key)}
+                disabled={pending}
                 aria-label={`Retry ${item.configuration.title || item.templateName}`}
                 leftIcon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
               >
