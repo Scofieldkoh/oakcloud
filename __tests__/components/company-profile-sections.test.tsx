@@ -66,4 +66,42 @@ describe('CompanyProfileSections', () => {
 
     expect(screen.getByText('Show share capital breakdown').closest('details')).toHaveAttribute('open');
   });
+
+  it('shows the ACRA badge when the stored dates match the ACRA record', () => {
+    const withAcra = {
+      ...(company as object),
+      lastArFiledDate: new Date('2026-06-28'),
+      accountsDueDate: new Date('2027-07-31'),
+      acraRecord: {
+        dataAsOf: '2026-08-14T14:07:42+08:00',
+        accountDueDate: '2027-07-31',
+        annualReturnDate: '2026-06-28',
+      },
+    } as never;
+
+    render(<CompanyProfileSections company={withAcra} companyId="company-1" />);
+
+    const badges = screen.getAllByText(/^ACRA /);
+    expect(badges).toHaveLength(2);
+    expect(badges[0]).toHaveTextContent('ACRA 14 August 2026');
+  });
+
+  it('hides the ACRA badge when the stored dates differ or the record has no date', () => {
+    const mismatched = {
+      ...(company as object),
+      lastArFiledDate: new Date('2026-01-01'),
+      accountsDueDate: new Date('2027-07-31'),
+      acraRecord: {
+        dataAsOf: '2026-08-14T14:07:42+08:00',
+        accountDueDate: '2027-07-31',
+        annualReturnDate: 'na',
+      },
+    } as never;
+
+    render(<CompanyProfileSections company={mismatched} companyId="company-1" />);
+
+    const badges = screen.getAllByText(/^ACRA /);
+    expect(badges).toHaveLength(1);
+    expect(badges[0]).toHaveTextContent('ACRA 14 August 2026');
+  });
 });

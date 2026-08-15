@@ -14,14 +14,14 @@ import {
 import {
   useCompany,
   useDeleteCompany,
-  useRetrieveFYE,
+  useRetrieveAcra,
   useUpdateCompany,
   useCompanyBizFile,
 } from '@/hooks/use-companies';
 import { useCompanyContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions } from '@/hooks/use-permissions';
 import { getEntityTypeLabel } from '@/lib/constants';
-import { isCompanyEntityType } from '@/lib/external/acra-fye';
+import type { UpdateCompanyInput } from '@/lib/validations/company';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { InternalNotes } from '@/components/notes/internal-notes';
@@ -40,7 +40,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   const router = useRouter();
   const { data: company, isLoading, error, refetch } = useCompany(id);
   const deleteCompany = useDeleteCompany();
-  const retrieveFYEMutation = useRetrieveFYE(id);
+  const retrieveAcraMutation = useRetrieveAcra(id);
   const updateCompanyMutation = useUpdateCompany();
   const { success, error: toastError } = useToast();
   // Get permissions for this specific company
@@ -116,34 +116,29 @@ function CompanyDetailContent({ id }: { id: string }) {
     router.replace(next ? `/companies/${id}?${next}` : `/companies/${id}`);
   }, [handleRefresh, id, refreshToken, router, searchParamsString]);
 
-  const handleRetrieveFYE = async () => {
-    if (!company || isRetrievingFYE) return;
+  const handleRetrieveAcra = async () => {
+    if (!company || isRetrievingAcra) return;
 
     try {
-      const result = await retrieveFYEMutation.mutateAsync();
+      const result = await retrieveAcraMutation.mutateAsync();
 
-      await updateCompanyMutation.mutateAsync({
-        id,
-        data: {
-          id,
-          financialYearEndDay: result.financialYearEndDay,
-          financialYearEndMonth: result.financialYearEndMonth,
-        },
-      });
+      const data: UpdateCompanyInput = { id };
+      if (result.financialYearEndDay != null) data.financialYearEndDay = result.financialYearEndDay;
+      if (result.financialYearEndMonth != null) data.financialYearEndMonth = result.financialYearEndMonth;
+      if (result.lastArFiledDate) data.lastArFiledDate = result.lastArFiledDate;
+      if (result.accountsDueDate) data.accountsDueDate = result.accountsDueDate;
 
-      success('Financial Year End retrieved successfully');
+      await updateCompanyMutation.mutateAsync({ id, data });
+
+      const asOf = result.dataAsOf?.slice(0, 10);
+      success(asOf ? `ACRA records retrieved (data as of ${asOf})` : 'ACRA records retrieved successfully');
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Failed to retrieve FYE from ACRA');
+      toastError(err instanceof Error ? err.message : 'Failed to retrieve ACRA records');
     }
   };
 
-  const isRetrievingFYE = retrieveFYEMutation.isPending || updateCompanyMutation.isPending;
-  const hasFinancialYearEnd = !!(company?.financialYearEndMonth && company?.financialYearEndDay);
-  const showRetrieveFYEButton =
-    !!company &&
-    !hasFinancialYearEnd &&
-    can.updateCompany &&
-    isCompanyEntityType(company.entityType);
+  const isRetrievingAcra = retrieveAcraMutation.isPending || updateCompanyMutation.isPending;
+  const showRetrieveAcraButton = !!company && can.updateCompany;
 
   useKeyboardShortcuts([
     {
@@ -163,10 +158,10 @@ function CompanyDetailContent({ id }: { id: string }) {
       handler: () => router.push(`/companies/upload?companyId=${id}`),
       description: 'Update via BizFile',
     }] : []),
-    ...(showRetrieveFYEButton ? [{
+    ...(showRetrieveAcraButton ? [{
       key: 'F3',
-      handler: handleRetrieveFYE,
-      description: 'Retrieve FYE',
+      handler: handleRetrieveAcra,
+      description: 'Retrieve ACRA',
     }] : []),
     ...(can.updateCompany ? [{
       key: 'e',
@@ -174,7 +169,7 @@ function CompanyDetailContent({ id }: { id: string }) {
       handler: () => router.push(`/companies/${id}/edit`),
       description: 'Edit company',
     }] : []),
-  ], !deleteDialogOpen && !isRetrievingFYE);
+  ], !deleteDialogOpen && !isRetrievingAcra);
 
   if (isLoading) {
     return (
@@ -282,6 +277,8 @@ function CompanyDetailContent({ id }: { id: string }) {
           company={company}
           companyId={id}
           can={can}
+          onRetrieveAcra={showRetrieveAcraButton ? handleRetrieveAcra : undefined}
+          isRetrievingAcra={isRetrievingAcra}
         />
       )}
       {activeTab === 'contacts' && (

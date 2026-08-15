@@ -27,12 +27,15 @@ import {
   ArrowDown,
   ArrowUpDown,
   X,
+  Square,
+  CheckSquare,
+  MinusSquare,
 } from 'lucide-react';
 import type { GeneratedDocumentStatus } from '@/generated/prisma';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
-import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { isActiveGenerationSessionMetadata } from '@/lib/document-generation-session';
@@ -57,7 +60,7 @@ export interface GeneratedDocumentFilters {
   title?: string;
   companyId?: string;
   companyName?: string;
-  templateId?: string;
+  templateName?: string;
   status?: GeneratedDocumentStatus | '';
   createdBy?: string;
   updatedFrom?: string;
@@ -109,11 +112,18 @@ interface DocumentTableProps {
   filters?: GeneratedDocumentFilters;
   onFilterChange?: (patch: Partial<GeneratedDocumentFilters>) => void;
   onSortChange?: (field: GeneratedDocumentSortField) => void;
-  companyOptions?: AsyncSearchSelectOption[];
-  companySearchQuery?: string;
-  companySearchLoading?: boolean;
-  onCompanySearchChange?: (query: string) => void;
-  templateOptions?: SelectOption[];
+  /** Whether to show selection checkboxes */
+  selectable?: boolean;
+  /** Set of currently selected document IDs */
+  selectedIds?: Set<string>;
+  /** Handler for toggling a single item */
+  onToggleOne?: (id: string) => void;
+  /** Handler for toggling all items */
+  onToggleAll?: () => void;
+  /** Whether all items are selected */
+  isAllSelected?: boolean;
+  /** Whether some but not all items are selected */
+  isIndeterminate?: boolean;
 }
 
 // ============================================================================
@@ -183,6 +193,8 @@ const MINIMUM_COLUMN_WIDTHS: Record<ColumnId, number> = {
   updated: 110,
   actions: 80,
 };
+
+const CHECKBOX_COLUMN_WIDTH = 44;
 
 function toLocalDateString(date?: Date): string | undefined {
   if (!date) return undefined;
@@ -391,11 +403,12 @@ export function DocumentTable({
   filters = {},
   onFilterChange,
   onSortChange,
-  companyOptions = [],
-  companySearchQuery = '',
-  companySearchLoading = false,
-  onCompanySearchChange,
-  templateOptions = [],
+  selectable = false,
+  selectedIds = new Set(),
+  onToggleOne,
+  onToggleAll,
+  isAllSelected = false,
+  isIndeterminate = false,
 }: DocumentTableProps) {
   const router = useRouter();
   const isResizingRef = useRef(false);
@@ -406,11 +419,11 @@ export function DocumentTable({
   const preferenceValueKey = JSON.stringify(preferenceValue ?? null);
 
   const tableWidth = useMemo(
-    () => COLUMN_IDS.reduce(
+    () => (selectable ? CHECKBOX_COLUMN_WIDTH : 0) + COLUMN_IDS.reduce(
       (total, columnId) => total + (columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]),
       0,
     ),
-    [columnWidths],
+    [columnWidths, selectable],
   );
 
   useEffect(() => {
@@ -576,15 +589,42 @@ export function DocumentTable({
             )}
           </div>
         ) : (
-          documents.map((doc, index) => {
-            const status = statusConfig[doc.status] || statusConfig.DRAFT;
-            const StatusIcon = status.icon;
-            const isGenerationSession = isActiveGenerationSessionMetadata(doc.metadata);
+          <>
+            {selectable && (
+              <div className="flex items-center gap-2 px-1">
+                <button
+                  onClick={onToggleAll}
+                  className="p-2 hover:bg-background-secondary rounded transition-colors flex items-center gap-2"
+                  aria-label={isAllSelected ? 'Deselect all documents' : 'Select all documents'}
+                  aria-pressed={isAllSelected}
+                >
+                  {isAllSelected ? (
+                    <CheckSquare className="w-5 h-5 text-oak-primary" aria-hidden="true" />
+                  ) : isIndeterminate ? (
+                    <MinusSquare className="w-5 h-5 text-oak-light" aria-hidden="true" />
+                  ) : (
+                    <Square className="w-5 h-5 text-text-muted" aria-hidden="true" />
+                  )}
+                  <span className="text-sm text-text-secondary">
+                    {isAllSelected ? 'Deselect all' : 'Select all'}
+                  </span>
+                </button>
+              </div>
+            )}
+            {documents.map((doc, index) => {
+              const status = statusConfig[doc.status] || statusConfig.DRAFT;
+              const StatusIcon = status.icon;
+              const isGenerationSession = isActiveGenerationSessionMetadata(doc.metadata);
+              const isSelected = selectedIds.has(doc.id);
 
-            return (
-              <MobileCard
-                key={doc.id}
-                title={doc.title}
+              return (
+                <MobileCard
+                  key={doc.id}
+                  isSelected={isSelected}
+                  selectable={selectable}
+                  onToggle={() => onToggleOne?.(doc.id)}
+                  selectionLabel={isSelected ? `Deselect ${doc.title}` : `Select ${doc.title}`}
+                  title={doc.title}
                 subtitle={doc.template?.name}
                 badge={
                   <span className={cn('badge inline-flex items-center gap-1', status.color)}>
@@ -665,7 +705,8 @@ export function DocumentTable({
                 }
               />
             );
-          })
+          })}
+          </>
         )}
       </div>
 
@@ -686,6 +727,7 @@ export function DocumentTable({
           style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}
         >
           <colgroup>
+            {selectable && <col style={{ width: `${CHECKBOX_COLUMN_WIDTH}px` }} />}
             {COLUMN_IDS.map((columnId) => (
               <col
                 key={columnId}
@@ -696,6 +738,7 @@ export function DocumentTable({
           <thead className="bg-background-tertiary border-b border-border-primary">
             {/* Inline filter row - moved above headers */}
             <tr data-filter-row className="h-14 bg-background-secondary/50">
+              {selectable && <th className="max-w-0" />}
               {COLUMN_IDS.map((columnId) => (
                 <th key={columnId} className="max-w-0">
                   {columnId === 'document' ? (
@@ -705,29 +748,20 @@ export function DocumentTable({
                       onChange={(value) => onFilterChange?.({ title: value })}
                     />
                   ) : columnId === 'company' ? (
-                    <AsyncSearchSelect
+                    <CompanySelect
                       value={filters.companyId || ''}
-                      onChange={(value) => onFilterChange?.({ companyId: value || undefined })}
-                      options={companyOptions}
-                      isLoading={companySearchLoading}
-                      searchQuery={companySearchQuery}
-                      onSearchChange={onCompanySearchChange || (() => {})}
+                      onChange={(companyId, company) => onFilterChange?.({
+                        companyId: companyId || undefined,
+                        companyName: company?.name || undefined,
+                      })}
                       placeholder="All companies"
-                      icon={<Building2 className="w-4 h-4" />}
-                      emptySearchText="Type to search companies"
-                      noResultsText="No companies found"
                       className="text-xs"
                     />
                   ) : columnId === 'template' ? (
-                    <SearchableSelect
-                      variant="table-filter"
-                      options={templateOptions}
-                      value={filters.templateId || ''}
-                      onChange={(value) => onFilterChange?.({ templateId: value || undefined })}
-                      placeholder="All templates"
-                      className="text-xs"
-                      showChevron={false}
-                      showKeyboardHints={false}
+                    <InlineTextFilter
+                      ariaLabel="Filter documents by template"
+                      value={filters.templateName}
+                      onChange={(value) => onFilterChange?.({ templateName: value })}
                     />
                   ) : columnId === 'status' ? (
                     <SearchableSelect
@@ -780,6 +814,24 @@ export function DocumentTable({
 
             {/* Column header row - below filters */}
             <tr data-column-header-row className="h-[38px] border-t border-border-primary">
+              {selectable && (
+                <th className="relative px-2 py-2.5">
+                  <button
+                    onClick={onToggleAll}
+                    className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                    aria-label={isAllSelected ? 'Deselect all documents' : 'Select all documents'}
+                    aria-pressed={isAllSelected}
+                  >
+                    {isAllSelected ? (
+                      <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
+                    ) : isIndeterminate ? (
+                      <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
+                    ) : (
+                      <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
+                    )}
+                  </button>
+                </th>
+              )}
               {COLUMN_IDS.map((columnId) => (
                 <th
                   key={columnId}
@@ -817,7 +869,7 @@ export function DocumentTable({
           <tbody>
             {documents.length === 0 ? (
               <tr>
-                <td colSpan={COLUMN_IDS.length} className="px-4 py-12 text-center">
+                <td colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center">
                   <FileText className="w-8 h-8 text-text-muted mx-auto mb-2" />
                   <p className="text-sm text-text-secondary mb-3">
                     No documents found. Try adjusting your filters.
@@ -833,6 +885,7 @@ export function DocumentTable({
                 const status = statusConfig[doc.status] || statusConfig.DRAFT;
                 const StatusIcon = status.icon;
                 const isGenerationSession = isActiveGenerationSessionMetadata(doc.metadata);
+                const isSelected = selectedIds.has(doc.id);
 
                 return (
                   <tr
@@ -840,11 +893,29 @@ export function DocumentTable({
                     onClick={(event) => handleRowClick(event, doc)}
                     className={cn(
                       'border-b border-border-primary transition-colors cursor-pointer',
-                      index % 2 === 1
-                        ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                        : 'hover:bg-background-tertiary/50',
+                      isSelected
+                        ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
+                        : index % 2 === 1
+                          ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
+                          : 'hover:bg-background-tertiary/50',
                     )}
                   >
+                    {selectable && (
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => onToggleOne?.(doc.id)}
+                          className="p-0.5 hover:bg-background-secondary rounded transition-colors"
+                          aria-label={isSelected ? `Deselect ${doc.title}` : `Select ${doc.title}`}
+                          aria-pressed={isSelected}
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
+                          ) : (
+                            <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
+                          )}
+                        </button>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <PrefetchLink
                         href={getDetailHref(doc)}

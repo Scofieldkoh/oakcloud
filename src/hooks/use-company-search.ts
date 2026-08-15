@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -33,6 +33,8 @@ interface CompanySearchResult {
     primarySsicDescription?: string | null;
     homeCurrency?: string | null;
   }>;
+  hasMore?: boolean;
+  page?: number;
 }
 
 interface UseCompanySearchOptions {
@@ -46,6 +48,10 @@ interface UseCompanySearchOptions {
   debounceMs?: number;
   /** Filter out specific company IDs (e.g., companies already linked) */
   excludeIds?: string[];
+  /** Always-visible options prepended to the result page (e.g. current selection). */
+  pinned?: CompanySearchOption[];
+  /** Enable server-side paging (adds `page` to the request and returns paging state) */
+  paginated?: boolean;
 }
 
 /**
@@ -75,7 +81,15 @@ interface UseCompanySearchOptions {
  * ```
  */
 export function useCompanySearch(options: UseCompanySearchOptions = {}) {
-  const { enabled = true, minChars = 2, limit = 10, debounceMs = 300, excludeIds = [] } = options;
+  const {
+    enabled = true,
+    minChars = 2,
+    limit = 10,
+    debounceMs = 300,
+    excludeIds = [],
+    pinned,
+    paginated = false,
+  } = options;
 
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(
@@ -86,25 +100,44 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<CompanySearchOption | null>(null);
+  const [page, setPage] = useState(0);
+
+  const knownRef = useRef<Map<string, CompanySearchOption>>(new Map());
+  const [knownVersion, setKnownVersion] = useState(0);
+
+  const remember = useCallback((options: CompanySearchOption[]) => {
+    let changed = false;
+    for (const option of options) {
+      if (!knownRef.current.has(option.id)) changed = true;
+      knownRef.current.set(option.id, option);
+    }
+    if (changed) setKnownVersion((version) => version + 1);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearchQuery(searchQuery.trim());
+      if (paginated) {
+        setPage(0);
+      }
     }, debounceMs);
 
     return () => window.clearTimeout(timer);
-  }, [searchQuery, debounceMs]);
+  }, [searchQuery, debounceMs, paginated]);
 
   // Only search if query meets minimum length
   const shouldSearch = debouncedSearchQuery.length >= minChars;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['company-search', debouncedSearchQuery, activeTenantId, limit],
+  const { data, isLoading, error: queryError } = useQuery({
+    queryKey: ['company-search', debouncedSearchQuery, activeTenantId, limit, paginated ? page : undefined],
     queryFn: async (): Promise<CompanySearchResult> => {
       const params = new URLSearchParams({
         q: debouncedSearchQuery,
         limit: String(limit),
       });
+      if (paginated) {
+        params.set('page', String(page));
+      }
       if (activeTenantId) {
         params.set('tenantId', activeTenantId);
       }
@@ -122,22 +155,34 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
 
   // Transform to AsyncSearchSelectOption format and filter out excluded IDs
   const companyOptions: CompanySearchOption[] = useMemo(() => {
-    if (!data?.options) return [];
+    const mapped: CompanySearchOption[] = (data?.options ?? []).map((company) => ({
+      id: company.id,
+      name: company.name,
+      label: company.name,
+      description: company.uen || company.primarySsicDescription || '',
+      uen: company.uen,
+      primarySsicDescription: company.primarySsicDescription,
+      homeCurrency: company.homeCurrency,
+    }));
+    remember(mapped);
+    remember(pinned ?? []);
 
     const excludeSet = new Set(excludeIds);
+    const byId = new Map<string, CompanySearchOption>();
+    for (const option of pinned ?? []) {
+      if (!excludeSet.has(option.id)) byId.set(option.id, option);
+    }
+    for (const option of mapped) {
+      if (!excludeSet.has(option.id) && !byId.has(option.id)) byId.set(option.id, option);
+    }
+    return [...byId.values()];
+  }, [data?.options, excludeIds, pinned, remember]);
 
-    return data.options
-      .filter((company) => !excludeSet.has(company.id))
-      .map((company) => ({
-        id: company.id,
-        name: company.name,
-        label: company.name,
-        description: company.uen || company.primarySsicDescription || '',
-        uen: company.uen,
-        primarySsicDescription: company.primarySsicDescription,
-        homeCurrency: company.homeCurrency,
-      }));
-  }, [data?.options, excludeIds]);
+  const known = useMemo(
+    () => new Map(knownRef.current),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [knownVersion],
+  );
 
   // Clear selection handler
   const clearSelection = useCallback(() => {
@@ -153,6 +198,12 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
     selectedCompany,
     setSelectedCompany,
     clearSelection,
+    page,
+    setPage,
+    hasMore: Boolean(data?.hasMore),
+    hasPreviousPage: page > 0,
+    known,
+    error: queryError instanceof Error ? queryError.message : null,
   };
 }
 

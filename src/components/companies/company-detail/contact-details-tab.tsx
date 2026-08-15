@@ -1,10 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Plus, Building2, User, Loader2, X, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Loader2, X, Filter } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { CompanyAccentSection, CompanyAccentButton, CompanyAccentFilter } from '@/components/companies/company-accent-section';
 import { useToast } from '@/components/ui/toast';
 import {
   useCompanyContactDetails,
@@ -82,6 +81,7 @@ function cleanRelationships(relationshipStr: string | undefined): string[] {
   });
 }
 
+// Accent header action button - matches Company Profile section actions
 export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDetailsTabProps) {
   const { success } = useToast();
   // Data is prefetched in background by usePrefetchCompanyContactDetails in parent
@@ -346,7 +346,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Loading state */}
         {isLoading && (
           <div className="py-12 text-center">
@@ -368,233 +368,152 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
         )}
 
         {data && (
-          <>
-            {/* Company-level Contact Details */}
-            <div className="card">
-              <div className="px-4 py-3 border-b border-border-primary">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h4 className="font-medium text-text-primary flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-text-tertiary" />
-                      Company Contact Details
-                    </h4>
-                    <p className="text-xs text-text-secondary mt-1">
-                      Contact information directly associated with the company
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
-                    {canEdit && (
-                      <Button variant="secondary" size="xs" onClick={openAddDetailForCompany}>
-                        <Plus className="w-3.5 h-3.5 mr-1" />
-                        Add Detail
-                      </Button>
-                    )}
-                    <span className="text-xs text-text-muted bg-surface-tertiary px-2.5 py-1 rounded-full whitespace-nowrap">
-                      {data.companyDetails.length} {data.companyDetails.length === 1 ? 'detail' : 'details'}
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            {/* Main column - Linked Contacts */}
+            <div className="space-y-3 lg:col-span-2">
+              <CompanyAccentSection
+                title="Linked Contacts"
+                actions={
+                  <div className="flex flex-wrap items-center justify-end gap-3">
+                    <span className="whitespace-nowrap text-xs font-medium">
+                      {activeContactCount} active{pastContactCount > 0 ? ` · ${pastContactCount} past` : ''}
                     </span>
-                  </div>
-                </div>
-              </div>
-              <div className="py-2">
-                {data.companyDetails.length > 0 ? (
-                  <>
-                    <div className="overflow-x-auto overflow-y-hidden">
-                      <div className="w-max min-w-[860px]">
-                        {/* Header row - aligned with Linked Contacts */}
-                        <div className="flex w-full items-center gap-2.5 lg:gap-4 py-2 px-3 lg:px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
-                          <div className="flex-shrink-0 w-[280px] lg:w-[360px]">Label</div>
-                          <div className="flex-shrink-0 w-[220px] lg:w-[300px]">Type</div>
-                          <div className="flex-shrink-0 w-[72px] lg:w-[80px] text-center">POC</div>
-                          <div className="flex-1 min-w-[220px]">Value</div>
-                          <div className="flex-shrink-0 w-[56px]"></div>
-                        </div>
-                        {/* Detail rows */}
-                        <div className="w-full divide-y divide-border-secondary">
-                          {data.companyDetails.map((detail) => (
-                            <ContactDetailRow
-                              key={detail.id}
-                              detail={detail}
-                              canEdit={canEdit}
-                              isEditing={editingDetailId === detail.id}
-                              editForm={editForm}
-                              onStartEdit={() => startEdit(detail)}
-                              onCancelEdit={cancelEdit}
-                              onSaveEdit={handleUpdateDetail}
-                              onDelete={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
-                              onUpdateForm={updateEditForm}
-                              isSaving={updateDetailMutation.isPending}
-                              isDeleting={deletingDetailId === detail.id}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <Building2 className="w-8 h-8 text-text-muted mx-auto mb-2" />
-                    <p className="text-sm text-text-muted">No company-level contact details</p>
-                    {canEdit && (
-                      <button
-                        onClick={openAddDetailForCompany}
-                        className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add first detail
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Linked Contacts */}
-            <div className="card">
-              <div className="px-4 py-3 border-b border-border-primary">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h4 className="font-medium text-text-primary flex items-center gap-2">
-                      <User className="w-4 h-4 text-text-tertiary" />
-                      Linked Contacts
-                    </h4>
-                    <p className="text-xs text-text-secondary mt-1">
-                      Directors, officers, shareholders, and other contacts linked to this company
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
-                    <span className="text-sm text-text-tertiary whitespace-nowrap">
-                      {activeContactCount} active; {pastContactCount} past
-                    </span>
+                    <CompanyAccentFilter label="Show ceased" checked={showCeasedContacts} onChange={setShowCeasedContacts} />
                     {contactDetails.length > 0 && (
                       <button
+                        type="button"
                         onClick={() => setShowContactFilters(!showContactFilters)}
-                        className={`btn-ghost btn-xs flex items-center gap-1 ${hasActiveContactFilters ? 'text-oak-light' : ''
-                          }`}
+                        className={`rounded p-1 transition-colors hover:bg-white/10 ${showContactFilters || hasActiveContactFilters ? 'bg-white/10' : ''}`}
                         title="Filter contacts"
                       >
-                        <Filter className="w-3.5 h-3.5" />
+                        <Filter className="h-3.5 w-3.5" />
                       </button>
                     )}
                     {canEdit && (
-                      <Button variant="secondary" size="xs" onClick={() => setShowAddContactModal(true)}>
-                        <Plus className="w-3.5 h-3.5 mr-1" />
+                      <CompanyAccentButton onClick={() => setShowAddContactModal(true)}>
+                        <Plus className="h-3.5 w-3.5" />
                         Add Contact
-                      </Button>
+                      </CompanyAccentButton>
                     )}
-                    <span className="text-xs text-text-muted bg-surface-tertiary px-2.5 py-1 rounded-full whitespace-nowrap">
-                      {contactDetails.length} {contactDetails.length === 1 ? 'contact' : 'contacts'}
-                    </span>
                   </div>
-                </div>
-
+                }
+              >
                 {/* Filter Panel */}
                 {showContactFilters && (
-                  <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <div className="flex-1 min-w-[120px] max-w-[180px]">
-                        <label className="text-xs text-text-tertiary mb-1 block">Name</label>
-                        <input
-                          type="text"
-                          value={contactNameFilter}
-                          onChange={(e) => setContactNameFilter(e.target.value)}
-                          placeholder="Search..."
-                          className="input input-xs w-full"
-                        />
-                      </div>
-                      <div className="min-w-[120px]">
-                        <label className="text-xs text-text-tertiary mb-1 block">Role</label>
-                        <select
-                          value={contactRoleFilter}
-                          onChange={(e) => setContactRoleFilter(e.target.value)}
-                          className="input input-xs w-full"
-                        >
-                          <option value="">All Roles</option>
-                          {availableContactRoles.map((role) => (
-                            <option key={role} value={role}>{role}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex items-center gap-2 h-[26px]">
-                        <Checkbox
-                          id="show-ceased-contacts"
-                          checked={showCeasedContacts}
-                          onChange={(e) => setShowCeasedContacts(e.target.checked)}
-                          size="sm"
-                        />
-                        <label htmlFor="show-ceased-contacts" className="text-xs text-text-secondary cursor-pointer">
-                          Show ceased
-                        </label>
-                      </div>
-                      {hasActiveContactFilters && (
-                        <button
-                          onClick={() => {
-                            setContactNameFilter('');
-                            setContactRoleFilter('');
-                            setShowCeasedContacts(false);
-                          }}
-                          className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                  <div className="flex flex-wrap items-end gap-3 border-b border-border-primary bg-surface-secondary px-3 py-2.5 animate-fade-in">
+                    <div className="min-w-[120px] max-w-[180px] flex-1">
+                      <label htmlFor="contact-name-filter" className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary">
+                        Name
+                      </label>
+                      <input
+                        id="contact-name-filter"
+                        type="text"
+                        value={contactNameFilter}
+                        onChange={(e) => setContactNameFilter(e.target.value)}
+                        placeholder="Search..."
+                        className="input input-xs w-full"
+                      />
                     </div>
-                  </div>
-                )}
-              </div>
-              <div className="py-2">
-                {contactDetails.length > 0 ? (
-                  <>
-                    <div className="overflow-x-auto overflow-y-hidden">
-                      <div className="w-max min-w-[1040px]">
-                        {/* Header row */}
-                        <div className="flex w-full items-center gap-2.5 lg:gap-4 py-2 px-3 lg:px-4 text-xs font-medium text-text-muted border-b border-border-secondary">
-                          <div className="flex-shrink-0 w-[280px] lg:w-[360px]">Name</div>
-                          <div className="flex-shrink-0 w-[220px] lg:w-[300px]">Role</div>
-                          <div className="flex-shrink-0 w-[72px] lg:w-[80px] text-center">POC</div>
-                          <div className="flex-shrink-0 w-[170px] lg:w-[210px]">Phone</div>
-                          <div className="flex-1 min-w-[220px]">Email</div>
-                          <div className="flex-shrink-0 w-[56px]"></div>
-                        </div>
-                        {/* Contact rows */}
-                        <div className="w-full divide-y divide-border-secondary">
-                          {filteredContactDetails.map((item) => (
-                            <ContactRow
-                              key={item.contact.id}
-                              item={item}
-                              companyId={companyId}
-                              canEdit={canEdit}
-                              onAddDetail={() => openAddDetailForContact(item)}
-                              onTogglePoc={(isPoc) => handleTogglePoc(item.contact.id, isPoc)}
-                              isTogglingPoc={togglingPocContactId === item.contact.id}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <User className="w-8 h-8 text-text-muted mx-auto mb-2" />
-                    <p className="text-sm text-text-muted">No linked contacts</p>
-                    {canEdit && (
-                      <button
-                        onClick={() => setShowAddContactModal(true)}
-                        className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
+                    <div className="min-w-[140px]">
+                      <label htmlFor="contact-role-filter" className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary">
+                        Role
+                      </label>
+                      <select
+                        id="contact-role-filter"
+                        value={contactRoleFilter}
+                        onChange={(e) => setContactRoleFilter(e.target.value)}
+                        className="input input-xs w-full"
                       >
-                        <Plus className="w-4 h-4" />
-                        Add first contact
+                        <option value="">All Roles</option>
+                        {availableContactRoles.map((role) => (
+                          <option key={role} value={role}>{role}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {hasActiveContactFilters && (
+                      <button
+                        onClick={() => {
+                          setContactNameFilter('');
+                          setContactRoleFilter('');
+                          setShowCeasedContacts(false);
+                        }}
+                        className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Clear
                       </button>
                     )}
                   </div>
                 )}
-                {contactDetails.length > 0 && filteredContactDetails.length === 0 && (
-                  <div className="p-4 text-center">
-                    <p className="text-text-muted text-sm">No contacts match your filters</p>
-                  </div>
+
+                {contactDetails.length > 0 ? (
+                  <>
+                    <div className="divide-y divide-border-primary px-3">
+                      {filteredContactDetails.map((item) => (
+                        <ContactRow
+                          key={item.contact.id}
+                          item={item}
+                          companyId={companyId}
+                          canEdit={canEdit}
+                          onAddDetail={() => openAddDetailForContact(item)}
+                          onTogglePoc={(isPoc) => handleTogglePoc(item.contact.id, isPoc)}
+                          isTogglingPoc={togglingPocContactId === item.contact.id}
+                        />
+                      ))}
+                    </div>
+                    {filteredContactDetails.length === 0 && (
+                      <p className="px-3 py-3 text-sm text-text-secondary">No contacts match your filters</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="px-3 py-3 text-sm text-text-secondary">No linked contacts</p>
                 )}
-              </div>
+              </CompanyAccentSection>
             </div>
-          </>
+
+            {/* Aside column - Company Contact Details */}
+            <aside className="space-y-3">
+              <CompanyAccentSection
+                title="Company Contact Details"
+                actions={
+                  <div className="flex flex-wrap items-center justify-end gap-3">
+                    <span className="whitespace-nowrap text-xs font-medium">
+                      {data.companyDetails.length} {data.companyDetails.length === 1 ? 'detail' : 'details'}
+                    </span>
+                    {canEdit && (
+                      <CompanyAccentButton onClick={openAddDetailForCompany}>
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Detail
+                      </CompanyAccentButton>
+                    )}
+                  </div>
+                }
+              >
+                {data.companyDetails.length > 0 ? (
+                  <div className="divide-y divide-border-primary px-3">
+                    {data.companyDetails.map((detail) => (
+                      <ContactDetailRow
+                        key={detail.id}
+                        detail={detail}
+                        canEdit={canEdit}
+                        isEditing={editingDetailId === detail.id}
+                        editForm={editForm}
+                        onStartEdit={() => startEdit(detail)}
+                        onCancelEdit={cancelEdit}
+                        onSaveEdit={handleUpdateDetail}
+                        onDelete={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
+                        onUpdateForm={updateEditForm}
+                        isSaving={updateDetailMutation.isPending}
+                        isDeleting={deletingDetailId === detail.id}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-3 py-3 text-sm text-text-secondary">No company-level contact details</p>
+                )}
+              </CompanyAccentSection>
+            </aside>
+          </div>
         )}
       </div>
 

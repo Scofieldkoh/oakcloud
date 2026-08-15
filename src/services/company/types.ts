@@ -110,6 +110,13 @@ export interface CompanyWithRelations extends Company {
     address?: string | null;
     appointmentDate?: Date | null;
   } | null;
+  /** ACRA registry record (from the local data.gov.sg sync) for the company UEN. */
+  acraRecord?: {
+    /** Data-as-of timestamp of the synced ACRA collection. */
+    dataAsOf: string;
+    accountDueDate: string | null;
+    annualReturnDate: string | null;
+  } | null;
   _count?: {
     documents: number;
     officers: number;

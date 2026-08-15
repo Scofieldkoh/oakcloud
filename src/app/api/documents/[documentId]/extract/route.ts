@@ -7,7 +7,8 @@ import { AI_MODELS, calculateUsageCost, formatCost } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 import { MISTRAL_OCR_MODEL_ID, MISTRAL_OCR_MODEL_NAME } from '@/lib/ocr/mistral';
 import { storage } from '@/lib/storage';
-import { retrieveFYEFromACRA, isCompanyEntityType } from '@/lib/external/acra-fye';
+import { retrieveFYEFromACRA } from '@/lib/external/acra-records';
+import { isCompanyEntityType } from '@/lib/external/acra-fye';
 import logger from '@/lib/logger';
 
 // Supported MIME types for vision extraction
@@ -100,19 +101,18 @@ export async function POST(
         }
       );
 
-      // Optionally retrieve FYE from ACRA if not in BizFile
+      // Optionally retrieve FYE from ACRA records if not in BizFile
       const extractedEntityType = mapEntityType(extractionResult.data.entityDetails?.entityType);
       const hasFYE =
         extractionResult.data.financialYear?.endDay &&
         extractionResult.data.financialYear?.endMonth;
 
       if (!hasFYE && isCompanyEntityType(extractedEntityType)) {
-        const companyName = extractionResult.data.entityDetails?.name;
         const uen = extractionResult.data.entityDetails?.uen;
-        if (companyName && uen) {
+        if (uen) {
           try {
-            logger.info('FYE not in BizFile, attempting ACRA retrieval', { companyName, uen });
-            const fyeResult = await retrieveFYEFromACRA(companyName, uen, extractedEntityType);
+            logger.info('FYE not in BizFile, attempting ACRA records retrieval', { uen, entityType: extractedEntityType });
+            const fyeResult = await retrieveFYEFromACRA(uen, extractedEntityType);
             if (fyeResult) {
               extractionResult.data.financialYear = {
                 ...extractionResult.data.financialYear,
@@ -121,7 +121,7 @@ export async function POST(
               };
             }
           } catch (fyeError) {
-            logger.warn('Failed to retrieve FYE from ACRA', { error: fyeError });
+            logger.warn('Failed to retrieve FYE from ACRA records', { error: fyeError });
           }
         }
       }

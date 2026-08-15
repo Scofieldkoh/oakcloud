@@ -3,11 +3,11 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Mail, Plus, Building2, User, Loader2, Pencil, Trash2, Star, X, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { CompanyAccentSection, CompanyAccentButton, CompanyFieldLabel } from '@/components/companies/company-accent-section';
 import { CopyButton } from '@/components/companies/contact-details/copy-button';
 import { PurposeToggle, PurposeBadges } from '@/components/contacts/purpose-toggle';
 import { AddContactDetailModal } from '@/components/companies/contact-details/add-contact-detail-modal';
@@ -167,7 +167,7 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
 
     if (isEditing && canEdit) {
       return (
-        <div key={detail.id} className="flex flex-col gap-2 p-3 bg-surface-secondary rounded-lg border border-oak-light/30">
+        <div key={detail.id} className="-mx-3 space-y-2 bg-surface-secondary px-3 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={editForm.detailType}
@@ -179,7 +179,8 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
                   purposes: newType === 'EMAIL' ? prev.purposes : [],
                 }));
               }}
-              className="input input-xs w-24"
+              className="input input-xs w-28"
+              aria-label="Detail type"
             >
               {Object.entries(DETAIL_TYPE_CONFIG).map(([type, cfg]) => (
                 <option key={type} value={type}>{cfg.label}</option>
@@ -189,8 +190,9 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
               type="text"
               value={editForm.value}
               onChange={(e) => setEditForm(prev => ({ ...prev, value: e.target.value }))}
-              className="input input-xs flex-1 min-w-[150px]"
+              className="input input-xs min-w-[150px] flex-1"
               placeholder="Value"
+              aria-label="Value"
             />
             <input
               type="text"
@@ -199,13 +201,14 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
               className="input input-xs w-28"
               placeholder="Label"
               list="label-suggestions-edit"
+              aria-label="Label"
             />
             <button
               onClick={() => setEditForm(prev => ({ ...prev, isPrimary: !prev.isPrimary }))}
-              className={`p-1.5 rounded ${editForm.isPrimary ? 'text-status-warning bg-status-warning/10' : 'text-text-muted hover:text-text-secondary'}`}
+              className={`rounded p-1 ${editForm.isPrimary ? 'text-amber-500 hover:text-amber-600' : 'text-text-muted hover:text-amber-500'}`}
               title={editForm.isPrimary ? 'Primary' : 'Set as primary'}
             >
-              <Star className="w-4 h-4" fill={editForm.isPrimary ? 'currentColor' : 'none'} />
+              <Star className="h-4 w-4" fill={editForm.isPrimary ? 'currentColor' : 'none'} />
             </button>
           </div>
           {editForm.detailType === 'EMAIL' && (
@@ -215,15 +218,25 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
               size="sm"
             />
           )}
-          <div className="flex justify-end gap-2 pt-1">
-            <Button variant="ghost" size="xs" onClick={() => setEditingId(null)} disabled={updateMutation.isPending}>
-              <X className="w-3.5 h-3.5 mr-1" />
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              onClick={() => setEditingId(null)}
+              disabled={updateMutation.isPending}
+              className="btn-ghost btn-xs text-text-muted hover:text-text-primary"
+              title="Cancel"
+            >
+              <X className="h-3.5 w-3.5" />
               Cancel
-            </Button>
-            <Button variant="primary" size="xs" onClick={handleUpdate} disabled={updateMutation.isPending || !editForm.value.trim()}>
-              {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+            </button>
+            <button
+              onClick={handleUpdate}
+              disabled={updateMutation.isPending || !editForm.value.trim()}
+              className="btn-ghost btn-xs text-oak-light hover:text-oak-dark disabled:opacity-50"
+              title="Save"
+            >
+              {updateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
               Save
-            </Button>
+            </button>
           </div>
           <datalist id="label-suggestions-edit">
             {LABEL_SUGGESTIONS.map((label) => (
@@ -235,38 +248,40 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
     }
 
     return (
-      <div key={detail.id} className="flex items-center gap-3 py-2 px-3 hover:bg-surface-secondary rounded-lg transition-colors group">
-        <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-text-primary truncate">{detail.value}</span>
+      <div key={detail.id} className="group flex items-center justify-between gap-3 py-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
+            <Icon className="h-4 w-4 flex-shrink-0 text-text-tertiary" aria-hidden="true" />
+            <span className="truncate">{detail.value}</span>
             <CopyButton value={detail.value} />
             {detail.isPrimary && (
-              <Star className="w-3.5 h-3.5 text-status-warning flex-shrink-0" fill="currentColor" />
+              <span className="text-amber-500" title="Primary contact detail">
+                <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+              </span>
             )}
           </div>
           {detail.label && (
-            <span className="text-xs text-text-muted">{detail.label}</span>
+            <p className="mt-1 text-xs text-text-secondary">{detail.label}</p>
+          )}
+          {detail.detailType === 'EMAIL' && detail.purposes && detail.purposes.length > 0 && (
+            <PurposeBadges purposes={detail.purposes} className="mt-1" />
           )}
         </div>
-        {detail.detailType === 'EMAIL' && detail.purposes && detail.purposes.length > 0 && (
-          <PurposeBadges purposes={detail.purposes} className="hidden sm:flex flex-shrink-0" />
-        )}
         {canEdit && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-shrink-0 items-center gap-1">
             <button
               onClick={() => startEdit(detail)}
-              className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"
+              className="rounded p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-oak-light"
               title="Edit"
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
-              className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
+              className="rounded p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-status-error"
               title="Delete"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
@@ -276,26 +291,17 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
 
   return (
     <>
-      <div className="card">
-        <div className="p-4 border-b border-border-primary">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium text-text-primary flex items-center gap-2">
-              <Mail className="w-4 h-4 text-text-tertiary" />
-              Contact Details
-            </h2>
-            {canEdit && (
-              <Button
-                variant="secondary"
-                size="xs"
-                onClick={() => setShowAddModal(true)}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Add Detail
-              </Button>
-            )}
-          </div>
-        </div>
-
+      <CompanyAccentSection
+        title="Contact Details"
+        actions={
+          canEdit ? (
+            <CompanyAccentButton onClick={() => setShowAddModal(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Add Detail
+            </CompanyAccentButton>
+          ) : undefined
+        }
+      >
         {/* Loading state */}
         {isLoading && (
           <LoadingState message="Loading contact details..." />
@@ -308,124 +314,53 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
 
         {/* Content */}
         {data && (
-          <div className="p-4">
-            {/* Grid layout like Contact Information */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Default Details */}
-              {data.defaultDetails.length > 0 && (
-                <div className="sm:col-span-2 lg:col-span-3">
-                  <p className="text-xs text-text-tertiary uppercase mb-2 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" />
-                    Default
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {data.defaultDetails.map((detail) => {
-                      if (editingId === detail.id) {
-                        return <div key={detail.id} className="sm:col-span-2 lg:col-span-3">{renderDetailRow(detail, true)}</div>;
-                      }
-                      const config = DETAIL_TYPE_CONFIG[detail.detailType];
-                      const Icon = config.icon;
-                      return (
-                        <div key={detail.id} className="flex items-center gap-2 group">
-                          <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
-                          <span className="text-sm text-text-primary truncate">{detail.value}</span>
-                          <CopyButton value={detail.value} />
-                          {detail.isPrimary && (
-                            <Star className="w-3 h-3 text-status-warning flex-shrink-0" fill="currentColor" />
-                          )}
-                          {canEdit && (
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                              <button
-                                onClick={() => startEdit(detail)}
-                                className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"
-                                title="Edit"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
-                                className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+          <div>
+            {/* Default Details */}
+            {data.defaultDetails.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 px-3 pt-3">
+                  <User className="h-3.5 w-3.5 text-text-tertiary" aria-hidden="true" />
+                  <CompanyFieldLabel>Default</CompanyFieldLabel>
                 </div>
-              )}
+                <div className="divide-y divide-border-primary px-3">
+                  {data.defaultDetails.map((detail) => renderDetailRow(detail, editingId === detail.id))}
+                </div>
+              </div>
+            )}
 
-              {/* Company-Specific Details */}
-              {data.companyDetails.map((company) => (
-                <div key={company.companyId} className="sm:col-span-2 lg:col-span-3 pt-3 border-t border-border-secondary first:border-t-0 first:pt-0">
-                  <p className="text-xs text-text-tertiary uppercase mb-2 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" />
-                    <Link
-                      href={`/companies/${company.companyId}`}
-                      className="text-oak-light hover:text-oak-dark"
-                    >
-                      {company.companyName}
-                    </Link>
-                  </p>
-                  {company.details.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {company.details.map((detail) => {
-                        if (editingId === detail.id) {
-                          return <div key={detail.id} className="sm:col-span-2 lg:col-span-3">{renderDetailRow(detail, true)}</div>;
-                        }
-                        const config = DETAIL_TYPE_CONFIG[detail.detailType];
-                        const Icon = config.icon;
-                        return (
-                          <div key={detail.id} className="flex items-center gap-2 group">
-                            <Icon className="w-4 h-4 text-text-tertiary flex-shrink-0" />
-                            <span className="text-sm text-text-primary truncate">{detail.value}</span>
-                            <CopyButton value={detail.value} />
-                            {detail.isPrimary && (
-                              <Star className="w-3 h-3 text-status-warning flex-shrink-0" fill="currentColor" />
-                            )}
-                            {canEdit && (
-                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                <button
-                                  onClick={() => startEdit(detail)}
-                                  className="text-text-muted hover:text-oak-light p-1 rounded hover:bg-surface-tertiary"
-                                  title="Edit"
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirm({ id: detail.id, value: detail.value })}
-                                  className="text-text-muted hover:text-status-error p-1 rounded hover:bg-surface-tertiary"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-text-muted italic">No details</p>
-                  )}
+            {/* Company-Specific Details */}
+            {data.companyDetails.map((company) => (
+              <div key={company.companyId} className="border-t border-border-primary">
+                <div className="flex items-center gap-1.5 px-3 pt-3">
+                  <Building2 className="h-3.5 w-3.5 text-text-tertiary" aria-hidden="true" />
+                  <Link
+                    href={`/companies/${company.companyId}`}
+                    className="text-[11px] font-medium uppercase tracking-wide text-oak-primary hover:underline"
+                  >
+                    {company.companyName}
+                  </Link>
                 </div>
-              ))}
-            </div>
+                {company.details.length > 0 ? (
+                  <div className="divide-y divide-border-primary px-3">
+                    {company.details.map((detail) => renderDetailRow(detail, editingId === detail.id))}
+                  </div>
+                ) : (
+                  <p className="px-3 pb-3 text-sm text-text-secondary">No details</p>
+                )}
+              </div>
+            ))}
 
             {/* Empty state when no details at all */}
             {data.defaultDetails.length === 0 && data.companyDetails.length === 0 && (
-              <div className="py-4 text-center">
-                <Mail className="w-6 h-6 text-text-muted mx-auto mb-2" />
+              <div className="px-3 py-6 text-center">
+                <Mail className="mx-auto mb-2 h-6 w-6 text-text-muted" aria-hidden="true" />
                 <p className="text-sm text-text-muted">No contact details</p>
                 {canEdit && (
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="text-sm text-oak-light hover:text-oak-dark mt-2 inline-flex items-center gap-1"
+                    className="mt-2 inline-flex items-center gap-1 text-sm text-oak-light hover:text-oak-dark"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="h-4 w-4" aria-hidden="true" />
                     Add first detail
                   </button>
                 )}
@@ -433,7 +368,7 @@ export function ContactDetailsSection({ contactId, contactName, canEdit }: Conta
             )}
           </div>
         )}
-      </div>
+      </CompanyAccentSection>
 
       {/* Add Contact Detail Modal - uses shared modal with company search */}
       <AddContactDetailModal

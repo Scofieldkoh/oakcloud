@@ -110,6 +110,7 @@ export const searchGeneratedDocumentsSchema = z.object({
   companyId: z.string().uuid().optional(),
   companyName: z.string().optional(), // Free text filter by company name
   templateId: z.string().uuid().optional(),
+  templateName: z.string().optional(), // Free text filter by template name
   createdBy: z.string().optional(),
   updatedFrom: z.string().optional(),
   updatedTo: z.string().optional(),

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
 import { useUpsertUserPreference, useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
 import type { TaskPipeline } from '@/hooks/use-task-pipelines';
@@ -314,10 +315,6 @@ export function TaskList({
   const rowClickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceValue = preferenceMap?.[TASK_COLUMN_PREF_KEY]?.value;
   const preferenceValueKey = JSON.stringify(preferenceValue ?? null);
-  const companyFilterOptions = useMemo(() => [
-    { value: '', label: 'All' },
-    ...companies.map((company) => ({ value: company.id, label: company.name })),
-  ], [companies]);
   const pipelineFilterOptions = useMemo(() => [
     { value: '', label: 'All' },
     ...pipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name })),
@@ -531,15 +528,11 @@ export function TaskList({
           <thead>
             <tr data-filter-row className="h-14 bg-background-secondary/50">
               <th className="max-w-0">
-                <SearchableSelect
-                  variant="table-filter"
-                  options={companyFilterOptions}
+                <CompanySelect
                   value={filters.companyId ?? ''}
-                  onChange={(value) => updateFilters({ companyId: value || undefined })}
+                  onChange={(companyId) => updateFilters({ companyId: companyId || undefined })}
                   placeholder="All companies"
                   className="text-xs"
-                  showChevron={false}
-                  showKeyboardHints={false}
                 />
               </th>
               <th className="max-w-0">

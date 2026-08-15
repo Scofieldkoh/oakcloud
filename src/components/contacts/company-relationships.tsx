@@ -16,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { CompanyAccentSection, CompanyAccentButton, CompanyAccentFilter } from '@/components/companies/company-accent-section';
 
 interface Company {
   id: string;
@@ -282,25 +283,20 @@ export function CompanyRelationships({
 
   if (consolidatedRelationships.length === 0) {
     return (
-      <div className="card">
-        <div className="p-4 border-b border-border-primary flex items-center justify-between">
-          <h2 className="font-medium text-text-primary flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-text-tertiary" />
-            Company Relationships
-          </h2>
-          {canUpdate && (
-            <button
-              onClick={onLinkCompany}
-              className="btn-secondary btn-xs flex items-center gap-1"
-            >
-              <Link2 className="w-3.5 h-3.5" />
+      <CompanyAccentSection
+        title="Company Relationships"
+        actions={
+          canUpdate ? (
+            <CompanyAccentButton onClick={onLinkCompany}>
+              <Link2 className="h-3.5 w-3.5" />
               Add to Company
-            </button>
-          )}
-        </div>
-        <div className="p-8 text-center">
-          <Building2 className="w-10 h-10 text-text-muted mx-auto mb-3" />
-          <p className="text-text-secondary">Not associated with any companies</p>
+            </CompanyAccentButton>
+          ) : undefined
+        }
+      >
+        <div className="px-3 py-8 text-center">
+          <Building2 className="mx-auto mb-3 h-10 w-10 text-text-muted" aria-hidden="true" />
+          <p className="text-sm text-text-secondary">Not associated with any companies</p>
           {canUpdate && (
             <button
               onClick={onLinkCompany}
@@ -310,121 +306,92 @@ export function CompanyRelationships({
             </button>
           )}
         </div>
-      </div>
+      </CompanyAccentSection>
     );
   }
 
   return (
-    <div className="card">
-      <div className="p-4 border-b border-border-primary">
-        <div className="flex items-center justify-between">
-          <h2 className="font-medium text-text-primary flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-text-tertiary" />
-            Company Relationships
-            <span className="text-xs text-text-muted">
-              ({filteredRelationships.length}
-              {hasActiveFilters && ` of ${consolidatedRelationships.length}`})
+    <CompanyAccentSection
+      title="Company Relationships"
+      actions={
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <span className="whitespace-nowrap text-xs font-medium">
+            {activeRelationshipCount} active{pastRelationshipCount > 0 ? ` · ${pastRelationshipCount} past` : ''}
+          </span>
+          {hiddenCompanyCount !== undefined && hiddenCompanyCount > 0 && (
+            <span className="whitespace-nowrap text-xs font-medium text-amber-200" title="Some company relationships are hidden due to your access permissions">
+              ({hiddenCompanyCount} hidden)
             </span>
-            <span className="text-xs text-text-tertiary">
-              {activeRelationshipCount} active; {pastRelationshipCount} past
-            </span>
-            {hiddenCompanyCount !== undefined && hiddenCompanyCount > 0 && (
-              <span className="text-xs text-status-warning" title="Some company relationships are hidden due to your access permissions">
-                ({hiddenCompanyCount} hidden)
-              </span>
-            )}
-          </h2>
-          <div className="flex items-center gap-2">
-            {consolidatedRelationships.length > 0 && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`btn-ghost btn-xs flex items-center gap-1 ${
-                  hasActiveFilters ? 'text-oak-light' : ''
-                }`}
-                title="Filter relationships"
-              >
-                <Filter className="w-3.5 h-3.5" />
-                {hasActiveFilters && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-oak-light" />
-                )}
-              </button>
-            )}
-            {canUpdate && (
-              <button
-                onClick={onLinkCompany}
-                className="btn-secondary btn-xs flex items-center gap-1"
-              >
-                <Link2 className="w-3.5 h-3.5" />
-                Add to Company
-              </button>
-            )}
-          </div>
+          )}
+          <CompanyAccentFilter label="Show ceased" checked={showCeased} onChange={setShowCeased} />
+          {consolidatedRelationships.length > 0 && (
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`rounded p-1 transition-colors hover:bg-white/10 ${showFilters || hasActiveFilters ? 'bg-white/10' : ''}`}
+              title="Filter relationships"
+            >
+              <Filter className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {canUpdate && (
+            <CompanyAccentButton onClick={onLinkCompany}>
+              <Link2 className="h-3.5 w-3.5" />
+              Add to Company
+            </CompanyAccentButton>
+          )}
         </div>
-
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="mt-3 pt-3 border-t border-border-secondary animate-fade-in">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex-1 min-w-[150px] max-w-[250px]">
-                <label className="text-xs text-text-tertiary mb-1 block">Company Name</label>
-                <input
-                  type="text"
-                  value={companyNameFilter}
-                  onChange={(e) => setCompanyNameFilter(e.target.value)}
-                  placeholder="Search by name or UEN..."
-                  className="input input-xs w-full"
-                />
-              </div>
-              <div className="min-w-[140px]">
-                <label className="text-xs text-text-tertiary mb-1 block">Position</label>
-                <select
-                  value={positionFilter}
-                  onChange={(e) => setPositionFilter(e.target.value)}
-                  className="input input-xs w-full"
-                >
-                  <option value="">All Positions</option>
-                  {availablePositions.map((pos) => (
-                    <option key={pos} value={pos}>{pos}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="show-ceased-contact"
-                  checked={showCeased}
-                  onChange={(e) => setShowCeased(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-border-primary text-oak-primary focus:ring-oak-primary"
-                />
-                <label htmlFor="show-ceased-contact" className="text-xs text-text-secondary cursor-pointer">
-                  Show ceased
-                </label>
-              </div>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="btn-ghost btn-xs flex items-center gap-1 text-text-muted hover:text-text-primary"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Clear
-                </button>
-              )}
-            </div>
+      }
+    >
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="flex flex-wrap items-end gap-3 border-b border-border-primary bg-surface-secondary px-3 py-2.5 animate-fade-in">
+          <div className="min-w-[150px] max-w-[250px] flex-1">
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary">Company Name</label>
+            <input
+              type="text"
+              value={companyNameFilter}
+              onChange={(e) => setCompanyNameFilter(e.target.value)}
+              placeholder="Search by name or UEN..."
+              className="input input-xs w-full"
+            />
           </div>
-        )}
-      </div>
-      <div className="divide-y divide-border-primary">
-        {filteredRelationships.length === 0 && hasActiveFilters ? (
-          <div className="p-6 text-center">
-            <p className="text-text-secondary text-sm">No companies match your filters</p>
+          <div className="min-w-[140px]">
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-secondary">Position</label>
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+              className="input input-xs w-full"
+            >
+              <option value="">All Positions</option>
+              {availablePositions.map((pos) => (
+                <option key={pos} value={pos}>{pos}</option>
+              ))}
+            </select>
+          </div>
+          {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="btn-secondary btn-xs mt-2"
+              className="btn-ghost btn-xs flex items-center gap-1 text-text-muted hover:text-text-primary"
             >
-              Clear Filters
+              <X className="h-3.5 w-3.5" />
+              Clear
             </button>
-          </div>
-        ) : null}
+          )}
+        </div>
+      )}
+
+      {filteredRelationships.length === 0 && hasActiveFilters ? (
+        <div className="px-3 py-6 text-center">
+          <p className="text-sm text-text-secondary">No companies match your filters</p>
+          <button
+            onClick={clearFilters}
+            className="btn-secondary btn-xs mt-2"
+          >
+            Clear Filters
+          </button>
+        </div>
+      ) : null}
+      <div className="divide-y divide-border-primary px-3">
         {filteredRelationships.map((rel) => {
           const isExpanded = expandedCompanies.has(rel.companyId);
           const hasDetailInfo = hasDetails(rel);
@@ -432,41 +399,41 @@ export function CompanyRelationships({
           const currentShareholdings = rel.shareholdings.filter((s) => s.isCurrent);
 
           return (
-            <div key={rel.companyId} className="bg-background-secondary">
+            <div key={rel.companyId} className="py-3">
               {/* Company Header */}
               <div
-                className={`p-4 flex items-start justify-between ${
-                  hasDetailInfo ? 'cursor-pointer hover:bg-background-tertiary/50' : ''
+                className={`flex items-start justify-between gap-3 ${
+                  hasDetailInfo ? 'cursor-pointer' : ''
                 }`}
                 onClick={() => hasDetailInfo && toggleExpanded(rel.companyId)}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
                     <Link
                       href={`/companies/${rel.companyId}`}
-                      className="text-text-primary font-medium hover:text-oak-light transition-colors"
+                      className="text-oak-primary hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {rel.companyName}
                     </Link>
-                    <span className="text-sm text-text-tertiary">({rel.companyUen})</span>
+                    <span className="text-xs text-text-secondary">({rel.companyUen})</span>
                     {rel.isPrimary && (
-                      <span className="badge badge-info text-xs flex items-center gap-1">
-                        <Star className="w-3 h-3" />
+                      <span className="inline-flex min-h-5 items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium leading-none text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200">
+                        <Star className="h-3 w-3" />
                         Primary
                       </span>
                     )}
                   </div>
 
                   {/* Role Badges Summary */}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     {/* Officer badges */}
                     {currentOfficerPositions.map((pos) => (
                       <span
                         key={pos.id}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-oak-primary/10 text-oak-light text-xs"
+                        className="inline-flex items-center gap-1 rounded-full bg-oak-primary/10 px-2 py-0.5 text-xs font-medium text-oak-light"
                       >
-                        <Briefcase className="w-3 h-3" />
+                        <Briefcase className="h-3 w-3" />
                         {pos.role.replace(/_/g, ' ')}
                       </span>
                     ))}
@@ -475,9 +442,9 @@ export function CompanyRelationships({
                     {currentShareholdings.map((sh) => (
                       <span
                         key={sh.id}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-info/10 text-status-info text-xs"
+                        className="inline-flex items-center gap-1 rounded-full bg-status-info/10 px-2 py-0.5 text-xs font-medium text-status-info"
                       >
-                        <PieChart className="w-3 h-3" />
+                        <PieChart className="h-3 w-3" />
                         {sh.numberOfShares.toLocaleString()} {sh.shareClass}
                         {sh.percentageHeld && ` (${sh.percentageHeld}%)`}
                       </span>
@@ -494,7 +461,7 @@ export function CompanyRelationships({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex flex-shrink-0 items-center gap-2">
                   {/* Only show Remove for pure general relationships (no officers/shareholders) */}
                   {canUpdate && rel.generalRelationship &&
                     rel.officerPositions.length === 0 &&
@@ -504,18 +471,18 @@ export function CompanyRelationships({
                         e.stopPropagation();
                         onUnlinkCompany(rel.companyId, rel.generalRelationship!);
                       }}
-                      className="text-text-muted hover:text-status-error transition-colors p-1"
+                      className="rounded p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-status-error"
                       title="Remove relationship"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                   {hasDetailInfo && (
-                    <button className="p-1 text-text-muted hover:text-text-secondary">
+                    <button className="rounded p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-text-secondary">
                       {isExpanded ? (
-                        <ChevronUp className="w-4 h-4" />
+                        <ChevronUp className="h-4 w-4" />
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="h-4 w-4" />
                       )}
                     </button>
                   )}
@@ -524,12 +491,12 @@ export function CompanyRelationships({
 
               {/* Expanded Details */}
               {isExpanded && hasDetailInfo && (
-                <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                <div className="mt-3 space-y-3 animate-fade-in">
                   {/* Officer Positions Detail */}
                   {rel.officerPositions.length > 0 && (
-                    <div className="bg-background-tertiary rounded-lg p-3">
-                      <h4 className="text-xs font-medium text-text-secondary uppercase mb-2 flex items-center gap-1">
-                        <Briefcase className="w-3.5 h-3.5" />
+                    <div className="rounded-lg border border-border-secondary p-3">
+                      <h4 className="mb-2 flex items-center gap-1 text-xs font-medium uppercase text-text-secondary">
+                        <Briefcase className="h-3.5 w-3.5" />
                         Officer Positions
                       </h4>
                       <div className="space-y-2">
@@ -565,7 +532,7 @@ export function CompanyRelationships({
                                   className="text-text-muted hover:text-oak-light transition-colors"
                                   title="Edit"
                                 >
-                                  <Pencil className="w-3.5 h-3.5" />
+                                  <Pencil className="h-3.5 w-3.5" />
                                 </button>
                               )}
                               {canUpdate && onUnlinkOfficer && pos.isCurrent && (
@@ -577,7 +544,7 @@ export function CompanyRelationships({
                                   className="text-text-muted hover:text-status-error transition-colors"
                                   title="Remove"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               )}
                             </div>
@@ -589,9 +556,9 @@ export function CompanyRelationships({
 
                   {/* Shareholdings Detail */}
                   {rel.shareholdings.length > 0 && (
-                    <div className="bg-background-tertiary rounded-lg p-3">
-                      <h4 className="text-xs font-medium text-text-secondary uppercase mb-2 flex items-center gap-1">
-                        <PieChart className="w-3.5 h-3.5" />
+                    <div className="rounded-lg border border-border-secondary p-3">
+                      <h4 className="mb-2 flex items-center gap-1 text-xs font-medium uppercase text-text-secondary">
+                        <PieChart className="h-3.5 w-3.5" />
                         Shareholdings
                       </h4>
                       <div className="space-y-2">
@@ -605,7 +572,7 @@ export function CompanyRelationships({
                                 {sh.numberOfShares.toLocaleString()} {sh.shareClass} shares
                               </span>
                               {sh.percentageHeld && (
-                                <span className="text-text-secondary ml-2">
+                                <span className="ml-2 text-text-secondary">
                                   ({sh.percentageHeld}% ownership)
                                 </span>
                               )}
@@ -625,7 +592,7 @@ export function CompanyRelationships({
                                   className="text-text-muted hover:text-oak-light transition-colors"
                                   title="Edit"
                                 >
-                                  <Pencil className="w-3.5 h-3.5" />
+                                  <Pencil className="h-3.5 w-3.5" />
                                 </button>
                               )}
                               {canUpdate && onUnlinkShareholder && sh.isCurrent && (
@@ -637,7 +604,7 @@ export function CompanyRelationships({
                                   className="text-text-muted hover:text-status-error transition-colors"
                                   title="Remove"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               )}
                             </div>
@@ -652,6 +619,6 @@ export function CompanyRelationships({
           );
         })}
       </div>
-    </div>
+    </CompanyAccentSection>
   );
 }

@@ -13,15 +13,17 @@ import {
   Archive,
   CalendarDays,
   FileText,
+  Download,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useSelection } from '@/hooks/use-selection';
 import { FilterChip } from '@/components/ui/filter-chip';
+import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { cn } from '@/lib/utils';
-import { useCompanySearch } from '@/hooks/use-company-search';
-import type { SelectOption } from '@/components/ui/searchable-select';
 import {
   readSessionListSnapshot,
   writeSessionListSnapshot,
@@ -66,7 +68,7 @@ function generatedDocumentsListKey(
     filters.title,
     filters.companyId,
     filters.companyName,
-    filters.templateId,
+    filters.templateName,
     filters.status,
     filters.createdBy,
     filters.updatedFrom,
@@ -115,7 +117,7 @@ export default function GeneratedDocumentsPage() {
   const initialTitleFilter = searchParams.get('title') || '';
   const initialCompanyIdFilter = searchParams.get('companyId') || '';
   const initialCompanyFilter = searchParams.get('company') || searchParams.get('companyName') || '';
-  const initialTemplateIdFilter = searchParams.get('templateId') || '';
+  const initialTemplateFilter = searchParams.get('templateName') || '';
   const initialStatusFilter = searchParams.get('status') || '';
   const initialCreatedByFilter = searchParams.get('createdBy') || '';
   const initialUpdatedFrom = searchParams.get('updatedFrom') || '';
@@ -131,7 +133,7 @@ export default function GeneratedDocumentsPage() {
         title: initialTitleFilter || undefined,
         companyId: initialCompanyIdFilter || undefined,
         companyName: initialCompanyFilter || undefined,
-        templateId: initialTemplateIdFilter || undefined,
+        templateName: initialTemplateFilter || undefined,
         status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
         createdBy: initialCreatedByFilter || undefined,
         updatedFrom: initialUpdatedFrom || undefined,
@@ -156,6 +158,19 @@ export default function GeneratedDocumentsPage() {
   const [batches, setBatches] = useState<DocumentGenerationBatchListItem[]>([]);
   const [batchesError, setBatchesError] = useState<string | null>(null);
   const [isDiscardingBatch, setIsDiscardingBatch] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+
+  // Selection state for bulk operations
+  const {
+    selectedIds,
+    selectedCount,
+    isAllSelected,
+    isIndeterminate,
+    toggleOne,
+    toggleAll,
+    clear: clearSelection,
+  } = useSelection(documents);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
@@ -163,7 +178,7 @@ export default function GeneratedDocumentsPage() {
     title: initialTitleFilter || undefined,
     companyId: initialCompanyIdFilter || undefined,
     companyName: initialCompanyFilter || undefined,
-    templateId: initialTemplateIdFilter || undefined,
+    templateName: initialTemplateFilter || undefined,
     status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
     createdBy: initialCreatedByFilter || undefined,
     updatedFrom: initialUpdatedFrom || undefined,
@@ -174,38 +189,6 @@ export default function GeneratedDocumentsPage() {
   const [page, setPage] = useState(initialPage);
   const limit = 20; // More items per page for list view
   const firstFetchRef = useRef(true);
-
-  const {
-    searchQuery: companySearchQuery,
-    setSearchQuery: setCompanySearchQuery,
-    options: companyOptions,
-    isLoading: companiesLoading,
-  } = useCompanySearch({ limit: 20 });
-
-  const [templateOptions, setTemplateOptions] = useState<SelectOption[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    fetch('/api/document-templates?limit=100&sortBy=name&sortOrder=asc')
-      .then((response) => (response.ok ? response.json() : { templates: [] }))
-      .then((data: { templates?: Array<{ id: string; name: string }> }) => {
-        if (!active) return;
-        setTemplateOptions(
-          (data.templates ?? []).map((template) => ({
-            value: template.id,
-            label: template.name,
-          })),
-        );
-      })
-      .catch(() => {
-        if (active) setTemplateOptions([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
@@ -220,7 +203,7 @@ export default function GeneratedDocumentsPage() {
       if (filters.title) params.set('title', filters.title);
       if (filters.companyId) params.set('companyId', filters.companyId);
       if (filters.companyName) params.set('companyName', filters.companyName);
-      if (filters.templateId) params.set('templateId', filters.templateId);
+      if (filters.templateName) params.set('templateName', filters.templateName);
       if (filters.status) params.set('status', filters.status);
       if (filters.createdBy) params.set('createdBy', filters.createdBy);
       if (filters.updatedFrom) params.set('updatedFrom', filters.updatedFrom);
@@ -296,13 +279,7 @@ export default function GeneratedDocumentsPage() {
 
   // Filter handlers
   const handleFilterChange = useCallback((patch: Partial<GeneratedDocumentFilters>) => {
-    setFilters((previous) => {
-      const next = { ...previous, ...patch };
-      if ('companyId' in patch) {
-        next.companyName = undefined;
-      }
-      return next;
-    });
+    setFilters((previous) => ({ ...previous, ...patch }));
     setPage(1);
   }, []);
 
@@ -424,6 +401,63 @@ export default function GeneratedDocumentsPage() {
     }
   };
 
+  // Handle bulk download (ZIP of PDFs)
+  const handleBulkDownload = async () => {
+    if (selectedCount === 0) return;
+    setIsBulkDownloading(true);
+    try {
+      const response = await fetch('/api/generated-documents/bulk-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds: Array.from(selectedIds) }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to download documents');
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `documents-${new Date().toISOString().split('T')[0]}.zip`;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+
+      success(`Downloaded ${selectedCount} document${selectedCount > 1 ? 's' : ''}`);
+    } catch (err) {
+      console.error('Bulk download error:', err);
+      toastError(err instanceof Error ? err.message : 'Failed to download documents');
+    } finally {
+      setIsBulkDownloading(false);
+    }
+  };
+
+  // Handle bulk delete
+  const handleBulkDeleteConfirm = async (reason?: string) => {
+    if (!reason || selectedCount === 0) return;
+
+    try {
+      const response = await fetch('/api/generated-documents/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), reason }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete documents');
+      }
+
+      success(data.message || `Deleted ${data.deleted} documents`);
+      setBulkDeleteDialogOpen(false);
+      clearSelection();
+      void fetchDocuments();
+    } catch (err) {
+      console.error('Bulk delete error:', err);
+      toastError(err instanceof Error ? err.message : 'Failed to delete documents');
+    }
+  };
+
   // Active filter chips
   const activeFilterChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
@@ -444,22 +478,20 @@ export default function GeneratedDocumentsPage() {
         onRemove: () => handleFilterChange({ title: undefined }),
       });
     }
-    const companyOption = companyOptions.find((option) => option.id === filters.companyId);
     if (filters.companyId || filters.companyName) {
       chips.push({
         key: 'company',
         label: 'Company',
-        value: companyOption?.label || filters.companyName || filters.companyId || '',
+        value: filters.companyName || filters.companyId || '',
         onRemove: () => handleFilterChange({ companyId: undefined, companyName: undefined }),
       });
     }
-    if (filters.templateId) {
-      const templateOption = templateOptions.find((option) => option.value === filters.templateId);
+    if (filters.templateName) {
       chips.push({
         key: 'template',
         label: 'Template',
-        value: templateOption?.label || filters.templateId,
-        onRemove: () => handleFilterChange({ templateId: undefined }),
+        value: filters.templateName,
+        onRemove: () => handleFilterChange({ templateName: undefined }),
       });
     }
     if (filters.status) {
@@ -493,8 +525,6 @@ export default function GeneratedDocumentsPage() {
     handleFilterChange,
     handleSearchChange,
     searchQuery,
-    companyOptions,
-    templateOptions,
   ]);
 
   const quickFilterClassName = (active: boolean) => cn(
@@ -697,11 +727,12 @@ export default function GeneratedDocumentsPage() {
           filters={filters}
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
-          companyOptions={companyOptions}
-          companySearchQuery={companySearchQuery}
-          companySearchLoading={companiesLoading}
-          onCompanySearchChange={setCompanySearchQuery}
-          templateOptions={templateOptions}
+          selectable={canDelete || canExport}
+          selectedIds={selectedIds}
+          onToggleOne={toggleOne}
+          onToggleAll={toggleAll}
+          isAllSelected={isAllSelected}
+          isIndeterminate={isIndeterminate}
         />
       </div>
 
@@ -750,6 +781,54 @@ export default function GeneratedDocumentsPage() {
         confirmLabel="Discard Draft"
         variant="danger"
       />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={bulkDeleteDialogOpen}
+        onClose={() => setBulkDeleteDialogOpen(false)}
+        onConfirm={handleBulkDeleteConfirm}
+        title={`Delete ${selectedCount} Document${selectedCount > 1 ? 's' : ''}`}
+        description={`You are about to delete ${selectedCount} document${selectedCount > 1 ? 's' : ''}. This action cannot be undone. Deleted documents can be restored by an administrator.`}
+        confirmLabel={`Delete ${selectedCount} Document${selectedCount > 1 ? 's' : ''}`}
+        variant="danger"
+        requireReason
+        reasonLabel="Reason for deletion"
+        reasonPlaceholder="Please provide a reason for deleting these documents..."
+        reasonMinLength={10}
+      />
+
+      {/* Floating Bulk Actions Toolbar */}
+      {(canDelete || canExport) && (
+        <BulkActionsToolbar
+          selectedCount={selectedCount}
+          onClearSelection={clearSelection}
+          itemLabel="document"
+          actions={[
+            ...(canExport ? [{
+              id: 'download',
+              label: 'Download',
+              icon: Download,
+              description: 'Download selected documents as ZIP',
+              variant: 'default' as const,
+              isLoading: isBulkDownloading,
+            }] : []),
+            ...(canDelete ? [{
+              id: 'delete',
+              label: 'Delete',
+              icon: Trash2,
+              description: 'Delete selected documents',
+              variant: 'danger' as const,
+            }] : []),
+          ]}
+          onAction={(actionId) => {
+            if (actionId === 'download') {
+              void handleBulkDownload();
+            } else if (actionId === 'delete') {
+              setBulkDeleteDialogOpen(true);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

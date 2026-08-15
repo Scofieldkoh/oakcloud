@@ -249,4 +249,47 @@ describe('useDocumentGenerationBatch', () => {
     expect(generationResult?.batchStatus).toBe('PARTIAL');
     expect(result.current.state.batch.revision).toBe(2);
   });
+
+  it('persists a pending stage change before previewing so review is not reset', async () => {
+    apiMock.saveDocumentGenerationBatch.mockResolvedValue({ ...serverBatch, revision: 1 });
+    apiMock.previewDocumentGenerationBatchItem.mockResolvedValue({ ...serverBatch, revision: 2 });
+    const configured: EditableDocumentGenerationBatch = {
+      ...serverBatch,
+      currentStage: 2,
+    };
+    const { result } = renderHook(() => useDocumentGenerationBatch({ initialBatch: configured }));
+
+    act(() => {
+      result.current.dispatch({ type: 'stage/navigate', stage: 'review-generate' });
+    });
+
+    await act(async () => {
+      await result.current.previewItem('item-a');
+    });
+
+    expect(apiMock.saveDocumentGenerationBatch).toHaveBeenCalledWith(
+      'batch-1',
+      expect.objectContaining({ currentStage: 3 }),
+    );
+    expect(result.current.state.stage).toBe('review-generate');
+  });
+
+  it('persists the target stage when continuing to the next stage', async () => {
+    apiMock.saveDocumentGenerationBatch.mockResolvedValue({ ...serverBatch, revision: 3 });
+    const configured: EditableDocumentGenerationBatch = {
+      ...serverBatch,
+      currentStage: 2,
+    };
+    const { result } = renderHook(() => useDocumentGenerationBatch({ initialBatch: configured }));
+
+    await act(async () => {
+      await result.current.continueTo('review-generate');
+    });
+
+    expect(apiMock.saveDocumentGenerationBatch).toHaveBeenCalledWith(
+      'batch-1',
+      expect.objectContaining({ currentStage: 3 }),
+    );
+    expect(result.current.state.stage).toBe('review-generate');
+  });
 });

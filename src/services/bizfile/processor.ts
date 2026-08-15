@@ -25,6 +25,9 @@ import type { TaskLaunchContext } from '@/services/tasks/types';
 
 const log = createLogger('bizfile-processor');
 
+// Vendor name used for BizFile documents in the document vault and generated filenames
+const ACRA_VENDOR_NAME = 'ACRA';
+
 type Officer = NonNullable<ExtractedBizFileData['officers']>[number];
 type Shareholder = NonNullable<ExtractedBizFileData['shareholders']>[number];
 
@@ -188,7 +191,7 @@ async function persistDocumentApproval(
         reason: 'BizFile extraction auto-approved',
         documentCategory: 'CORPORATE_SECRETARIAL',
         documentSubCategory: 'BIZFILE',
-        vendorName: 'Accounting and Corporate Regulatory Authority',
+        vendorName: ACRA_VENDOR_NAME,
         documentNumber: args.data.documentMetadata?.receiptNo || null,
         documentDate: args.data.documentMetadata?.receiptDate
           ? new Date(args.data.documentMetadata.receiptDate)
@@ -335,7 +338,7 @@ async function moveAndRenameDocument(
       documentDate: data.documentMetadata?.receiptDate
         ? new Date(data.documentMetadata.receiptDate)
         : null,
-      contactName: 'Accounting and Corporate Regulatory Authority',
+      contactName: ACRA_VENDOR_NAME,
       documentNumber: data.documentMetadata?.receiptNo || null,
       currency: 'SGD',
       totalAmount: 0,

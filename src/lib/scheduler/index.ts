@@ -54,6 +54,7 @@
 
 import { scheduler } from './scheduler';
 import {
+  acraSyncTask,
   backupTask,
   cleanupTask,
   esigningExpiryCheckTask,
@@ -77,6 +78,7 @@ import { startViewCountFlush, stopViewCountFlush } from '@/lib/view-count-buffer
  */
 export async function initializeScheduler(): Promise<void> {
   // Register all tasks
+  scheduler.registerTask(acraSyncTask);
   scheduler.registerTask(backupTask);
   scheduler.registerTask(cleanupTask);
   scheduler.registerTask(esigningExpiryCheckTask);

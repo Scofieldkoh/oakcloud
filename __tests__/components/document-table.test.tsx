@@ -29,6 +29,16 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: () => ({ mutate: vi.fn() }),
 }));
 
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: ({
+    value,
+    placeholder,
+  }: {
+    value: string;
+    placeholder?: string;
+  }) => <input aria-label="Filter by company" placeholder={placeholder} value={value} readOnly />,
+}));
+
 import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
 
 function documentFixture(overrides: Partial<GeneratedDocument> = {}): GeneratedDocument {
@@ -73,7 +83,7 @@ describe('DocumentTable', () => {
 
     expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by title' })).toBeInTheDocument();
     expect(within(rows[0]).getByPlaceholderText('All companies')).toBeInTheDocument();
-    expect(within(rows[0]).getByRole('combobox', { name: 'All templates' })).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by template' })).toBeInTheDocument();
     expect(within(rows[0]).getByRole('combobox', { name: 'All statuses' })).toBeInTheDocument();
     expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by creator' })).toBeInTheDocument();
     expect(screen.getByRole('separator', { name: 'Resize Document column' })).toBeInTheDocument();
@@ -90,7 +100,6 @@ describe('DocumentTable', () => {
       <DocumentTable
         documents={[documentFixture()]}
         filters={{}}
-        templateOptions={[{ value: 'template-1', label: 'Board Minutes' }]}
       />,
     );
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
   useCurrentWorkspaceUsers,
@@ -16,12 +16,11 @@ import {
   type WorkspaceUser,
   type Role,
 } from '@/hooks/use-admin';
-import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
+import type { CompanySearchOption } from '@/hooks/use-company-search';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
-import { AsyncSearchSelect } from '@/components/ui/async-search-select';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { Alert } from '@/components/ui/alert';
+import { CompanySelect } from '@/components/ui/company-select';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/components/ui/toast';
@@ -204,29 +203,8 @@ export default function UsersPage() {
     ? data?.users.find((u: WorkspaceUser) => u.id === managingUserId) || null
     : null;
 
-  const {
-    searchQuery: inviteCompanySearchQuery,
-    setSearchQuery: setInviteCompanySearchQuery,
-    options: inviteCompanyOptions,
-    isLoading: isInviteCompanyLoading,
-    selectedCompany: selectedInviteCompany,
-    setSelectedCompany: setSelectedInviteCompany,
-  } = useCompanySearch({ enabled: isInviteModalOpen, minChars: 0, limit: 50 });
-  const {
-    searchQuery: manageCompanySearchQuery,
-    setSearchQuery: setManageCompanySearchQuery,
-    options: manageCompanyOptions,
-    isLoading: isManageCompanyLoading,
-    setSelectedCompany: setSelectedManageCompany,
-  } = useCompanySearch({ enabled: Boolean(managingUserId), minChars: 0, limit: 50 });
-  const inviteRoleCompanyOptions = useMemo(
-    () => [ALL_COMPANIES_OPTION, ...inviteCompanyOptions],
-    [inviteCompanyOptions]
-  );
-  const manageRoleCompanyOptions = useMemo(
-    () => [ALL_COMPANIES_OPTION, ...manageCompanyOptions],
-    [manageCompanyOptions]
-  );
+  const [selectedInviteCompany, setSelectedInviteCompany] = useState<CompanySearchOption | null>(null);
+  const [, setSelectedManageCompany] = useState<CompanySearchOption | null>(null);
   const inviteUser = useInviteUser(activeWorkspaceId || undefined);
   const updateUser = useUpdateUser(activeWorkspaceId || undefined, editingUser?.id);
   const deleteUser = useDeleteUser(activeWorkspaceId || undefined);
@@ -1022,7 +1000,7 @@ export default function UsersPage() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <AsyncSearchSelect<CompanySearchOption>
+                    <CompanySelect
                       value={selectedRoleCompanyId ?? ''}
                       onChange={(companyId, company) => {
                         if (companyId === ALL_COMPANIES_OPTION.id) {
@@ -1034,13 +1012,11 @@ export default function UsersPage() {
                         setSelectedInviteCompany(company);
                       }}
                       placeholder="Search companies..."
-                      options={inviteRoleCompanyOptions}
-                      isLoading={isInviteCompanyLoading}
-                      searchQuery={inviteCompanySearchQuery}
-                      onSearchChange={setInviteCompanySearchQuery}
                       icon={<Building2 className="w-4 h-4" />}
                       emptySearchText="Type to search companies, or leave blank for all companies"
                       noResultsText="No companies found"
+                      enabled={isInviteModalOpen}
+                      pinned={[ALL_COMPANIES_OPTION]}
                     />
                   </div>
                   <Button
@@ -1264,7 +1240,7 @@ export default function UsersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label text-xs mb-1">Company</label>
-                  <AsyncSearchSelect<CompanySearchOption>
+                  <CompanySelect
                     value={selectedCompanyId}
                     onChange={(companyId, company) => {
                       setSelectedCompanyId(companyId);
@@ -1273,13 +1249,9 @@ export default function UsersPage() {
                       );
                     }}
                     placeholder="Search companies..."
-                    options={manageRoleCompanyOptions}
-                    isLoading={isManageCompanyLoading}
-                    searchQuery={manageCompanySearchQuery}
-                    onSearchChange={setManageCompanySearchQuery}
                     icon={<Building2 className="w-4 h-4" />}
-                    emptySearchText="Type to search companies"
-                    noResultsText="No companies found"
+                    enabled={Boolean(managingUserId)}
+                    pinned={[ALL_COMPANIES_OPTION]}
                   />
                 </div>
                 <div>

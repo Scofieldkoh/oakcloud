@@ -7,8 +7,17 @@ interface CompanyProfileTabProps {
   company: CompanyWithRelations;
   companyId: string;
   can: { updateCompany: boolean; deleteOfficer?: boolean; deleteShareholder?: boolean };
+  onRetrieveAcra?: () => void;
+  isRetrievingAcra?: boolean;
 }
 
-export function CompanyProfileTab({ company, companyId }: CompanyProfileTabProps) {
-  return <CompanyProfileSections company={company} companyId={companyId} />;
+export function CompanyProfileTab({ company, companyId, onRetrieveAcra, isRetrievingAcra }: CompanyProfileTabProps) {
+  return (
+    <CompanyProfileSections
+      company={company}
+      companyId={companyId}
+      onRetrieveAcra={onRetrieveAcra}
+      isRetrievingAcra={isRetrievingAcra}
+    />
+  );
 }

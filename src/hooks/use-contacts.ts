@@ -265,9 +265,9 @@ export function useContacts(
     queryFn: () => fetchContacts(params),
     staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    // A session-restored snapshot is stale by definition, so refresh it in the
-    // background. Warm in-memory caches keep the existing no-refetch behavior.
-    refetchOnMount: restoredFromSession ? true : false,
+    // Refetch stale data on mount (e.g. after a mutation invalidated the list),
+    // while still serving cached data instantly when it is fresh.
+    refetchOnMount: true,
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching

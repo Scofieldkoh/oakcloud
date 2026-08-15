@@ -151,11 +151,14 @@ function normalizeDraftMetadata(metadata: unknown): Record<string, unknown> {
         }
       }
 
+      const dataAsOf = typeof parsed.dataAsOf === 'string' ? parsed.dataAsOf.trim().slice(0, 64) : '';
+
       normalizedResults[fieldKey] = {
         name,
         available: parsed.available,
         checkedAt,
         records,
+        ...(dataAsOf ? { dataAsOf } : {}),
       };
     }
 

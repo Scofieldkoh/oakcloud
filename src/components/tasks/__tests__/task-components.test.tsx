@@ -31,6 +31,12 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: () => ({ mutate: preferenceMocks.save }),
 }));
 
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: ({ placeholder }: { placeholder?: string }) => (
+    <input aria-label="All companies" placeholder={placeholder} readOnly />
+  ),
+}));
+
 const stages: TaskStageSummary[] = [
   { id: 'stage-1', name: 'Profile', position: 0, actionType: 'COMPANY_PROFILE', icon: 'Building2', isRequired: true, status: 'NOT_STARTED' },
   { id: 'stage-2', name: 'Documents', position: 1, actionType: 'DOCUMENT_GENERATION', icon: 'FileText', isRequired: true, status: 'IN_PROGRESS' },
@@ -147,7 +153,6 @@ describe('TaskList', () => {
       within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
     );
     const searchableSelects = [
-      within(rows[0]).getByRole('combobox', { name: 'All companies' }),
       within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
       within(rows[0]).getByRole('combobox', { name: 'All pipelines' }),
     ];

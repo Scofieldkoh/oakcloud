@@ -118,12 +118,12 @@ export const RATE_LIMIT_CONFIGS = {
     lockoutDurationMs: 60 * 60 * 1000, // 1 hour lockout
   } as RateLimitConfig,
 
-  /** Login attempts: 5 per 15 minutes */
+  /** Login attempts: 5 per 1 minute */
   LOGIN: {
     maxRequests: 5,
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 60 * 1000, // 1 minute
     lockoutThreshold: 15,
-    lockoutDurationMs: 30 * 60 * 1000, // 30 minute lockout
+    lockoutDurationMs: 15 * 60 * 1000, // 15 minute lockout
   } as RateLimitConfig,
 
   /** API general: 100 requests per minute */

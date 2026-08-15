@@ -2758,6 +2758,63 @@ Migration `20260724090000_modular_tasks_reset` deliberately drops all retired `w
 
 ---
 
+## ACRA Entity Sync Module Tables
+
+Local mirror of the data.gov.sg "ACRA Information on Corporate Entities" collection, used by the form builder's "Company name check". The daily `acra-sync` scheduled task compares `acra_sync_state.collection_last_updated_at` against the API's `lastUpdatedAt` and re-imports all 27 CSV datasets when they differ. Rows are stamped with `data_as_of`; stale rows are deleted only after a full import succeeds.
+
+### acra_entity
+
+One row per live local/foreign company (dead statuses and non-company entity types are filtered out at import time).
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| uen | TEXT | No | Unique entity number from ACRA |
+| entity_name | TEXT | No | Registered entity name |
+| entity_status | TEXT | No | ACRA status (e.g., "Live Company", "In Liquidation - ...") |
+| entity_type | TEXT | No | "Local Company" or "Foreign Company" |
+| company_type_description | TEXT | Yes | Company type (e.g., "EXEMPT PRIVATE COMPANY LIMITED BY SHARES") |
+| registration_incorporate_date | TEXT | Yes | Incorporation date as stored in the CSV |
+| block | TEXT | Yes | Address part |
+| street_name | TEXT | Yes | Address part |
+| level_no | TEXT | Yes | Address part |
+| unit_no | TEXT | Yes | Address part |
+| building_name | TEXT | Yes | Address part |
+| postal_code | TEXT | Yes | Address part |
+| address | TEXT | Yes | Derived display address, e.g. "123 MAIN STREET ACME BUILDING #05-01 SINGAPORE 123456" |
+| account_due_date | TEXT | Yes | Statutory account due date |
+| annual_return_date | TEXT | Yes | Annual return due date |
+| primary_ssic_code | TEXT | Yes | Primary SSIC code |
+| primary_ssic_description | TEXT | Yes | Primary SSIC description |
+| secondary_ssic_code | TEXT | Yes | Secondary SSIC code |
+| secondary_ssic_description | TEXT | Yes | Secondary SSIC description |
+| no_of_officers | TEXT | Yes | Number of officers |
+| former_entity_name1 | TEXT | Yes | First former entity name |
+| uen_of_audit_firm1 | TEXT | Yes | UEN of the first audit firm |
+| data_as_of | TEXT | No | ISO timestamp of the ACRA collection snapshot the row came from |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+- `acra_entity_uen_key` UNIQUE on uen
+- `acra_entity_entity_name_trgm_idx` GIN trigram on `entity_name` (powers the insensitive substring name search used by `contains`/`mode: insensitive`, i.e. `ILIKE '%word%'`; requires the `pg_trgm` extension)
+
+### acra_sync_state
+
+Singleton row (`id = 'main'`) holding sync progress and doubling as the sync lock.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | TEXT | No | Always `'main'` |
+| collection_last_updated_at | TEXT | Yes | Last imported ACRA collection `lastUpdatedAt` (ISO string) |
+| entity_count | INTEGER | No | Row count after the last completed sync |
+| last_started_at | TIMESTAMP | Yes | Non-null while a sync run holds the lock |
+| last_completed_at | TIMESTAMP | Yes | When the last sync finished |
+| last_error | TEXT | Yes | Error message of the last failed sync |
+| updated_at | TIMESTAMP | No | Last update time |
+
+---
+
 ## Migration Notes
 
 ### Multi-Tenancy

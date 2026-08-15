@@ -10,6 +10,7 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparato
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { buildDetailHref } from '@/lib/list-navigation';
@@ -50,6 +51,7 @@ const MONTH_NAMES = [
 
 /** Inline filter values for the table */
 export interface CompanyInlineFilters {
+  companyId?: string;
   companyName?: string;
   address?: string;
   uen?: string;
@@ -443,24 +445,15 @@ export function CompanyTable({
 
       case 'company':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.companyName || ''}
-              onChange={(e) => onInlineFilterChange({ companyName: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.companyName && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ companyName: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <CompanySelect
+            value={inlineFilters.companyId || ''}
+            onChange={(companyId, company) => onInlineFilterChange({
+              companyId: companyId || undefined,
+              companyName: company?.name || undefined,
+            })}
+            placeholder="All companies"
+            className="text-xs"
+          />
         );
 
       case 'address':

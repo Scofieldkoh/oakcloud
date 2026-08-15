@@ -25,6 +25,7 @@ import type {
   BizFileExtractionOptions,
   BizFileExtractionResult,
 } from './types';
+import { enrichBizFileComplianceFromAcra } from './acra-enrichment';
 
 const log = createLogger('bizfile-extractor');
 const NO_AI_PROVIDER_ERROR =
@@ -82,8 +83,8 @@ Return a JSON object with the following structure (include only fields that have
     "shareClass": "ORDINARY | PREFERENCE | etc",
     "currency": "SGD",
     "numberOfShares": number,
-    "parValue": number - value per share; if not printed explicitly, calculate totalValue / numberOfShares when numberOfShares is greater than zero,
-    "totalValue": number,
+    "parValue": number - IGNORED: par value is strictly recalculated by the system as totalValue / numberOfShares; do not extract or calculate this field,
+    "totalValue": number - the full total value of the share class as printed in the document (for example, 150000 shares of SGD 1.00 each has totalValue 150000). Always extract it directly from the document; never copy the per-share parValue into totalValue and never compute it as parValue x numberOfShares,
     "isPaidUp": boolean,
     "isTreasury": boolean
   }],
@@ -153,7 +154,7 @@ Important:
 - Include all officers (current and ceased)
 - Include all shareholders with their nationality and address
 - Extract share capital structure completely including treasury shares
-- For every share-capital row, extract parValue when printed; otherwise calculate it as totalValue divided by numberOfShares (for example, 168 SGD / 168 shares = 1 SGD per share)
+- For every share-capital row, extract totalValue directly from the document's printed class total (for example, "150,000 shares of SGD 1.00 each" has totalValue 150,000) - never use the per-share value as the total. Do not extract or calculate parValue; the system strictly recalculates it as totalValue divided by numberOfShares (for example, 168 SGD / 168 shares = 1 SGD per share)
 - IMPORTANT: Extract paidUpCapital and issuedCapital amounts directly from the "PAID-UP CAPITAL" and "ISSUED/REGISTERED CAPITAL" sections in the document - do NOT calculate from share capital
 - Mark cessation dates as null for current officers
 - Include both primary and secondary SSIC codes if available
@@ -227,6 +228,20 @@ function parseExtractionResponse(content: string): ExtractedBizFileData {
   return validateExtractionData(parsed);
 }
 
+/**
+ * Finalize an extraction result: enrich compliance dates from the local ACRA
+ * records (by UEN) before the result is stored or returned.
+ */
+async function finalizeExtractionResult(
+  data: ExtractedBizFileData,
+  modelUsed: string,
+  providerUsed: string,
+  usage?: BizFileExtractionResult['usage'],
+): Promise<BizFileExtractionResult> {
+  const enriched = await enrichBizFileComplianceFromAcra(data);
+  return { data: enriched.data, modelUsed, providerUsed, usage };
+}
+
 function buildMistralPrompt(additionalContext?: string): string {
   return `${EXTRACTION_SYSTEM_PROMPT}\n\n${buildUserPrompt(additionalContext)}`;
 }
@@ -274,12 +289,12 @@ async function tryExtractBizFileWithMistral(
 
     log.info(`Using Mistral OCR model: ${result.model} (mistral)`);
 
-    return {
-      data: validateExtractionData(result.documentAnnotation),
-      modelUsed: result.model || MISTRAL_OCR_MODEL_ID,
-      providerUsed: result.provider,
-      usage: result.usage,
-    };
+    return finalizeExtractionResult(
+      validateExtractionData(result.documentAnnotation),
+      result.model || MISTRAL_OCR_MODEL_ID,
+      result.provider,
+      result.usage,
+    );
   } catch (error) {
     if (error instanceof MistralOCRNotConfiguredError) {
       log.info('Mistral OCR not configured, falling back to standard AI extraction');
@@ -382,12 +397,7 @@ export async function extractBizFileWithVision(
   // Parse and validate the response
   const parsed = parseExtractionResponse(response.content);
 
-  return {
-    data: parsed,
-    modelUsed: modelId,
-    providerUsed: response.provider,
-    usage: response.usage,
-  };
+  return finalizeExtractionResult(parsed, modelId, response.provider, response.usage);
 }
 
 /**
@@ -459,10 +469,5 @@ export async function extractBizFileData(
   // Parse and validate the response
   const parsed = parseExtractionResponse(response.content);
 
-  return {
-    data: parsed,
-    modelUsed: modelId,
-    providerUsed: response.provider,
-    usage: response.usage,
-  };
+  return finalizeExtractionResult(parsed, modelId, response.provider, response.usage);
 }

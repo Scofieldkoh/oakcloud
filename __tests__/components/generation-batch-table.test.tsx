@@ -17,6 +17,25 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: () => ({ mutate: vi.fn() }),
 }));
 
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (id: string, name?: string) => void;
+    placeholder?: string;
+  }) => (
+    <input
+      aria-label="Filter batches by company"
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
+
 import { GenerationBatchTable } from '@/components/documents/generation-batch';
 import type { DocumentGenerationBatchListItem } from '@/types/document-generation-batch';
 
@@ -43,6 +62,7 @@ function batchFixture(overrides: Partial<DocumentGenerationBatchListItem> = {}):
     counts: counts({ READY: 2, NOT_STARTED: 1 }),
     status: 'DRAFT',
     currentStage: 2,
+    createdBy: { firstName: 'Ava', lastName: 'Tan' },
     updatedAt: '2026-08-12T01:00:00.000Z',
     ...overrides,
   };
@@ -68,15 +88,16 @@ describe('GenerationBatchTable', () => {
     expect(cells[1]).toHaveTextContent('3 documents');
     expect(cells[1]).toHaveTextContent('1 needs attention · 2 ready');
     expect(cells[2]).toHaveTextContent('Draft');
-    expect(within(cells[4]).getByRole('link', { name: /resume/i })).toBeInTheDocument();
+    expect(cells[3]).toHaveTextContent('Ava Tan');
+    expect(within(cells[5]).getByRole('link', { name: /resume/i })).toBeInTheDocument();
   });
 
-  it('filters by company with an inline text filter', () => {
+  it('filters by company with the reusable company select', () => {
     render(
       <GenerationBatchTable
         batches={[
           batchFixture(),
-          batchFixture({ id: 'batch-2', companyName: 'Beta Pte. Ltd.' }),
+          batchFixture({ id: 'batch-2', companyName: 'Beta Pte. Ltd.', primaryCompanyId: 'company-2' }),
         ]}
         onDiscard={vi.fn()}
       />,
@@ -86,7 +107,7 @@ describe('GenerationBatchTable', () => {
     const filterRow = within(table).getAllByRole('row')[0];
     fireEvent.change(
       within(filterRow).getByRole('textbox', { name: 'Filter batches by company' }),
-      { target: { value: 'Beta' } },
+      { target: { value: 'company-2' } },
     );
 
     const { bodyRows } = bodyCells();
@@ -97,12 +118,12 @@ describe('GenerationBatchTable', () => {
   it('resizes columns with the same resize handles as the documents table', () => {
     render(<GenerationBatchTable batches={[batchFixture()]} onDiscard={vi.fn()} />);
     const table = screen.getByRole('table');
-    expect(table).toHaveStyle({ minWidth: '940px' });
+    expect(table).toHaveStyle({ minWidth: '1100px' });
 
     const handle = screen.getByRole('separator', { name: 'Resize Company column' });
     fireEvent.keyDown(handle, { key: 'ArrowRight' });
 
-    expect(table).toHaveStyle({ minWidth: '950px' });
+    expect(table).toHaveStyle({ minWidth: '1110px' });
   });
 
   it('sorts rows by a column header', () => {

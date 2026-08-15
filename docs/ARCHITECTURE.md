@@ -56,7 +56,7 @@ Core design principles:
 | TipTap | Rich text editing |
 | pdf-lib | Existing document export paths |
 | Puppeteer | Form response PDF rendering |
-| GoBusiness eAdviser API | Company name availability checks for the form "Company name check" element |
+| data.gov.sg ACRA datastore | Source for the locally mirrored `acra_entity` table powering company name availability checks for the form "Company name check" element (ACRA Information on Corporate Entities collection, updated monthly; mirrored by the daily ACRA sync task) |
 | Microsoft Graph | Word-to-PDF conversion for e-signing uploads through usable SharePoint/OneDrive connectors; uploads remain PDF-only when no valid connector is configured |
 | MinIO / S3 | Uploaded file storage |
 
@@ -64,7 +64,7 @@ Core design principles:
 
 | Service | Purpose |
 |---------|---------|
-| In-process scheduler | Backup, cleanup, exchange-rate sync, form AI review, form count reconciliation, E-signing preparation |
+| In-process scheduler | Backup, cleanup, exchange-rate sync, ACRA entity sync, form AI review, form count reconciliation, E-signing preparation |
 | In-memory rate limiter | Public endpoint throttling |
 | In-memory view counter buffer | Batches form view count writes every 30 seconds |
 
@@ -394,6 +394,7 @@ The 2026-07-24 migration is a complete reset of the retired Workflow/Projects da
 | Tasks | Versioned pipeline execution with responsive list and stage modal |
 | Pipelines | Tenant-scoped reusable stage templates and immutable published versions |
 | Exchange Rates | MAS sync and overrides |
+| ACRA Entity Sync | Local mirror of the ACRA corporate entities collection (27 CSVs), daily date-comparison sync task, DB-backed company name availability checks |
 | Chart Of Accounts | Hierarchical accounts and external code mapping |
 
 ## Planned Modules

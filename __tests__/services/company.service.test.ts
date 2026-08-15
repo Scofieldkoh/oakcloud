@@ -22,6 +22,9 @@ vi.mock('@/lib/prisma', () => ({
     tenant: {
       findUnique: vi.fn(),
     },
+    acraEntity: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -91,6 +94,54 @@ describe('Company Service', () => {
           }),
         })
       );
+    });
+
+    it('should attach the ACRA record for the company UEN', async () => {
+      const mockCompany = {
+        id: 'company-1',
+        name: 'Test Company',
+        uen: '202312345A',
+        tenantId: 'tenant-1',
+      };
+
+      vi.mocked(prisma.company.findFirst).mockResolvedValue(mockCompany as never);
+      vi.mocked(prisma.acraEntity.findFirst).mockResolvedValue({
+        dataAsOf: '2026-08-14',
+        accountDueDate: '2026-12-31',
+        annualReturnDate: '2026-07-31',
+      } as never);
+
+      const result = await getCompanyById('company-1', 'tenant-1');
+
+      expect(result).toEqual({
+        ...mockCompany,
+        acraRecord: {
+          dataAsOf: '2026-08-14',
+          accountDueDate: '2026-12-31',
+          annualReturnDate: '2026-07-31',
+        },
+      });
+      expect(prisma.acraEntity.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { uen: { equals: '202312345A', mode: 'insensitive' } },
+        })
+      );
+    });
+
+    it('should not attach an ACRA record when none exists', async () => {
+      const mockCompany = {
+        id: 'company-1',
+        name: 'Test Company',
+        uen: '202312345A',
+        tenantId: 'tenant-1',
+      };
+
+      vi.mocked(prisma.company.findFirst).mockResolvedValue(mockCompany as never);
+      vi.mocked(prisma.acraEntity.findFirst).mockResolvedValue(null);
+
+      const result = await getCompanyById('company-1', 'tenant-1');
+
+      expect(result).toEqual(mockCompany);
     });
 
     it('should filter by tenantId for regular queries', async () => {

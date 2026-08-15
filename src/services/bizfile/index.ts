@@ -49,6 +49,15 @@ export {
   buildFullAddress,
 } from './normalizer';
 
+// Re-export ACRA compliance enrichment
+export {
+  enrichBizFileComplianceFromAcra,
+} from './acra-enrichment';
+export type {
+  BizFileAcraEnrichmentResult,
+  AcraEnrichedComplianceField,
+} from './acra-enrichment';
+
 // Re-export diff function
 export {
   generateBizFileDiff,

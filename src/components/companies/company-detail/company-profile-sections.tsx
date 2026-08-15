@@ -40,6 +40,26 @@ function title(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function isoDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const candidate = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(candidate) ? candidate : null;
+}
+
+function acraSourceBadge(
+  company: CompanyWithRelations,
+  acraField: 'annualReturnDate' | 'accountDueDate',
+) {
+  const record = company.acraRecord;
+  if (!record?.dataAsOf) return null;
+  const acraValue = isoDate(record[acraField]);
+  if (!acraValue) return null;
+  const stored = acraField === 'annualReturnDate' ? company.lastArFiledDate : company.accountsDueDate;
+  const storedValue = isoDate(stored ? new Date(stored).toISOString() : null);
+  if (storedValue !== acraValue) return null;
+  return <span className="badge badge-neutral">ACRA {day(record.dataAsOf.slice(0, 10))}</span>;
+}
+
 function Section({ title: heading, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
   return <CompanyAccentSection title={heading} actions={actions}>{children}</CompanyAccentSection>;
 }
@@ -55,7 +75,7 @@ function FieldLabel({ children }: { children: ReactNode }) {
   return <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-text-secondary">{children}</p>;
 }
 
-export function CompanyProfileSections({ company, companyId }: { company: CompanyWithRelations; companyId: string }) {
+export function CompanyProfileSections({ company, companyId, onRetrieveAcra, isRetrievingAcra }: { company: CompanyWithRelations; companyId: string; onRetrieveAcra?: () => void; isRetrievingAcra?: boolean }) {
   const [showCeased, setShowCeased] = useState(false);
   const [showFormer, setShowFormer] = useState(false);
   const [showDischarged, setShowDischarged] = useState(false);
@@ -91,7 +111,7 @@ export function CompanyProfileSections({ company, companyId }: { company: Compan
         <div className="divide-y divide-border-primary px-3">
           {officers.length ? officers.map((officer) => <div key={officer.id} className="flex items-center justify-between gap-3 py-3">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary"><span>{officer.name}</span><OfficerRoleBadge role={officer.role} /></div>
+              <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">{officer.contactId ? <Link href={`/contacts/${officer.contactId}`} className="text-oak-primary hover:underline">{officer.name}</Link> : <span>{officer.name}</span>}<OfficerRoleBadge role={officer.role} /></div>
               <p className="mt-1 text-xs text-text-secondary">{officer.appointmentDate ? `Appointed ${day(officer.appointmentDate)}` : 'Appointment date unavailable'}{officer.nationality ? ` · ${officer.nationality}` : ''}{officer.cessationDate ? ` · Ceased ${day(officer.cessationDate)}` : ''}</p>
             </div>
             {officer.isCurrent && !officer.cessationDate ? <ActiveBadge /> : null}
@@ -112,7 +132,7 @@ export function CompanyProfileSections({ company, companyId }: { company: Compan
             const ownership = shareholder.percentageHeld == null ? null : Number(shareholder.percentageHeld);
             return <div key={shareholder.id} className="py-3">
               <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
-                <span>{shareholder.name}{ownership == null ? '' : ` (${ownership.toLocaleString('en-SG')}% ownership)`}</span>
+                <span>{shareholder.contactId ? <Link href={`/contacts/${shareholder.contactId}`} className="text-oak-primary hover:underline">{shareholder.name}</Link> : shareholder.name}{ownership == null ? '' : ` (${ownership.toLocaleString('en-SG')}% ownership)`}</span>
                 <ShareholderTypeBadge type={shareholder.shareholderType ?? 'INDIVIDUAL'} />
                 {shareholder.isNominee ? <span className="badge badge-neutral">Nominee</span> : null}
               </div>
@@ -140,12 +160,21 @@ export function CompanyProfileSections({ company, companyId }: { company: Compan
     </div>
 
     <aside className="space-y-3">
-      <Section title="Compliance">
+      <Section title="Compliance" actions={onRetrieveAcra ? (
+        <button
+          type="button"
+          onClick={onRetrieveAcra}
+          disabled={isRetrievingAcra}
+          className="rounded border border-white/50 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isRetrievingAcra ? 'Retrieving…' : 'Retrieve ACRA'}
+        </button>
+      ) : undefined}>
         <div className="grid grid-cols-2 gap-4 p-3 text-sm">
           <div><FieldLabel>Financial year end</FieldLabel><p>{company.financialYearEndDay && company.financialYearEndMonth ? `${company.financialYearEndDay} ${new Date(2000, company.financialYearEndMonth - 1).toLocaleString('en-SG', { month: 'long' })}` : '-'}</p></div>
           <div><FieldLabel>Home currency</FieldLabel><p>{company.homeCurrency ?? '-'}</p></div>
-          <div><FieldLabel>Last annual return</FieldLabel><p>{day(company.lastArFiledDate)}</p></div>
-          <div><FieldLabel>Accounts due</FieldLabel><p>{day(company.accountsDueDate)}</p></div>
+          <div><FieldLabel>Last annual return</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.lastArFiledDate)}{acraSourceBadge(company, 'annualReturnDate')}</p></div>
+          <div><FieldLabel>Accounts due</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.accountsDueDate)}{acraSourceBadge(company, 'accountDueDate')}</p></div>
           <div><FieldLabel>Last AGM</FieldLabel><p>{day(company.lastAgmDate)}</p></div>
           <div><FieldLabel>FYE as at last AR</FieldLabel><p>{day(company.fyeAsAtLastAr)}</p></div>
         </div>

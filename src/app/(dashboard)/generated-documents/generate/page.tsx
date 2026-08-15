@@ -134,7 +134,7 @@ function sessionToEditableItem(
 function WorkspaceSkeleton() {
   return (
     <div
-      className="mx-auto w-full max-w-[1800px] animate-pulse p-3 sm:p-5"
+      className="mx-auto w-full max-w-[2200px] animate-pulse p-3 sm:p-5"
       role="status"
       aria-label="Loading document generation workspace"
     >

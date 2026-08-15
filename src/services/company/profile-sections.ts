@@ -282,9 +282,10 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         identificationType: officer.identificationType, identificationNumber: officer.identificationNumber,
         nationality: officer.nationality, address: officer.address,
         appointmentDate: dateOrNull(officer.appointmentDate), cessationDate: dateOrNull(officer.cessationDate),
-        isCurrent: officer.isCurrent ?? !officer.cessationDate,
+        // An officer is active as long as there is no cessation date.
+        isCurrent: !officer.cessationDate,
       } });
-      await tx.company.update({ where: { id: companyId }, data: { currentOfficerCount: data.officers.filter((item: any) => item.isCurrent ?? !item.cessationDate).length } });
+      await tx.company.update({ where: { id: companyId }, data: { currentOfficerCount: data.officers.filter((item: any) => !item.cessationDate).length } });
       break;
     case 'shareholders':
       await tx.companyShareholder.deleteMany({ where: { companyId } });

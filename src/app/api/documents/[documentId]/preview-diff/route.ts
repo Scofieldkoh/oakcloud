@@ -7,7 +7,8 @@ import { AI_MODELS, calculateUsageCost, formatCost } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 import { MISTRAL_OCR_MODEL_ID, MISTRAL_OCR_MODEL_NAME } from '@/lib/ocr/mistral';
 import { storage } from '@/lib/storage';
-import { retrieveFYEFromACRA, isCompanyEntityType } from '@/lib/external/acra-fye';
+import { retrieveFYEFromACRA } from '@/lib/external/acra-records';
+import { isCompanyEntityType } from '@/lib/external/acra-fye';
 import logger from '@/lib/logger';
 
 // Supported MIME types for vision extraction
@@ -124,18 +125,17 @@ export async function POST(
         }
       );
 
-      // If FYE not extracted and entity type is a company, try to retrieve from ACRA
+      // If FYE not extracted and entity type is a company, try to retrieve from ACRA records
       const extractedEntityType = mapEntityType(extractionResult.data.entityDetails?.entityType);
       const hasFYE = extractionResult.data.financialYear?.endDay && extractionResult.data.financialYear?.endMonth;
 
       if (!hasFYE && isCompanyEntityType(extractedEntityType)) {
-        const companyName = extractionResult.data.entityDetails?.name;
         const uen = extractionResult.data.entityDetails?.uen;
 
-        if (companyName && uen) {
+        if (uen) {
           try {
-            logger.info('FYE not in BizFile, attempting ACRA retrieval', { companyName, uen, entityType: extractedEntityType });
-            const fyeResult = await retrieveFYEFromACRA(companyName, uen, extractedEntityType);
+            logger.info('FYE not in BizFile, attempting ACRA records retrieval', { uen, entityType: extractedEntityType });
+            const fyeResult = await retrieveFYEFromACRA(uen, extractedEntityType);
 
             if (fyeResult) {
               // Add FYE to extracted data
@@ -144,11 +144,11 @@ export async function POST(
                 endDay: fyeResult.day,
                 endMonth: fyeResult.month,
               };
-              logger.info('FYE retrieved from ACRA and added to extraction', { fyeResult });
+              logger.info('FYE retrieved from ACRA records and added to extraction', { fyeResult });
             }
           } catch (fyeError) {
             // Log but don't fail the extraction if FYE retrieval fails
-            logger.warn('Failed to retrieve FYE from ACRA, continuing without it', { error: fyeError });
+            logger.warn('Failed to retrieve FYE from ACRA records, continuing without it', { error: fyeError });
           }
         }
       }

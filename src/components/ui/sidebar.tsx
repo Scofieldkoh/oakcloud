@@ -31,6 +31,7 @@ import {
   Mail,
   ClipboardList,
   PenSquare,
+  Database,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -77,6 +78,7 @@ const secondaryNavigation: NavItem[] = [
 const ungroupedAdminItems: NavItem[] = [
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
+  { name: 'ACRA Records', href: '/admin/acra-data', icon: Database, adminOnly: true },
 ];
 
 // Grouped admin items

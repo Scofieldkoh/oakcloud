@@ -1,25 +1,37 @@
 /**
- * GoBusiness eAdviser Company Name Availability Check
+ * ACRA Company Name Availability Check (via the local acra_entity table)
  *
- * Checks whether a proposed Singapore company name appears to be available
- * for incorporation by querying the public GoBusiness eAdviser "Start a
- * Business" name search. The endpoint returns similar ACRA-registered
- * business names (accurate as of 23:59 the previous day).
+ * Checks whether a proposed Singapore company name appears to be available for
+ * incorporation by searching the locally mirrored ACRA "Information on
+ * Corporate Entities" data (the `acra_entity` table kept current by the daily
+ * ACRA sync task).
+ *
+ * The check is DB-only: there is no live data.gov.sg fallback. While the local
+ * table is empty (before the first sync/bootstrap completes) the check throws
+ * `CompanyNameCheckUnavailableError`.
+ *
+ * Because the source data is refreshed monthly rather than in real time, every
+ * result carries a `dataAsOf` timestamp (the collection's last-updated time)
+ * so callers can show how fresh the data used for the check is.
  *
  * Usage:
  *   const result = await checkCompanyNameAvailability('Acme Holdings');
- *   // result = { available: boolean, checkedAt: ISO string, records: [...] }
+ *   // result = { available: boolean, checkedAt: ISO string, dataAsOf: ISO string | null, records: [...] }
  */
 
+import { Prisma } from '@/generated/prisma';
 import logger from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
+import { getAcraSyncState } from '@/services/acra-sync.service';
 
-const GOBIZ_EADVISER_API_BASE_URL =
-  process.env.GOBIZ_EADVISER_API_BASE_URL || 'https://api.eadviser.gobusiness.gov.sg';
-
-const SEARCH_PATH = '/api/ipos/search';
-const REQUEST_TIMEOUT_MS = 15_000;
-const MAX_RETRY_ATTEMPTS = 1; // Total attempts = 1 initial + 1 retry
 const MAX_RECORDS = 10;
+const DB_QUERY_LIMIT = 500;
+
+// Company-type suffix tokens that are not distinctive when comparing names.
+const COMPANY_SUFFIX_WORDS = new Set([
+  'pte', 'ltd', 'limited', 'llp', 'llc', 'inc', 'corp', 'corporation',
+  'sdn', 'bhd', 'berhad', 'plc', 'gmbh', 'ptd',
+]);
 
 export const COMPANY_NAME_MAX_LENGTH = 300;
 export const COMPANY_NAME_RECORD_COUNT_CAP = MAX_RECORDS;
@@ -33,6 +45,8 @@ export interface CompanyNameCheckRecord {
 export interface CompanyNameCheckResult {
   available: boolean;
   checkedAt: string;
+  /** Last-updated time of the ACRA collection the check was run against. */
+  dataAsOf: string | null;
   records: CompanyNameCheckRecord[];
 }
 
@@ -43,57 +57,27 @@ export class CompanyNameCheckUnavailableError extends Error {
   }
 }
 
-interface GobizBusinessNameRecord {
-  uen?: unknown;
-  entityName?: unknown;
-  entityStatus?: unknown;
-}
-
-interface GobizIposResponse {
-  data?: {
-    businessNameService?: {
-      status?: unknown;
-      records?: GobizBusinessNameRecord[];
-    };
-  };
-  hasError?: unknown;
-}
-
 export function normalizeCompanyName(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
 
-function normalizeRecord(record: GobizBusinessNameRecord): CompanyNameCheckRecord | null {
-  if (!record || typeof record !== 'object') return null;
-
-  const uen = typeof record.uen === 'string' ? record.uen.trim().slice(0, 32) : '';
-  const entityName = typeof record.entityName === 'string' ? record.entityName.trim().slice(0, 500) : '';
-  const entityStatus = typeof record.entityStatus === 'string' ? record.entityStatus.trim().slice(0, 200) : '';
-
-  if (!uen && !entityName) return null;
-
-  return { uen, entityName, entityStatus };
+function extractWords(value: string): string[] {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
 }
 
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
+function getSignificantWords(words: string[]): string[] {
+  return words.filter((word) => word.length >= 3 && !COMPANY_SUFFIX_WORDS.has(word));
+}
+
+function wordsMatch(entityWords: string[], significantWords: string[]): boolean {
+  return significantWords.every((word) => entityWords.includes(word));
 }
 
 /**
  * Check whether a proposed company name appears to be available for
- * incorporation. Returns the similar ACRA records returned by GoBusiness
- * plus an `available` flag (true when no similar names are found).
+ * incorporation. Searches the local ACRA entity table and returns similar
+ * registered business names together with the collection's last-updated time
+ * (`dataAsOf`), since the data is refreshed monthly.
  */
 export async function checkCompanyNameAvailability(
   name: string
@@ -108,70 +92,80 @@ export async function checkCompanyNameAvailability(
     throw new Error(`Company name must be at most ${COMPANY_NAME_MAX_LENGTH} characters`);
   }
 
-  const url = new URL(SEARCH_PATH, GOBIZ_EADVISER_API_BASE_URL);
-  url.searchParams.set('search-term', normalizedName);
+  const queryWords = extractWords(normalizedName);
+  const significantWords = getSignificantWords(queryWords);
+
+  let syncState: { collectionLastUpdatedAt: string | null; entityCount: number } | null = null;
+  try {
+    syncState = await getAcraSyncState();
+  } catch (error) {
+    logger.warn('Reading the ACRA sync state failed', { error });
+  }
+
+  if (!syncState || syncState.entityCount <= 0) {
+    throw new CompanyNameCheckUnavailableError(
+      'Company name check is temporarily unavailable'
+    );
+  }
 
   logger.info('Checking company name availability', { name: normalizedName });
 
-  for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt += 1) {
-    try {
-      const response = await fetchWithTimeout(url.toString(), REQUEST_TIMEOUT_MS);
-
-      if (!response.ok) {
-        const isLastAttempt = attempt >= MAX_RETRY_ATTEMPTS;
-        logger.warn('GoBusiness name check returned non-OK status', {
-          status: response.status,
-          attempt: attempt + 1,
-        });
-        if (!isLastAttempt) continue;
-        throw new CompanyNameCheckUnavailableError(
-          `GoBusiness name check returned ${response.status}`
-        );
+  // Significant words are >= 3 characters, which the pg_trgm GIN index can
+  // accelerate. When none exist, fall back to a single substring condition.
+  const where: Prisma.AcraEntityWhereInput = significantWords.length > 0
+    ? {
+        AND: significantWords.map((word) => ({
+          entityName: { contains: word, mode: 'insensitive' },
+        })),
       }
-
-      const data = (await response.json()) as GobizIposResponse;
-      const businessNameService = data?.data?.businessNameService;
-
-      if (data?.hasError === true || !businessNameService) {
-        throw new CompanyNameCheckUnavailableError('GoBusiness name check returned an invalid response');
-      }
-
-      const records = (businessNameService.records || [])
-        .map(normalizeRecord)
-        .filter((record): record is CompanyNameCheckRecord => !!record)
-        .slice(0, MAX_RECORDS);
-
-      logger.info('Company name availability check completed', {
-        name: normalizedName,
-        recordCount: records.length,
-      });
-
-      return {
-        available: records.length === 0,
-        checkedAt: new Date().toISOString(),
-        records,
+    : {
+        entityName: { contains: normalizedName.toLowerCase(), mode: 'insensitive' },
       };
-    } catch (error) {
-      if (error instanceof CompanyNameCheckUnavailableError) {
-        throw error;
-      }
 
-      const isLastAttempt = attempt >= MAX_RETRY_ATTEMPTS;
-      logger.warn('GoBusiness name check request failed', {
-        error,
-        attempt: attempt + 1,
-        isLastAttempt,
-      });
-
-      if (!isLastAttempt) continue;
-
-      throw new CompanyNameCheckUnavailableError(
-        'GoBusiness name check is temporarily unavailable'
-      );
-    }
+  let rawRecords: CompanyNameCheckRecord[];
+  try {
+    rawRecords = await prisma.acraEntity.findMany({
+      where,
+      select: { uen: true, entityName: true, entityStatus: true },
+      orderBy: { entityName: 'asc' },
+      take: DB_QUERY_LIMIT,
+    });
+  } catch (error) {
+    logger.warn('Local ACRA entity query failed', { error });
+    throw new CompanyNameCheckUnavailableError(
+      'Company name check is temporarily unavailable'
+    );
   }
 
-  throw new CompanyNameCheckUnavailableError(
-    'GoBusiness name check is temporarily unavailable'
-  );
+  const seen = new Set<string>();
+  const records: CompanyNameCheckRecord[] = [];
+
+  for (const record of rawRecords) {
+    const entityWords = extractWords(record.entityName);
+    const matches = significantWords.length === 0
+      ? record.entityName.toLowerCase().includes(normalizedName.toLowerCase())
+      : wordsMatch(entityWords, significantWords);
+
+    if (!matches) continue;
+
+    const dedupeKey = record.uen || record.entityName.toLowerCase();
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+
+    records.push(record);
+    if (records.length >= MAX_RECORDS) break;
+  }
+
+  logger.info('Company name availability check completed', {
+    name: normalizedName,
+    recordCount: records.length,
+    dataAsOf: syncState.collectionLastUpdatedAt,
+  });
+
+  return {
+    available: records.length === 0,
+    checkedAt: new Date().toISOString(),
+    dataAsOf: syncState.collectionLastUpdatedAt,
+    records,
+  };
 }

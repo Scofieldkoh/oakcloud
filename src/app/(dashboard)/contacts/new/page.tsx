@@ -15,8 +15,8 @@ import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { PurposeToggle } from '@/components/contacts/purpose-toggle';
-import { AsyncSearchSelect } from '@/components/ui/async-search-select';
-import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
+import { CompanySelect } from '@/components/ui/company-select';
+import type { CompanySearchOption } from '@/hooks/use-company-search';
 import { ContactMatchDialog } from '@/components/contacts/contact-match-dialog';
 import type { ContactMatchResult } from '@/types/contact-identity';
 
@@ -103,14 +103,7 @@ export default function NewContactPage() {
   const [companyContactDetails, setCompanyContactDetails] = useState<ContactDetailDraft>(
     createInitialContactDetailDraft
   );
-  const {
-    searchQuery: companySearchQuery,
-    setSearchQuery: setCompanySearchQuery,
-    options: companyOptions,
-    isLoading: isSearchingCompanies,
-    selectedCompany,
-    setSelectedCompany,
-  } = useCompanySearch();
+  const [selectedCompany, setSelectedCompany] = useState<CompanySearchOption | null>(null);
 
   const hasDefaultContactDetailChanges =
     Boolean(defaultContactDetails.email.value.trim()) ||
@@ -614,17 +607,10 @@ export default function NewContactPage() {
               </div>
               <div>
                 <label className="label">Company</label>
-                <AsyncSearchSelect<CompanySearchOption>
+                <CompanySelect
                   value={selectedCompany?.id ?? ''}
                   onChange={(_id, company) => setSelectedCompany(company)}
-                  options={companyOptions}
-                  isLoading={isSearchingCompanies}
-                  searchQuery={companySearchQuery}
-                  onSearchChange={setCompanySearchQuery}
                   placeholder="Search companies..."
-                  icon={<Building2 className="w-4 h-4" />}
-                  emptySearchText="Type to search companies"
-                  noResultsText="No companies found"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

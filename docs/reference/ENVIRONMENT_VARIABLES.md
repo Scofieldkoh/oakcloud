@@ -99,14 +99,26 @@ Notes:
 - In production, `FORM_RESPONSE_TOKEN_SECRET` (or a secure fallback secret) must be at least 32 characters.
 - Public form draft resume uses per-draft access tokens stored in the database and does not use these env vars.
 
-## GoBusiness Company Name Check
+## ACRA Company Name Check (data.gov.sg)
 
-The form builder's "Company name check" element queries the public GoBusiness
-eAdviser name search endpoint to find similar ACRA-registered business names.
+The form builder's "Company name check" element searches a locally maintained
+mirror of the data.gov.sg
+[ACRA Information on Corporate Entities](https://data.gov.sg/collections/2/view)
+collection to find similar ACRA-registered business names. The mirror (`acra_entity`
+table) is kept current by the daily ACRA entity sync task, which compares the
+collection's last-updated time against the stored value and re-imports all 27
+CSV datasets when they differ. The collection is refreshed monthly by ACRA, so
+check results note the collection's last-updated time ("Based on ACRA registry
+data as of ..."). The check is DB-only (no live API fallback) and reports
+itself unavailable until the first sync has populated the table.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GOBIZ_EADVISER_API_BASE_URL` | `https://api.eadviser.gobusiness.gov.sg` | Base URL of the GoBusiness eAdviser API used by the company name availability check |
+| `DATAGOV_METADATA_URL` | `https://api-production.data.gov.sg/v2/public/api/collections/2/metadata` | Metadata endpoint used to determine the collection's last-updated time ("data as of") |
+| `DATAGOV_API_KEY` | - | Optional data.gov.sg API key sent via the `x-api-key` header; raises the download rate limit used by the sync task |
+| `SCHEDULER_ACRA_SYNC_ENABLED` | `false` | Enables the daily ACRA entity sync task |
+| `SCHEDULER_ACRA_SYNC_CRON` | `0 3 * * *` | When the daily sync runs (default: 3 AM SGT) |
+| `ACRA_SYNC_SLEEP_MS` | - | Optional fixed request-spacing override in ms (e.g. `0` for faster one-off backfills via `scripts/run-acra-sync.ts`) |
 
 ## Storage
 

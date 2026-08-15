@@ -490,7 +490,9 @@ export const ModelName = {
   TaskStageChecklistItem: 'TaskStageChecklistItem',
   TaskStageOutcome: 'TaskStageOutcome',
   TaskEsigningPreparation: 'TaskEsigningPreparation',
-  TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext'
+  TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext',
+  AcraEntity: 'AcraEntity',
+  AcraSyncState: 'AcraSyncState'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -506,7 +508,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -8428,6 +8430,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AcraEntity: {
+      payload: Prisma.$AcraEntityPayload<ExtArgs>
+      fields: Prisma.AcraEntityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AcraEntityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AcraEntityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>
+        }
+        findFirst: {
+          args: Prisma.AcraEntityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AcraEntityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>
+        }
+        findMany: {
+          args: Prisma.AcraEntityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>[]
+        }
+        create: {
+          args: Prisma.AcraEntityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>
+        }
+        createMany: {
+          args: Prisma.AcraEntityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AcraEntityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>[]
+        }
+        delete: {
+          args: Prisma.AcraEntityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>
+        }
+        update: {
+          args: Prisma.AcraEntityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>
+        }
+        deleteMany: {
+          args: Prisma.AcraEntityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AcraEntityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AcraEntityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>[]
+        }
+        upsert: {
+          args: Prisma.AcraEntityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraEntityPayload>
+        }
+        aggregate: {
+          args: Prisma.AcraEntityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAcraEntity>
+        }
+        groupBy: {
+          args: Prisma.AcraEntityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AcraEntityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AcraEntityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AcraEntityCountAggregateOutputType> | number
+        }
+      }
+    }
+    AcraSyncState: {
+      payload: Prisma.$AcraSyncStatePayload<ExtArgs>
+      fields: Prisma.AcraSyncStateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AcraSyncStateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AcraSyncStateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>
+        }
+        findFirst: {
+          args: Prisma.AcraSyncStateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AcraSyncStateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>
+        }
+        findMany: {
+          args: Prisma.AcraSyncStateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>[]
+        }
+        create: {
+          args: Prisma.AcraSyncStateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>
+        }
+        createMany: {
+          args: Prisma.AcraSyncStateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AcraSyncStateCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>[]
+        }
+        delete: {
+          args: Prisma.AcraSyncStateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>
+        }
+        update: {
+          args: Prisma.AcraSyncStateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>
+        }
+        deleteMany: {
+          args: Prisma.AcraSyncStateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AcraSyncStateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AcraSyncStateUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>[]
+        }
+        upsert: {
+          args: Prisma.AcraSyncStateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcraSyncStatePayload>
+        }
+        aggregate: {
+          args: Prisma.AcraSyncStateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAcraSyncState>
+        }
+        groupBy: {
+          args: Prisma.AcraSyncStateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AcraSyncStateGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AcraSyncStateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AcraSyncStateCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -10579,6 +10729,51 @@ export const TaskCompanyRecoveryContextScalarFieldEnum = {
 export type TaskCompanyRecoveryContextScalarFieldEnum = (typeof TaskCompanyRecoveryContextScalarFieldEnum)[keyof typeof TaskCompanyRecoveryContextScalarFieldEnum]
 
 
+export const AcraEntityScalarFieldEnum = {
+  id: 'id',
+  uen: 'uen',
+  entityName: 'entityName',
+  entityStatus: 'entityStatus',
+  entityType: 'entityType',
+  companyTypeDescription: 'companyTypeDescription',
+  registrationIncorporateDate: 'registrationIncorporateDate',
+  block: 'block',
+  streetName: 'streetName',
+  levelNo: 'levelNo',
+  unitNo: 'unitNo',
+  buildingName: 'buildingName',
+  postalCode: 'postalCode',
+  address: 'address',
+  accountDueDate: 'accountDueDate',
+  annualReturnDate: 'annualReturnDate',
+  primarySsicCode: 'primarySsicCode',
+  primarySsicDescription: 'primarySsicDescription',
+  secondarySsicCode: 'secondarySsicCode',
+  secondarySsicDescription: 'secondarySsicDescription',
+  noOfOfficers: 'noOfOfficers',
+  formerEntityName1: 'formerEntityName1',
+  uenOfAuditFirm1: 'uenOfAuditFirm1',
+  dataAsOf: 'dataAsOf',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AcraEntityScalarFieldEnum = (typeof AcraEntityScalarFieldEnum)[keyof typeof AcraEntityScalarFieldEnum]
+
+
+export const AcraSyncStateScalarFieldEnum = {
+  id: 'id',
+  collectionLastUpdatedAt: 'collectionLastUpdatedAt',
+  entityCount: 'entityCount',
+  lastStartedAt: 'lastStartedAt',
+  lastCompletedAt: 'lastCompletedAt',
+  lastError: 'lastError',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AcraSyncStateScalarFieldEnum = (typeof AcraSyncStateScalarFieldEnum)[keyof typeof AcraSyncStateScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -12129,6 +12324,8 @@ export type GlobalOmitConfig = {
   taskStageOutcome?: Prisma.TaskStageOutcomeOmit
   taskEsigningPreparation?: Prisma.TaskEsigningPreparationOmit
   taskCompanyRecoveryContext?: Prisma.TaskCompanyRecoveryContextOmit
+  acraEntity?: Prisma.AcraEntityOmit
+  acraSyncState?: Prisma.AcraSyncStateOmit
 }
 
 /* Types for Logging */

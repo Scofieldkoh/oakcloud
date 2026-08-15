@@ -221,6 +221,51 @@ describe('BizFile Service', () => {
       expect(result.shareCapital?.[0].parValue).toBe(1);
     });
 
+    it('corrects the calculated par value and leaves the extracted total untouched', () => {
+      const result = normalizeExtractedData({
+        entityDetails: { uen: '202312345A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+        shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 150000, parValue: 1, totalValue: 1, isPaidUp: true }],
+      });
+
+      expect(result.shareCapital?.[0].totalValue).toBe(1);
+      expect(result.shareCapital?.[0].parValue).toBeCloseTo(1 / 150000, 10);
+      expect(result.shareCapital?.[0].reviewFlags).toHaveLength(1);
+      expect(result.shareCapital?.[0].reviewFlags?.[0]).toContain('par value corrected from SGD 1 to SGD 0.0000066667');
+      expect(result.shareCapital?.[0].reviewFlags?.[0]).not.toContain('total corrected');
+    });
+
+    it('leaves consistent share capital totals untouched', () => {
+      const result = normalizeExtractedData({
+        entityDetails: { uen: '202312345A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+        shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 150000, parValue: 1, totalValue: 150000, isPaidUp: true }],
+      });
+
+      expect(result.shareCapital?.[0].totalValue).toBe(150000);
+      expect(result.shareCapital?.[0].reviewFlags).toBeUndefined();
+    });
+
+    it('always derives par value strictly from the extracted total, ignoring the extracted per-share value', () => {
+      const result = normalizeExtractedData({
+        entityDetails: { uen: '202312345A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+        shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 50, parValue: 1, totalValue: 100, isPaidUp: true }],
+      });
+
+      expect(result.shareCapital?.[0].totalValue).toBe(100);
+      expect(result.shareCapital?.[0].parValue).toBe(2);
+      expect(result.shareCapital?.[0].reviewFlags).toHaveLength(1);
+      expect(result.shareCapital?.[0].reviewFlags?.[0]).toContain('par value corrected from SGD 1 to SGD 2');
+    });
+
+    it('does not derive totals for treasury share capital rows', () => {
+      const result = normalizeExtractedData({
+        entityDetails: { uen: '202312345A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+        shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 150000, parValue: 1, totalValue: 0, isPaidUp: false, isTreasury: true }],
+      });
+
+      expect(result.shareCapital?.[0].totalValue).toBe(0);
+      expect(result.shareCapital?.[0].reviewFlags).toBeUndefined();
+    });
+
     it('preserves short leading brand acronyms and normalizes legal suffix casing', () => {
       const result = normalizeExtractedData({
         entityDetails: { uen: '202312345A', name: 'DAP ATELIER PTE LTD', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },

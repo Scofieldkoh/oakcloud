@@ -133,97 +133,122 @@ export function useDocumentGenerationBatch(
     return item?.id ?? item?.key ?? itemId;
   }, []);
 
+  const persistInFlightRef = useRef<Promise<EditableDocumentGenerationBatch> | null>(null);
+
   const persist = useCallback(async (): Promise<EditableDocumentGenerationBatch> => {
-    const current = stateRef.current;
-    if (current.batch.items.length === 0) {
-      throw new Error('Select at least one template before saving');
+    if (persistInFlightRef.current) {
+      return persistInFlightRef.current;
     }
-    dispatch({ type: 'request/start', pending: 'save' });
-    let batchId = current.batch.id;
-    let revision = current.batch.revision;
-    let activeItemId = current.activeItemId;
-    let items = current.batch.items;
-    try {
-      if (!batchId) {
-        const created = await createDocumentGenerationBatch({
-          items: current.batch.items.map((item) => ({
-            templateId: item.templateId,
-          })),
-          ...(current.batch.legacyDraftId
-            ? { legacyDraftId: current.batch.legacyDraftId }
-            : {}),
-          ...(current.batch.taskContext !== undefined
-            ? { taskContext: current.batch.taskContext }
-            : {}),
-        });
-        batchId = created.id;
-        revision = created.revision;
-        activeItemId = created.activeItemId ?? null;
-        const serverItemByTemplate = new Map(
-          created.items.map((item) => [item.templateId, item]),
-        );
-        items = current.batch.items.map((item) => {
-          const server = serverItemByTemplate.get(item.templateId);
-          return server ? { ...item, id: server.id } : item;
-        });
+    const run = async (): Promise<EditableDocumentGenerationBatch> => {
+      const current = stateRef.current;
+      if (current.batch.items.length === 0) {
+        throw new Error('Select at least one template before saving');
       }
-      const updateInput = buildUpdateInput({
-        ...current,
-        activeItemId,
-        batch: { ...current.batch, id: batchId, revision, items },
-      });
-      const saved = await saveDocumentGenerationBatch(batchId, updateInput);
-      disarm();
-      return commit(saved);
-    } catch (error) {
-      if (
-        error instanceof DocumentGenerationBatchApiError
-        && error.status === 409
-        && error.details
-        && typeof error.details === 'object'
-        && 'currentRevision' in error.details
-      ) {
-        const currentRevision = Number(
-          (error.details as { currentRevision: unknown }).currentRevision,
-        );
-        if (batchId && !stateRef.current.batch.id) {
-          dispatch({
-            type: 'server/track-id',
-            id: batchId,
-            revision: revision ?? 0,
-            currentRevision,
+      dispatch({ type: 'request/start', pending: 'save' });
+      let batchId = current.batch.id;
+      let revision = current.batch.revision;
+      let activeItemId = current.activeItemId;
+      let items = current.batch.items;
+      try {
+        if (!batchId) {
+          const created = await createDocumentGenerationBatch({
+            items: current.batch.items.map((item) => ({
+              templateId: item.templateId,
+            })),
+            ...(current.batch.legacyDraftId
+              ? { legacyDraftId: current.batch.legacyDraftId }
+              : {}),
+            ...(current.batch.taskContext !== undefined
+              ? { taskContext: current.batch.taskContext }
+              : {}),
           });
-          stateRef.current = {
-            ...stateRef.current,
-            batch: { ...stateRef.current.batch, id: batchId, revision: revision ?? 0 },
-            conflict: { currentRevision },
-            dirty: true,
-            pending: null,
-          };
-        } else {
-          dispatch({ type: 'save/conflict', currentRevision });
+          batchId = created.id;
+          revision = created.revision;
+          activeItemId = created.activeItemId ?? null;
+          const serverItemByTemplate = new Map(
+            created.items.map((item) => [item.templateId, item]),
+          );
+          items = current.batch.items.map((item) => {
+            const server = serverItemByTemplate.get(item.templateId);
+            return server ? { ...item, id: server.id } : item;
+          });
         }
-      } else {
-        dispatch({ type: 'request/end' });
+        const updateInput = buildUpdateInput({
+          ...current,
+          activeItemId,
+          batch: { ...current.batch, id: batchId, revision, items },
+        });
+        const saved = await saveDocumentGenerationBatch(batchId, updateInput);
+        disarm();
+        return commit(saved);
+      } catch (error) {
+        if (
+          error instanceof DocumentGenerationBatchApiError
+          && error.status === 409
+          && error.details
+          && typeof error.details === 'object'
+          && 'currentRevision' in error.details
+        ) {
+          const currentRevision = Number(
+            (error.details as { currentRevision: unknown }).currentRevision,
+          );
+          if (batchId && !stateRef.current.batch.id) {
+            dispatch({
+              type: 'server/track-id',
+              id: batchId,
+              revision: revision ?? 0,
+              currentRevision,
+            });
+            stateRef.current = {
+              ...stateRef.current,
+              batch: { ...stateRef.current.batch, id: batchId, revision: revision ?? 0 },
+              conflict: { currentRevision },
+              dirty: true,
+              pending: null,
+            };
+          } else {
+            dispatch({ type: 'save/conflict', currentRevision });
+          }
+        } else {
+          dispatch({ type: 'request/end' });
+        }
+        throw error;
       }
-      throw error;
+    };
+    const promise = run();
+    persistInFlightRef.current = promise;
+    try {
+      return await promise;
+    } finally {
+      persistInFlightRef.current = null;
     }
   }, [commit, disarm]);
 
   const ensurePersisted = useCallback(async (): Promise<EditableDocumentGenerationBatch> => {
+    const stagesMatch = () => {
+      const current = stateRef.current;
+      const localStage = BATCH_STAGES.indexOf(current.stage);
+      const persistedStage = Math.min(current.batch.currentStage, BATCH_STAGES.length - 1);
+      return persistedStage === localStage;
+    };
     const current = stateRef.current;
-    if (current.batch.id && !current.dirty) {
+    if (current.batch.id && !current.dirty && stagesMatch()) {
       return current.batch;
     }
-    return persist();
+    await persist();
+    if (!stagesMatch()) {
+      await persist();
+    }
+    return stateRef.current.batch;
   }, [persist]);
 
   const saveDraft = useCallback(() => persist(), [persist]);
 
   const continueTo = useCallback(async (stage: BatchStage) => {
-    await persist();
     dispatch({ type: 'stage/navigate', stage });
-  }, [persist]);
+    stateRef.current = { ...stateRef.current, stage };
+    await ensurePersisted();
+  }, [ensurePersisted]);
 
   const previewItem = useCallback(async (
     itemId: string,

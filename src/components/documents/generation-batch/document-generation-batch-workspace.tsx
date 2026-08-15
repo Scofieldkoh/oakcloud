@@ -29,6 +29,7 @@ import type {
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import { useDocumentPartyOptions } from '@/hooks/use-document-party-options';
 import { useOptionSearch } from '@/hooks/use-option-search';
+import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 import {
   mapCompanyOption,
   mapContactOption,
@@ -65,11 +66,20 @@ export interface DocumentGenerationBatchWorkspaceProps {
   backHref?: string;
 }
 
-const COMPANY_ENDPOINT = '/api/companies/options';
 const CONTACT_ENDPOINT = '/api/contacts/options';
 
-const getCompanyId = (company: Company) => company.id;
 const getContactId = (contact: DocumentContact) => contact.id;
+
+function companySearchOptionToCompany(option: CompanySearchOption): Company {
+  return {
+    id: option.id,
+    name: option.name,
+    uen: option.uen ?? '',
+    status: '',
+    registeredAddress: null,
+    incorporationDate: null,
+  };
+}
 
 function formatClockTime(value: number | null): string | null {
   if (!value) return null;
@@ -82,7 +92,7 @@ function formatClockTime(value: number | null): string | null {
 export function DocumentGenerationBatchWorkspace({
   initialBatch = null,
   templates,
-  companies,
+  companies: _companies,
   contacts,
   backHref = '/generated-documents',
 }: DocumentGenerationBatchWorkspaceProps) {
@@ -132,13 +142,31 @@ export function DocumentGenerationBatchWorkspace({
     }];
   }, [state.batch.company]);
 
-  const companySearch = useOptionSearch<Company>({
-    endpoint: COMPANY_ENDPOINT,
-    mapOption: mapCompanyOption,
-    getId: getCompanyId,
-    seed: companies,
-    pinned: pinnedCompanies,
+  const companySearch = useCompanySearch({
+    minChars: 0,
+    limit: 50,
+    paginated: true,
+    pinned: pinnedCompanies.map((company) => ({
+      id: company.id,
+      name: company.name,
+      label: company.name,
+      description: company.uen || '',
+      uen: company.uen,
+    })),
   });
+
+  const companyOptions = useMemo<Company[]>(
+    () => companySearch.options.map(companySearchOptionToCompany),
+    [companySearch.options],
+  );
+
+  const knownCompaniesById = useMemo<Map<string, Company>>(() => {
+    const byId = new Map<string, Company>();
+    for (const option of companySearch.known.values()) {
+      byId.set(option.id, companySearchOptionToCompany(option));
+    }
+    return byId;
+  }, [companySearch.known]);
 
   const contactSearch = useOptionSearch<DocumentContact>({
     endpoint: CONTACT_ENDPOINT,
@@ -153,7 +181,7 @@ export function DocumentGenerationBatchWorkspace({
   const [resolvedCompany, setResolvedCompany] = useState<Company | null>(null);
   useEffect(() => {
     const id = state.batch.primaryCompanyId;
-    if (!id || companySearch.known.has(id)) return;
+    if (!id || knownCompaniesById.has(id)) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -166,21 +194,21 @@ export function DocumentGenerationBatchWorkspace({
       }
     })();
     return () => { cancelled = true; };
-  }, [state.batch.primaryCompanyId, companySearch.known]);
+  }, [state.batch.primaryCompanyId, knownCompaniesById]);
 
   const selectedCompany = useMemo<Company | null>(() => {
     const id = state.batch.primaryCompanyId;
     if (!id) return null;
-    return companySearch.known.get(id)
+    return knownCompaniesById.get(id)
       ?? (resolvedCompany?.id === id ? resolvedCompany : null);
-  }, [state.batch.primaryCompanyId, companySearch.known, resolvedCompany]);
+  }, [state.batch.primaryCompanyId, knownCompaniesById, resolvedCompany]);
 
   /** Companies referenced by Service Agreement entity pickers. */
   const knownCompanies = useMemo(() => {
-    const byId = new Map(companySearch.known);
+    const byId = new Map(knownCompaniesById);
     if (selectedCompany) byId.set(selectedCompany.id, selectedCompany);
     return [...byId.values()];
-  }, [companySearch.known, selectedCompany]);
+  }, [knownCompaniesById, selectedCompany]);
 
   const partyContacts = useMemo<DocumentContact[]>(
     () => partyOptions.contacts.map((party) => ({
@@ -455,7 +483,7 @@ export function DocumentGenerationBatchWorkspace({
   return (
     <div
       data-testid="document-generation-batch-workspace"
-      className="mx-auto flex w-full max-w-[1800px] flex-col p-3 sm:p-5"
+      className="mx-auto flex w-full max-w-[2200px] flex-col p-3 sm:p-5"
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-secondary pb-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -668,11 +696,11 @@ export function DocumentGenerationBatchWorkspace({
 
         {state.stage === 'shared-setup' && (
           <BatchSharedSetup
-            companyOptions={companySearch.options}
+            companyOptions={companyOptions}
             selectedCompany={selectedCompany}
             primaryCompanyId={state.batch.primaryCompanyId}
-            companyQuery={companySearch.query}
-            onCompanyQueryChange={companySearch.setQuery}
+            companyQuery={companySearch.searchQuery}
+            onCompanyQueryChange={companySearch.setSearchQuery}
             companyLoading={companySearch.isLoading}
             companyError={companySearch.error}
             masterFields={state.batch.masterFields}

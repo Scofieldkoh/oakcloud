@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     const query = (searchParams.get('q') || searchParams.get('query') || '').trim();
     const parsedLimit = Number(searchParams.get('limit') || DEFAULT_LIMIT);
     const limit = Math.max(1, Math.min(Number.isFinite(parsedLimit) ? parsedLimit : DEFAULT_LIMIT, MAX_LIMIT));
+    const parsedPage = Number(searchParams.get('page') || 0);
+    const page = Math.max(0, Number.isFinite(parsedPage) ? Math.floor(parsedPage) : 0);
 
     const effectiveTenantId = session.tenantId;
 
@@ -53,17 +55,23 @@ export async function GET(request: NextRequest) {
         homeCurrency: true,
       },
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
-      take: limit,
+      take: limit + 1,
+      skip: page * limit,
     });
 
+    const hasMore = companies.length > limit;
+    const pageCompanies = companies.slice(0, limit);
+
     return NextResponse.json({
-      options: companies.map((company) => ({
+      options: pageCompanies.map((company) => ({
         id: company.id,
         name: company.name,
         uen: company.uen,
         primarySsicDescription: company.primarySsicDescription,
         homeCurrency: company.homeCurrency,
       })),
+      hasMore,
+      page,
     });
   } catch (error) {
     if (error instanceof Error) {

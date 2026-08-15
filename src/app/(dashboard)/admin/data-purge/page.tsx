@@ -46,6 +46,14 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode; entityType: Pur
   { id: 'processingDocuments', label: 'Processing Docs', icon: <FileStack className="w-4 h-4" />, entityType: 'processingDocument' },
 ];
 
+const PURGE_ALL_ORDER: { entityType: PurgeableEntity; key: TabType }[] = [
+  { entityType: 'processingDocument', key: 'processingDocuments' },
+  { entityType: 'generatedDocument', key: 'generatedDocuments' },
+  { entityType: 'company', key: 'companies' },
+  { entityType: 'contact', key: 'contacts' },
+  { entityType: 'user', key: 'users' },
+];
+
 export default function DataPurgePage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
@@ -53,6 +61,7 @@ export default function DataPurgePage() {
   const [activeTab, setActiveTab] = useState<TabType>('users');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [purgeAllOpen, setPurgeAllOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
@@ -71,6 +80,9 @@ export default function DataPurgePage() {
 
   const currentEntityType = TABS.find((t) => t.id === activeTab)?.entityType || 'user';
   const allRecords = data?.records?.[activeTab] || [];
+  const totalSoftDeleted = data
+    ? data.stats.users + data.stats.companies + data.stats.contacts + data.stats.generatedDocuments + data.stats.processingDocuments
+    : 0;
 
   // Client-side pagination
   const totalRecords = allRecords.length;
@@ -138,6 +150,40 @@ export default function DataPurgePage() {
     }
   };
 
+  const handlePurgeAll = async (reason?: string) => {
+    if (!reason || !data) return;
+
+    setPurgeAllOpen(false);
+
+    let totalDeleted = 0;
+    let failedCount = 0;
+
+    for (const { entityType, key } of PURGE_ALL_ORDER) {
+      const ids = (data.records[key] || []).map((r) => r.id);
+      if (ids.length === 0) continue;
+
+      try {
+        const result = await purgeMutation.mutateAsync({
+          entityType,
+          entityIds: ids,
+          reason,
+        });
+        totalDeleted += result.deletedCount ?? 0;
+        failedCount += result.failedCount ?? 0;
+      } catch {
+        failedCount += 1;
+      }
+    }
+
+    await refetch();
+
+    if (failedCount > 0) {
+      showError(`Permanently deleted ${totalDeleted} record(s), but ${failedCount} record(s) failed.`);
+    } else {
+      success(`Permanently deleted ${totalDeleted} record(s)`);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -150,15 +196,26 @@ export default function DataPurgePage() {
             Permanently delete soft-deleted records. This action cannot be undone.
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          leftIcon={<RefreshCw className="w-4 h-4" />}
-          onClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<RefreshCw className="w-4 h-4" />}
+            onClick={() => refetch()}
+            isLoading={isLoading}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            leftIcon={<Trash2 className="w-4 h-4" />}
+            onClick={() => setPurgeAllOpen(true)}
+            disabled={totalSoftDeleted === 0}
+          >
+            Purge all
+          </Button>
+        </div>
       </div>
 
       {/* Warning Banner */}
@@ -616,6 +673,22 @@ export default function DataPurgePage() {
         requireReason
         reasonLabel="Reason for deletion"
         reasonPlaceholder="Enter the reason for permanently deleting these records..."
+        reasonMinLength={10}
+        isLoading={purgeMutation.isPending}
+      />
+
+      {/* Purge All Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={purgeAllOpen}
+        onClose={() => setPurgeAllOpen(false)}
+        onConfirm={handlePurgeAll}
+        title="Permanently Delete All Soft-Deleted Records?"
+        description={`This will permanently remove all ${totalSoftDeleted} soft-deleted record(s) across every category and their related data. This action cannot be undone.`}
+        confirmLabel="Permanently Delete All"
+        variant="danger"
+        requireReason
+        reasonLabel="Reason for deletion"
+        reasonPlaceholder="Enter the reason for permanently deleting all records..."
         reasonMinLength={10}
         isLoading={purgeMutation.isPending}
       />

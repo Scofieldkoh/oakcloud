@@ -302,6 +302,7 @@ export async function listDocumentGenerationBatches(
     },
     include: {
       primaryCompany: { select: { id: true, name: true, uen: true } },
+      createdBy: { select: { firstName: true, lastName: true } },
       items: {
         select: { status: true, generatedDocument: { select: { deletedAt: true } } },
       },
@@ -329,6 +330,10 @@ export async function listDocumentGenerationBatches(
       counts,
       status: batch.status,
       currentStage: batch.currentStage,
+      createdBy: {
+        firstName: batch.createdBy.firstName,
+        lastName: batch.createdBy.lastName,
+      },
       updatedAt: batch.updatedAt.toISOString(),
     };
   });

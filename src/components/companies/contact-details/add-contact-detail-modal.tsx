@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Building2, User, Loader2, Phone, Mail, Trash2 } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PurposeToggle } from '@/components/contacts/purpose-toggle';
-import { AsyncSearchSelect } from '@/components/ui/async-search-select';
-import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
+import { CompanySelect } from '@/components/ui/company-select';
+import type { CompanySearchOption } from '@/hooks/use-company-search';
 import type { DetailScope } from '@/components/ui/scope-toggle';
 import type { ContactDetailType } from '@/generated/prisma';
 import type { CreateContactDetailInput, ContactDetail } from '@/hooks/use-contact-details';
@@ -78,15 +78,8 @@ export function AddContactDetailModal({
   const isStandaloneMode = targetType === 'contact' && !companyId;
 
   // For standalone mode: company search state
-  const {
-    searchQuery: companySearchQuery,
-    setSearchQuery: setCompanySearchQuery,
-    options: companyOptions,
-    isLoading: isSearchingCompanies,
-    selectedCompany,
-    setSelectedCompany,
-    clearSelection: clearCompanySelection,
-  } = useCompanySearch({ excludeIds: linkedCompanyIds });
+  const [selectedCompany, setSelectedCompany] = useState<CompanySearchOption | null>(null);
+  const clearCompanySelection = useCallback(() => setSelectedCompany(null), []);
 
 
   // Show scope toggle when:
@@ -448,17 +441,11 @@ export function AddContactDetailModal({
             <>
               <div>
                 <label className="label">Company</label>
-                <AsyncSearchSelect<CompanySearchOption>
+                <CompanySelect
                   value={selectedCompany?.id ?? ''}
-                  onChange={(id, item) => setSelectedCompany(item)}
-                  options={companyOptions}
-                  isLoading={isSearchingCompanies}
-                  searchQuery={companySearchQuery}
-                  onSearchChange={setCompanySearchQuery}
+                  onChange={(_id, company) => setSelectedCompany(company)}
+                  excludeIds={linkedCompanyIds}
                   placeholder="Search companies..."
-                  icon={<Building2 className="w-4 h-4" />}
-                  emptySearchText="Type to search companies"
-                  noResultsText="No companies found"
                 />
               </div>
               <div className="border-t border-border-secondary" />

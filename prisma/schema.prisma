@@ -2844,6 +2844,49 @@ model TaskCompanyRecoveryContext {
   @@map("task_company_recovery_contexts")
 }
 
+model AcraEntity {
+  id                             String   @id @default(uuid())
+  uen                            String   @unique
+  entityName                     String   @map("entity_name")
+  entityStatus                   String   @map("entity_status")
+  entityType                     String   @map("entity_type")
+  companyTypeDescription         String?  @map("company_type_description")
+  registrationIncorporateDate    String?  @map("registration_incorporate_date")
+  block                          String?  @map("block")
+  streetName                     String?  @map("street_name")
+  levelNo                        String?  @map("level_no")
+  unitNo                         String?  @map("unit_no")
+  buildingName                   String?  @map("building_name")
+  postalCode                     String?  @map("postal_code")
+  address                        String?  @map("address")
+  accountDueDate                 String?  @map("account_due_date")
+  annualReturnDate               String?  @map("annual_return_date")
+  primarySsicCode                String?  @map("primary_ssic_code")
+  primarySsicDescription         String?  @map("primary_ssic_description")
+  secondarySsicCode              String?  @map("secondary_ssic_code")
+  secondarySsicDescription       String?  @map("secondary_ssic_description")
+  noOfOfficers                   String?  @map("no_of_officers")
+  formerEntityName1              String?  @map("former_entity_name1")
+  uenOfAuditFirm1                String?  @map("uen_of_audit_firm1")
+  dataAsOf                       String   @map("data_as_of")
+  createdAt                      DateTime @default(now()) @map("created_at")
+  updatedAt                      DateTime @updatedAt @map("updated_at")
+
+  @@map("acra_entity")
+}
+
+model AcraSyncState {
+  id                      String    @id @default("main")
+  collectionLastUpdatedAt String?   @map("collection_last_updated_at")
+  entityCount             Int       @default(0) @map("entity_count")
+  lastStartedAt           DateTime? @map("last_started_at")
+  lastCompletedAt         DateTime? @map("last_completed_at")
+  lastError               String?   @map("last_error")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  @@map("acra_sync_state")
+}
+
 enum TaskStatus {
   NOT_STARTED
   IN_PROGRESS

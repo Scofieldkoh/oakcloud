@@ -224,7 +224,7 @@ export function useCompanies(params: CompanySearchParams = {}) {
     queryFn: () => fetchCompanies(params),
     staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: true, // Refetch if stale (e.g. after a mutation invalidated the list)
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
@@ -259,9 +259,9 @@ export function useCompaniesPageBootstrap(
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    // A session-restored snapshot is stale by definition, so refresh it in the
-    // background. Warm in-memory caches keep the existing no-refetch behavior.
-    refetchOnMount: restoredFromSession ? true : false,
+    // Refetch stale data on mount (e.g. after a mutation invalidated the list),
+    // while still serving cached data instantly when it is fresh.
+    refetchOnMount: true,
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
     placeholderData: (previousData) => previousData,
@@ -397,6 +397,7 @@ export function useCreateCompany() {
     }) => createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['companies-page-bootstrap'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });
     },
   });
@@ -433,6 +434,7 @@ export function useUpdateCompany() {
       updateCompany(id, data, activeTenantId),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['companies-page-bootstrap'] });
       queryClient.invalidateQueries({ queryKey: ['company', id] });
     },
   });
@@ -470,6 +472,7 @@ export function useDeleteCompany() {
       deleteCompany(id, reason, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['companies-page-bootstrap'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });
     },
   });
@@ -500,6 +503,7 @@ export function useBulkDeleteCompanies() {
       bulkDeleteCompanies(ids, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['companies-page-bootstrap'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });
     },
   });
@@ -850,43 +854,47 @@ export function useCompanyBizFile(companyId: string) {
 }
 
 // ============================================================================
-// FYE Retrieval from ACRA
+// ACRA Records Retrieval
 // ============================================================================
 
-export interface FYERetrievalResult {
-  financialYearEndDay: number;
-  financialYearEndMonth: number;
+export interface AcraRetrievalResult {
+  financialYearEndDay: number | null;
+  financialYearEndMonth: number | null;
+  lastArFiledDate: string | null;
+  accountsDueDate: string | null;
+  dataAsOf: string | null;
 }
 
-async function retrieveFYE(companyId: string, tenantId?: string): Promise<FYERetrievalResult> {
+async function retrieveAcraRecords(companyId: string, tenantId?: string): Promise<AcraRetrievalResult> {
   const res = await fetch(withWorkspaceId(`/api/companies/${companyId}/retrieve-fye`, tenantId));
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to retrieve FYE from ACRA');
+    throw new Error(error.error || 'Failed to retrieve ACRA records');
   }
   return res.json();
 }
 
 /**
- * Hook to retrieve Financial Year End from ACRA data
+ * Hook to retrieve compliance data (FYE, annual return date, accounts due
+ * date) from the locally synced ACRA records.
  *
- * Fetches account_due_date from data.gov.sg and calculates FYE based on company type.
- *
- * @param companyId - Company ID to retrieve FYE for
+ * @param companyId - Company ID to retrieve ACRA records for
  * @returns Mutation object with mutate/mutateAsync functions
  *
  * @example
  * ```tsx
- * const retrieveFYE = useRetrieveFYE(companyId);
+ * const retrieveAcra = useRetrieveAcra(companyId);
  *
  * const handleRetrieve = async () => {
- *   const result = await retrieveFYE.mutateAsync();
+ *   const result = await retrieveAcra.mutateAsync();
  *   setValue('financialYearEndDay', result.financialYearEndDay);
  *   setValue('financialYearEndMonth', result.financialYearEndMonth);
+ *   setValue('lastArFiledDate', result.lastArFiledDate);
+ *   setValue('accountsDueDate', result.accountsDueDate);
  * };
  * ```
  */
-export function useRetrieveFYE(companyId: string) {
+export function useRetrieveAcra(companyId: string) {
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
@@ -894,6 +902,6 @@ export function useRetrieveFYE(companyId: string) {
   );
 
   return useMutation({
-    mutationFn: () => retrieveFYE(companyId, activeTenantId),
+    mutationFn: () => retrieveAcraRecords(companyId, activeTenantId),
   });
 }

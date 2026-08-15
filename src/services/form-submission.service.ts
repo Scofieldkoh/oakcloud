@@ -1413,11 +1413,14 @@ export function sanitizeSubmissionMetadata(
         }
       }
 
+      const dataAsOf = typeof parsed.dataAsOf === 'string' ? parsed.dataAsOf.trim().slice(0, 64) : '';
+
       sanitizedResults[fieldKey] = {
         name: resultName,
         available: parsed.available,
         checkedAt,
         records,
+        ...(dataAsOf ? { dataAsOf } : {}),
       };
     }
   }

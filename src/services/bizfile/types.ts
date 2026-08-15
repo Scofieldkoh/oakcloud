@@ -71,6 +71,8 @@ export interface ExtractedBizFileData {
     totalValue: number;
     isPaidUp: boolean;
     isTreasury?: boolean;
+    /** Review notes surfaced in the BizFile review UI (e.g., recalculated par values). */
+    reviewFlags?: string[];
   }>;
   treasuryShares?: {
     numberOfShares: number;

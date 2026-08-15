@@ -15,6 +15,10 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: () => ({ mutate: vi.fn() }),
 }));
 
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: () => <input aria-label="Filter by company" readOnly />,
+}));
+
 const baseDocument: GeneratedDocument = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   title: 'Board resolution draft',

@@ -30,7 +30,7 @@ type Props = {
   issues: BizFileReviewIssue[];
   matchPreviews?: Record<string, ContactMatchPreview | null>;
 };
-const UPPERCASE_OPTION_LABELS = new Set(["NRIC", "FIN", "UEN"]);
+const UPPERCASE_OPTION_LABELS = new Set(["NRIC", "FIN", "UEN", "CEO", "CFO"]);
 const optionLabel = (value: string) => UPPERCASE_OPTION_LABELS.has(value)
   ? value
   : value.split("_").map((word) => word.charAt(0) + word.slice(1).toLowerCase()).join(" ");
@@ -509,6 +509,11 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
               }
               error={issue(issues, `shareCapital.${i}.isTreasury`)}
             />
+            {item.reviewFlags?.length ? (
+              <div className="col-span-full rounded-md border border-status-warning/30 bg-status-warning/5 px-3 py-2 text-xs text-status-warning">
+                {item.reviewFlags.map((flag) => <p key={flag}>{flag}</p>)}
+              </div>
+            ) : null}
           </div>
         )}
       />

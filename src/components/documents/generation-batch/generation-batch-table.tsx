@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowDown,
   ArrowUp,
@@ -12,11 +13,14 @@ import {
   Layers,
   RotateCcw,
   Trash2,
+  User,
   X,
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import {
   MobileCard,
   CardDetailsGrid,
@@ -26,7 +30,7 @@ import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-pr
 import type { DocumentGenerationBatchListItem } from '@/types/document-generation-batch';
 
 type BatchStatus = DocumentGenerationBatchListItem['status'];
-type SortField = 'companyName' | 'itemCount' | 'status' | 'updatedAt';
+type SortField = 'companyName' | 'itemCount' | 'status' | 'createdByName' | 'updatedAt';
 type SortOrder = 'asc' | 'desc';
 
 const statusConfig: Record<BatchStatus, { color: string; label: string; icon: typeof Clock }> = {
@@ -35,13 +39,14 @@ const statusConfig: Record<BatchStatus, { color: string; label: string; icon: ty
   COMPLETED: { color: 'badge-success', label: 'Complete', icon: CheckCircle2 },
 };
 
-const COLUMN_IDS = ['company', 'documents', 'status', 'updated', 'actions'] as const;
+const COLUMN_IDS = ['company', 'documents', 'status', 'createdBy', 'updated', 'actions'] as const;
 type ColumnId = (typeof COLUMN_IDS)[number];
 
 const COLUMN_LABELS: Record<ColumnId, string> = {
   company: 'Company',
   documents: 'Documents',
   status: 'Status',
+  createdBy: 'Created By',
   updated: 'Updated',
   actions: 'Actions',
 };
@@ -50,6 +55,7 @@ const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, SortField>> = {
   company: 'companyName',
   documents: 'itemCount',
   status: 'status',
+  createdBy: 'createdByName',
   updated: 'updatedAt',
 };
 
@@ -66,6 +72,7 @@ const DEFAULT_COLUMN_WIDTHS: Record<ColumnId, number> = {
   company: 240,
   documents: 280,
   status: 140,
+  createdBy: 160,
   updated: 160,
   actions: 120,
 };
@@ -73,6 +80,7 @@ const MINIMUM_COLUMN_WIDTHS: Record<ColumnId, number> = {
   company: 160,
   documents: 180,
   status: 110,
+  createdBy: 120,
   updated: 120,
   actions: 90,
 };
@@ -92,10 +100,20 @@ function progressSummary(batch: DocumentGenerationBatchListItem): string {
   return `${counts.READY} of ${batch.itemCount} ready`;
 }
 
-export interface GenerationBatchTableProps {
-  batches: DocumentGenerationBatchListItem[];
-  onDiscard: (batchId: string) => void | Promise<void>;
-  isDiscarding?: boolean;
+function resumeBatchHref(batchId: string): string {
+  return `/generated-documents/generate?batch=${batchId}`;
+}
+
+function toLocalDateString(date?: Date): string | undefined {
+  if (!date) return undefined;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseLocalDate(value?: string): Date | undefined {
+  return value ? new Date(`${value}T00:00:00`) : undefined;
 }
 
 function InlineTextFilter({
@@ -105,7 +123,7 @@ function InlineTextFilter({
 }: {
   ariaLabel: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string | undefined) => void;
 }) {
   return (
     <div className="flex h-9 w-full items-center gap-2 rounded-lg border border-border-primary bg-background-secondary/30 transition-colors hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30">
@@ -113,7 +131,7 @@ function InlineTextFilter({
         type="text"
         aria-label={ariaLabel}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange(event.target.value || undefined)}
         placeholder="All"
         className="min-w-0 flex-1 bg-transparent px-3 text-xs text-text-primary outline-none placeholder:text-text-secondary"
       />
@@ -121,7 +139,7 @@ function InlineTextFilter({
         <button
           type="button"
           aria-label={`Clear ${ariaLabel.toLowerCase()}`}
-          onClick={() => onChange('')}
+          onClick={() => onChange(undefined)}
           className="mr-1 rounded p-0.5 transition-colors hover:bg-background-tertiary"
         >
           <X className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
@@ -129,6 +147,12 @@ function InlineTextFilter({
       ) : null}
     </div>
   );
+}
+
+export interface GenerationBatchTableProps {
+  batches: DocumentGenerationBatchListItem[];
+  onDiscard: (batchId: string) => void | Promise<void>;
+  isDiscarding?: boolean;
 }
 
 function SortHeader({
@@ -173,11 +197,15 @@ export function GenerationBatchTable({
   onDiscard,
   isDiscarding = false,
 }: GenerationBatchTableProps) {
-  const [companyQuery, setCompanyQuery] = useState('');
+  const [companyFilterId, setCompanyFilterId] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [createdByFilter, setCreatedByFilter] = useState('');
+  const [updatedFrom, setUpdatedFrom] = useState<string | undefined>(undefined);
+  const [updatedTo, setUpdatedTo] = useState<string | undefined>(undefined);
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [batchToDiscard, setBatchToDiscard] = useState<DocumentGenerationBatchListItem | null>(null);
+  const router = useRouter();
 
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
   const isResizingRef = useRef(false);
@@ -298,14 +326,37 @@ export function GenerationBatchTable({
     });
   }, []);
 
+  const handleRowClick = useCallback((
+    event: React.MouseEvent<HTMLTableRowElement>,
+    batch: DocumentGenerationBatchListItem,
+  ) => {
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
+
+    router.push(resumeBatchHref(batch.id));
+  }, [router]);
+
   const filtered = useMemo(() => {
-    const query = companyQuery.trim().toLowerCase();
     return batches.filter((batch) => {
-      if (query && !(batch.companyName ?? '').toLowerCase().includes(query)) return false;
+      if (companyFilterId && batch.primaryCompanyId !== companyFilterId) return false;
       if (statusFilter && batch.status !== statusFilter) return false;
+      if (createdByFilter) {
+        const query = createdByFilter.trim().toLowerCase();
+        const name = `${batch.createdBy.firstName} ${batch.createdBy.lastName}`.toLowerCase();
+        if (!name.includes(query)) return false;
+      }
+      if (updatedFrom || updatedTo) {
+        const updatedAt = new Date(batch.updatedAt).getTime();
+        if (updatedFrom && updatedAt < new Date(`${updatedFrom}T00:00:00.000`).getTime()) return false;
+        if (updatedTo && updatedAt > new Date(`${updatedTo}T23:59:59.999`).getTime()) return false;
+      }
       return true;
     });
-  }, [batches, companyQuery, statusFilter]);
+  }, [batches, companyFilterId, statusFilter, createdByFilter, updatedFrom, updatedTo]);
 
   const sorted = useMemo(() => {
     const result = [...filtered];
@@ -320,6 +371,11 @@ export function GenerationBatchTable({
           break;
         case 'status':
           cmp = a.status.localeCompare(b.status);
+          break;
+        case 'createdByName':
+          cmp = `${a.createdBy.firstName} ${a.createdBy.lastName}`.localeCompare(
+            `${b.createdBy.firstName} ${b.createdBy.lastName}`,
+          );
           break;
         case 'updatedAt':
         default:
@@ -361,8 +417,14 @@ export function GenerationBatchTable({
                 </span>
               }
               className={index % 2 === 1 ? 'bg-oak-row-alt' : undefined}
+              onCardClick={() => router.push(resumeBatchHref(batch.id))}
               details={
                 <CardDetailsGrid>
+                  <CardDetailItem
+                    label="Created By"
+                    value={`${batch.createdBy.firstName} ${batch.createdBy.lastName}`}
+                    icon={<User className="h-3 w-3" aria-hidden="true" />}
+                  />
                   <CardDetailItem
                     label="Updated"
                     value={formatDate(batch.updatedAt)}
@@ -373,7 +435,7 @@ export function GenerationBatchTable({
               actions={
                 <div className="flex items-center gap-1">
                   <Link
-                    href={`/generated-documents/generate?batch=${batch.id}`}
+                    href={resumeBatchHref(batch.id)}
                     className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded p-2 text-text-tertiary transition-colors hover:bg-background-elevated hover:text-text-primary"
                     aria-label={`Resume ${batch.companyName ?? 'batch'} (${batch.itemCount} documents)`}
                   >
@@ -414,10 +476,11 @@ export function GenerationBatchTable({
               {COLUMN_IDS.map((columnId) => (
                 <th key={columnId} className="max-w-0">
                   {columnId === 'company' ? (
-                    <InlineTextFilter
-                      ariaLabel="Filter batches by company"
-                      value={companyQuery}
-                      onChange={setCompanyQuery}
+                    <CompanySelect
+                      value={companyFilterId}
+                      onChange={(companyId) => setCompanyFilterId(companyId || '')}
+                      placeholder="All companies"
+                      className="text-xs"
                     />
                   ) : columnId === 'status' ? (
                     <SearchableSelect
@@ -429,6 +492,35 @@ export function GenerationBatchTable({
                       className="text-xs"
                       showChevron={false}
                       showKeyboardHints={false}
+                    />
+                  ) : columnId === 'createdBy' ? (
+                    <InlineTextFilter
+                      ariaLabel="Filter batches by creator"
+                      value={createdByFilter}
+                      onChange={(value) => setCreatedByFilter(value ?? '')}
+                    />
+                  ) : columnId === 'updated' ? (
+                    <DatePicker
+                      value={
+                        updatedFrom || updatedTo
+                          ? {
+                              mode: 'range' as const,
+                              range: {
+                                from: parseLocalDate(updatedFrom),
+                                to: parseLocalDate(updatedTo),
+                              },
+                            }
+                          : undefined
+                      }
+                      onChange={(value: DatePickerValue | undefined) => {
+                        const range = value?.mode === 'range' ? value.range : undefined;
+                        setUpdatedFrom(toLocalDateString(range?.from));
+                        setUpdatedTo(toLocalDateString(range?.to));
+                      }}
+                      placeholder="All dates"
+                      size="sm"
+                      defaultTab="range"
+                      className="text-xs"
                     />
                   ) : null}
                 </th>
@@ -482,8 +574,9 @@ export function GenerationBatchTable({
               return (
                 <tr
                   key={batch.id}
+                  onClick={(event) => handleRowClick(event, batch)}
                   className={cn(
-                    'border-b border-border-primary transition-colors',
+                    'border-b border-border-primary transition-colors cursor-pointer',
                     index % 2 === 1
                       ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
                       : 'hover:bg-background-tertiary/50',
@@ -509,11 +602,19 @@ export function GenerationBatchTable({
                       {status.label}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-2">
+                      <User className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
+                      <span className="truncate text-text-primary">
+                        {batch.createdBy.firstName} {batch.createdBy.lastName}
+                      </span>
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-text-secondary">{formatDate(batch.updatedAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Link
-                        href={`/generated-documents/generate?batch=${batch.id}`}
+                        href={resumeBatchHref(batch.id)}
                         className="rounded p-1.5 text-text-tertiary transition-colors hover:bg-background-elevated hover:text-text-primary"
                         aria-label={`Resume ${batch.companyName ?? 'batch'} (${batch.itemCount} documents)`}
                       >

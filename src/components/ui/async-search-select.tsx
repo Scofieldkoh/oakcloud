@@ -2,13 +2,22 @@
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Loader2, Check, X } from 'lucide-react';
+import { Search, Loader2, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface AsyncSearchSelectOption {
   id: string;
   label: string;
   description?: string;
+}
+
+export interface AsyncSearchSelectPagination {
+  /** Current page index (0-based). */
+  page: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
 }
 
 export interface AsyncSearchSelectProps<T extends AsyncSearchSelectOption> {
@@ -38,10 +47,16 @@ export interface AsyncSearchSelectProps<T extends AsyncSearchSelectOption> {
   renderOption?: (item: T, isHighlighted: boolean, isSelected: boolean) => ReactNode;
   /** Icon to show in search input and options */
   icon?: ReactNode;
+  /** Whether to render the magnifying-glass icon in the search input */
+  showSearchIcon?: boolean;
+  /** Additional classes for the search input text (font size/colour) */
+  inputClassName?: string;
   /** Text to show when there's no search query */
   emptySearchText?: string;
   /** Text to show when search returns no results */
   noResultsText?: string;
+  /** Optional server-side pagination controls for the results list. */
+  pagination?: AsyncSearchSelectPagination;
 }
 
 export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
@@ -58,8 +73,11 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   renderSelected,
   renderOption,
   icon,
+  showSearchIcon = true,
+  inputClassName = 'text-sm text-text-primary placeholder:text-text-muted',
   emptySearchText = 'Type to search',
   noResultsText = 'No results found',
+  pagination,
 }: AsyncSearchSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -271,7 +289,9 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
         ) : (
           // Show search input
           <>
-            <Search className="w-4 h-4 text-text-muted ml-3 shrink-0" />
+            {showSearchIcon && (
+              <Search className="w-4 h-4 text-text-muted ml-3 shrink-0" />
+            )}
             <input
               ref={inputRef}
               type="text"
@@ -284,7 +304,11 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="flex-1 bg-transparent outline-none text-sm text-text-primary placeholder:text-text-muted min-w-0 pr-3"
+              className={cn(
+                'flex-1 bg-transparent outline-none min-w-0',
+                showSearchIcon ? 'pr-3' : 'px-3',
+                inputClassName,
+              )}
             />
           </>
         )}
@@ -342,6 +366,33 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
                 ))
               )}
             </div>
+
+            {/* Pagination controls */}
+            {pagination && (
+              <div className="flex items-center justify-between border-t border-border-primary px-1.5 py-1">
+                <button
+                  type="button"
+                  onClick={pagination.onPreviousPage}
+                  disabled={!pagination.hasPreviousPage || isLoading}
+                  className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                  Previous
+                </button>
+                <span className="text-xs text-text-muted">
+                  Page {pagination.page + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={pagination.onNextPage}
+                  disabled={!pagination.hasNextPage || isLoading}
+                  className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            )}
 
             {/* Footer hint */}
             <div className="px-3 py-2 bg-background-secondary border-t border-border-primary rounded-b-xl">

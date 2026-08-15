@@ -130,6 +130,7 @@ export interface DocumentGenerationBatchListItem {
   counts: Record<BatchItemStatus, number>;
   status: BatchStatus;
   currentStage: number;
+  createdBy: { firstName: string; lastName: string };
   updatedAt: string;
 }
 

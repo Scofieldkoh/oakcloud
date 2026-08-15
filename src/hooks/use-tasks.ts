@@ -135,6 +135,7 @@ export function useTasks(params: TaskListParams = {}) {
     queryFn: () => apiRequest<TaskListResponse>(taskListUrl(params)),
     placeholderData: (previous) => previous,
     staleTime: 60 * 1000,
+    refetchOnMount: true,
   });
 }
 

@@ -22,8 +22,8 @@ This guide documents the current keyboard shortcut standard used across Companie
 |------|-----------|
 | `/companies` | `Ctrl+R` refresh, `F1` add company, `F2` upload BizFile, `Ctrl+K` focus search |
 | `/companies/new` | `Ctrl+Backspace` cancel, `Ctrl+S` create, `F2` open BizFile upload |
-| `/companies/[id]` | `Ctrl+Backspace` back, `Ctrl+R` refresh, `F1` add company, `F2` update via BizFile, `Ctrl+E` edit |
-| `/companies/[id]/edit` | `Ctrl+Backspace` cancel, `Ctrl+S` save, `F1` add company, `F2` update via BizFile, `F3` retrieve FYE (when available) |
+| `/companies/[id]` | `Ctrl+Backspace` back, `Ctrl+R` refresh, `F1` add company, `F2` update via BizFile, `F3` retrieve ACRA (when available), `Ctrl+E` edit |
+| `/companies/[id]/edit` | `Ctrl+Backspace` cancel, `Ctrl+S` save, `F1` add company, `F2` update via BizFile |
 | `/companies/[id]/audit` | `Ctrl+Backspace` back, `Ctrl+R` refresh, `F1` add company, `F2` update via BizFile |
 | `/companies/upload` | `Ctrl+Backspace` cancel/back, `F1` create company, `Ctrl+S` confirm/apply update on preview steps |
 

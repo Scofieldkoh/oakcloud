@@ -7,14 +7,18 @@ const rolePalette: Record<string, string> = {
   CFO: 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950 dark:text-cyan-200',
 };
 
-function titleCase(value: string): string {
+const ABBREVIATIONS = new Set(['CEO', 'CFO', 'COO', 'CTO', 'CIO', 'CMO']);
+
+function roleLabel(value: string): string {
+  const upper = value.trim().toUpperCase();
+  if (ABBREVIATIONS.has(upper)) return upper;
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 const base = 'inline-flex min-h-5 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none';
 
 export function OfficerRoleBadge({ role }: { role: string }) {
-  return <span className={`${base} ${rolePalette[role] ?? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'}`}>{titleCase(role)}</span>;
+  return <span className={`${base} ${rolePalette[role] ?? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'}`}>{roleLabel(role)}</span>;
 }
 
 export function ShareholderTypeBadge({ type }: { type: string }) {

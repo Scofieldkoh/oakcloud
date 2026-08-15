@@ -139,6 +139,7 @@ const DEFAULT_UI_LABELS = {
   name_check_not_available: 'Similar names found — please enter an available company name.',
   name_check_available: 'No similar names found — the name appears to be available for incorporation.',
   name_check_similar_found: 'Similar names found — final availability is determined by ACRA at application time.',
+  name_check_data_as_of: 'Based on ACRA registry data as of {date}.',
   name_check_unavailable: 'Availability check temporarily unavailable. Please try again.',
   validation_required: '{field} is required',
   validation_email: '{field} must be a valid email',
@@ -205,6 +206,7 @@ type NameCheckResult = {
   name: string;
   available: boolean;
   checkedAt: string;
+  dataAsOf: string | null;
   records: NameCheckRecord[];
 };
 
@@ -1210,8 +1212,15 @@ function parseNameCheckResult(value: unknown): NameCheckResult | null {
     name: raw.name.slice(0, 300),
     available: raw.available === true,
     checkedAt: raw.checkedAt.slice(0, 64),
+    dataAsOf: typeof raw.dataAsOf === 'string' ? raw.dataAsOf.slice(0, 64) : null,
     records,
   };
+}
+
+function formatDataAsOf(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function parseNameCheckResults(value: unknown): Record<string, NameCheckResult> {
@@ -2519,16 +2528,23 @@ export default function PublicFormPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });
-      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || uiLabel('name_check_unavailable'));
+      let data: { error?: string; available?: boolean; checkedAt?: string; dataAsOf?: string; records?: unknown[] } | null = null;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(uiLabel('name_check_unavailable'));
+      }
+
+      if (!response.ok || !data) {
+        throw new Error(data?.error || uiLabel('name_check_unavailable'));
       }
 
       const result: NameCheckResult = {
         name,
         available: data.available === true,
         checkedAt: typeof data.checkedAt === 'string' ? data.checkedAt : new Date().toISOString(),
+        dataAsOf: typeof data.dataAsOf === 'string' ? data.dataAsOf : null,
         records: Array.isArray(data.records)
           ? (data.records as unknown[])
             .slice(0, 10)
@@ -4109,6 +4125,11 @@ export default function PublicFormPage() {
                         </li>
                       ))}
                     </ul>
+                  )}
+                  {nameCheckResult.dataAsOf && (
+                    <p className="mt-1.5 text-xs opacity-80">
+                      {uiLabel('name_check_data_as_of', { date: formatDataAsOf(nameCheckResult.dataAsOf) })}
+                    </p>
                   )}
                 </div>
               )}

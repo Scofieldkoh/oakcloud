@@ -36,7 +36,7 @@ vi.mock('@/hooks/use-companies', () => ({
   useCompany: () => ({ data: null, isLoading: false, error: new Error('missing'), refetch: vi.fn(), isFetching: false }),
   useCompanyBizFile: () => ({ data: null }),
   useDeleteCompany: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useRetrieveFYE: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRetrieveAcra: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateCompany: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 

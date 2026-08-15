@@ -22,6 +22,17 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
 
+vi.mock('@/hooks/use-company-search', () => ({
+  useCompanySearch: () => ({
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    options: [],
+    isLoading: false,
+    known: new Map(),
+    error: null,
+  }),
+}));
+
 import GenerateDocumentPage from '@/app/(dashboard)/generated-documents/generate/page';
 
 const legacyDocumentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';

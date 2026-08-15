@@ -171,13 +171,34 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
   }
 
   if (normalized.shareCapital) {
-    normalized.shareCapital = normalized.shareCapital.map((capital) => ({
-      ...capital,
-      currency: normalizeCurrency(capital.currency) || 'SGD',
-      parValue: capital.parValue ?? (capital.numberOfShares > 0
-        ? capital.totalValue / capital.numberOfShares
-        : undefined),
-    }));
+    normalized.shareCapital = normalized.shareCapital.map((capital) => {
+      const entry: NonNullable<ExtractedBizFileData['shareCapital']>[number] = {
+        ...capital,
+        currency: normalizeCurrency(capital.currency) || 'SGD',
+      };
+      // The extracted total is the authoritative value from the document and is
+      // never recalculated. Par value is strictly calculated as
+      // totalValue / numberOfShares; the extracted per-share value is ignored.
+      // Treasury rows carry a total of 0, so no par value applies to them.
+      const extractedParValue = capital.parValue;
+      const derivedParValue =
+        !entry.isTreasury && entry.numberOfShares > 0 && entry.totalValue > 0
+          ? entry.totalValue / entry.numberOfShares
+          : undefined;
+      entry.parValue = derivedParValue;
+      if (
+        !entry.isTreasury
+        && extractedParValue != null
+        && derivedParValue != null
+        && Math.abs(extractedParValue - derivedParValue) > 1e-9 * Math.max(1, Math.abs(derivedParValue))
+      ) {
+        entry.reviewFlags = [
+          ...(capital.reviewFlags ?? []),
+          `Share capital par value corrected from ${entry.currency} ${extractedParValue} to ${entry.currency} ${Number(derivedParValue.toFixed(10))} (recalculated as ${entry.currency} ${entry.totalValue} total / ${entry.numberOfShares} shares). Please verify against the document.`,
+        ];
+      }
+      return entry;
+    });
   }
 
   if (normalized.treasuryShares) {

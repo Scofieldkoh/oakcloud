@@ -5,6 +5,25 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
 
+const companyOption = {
+  id: 'company-1',
+  name: 'Acme Pte. Ltd.',
+  label: 'Acme Pte. Ltd.',
+  description: '202600001A',
+  uen: '202600001A',
+};
+
+vi.mock('@/hooks/use-company-search', () => ({
+  useCompanySearch: () => ({
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    options: [companyOption],
+    isLoading: false,
+    known: new Map([[companyOption.id, companyOption]]),
+    error: null,
+  }),
+}));
+
 const apiMock = vi.hoisted(() => ({
   createDocumentGenerationBatch: vi.fn(),
   saveDocumentGenerationBatch: vi.fn(),
@@ -232,6 +251,50 @@ describe('DocumentGenerationBatchWorkspace', () => {
         expect.any(AbortSignal),
       );
     });
+    unmount();
+  });
+
+  it('stays on Review & generate after refreshing a preview', async () => {
+    const configureBatch = batch(
+      [{
+        key: 'item-a',
+        templateId: 'template-a',
+        templateName: 'Engagement Letter',
+        kind: 'STANDARD',
+        status: 'PREVIEWED',
+      }],
+      { currentStage: 2, activeItemId: 'item-a' },
+    );
+    configureBatch.items[0].previewContent = '<p>content</p>';
+    configureBatch.items[0].previewFingerprint = 'fp';
+    apiMock.saveDocumentGenerationBatch.mockResolvedValue({
+      ...configureBatch,
+      currentStage: 3,
+      revision: 2,
+    });
+    apiMock.previewDocumentGenerationBatchItem.mockResolvedValue({
+      ...configureBatch,
+      currentStage: 3,
+      revision: 3,
+    });
+    const { unmount } = render(
+      <DocumentGenerationBatchWorkspace {...props({ initialBatch: configureBatch })} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /review & generate/i }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /refresh preview/i })).not.toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /refresh preview/i }));
+
+    await waitFor(() => {
+      expect(apiMock.previewDocumentGenerationBatchItem).toHaveBeenCalled();
+    });
+    expect(apiMock.saveDocumentGenerationBatch).toHaveBeenCalledWith(
+      'batch-1',
+      expect.objectContaining({ currentStage: 3 }),
+    );
+    expect(screen.queryByRole('button', { name: /refresh preview/i })).not.toBeNull();
     unmount();
   });
 });

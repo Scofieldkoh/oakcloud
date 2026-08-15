@@ -25,7 +25,6 @@ import {
   CheckSquare,
   MinusSquare,
   X,
-  Building2,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import {
@@ -43,12 +42,11 @@ import { ProcessingFilters, type ProcessingFilterValues } from '@/components/pro
 import { ProcessingToolbar } from '@/components/processing/processing-toolbar';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { AsyncSearchSelect } from '@/components/ui/async-search-select';
+import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { Pagination } from '@/components/ui/pagination';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { useCompanySearch } from '@/hooks/use-company-search';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
@@ -801,13 +799,6 @@ export default function ProcessingDocumentsPage() {
     true // enabled
   );
   const pendingApprovalCount = pendingNavData?.total ?? 0;
-
-  const {
-    searchQuery: inlineCompanySearchQuery,
-    setSearchQuery: setInlineCompanySearchQuery,
-    options: inlineCompanyOptions,
-    isLoading: inlineCompaniesLoading,
-  } = useCompanySearch({ limit: 20 });
 
   // Fetch tags for filter dropdown (uses effectiveCompanyId if available, otherwise just tenant tags)
   const { data: tagsData } = useAvailableTags(effectiveCompanyId, activeTenantId);
@@ -2055,17 +2046,10 @@ export default function ProcessingDocumentsPage() {
                           )}
                         </div>
                       ) : columnId === 'company' ? (
-                        <AsyncSearchSelect
+                        <CompanySelect
                           value={params.companyId || ''}
-                          onChange={(value) => handleFiltersChange({ companyId: value || undefined })}
-                          options={inlineCompanyOptions}
-                          isLoading={inlineCompaniesLoading}
-                          searchQuery={inlineCompanySearchQuery}
-                          onSearchChange={setInlineCompanySearchQuery}
+                          onChange={(companyId) => handleFiltersChange({ companyId: companyId || undefined })}
                           placeholder="All"
-                          emptySearchText="Type to search companies"
-                          noResultsText="No companies found"
-                          icon={<Building2 className="w-4 h-4" />}
                           className="text-xs"
                         />
                       ) : columnId === 'pipeline' ? (

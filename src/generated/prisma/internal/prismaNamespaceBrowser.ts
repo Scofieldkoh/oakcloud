@@ -157,7 +157,9 @@ export const ModelName = {
   TaskStageChecklistItem: 'TaskStageChecklistItem',
   TaskStageOutcome: 'TaskStageOutcome',
   TaskEsigningPreparation: 'TaskEsigningPreparation',
-  TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext'
+  TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext',
+  AcraEntity: 'AcraEntity',
+  AcraSyncState: 'AcraSyncState'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -2286,6 +2288,51 @@ export const TaskCompanyRecoveryContextScalarFieldEnum = {
 } as const
 
 export type TaskCompanyRecoveryContextScalarFieldEnum = (typeof TaskCompanyRecoveryContextScalarFieldEnum)[keyof typeof TaskCompanyRecoveryContextScalarFieldEnum]
+
+
+export const AcraEntityScalarFieldEnum = {
+  id: 'id',
+  uen: 'uen',
+  entityName: 'entityName',
+  entityStatus: 'entityStatus',
+  entityType: 'entityType',
+  companyTypeDescription: 'companyTypeDescription',
+  registrationIncorporateDate: 'registrationIncorporateDate',
+  block: 'block',
+  streetName: 'streetName',
+  levelNo: 'levelNo',
+  unitNo: 'unitNo',
+  buildingName: 'buildingName',
+  postalCode: 'postalCode',
+  address: 'address',
+  accountDueDate: 'accountDueDate',
+  annualReturnDate: 'annualReturnDate',
+  primarySsicCode: 'primarySsicCode',
+  primarySsicDescription: 'primarySsicDescription',
+  secondarySsicCode: 'secondarySsicCode',
+  secondarySsicDescription: 'secondarySsicDescription',
+  noOfOfficers: 'noOfOfficers',
+  formerEntityName1: 'formerEntityName1',
+  uenOfAuditFirm1: 'uenOfAuditFirm1',
+  dataAsOf: 'dataAsOf',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AcraEntityScalarFieldEnum = (typeof AcraEntityScalarFieldEnum)[keyof typeof AcraEntityScalarFieldEnum]
+
+
+export const AcraSyncStateScalarFieldEnum = {
+  id: 'id',
+  collectionLastUpdatedAt: 'collectionLastUpdatedAt',
+  entityCount: 'entityCount',
+  lastStartedAt: 'lastStartedAt',
+  lastCompletedAt: 'lastCompletedAt',
+  lastError: 'lastError',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AcraSyncStateScalarFieldEnum = (typeof AcraSyncStateScalarFieldEnum)[keyof typeof AcraSyncStateScalarFieldEnum]
 
 
 export const SortOrder = {

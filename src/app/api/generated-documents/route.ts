@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       companyId: searchParams.get('companyId') || undefined,
       companyName: searchParams.get('companyName') || undefined,
       templateId: searchParams.get('templateId') || undefined,
+      templateName: searchParams.get('templateName') || undefined,
       createdBy: searchParams.get('createdBy') || undefined,
       updatedFrom: searchParams.get('updatedFrom') || undefined,
       updatedTo: searchParams.get('updatedTo') || undefined,

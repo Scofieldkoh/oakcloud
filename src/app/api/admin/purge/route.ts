@@ -384,6 +384,59 @@ export async function POST(request: NextRequest) {
                 where: { companyId: company.id },
               });
 
+              // Delete service agreements where this company is the primary company
+              const ownedAgreementIds = (
+                await tx.serviceAgreement.findMany({
+                  where: { primaryCompanyId: company.id },
+                  select: { id: true },
+                })
+              ).map((a) => a.id);
+
+              const ownedItemIds = ownedAgreementIds.length
+                ? (
+                    await tx.serviceAgreementItem.findMany({
+                      where: { agreementId: { in: ownedAgreementIds } },
+                      select: { id: true },
+                    })
+                  ).map((i) => i.id)
+                : [];
+
+              // Delete client services referencing this company or its agreements
+              const clientServiceIds = (
+                await tx.clientService.findMany({
+                  where: {
+                    OR: [
+                      { companyId: company.id },
+                      ...(ownedAgreementIds.length ? [{ agreementId: { in: ownedAgreementIds } }] : []),
+                      ...(ownedItemIds.length ? [{ agreementItemId: { in: ownedItemIds } }] : []),
+                    ],
+                  },
+                  select: { id: true },
+                })
+              ).map((c) => c.id);
+
+              await tx.clientServiceFeeLine.deleteMany({
+                where: { clientServiceId: { in: clientServiceIds } },
+              });
+              await tx.clientService.deleteMany({
+                where: { id: { in: clientServiceIds } },
+              });
+
+              // Delete service agreement entities referencing this company
+              await tx.serviceAgreementEntity.deleteMany({
+                where: { companyId: company.id },
+              });
+
+              // Delete service agreements where this company is the primary company
+              await tx.serviceAgreement.deleteMany({
+                where: { id: { in: ownedAgreementIds } },
+              });
+
+              // Delete document generation batches referencing this company
+              await tx.documentGenerationBatch.deleteMany({
+                where: { primaryCompanyId: company.id },
+              });
+
               // Delete the company
               await tx.company.delete({
                 where: { id: company.id },

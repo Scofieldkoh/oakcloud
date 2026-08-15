@@ -4,11 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { parseIdParams } from '@/lib/validations/params';
-import {
-  retrieveFYEFromACRA,
-  isCompanyEntityType,
-  ACRARateLimitError,
-} from '@/lib/external/acra-fye';
+import { retrieveAcraCompliance } from '@/lib/external/acra-records';
 
 export async function GET(
   request: NextRequest,
@@ -35,11 +31,8 @@ export async function GET(
       where: { id, tenantId },
       select: {
         id: true,
-        name: true,
         uen: true,
         entityType: true,
-        financialYearEndDay: true,
-        financialYearEndMonth: true,
       },
     });
 
@@ -47,47 +40,24 @@ export async function GET(
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    // Validate entity type is a company structure
-    if (!isCompanyEntityType(company.entityType)) {
-      return NextResponse.json(
-        { error: 'FYE retrieval is only available for company entity types' },
-        { status: 400 }
-      );
-    }
+    // Retrieve compliance data from the local ACRA records
+    const compliance = await retrieveAcraCompliance(company.uen, company.entityType);
 
-    // Retrieve FYE from ACRA
-    const fye = await retrieveFYEFromACRA(
-      company.name,
-      company.uen,
-      company.entityType
-    );
-
-    if (!fye) {
+    if (!compliance) {
       return NextResponse.json(
-        { error: 'Could not retrieve FYE data from ACRA. Company may not have filed annual returns yet.' },
+        { error: 'Could not retrieve ACRA records for this company.' },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
-      financialYearEndDay: fye.day,
-      financialYearEndMonth: fye.month,
+      financialYearEndDay: compliance.financialYearEndDay,
+      financialYearEndMonth: compliance.financialYearEndMonth,
+      lastArFiledDate: compliance.annualReturnDate,
+      accountsDueDate: compliance.accountDueDate,
+      dataAsOf: compliance.dataAsOf,
     });
   } catch (error) {
-    if (error instanceof ACRARateLimitError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 429,
-          headers: error.retryAfterSeconds
-            ? { 'Retry-After': String(error.retryAfterSeconds) }
-            : undefined,
-        }
-      );
-    }
-
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

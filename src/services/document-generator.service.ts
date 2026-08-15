@@ -1208,6 +1208,70 @@ export async function deleteGeneratedDocument(
 }
 
 // ============================================================================
+// Bulk Delete Documents (Soft Delete)
+// ============================================================================
+
+export interface BulkDeleteGeneratedDocumentsResult {
+  deleted: number;
+  failed: Array<{ id: string; error: string }>;
+}
+
+export async function bulkDeleteGeneratedDocuments(
+  ids: string[],
+  params: TenantAwareParams,
+  reason: string
+): Promise<BulkDeleteGeneratedDocumentsResult> {
+  const { tenantId, userId } = params;
+
+  const documents = await prisma.generatedDocument.findMany({
+    where: { id: { in: ids }, tenantId },
+    select: { id: true, title: true, companyId: true, deletedAt: true },
+  });
+
+  const failed: Array<{ id: string; error: string }> = [];
+  let deleted = 0;
+
+  for (const id of ids) {
+    const document = documents.find((candidate) => candidate.id === id);
+    if (!document) {
+      failed.push({ id, error: 'Document not found' });
+      continue;
+    }
+    if (document.deletedAt) {
+      failed.push({ id, error: 'Document is already deleted' });
+      continue;
+    }
+
+    await prisma.generatedDocument.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    await createAuditLog({
+      tenantId,
+      userId,
+      companyId: document.companyId ?? undefined,
+      action: 'DELETE',
+      entityType: 'GeneratedDocument',
+      entityId: document.id,
+      entityName: document.title,
+      summary: `Deleted document "${document.title}"`,
+      changeSource: 'MANUAL',
+      reason,
+    });
+    await safelyReconcileGeneratedDocumentTaskOutcomes(
+      tenantId,
+      document.id,
+      userId,
+    );
+
+    deleted += 1;
+  }
+
+  return { deleted, failed };
+}
+
+// ============================================================================
 // Clone Document
 // ============================================================================
 
@@ -1425,6 +1489,13 @@ export async function searchGeneratedDocuments(
 
   if (params.templateId) {
     where.templateId = params.templateId;
+  }
+
+  // Template name filter (free text, works even when the template was deleted)
+  if (params.templateName) {
+    where.template = {
+      name: { contains: params.templateName.trim(), mode: 'insensitive' },
+    };
   }
 
   if (params.status) {

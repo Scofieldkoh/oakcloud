@@ -22,6 +22,7 @@ import { buildA4PrintCss } from '@/components/documents/a4-print-styles';
 export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
+import archiver from 'archiver';
 
 // ============================================================================
 // Types
@@ -246,6 +247,65 @@ async function countPDFPages(buffer: Buffer): Promise<number> {
   const pdfString = buffer.toString('binary');
   const matches = pdfString.match(/\/Type\s*\/Page[^s]/g);
   return matches ? matches.length : 1;
+}
+
+// ============================================================================
+// Bulk ZIP Export
+// ============================================================================
+
+export interface ExportZipResult {
+  buffer: Buffer;
+  filename: string;
+}
+
+/**
+ * Export multiple documents to a single ZIP archive of PDFs.
+ */
+export async function exportDocumentsToZip(
+  ids: string[],
+  params: { tenantId: string; userId?: string }
+): Promise<ExportZipResult> {
+  const { tenantId, userId } = params;
+
+  const documents = await prisma.generatedDocument.findMany({
+    where: { id: { in: ids }, tenantId, deletedAt: null },
+    select: { id: true },
+  });
+  const foundIds = new Set(documents.map((document) => document.id));
+
+  const archive = archiver('zip', { zlib: { level: 5 } });
+  const chunks: Buffer[] = [];
+  archive.on('data', (chunk: Buffer) => chunks.push(chunk));
+  const finalized = new Promise<Buffer>((resolve, reject) => {
+    archive.on('end', () => resolve(Buffer.concat(chunks)));
+    archive.on('error', reject);
+  });
+
+  const usedFilenames = new Map<string, number>();
+
+  for (const id of ids) {
+    if (!foundIds.has(id)) continue;
+
+    const result = await exportToPDF({ documentId: id, tenantId, userId });
+
+    let fileName = result.filename;
+    const count = usedFilenames.get(result.filename) ?? 0;
+    if (count > 0) {
+      const extensionIndex = result.filename.lastIndexOf('.');
+      fileName = extensionIndex > 0
+        ? `${result.filename.slice(0, extensionIndex)} (${count})${result.filename.slice(extensionIndex)}`
+        : `${result.filename} (${count})`;
+    }
+    usedFilenames.set(result.filename, count + 1);
+
+    archive.append(result.buffer, { name: fileName });
+  }
+
+  await archive.finalize();
+  const buffer = await finalized;
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  return { buffer, filename: `documents-${dateStr}.zip` };
 }
 
 // ============================================================================

@@ -100,6 +100,13 @@ export interface CompanyWithRelations extends Company {
   };
   /** Whether any linked contact is marked as Point of Contact */
   hasPoc: boolean;
+  /** ACRA registry record (from the local data.gov.sg sync) for the company UEN. */
+  acraRecord?: {
+    /** Data-as-of timestamp of the synced ACRA collection. */
+    dataAsOf: string;
+    accountDueDate: string | null;
+    annualReturnDate: string | null;
+  } | null;
 }
 
 // Re-export shared type for backwards compatibility
@@ -344,6 +351,12 @@ export async function updateCompany(
     updateData.financialYearEndMonth = data.financialYearEndMonth;
   if (data.fyeAsAtLastAr !== undefined)
     updateData.fyeAsAtLastAr = data.fyeAsAtLastAr ? new Date(data.fyeAsAtLastAr) : null;
+  if (data.lastAgmDate !== undefined)
+    updateData.lastAgmDate = data.lastAgmDate ? new Date(data.lastAgmDate) : null;
+  if (data.lastArFiledDate !== undefined)
+    updateData.lastArFiledDate = data.lastArFiledDate ? new Date(data.lastArFiledDate) : null;
+  if (data.accountsDueDate !== undefined)
+    updateData.accountsDueDate = data.accountsDueDate ? new Date(data.accountsDueDate) : null;
   if (data.homeCurrency !== undefined) updateData.homeCurrency = data.homeCurrency;
   if (data.paidUpCapitalCurrency !== undefined)
     updateData.paidUpCapitalCurrency = data.paidUpCapitalCurrency;
@@ -725,7 +738,7 @@ export async function getCompanyById(
     where.deletedAt = null;
   }
 
-  return prisma.company.findFirst({
+  const company = await prisma.company.findFirst({
     where,
     include: {
       addresses: {
@@ -830,6 +843,30 @@ export async function getCompanyById(
       },
     },
   });
+
+  if (!company) return null;
+  return attachAcraRecord(company);
+}
+
+/**
+ * Attach the locally synced ACRA registry record for the company UEN.
+ * Failures (e.g., the acra_entity table not being provisioned yet) never
+ * block company retrieval.
+ */
+async function attachAcraRecord<T extends { uen: string }>(
+  company: T,
+): Promise<T & { acraRecord?: CompanyWithRelations['acraRecord'] }> {
+  if (!company.uen) return company;
+  try {
+    const acra = await prisma.acraEntity.findFirst({
+      where: { uen: { equals: company.uen, mode: 'insensitive' } },
+      select: { dataAsOf: true, accountDueDate: true, annualReturnDate: true },
+    });
+    if (!acra) return company;
+    return { ...company, acraRecord: acra };
+  } catch {
+    return company;
+  }
 }
 
 export async function getCompanyByUen(
@@ -1239,7 +1276,7 @@ export async function getCompanyFullDetails(
 
   // Combine results into the expected shape
   // OPTIMIZED: Compute counts from already-fetched arrays instead of separate query
-  return {
+  return attachAcraRecord({
     ...company,
     formerNames,
     addresses,
@@ -1256,7 +1293,7 @@ export async function getCompanyFullDetails(
       charges: charges.length,
       auditLogs: 0, // Audit logs rarely needed on detail page, fetch separately if needed
     },
-  } as CompanyWithRelations;
+  } as CompanyWithRelations);
 }
 
 // ============================================================================

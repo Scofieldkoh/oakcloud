@@ -552,3 +552,13 @@ export type TaskEsigningPreparation = Prisma.TaskEsigningPreparationModel
  *
  */
 export type TaskCompanyRecoveryContext = Prisma.TaskCompanyRecoveryContextModel
+/**
+ * Model AcraEntity
+ *
+ */
+export type AcraEntity = Prisma.AcraEntityModel
+/**
+ * Model AcraSyncState
+ *
+ */
+export type AcraSyncState = Prisma.AcraSyncStateModel

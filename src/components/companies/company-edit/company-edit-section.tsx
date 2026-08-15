@@ -5,6 +5,7 @@ import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { Toggle } from '@/components/ui/toggle';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
@@ -24,7 +25,7 @@ const objectDefaults: Record<string, Record<string, unknown>> = {
 };
 
 const arrayDefaults: Record<string, Record<string, unknown>> = {
-  officers: { name: '', role: 'DIRECTOR', identificationType: null, identificationNumber: '', nationality: '', address: '', appointmentDate: null, cessationDate: null, isCurrent: true },
+  officers: { name: '', role: 'DIRECTOR', identificationType: null, identificationNumber: '', nationality: '', address: '', appointmentDate: null, cessationDate: null },
   shareholders: { name: '', shareholderType: 'INDIVIDUAL', isNominee: false, identificationType: null, identificationNumber: '', nationality: '', placeOfOrigin: '', address: '', shareClass: 'ORDINARY', numberOfShares: 0, percentageHeld: null, currency: 'SGD', isCurrent: true },
   shareCapital: { shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 0, parValue: null, totalValue: 0, isPaidUp: true, isTreasury: false },
   charges: { chargeNumber: '', chargeType: '', description: '', chargeHolderName: '', amountSecured: null, amountSecuredText: '', currency: 'SGD', registrationDate: null, dischargeDate: null, isFullyDischarged: false },
@@ -61,7 +62,8 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
     </div>;
   }
   if (value && typeof value === 'object') {
-    return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:col-span-2">{Object.entries(value as Record<string, unknown>).filter(([child]) => child !== 'id').map(([child, childValue]) => <CompanyProfileValueEditor key={child} value={childValue} path={[...path, child]} onChange={(next) => onChange({ ...(value as Record<string, unknown>), [child]: next })} />)}</div>;
+    const isOfficerRecord = path[0] === 'officers';
+    return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:col-span-2">{Object.entries(value as Record<string, unknown>).filter(([child]) => child !== 'id' && !(isOfficerRecord && child === 'isCurrent')).map(([child, childValue]) => <CompanyProfileValueEditor key={child} value={childValue} path={[...path, child]} onChange={(next) => onChange({ ...(value as Record<string, unknown>), [child]: next })} />)}</div>;
   }
   if (value === null && objectDefaults[key]) {
     return <div><p className="label">{label}</p><Button variant="secondary" size="xs" onClick={() => onChange({ ...objectDefaults[key] })}>Add {words(key)}</Button></div>;
@@ -82,7 +84,10 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
       />
     </div>;
   }
-  return <label className="block text-sm"><span className="label">{label}</span><input aria-label={label} className="input input-sm w-full" type={numeric ? 'number' : isDateField(key) ? 'date' : 'text'} step={numeric ? 'any' : undefined} value={value == null ? '' : String(value)} onChange={(event) => onChange(numeric ? (event.target.value === '' ? null : Number(event.target.value)) : (event.target.value || (isDateField(key) ? null : '')))} /></label>;
+  if (isDateField(key)) {
+    return <SingleDateInput label={label} value={value == null ? '' : String(value)} onChange={(next) => onChange(next || null)} />;
+  }
+  return <label className="block text-sm"><span className="label">{label}</span><input aria-label={label} className="input input-sm w-full" type={numeric ? 'number' : 'text'} step={numeric ? 'any' : undefined} value={value == null ? '' : String(value)} onChange={(event) => onChange(numeric ? (event.target.value === '' ? null : Number(event.target.value)) : (event.target.value || ''))} /></label>;
 }
 
 export interface CompanyEditSectionProps {

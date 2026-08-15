@@ -161,7 +161,7 @@ export default function CompaniesPage() {
   }, [targetUrl, router]);
 
   const handleSearch = (query: string) => {
-    setParams((prev) => ({ ...prev, query, page: 1 }));
+    setParams((prev) => ({ ...prev, query, companyId: undefined, page: 1 }));
   };
 
   const handleFilterChange = (newFilters: FilterValues) => {
@@ -184,6 +184,7 @@ export default function CompaniesPage() {
   const handleInlineFilterChange = useCallback((filters: Partial<CompanyInlineFilters>) => {
     setParams((prev) => {
       const newParams: typeof prev & {
+        companyId?: string;
         incorporationDateFrom?: string;
         incorporationDateTo?: string;
         officersMin?: number;
@@ -199,6 +200,11 @@ export default function CompaniesPage() {
         address?: string;
         hasWarnings?: boolean;
       } = { ...prev, page: 1 };
+
+      // companyId tracks the selected company for the inline company dropdown
+      if ('companyId' in filters) {
+        newParams.companyId = filters.companyId;
+      }
 
       // companyName maps to query (the existing search field)
       if ('companyName' in filters) {
@@ -284,6 +290,7 @@ export default function CompaniesPage() {
 
   // Derive inline filter values from params for the table
   const inlineFilters: CompanyInlineFilters = useMemo(() => ({
+    companyId: (params as Record<string, unknown>).companyId as string | undefined,
     companyName: params.query || undefined,
     uen: params.uen,
     address: (params as Record<string, unknown>).address as string | undefined,
@@ -313,7 +320,7 @@ export default function CompaniesPage() {
         key: 'companyName',
         label: 'Company',
         value: inlineFilters.companyName,
-        onRemove: () => handleInlineFilterChange({ companyName: undefined }),
+        onRemove: () => handleInlineFilterChange({ companyName: undefined, companyId: undefined }),
       });
     }
 
@@ -492,6 +499,7 @@ export default function CompaniesPage() {
     setParams((prev) => ({
       ...prev,
       query: '',
+      companyId: undefined,
       entityType: undefined,
       status: undefined,
       hasCharges: undefined,

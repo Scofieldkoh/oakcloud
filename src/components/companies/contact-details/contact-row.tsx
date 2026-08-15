@@ -66,6 +66,12 @@ interface ContactRowProps {
   isTogglingPoc?: boolean;
 }
 
+const RELATIONSHIP_BADGE =
+  'inline-flex min-h-5 items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium leading-none text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200';
+
+const POC_BADGE =
+  'inline-flex min-h-5 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium leading-none text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200';
+
 export function ContactRow({
   item,
   companyId,
@@ -117,58 +123,69 @@ export function ContactRow({
   };
 
   return (
-    <div className="flex w-full items-center gap-2.5 lg:gap-4 py-3 px-3 lg:px-4 hover:bg-surface-secondary transition-colors group">
-      {/* Name with link - widened 1.5x */}
-      <div className="flex-shrink-0 w-[280px] lg:w-[360px] min-w-0">
-        <Link
-          href={`/contacts/${item.contact.id}`}
-          className="font-medium text-text-primary hover:text-oak-light flex items-center gap-1.5 truncate"
-        >
+    <div className="group flex items-center justify-between gap-3 py-3">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
           {item.contact.contactType === 'CORPORATE' ? (
-            <Building2 className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
+            <Building2 className="h-4 w-4 flex-shrink-0 text-text-tertiary" aria-hidden="true" />
           ) : (
-            <User className="w-4 h-4 text-text-tertiary flex-shrink-0" aria-hidden="true" />
+            <User className="h-4 w-4 flex-shrink-0 text-text-tertiary" aria-hidden="true" />
           )}
-          <span className="truncate">{item.contact.fullName}</span>
-        </Link>
-      </div>
-
-      {/* Relationship badges - w-[300px] */}
-      <div className="flex-shrink-0 w-[220px] lg:w-[300px] min-w-0">
-        <div className="flex flex-wrap gap-1 items-center min-w-0">
-          {relationships.length > 0 ? (
-            <>
-              {relationships.slice(0, 2).map((rel, idx) => (
-                <span key={idx} className="text-xs font-medium text-white bg-oak-light px-2 py-0.5 rounded">
-                  {rel}
-                </span>
-              ))}
-              {relationships.length > 2 && (
-                <span
-                  className="text-xs text-text-muted cursor-help relative group/tooltip"
-                  title={relationships.slice(2).join(', ')}
-                >
-                  +{relationships.length - 2}
-                  {/* Tooltip */}
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50">
-                    {relationships.slice(2).join(', ')}
-                  </span>
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-xs text-text-muted italic">No role</span>
+          <Link
+            href={`/contacts/${item.contact.id}`}
+            className="truncate text-oak-primary hover:underline"
+          >
+            {item.contact.fullName}
+          </Link>
+          {relationships.map((rel) => (
+            <span key={rel} className={RELATIONSHIP_BADGE}>
+              {rel}
+            </span>
+          ))}
+          {hasPoc && (
+            <span className={POC_BADGE} title="Point of Contact">
+              <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+              Point of Contact
+            </span>
+          )}
+          {!item.isCurrent && (
+            <span className="inline-flex min-h-5 items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium leading-none text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              Past
+            </span>
           )}
         </div>
+        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
+          {displayedPhone && (
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <Phone className="h-3.5 w-3.5 flex-shrink-0 text-text-tertiary" aria-hidden="true" />
+              <span className="truncate">{displayedPhone}</span>
+              <CopyButton value={displayedPhone} label="phone number" />
+            </span>
+          )}
+          {displayedEmail && (
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <Mail className="h-3.5 w-3.5 flex-shrink-0 text-text-tertiary" aria-hidden="true" />
+              <span className="truncate">{displayedEmail}</span>
+              <CopyButton value={displayedEmail} label="email address" />
+            </span>
+          )}
+          {emailPurposes.map((purpose) => (
+            <span key={purpose} className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              {purpose}
+            </span>
+          ))}
+          {!displayedPhone && !displayedEmail && (
+            <span className="italic">No contact details</span>
+          )}
+        </p>
       </div>
 
-      {/* POC column - w-[80px] */}
-      <div className="flex-shrink-0 w-[72px] lg:w-[80px] flex items-center justify-center">
+      <div className="flex flex-shrink-0 items-center gap-1">
         {canEdit ? (
           <button
             onClick={handlePocClick}
             disabled={isTogglingPoc}
-            className={`p-1.5 rounded transition-colors ${
+            className={`rounded p-1 transition-colors ${
               hasPoc
                 ? 'text-amber-500 hover:text-amber-600'
                 : 'text-text-muted hover:text-amber-500'
@@ -177,77 +194,35 @@ export function ContactRow({
             aria-pressed={hasPoc}
           >
             {isTogglingPoc ? (
-              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Star className={`w-4 h-4 ${hasPoc ? 'fill-current' : ''}`} aria-hidden="true" />
+              <Star className={`h-4 w-4 ${hasPoc ? 'fill-current' : ''}`} aria-hidden="true" />
             )}
           </button>
         ) : hasPoc ? (
           <span className="text-amber-500" aria-label={`${item.contact.fullName} is point of contact`}>
-            <Star className="w-4 h-4 fill-current" aria-hidden="true" />
+            <Star className="h-4 w-4 fill-current" aria-hidden="true" />
           </span>
         ) : null}
-      </div>
-
-      {/* Phone */}
-      <div className="flex-shrink-0 w-[170px] lg:w-[210px] min-w-0">
-        {displayedPhone ? (
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Phone className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" aria-hidden="true" />
-            <span className="text-sm text-text-primary truncate">{displayedPhone}</span>
-            <CopyButton value={displayedPhone} label="phone number" />
-          </div>
-        ) : (
-          <span className="text-xs text-text-muted italic">No phone</span>
-        )}
-      </div>
-
-      {/* Email with automation badges */}
-      <div className="flex-1 min-w-[220px]">
-        {displayedEmail ? (
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Mail className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" aria-hidden="true" />
-            <span className="text-sm text-text-primary truncate">{displayedEmail}</span>
-            <CopyButton value={displayedEmail} label="email address" />
-            {emailPurposes.length > 0 && (
-              <div className="hidden xl:flex gap-1 flex-shrink-0">
-                {emailPurposes.slice(0, 2).map((purpose) => (
-                  <span key={purpose} className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                    {purpose}
-                  </span>
-                ))}
-                {emailPurposes.length > 2 && (
-                  <span className="text-[10px] text-text-muted">+{emailPurposes.length - 2}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <span className="text-xs text-text-muted italic">No email</span>
-        )}
-      </div>
-
-      {/* Actions - always visible */}
-      {canEdit && (
-        <div className="flex-shrink-0 w-[56px] flex items-center justify-end gap-2">
+        {canEdit && (
           <button
             onClick={onAddDetail}
-            className="text-text-muted hover:text-oak-light transition-colors"
+            className="rounded p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-oak-light"
             aria-label={`Edit contact details for ${item.contact.fullName}`}
           >
-            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
-          {onUnlink && !hasProtectedRole && (
-            <button
-              onClick={onUnlink}
-              className="text-text-muted hover:text-status-error transition-colors"
-              aria-label={`Remove ${item.contact.fullName} from company`}
-            >
-              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
-          )}
-        </div>
-      )}
+        )}
+        {canEdit && onUnlink && !hasProtectedRole && (
+          <button
+            onClick={onUnlink}
+            className="rounded p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-status-error"
+            aria-label={`Remove ${item.contact.fullName} from company`}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

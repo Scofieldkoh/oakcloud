@@ -1,16 +1,15 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Search, Filter, X, ChevronDown, Tag, Calendar, Eye, Copy, Building2 } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, Tag, Calendar, Eye, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
-import { AsyncSearchSelect } from '@/components/ui/async-search-select';
+import { CompanySelect } from '@/components/ui/company-select';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { TagChip, TagManager } from '@/components/processing/document-tags';
 import { TAG_COLORS } from '@/lib/validations/document-tag';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
-import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, TagColor, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import type { AmountFilterValue } from '@/components/ui/amount-filter';
 
@@ -112,15 +111,8 @@ export function ProcessingFilters({
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProcessingFilterValues>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [companyName, setCompanyName] = useState('');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Company search using shared hook
-  const {
-    searchQuery: companySearchQuery,
-    setSearchQuery: setCompanySearchQuery,
-    options: companyOptions,
-    isLoading: companiesLoading,
-  } = useCompanySearch();
 
   // Serialize initialFilters for comparison to avoid object reference issues
   const initialFiltersKey = useMemo(() => JSON.stringify(initialFilters), [initialFilters]);
@@ -477,17 +469,13 @@ export function ProcessingFilters({
             {/* Row 2: Company & Date Filters */}
             <div>
               <label className="label">Company</label>
-              <AsyncSearchSelect<CompanySearchOption>
+              <CompanySelect
                 value={filters.companyId || ''}
-                onChange={(id) => handleFilterChange('companyId', id)}
-                options={companyOptions}
-                isLoading={companiesLoading}
-                searchQuery={companySearchQuery}
-                onSearchChange={setCompanySearchQuery}
+                onChange={(id, company) => {
+                  handleFilterChange('companyId', id);
+                  setCompanyName(company?.name ?? '');
+                }}
                 placeholder="Search companies..."
-                icon={<Building2 className="w-4 h-4" />}
-                emptySearchText="Type to search companies"
-                noResultsText="No companies found"
               />
             </div>
 
@@ -684,8 +672,11 @@ export function ProcessingFilters({
           {filters.companyId && (
             <FilterChip
               label="Company"
-              value={companyOptions.find(c => c.id === filters.companyId)?.label || filters.companyId}
-              onRemove={() => clearFilter('companyId')}
+              value={companyName || filters.companyId}
+              onRemove={() => {
+                clearFilter('companyId');
+                setCompanyName('');
+              }}
             />
           )}
           {(filters.uploadDateFrom || filters.uploadDateTo) && (

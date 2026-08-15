@@ -6,15 +6,12 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   User,
-  MapPin,
-  Calendar,
-  History,
-  Pencil,
-  Trash2,
   AlertCircle,
   Building2,
-  Tags,
   RefreshCw,
+  Pencil,
+  Trash2,
+  Tags,
 } from 'lucide-react';
 import { useContact, useDeleteContact, useLinkContactToCompany, useUnlinkContactFromCompany, useRemoveOfficerPosition, useRemoveShareholding, useUpdateOfficerPosition, useUpdateShareholding, useContactLinkInfo } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
@@ -27,6 +24,7 @@ import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui
 import { useToast } from '@/components/ui/toast';
 import { CompanyRelationships } from '@/components/contacts/company-relationships';
 import { ContactDetailsSection } from '@/components/contacts/contact-details-section';
+import { CompanyAccentSection, CompanyAccentButton, CompanyFieldLabel } from '@/components/companies/company-accent-section';
 import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal';
 import { InternalNotes } from '@/components/notes/internal-notes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -391,15 +389,6 @@ export default function ContactDetailPage({
             </h1>
             <span className={`badge ${currentTypeConfig.color}`}>{currentTypeConfig.label}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-text-secondary">
-            {contact.identificationType && contact.identificationNumber && (
-              <span>
-                {idTypeLabels[contact.identificationType]}: {contact.identificationNumber}
-              </span>
-            )}
-            {contact.corporateUen && <span>UEN: {contact.corporateUen}</span>}
-            {contact.nationality && <span>{contact.nationality}</span>}
-          </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           {can.createContact && (
@@ -446,38 +435,40 @@ export default function ContactDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-3">
           {/* Contact Information */}
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <User className="w-4 h-4 text-text-tertiary" />
-                Contact Information
-              </h2>
-            </div>
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CompanyAccentSection
+            title="Contact Information"
+            actions={
+              <CompanyAccentButton onClick={() => setAliasesModalOpen(true)}>
+                <Tags className="h-3.5 w-3.5" />
+                Manage Aliases
+              </CompanyAccentButton>
+            }
+          >
+            <div className="grid grid-cols-1 gap-4 p-3 text-sm sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
               {contact.contactType === 'INDIVIDUAL' ? (
                 <>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">First Name</p>
+                    <CompanyFieldLabel>First Name</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.firstName || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">Last Name</p>
+                    <CompanyFieldLabel>Last Name</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.lastName || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">Alias</p>
+                    <CompanyFieldLabel>Alias</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.alias || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">Nationality</p>
+                    <CompanyFieldLabel>Nationality</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.nationality || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">ID Type</p>
+                    <CompanyFieldLabel>ID Type</CompanyFieldLabel>
                     <p className="text-text-primary">
                       {contact.identificationType
                         ? idTypeLabels[contact.identificationType]
@@ -485,41 +476,33 @@ export default function ContactDetailPage({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">ID Number</p>
+                    <CompanyFieldLabel>ID Number</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.identificationNumber || '-'}</p>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="sm:col-span-2 lg:col-span-2">
-                    <p className="text-xs text-text-tertiary uppercase mb-1">Corporate Name</p>
+                    <CompanyFieldLabel>Corporate Name</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.corporateName || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary uppercase mb-1">UEN</p>
+                    <CompanyFieldLabel>UEN</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.corporateUen || '-'}</p>
                   </div>
                 </>
               )}
             </div>
-          </div>
+          </CompanyAccentSection>
 
           {/* Contact Details - Full grouped view with default and company-specific */}
           <ContactDetailsSection contactId={id} contactName={contact.fullName} canEdit={can.updateContact} />
 
           {/* Address */}
           {contact.fullAddress && (
-            <div className="card">
-              <div className="p-4 border-b border-border-primary">
-                <h2 className="font-medium text-text-primary flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-text-tertiary" />
-                  Address
-                </h2>
-              </div>
-              <div className="p-4">
-                <p className="text-text-primary">{contact.fullAddress}</p>
-              </div>
-            </div>
+            <CompanyAccentSection title="Address">
+              <p className="p-3 text-sm text-text-primary">{contact.fullAddress}</p>
+            </CompanyAccentSection>
           )}
 
           {/* Company Relationships (Unified View) */}
@@ -584,15 +567,12 @@ export default function ContactDetailPage({
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Quick Stats */}
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary">Summary</h2>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-text-secondary">Linked Companies</span>
+          <CompanyAccentSection title="Summary">
+            <div className="divide-y divide-border-primary px-3 text-sm">
+              <div className="flex items-center justify-between py-3">
+                <span className="text-text-secondary">Linked Companies</span>
                 <span className="font-medium text-text-primary">
                   {(() => {
                     // Count unique companies across all current (non-ceased) relationship types
@@ -604,56 +584,40 @@ export default function ContactDetailPage({
                   })()}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-text-secondary">Officer Positions</span>
+              <div className="flex items-center justify-between py-3">
+                <span className="text-text-secondary">Officer Positions</span>
                 <span className="font-medium text-text-primary">
                   {contact.officerPositions?.filter((p) => p.isCurrent).length || 0}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-text-secondary">Shareholdings</span>
+              <div className="flex items-center justify-between py-3">
+                <span className="text-text-secondary">Shareholdings</span>
                 <span className="font-medium text-text-primary">
                   {contact.shareholdings?.filter((s) => s.isCurrent).length || 0}
                 </span>
               </div>
             </div>
-          </div>
+          </CompanyAccentSection>
 
-          {/* Metadata */}
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-text-tertiary" />
-                Record Info
-              </h2>
-            </div>
-            <div className="p-4 space-y-3">
+          {/* Audit History */}
+          <CompanyAccentSection title="Audit History">
+            <div className="space-y-3 p-3 text-sm">
               <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">Created</p>
-                <p className="text-sm text-text-primary">{formatDate(contact.createdAt)}</p>
+                <CompanyFieldLabel>Created</CompanyFieldLabel>
+                <p className="text-text-primary">{formatDate(contact.createdAt)}</p>
               </div>
-              <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">Last Updated</p>
-                <p className="text-sm text-text-primary">{formatDate(contact.updatedAt)}</p>
+              <div className="border-t border-border-primary pt-3">
+                <CompanyFieldLabel>Last Updated</CompanyFieldLabel>
+                <p className="text-text-primary">{formatDate(contact.updatedAt)}</p>
               </div>
-              <div>
-                <p className="text-xs text-text-tertiary uppercase mb-1">Status</p>
+              <div className="border-t border-border-primary pt-3">
+                <CompanyFieldLabel>Status</CompanyFieldLabel>
                 <span className={`badge ${contact.isActive ? 'badge-success' : 'badge-neutral'}`}>
                   {contact.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Audit History */}
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <History className="w-4 h-4 text-text-tertiary" />
-                Audit History
-              </h2>
-            </div>
-            <div className="p-4">
+            <div className="border-t border-border-primary p-3">
               <Link
                 href={`/contacts/${id}/audit`}
                 className="btn-secondary btn-sm w-full justify-center"
@@ -661,28 +625,7 @@ export default function ContactDetailPage({
                 View History
               </Link>
             </div>
-          </div>
-
-          {/* Aliases */}
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary flex items-center gap-2">
-                <Tags className="w-4 h-4 text-text-tertiary" />
-                Aliases
-              </h2>
-            </div>
-            <div className="p-4">
-              <p className="text-xs text-text-muted mb-3">
-                Manage vendor/customer name aliases for document processing
-              </p>
-              <button
-                onClick={() => setAliasesModalOpen(true)}
-                className="btn-secondary btn-sm w-full justify-center"
-              >
-                Manage Aliases
-              </button>
-            </div>
-          </div>
+          </CompanyAccentSection>
         </div>
       </div>
 
