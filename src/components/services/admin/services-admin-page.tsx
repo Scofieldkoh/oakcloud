@@ -91,7 +91,12 @@ export function ServicesAdminPage() {
         </button>
       </div>
 
-      <section id="service-catalog-panel" aria-labelledby="service-catalog-tab" className="pt-1">
+      <section
+        id="service-catalog-panel"
+        role="tabpanel"
+        aria-labelledby="service-catalog-tab"
+        className="pt-1"
+      >
         <ServiceCatalogPanel
           workspaceId={workspaceId}
           canCreate

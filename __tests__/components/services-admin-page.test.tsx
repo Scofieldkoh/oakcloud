@@ -97,9 +97,15 @@ describe('ServicesAdminPage', () => {
     ).toBeVisible();
     expect(screen.getByRole('tablist', { name: 'Services administration sections' })).toBeVisible();
     expect(screen.getAllByRole('tab')).toHaveLength(1);
-    expect(screen.getByRole('tab', { name: 'Service catalog' })).toHaveAttribute(
+    const catalogTab = screen.getByRole('tab', { name: 'Service catalog' });
+    expect(catalogTab).toHaveAttribute(
       'aria-selected',
       'true',
+    );
+    expect(catalogTab).toHaveAttribute('aria-controls', 'service-catalog-panel');
+    expect(screen.getByRole('tabpanel', { name: 'Service catalog' })).toHaveAttribute(
+      'id',
+      'service-catalog-panel',
     );
     expect(screen.getByRole('heading', { name: 'Service catalog' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add service family' })).toBeVisible();
