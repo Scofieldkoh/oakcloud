@@ -93,6 +93,18 @@ describe('PlaceholderPanel', () => {
     expect(onInsert.mock.calls[0][0]).toMatch(/#each directors[\s\S]*this\.name[\s\S]*\/each/);
   });
 
+  it('inserts a keep-together signature block from the guided builder', () => {
+    const onInsert = vi.fn();
+    render(<PlaceholderPanel {...defaultProps} onInsert={onInsert} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Signature blocks, 1 result' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Build signature block' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Insert signature block' }));
+
+    expect(onInsert.mock.calls[0][0]).toContain('data-flow-keep-together="true"');
+    expect(onInsert.mock.calls[0][0]).toMatch(/#each directors[\s\S]*\/each/);
+  });
+
   it('explains a duplicate custom placeholder key inline', () => {
     render(
       <PlaceholderPanel
@@ -135,7 +147,7 @@ describe('PlaceholderPanel', () => {
 
     expect(screen.getByRole('button', { name: 'Loops, 2 results' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Conditions, 1 result' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Modifiers, 3 results' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Modifiers, 4 results' })).toBeVisible();
   });
 
   it('offers usable Copy actions for normal, custom, and partial fields but not builders', () => {

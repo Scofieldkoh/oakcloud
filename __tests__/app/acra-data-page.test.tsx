@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -236,6 +236,41 @@ describe('ACRA Data admin page', () => {
     expect(screen.getAllByText('EXEMPT PRIVATE COMPANY LIMITED BY SHARES').length).toBeGreaterThan(0);
     expect(screen.getAllByText('OLD ACME PTE. LTD.').length).toBeGreaterThan(0);
     expect(screen.getAllByText('123 MAIN STREET ACME BUILDING #05-01 SINGAPORE 123456').length).toBeGreaterThan(0);
+  });
+
+  it('collapses mobile card details by default and expands all fields on click', async () => {
+    const { default: AcraDataPage } = await import('@/app/(dashboard)/admin/acra-data/page');
+    render(<AcraDataPage />);
+
+    const card = screen
+      .getAllByText('201904999E')
+      .map((element) => element.closest('.card'))
+      .find((element) => element !== null) as HTMLElement;
+
+    // Collapsed: only name, UEN, and status are visible
+    expect(within(card).getByText('ACME HOLDINGS PTE. LTD.')).toBeTruthy();
+    expect(within(card).getByText('201904999E')).toBeTruthy();
+    expect(within(card).getByText('Live Company')).toBeTruthy();
+    expect(within(card).queryByText('Data As Of')).toBeNull();
+    expect(within(card).queryByText('Address')).toBeNull();
+
+    await fireEvent.click(card);
+
+    // Expanded: every record field is shown
+    expect(within(card).getByText('Data As Of')).toBeTruthy();
+    expect(within(card).getByText('Company Type')).toBeTruthy();
+    expect(within(card).getByText('EXEMPT PRIVATE COMPANY LIMITED BY SHARES')).toBeTruthy();
+    expect(within(card).getByText('ACCOUNTING AND AUDITING SERVICES')).toBeTruthy();
+    expect(within(card).getByText('Secondary SSIC Description')).toBeTruthy();
+    expect(within(card).getByText('OLD ACME PTE. LTD.')).toBeTruthy();
+    expect(within(card).getByText('T08LL0001A')).toBeTruthy();
+    expect(within(card).getByText('123 MAIN STREET ACME BUILDING #05-01 SINGAPORE 123456')).toBeTruthy();
+    expect(within(card).getByText('Postal Code')).toBeTruthy();
+
+    await fireEvent.click(card);
+
+    // Collapses again
+    expect(within(card).queryByText('Data As Of')).toBeNull();
   });
 
   it('triggers the manual sync when the Sync now button is clicked', async () => {

@@ -395,8 +395,18 @@ export function buildHeaderHtml(letterhead: WorkspaceLetterhead | null): string 
 /**
  * Build complete footer HTML for PDF generation
  */
-export function buildFooterHtml(letterhead: WorkspaceLetterhead | null): string {
+export function buildFooterHtml(
+  letterhead: WorkspaceLetterhead | null,
+  options: { includePageNumbers?: boolean } = {},
+): string {
+  const includePageNumbers = options.includePageNumbers !== false;
+
   if (!letterhead || !letterhead.isEnabled) {
+    if (!includePageNumbers) {
+      // Page numbers are rendered by the document's own print page number
+      // strip instead of the PDF footer template.
+      return '';
+    }
     // Default footer with page numbers
     return `
       <div style="width: 100%; font-size: 9px; text-align: center; padding: 10px 40px; color: #666;">
@@ -418,11 +428,17 @@ export function buildFooterHtml(letterhead: WorkspaceLetterhead | null): string 
   }
 
   // Always include page numbers
-  parts.push(`
-    <div style="margin-top: 5px; color: #666;">
-      Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-    </div>
-  `);
+  if (includePageNumbers) {
+    parts.push(`
+      <div style="margin-top: 5px; color: #666;">
+        Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+      </div>
+    `);
+  }
+
+  if (parts.length === 0) {
+    return '';
+  }
 
   return `
     <div style="width: 100%; font-size: 9px; text-align: center; padding: 10px 40px;">

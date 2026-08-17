@@ -242,6 +242,34 @@ describePostgres('document generation batch postgres integration', () => {
     expect(agreementCount).toBe(0);
   });
 
+  it('resolves the active item to the new item when a local item is saved by template id', async () => {
+    const { actor, templates } = await seed();
+    const created = await createDocumentGenerationBatch(
+      { items: [{ templateId: templates[0].id }] },
+      actor,
+    );
+
+    const updated = await updateDocumentGenerationBatch(
+      created.id,
+      {
+        expectedRevision: created.revision,
+        currentStage: 2,
+        activeItemId: templates[1].id,
+        items: [
+          { templateId: templates[0].id },
+          { templateId: templates[1].id },
+        ],
+      },
+      actor,
+    );
+
+    const newItem = updated.items.find(
+      (item) => item.templateId === templates[1].id,
+    );
+    expect(updated.activeItemId).toBe(newItem?.id);
+    expect(updated.items).toHaveLength(2);
+  });
+
   it('adopts a legacy session idempotently around the same child document', async () => {
     const { actor, templates } = await seed();
     const legacy = await prisma.generatedDocument.create({

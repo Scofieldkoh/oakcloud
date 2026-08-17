@@ -107,6 +107,38 @@ describe('A4PageEditor', () => {
         fontFamily: 'Verdana, Geneva, sans-serif',
         fontSize: '9pt',
       });
+      expect(printDocument.querySelector('style')?.textContent).toContain(
+        'margin: 20mm 20mm 14mm 20mm',
+      );
+      expect(printDocument.querySelector('style')?.textContent).toContain(
+        'height: calc(calc(297mm - 20mm - 20mm) + 6mm);',
+      );
+      expect(printDocument.querySelector('.print-page-number')?.textContent)
+        .toBe('1');
+      printFrame.remove();
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  it('strips page-break elements from printed pages so they cannot force blank pages', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <A4PageEditor
+          value={'<p>One</p><div class="page-break">--- Page Break ---</div><p>Two</p>'}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Print' }));
+      const printFrame = document.querySelector('iframe')!;
+      const printDocument = printFrame.contentDocument!;
+      expect(printDocument.querySelector('.print-page .content .page-break')).toBeNull();
+      expect(printDocument.querySelector('.print-page .content')?.textContent)
+        .not.toContain('Page Break');
+      expect(printDocument.querySelector('.print-page .content p')?.textContent)
+        .toContain('One');
       printFrame.remove();
     } finally {
       vi.clearAllTimers();

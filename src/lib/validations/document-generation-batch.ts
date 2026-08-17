@@ -90,8 +90,10 @@ export const updateDocumentGenerationBatchSchema = z.object({
     });
   }
   if (value.activeItemId) {
-    const ids = value.items.map((item) => item.id).filter(Boolean);
-    if (!ids.includes(value.activeItemId)) {
+    // The client may reference a local item that has not been assigned a
+    // server id yet by its template id, so both identifiers are accepted.
+    const identifiers = value.items.flatMap((item) => [item.id, item.templateId]);
+    if (!identifiers.includes(value.activeItemId)) {
       context.addIssue({
         code: 'custom',
         path: ['activeItemId'],

@@ -115,6 +115,40 @@ export function buildConditionBlock(input: ConditionBlockInput): string {
   return `{{#if ${field} ${comparison} "${escapeHtml(assertSafeConditionValue(input.value))}"}}${input.bodyHtml}{{/if}}`;
 }
 
+export interface SignatureBlockInput {
+  collection: TemplateCollection;
+}
+
+/**
+ * Creates one keep-together signature block per signer by iterating the
+ * selected collection. Each iteration carries `data-flow-keep-together` so
+ * the A4 paginator never splits a single signer's sign-on line, space, name,
+ * designation, and date across a page break, while signers still flow onto
+ * following pages independently.
+ */
+export function buildSignatureBlock(input: SignatureBlockInput): string {
+  const collection = assertAllowedCollection(input.collection);
+  const designationLine =
+    collection === 'directors' ? '<p>{{this.role}}</p>' : '<p><br></p>';
+  const body = [
+    '<div data-flow-keep-together="true">',
+    '<p>Sign on behalf of client</p>',
+    '<p><br></p>',
+    '<p><br></p>',
+    '<p>________________________</p>',
+    '<p>{{this.name}}</p>',
+    designationLine,
+    '<p>{{system.currentDate}}</p>',
+    '</div>',
+  ].join('');
+
+  return [
+    `<div>{{#each ${collection}}}</div>`,
+    body,
+    '<div>{{/each}}</div>',
+  ].join('');
+}
+
 function assertAllowedCollection(collection: unknown): TemplateCollection {
   if (collection === 'directors' || collection === 'shareholders') return collection;
   throw new Error('Unsupported loop collection.');

@@ -138,6 +138,56 @@ describe('service agreement renderer', () => {
     expect(result.itemDiagnostics).toEqual([]);
   });
 
+  it('groups fee lines under underlined entity headers with description and fee columns', () => {
+    const result = assembleServiceAgreementTemplate({ templateContent, agreement });
+    const feeTable =
+      result.content.match(
+        /<table data-service-agreement-fees="true">[\s\S]*?<\/table>/,
+      )?.[0] ?? '';
+
+    expect(feeTable).toContain(
+      '<th style="width: 70%;">Description</th><th style="width: 30%;">Fee</th>',
+    );
+    expect(feeTable).not.toContain('<th>Service</th>');
+    expect(feeTable).not.toContain('<th>Entity</th>');
+    expect(feeTable).toContain(
+      '<tr><td colspan="2" style="text-decoration: underline;">Alpha Pte. Ltd.</td></tr>',
+    );
+    expect(feeTable).toContain(
+      '<tr><td colspan="2" style="text-decoration: underline;">Beta &lt;Holdings&gt;</td></tr>',
+    );
+    expect(
+      feeTable.indexOf('Alpha Pte. Ltd.</td>'),
+    ).toBeLessThan(feeTable.indexOf('Beta &lt;Holdings&gt;</td>'));
+    expect(feeTable).toContain(
+      '<tr><td>Monthly accounting</td><td>S$200.00 per month</td></tr>',
+    );
+    expect(feeTable).toContain(
+      '<tr><td>Annual corporate secretarial</td><td>S$500.00 per year</td></tr>',
+    );
+    expect(
+      feeTable.indexOf('Monthly accounting'),
+    ).toBeLessThan(feeTable.indexOf('Beta &lt;Holdings&gt;'));
+    expect(
+      feeTable.indexOf('Annual corporate secretarial'),
+    ).toBeGreaterThan(feeTable.indexOf('Beta &lt;Holdings&gt;'));
+  });
+
+  it('preserves fee lines whose entity is no longer part of the agreement', () => {
+    const orphanAgreement = structuredClone(agreement);
+    orphanAgreement.items[1].feeLines[0].agreementEntityId = 'entity-missing';
+
+    const result = assembleServiceAgreementTemplate({
+      templateContent,
+      agreement: orphanAgreement,
+    });
+
+    expect(result.content).toContain(
+      '<tr><td>Monthly accounting</td><td>S$200.00 per month</td></tr>',
+    );
+    expect(result.content).not.toContain('style="text-decoration: underline;">Alpha Pte. Ltd.');
+  });
+
   it('strips baked-in typography styles but preserves list indent and formatting', () => {
     const styledAgreement = structuredClone(agreement);
     styledAgreement.items[1].partialContentSnapshot = [

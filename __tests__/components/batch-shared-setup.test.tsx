@@ -108,6 +108,38 @@ describe('BatchSharedSetup', () => {
     );
   });
 
+  it('uses the reusable single date selector for date master fields', () => {
+    const p = props({
+      masterFields: {
+        fields: [
+          {
+            id: 'engagement_date::date',
+            key: 'engagement_date',
+            type: 'date',
+            label: 'Engagement date',
+            templateIds: ['template-a', 'template-b'],
+            requiredTemplateIds: ['template-a'],
+            defaultsByTemplateId: {},
+          },
+        ],
+        conflicts: [],
+      },
+    });
+    const { unmount } = render(<BatchSharedSetup {...p} />);
+
+    const dateInput = screen.getByLabelText('Engagement date');
+    expect(dateInput).toBeInTheDocument();
+    expect(dateInput).toHaveAttribute('placeholder', 'dd mmm yyyy');
+    expect(screen.getByRole('button', { name: 'Open calendar' })).toBeInTheDocument();
+
+    fireEvent.change(dateInput, { target: { value: '2026-09-01' } });
+    expect(p.onMasterValueChange).toHaveBeenCalledWith(
+      'engagement_date::date',
+      '2026-09-01',
+    );
+    unmount();
+  });
+
   it('explains type conflicts and links overridden documents', async () => {
     const user = userEvent.setup();
     const p = props({

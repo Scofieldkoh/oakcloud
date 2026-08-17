@@ -7,6 +7,7 @@ import type {
   ServiceAgreementItemInput,
 } from '@/services/service-agreement';
 import { Button } from '@/components/ui/button';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { ServiceFeeEditor } from './service-fee-editor';
 import { createServiceAgreementClientKey } from './client-key';
 
@@ -204,24 +205,24 @@ export function ServiceItemEditor({
         </fieldset>
       ) : null}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="text-xs text-text-secondary">
-          Start date
-          <input
-            type="date"
+        <div className="text-xs text-text-secondary">
+          <span>Start date</span>
+          <SingleDateInput
             value={item.startDate}
-            onChange={(event) => onChange({ ...item, startDate: event.target.value })}
-            className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 sm:h-8"
+            onChange={(next) => onChange({ ...item, startDate: next })}
+            ariaLabel="Start date"
+            className="mt-1"
           />
-        </label>
-        <label className="text-xs text-text-secondary">
-          End date
-          <input
-            type="date"
+        </div>
+        <div className="text-xs text-text-secondary">
+          <span>End date</span>
+          <SingleDateInput
             value={item.endDate ?? ''}
-            onChange={(event) => onChange({ ...item, endDate: event.target.value || null })}
-            className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 sm:h-8"
+            onChange={(next) => onChange({ ...item, endDate: next || null })}
+            ariaLabel="End date"
+            className="mt-1"
           />
-        </label>
+        </div>
       </div>
       <div className="mt-4">
         <ServiceFeeEditor

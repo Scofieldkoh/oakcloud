@@ -7,6 +7,7 @@ import {
   AsyncSearchSelect,
   type AsyncSearchSelectOption,
 } from '@/components/ui/async-search-select';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import type {
   MasterFieldCatalogue,
 } from '@/types/document-generation-batch';
@@ -207,20 +208,31 @@ export function BatchSharedSetup({
                       {field.type}
                     </span>
                   </div>
-                  <input
-                    id={inputId}
-                    type={field.type === 'date' ? 'date' : 'text'}
-                    value={value}
-                    onChange={(event) => onMasterValueChange(field.id, event.target.value)}
-                    disabled={disabled}
-                    aria-required={isRequired || undefined}
-                    aria-invalid={missing || undefined}
-                    aria-describedby={helpId}
-                    className={cn(
-                      'mt-2 min-h-11 w-full rounded-lg border bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10',
-                      missing ? 'border-status-error/60' : 'border-border-primary',
-                    )}
-                  />
+                  {field.type === 'date' ? (
+                    <SingleDateInput
+                      value={value}
+                      onChange={(next) => onMasterValueChange(field.id, next)}
+                      disabled={disabled}
+                      ariaLabel={field.label}
+                      error={missing ? 'Required' : undefined}
+                      className="mt-2"
+                    />
+                  ) : (
+                    <input
+                      id={inputId}
+                      type="text"
+                      value={value}
+                      onChange={(event) => onMasterValueChange(field.id, event.target.value)}
+                      disabled={disabled}
+                      aria-required={isRequired || undefined}
+                      aria-invalid={missing || undefined}
+                      aria-describedby={helpId}
+                      className={cn(
+                        'mt-2 min-h-11 w-full rounded-lg border bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10',
+                        missing ? 'border-status-error/60' : 'border-border-primary',
+                      )}
+                    />
+                  )}
                   <p
                     id={helpId}
                     className={cn('mt-1 text-xs', missing ? 'text-status-error' : 'text-text-muted')}

@@ -572,6 +572,14 @@ export async function unlinkContactFromCompany(
     },
   });
 
+  const pocCount = await prisma.companyContact.count({
+    where: { companyId, isPoc: true, deletedAt: null },
+  });
+  await prisma.company.update({
+    where: { id: companyId },
+    data: { hasPoc: pocCount > 0 },
+  });
+
   // Create audit log for the unlink operation
   if (userId) {
     await createAuditLog({

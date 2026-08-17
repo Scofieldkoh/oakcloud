@@ -312,6 +312,16 @@ export function resolvePlaceholders(
 
   let resolved = content;
 
+  // Normalize doubly-nested modifier syntax before anything else:
+  // {{MODIFIER({{path}})}} -> MODIFIER({{path}}). Without this, the external
+  // modifier matcher consumes the inner "MODIFIER({{path}})" and leaves the
+  // resolved value wrapped in a stray {{value}}, which is then reported as an
+  // unresolved placeholder named after the value (e.g. "CEO").
+  resolved = resolved.replace(
+    /\{\{([A-Z_]+)\(\s*(?:<[^>]*>\s*)*\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}(?:\s*<[^>]*>)*\s*\)\}\}/g,
+    '$1({{$2}})',
+  );
+
   // Process partials first (if partialsMap is provided)
   if (opts.partialsMap && opts.partialsMap.size > 0) {
     const partialResult = processPartials(resolved, opts.partialsMap, opts);
@@ -540,10 +550,72 @@ const VALUE_MODIFIERS: Record<string, (value: string) => string> = {
   PROPERCASE: (v) => toProperCase(v),
   TITLECASE: (v) => toProperCase(v),
   TRIM: (v) => v.trim(),
+  DESIGNATION: (v) => toDesignationCase(v),
 };
 
 function toProperCase(value: string): string {
   return value.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/**
+ * Acronyms commonly used in officer/contact designations that must stay
+ * uppercase instead of being title-cased.
+ */
+const DESIGNATION_ACRONYMS = new Set([
+  'CEO',
+  'CFO',
+  'COO',
+  'CTO',
+  'CIO',
+  'CISO',
+  'CRO',
+  'CMO',
+  'CLO',
+  'CHRO',
+  'CDO',
+  'CPO',
+  'CSO',
+  'CAO',
+  'CCO',
+  'MD',
+  'VP',
+  'PA',
+  'HR',
+]);
+
+/** Small words lowercased mid-designation: "Director of Finance". */
+const DESIGNATION_SMALL_WORDS = new Set([
+  'of',
+  'the',
+  'and',
+  'in',
+  'at',
+  'for',
+  'on',
+  'to',
+  'with',
+]);
+
+/**
+ * Title-cases a designation ("DIRECTOR" -> "Director") while preserving
+ * known acronyms ("CEO", "CFO", ...) exactly as uppercase.
+ */
+function toDesignationCase(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((word, index) => {
+      const core = word.replace(/[^A-Za-z]/g, '');
+      if (!core) return word;
+      const upper = core.toUpperCase();
+      if (DESIGNATION_ACRONYMS.has(upper)) return upper;
+      const cased = core.charAt(0).toUpperCase() + core.slice(1).toLowerCase();
+      if (index > 0 && DESIGNATION_SMALL_WORDS.has(cased.toLowerCase())) {
+        return cased.toLowerCase();
+      }
+      return cased;
+    })
+    .join(' ');
 }
 
 /**

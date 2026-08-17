@@ -8,6 +8,7 @@ import type {
   ServiceAgreementWorkspaceState,
 } from '@/types/document-generation-batch';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { ServiceAgreementSetup } from '@/components/documents/service-agreement/service-agreement-setup';
 import { ServiceSelectionStep } from '@/components/documents/service-agreement/service-selection-step';
 import type {
@@ -145,28 +146,26 @@ export function ServiceAgreementConfig({
 
       <BatchSection title="Agreement details">
         <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-          <label className="block">
+          <div className="block">
             <span className="text-sm font-medium text-text-primary">Agreement date</span>
-            <input
-              type="date"
+            <SingleDateInput
               value={workspace.agreementDate}
-              onChange={(event) => updateWorkspace({ agreementDate: event.target.value })}
+              onChange={(next) => updateWorkspace({ agreementDate: next })}
               disabled={disabled}
-              aria-label="Agreement date"
-              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10"
+              ariaLabel="Agreement date"
+              className="mt-1"
             />
-          </label>
-          <label className="block">
+          </div>
+          <div className="block">
             <span className="text-sm font-medium text-text-primary">Effective date</span>
-            <input
-              type="date"
+            <SingleDateInput
               value={workspace.effectiveDate ?? ''}
-              onChange={(event) => updateWorkspace({ effectiveDate: event.target.value || null })}
+              onChange={(next) => updateWorkspace({ effectiveDate: next || null })}
               disabled={disabled}
-              aria-label="Effective date"
-              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10"
+              ariaLabel="Effective date"
+              className="mt-1"
             />
-          </label>
+          </div>
           <label className="block">
             <span className="text-sm font-medium text-text-primary">Term (months)</span>
             <input

@@ -300,4 +300,44 @@ describe('A4 deterministic pagination engine', () => {
     expect(pages[0].oversized).toBe(true);
     expect(pages[0].content.match(/<tr\b/g)).toHaveLength(1);
   });
+
+  it('moves a keep-together block whole to the next page instead of splitting it', () => {
+    const canonical = hydrateFlowHtml(
+      '<p>1234567890</p>' +
+        '<div data-flow-keep-together="true"><p>sign</p><p>name</p></div>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+
+    expect(pages).toHaveLength(2);
+    expect(visibleText(pages[0].content)).toBe('1234567890');
+    expect(visibleText(pages[1].content)).toBe('signname');
+    expect(pages[1].oversized).not.toBe(true);
+    expect(pages[1].content).toContain('data-flow-keep-together');
+    expect(pages[1].content).not.toContain('data-flow-continuation');
+  });
+
+  it('marks a keep-together block larger than a page as oversized without splitting', () => {
+    const canonical = hydrateFlowHtml(
+      '<div data-flow-keep-together="true"><p>123456789012345</p></div>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0].oversized).toBe(true);
+    expect(pages[0].content).toContain('data-flow-keep-together');
+    expect(pages[0].content).not.toContain('data-flow-continuation');
+    expect(visibleText(pages[0].content)).toBe('123456789012345');
+  });
+
+  it('preserves the keep-together marker through reassembly', () => {
+    const canonical = hydrateFlowHtml(
+      '<p>12345678901234</p>' +
+        '<div data-flow-keep-together="true"><p>sign</p><p>name</p></div>',
+    );
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
+    const reassembled = stripFlowMetadata(reassemblePageFragments(pages));
+
+    expect(reassembled).toContain('data-flow-keep-together="true"');
+    expect(reassembled).toContain('<p>sign</p><p>name</p>');
+  });
 });

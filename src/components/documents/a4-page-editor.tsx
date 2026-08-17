@@ -89,14 +89,21 @@ import {
   formatA4LayoutStatus,
   normalizeA4DocumentLayout,
   type A4DocumentLayout,
-  type A4MarginsMm,
 } from './a4-pagination/layout';
+import {
+  A4_WIDTH_PX,
+  A4_HEIGHT_PX,
+  createA4PageLayout,
+  type A4PageLayout,
+} from './a4-pagination/a4-page-layout';
+import { buildA4PageContentStyles } from './a4-pagination/a4-page-content-css';
+import { buildA4FontFaceCss } from './a4-pagination/a4-font-faces';
 import {
   A4EditorToolbar,
   type EditorCommand,
   type EditorFormatState,
 } from './a4-editor-toolbar';
-import { buildA4PrintCss } from './a4-print-styles';
+import { buildA4PrintCss, PAGE_NUMBER_STRIP_MM } from './a4-print-styles';
 
 // ============================================================================
 // HTML Sanitization
@@ -159,6 +166,7 @@ function sanitizeHtml(html: string): string {
       'data-flow-continuation',
       'data-flow-continuation-item',
       'data-flow-oversized',
+      'data-flow-keep-together',
     ],
     ALLOWED_URI_REGEXP:
       /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
@@ -398,48 +406,11 @@ interface PageData {
   oversized?: boolean;
 }
 
-// ============================================================================
-// A4 Constants - 96 DPI (standard screen) for true WYSIWYG
-// ============================================================================
-
-const A4 = {
-  WIDTH_PX: 794,
-  HEIGHT_PX: 1123,
-};
-
 // Shared font styles
 const FONT_FAMILY = "'Times New Roman', Times, serif";
-const MM_TO_PX = 96 / 25.4;
-
-interface PageLayout {
-  marginsMm: A4MarginsMm;
-  topPx: number;
-  rightPx: number;
-  bottomPx: number;
-  leftPx: number;
-  contentWidthPx: number;
-  contentHeightPx: number;
-}
-
-function createPageLayout(marginsMm: A4MarginsMm): PageLayout {
-  const topPx = Math.round(marginsMm.top * MM_TO_PX);
-  const rightPx = Math.round(marginsMm.right * MM_TO_PX);
-  const bottomPx = Math.round(marginsMm.bottom * MM_TO_PX);
-  const leftPx = Math.round(marginsMm.left * MM_TO_PX);
-
-  return {
-    marginsMm,
-    topPx,
-    rightPx,
-    bottomPx,
-    leftPx,
-    contentWidthPx: A4.WIDTH_PX - leftPx - rightPx,
-    contentHeightPx: A4.HEIGHT_PX - topPx - bottomPx,
-  };
-}
 
 function createPageMeasurer(
-  pageLayout: PageLayout,
+  pageLayout: A4PageLayout,
   fontFamily: string,
   fontSize: string,
   lineHeight: string,
@@ -488,7 +459,7 @@ interface PageProps {
   pageNumber: number;
   isActive: boolean;
   isPreviewMode: boolean;
-  pageLayout: PageLayout;
+  pageLayout: A4PageLayout;
   fontFamily: string;
   fontSize: string;
   lineHeight: string;
@@ -522,8 +493,8 @@ function Page({
       className="relative group"
       style={{
         position: 'relative',
-        width: A4.WIDTH_PX,
-        height: A4.HEIGHT_PX,
+        width: A4_WIDTH_PX,
+        height: A4_HEIGHT_PX,
       }}
     >
       <div
@@ -533,8 +504,8 @@ function Page({
           isPreviewMode && 'ring-2 ring-green-500',
         )}
         style={{
-          width: A4.WIDTH_PX,
-          height: A4.HEIGHT_PX,
+          width: A4_WIDTH_PX,
+          height: A4_HEIGHT_PX,
           boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
         }}
       >
@@ -601,7 +572,7 @@ function PageChrome({
   onDelete(id: string): void;
   onRemoveBreak(id: string): void;
   placeholder?: string;
-  pageLayout: PageLayout;
+  pageLayout: A4PageLayout;
   fontFamily: string;
   fontSize: string;
   lineHeight: string;
@@ -609,7 +580,7 @@ function PageChrome({
 }) {
   const isEmpty = !page.content || page.content.replace(/<[^>]*>/g, '').trim() === '';
   return (
-    <div className="pointer-events-none relative select-none" style={{ width: A4.WIDTH_PX, height: A4.HEIGHT_PX }}>
+    <div className="pointer-events-none relative select-none" style={{ width: A4_WIDTH_PX, height: A4_HEIGHT_PX }}>
       <div className="absolute -top-6 left-1/2 z-10 -translate-x-1/2 rounded-t-md bg-gray-700 px-3 py-1 text-xs text-white">
         Page {pageNumber} of {totalPages}
       </div>
@@ -830,7 +801,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [surfaceRepairGeneration, setSurfaceRepairGeneration] = useState(0);
     const pageLayout = useMemo(
-      () => createPageLayout(effectiveLayout.marginsMm),
+      () => createA4PageLayout(effectiveLayout.marginsMm),
       [effectiveLayout.marginsMm],
     );
 
@@ -2452,10 +2423,21 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       // Filter out pages that only contain [Remove Page]
       const filteredPages = printPages.filter((page) => !shouldRemovePage(page.content));
 
+      const stripBreakElements = (html: string): string => {
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container
+          .querySelectorAll(
+            '.page-break, [style*="page-break-after"], [style*="page-break-before"]',
+          )
+          .forEach((element) => element.remove());
+        return container.innerHTML;
+      };
+
       const pagesHtml = filteredPages.length > 0
         ? filteredPages
             .map((page, index) => {
-              const content = sanitizeHtml(page.content) || '&nbsp;';
+              const content = stripBreakElements(sanitizeHtml(page.content)) || '&nbsp;';
               const pageNumberHtml = showPageNumbers
                 ? `<div class="print-page-number">${index + 1}</div>`
                 : '';
@@ -2489,7 +2471,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 <head>
   <title>Print</title>
   <style>
-    ${buildA4PrintCss(effectiveLayout)}
+    ${buildA4PrintCss(effectiveLayout, {
+      pageNumberStripMm: showPageNumbers ? PAGE_NUMBER_STRIP_MM : undefined,
+    })}
   </style>
 </head>
 <body>${pagesHtml}</body>
@@ -2537,140 +2521,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     return (
       <div className={cn('flex flex-col h-full bg-background-secondary', className)}>
-        <style>{`
-          .a4-page-content p {
-            margin: 0 0 ${paragraphSpacing} 0;
-          }
-          .a4-page-content p,
-          .a4-page-content div,
-          .a4-page-content span,
-          .a4-page-content li,
-          .a4-page-content blockquote,
-          .a4-page-content th,
-          .a4-page-content td {
-            line-height: inherit;
-          }
-          .a4-page-content h1,
-          .a4-page-content h2,
-          .a4-page-content h3 {
-            font-family: inherit;
-            font-weight: 700;
-            line-height: inherit;
-            margin: 0 0 ${paragraphSpacing} 0;
-          }
-          .a4-page-content h1 {
-            font-size: 24pt;
-          }
-          .a4-page-content h2 {
-            font-size: 18pt;
-          }
-          .a4-page-content h3 {
-            font-size: 14pt;
-          }
-          .a4-page-content ul {
-            list-style: none;
-            margin: 0 0 ${paragraphSpacing} 0;
-            padding-left: 0;
-          }
-          .a4-page-content ol {
-            list-style: none;
-            margin: 0 0 ${paragraphSpacing} 0;
-            padding-left: 0;
-            counter-reset: item var(--list-start, 0);
-          }
-          .a4-page-content ul > li,
-          .a4-page-content ol > li {
-            position: relative;
-            margin: 0 0 0.25em 0;
-          }
-          .a4-page-content ul > li {
-            padding-left: 2ch;
-          }
-          .a4-page-content ol > li {
-            padding-left: 5ch;
-          }
-          .a4-page-content ol ol > li {
-            padding-left: 6ch;
-          }
-          .a4-page-content ol ol ol > li {
-            padding-left: 8ch;
-          }
-          .a4-page-content ul > li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            top: 0;
-          }
-          .a4-page-content ol > li {
-            counter-increment: item;
-          }
-          .a4-page-content ol > li::before {
-            content: counter(item) ". ";
-            position: absolute;
-            left: 0;
-            top: 0;
-          }
-          .a4-page-content ol.list-bold-numbers > li::before {
-            font-weight: 700;
-          }
-          .a4-page-content ol.list-alpha > li::before {
-            content: counter(item, lower-alpha) ") ";
-          }
-          .a4-page-content ol[style*="--flow-list-start"] {
-            counter-reset: item var(--flow-list-start, 0);
-          }
-          .a4-page-content ol > li[data-flow-continuation-item] {
-            counter-increment: none;
-          }
-          .a4-page-content ol > li[data-flow-continuation-item]::before {
-            content: none;
-          }
-          .a4-page-content ul > li[data-flow-continuation-item]::before {
-            content: none;
-          }
-          .a4-page-content ol ol,
-          .a4-page-content ol ul,
-          .a4-page-content ul ol,
-          .a4-page-content ul ul {
-            padding-left: 0;
-          }
-          .a4-page-content ol ol {
-            counter-reset: item;
-          }
-          .a4-page-content ol ol > li::before {
-            content: counters(item, ".") " ";
-          }
-          .a4-page-content li {
-            display: list-item;
-            margin: 0 0 0.25em 0;
-          }
-          .a4-page-content blockquote {
-            margin: 0 0 ${paragraphSpacing} 40px;
-            padding: 0;
-          }
-          .a4-page-content table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            margin: 0 0 ${paragraphSpacing} 0;
-          }
-          .a4-page-content th,
-          .a4-page-content td {
-            border: 1px solid #9ca3af;
-            padding: 6px 8px;
-            vertical-align: top;
-            min-height: 1.5em;
-            word-break: break-word;
-          }
-          .a4-page-content th {
-            background: #f3f4f6;
-            font-weight: 700;
-          }
-          .a4-page-content a {
-            color: #1155cc;
-            text-decoration: underline;
-          }
-        `}</style>
+        <style>{`${buildA4FontFaceCss()}\n${buildA4PageContentStyles(paragraphSpacing)}`}</style>
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-background-elevated border-b border-border-primary">
           <div className="flex items-center gap-3">
             <FileText className="w-4 h-4 text-text-muted" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type { EditableBatchItem } from './batch-workspace-state';
 
@@ -63,12 +64,30 @@ export function BatchCustomFieldForm({
         {visibleFields.map((field) => {
           const value = itemValues[field.key] ?? '';
           const missing = field.required && !value.trim();
+          if (field.type === 'date') {
+            return (
+              <div key={field.key} className="block">
+                <span className="text-sm font-medium text-text-primary">{field.label}</span>
+                {field.required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
+                <SingleDateInput
+                  value={value}
+                  onChange={(next) => onPatch({
+                    itemValues: { ...itemValues, [field.key]: next },
+                  })}
+                  disabled={disabled}
+                  ariaLabel={field.label}
+                  error={missing ? 'Required' : undefined}
+                  className="mt-1"
+                />
+              </div>
+            );
+          }
           return (
             <label key={field.key} className="block">
               <span className="text-sm font-medium text-text-primary">{field.label}</span>
               {field.required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
               <input
-                type={field.type === 'date' ? 'date' : 'text'}
+                type="text"
                 value={value}
                 onChange={(event) => onPatch({
                   itemValues: { ...itemValues, [field.key]: event.target.value },

@@ -463,6 +463,16 @@ export async function toggleContactPoc(
   const { tenantId, userId, tx } = params;
   const db = tx || prisma;
 
+  const syncCompanyHasPoc = async () => {
+    const pocCount = await db.companyContact.count({
+      where: { companyId, isPoc: true, deletedAt: null },
+    });
+    await db.company.update({
+      where: { id: companyId },
+      data: { hasPoc: pocCount > 0 },
+    });
+  };
+
   // Validate company belongs to tenant
   const company = await db.company.findFirst({
     where: { id: companyId, tenantId, deletedAt: null },
@@ -532,6 +542,7 @@ export async function toggleContactPoc(
       changeSource: 'MANUAL',
       metadata: { isPoc, contactId },
     }, tx as Prisma.TransactionClient | undefined);
+    await syncCompanyHasPoc();
     return;
   }
 
@@ -557,6 +568,7 @@ export async function toggleContactPoc(
     changeSource: 'MANUAL',
     metadata: { isPoc, contactId },
   }, tx as Prisma.TransactionClient | undefined);
+  await syncCompanyHasPoc();
 }
 
 /**

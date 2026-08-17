@@ -2,21 +2,59 @@ import {
   normalizeA4DocumentLayout,
   type A4DocumentLayout,
 } from '@/components/documents/a4-pagination/layout';
+import { buildA4FontFaceCss } from '@/components/documents/a4-pagination/a4-font-faces';
+
+/** Height of the reserved bottom strip for printed page numbers. */
+export const PAGE_NUMBER_STRIP_MM = 6;
+
+export interface A4PrintCssOptions {
+  /**
+   * Reserve a strip inside every printed page, below the content area, for
+   * the page number. Chrome fragments absolutely positioned elements that
+   * hang below a box ending at the page boundary onto the next page, so the
+   * number must live inside the page. The `@page` bottom margin is reduced
+   * by the same amount so each `.print-page` still occupies exactly one
+   * physical page.
+   */
+  pageNumberStripMm?: number;
+  /**
+   * Let page content taller than the printable area flow onto following
+   * pages instead of being clipped to a single page. Used by server-side
+   * PDF export, where canonical content can contain blocks (e.g. tall
+   * tables) that span multiple physical pages.
+   */
+  allowPageOverflow?: boolean;
+  /**
+   * Overrides the bundled @font-face rules. Server-side export passes
+   * data-URI faces so the PDF page does not depend on a public font URL.
+   */
+  fontFaceCss?: string;
+}
 
 /**
  * Shared A4 print stylesheet. Client editor, HTML export, PDF export, and
  * preview all consume this one function so typography, spacing, margins, and
  * line-break semantics cannot drift between the edit and print paths.
  */
-export function buildA4PrintCss(layout: A4DocumentLayout): string {
+export function buildA4PrintCss(
+  layout: A4DocumentLayout,
+  options: A4PrintCssOptions = {},
+): string {
   const normalized = normalizeA4DocumentLayout(layout);
   const { top, right, bottom, left } = normalized.marginsMm;
+  const strip = Math.min(options.pageNumberStripMm ?? 0, bottom);
+  const pageBottomMargin = Math.max(0, bottom - strip);
+  const allowOverflow = options.allowPageOverflow === true;
   const contentHeight = `calc(297mm - ${top}mm - ${bottom}mm)`;
+  const pageHeight = strip > 0
+    ? `calc(${contentHeight} + ${strip}mm)`
+    : null;
 
   return `
+    ${options.fontFaceCss ?? buildA4FontFaceCss()}
     @page {
       size: 210mm 297mm;
-      margin: ${top}mm ${right}mm ${bottom}mm ${left}mm;
+      margin: ${top}mm ${right}mm ${pageBottomMargin}mm ${left}mm;
     }
     * {
       box-sizing: border-box;
@@ -115,6 +153,7 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
     .print-page {
       position: relative;
       min-height: ${contentHeight};
+      ${pageHeight ? `height: ${pageHeight};` : ''}
       page-break-after: always;
       break-after: page;
     }
@@ -122,11 +161,22 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
       page-break-after: auto;
       break-after: auto;
     }
+    .print-page .content {
+      ${allowOverflow
+        ? 'overflow: visible;'
+        : `height: ${contentHeight};\n      overflow: hidden;`}
+    }
+    .print-page[data-oversized="true"] .content {
+      height: auto;
+      overflow: visible;
+    }
     .print-page-number {
       position: absolute;
       left: 0;
       right: 0;
-      bottom: calc(-1 * ${bottom}mm / 2);
+      ${strip > 0
+        ? `bottom: 0;\n      height: ${strip}mm;\n      line-height: ${strip}mm;`
+        : `bottom: calc(-1 * ${bottom}mm / 2);`}
       text-align: center;
       font-family: 'Times New Roman', Times, serif;
       font-size: 10pt;
@@ -145,6 +195,10 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
       padding: 0;
       border: none;
       clear: both;
+    }
+    [data-flow-keep-together] {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
     @media print {
       html, body {

@@ -101,6 +101,7 @@ export function sanitizeReplacementHtml(html: string): string {
       'data-flow-id',
       'data-flow-continuation',
       'data-flow-oversized',
+      'data-flow-keep-together',
     ],
   });
 

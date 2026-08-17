@@ -176,35 +176,57 @@ export function assembleServiceAgreementTemplate(input: {
     })
     .join('');
 
-  const multipleEntities = entities.length > 1;
-  const feeRows = items
-    .flatMap((item) =>
+  const feeRow = (fee: ServiceAgreementFeeLineDto): string => [
+    '<tr>',
+    `<td>${escapeHtml(fee.description)}</td>`,
+    `<td>${escapeHtml(currency(fee.amount, fee.currency))} ${escapeHtml(
+      frequency(fee),
+    )}</td>`,
+    '</tr>',
+  ].join('');
+
+  const tbodyRows: string[] = [];
+  let firstFeeGroup = true;
+  for (const entity of entities) {
+    const groupRows = items.flatMap((item) =>
       [...item.feeLines]
         .sort((left, right) => left.displayOrder - right.displayOrder)
-        .map((fee) => {
-          const entity = entityById.get(fee.agreementEntityId);
-          return [
-            '<tr>',
-            `<td>${escapeHtml(item.variantNameSnapshot)}</td>`,
-            multipleEntities
-              ? `<td>${escapeHtml(entity?.nameSnapshot ?? '')}</td>`
-              : '',
-            `<td>${escapeHtml(fee.description)}</td>`,
-            `<td>${escapeHtml(currency(fee.amount, fee.currency))} ${escapeHtml(
-              frequency(fee),
-            )}</td>`,
-            '</tr>',
-          ].join('');
-        }),
-    )
-    .join('');
+        .filter((fee) => fee.agreementEntityId === entity.id)
+        .map(feeRow),
+    );
+    if (groupRows.length === 0) continue;
+    if (!firstFeeGroup) {
+      tbodyRows.push('<tr><td colspan="2">&nbsp;</td></tr>');
+    }
+    firstFeeGroup = false;
+    tbodyRows.push(
+      `<tr><td colspan="2" style="text-decoration: underline;">${escapeHtml(
+        entity.nameSnapshot,
+      )}</td></tr>`,
+    );
+    tbodyRows.push(...groupRows);
+  }
+  // Fee lines pointing at an entity that is no longer part of the agreement
+  // are preserved in their original order instead of being dropped silently.
+  const knownEntityIds = new Set(entities.map((entity) => entity.id));
+  const orphanRows = items.flatMap((item) =>
+    [...item.feeLines]
+      .sort((left, right) => left.displayOrder - right.displayOrder)
+      .filter((fee) => !knownEntityIds.has(fee.agreementEntityId))
+      .map(feeRow),
+  );
+  if (orphanRows.length > 0) {
+    if (tbodyRows.length > 0) {
+      tbodyRows.push('<tr><td colspan="2">&nbsp;</td></tr>');
+    }
+    tbodyRows.push(...orphanRows);
+  }
+
   const feeTable = [
     '<table data-service-agreement-fees="true"><thead><tr>',
-    '<th>Service</th>',
-    multipleEntities ? '<th>Entity</th>' : '',
-    '<th>Description</th><th>Fee</th>',
+    '<th style="width: 70%;">Description</th><th style="width: 30%;">Fee</th>',
     '</tr></thead><tbody>',
-    feeRows,
+    tbodyRows.join(''),
     '</tbody></table>',
   ].join('');
 

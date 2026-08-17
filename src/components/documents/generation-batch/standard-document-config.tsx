@@ -10,6 +10,7 @@ import {
 import {
   DocumentPartyChoiceList,
 } from '@/components/documents/document-party-choice-list';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { DocumentParty } from '@/lib/document-party';
 import type {
   BatchItemConfiguration,
@@ -278,27 +279,43 @@ export function StandardDocumentConfig({
                       {hasOverride ? 'Override' : 'Shared'}
                     </span>
                   </div>
-                  <input
-                    id={inputId}
-                    type={field.type === 'date' ? 'date' : 'text'}
-                    value={value}
-                    readOnly={!hasOverride}
-                    disabled={disabled}
-                    aria-invalid={missing || undefined}
-                    onChange={(event) => onPatch({
-                      masterOverrides: {
-                        ...configuration.masterOverrides,
-                        [field.id]: event.target.value,
-                      },
-                    })}
-                    className={cn(
-                      'mt-2 min-h-11 w-full rounded-lg border px-3 text-sm focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10',
-                      hasOverride
-                        ? 'border-border-primary bg-background-primary text-text-primary'
-                        : 'border-border-secondary bg-background-secondary text-text-secondary',
-                      missing && 'border-status-error/60',
-                    )}
-                  />
+                  {field.type === 'date' ? (
+                    <SingleDateInput
+                      value={value}
+                      onChange={(next) => onPatch({
+                        masterOverrides: {
+                          ...configuration.masterOverrides,
+                          [field.id]: next,
+                        },
+                      })}
+                      disabled={disabled || !hasOverride}
+                      ariaLabel={field.label}
+                      error={missing ? 'Required' : undefined}
+                      className="mt-2"
+                    />
+                  ) : (
+                    <input
+                      id={inputId}
+                      type="text"
+                      value={value}
+                      readOnly={!hasOverride}
+                      disabled={disabled}
+                      aria-invalid={missing || undefined}
+                      onChange={(event) => onPatch({
+                        masterOverrides: {
+                          ...configuration.masterOverrides,
+                          [field.id]: event.target.value,
+                        },
+                      })}
+                      className={cn(
+                        'mt-2 min-h-11 w-full rounded-lg border px-3 text-sm focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10',
+                        hasOverride
+                          ? 'border-border-primary bg-background-primary text-text-primary'
+                          : 'border-border-secondary bg-background-secondary text-text-secondary',
+                        missing && 'border-status-error/60',
+                      )}
+                    />
+                  )}
                   <div className="mt-2 flex items-center gap-3">
                     {hasOverride ? (
                       <button

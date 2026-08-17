@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildConditionBlock,
   buildEachBlock,
+  buildSignatureBlock,
 } from '@/components/documents/template-editor/template-builders';
 
 describe('guided template builders', () => {
@@ -85,5 +86,24 @@ describe('guided template builders', () => {
       value: 'Acme"}}{{#each directors}}',
       bodyHtml: '<p>Unsafe</p>',
     })).toThrow('Condition value cannot contain template tokens');
+  });
+
+  it('builds a balanced keep-together signature block loop per signer', () => {
+    const result = buildSignatureBlock({ collection: 'directors' });
+
+    expect(result.match(/{{#each directors}}/g)).toHaveLength(1);
+    expect(result.match(/{{\/each}}/g)).toHaveLength(1);
+    expect(result.match(/data-flow-keep-together="true"/g)).toHaveLength(1);
+    expect(result).toContain('<p>Sign on behalf of client</p>');
+    expect(result).toContain('<p>{{this.name}}</p>');
+    expect(result).toContain('<p>{{this.role}}</p>');
+    expect(result).toContain('<p>{{system.currentDate}}</p>');
+  });
+
+  it('omits the designation line for shareholder signature blocks', () => {
+    const result = buildSignatureBlock({ collection: 'shareholders' });
+
+    expect(result).toContain('{{#each shareholders}}');
+    expect(result).not.toContain('{{this.role}}');
   });
 });

@@ -177,6 +177,66 @@ describe('placeholder resolver', () => {
     expect(result.missing).toEqual([]);
   });
 
+  it('normalizes designations while preserving executive acronyms', () => {
+    const result = resolvePlaceholders(
+      [
+        '{{DESIGNATION(selectedDirector.role)}}',
+        '{{DESIGNATION(selectedShareholder.detail)}}',
+        'DESIGNATION({{selectedContact.detail}})',
+      ].join('|'),
+      {
+        selectedDirector: { id: 'd1', contactId: 'c1', name: 'Alice', detail: 'DIRECTOR', role: 'CEO', email: null, phone: null, address: { full: null, letter: null } },
+        selectedShareholder: { id: 's1', contactId: 'c2', name: 'Ben', detail: 'CFO', shareClass: 'ORDINARY', email: null, phone: null, address: { full: null, letter: null } },
+        selectedContact: { id: 'c3', contactId: 'c3', name: 'Cara', detail: 'DIRECTOR OF FINANCE', email: null, phone: null, address: { full: null, letter: null } },
+        system: { currentDate: new Date('2026-07-16'), preparerName: 'Test User', generatedBy: 'Test User' },
+      }
+    );
+
+    expect(result.resolved).toContain('CEO|CFO|Director of Finance');
+    expect(result.resolved).not.toContain('Ceo');
+    expect(result.resolved).not.toContain('Cfo');
+    expect(result.missing).toEqual([]);
+  });
+
+  it('normalizes every-day designations to title case', () => {
+    const result = resolvePlaceholders(
+      '<p>{{DESIGNATION(selectedDirector.detail)}}</p><p>DESIGNATION({{selectedDirector.role}})</p>',
+      {
+        selectedDirector: { id: 'd1', contactId: 'c1', name: 'Alice', detail: 'MANAGING DIRECTOR', role: 'company secretary', email: null, phone: null, address: { full: null, letter: null } },
+      }
+    );
+
+    expect(result.resolved).toContain('<p>Managing Director</p>');
+    expect(result.resolved).toContain('<p>Company Secretary</p>');
+    expect(result.missing).toEqual([]);
+  });
+
+  it('normalizes doubly-nested modifier syntax without leaking stray placeholders', () => {
+    const result = resolvePlaceholders(
+      '<p>{{DESIGNATION({{selectedContact.detail}})}}</p>',
+      {
+        selectedContact: { id: 'c1', contactId: 'c1', name: 'Cara', detail: 'CEO', email: null, phone: null, address: { full: null, letter: null } },
+      }
+    );
+
+    expect(result.resolved).toBe('<p>CEO</p>');
+    expect(result.resolved).not.toContain('{{');
+    expect(result.missing).toEqual([]);
+  });
+
+  it('normalizes doubly-nested modifiers inside each blocks', () => {
+    const result = resolvePlaceholders(
+      '{{#each directors}}<p>{{DESIGNATION({{this.role}})}}</p>{{/each}}',
+      {
+        directors: [{ name: 'Alice', role: 'DIRECTOR', isCurrent: true }],
+      }
+    );
+
+    expect(result.resolved).toContain('<p>Director</p>');
+    expect(result.resolved).not.toContain('{{');
+    expect(result.missing).toEqual([]);
+  });
+
   it('resolves external modifiers when the editor wraps the placeholder in inline HTML', () => {
     const result = resolvePlaceholders(
       '<p>PCASE(<span style="color: rgb(0, 0, 0); font-weight: 400;">{{company.name}}</span>)</p>',

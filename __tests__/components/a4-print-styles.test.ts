@@ -95,4 +95,83 @@ describe('shared A4 print styles', () => {
       'ul > li[data-flow-continuation-item]::before { content: none; }',
     );
   });
+
+  it('clips each print page to exactly one physical page', () => {
+    const css = buildA4PrintCss({
+      ...DEFAULT_A4_DOCUMENT_LAYOUT,
+      marginsMm: { top: 20, right: 20, bottom: 20, left: 20 },
+    });
+    expect(css).toContain('.print-page .content {');
+    expect(css).toContain('height: calc(297mm - 20mm - 20mm)');
+    expect(css).toContain('overflow: hidden');
+  });
+
+  it('keeps oversized pages unclipped so the editor warning content is not hidden', () => {
+    const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
+    expect(css).toContain('.print-page[data-oversized="true"] .content {');
+    expect(css).toContain('height: auto;');
+    expect(css).toContain('overflow: visible;');
+  });
+
+  it('reserves an in-page strip for page numbers and shrinks the page bottom margin', () => {
+    const css = buildA4PrintCss(
+      {
+        ...DEFAULT_A4_DOCUMENT_LAYOUT,
+        marginsMm: { top: 20, right: 20, bottom: 20, left: 20 },
+      },
+      { pageNumberStripMm: 6 },
+    );
+    expect(css).toContain('margin: 20mm 20mm 14mm 20mm');
+    expect(css).toContain(
+      'height: calc(calc(297mm - 20mm - 20mm) + 6mm);',
+    );
+    expect(css).toContain('bottom: 0;');
+    expect(css).not.toContain('bottom: calc(-1 * 20mm / 2)');
+    expect(css).toContain('.print-page .content {\n      height: calc(297mm - 20mm - 20mm);');
+  });
+
+  it('clamps the page number strip to the configured bottom margin', () => {
+    const css = buildA4PrintCss(
+      {
+        ...DEFAULT_A4_DOCUMENT_LAYOUT,
+        marginsMm: { top: 20, right: 20, bottom: 5, left: 20 },
+      },
+      { pageNumberStripMm: 6 },
+    );
+    expect(css).toContain('margin: 20mm 20mm 0mm 20mm');
+    expect(css).toContain(
+      'height: calc(calc(297mm - 20mm - 5mm) + 5mm);',
+    );
+  });
+
+  it('lets export pages overflow instead of clipping when requested', () => {
+    const css = buildA4PrintCss(
+      {
+        ...DEFAULT_A4_DOCUMENT_LAYOUT,
+        marginsMm: { top: 20, right: 20, bottom: 20, left: 20 },
+      },
+      { allowPageOverflow: true },
+    );
+    expect(css).toContain('.print-page .content {\n      overflow: visible;');
+    expect(css).not.toContain('overflow: hidden');
+    expect(css).toContain('margin: 20mm 20mm 20mm 20mm');
+  });
+
+  it('bundles metric-compatible font faces so print matches every environment', () => {
+    const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
+    expect(css).toContain("@font-face {\n      font-family: 'Arial';");
+    expect(css).toContain('arimo-latin-400-normal.woff2');
+    expect(css).toContain("font-family: 'Times New Roman';");
+    expect(css).toContain('tinos-latin-400-normal.woff2');
+    expect(css).toContain("font-family: 'Courier New';");
+    expect(css).toContain('cousine-latin-400-normal.woff2');
+  });
+
+  it('allows overriding the font faces with embedded data URIs', () => {
+    const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT, {
+      fontFaceCss: '@font-face { font-family: \'Test\'; src: url(data:font/woff2;base64,AAAA); }',
+    });
+    expect(css).toContain('data:font/woff2;base64,AAAA');
+    expect(css).not.toContain('/fonts/arimo');
+  });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { ServiceAgreementFeeLineInput } from '@/services/service-agreement';
 import { createServiceAgreementClientKey } from './client-key';
 
@@ -109,17 +110,17 @@ export function ServiceFeeEditor({
               />
             </label>
           ) : null}
-          <label className="text-xs text-text-secondary">
-            Billing start date
-            <input
-              type="date"
+          <div className="text-xs text-text-secondary">
+            <span>Billing start date</span>
+            <SingleDateInput
               value={fee.billingStartDate ?? startDate}
-              onChange={(event) => update(index, {
-                billingStartDate: event.target.value || null,
+              onChange={(next) => update(index, {
+                billingStartDate: next || null,
               })}
-              className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-sm sm:h-8"
+              ariaLabel="Billing start date"
+              className="mt-1"
             />
-          </label>
+          </div>
           <div className="flex items-end">
             <Button
               variant="ghost"

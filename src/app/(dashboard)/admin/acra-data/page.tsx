@@ -22,6 +22,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  ChevronDown,
   Database,
   RefreshCw,
   Search,
@@ -244,6 +245,7 @@ export default function AcraDataPage() {
   const [sortBy, setSortBy] = useState('entityName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
+  const [expandedRecordIds, setExpandedRecordIds] = useState<string[]>([]);
 
   // Debounce the toolbar search
   useEffect(() => {
@@ -325,6 +327,12 @@ export default function AcraDataPage() {
       description: 'Refresh list',
     },
   ]);
+
+  const toggleRecordExpanded = useCallback((id: string) => {
+    setExpandedRecordIds((prev) =>
+      prev.includes(id) ? prev.filter((existingId) => existingId !== id) : [...prev, id]
+    );
+  }, []);
 
   const handleSort = useCallback((field: string) => {
     setSortBy((prevSortBy) => {
@@ -778,23 +786,62 @@ export default function AcraDataPage() {
               No ACRA records found
             </div>
           ) : (
-            data.records.map((record) => (
-              <MobileCard
-                key={record.id}
-                title={record.entityName}
-                subtitle={<span className="font-mono">{record.uen}</span>}
-                badge={<StatusBadge status={record.entityStatus} />}
-                details={
-                  <CardDetailsGrid>
-                    <CardDetailItem label="Type" value={record.entityType} />
-                    <CardDetailItem label="Incorp. Date" value={record.registrationIncorporateDate || '-'} />
-                    <CardDetailItem label="Data As Of" value={formatDate(record.dataAsOf)} />
-                    <CardDetailItem label="Updated" value={formatDate(record.updatedAt)} />
-                    {record.address && <CardDetailItem label="Address" value={record.address} fullWidth />}
-                  </CardDetailsGrid>
-                }
-              />
-            ))
+            data.records.map((record) => {
+              const isExpanded = expandedRecordIds.includes(record.id);
+              return (
+                <MobileCard
+                  key={record.id}
+                  title={record.entityName}
+                  subtitle={<span className="font-mono">{record.uen}</span>}
+                  badge={<StatusBadge status={record.entityStatus} />}
+                  onCardClick={() => toggleRecordExpanded(record.id)}
+                  actions={
+                    <button
+                      type="button"
+                      onClick={() => toggleRecordExpanded(record.id)}
+                      className="p-1 hover:bg-background-tertiary rounded transition-colors"
+                      aria-label={isExpanded ? 'Collapse record details' : 'Expand record details'}
+                      aria-expanded={isExpanded}
+                    >
+                      <ChevronDown
+                        className={cn(
+                          'w-4 h-4 text-text-muted transition-transform duration-150',
+                          isExpanded && 'rotate-180'
+                        )}
+                      />
+                    </button>
+                  }
+                  details={
+                    isExpanded ? (
+                      <CardDetailsGrid>
+                        <CardDetailItem label="Company Type" value={record.companyTypeDescription || '-'} />
+                        <CardDetailItem label="Type" value={record.entityType} />
+                        <CardDetailItem label="Incorp. Date" value={record.registrationIncorporateDate || '-'} />
+                        <CardDetailItem label="Account Due Date" value={record.accountDueDate || '-'} />
+                        <CardDetailItem label="Annual Return Date" value={record.annualReturnDate || '-'} />
+                        <CardDetailItem label="Primary SSIC" value={record.primarySsicCode || '-'} />
+                        <CardDetailItem label="Primary SSIC Description" value={record.primarySsicDescription || '-'} />
+                        <CardDetailItem label="Secondary SSIC" value={record.secondarySsicCode || '-'} />
+                        <CardDetailItem label="Secondary SSIC Description" value={record.secondarySsicDescription || '-'} />
+                        <CardDetailItem label="No. of Officers" value={record.noOfOfficers || '-'} />
+                        <CardDetailItem label="Former Entity Name 1" value={record.formerEntityName1 || '-'} />
+                        <CardDetailItem label="UEN of Audit Firm 1" value={record.uenOfAuditFirm1 || '-'} />
+                        <CardDetailItem label="Block" value={record.block || '-'} />
+                        <CardDetailItem label="Street" value={record.streetName || '-'} />
+                        <CardDetailItem label="Level" value={record.levelNo || '-'} />
+                        <CardDetailItem label="Unit" value={record.unitNo || '-'} />
+                        <CardDetailItem label="Building" value={record.buildingName || '-'} />
+                        <CardDetailItem label="Postal Code" value={record.postalCode || '-'} />
+                        <CardDetailItem label="Address" value={record.address || '-'} fullWidth />
+                        <CardDetailItem label="Data As Of" value={formatDate(record.dataAsOf)} />
+                        <CardDetailItem label="Created" value={formatDate(record.createdAt)} />
+                        <CardDetailItem label="Updated" value={formatDate(record.updatedAt)} />
+                      </CardDetailsGrid>
+                    ) : undefined
+                  }
+                />
+              );
+            })
           )}
 
           {data.totalPages > 0 && (

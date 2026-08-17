@@ -513,6 +513,54 @@ describe('document generation batch lifecycle', () => {
     expect(prisma.documentGenerationBatch.create).not.toHaveBeenCalled();
   });
 
+  it('resolves an activeItemId that references a newly added item by template id', async () => {
+    const existingItem = batchItem('item-a', templateA, 0);
+    const newItem = batchItem('item-c', templateC, 1);
+    const batch = batchWith([existingItem]);
+    const updatedBatch = batchWith([existingItem, newItem], {
+      activeItemId: 'item-c',
+      currentStage: 2,
+    });
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(batch as never);
+    vi.mocked(prisma.documentGenerationBatch.updateMany).mockResolvedValue({ count: 1 });
+    vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([templateA, templateC] as never);
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue(templateC as never);
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({ id: 'child-c' } as never);
+    vi.mocked(prisma.documentGenerationBatchItem.create).mockResolvedValue({
+      id: 'item-c',
+    } as never);
+    vi.mocked(prisma.documentGenerationBatchItem.findMany)
+      .mockResolvedValueOnce([existingItem] as never)
+      .mockResolvedValueOnce([existingItem, newItem] as never)
+      .mockResolvedValueOnce([
+        { status: 'NOT_STARTED' },
+        { status: 'NOT_STARTED' },
+      ] as never);
+    vi.mocked(prisma.documentGenerationBatch.update).mockResolvedValue(updatedBatch as never);
+
+    const result = await updateDocumentGenerationBatch(
+      'batch-1',
+      {
+        expectedRevision: 0,
+        currentStage: 2,
+        activeItemId: templateC.id,
+        items: [
+          { templateId: templateA.id },
+          { templateId: templateC.id },
+        ],
+      },
+      actor,
+    );
+
+    expect(prisma.documentGenerationBatch.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ activeItemId: 'item-c' }),
+      }),
+    );
+    expect(result.activeItemId).toBe('item-c');
+    expect(result.items.map((item) => item.id)).toEqual(['item-a', 'item-c']);
+  });
+
   it('discards incomplete children but preserves generated outputs', async () => {
     const generated = batchItem('item-gen', templateA, 0, {
       status: 'GENERATED',

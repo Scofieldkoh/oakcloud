@@ -641,6 +641,20 @@ export async function updateDocumentGenerationBatch(
     });
     const status = computeBatchStatus(finalItems.map((item) => item.status));
 
+    // The client may point `activeItemId` at a local item by its template id
+    // before the first save assigns it a server id. Resolve it against the
+    // final items so the stored value is always a real item id.
+    const resolveActiveItemId = (): string | null => {
+      if (input.activeItemId === undefined) return current.activeItemId;
+      if (input.activeItemId === null) return null;
+      const direct = syncedItems.find((item) => item.id === input.activeItemId);
+      if (direct) return direct.id;
+      const byTemplate = syncedItems.find(
+        (item) => item.templateId === input.activeItemId,
+      );
+      return byTemplate?.id ?? input.activeItemId;
+    };
+
     return tx.documentGenerationBatch.update({
       where: { id },
       data: {
@@ -649,10 +663,7 @@ export async function updateDocumentGenerationBatch(
           input.primaryCompanyId !== undefined
             ? input.primaryCompanyId
             : current.primaryCompanyId,
-        activeItemId:
-          input.activeItemId !== undefined
-            ? input.activeItemId
-            : current.activeItemId,
+        activeItemId: resolveActiveItemId(),
         masterFieldValues: (
           input.masterFieldValues !== undefined
             ? input.masterFieldValues

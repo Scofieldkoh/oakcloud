@@ -119,6 +119,22 @@ describe('document generation batch validation', () => {
     }).success).toBe(false);
   });
 
+  it('accepts an activeItemId referencing a local item by its template id', () => {
+    expect(updateDocumentGenerationBatchSchema.safeParse({
+      expectedRevision: 1,
+      activeItemId: templateB,
+      items: [
+        { id: uuid, templateId: templateA },
+        { templateId: templateB },
+      ],
+    }).success).toBe(true);
+    expect(updateDocumentGenerationBatchSchema.safeParse({
+      expectedRevision: 1,
+      activeItemId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      items: [{ id: uuid, templateId: templateA }],
+    }).success).toBe(false);
+  });
+
   it('requires expected revision for execution payloads', () => {
     expect(batchExecutionSchema.safeParse({ expectedRevision: 2 }).success).toBe(true);
     expect(batchExecutionSchema.safeParse({}).success).toBe(false);

@@ -24,6 +24,11 @@ const SPLITTABLE_TEXT_TAGS = new Set([
   'H6',
 ]);
 const HEADING_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+const KEEP_TOGETHER_ATTRIBUTE = 'data-flow-keep-together';
+
+function isKeepTogether(element: HTMLElement): boolean {
+  return element.hasAttribute(KEEP_TOGETHER_ATTRIBUTE);
+}
 
 interface ElementSplit {
   fit: HTMLElement;
@@ -538,6 +543,26 @@ function paginateSection(
     const element = remaining.shift()!;
     const elementHtml = htmlFor(element);
     const nextElement = remaining[0];
+
+    // Blocks marked keep-together (e.g. signature blocks) never split. They
+    // fit onto the current page, move whole to the next page, or stand alone
+    // as oversized when they exceed an entire page by themselves.
+    if (isKeepTogether(element)) {
+      if (measurer.measure(currentHtml + elementHtml) <= maxHeight) {
+        currentHtml += elementHtml;
+        continue;
+      }
+      if (currentHtml) {
+        remaining.unshift(element);
+        commitPage();
+        continue;
+      }
+      element.dataset.flowOversized = 'true';
+      currentHtml = elementHtml;
+      currentOversized = true;
+      commitPage();
+      continue;
+    }
 
     if (
       currentHtml &&
