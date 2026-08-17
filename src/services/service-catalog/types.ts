@@ -13,6 +13,23 @@ export interface ServiceVariantFeeTemplateDto {
   displayOrder: number;
 }
 
+export interface ServiceVariantDeadlineRuleDto {
+  id: string;
+  ruleId: string;
+  serviceVariantId: string;
+  enabledByDefault: boolean;
+  parameterDefaults: Record<string, unknown>;
+  scheduleDefaults: unknown[];
+  displayOrder: number;
+  archivedAt: Date | null;
+  rule?: {
+    id: string;
+    code: string;
+    name: string;
+    currentVersionId: string | null;
+  };
+}
+
 export interface ServiceVariantDto {
   id: string;
   familyId: string;
@@ -32,6 +49,7 @@ export interface ServiceVariantDto {
     placeholders: unknown;
   };
   feeTemplates: ServiceVariantFeeTemplateDto[];
+  deadlineRules?: ServiceVariantDeadlineRuleDto[];
 }
 
 export interface ServiceFamilyDto {

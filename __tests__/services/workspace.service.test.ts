@@ -18,6 +18,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     workspace: {
       findUnique: vi.fn(),
+      create: vi.fn(),
     },
     userCompanyAssignment: {
       createMany: vi.fn(),
@@ -41,6 +42,10 @@ vi.mock('@/lib/audit', () => ({
 vi.mock('@/lib/workspace', () => ({
   generateWorkspaceSlug: vi.fn(),
   getWorkspaceLimits: vi.fn(),
+}));
+
+vi.mock('@/services/deadline-rule/starter-drafts', () => ({
+  createServiceScheduleStarterData: vi.fn(),
 }));
 
 vi.mock('@/lib/rbac', () => ({
@@ -78,11 +83,12 @@ vi.mock('bcryptjs', () => ({
 
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { getWorkspaceLimits } from '@/lib/workspace';
+import { generateWorkspaceSlug, getWorkspaceLimits } from '@/lib/workspace';
 import { sendEmail } from '@/lib/email';
 import { userInvitationEmail } from '@/lib/email-templates';
 import { logUserMembership } from '@/lib/audit';
-import { inviteUserToWorkspace } from '@/services/workspace.service';
+import { createWorkspace, inviteUserToWorkspace } from '@/services/workspace.service';
+import { createServiceScheduleStarterData } from '@/services/deadline-rule/starter-drafts';
 
 describe('tenant.service - inviteUserToWorkspace', () => {
   beforeEach(() => {
@@ -194,5 +200,28 @@ describe('tenant.service - inviteUserToWorkspace', () => {
 
     expect(prisma.user.create).not.toHaveBeenCalled();
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('workspace starter provisioning', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(generateWorkspaceSlug).mockResolvedValue('new-workspace');
+    vi.mocked(prisma.workspace.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.workspace.create).mockResolvedValue({
+      id: 'workspace-1',
+      name: 'New Workspace',
+      slug: 'new-workspace',
+    } as never);
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: typeof prisma) => Promise<unknown>) => callback(prisma));
+  });
+
+  it('provisions starter schedule data inside workspace creation transaction', async () => {
+    await createWorkspace({
+      name: 'New Workspace',
+      contactEmail: 'owner@example.com',
+    }, 'creator-1');
+
+    expect(createServiceScheduleStarterData).toHaveBeenCalledWith(prisma, 'workspace-1');
   });
 });

@@ -27,6 +27,7 @@ import {
   tenantSetupCompleteEmail,
   userRemovedEmail,
 } from '@/lib/email-templates';
+import { createServiceScheduleStarterData } from '@/services/deadline-rule/starter-drafts';
 import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
@@ -101,7 +102,7 @@ export async function createWorkspace(
         throw new Error('Workspace slug already exists');
       }
 
-      return tx.workspace.create({
+      const createdWorkspace = await tx.workspace.create({
         data: {
           name: data.name,
           slug,
@@ -116,6 +117,8 @@ export async function createWorkspace(
           settings: data.settings ? (data.settings as Prisma.InputJsonValue) : Prisma.JsonNull,
         },
       });
+      await createServiceScheduleStarterData(tx, createdWorkspace.id);
+      return createdWorkspace;
     });
 
     // Log tenant creation (outside transaction - non-critical)

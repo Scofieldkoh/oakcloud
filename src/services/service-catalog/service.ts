@@ -33,6 +33,15 @@ function variantInclude(tenantId: string) {
       where: { tenantId },
       orderBy: [{ displayOrder: 'asc' as const }, { description: 'asc' as const }],
     },
+    deadlineRuleAssociations: {
+      where: { tenantId, archivedAt: null },
+      orderBy: [{ displayOrder: 'asc' as const }, { createdAt: 'asc' as const }],
+      include: {
+        rule: {
+          select: { id: true, code: true, name: true, currentVersionId: true },
+        },
+      },
+    },
   } satisfies Prisma.ServiceVariantInclude;
 }
 
@@ -58,6 +67,39 @@ function familyInclude(tenantId: string) {
 type FamilyRecord = Prisma.ServiceFamilyGetPayload<{
   include: ReturnType<typeof familyInclude>;
 }>;
+
+async function persistVariantDeadlineRules(
+  tx: Prisma.TransactionClient,
+  variantId: string,
+  tenantId: string,
+  associations: NonNullable<import('@/lib/validations/service-catalog').CreateServiceVariantInput['deadlineRules']>,
+) {
+  const ruleIds = associations.map((association) => association.ruleId);
+  const rules = ruleIds.length === 0
+    ? []
+    : await tx.deadlineRule.findMany({
+        where: { tenantId, id: { in: ruleIds }, archivedAt: null },
+        select: { id: true },
+      });
+  if (rules.length !== ruleIds.length) {
+    throw new NotFoundError('One or more deadline rules were not found in this workspace');
+  }
+  await tx.serviceVariantDeadlineRule.deleteMany({
+    where: { tenantId, serviceVariantId: variantId },
+  });
+  if (associations.length === 0) return;
+  await tx.serviceVariantDeadlineRule.createMany({
+    data: associations.map((association) => ({
+      tenantId,
+      serviceVariantId: variantId,
+      ruleId: association.ruleId,
+      enabledByDefault: association.enabledByDefault,
+      parameterDefaults: association.parameterDefaults as Prisma.InputJsonValue,
+      scheduleDefaults: association.scheduleDefaults as Prisma.InputJsonValue,
+      displayOrder: association.displayOrder,
+    })),
+  });
+}
 
 function toVariantDto(variant: VariantRecord): ServiceVariantDto {
   return {
@@ -86,6 +128,26 @@ function toVariantDto(variant: VariantRecord): ServiceVariantDto {
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.customFrequencyLabel,
       displayOrder: fee.displayOrder,
+    })),
+    deadlineRules: (variant.deadlineRuleAssociations ?? []).map((association) => ({
+      id: association.id,
+      ruleId: association.ruleId,
+      serviceVariantId: association.serviceVariantId,
+      enabledByDefault: association.enabledByDefault,
+      parameterDefaults: (association.parameterDefaults ?? {}) as Record<string, unknown>,
+      scheduleDefaults: (association.scheduleDefaults ?? []) as unknown[],
+      displayOrder: association.displayOrder,
+      archivedAt: association.archivedAt,
+      ...(association.rule
+        ? {
+            rule: {
+              id: association.rule.id,
+              code: association.rule.code,
+              name: association.rule.name,
+              currentVersionId: association.rule.currentVersionId,
+            },
+          }
+        : {}),
     })),
   };
 }
@@ -455,6 +517,9 @@ export async function createServiceVariant(
       },
       include: variantInclude(params.tenantId),
     });
+    if (input.deadlineRules !== undefined) {
+      await persistVariantDeadlineRules(tx, variant.id, params.tenantId, input.deadlineRules);
+    }
     await createAuditLog(
       {
         tenantId: params.tenantId,
@@ -554,6 +619,9 @@ export async function updateServiceVariant(
       },
       include: variantInclude(params.tenantId),
     });
+    if (input.deadlineRules !== undefined) {
+      await persistVariantDeadlineRules(tx, variant.id, params.tenantId, input.deadlineRules);
+    }
 
     await createAuditLog(
       {

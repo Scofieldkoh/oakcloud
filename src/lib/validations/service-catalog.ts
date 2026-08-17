@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { serviceVariantRuleAssociationsSchema } from './deadline-rule';
 
 const codeSchema = z
   .string()
@@ -111,6 +112,7 @@ const variantFields = {
   displayOrder: z.number().int().min(0),
   isActive: z.boolean(),
   feeTemplates: z.array(serviceVariantFeeTemplateSchema).max(50, 'At most 50 fee rows are allowed'),
+  deadlineRules: serviceVariantRuleAssociationsSchema.optional(),
 };
 
 function validateVariant(
@@ -153,6 +155,7 @@ export const createServiceVariantSchema = z
     displayOrder: variantFields.displayOrder.default(0),
     isActive: variantFields.isActive.default(true),
     feeTemplates: variantFields.feeTemplates.default([]),
+    deadlineRules: variantFields.deadlineRules,
   })
   .superRefine(validateVariant)
   .transform((value) => ({
@@ -173,6 +176,7 @@ export const updateServiceVariantSchema = z
     displayOrder: variantFields.displayOrder.optional(),
     isActive: variantFields.isActive.optional(),
     feeTemplates: variantFields.feeTemplates.optional(),
+    deadlineRules: variantFields.deadlineRules,
   })
   .superRefine(validateVariant)
   .transform((value) => ({
