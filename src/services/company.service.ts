@@ -22,6 +22,7 @@ import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detecti
 import type { Company } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
+import { normalizeCompanyAlias } from '@/lib/company-display-label';
 import {
   safelyCaptureCompanyTaskStageIds,
   safelyReconcileCompanyTaskOutcomes,
@@ -35,6 +36,8 @@ type Decimal = Prisma.Decimal;
 // ============================================================================
 
 export interface CompanyWithRelations extends Company {
+  /** Optional user-facing label; null means derive initials from the legal name. */
+  displayAlias: string | null;
   addresses?: Array<{
     id: string;
     addressType: string;
@@ -115,6 +118,7 @@ export type { TenantAwareParams } from '@/lib/types';
 // Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof Company)[] = [
   'name',
+  'displayAlias',
   'formerName',
   'dateOfNameChange',
   'uen',
@@ -141,8 +145,17 @@ const TRACKED_FIELDS: (keyof Company)[] = [
 // charge, etc.) together with the minimal company fields needed for tenant
 // authorization checks and audit-log metadata.
 const COMPANY_SCOPE_INCLUDE = {
-  company: { select: { id: true, tenantId: true, name: true } },
+  company: { select: { id: true, tenantId: true, name: true, displayAlias: true } },
 } as const;
+
+/**
+ * Normalize a stored alias at service boundaries while preserving every DTO
+ * field returned by Prisma. Legacy rows may contain surrounding whitespace.
+ */
+function serializeCompany<T extends { displayAlias?: string | null }>(company: T): T {
+  if (!Object.prototype.hasOwnProperty.call(company, 'displayAlias')) return company;
+  return { ...company, displayAlias: normalizeCompanyAlias(company.displayAlias) };
+}
 
 // ============================================================================
 // Create Company
@@ -202,6 +215,7 @@ export async function createCompany(
       tenantId,
       uen: data.uen.toUpperCase(),
       name: data.name,
+      displayAlias: normalizeCompanyAlias(data.displayAlias),
       formerName: data.formerName,
       dateOfNameChange: data.dateOfNameChange ? new Date(data.dateOfNameChange) : null,
       entityType: data.entityType,
@@ -261,7 +275,7 @@ export async function createCompany(
   });
   await safelyReconcileCompanyTaskOutcomes(tenantId, company.id, userId);
 
-  return company;
+  return serializeCompany(company);
 }
 
 // ============================================================================
@@ -326,6 +340,7 @@ export async function updateCompany(
 
   if (data.uen !== undefined) updateData.uen = data.uen.toUpperCase();
   if (data.name !== undefined) updateData.name = data.name;
+  if (data.displayAlias !== undefined) updateData.displayAlias = normalizeCompanyAlias(data.displayAlias);
   if (data.formerName !== undefined) updateData.formerName = data.formerName;
   if (data.dateOfNameChange !== undefined)
     updateData.dateOfNameChange = data.dateOfNameChange ? new Date(data.dateOfNameChange) : null;
@@ -845,7 +860,7 @@ export async function getCompanyById(
   });
 
   if (!company) return null;
-  return attachAcraRecord(company);
+  return attachAcraRecord(serializeCompany(company));
 }
 
 /**
@@ -891,7 +906,8 @@ export async function getCompanyByUen(
     where.deletedAt = null;
   }
 
-  return prisma.company.findFirst({ where });
+  const company = await prisma.company.findFirst({ where });
+  return company ? serializeCompany(company) : null;
 }
 
 // ============================================================================
@@ -1115,7 +1131,7 @@ export async function searchCompanies(
   ]);
 
   let companies = companiesRaw.map((company) => ({
-    ...company,
+    ...serializeCompany(company),
     _count: {
       documents: company.documentCount,
       charges: company.activeChargeCount,
@@ -1276,7 +1292,7 @@ export async function getCompanyFullDetails(
 
   // Combine results into the expected shape
   // OPTIMIZED: Compute counts from already-fetched arrays instead of separate query
-  return attachAcraRecord({
+  return attachAcraRecord(serializeCompany({
     ...company,
     formerNames,
     addresses,
@@ -1293,7 +1309,7 @@ export async function getCompanyFullDetails(
       charges: charges.length,
       auditLogs: 0, // Audit logs rarely needed on detail page, fetch separately if needed
     },
-  } as CompanyWithRelations);
+  } as CompanyWithRelations));
 }
 
 // ============================================================================
@@ -1624,7 +1640,7 @@ export async function unlinkOfficerFromContact(
   const officer = await prisma.companyOfficer.findFirst({
     where: { id: officerId },
     include: {
-      company: { select: { id: true, tenantId: true, name: true } },
+      company: { select: { id: true, tenantId: true, name: true, displayAlias: true } },
       contact: { select: { id: true, fullName: true } },
     },
   });
@@ -1915,7 +1931,7 @@ export async function unlinkShareholderFromContact(
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId },
     include: {
-      company: { select: { id: true, tenantId: true, name: true } },
+      company: { select: { id: true, tenantId: true, name: true, displayAlias: true } },
       contact: { select: { id: true, fullName: true } },
     },
   });

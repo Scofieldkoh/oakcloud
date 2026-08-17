@@ -30,6 +30,7 @@ const identityRecord = z.object({
 export const identitySectionSchema = z.object({
   uen: requiredText,
   name: requiredText,
+  displayAlias: z.string().trim().max(40).nullable().optional(),
   entityType: z.enum(BIZFILE_ENTITY_TYPE_OPTIONS),
   status: z.enum(BIZFILE_STATUS_OPTIONS),
   statusDate: optionalDate,

@@ -9,6 +9,7 @@ import {
   companyProfileSectionSchemas,
   type CompanyProfileSectionData,
 } from '@/lib/validations/company-profile';
+import { normalizeCompanyAlias } from '@/lib/company-display-label';
 
 const profileCompanyArgs = {
   include: {
@@ -64,6 +65,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
     case 'identity': return {
       uen: company.uen,
       name: company.name,
+      displayAlias: normalizeCompanyAlias(company.displayAlias),
       entityType: company.entityType,
       status: company.status,
       statusDate: date(company.statusDate),
@@ -250,6 +252,9 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
       await tx.company.update({ where: { id: companyId }, data: {
         uen: data.uen, name: data.name, entityType: data.entityType, status: data.status,
         statusDate: dateOrNull(data.statusDate), incorporationDate: dateOrNull(data.incorporationDate),
+        ...(Object.prototype.hasOwnProperty.call(data, 'displayAlias')
+          ? { displayAlias: normalizeCompanyAlias(data.displayAlias) }
+          : {}),
       } });
       break;
     case 'addresses':

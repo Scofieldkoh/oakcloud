@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ transaction: vi.fn() }));
 const company = {
-  id: 'company-1', tenantId: 'tenant-1', uen: '202400001A', name: 'Example Pte. Ltd.',
+  id: 'company-1', tenantId: 'tenant-1', uen: '202400001A', name: 'Example Pte. Ltd.', displayAlias: 'OAK',
   formerName: null, dateOfNameChange: null, entityType: 'PRIVATE_LIMITED', status: 'LIVE',
   statusDate: null, incorporationDate: new Date('2020-01-01'), registrationDate: new Date('2020-01-02'),
   primarySsicCode: null, primarySsicDescription: null, secondarySsicCode: null, secondarySsicDescription: null,
@@ -60,5 +60,26 @@ describe('company profile section services', () => {
     expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ entityId: 'company-1:addresses' }) }));
     expect(saved.section).toBe('addresses');
     expect(saved.version).not.toBe(current.version);
+  });
+
+  it('includes the alias in identity versions and normalizes profile alias updates', async () => {
+    const { getCompanyProfileSection, mutateCompanyProfileSection } = await import('@/services/company/profile-sections');
+    const identity = await getCompanyProfileSection('company-1', 'tenant-1', 'identity');
+
+    expect(identity.data).toEqual(expect.objectContaining({ displayAlias: 'OAK' }));
+
+    await mutateCompanyProfileSection(tx, 'company-1', 'identity', {
+      uen: '202400001A',
+      name: 'Example Pte. Ltd.',
+      displayAlias: '   ',
+      entityType: 'PRIVATE_LIMITED',
+      status: 'LIVE',
+      statusDate: null,
+      incorporationDate: '2020-01-01',
+    });
+
+    expect(tx.company.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ displayAlias: null }),
+    }));
   });
 });

@@ -41,6 +41,7 @@ export const createCompanySchema = z.object({
     .max(10, 'UEN must be at most 10 characters')
     .regex(/^[A-Z0-9]+$/, 'UEN must contain only uppercase letters and numbers'),
   name: z.string().min(1, 'Company name is required').max(200, 'Company name is too long'),
+  displayAlias: z.string().trim().max(40).nullable().optional(),
   formerName: z.string().max(200).optional().nullable(),
   dateOfNameChange: dateStringTransform,
   entityType: entityTypeEnum.default('PRIVATE_LIMITED'),

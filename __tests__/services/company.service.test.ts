@@ -19,6 +19,7 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       count: vi.fn(),
     },
+    $transaction: vi.fn(),
     tenant: {
       findUnique: vi.fn(),
     },
@@ -45,8 +46,9 @@ import {
   getCompanyByUen,
   searchCompanies,
   createCompany,
+  updateCompany,
 } from '@/services/company.service';
-import type { CreateCompanyInput } from '@/lib/validations/company';
+import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/company';
 
 describe('Company schema contract', () => {
   it('exposes normalized auditor fields through the generated Prisma client', () => {
@@ -126,6 +128,25 @@ describe('Company Service', () => {
           where: { uen: { equals: '202312345A', mode: 'insensitive' } },
         })
       );
+    });
+
+    it('should trim the stored alias in the detail response without dropping the legal name', async () => {
+      const mockCompany = {
+        id: 'company-1',
+        name: 'Oaktree Accounting & Corporate Solution Pte. Ltd.',
+        uen: '202312345A',
+        displayAlias: ' OAK ',
+        tenantId: 'tenant-1',
+      };
+
+      vi.mocked(prisma.company.findFirst).mockResolvedValue(mockCompany as never);
+
+      const result = await getCompanyById('company-1', 'tenant-1');
+
+      expect(result).toEqual(expect.objectContaining({
+        name: 'Oaktree Accounting & Corporate Solution Pte. Ltd.',
+        displayAlias: 'OAK',
+      }));
     });
 
     it('should not attach an ACRA record when none exists', async () => {
@@ -328,6 +349,25 @@ describe('Company Service', () => {
         })
       );
     });
+
+    it('should trim stored aliases in search results without dropping existing fields', async () => {
+      vi.mocked(prisma.company.findMany).mockResolvedValue([{
+        id: 'company-1',
+        name: 'Oaktree Accounting & Corporate Solution Pte. Ltd.',
+        uen: '202312345A',
+        displayAlias: ' OAK ',
+        tenantId: 'tenant-1',
+        addresses: [],
+      }] as never);
+      vi.mocked(prisma.company.count).mockResolvedValue(1);
+
+      const result = await searchCompanies(defaultSearchParams, 'tenant-1');
+
+      expect(result.companies[0]).toEqual(expect.objectContaining({
+        name: 'Oaktree Accounting & Corporate Solution Pte. Ltd.',
+        displayAlias: 'OAK',
+      }));
+    });
   });
 
   // Default company data for tests - cast to CreateCompanyInput since Zod transforms are complex
@@ -369,6 +409,60 @@ describe('Company Service', () => {
       );
 
       expect(result.name).toBe('New Company Pte Ltd');
+    });
+
+    it('should trim a provided alias without persisting a derived fallback', async () => {
+      const mockCompany = {
+        id: 'new-company',
+        name: 'New Company Pte Ltd',
+        uen: '202400001A',
+        displayAlias: 'OAK',
+        tenantId: 'tenant-1',
+      };
+
+      vi.mocked(prisma.company.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.company.create).mockResolvedValue(mockCompany as never);
+
+      await createCompany(
+        { ...defaultCompanyData, displayAlias: ' OAK ' },
+        { tenantId: 'tenant-1', userId: 'user-1' },
+      );
+
+      expect(prisma.company.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ displayAlias: 'OAK' }),
+      }));
+      expect(prisma.company.create).not.toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ displayAlias: 'NCP' }),
+      }));
+    });
+
+    it('should normalize a blank alias to null when updating a company', async () => {
+      const existingCompany = {
+        id: 'company-1',
+        name: 'Example Company Pte Ltd',
+        uen: '202400001A',
+        tenantId: 'tenant-1',
+        deletedAt: null,
+      };
+      const txCompany = {
+        update: vi.fn().mockResolvedValue({ ...existingCompany, displayAlias: null }),
+      };
+      const tx = {
+        company: txCompany,
+        companyAddress: { findFirst: vi.fn() },
+      };
+
+      vi.mocked(prisma.company.findFirst).mockResolvedValue(existingCompany as never);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(tx as never) as never);
+
+      await updateCompany(
+        { id: 'company-1', displayAlias: '   ' } as UpdateCompanyInput,
+        { tenantId: 'tenant-1', userId: 'user-1' },
+      );
+
+      expect(txCompany.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ displayAlias: null }),
+      }));
     });
 
     it('should reject duplicate UEN within tenant', async () => {

@@ -31,6 +31,8 @@ export interface RelatedContact {
  * Company with all related data included
  */
 export interface CompanyWithRelations extends Company {
+  /** Optional user-facing label; null means derive initials from the legal name. */
+  displayAlias: string | null;
   formerNames?: Array<{
     id: string;
     formerName: string;
@@ -263,6 +265,7 @@ export interface ShareholderUpdateResult {
  */
 export const TRACKED_COMPANY_FIELDS: (keyof Company)[] = [
   'name',
+  'displayAlias',
   'formerName',
   'dateOfNameChange',
   'uen',
