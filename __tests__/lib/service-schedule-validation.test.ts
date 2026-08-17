@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type {
+  ApplicabilityDefinition,
+  ApplicabilityPredicate,
+} from '@/services/service-schedule';
 import {
   applicabilityDefinitionSchema,
   applicabilityPredicateSchema,
@@ -9,6 +13,48 @@ import {
   recurrenceSchema,
   scheduleEntriesSchema,
 } from '@/lib/validations/service-schedule';
+
+type Assert<T extends true> = T;
+type IsEqual<Left, Right> =
+  [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
+
+type _PublicPredicateMatchesSchema = Assert<IsEqual<
+  ApplicabilityPredicate,
+  import('zod').infer<typeof applicabilityPredicateSchema>
+>>;
+type _PublicDefinitionMatchesSchema = Assert<IsEqual<
+  ApplicabilityDefinition,
+  import('zod').infer<typeof applicabilityDefinitionSchema>
+>>;
+
+const validTypedPredicates: ApplicabilityPredicate[] = [
+  { kind: 'FIELD_TRUE', field: 'isGstRegistered' },
+  { kind: 'FIELD_EQUALS', field: 'currentOfficerCount', value: 3 },
+  { kind: 'FIELD_IN', field: 'entityType', values: ['EXEMPTED_PRIVATE_LIMITED'] },
+  { kind: 'FIELD_COMPARE', field: 'nextAgmDueDate', operator: 'GTE', value: '2026-01-01' },
+];
+const validTypedDefinition: ApplicabilityDefinition = {
+  schemaVersion: 1,
+  kind: 'ALL',
+  conditions: validTypedPredicates,
+};
+void validTypedPredicates;
+void validTypedDefinition;
+
+// @ts-expect-error Boolean predicates cannot target string fields.
+const invalidBooleanPredicate: ApplicabilityPredicate = { kind: 'FIELD_TRUE', field: 'name' };
+// @ts-expect-error Numeric/date comparisons cannot target boolean fields.
+const invalidComparePredicate: ApplicabilityPredicate = {
+  kind: 'FIELD_COMPARE', field: 'isGstRegistered', operator: 'GT', value: 1,
+};
+const invalidNumericEquality: ApplicabilityPredicate = {
+  kind: 'FIELD_EQUALS', field: 'currentOfficerCount',
+  // @ts-expect-error Numeric fields do not accept string equality values.
+  value: '3',
+};
+void invalidBooleanPredicate;
+void invalidComparePredicate;
+void invalidNumericEquality;
 
 describe('generic service schedule validation', () => {
   it('accepts zero, four, and thirty-one entries for every service family', () => {
@@ -227,5 +273,79 @@ describe('generic service schedule validation', () => {
     expect(() => { result = applicabilityDefinitionSchema.safeParse({ schemaVersion: 1, ...nested }); }).not.toThrow();
     expect(result!.success).toBe(false);
     if (!result!.success) expect(result!.error.issues[0]?.message).toMatch(/nested|depth|levels/i);
+  });
+
+  it('rejects unknown-root deep groups without entering recursive parsing', () => {
+    let nested: Record<string, unknown> = { kind: 'UNKNOWN_ROOT', conditions: [] };
+    for (let index = 0; index < 5000; index += 1) {
+      nested = { kind: 'UNKNOWN_ROOT', conditions: [nested] };
+    }
+
+    let result: ReturnType<typeof applicabilityDefinitionSchema.safeParse>;
+    expect(() => {
+      result = applicabilityDefinitionSchema.safeParse({ schemaVersion: 1, ...nested });
+    }).not.toThrow();
+    expect(result!.success).toBe(false);
+  });
+
+  it('rejects unknown-child deep groups before recursive parsing', () => {
+    let nested: Record<string, unknown> = { kind: 'UNKNOWN_CHILD', conditions: [] };
+    for (let index = 0; index < 5000; index += 1) {
+      nested = { kind: 'UNKNOWN_CHILD', conditions: [nested] };
+    }
+
+    let result: ReturnType<typeof applicabilityDefinitionSchema.safeParse>;
+    expect(() => {
+      result = applicabilityDefinitionSchema.safeParse({
+        schemaVersion: 1,
+        kind: 'ALL',
+        conditions: [nested],
+      });
+    }).not.toThrow();
+    expect(result!.success).toBe(false);
+  });
+
+  it('rejects huge condition widths before visiting every element', () => {
+    const input = {
+      schemaVersion: 1,
+      kind: 'UNKNOWN_ROOT',
+      conditions: Array.from({ length: 200_000 }, () => ({ kind: 'UNKNOWN_CHILD' })),
+    };
+    const started = performance.now();
+    let result: ReturnType<typeof applicabilityDefinitionSchema.safeParse>;
+    expect(() => {
+      result = applicabilityDefinitionSchema.safeParse(input);
+    }).not.toThrow();
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(result!.success).toBe(false);
+  });
+
+  it('rejects huge unknown-property arrays before traversing their contents', () => {
+    const input = {
+      schemaVersion: 1,
+      kind: 'UNKNOWN_ROOT',
+      unknownProperty: { payload: Array.from({ length: 200_000 }, () => ({ nested: true })) },
+    };
+    let result: ReturnType<typeof applicabilityDefinitionSchema.safeParse>;
+    expect(() => {
+      result = applicabilityDefinitionSchema.safeParse(input);
+    }).not.toThrow();
+    expect(result!.success).toBe(false);
+  });
+
+  it('rejects cyclic applicability structures with a controlled Zod error', () => {
+    const cyclic: Record<string, unknown> = {
+      schemaVersion: 1,
+      kind: 'UNKNOWN_ROOT',
+      conditions: [],
+    };
+    (cyclic.conditions as unknown[]).push(cyclic);
+
+    let result: ReturnType<typeof applicabilityDefinitionSchema.safeParse>;
+    expect(() => {
+      result = applicabilityDefinitionSchema.safeParse(cyclic);
+    }).not.toThrow();
+    expect(result!.success).toBe(false);
+    if (!result!.success) expect(result!.error.issues[0]?.message).toMatch(/cycle|cyclic/i);
   });
 });

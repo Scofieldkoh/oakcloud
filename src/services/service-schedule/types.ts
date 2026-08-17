@@ -82,44 +82,105 @@ export type MilestoneDefinition = {
   isActive: boolean;
 };
 
-export type CompanyField =
+export type BooleanCompanyField =
+  | 'isGstRegistered'
+  | 'isRegisteredCharity'
+  | 'isIPC'
+  | 'hasCharges';
+
+export type NumericCompanyField =
+  | 'currentOfficerCount'
+  | 'currentShareholderCount'
+  | 'annualReceiptsOrExpenditure';
+
+export type DateCompanyField =
   | 'financialYearEnd'
   | 'nextAgmDueDate'
   | 'nextArDueDate'
   | 'accountsDueDate'
   | 'incorporationDate'
-  | 'registrationDate'
+  | 'registrationDate';
+
+export type StringCompanyField =
   | 'entityType'
   | 'status'
-  | 'isGstRegistered'
-  | 'isRegisteredCharity'
-  | 'isIPC'
-  | 'hasCharges'
-  | 'currentOfficerCount'
-  | 'currentShareholderCount'
-  | 'annualReceiptsOrExpenditure'
   | 'primarySsicCode'
   | 'secondarySsicCode'
   | 'uen'
   | 'name';
 
-export type CompanyRuleSource = Partial<Record<CompanyField, unknown>>;
+export type CompanyField = BooleanCompanyField | NumericCompanyField | DateCompanyField | StringCompanyField;
+
+/** The runtime predicate schema's field-to-value compatibility map. */
+export type CompanyFieldValueMap = {
+  [Field in BooleanCompanyField]: boolean;
+} & {
+  [Field in NumericCompanyField]: number;
+} & {
+  [Field in DateCompanyField]: string;
+} & {
+  [Field in StringCompanyField]: string;
+};
+
+export type CompanyFieldValue = CompanyFieldValueMap[CompanyField];
+export type CompanyRuleSource = Partial<CompanyFieldValueMap>;
+
+type EqualityApplicabilityPredicate<Kind extends 'FIELD_EQUALS' | 'FIELD_NOT_EQUALS'> = {
+  [Field in CompanyField]: {
+    kind: Kind;
+    field: Field;
+    value: CompanyFieldValueMap[Field];
+  };
+}[CompanyField];
+
+type ListApplicabilityPredicate<Kind extends 'FIELD_IN' | 'FIELD_NOT_IN'> = {
+  [Field in CompanyField]: {
+    kind: Kind;
+    field: Field;
+    values: Array<CompanyFieldValueMap[Field]>;
+  };
+}[CompanyField];
+
+type BooleanApplicabilityPredicate<Kind extends 'FIELD_TRUE' | 'FIELD_FALSE'> = {
+  [Field in BooleanCompanyField]: {
+    kind: Kind;
+    field: Field;
+  };
+}[BooleanCompanyField];
+
+type PresenceApplicabilityPredicate<Kind extends 'FIELD_PRESENT' | 'FIELD_MISSING'> = {
+  kind: Kind;
+  field: CompanyField;
+};
+
+export type ComparisonOperator = 'GT' | 'GTE' | 'LT' | 'LTE';
+
+type CompareApplicabilityPredicate = {
+  [Field in NumericCompanyField]: {
+    kind: 'FIELD_COMPARE';
+    field: Field;
+    operator: ComparisonOperator;
+    value: number;
+  };
+}[NumericCompanyField] | {
+  [Field in DateCompanyField]: {
+    kind: 'FIELD_COMPARE';
+    field: Field;
+    operator: ComparisonOperator;
+    value: string;
+  };
+}[DateCompanyField];
 
 export type ApplicabilityPredicate =
-  | { kind: 'FIELD_EQUALS'; field: CompanyField; value: string | number | boolean }
-  | { kind: 'FIELD_NOT_EQUALS'; field: CompanyField; value: string | number | boolean }
-  | { kind: 'FIELD_IN'; field: CompanyField; values: Array<string | number | boolean> }
-  | { kind: 'FIELD_NOT_IN'; field: CompanyField; values: Array<string | number | boolean> }
-  | { kind: 'FIELD_TRUE'; field: CompanyField }
-  | { kind: 'FIELD_FALSE'; field: CompanyField }
-  | { kind: 'FIELD_PRESENT'; field: CompanyField }
-  | { kind: 'FIELD_MISSING'; field: CompanyField }
-  | {
-      kind: 'FIELD_COMPARE';
-      field: CompanyField;
-      operator: 'GT' | 'GTE' | 'LT' | 'LTE';
-      value: string | number;
-    };
+  | EqualityApplicabilityPredicate<'FIELD_EQUALS'>
+  | EqualityApplicabilityPredicate<'FIELD_NOT_EQUALS'>
+  | ListApplicabilityPredicate<'FIELD_IN'>
+  | ListApplicabilityPredicate<'FIELD_NOT_IN'>
+  | BooleanApplicabilityPredicate<'FIELD_TRUE'>
+  | BooleanApplicabilityPredicate<'FIELD_FALSE'>
+  | PresenceApplicabilityPredicate<'FIELD_PRESENT'>
+  | PresenceApplicabilityPredicate<'FIELD_MISSING'>
+  | CompareApplicabilityPredicate;
 
 export type ApplicabilityGroup = {
   kind: 'ALL' | 'ANY';

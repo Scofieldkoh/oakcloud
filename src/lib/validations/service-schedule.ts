@@ -8,6 +8,16 @@ const MAX_APPLICABILITY_DEPTH = 5;
 const MAX_APPLICABILITY_GROUP_CONDITIONS = 50;
 const MAX_APPLICABILITY_GROUPS = 25;
 const MAX_APPLICABILITY_NODES = 100;
+// Every accepted applicability array is either a bounded conditions list or a
+// bounded FIELD_IN/FIELD_NOT_IN values list. Applying that same bound to
+// unknown arrays lets the pre-parser reject hostile payloads before Zod walks
+// any of their contents.
+const MAX_APPLICABILITY_ARRAY_ITEMS = MAX_APPLICABILITY_GROUP_CONDITIONS;
+const MAX_APPLICABILITY_OBJECT_PROPERTIES = MAX_APPLICABILITY_GROUP_CONDITIONS;
+// A valid group contributes an object and its conditions array per level,
+// plus the root object. Keep enough structural headroom for that shape while
+// still making malformed arbitrary nesting deterministic.
+const MAX_APPLICABILITY_STRUCTURAL_DEPTH = (MAX_APPLICABILITY_DEPTH * 2) + 2;
 
 function isRealGregorianDate(value: string): boolean {
   if (!DATE_ONLY_PATTERN.test(value)) return false;
@@ -205,54 +215,65 @@ export const recurrenceSchema = z.discriminatedUnion('kind', [
 export const ruleRecurrenceSchema = recurrenceSchema;
 export const recurrenceDefinitionSchema = recurrenceSchema;
 
-const scalarSchema = z.union([z.string(), z.number().finite(), z.boolean()]);
-const comparisonValueSchema = z.union([z.string(), z.number().finite()]);
-const compareFieldSchema = z.union([numericCompanyFieldSchema, dateCompanyFieldSchema]);
-
-function fieldValueIssue(field: string, value: unknown): string | null {
-  if (booleanCompanyFieldSchema.options.includes(field as z.infer<typeof booleanCompanyFieldSchema>)) {
-    return typeof value === 'boolean' ? null : `${field} requires a boolean value`;
-  }
-  if (numericCompanyFieldSchema.options.includes(field as z.infer<typeof numericCompanyFieldSchema>)) {
-    return typeof value === 'number' && Number.isFinite(value) ? null : `${field} requires a numeric value`;
-  }
-  if (dateCompanyFieldSchema.options.includes(field as z.infer<typeof dateCompanyFieldSchema>)) {
-    return typeof value === 'string' && isRealGregorianDate(value) ? null : `${field} requires a real YYYY-MM-DD date`;
-  }
-  return typeof value === 'string' ? null : `${field} requires a string value`;
-}
-
-function addFieldValueIssue(ctx: z.RefinementCtx, field: string, value: unknown, path: (string | number)[]): void {
-  const message = fieldValueIssue(field, value);
-  if (message) ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
-}
-
-const applicabilityPredicateBaseSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('FIELD_EQUALS'), field: companyFieldSchema, value: scalarSchema }).strict(),
-  z.object({ kind: z.literal('FIELD_NOT_EQUALS'), field: companyFieldSchema, value: scalarSchema }).strict(),
-  z.object({ kind: z.literal('FIELD_IN'), field: companyFieldSchema, values: z.array(scalarSchema).min(1).max(MAX_APPLICABILITY_LEAVES) }).strict(),
-  z.object({ kind: z.literal('FIELD_NOT_IN'), field: companyFieldSchema, values: z.array(scalarSchema).min(1).max(MAX_APPLICABILITY_LEAVES) }).strict(),
+// Keep predicate branches field-specific instead of applying a broad scalar
+// schema followed by refinement. This makes both runtime parsing and the
+// inferred/public TypeScript AST reject the same invalid field/value pairs.
+const applicabilityPredicateBaseSchema = z.union([
+  z.object({ kind: z.literal('FIELD_EQUALS'), field: booleanCompanyFieldSchema, value: z.boolean() }).strict(),
+  z.object({ kind: z.literal('FIELD_EQUALS'), field: numericCompanyFieldSchema, value: z.number().finite() }).strict(),
+  z.object({ kind: z.literal('FIELD_EQUALS'), field: dateCompanyFieldSchema, value: dateOnlySchema }).strict(),
+  z.object({ kind: z.literal('FIELD_EQUALS'), field: stringCompanyFieldSchema, value: z.string() }).strict(),
+  z.object({ kind: z.literal('FIELD_NOT_EQUALS'), field: booleanCompanyFieldSchema, value: z.boolean() }).strict(),
+  z.object({ kind: z.literal('FIELD_NOT_EQUALS'), field: numericCompanyFieldSchema, value: z.number().finite() }).strict(),
+  z.object({ kind: z.literal('FIELD_NOT_EQUALS'), field: dateCompanyFieldSchema, value: dateOnlySchema }).strict(),
+  z.object({ kind: z.literal('FIELD_NOT_EQUALS'), field: stringCompanyFieldSchema, value: z.string() }).strict(),
+  z.object({
+    kind: z.literal('FIELD_IN'), field: booleanCompanyFieldSchema,
+    values: z.array(z.boolean()).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_IN'), field: numericCompanyFieldSchema,
+    values: z.array(z.number().finite()).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_IN'), field: dateCompanyFieldSchema,
+    values: z.array(dateOnlySchema).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_IN'), field: stringCompanyFieldSchema,
+    values: z.array(z.string()).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_NOT_IN'), field: booleanCompanyFieldSchema,
+    values: z.array(z.boolean()).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_NOT_IN'), field: numericCompanyFieldSchema,
+    values: z.array(z.number().finite()).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_NOT_IN'), field: dateCompanyFieldSchema,
+    values: z.array(dateOnlySchema).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_NOT_IN'), field: stringCompanyFieldSchema,
+    values: z.array(z.string()).min(1).max(MAX_APPLICABILITY_LEAVES),
+  }).strict(),
   z.object({ kind: z.literal('FIELD_TRUE'), field: booleanCompanyFieldSchema }).strict(),
   z.object({ kind: z.literal('FIELD_FALSE'), field: booleanCompanyFieldSchema }).strict(),
   z.object({ kind: z.literal('FIELD_PRESENT'), field: companyFieldSchema }).strict(),
   z.object({ kind: z.literal('FIELD_MISSING'), field: companyFieldSchema }).strict(),
   z.object({
-    kind: z.literal('FIELD_COMPARE'),
-    field: compareFieldSchema,
-    operator: z.enum(['GT', 'GTE', 'LT', 'LTE']),
-    value: comparisonValueSchema,
+    kind: z.literal('FIELD_COMPARE'), field: numericCompanyFieldSchema,
+    operator: z.enum(['GT', 'GTE', 'LT', 'LTE']), value: z.number().finite(),
+  }).strict(),
+  z.object({
+    kind: z.literal('FIELD_COMPARE'), field: dateCompanyFieldSchema,
+    operator: z.enum(['GT', 'GTE', 'LT', 'LTE']), value: dateOnlySchema,
   }).strict(),
 ]);
 
-export const applicabilityPredicateSchema = applicabilityPredicateBaseSchema.superRefine((value, ctx) => {
-  if (value.kind === 'FIELD_EQUALS' || value.kind === 'FIELD_NOT_EQUALS') {
-    addFieldValueIssue(ctx, value.field, value.value, ['value']);
-  } else if (value.kind === 'FIELD_IN' || value.kind === 'FIELD_NOT_IN') {
-    value.values.forEach((entry, index) => addFieldValueIssue(ctx, value.field, entry, ['values', index]));
-  } else if (value.kind === 'FIELD_COMPARE') {
-    addFieldValueIssue(ctx, value.field, value.value, ['value']);
-  }
-});
+export const applicabilityPredicateSchema = applicabilityPredicateBaseSchema;
 
 type ApplicabilityNode = z.infer<typeof applicabilityPredicateSchema> | {
   kind: 'ALL' | 'ANY';
@@ -267,13 +288,11 @@ const applicabilityNodeSchema: z.ZodType<ApplicabilityNode> = z.lazy(() => z.uni
   }).strict(),
 ]));
 
-type RawApplicabilityRecord = Record<string, unknown>;
-
-function isRawApplicabilityRecord(value: unknown): value is RawApplicabilityRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 type ApplicabilityGuardIssue = { path: Array<string | number>; message: string };
+
+function isApplicabilityContainer(value: unknown): value is object {
+  return typeof value === 'object' && value !== null;
+}
 
 /**
  * Inspect untrusted JSON iteratively before the recursive Zod AST parser is
@@ -281,50 +300,92 @@ type ApplicabilityGuardIssue = { path: Array<string | number>; message: string }
  * stack or consuming unbounded work.
  */
 function guardRawApplicabilityInput(input: unknown): ApplicabilityGuardIssue | null {
-  if (!isRawApplicabilityRecord(input)) return null;
-  const stack: Array<{ node: unknown; path: Array<string | number>; depth: number }> = [
-    { node: input, path: [], depth: 1 },
+  if (!isApplicabilityContainer(input)) return null;
+  const stack: Array<{
+    node: unknown;
+    path: Array<string | number>;
+    depth: number;
+    groupDepth: number;
+  }> = [
+    { node: input, path: [], depth: 0, groupDepth: 0 },
   ];
+  const seen = new WeakSet<object>();
   let nodes = 0;
   let leaves = 0;
   let groups = 0;
 
   while (stack.length > 0) {
     const current = stack.pop()!;
+    if (!isApplicabilityContainer(current.node)) continue;
+    if (seen.has(current.node)) {
+      return { path: current.path, message: 'Applicability definitions cannot contain cycles' };
+    }
+    seen.add(current.node);
+
     nodes += 1;
     if (nodes > MAX_APPLICABILITY_NODES) {
       return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_NODES} nodes` };
     }
-    if (!isRawApplicabilityRecord(current.node)) continue;
-    const kind = current.node.kind;
-    if (kind === 'ALL' || kind === 'ANY') {
+    if (current.depth > MAX_APPLICABILITY_STRUCTURAL_DEPTH) {
+      return {
+        path: current.path,
+        message: `Applicability structures may be nested at most ${MAX_APPLICABILITY_STRUCTURAL_DEPTH} levels`,
+      };
+    }
+
+    if (Array.isArray(current.node)) {
+      if (current.node.length > MAX_APPLICABILITY_ARRAY_ITEMS) {
+        const label = current.path[current.path.length - 1] === 'conditions' ? 'conditions' : 'values';
+        return {
+          path: current.path,
+          message: `Applicability arrays may contain at most ${MAX_APPLICABILITY_ARRAY_ITEMS} ${label}`,
+        };
+      }
+      for (let index = current.node.length - 1; index >= 0; index -= 1) {
+        stack.push({
+          node: current.node[index],
+          path: [...current.path, index],
+          depth: current.depth + 1,
+          groupDepth: current.groupDepth,
+        });
+      }
+      continue;
+    }
+
+    const record = current.node as Record<string, unknown>;
+    const keys = Object.keys(record);
+    if (keys.length > MAX_APPLICABILITY_OBJECT_PROPERTIES) {
+      return {
+        path: current.path,
+        message: `Applicability objects may contain at most ${MAX_APPLICABILITY_OBJECT_PROPERTIES} properties`,
+      };
+    }
+    const kind = record.kind;
+    const isGroup = kind === 'ALL' || kind === 'ANY';
+    const groupDepth = isGroup ? current.groupDepth + 1 : current.groupDepth;
+    if (isGroup) {
       groups += 1;
       if (groups > MAX_APPLICABILITY_GROUPS) {
         return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_GROUPS} groups` };
       }
-      if (current.depth > MAX_APPLICABILITY_DEPTH) {
+      if (groupDepth > MAX_APPLICABILITY_DEPTH) {
         return { path: current.path, message: `Applicability groups may be nested at most ${MAX_APPLICABILITY_DEPTH} levels` };
-      }
-      const conditions = current.node.conditions;
-      if (!Array.isArray(conditions)) continue;
-      if (conditions.length > MAX_APPLICABILITY_GROUP_CONDITIONS) {
-        return {
-          path: [...current.path, 'conditions'],
-          message: `Applicability groups may contain at most ${MAX_APPLICABILITY_GROUP_CONDITIONS} conditions`,
-        };
-      }
-      for (let index = conditions.length - 1; index >= 0; index -= 1) {
-        stack.push({
-          node: conditions[index],
-          path: [...current.path, 'conditions', index],
-          depth: current.depth + 1,
-        });
       }
     } else if (typeof kind === 'string' && kind.startsWith('FIELD_')) {
       leaves += 1;
       if (leaves > MAX_APPLICABILITY_LEAVES) {
         return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_LEAVES} leaf predicates` };
       }
+    }
+
+    for (let index = keys.length - 1; index >= 0; index -= 1) {
+      const key = keys[index];
+      stack.push({
+        node: record[key],
+        path: [...current.path, key],
+        depth: current.depth + 1,
+        groupDepth,
+      });
     }
   }
   return null;
