@@ -40,6 +40,7 @@ import {
   replaceVariantRuleAssociations,
   updateDeadlineRuleDraft,
 } from '@/services/deadline-rule';
+import { Prisma } from '@/generated/prisma';
 
 const actor = {
   tenantId: '11111111-1111-4111-8111-111111111111',
@@ -118,6 +119,10 @@ describe('deadline rule service', () => {
         configHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     }));
+    const parameterCreate = prismaMock.deadlineRuleVersion.create.mock.calls[0]?.[0]?.data
+      .parameterDefinitions.create[0];
+    expect(parameterCreate.defaultValue).toBe(Prisma.DbNull);
+    expect(parameterCreate.validation).toBe(Prisma.DbNull);
     expect(result.draft?.state).toBe('DRAFT');
   });
 
@@ -365,6 +370,11 @@ describe('deadline rule service', () => {
       description: 'Updated description',
       expectedDraftRevision: 1,
     }, actor);
+
+    const updatedParameterCreate = prismaMock.deadlineRuleVersion.update.mock.calls[0]?.[0]?.data
+      .parameterDefinitions.create[0];
+    expect(updatedParameterCreate.defaultValue).toBe(Prisma.DbNull);
+    expect(updatedParameterCreate.validation).toBe(Prisma.DbNull);
 
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       changes: expect.objectContaining({

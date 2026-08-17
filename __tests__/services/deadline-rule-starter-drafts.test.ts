@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Prisma } from '@/generated/prisma';
 
 import {
   STARTER_DEFINITIONS,
@@ -8,6 +9,14 @@ import {
 import { hashDeadlineRuleDefinition } from '@/services/deadline-rule/canonical';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
+
+const databaseNull = { storage: 'DATABASE_NULL' } as const;
+
+function normalizeNullableJson(value: unknown): unknown {
+  if (value === Prisma.DbNull) return databaseNull;
+  if (value === Prisma.JsonNull) return { storage: 'JSON_NULL' };
+  return value;
+}
 
 const tx = {
   businessCalendar: {
@@ -98,6 +107,139 @@ describe('deadline rule starter definitions', () => {
     for (const [arg] of tx.deadlineRuleVersion.create.mock.calls) {
       expect(arg.data).not.toHaveProperty('serviceVariantDeadlineRule');
       expect(arg.data).toMatchObject({ state: 'DRAFT', version: 0, draftRevision: 1 });
+    }
+  });
+
+  it('keeps every runtime child row field-identical to the SQL starter seed shape', async () => {
+    await createServiceScheduleStarterData(tx as never, tenantId);
+
+    const expectedParameter = {
+      tenantId,
+      key: 'monthsAfterFye',
+      label: 'Months after FYE',
+      type: 'INTEGER',
+      isRequired: true,
+      defaultValue: databaseNull,
+      validation: databaseNull,
+      helpText: null,
+      displayOrder: 0,
+    };
+    const expectedMilestones = [
+      {
+        tenantId,
+        milestoneKey: 'agm-due',
+        name: 'AGM due date',
+        description: null,
+        type: 'STATUTORY',
+        generationMode: 'ONCE_PER_CYCLE',
+        dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+        businessDayAdjustment: 'NONE',
+        displayOrder: 0,
+        isActive: true,
+      },
+      {
+        tenantId,
+        milestoneKey: 'annual-return-due',
+        name: 'Annual Return due date',
+        description: null,
+        type: 'STATUTORY',
+        generationMode: 'ONCE_PER_CYCLE',
+        dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextArDueDate' } },
+        businessDayAdjustment: 'NONE',
+        displayOrder: 0,
+        isActive: true,
+      },
+      {
+        tenantId,
+        milestoneKey: 'eci-due',
+        name: 'ECI due date',
+        description: null,
+        type: 'STATUTORY',
+        generationMode: 'ONCE_PER_CYCLE',
+        dateExpression: {
+          kind: 'ADD_MONTHS',
+          source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+          amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+        },
+        businessDayAdjustment: 'NONE',
+        displayOrder: 0,
+        isActive: true,
+      },
+      {
+        tenantId,
+        milestoneKey: 'form-c-due',
+        name: 'Form C due date',
+        description: null,
+        type: 'STATUTORY',
+        generationMode: 'ONCE_PER_CYCLE',
+        dateExpression: {
+          kind: 'ADD_MONTHS',
+          source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+          amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+        },
+        businessDayAdjustment: 'NONE',
+        displayOrder: 0,
+        isActive: true,
+      },
+    ];
+    const migration = readFileSync(
+      'prisma/migrations/20260817101000_deadline_rule_starter_drafts/migration.sql',
+      'utf8',
+    );
+
+    expect(migration).toContain(
+      '"is_required", "default_value", "validation", "display_order",',
+    );
+    expect(migration).toContain(
+      "'INTEGER', TRUE, NULL, NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP",
+    );
+    expect(migration).toContain('WHERE r."code" IN (\'SG_ECI\', \'SG_FORM_C\')');
+    expect(migration).toContain(
+      '"type", "generation_mode", "date_expression", "business_day_adjustment",',
+    );
+    expect(migration).toContain(
+      "'STATUTORY', 'ONCE_PER_CYCLE', starter.\"date_expression\"::jsonb, 'NONE',",
+    );
+
+    for (const [index, definition] of STARTER_DEFINITIONS.entries()) {
+      const versionData = tx.deadlineRuleVersion.create.mock.calls[index]?.[0]?.data;
+      expect(versionData).toBeDefined();
+      const actualParameters = versionData.parameterDefinitions.create.map((row: Record<string, unknown>) => ({
+        tenantId: (row.tenant as { connect: { id: string } }).connect.id,
+        key: row.key,
+        label: row.label,
+        type: row.type,
+        isRequired: row.isRequired,
+        defaultValue: normalizeNullableJson(row.defaultValue),
+        validation: normalizeNullableJson(row.validation),
+        helpText: row.helpText,
+        displayOrder: row.displayOrder,
+      }));
+      const actualMilestones = versionData.milestoneTemplates.create.map((row: Record<string, unknown>) => ({
+        tenantId: (row.tenant as { connect: { id: string } }).connect.id,
+        milestoneKey: row.milestoneKey,
+        name: row.name,
+        description: row.description,
+        type: row.type,
+        generationMode: row.generationMode,
+        dateExpression: row.dateExpression,
+        businessDayAdjustment: row.businessDayAdjustment,
+        displayOrder: row.displayOrder,
+        isActive: row.isActive,
+      }));
+
+      expect(actualParameters).toEqual(definition.parameters.length === 0 ? [] : [expectedParameter]);
+      expect(actualMilestones).toEqual([expectedMilestones[index]]);
+      const expectedMilestone = expectedMilestones[index];
+      expect(migration).toContain(
+        `      '${definition.code}', '${definition.name}', '${definition.description}', '${hashDeadlineRuleDefinition(definition)}',\n`
+          + `      '${expectedMilestone.milestoneKey}', '${expectedMilestone.name}',\n`
+          + `      '${JSON.stringify(expectedMilestone.dateExpression)}'`,
+      );
+      for (const row of versionData.parameterDefinitions.create) {
+        expect(row.defaultValue).toBe(Prisma.DbNull);
+        expect(row.validation).toBe(Prisma.DbNull);
+      }
     }
   });
 

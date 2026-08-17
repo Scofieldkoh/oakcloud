@@ -151,9 +151,9 @@ function createVersionData(
         label: parameter.label,
         type: parameter.type,
         isRequired: parameter.required,
-        defaultValue: Prisma.JsonNull,
+        defaultValue: Prisma.DbNull,
         validation: parameter.options === undefined
-          ? Prisma.JsonNull
+          ? Prisma.DbNull
           : { options: parameter.options },
         helpText: parameter.description,
         displayOrder: index,
