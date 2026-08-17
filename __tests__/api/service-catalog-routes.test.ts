@@ -1,15 +1,17 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConflictError, NotFoundError } from '@/lib/errors';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '@/lib/errors';
 
 const session = {
   id: 'user-1',
   tenantId: 'tenant-1',
   isSuperAdmin: false,
+  isWorkspaceAdmin: true,
 };
 
 const mocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
+  requireServiceAdministrator: vi.fn(),
   requirePermission: vi.fn(),
   requireSessionWorkspaceId: vi.fn(),
   resolveWorkspaceId: vi.fn(),
@@ -25,6 +27,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
+vi.mock('@/lib/service-administration-auth', () => ({
+  requireServiceAdministrator: mocks.requireServiceAdministrator,
+}));
 vi.mock('@/lib/rbac', () => ({ requirePermission: mocks.requirePermission }));
 vi.mock('@/lib/api-helpers', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api-helpers')>()),
@@ -71,6 +76,7 @@ describe('service catalog routes', () => {
     );
 
     expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'read');
+    expect(mocks.requireServiceAdministrator).not.toHaveBeenCalled();
     expect(mocks.requireSessionWorkspaceId).toHaveBeenCalledWith(session);
     expect(mocks.getSelectableServiceVariants).toHaveBeenCalledWith(session.tenantId);
     expect(response.status).toBe(200);
@@ -84,6 +90,8 @@ describe('service catalog routes', () => {
       ),
     );
 
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(mocks.resolveWorkspaceId).toHaveBeenCalledWith(session, 'tenant-2');
     expect(mocks.listServiceCatalog).toHaveBeenCalledWith(
       expect.objectContaining({ page: 2, limit: 20 }),
@@ -101,7 +109,8 @@ describe('service catalog routes', () => {
       }),
     );
 
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'create');
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(mocks.createServiceFamily).not.toHaveBeenCalled();
     expect(response.status).toBe(400);
   });
@@ -132,11 +141,12 @@ describe('service catalog routes', () => {
       { params: Promise.resolve({ id: 'family-2' }) },
     );
 
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'update');
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(response.status).toBe(404);
   });
 
-  it('creates a validated variant with create permission', async () => {
+  it('creates a validated variant as a service administrator', async () => {
     mocks.createServiceVariant.mockResolvedValue({ id: 'variant-1' });
     const response = await createVariant(
       new NextRequest('http://localhost/api/service-catalog/variants', {
@@ -153,7 +163,8 @@ describe('service catalog routes', () => {
       }),
     );
 
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'create');
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(mocks.createServiceVariant).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'MONTHLY_ACCOUNTING' }),
       { tenantId: session.tenantId, userId: session.id },
@@ -178,7 +189,7 @@ describe('service catalog routes', () => {
     expect(response.status).toBe(400);
   });
 
-  it('reads and updates variants with method-specific permissions', async () => {
+  it('reads and updates variants as a service administrator', async () => {
     mocks.getServiceVariant.mockResolvedValue({ id: 'variant-1' });
     mocks.updateServiceVariant.mockResolvedValue({ id: 'variant-1', name: 'Updated' });
 
@@ -195,13 +206,14 @@ describe('service catalog routes', () => {
       { params: Promise.resolve({ id: 'variant-1' }) },
     );
 
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'read');
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'update');
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledTimes(2);
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(getResponse.status).toBe(200);
     expect(patchResponse.status).toBe(200);
   });
 
-  it('archives a family only with delete permission and a reason', async () => {
+  it('archives a family as a service administrator with a reason', async () => {
     mocks.archiveServiceFamily.mockResolvedValue({ id: 'family-1', archived: true });
     const response = await archiveFamily(
       new NextRequest(
@@ -211,7 +223,8 @@ describe('service catalog routes', () => {
       { params: Promise.resolve({ id: 'family-1' }) },
     );
 
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'delete');
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(mocks.archiveServiceFamily).toHaveBeenCalledWith(
       'family-1',
       'Consolidated',
@@ -230,12 +243,72 @@ describe('service catalog routes', () => {
       { params: Promise.resolve({ id: 'variant-1' }) },
     );
 
-    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'delete');
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
     expect(mocks.archiveServiceVariant).toHaveBeenCalledWith(
       'variant-1',
       'No longer offered',
       { tenantId: session.tenantId, userId: session.id },
     );
     expect(response.status).toBe(200);
+  });
+
+  it('returns 403 and skips the service for non-administrator users', async () => {
+    const nonAdminSession = {
+      ...session,
+      isSuperAdmin: false,
+      isWorkspaceAdmin: false,
+    };
+    mocks.requireAuth.mockResolvedValueOnce(nonAdminSession);
+    mocks.requireServiceAdministrator.mockImplementationOnce(() => {
+      throw new ForbiddenError('Service administration requires Tenant Admin access');
+    });
+
+    const response = await createFamily(
+      new NextRequest('http://localhost/api/service-catalog/families', {
+        method: 'POST',
+        body: JSON.stringify({ code: 'CORP-SEC', name: 'Corporate Secretarial' }),
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(nonAdminSession);
+    expect(mocks.createServiceFamily).not.toHaveBeenCalled();
+  });
+
+  it('rejects an administrator when no workspace can be resolved', async () => {
+    const sessionWithoutWorkspace = { ...session, tenantId: null };
+    mocks.requireAuth.mockResolvedValueOnce(sessionWithoutWorkspace);
+    mocks.resolveWorkspaceId.mockImplementationOnce(() => {
+      throw new BadRequestError('Workspace context required');
+    });
+
+    const response = await createFamily(
+      new NextRequest('http://localhost/api/service-catalog/families', {
+        method: 'POST',
+        body: JSON.stringify({ code: 'CORP-SEC', name: 'Corporate Secretarial' }),
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(sessionWithoutWorkspace);
+    expect(mocks.createServiceFamily).not.toHaveBeenCalled();
+  });
+
+  it('keeps selectable reads behind document read authorization', async () => {
+    mocks.requirePermission.mockImplementationOnce(() => {
+      throw new ForbiddenError('Permission denied');
+    });
+
+    const response = await getCatalog(
+      new NextRequest('http://localhost/api/service-catalog?selectable=true'),
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'document', 'read');
+    expect(mocks.requireServiceAdministrator).not.toHaveBeenCalled();
+    expect(mocks.getSelectableServiceVariants).not.toHaveBeenCalled();
   });
 });

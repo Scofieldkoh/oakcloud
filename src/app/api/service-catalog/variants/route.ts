@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { resolveWorkspaceId } from '@/lib/api-helpers';
-import { requirePermission } from '@/lib/rbac';
+import { requireServiceAdministrator } from '@/lib/service-administration-auth';
 import { createServiceVariantSchema } from '@/lib/validations/service-catalog';
 import { createServiceVariant } from '@/services/service-catalog';
 import { serviceCatalogErrorResponse } from '../route-utils';
@@ -9,7 +9,7 @@ import { serviceCatalogErrorResponse } from '../route-utils';
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
-    await requirePermission(session, 'document', 'create');
+    requireServiceAdministrator(session);
     const body = await request.json();
     const tenantId = resolveWorkspaceId(
       session,

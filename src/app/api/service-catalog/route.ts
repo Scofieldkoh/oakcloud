@@ -5,6 +5,7 @@ import {
   resolveWorkspaceId,
 } from '@/lib/api-helpers';
 import { requirePermission } from '@/lib/rbac';
+import { requireServiceAdministrator } from '@/lib/service-administration-auth';
 import { searchServiceCatalogSchema } from '@/lib/validations/service-catalog';
 import {
   getSelectableServiceVariants,
@@ -15,15 +16,16 @@ import { serviceCatalogErrorResponse } from './route-utils';
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
-    await requirePermission(session, 'document', 'read');
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get('selectable') === 'true') {
+      await requirePermission(session, 'document', 'read');
       const tenantId = requireSessionWorkspaceId(session);
       const variants = await getSelectableServiceVariants(tenantId);
       return NextResponse.json({ variants });
     }
 
+    requireServiceAdministrator(session);
     const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const isActiveParam = searchParams.get('isActive');
     const input = searchServiceCatalogSchema.parse({

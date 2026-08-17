@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { resolveWorkspaceId } from '@/lib/api-helpers';
-import { requirePermission } from '@/lib/rbac';
+import { requireServiceAdministrator } from '@/lib/service-administration-auth';
 import {
   archiveServiceCatalogItemSchema,
   updateServiceVariantSchema,
@@ -20,7 +20,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    await requirePermission(session, 'document', 'read');
+    requireServiceAdministrator(session);
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    await requirePermission(session, 'document', 'update');
+    requireServiceAdministrator(session);
     const { id } = await params;
     const body = await request.json();
     const tenantId = resolveWorkspaceId(
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    await requirePermission(session, 'document', 'delete');
+    requireServiceAdministrator(session);
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
