@@ -86,6 +86,7 @@ function expectMissingInput(call: () => unknown): void {
     throw new Error('Expected a typed missing-input error');
   } catch (error) {
     expect(missingInput(error)).toBe(true);
+    expect((error as DeadlineApiError).statusCode).toBe(422);
   }
 }
 
@@ -451,6 +452,83 @@ describe('evaluateDeadlineRule', () => {
         amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
       })],
     }))).toThrow(ValidationError);
+  });
+
+  it.each(['constructor', 'toString'])('treats a missing prototype-named date parameter (%s) as missing input', (key) => {
+    expectMissingInput(() => evaluateDeadlineRule(input({
+      parameters: {},
+      milestones: [milestone('date-parameter', {
+        kind: 'RELATIVE_TO_SOURCE',
+        source: { kind: 'PARAMETER', key },
+        offset: 0,
+        unit: 'CALENDAR_DAY',
+      })],
+    })));
+  });
+
+  it.each(['constructor', 'toString'])('treats a missing prototype-named integer parameter (%s) as missing input', (key) => {
+    expectMissingInput(() => evaluateDeadlineRule(input({
+      parameters: {},
+      milestones: [milestone('integer-parameter', {
+        kind: 'ADD_MONTHS',
+        amount: { kind: 'INTEGER_PARAMETER', key },
+      })],
+    })));
+  });
+
+  it('resolves own prototype-named parameters, snapshots them, and hashes their values', () => {
+    const dateParameters = { constructor: '2026-08-15' };
+    const dateResult = evaluateDeadlineRule(input({
+      parameters: dateParameters,
+      milestones: [milestone('date-parameter', {
+        kind: 'RELATIVE_TO_SOURCE',
+        source: { kind: 'PARAMETER', key: 'constructor' },
+        offset: 0,
+        unit: 'CALENDAR_DAY',
+      })],
+    }));
+    expect(dateResult.byKey['date-parameter:']?.calculatedDueDate).toBe('2026-08-15');
+    expect(dateResult.sourceSnapshot).toEqual(expect.objectContaining({
+      parameters: { constructor: '2026-08-15' },
+    }));
+
+    const integerResult = evaluateDeadlineRule(input({
+      parameters: { toString: 2 },
+      milestones: [milestone('integer-parameter', {
+        kind: 'ADD_MONTHS',
+        amount: { kind: 'INTEGER_PARAMETER', key: 'toString' },
+      })],
+    }));
+    expect(integerResult.byKey['integer-parameter:']?.calculatedDueDate).toBe('2026-10-01');
+    expect(integerResult.sourceSnapshot).toEqual(expect.objectContaining({
+      parameters: { toString: 2 },
+    }));
+    const changedIntegerResult = evaluateDeadlineRule(input({
+      parameters: { toString: 3 },
+      milestones: [milestone('integer-parameter', {
+        kind: 'ADD_MONTHS',
+        amount: { kind: 'INTEGER_PARAMETER', key: 'toString' },
+      })],
+    }));
+    expect(changedIntegerResult.evaluationHash).not.toBe(integerResult.evaluationHash);
+  });
+
+  it('supports null-prototype parameter records without inheriting prototype values', () => {
+    const parameters = Object.create(null) as Record<string, unknown>;
+    parameters['toString'] = '2026-08-19';
+    const result = evaluateDeadlineRule(input({
+      parameters,
+      milestones: [milestone('date-parameter', {
+        kind: 'RELATIVE_TO_SOURCE',
+        source: { kind: 'PARAMETER', key: 'toString' },
+        offset: 0,
+        unit: 'CALENDAR_DAY',
+      })],
+    }));
+    expect(result.byKey['date-parameter:']?.calculatedDueDate).toBe('2026-08-19');
+    expect(result.sourceSnapshot).toEqual(expect.objectContaining({
+      parameters: { toString: '2026-08-19' },
+    }));
   });
 
   it('accepts operation milestones through the persisted strict schema', async () => {

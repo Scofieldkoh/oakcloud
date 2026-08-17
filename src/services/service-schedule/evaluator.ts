@@ -549,6 +549,14 @@ function hasCompanyValue(company: CompanyRuleSource, field: CompanyField): boole
   return OWN.call(company, field) && company[field] !== undefined && company[field] !== null;
 }
 
+function hasParameter(parameters: Record<string, unknown>, key: string): boolean {
+  return OWN.call(parameters, key);
+}
+
+function readParameter(input: DeadlineRuleEvaluationInput, key: string): unknown {
+  return hasParameter(input.parameters, key) ? input.parameters[key] : undefined;
+}
+
 function sourceName(source: DateSource): string {
   switch (source.kind) {
     case 'COMPANY_FIELD': return `Company.${source.field}`;
@@ -596,8 +604,9 @@ function resolveSource(
       return { date: input.period.end, explanation: [`Source ${sourceName(source)} = ${input.period.end}`] };
     case 'PARAMETER': {
       tracker.parameters.add(source.key);
-      const value = input.parameters[source.key];
-      if (value === undefined || value === null) {
+      const supplied = hasParameter(input.parameters, source.key);
+      const value = readParameter(input, source.key);
+      if (!supplied || value === undefined || value === null) {
         markProvenance(tracker, sourceName(source), null);
         throw missingInput(`${sourceName(source)} is required`, { source });
       }
@@ -672,8 +681,9 @@ function resolveIntegerOperand(
   const key = requiredString(operand.key, `${path}.key`);
   if (!REFERENCE_KEY_PATTERN.test(key)) throw new ValidationError(`${path}.key is malformed`, { path, key });
   tracker.parameters.add(key);
-  const value = input.parameters[key];
-  if (value === undefined || value === null) {
+  const supplied = hasParameter(input.parameters, key);
+  const value = readParameter(input, key);
+  if (!supplied || value === undefined || value === null) {
     markProvenance(tracker, `Parameter.${key}`, null);
     throw missingInput(`Parameter.${key} is required`, { parameter: key, expectedType: 'INTEGER' });
   }
@@ -978,7 +988,10 @@ function buildSnapshot(
   }
   const parameters: Record<string, unknown> = {};
   for (const key of [...tracker.parameters].sort()) {
-    if (input.parameters[key] !== undefined) parameters[key] = jsonSafe(input.parameters[key], `parameters.${key}`);
+    const value = readParameter(input, key);
+    if (hasParameter(input.parameters, key) && value !== undefined) {
+      parameters[key] = jsonSafe(value, `parameters.${key}`);
+    }
   }
   const calendar = {
     id: input.calendar.id,
