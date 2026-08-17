@@ -41,7 +41,26 @@ const family = {
   displayColor: '#2F6F5E',
   displayOrder: 0,
   isActive: true,
-  variants: [],
+  variants: [{
+    id: 'variant-1',
+    familyId: 'family-1',
+    code: 'MONTHLY_ACCOUNTING',
+    name: 'Monthly Accounting',
+    description: null,
+    serviceCadence: 'MONTHLY',
+    customCadenceLabel: null,
+    displayOrder: 0,
+    version: 1,
+    isActive: true,
+    sowPartial: {
+      id: 'partial-1',
+      name: 'accounting-sow',
+      displayName: 'Accounting SOW',
+      version: 1,
+      placeholders: [],
+    },
+    feeTemplates: [],
+  }],
 };
 
 const json = (body: unknown, status = 200) => new Response(
@@ -57,6 +76,18 @@ async function waitUntil(check: () => boolean, timeout = 4000) {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
   }
+}
+
+function visibleInteractiveElements(container: HTMLElement): HTMLElement[] {
+  return [...container.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea')]
+    .filter((element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && rect.width > 0
+        && rect.height > 0;
+    });
 }
 
 describe('Services administration browser surface', () => {
@@ -155,13 +186,59 @@ describe('Services administration browser surface', () => {
 
     const main = screen.getByRole('main');
     const tablist = screen.getByRole('tablist', { name: 'Services administration sections' });
-    expect(main.className).toContain('p-4');
-    expect(main.className).toContain('sm:p-6');
-    expect(tablist.className).toContain('flex-wrap');
+    const heading = screen.getByRole('heading', { name: 'Services administration' });
+    const catalogPanel = screen.getByRole('tabpanel', { name: 'Service catalog' });
+    const headingRect = heading.getBoundingClientRect();
+    const tablistRect = tablist.getBoundingClientRect();
+    const catalogPanelRect = catalogPanel.getBoundingClientRect();
+    expect(headingRect.bottom).toBeLessThanOrEqual(tablistRect.top + 1);
+    expect(tablistRect.bottom).toBeLessThanOrEqual(catalogPanelRect.top + 1);
+    expect(headingRect.bottom).toBeLessThanOrEqual(catalogPanelRect.top + 1);
+
+    const mainRect = main.getBoundingClientRect();
+    const contained = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      return rect.left >= mainRect.left - 1
+        && rect.right <= mainRect.right + 1
+        && rect.top >= mainRect.top - 1;
+    };
+    expect(contained(tablist)).toBe(true);
+    expect(contained(catalogPanel)).toBe(true);
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
       document.documentElement.clientWidth,
     );
+
+    const catalogHeading = screen.getByRole('heading', { name: 'Service catalog' });
     const addFamily = screen.getByRole('button', { name: 'Add service family' });
-    expect(addFamily.getBoundingClientRect().height).toBeGreaterThanOrEqual(40);
+    expect(addFamily.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      catalogHeading.getBoundingClientRect().bottom - 1,
+    );
+    const familyArticle = screen.getByText('Accounting').closest('article');
+    if (!familyArticle) throw new Error('Service family article missing');
+    expect(contained(familyArticle)).toBe(true);
+    expect(contained(addFamily)).toBe(true);
+
+    const controls = visibleInteractiveElements(main);
+    expect(controls.map((control) => control.getAttribute('aria-label') || control.textContent?.trim()))
+      .toEqual(expect.arrayContaining([
+        'Service catalog',
+        'Add service family',
+        'Search service catalog',
+        'Add variant',
+        'Edit Accounting',
+        'Archive Accounting',
+        'Edit wording',
+        'Edit Monthly Accounting',
+        'Archive Monthly Accounting',
+      ]));
+    for (const control of controls) {
+      const rect = control.getBoundingClientRect();
+      expect(rect.width, control.outerHTML).toBeGreaterThanOrEqual(44);
+      expect(rect.height, control.outerHTML).toBeGreaterThanOrEqual(44);
+      expect(contained(control), control.outerHTML).toBe(true);
+    }
+
+    const status = screen.getByLabelText('Active state');
+    expect(controls).toContain(status);
   });
 });

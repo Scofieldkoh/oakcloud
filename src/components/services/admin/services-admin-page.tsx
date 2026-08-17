@@ -85,7 +85,7 @@ export function ServicesAdminPage() {
           aria-selected="true"
           aria-controls="service-catalog-panel"
           tabIndex={0}
-          className="border-b-2 border-oak-primary px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
+          className="min-h-11 border-b-2 border-oak-primary px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8"
         >
           Service catalog
         </button>

@@ -188,6 +188,7 @@ export function ServiceCatalogPanel({
         {canCreate ? (
           <Button
             size="sm"
+            className="min-h-11 sm:min-h-8"
             leftIcon={<Plus className="h-4 w-4" />}
             onClick={() => setEditDialog({ type: 'family' })}
           >
@@ -200,6 +201,7 @@ export function ServiceCatalogPanel({
         <FormInput
           aria-label="Search service catalog"
           type="search"
+          className="min-h-11 sm:min-h-8"
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
@@ -216,7 +218,7 @@ export function ServiceCatalogPanel({
               setStatus(event.target.value as typeof status);
               setPage(1);
             }}
-            className="mt-2 h-8 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
+            className="mt-2 h-8 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary sm:min-h-8"
           >
             <option value="all">All</option>
             <option value="active">Active</option>
@@ -289,6 +291,7 @@ export function ServiceCatalogPanel({
                     <Button
                       size="xs"
                       variant="secondary"
+                      className="min-h-11 sm:min-h-7"
                       leftIcon={<Plus className="h-3.5 w-3.5" />}
                       onClick={() =>
                         setEditDialog({ type: 'variant', familyId: family.id })
@@ -301,6 +304,7 @@ export function ServiceCatalogPanel({
                     <Button
                       size="xs"
                       variant="ghost"
+                      className="min-h-11 sm:min-h-7"
                       aria-label={`Edit ${family.name}`}
                       leftIcon={<Pencil className="h-3.5 w-3.5" />}
                       onClick={() =>
@@ -314,6 +318,7 @@ export function ServiceCatalogPanel({
                     <Button
                       size="xs"
                       variant="ghost"
+                      className="min-h-11 sm:min-h-7"
                       aria-label={`Archive ${family.name}`}
                       leftIcon={<Archive className="h-3.5 w-3.5" />}
                       onClick={() =>
@@ -380,7 +385,7 @@ export function ServiceCatalogPanel({
                         <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
                           {canUpdate ? (
                             <Link
-                              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-medium text-text-primary transition-colors hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-7"
+                              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-medium text-text-primary transition-colors hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-7"
                               href={`/template-partials/editor?type=partial&tab=services&id=${variant.sowPartial.id}`}
                             >
                               <FilePenLine className="h-3.5 w-3.5" />
@@ -391,6 +396,7 @@ export function ServiceCatalogPanel({
                             <Button
                               size="xs"
                               variant="ghost"
+                              className="min-h-11 sm:min-h-7"
                               aria-label={`Edit ${variant.name}`}
                               onClick={() =>
                                 setEditDialog({
@@ -407,6 +413,7 @@ export function ServiceCatalogPanel({
                             <Button
                               size="xs"
                               variant="ghost"
+                              className="min-h-11 sm:min-h-7"
                               aria-label={`Archive ${variant.name}`}
                               onClick={() =>
                                 setArchiveTarget({
