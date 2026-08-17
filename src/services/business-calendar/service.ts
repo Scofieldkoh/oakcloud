@@ -629,10 +629,20 @@ async function computeImpact(
   const evaluatedInputs: Array<{ cycleId: string; evaluationHash: string; sourceSnapshot: Record<string, unknown> }> = [];
 
   for (const cycle of cycleById.values()) {
+    // Manual-trigger cycles and their evaluator state are immutable history.
+    // They remain in the occurrence decision scope, but never enter the rule
+    // evaluator or its hashes/warnings.
+    if (cycle.origin !== 'RULE') continue;
     const context = contextByKey.get(cycleKey(cycle.clientServiceId, cycle.ruleId));
-    if (!context) continue;
+    if (!context) {
+      evaluationWarnings.set(cycle.id, 'Rule evaluator context is missing');
+      continue;
+    }
     const evaluatorInput = evaluatorInputFor(cycle, context, proposedCalendar);
-    if (!evaluatorInput) continue;
+    if (!evaluatorInput) {
+      evaluationWarnings.set(cycle.id, 'Rule evaluator input cannot be built');
+      continue;
+    }
     try {
       const result = evaluateDeadlineRule(evaluatorInput);
       evaluatedByCycle.set(cycle.id, new Map(Object.entries(result.byKey)));

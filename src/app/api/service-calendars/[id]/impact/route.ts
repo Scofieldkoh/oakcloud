@@ -6,7 +6,7 @@ import { requireServiceAdministrator } from '@/lib/service-administration-auth';
 import { businessCalendarInputSchema } from '@/lib/validations/business-calendar';
 import { idParamSchema, uuidSchema } from '@/lib/validations/params';
 import { previewBusinessCalendarImpact } from '@/services/business-calendar';
-import { businessCalendarErrorResponse, parseRequestTenantId, readJsonRecord } from '../../route-utils';
+import { businessCalendarErrorResponse, parseRequestTenantId, readJsonRecord, selectRequestTenantId } from '../../route-utils';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -21,10 +21,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       Object.fromEntries(searchParams.entries()),
     );
     const bodyTenantId = parseRequestTenantId(rawBody);
-    const tenantId = resolveWorkspaceId(
-      session,
-      query.tenantId ?? bodyTenantId ?? null,
-    );
+    const requestedTenantId = selectRequestTenantId(query.tenantId, bodyTenantId);
+    const tenantId = resolveWorkspaceId(session, requestedTenantId ?? null);
     const { tenantId: _tenantId, ...payload } = rawBody;
     const input = businessCalendarInputSchema.parse(payload);
     const impact = await previewBusinessCalendarImpact(id, input, { tenantId, userId: session.id });

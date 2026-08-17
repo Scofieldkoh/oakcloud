@@ -9,7 +9,7 @@ import {
   getBusinessCalendar,
   updateBusinessCalendar,
 } from '@/services/business-calendar';
-import { businessCalendarErrorResponse, parseRequestTenantId, readJsonRecord } from '../route-utils';
+import { businessCalendarErrorResponse, parseRequestTenantId, readJsonRecord, selectRequestTenantId } from '../route-utils';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -40,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const query = z.object({ tenantId: uuidSchema.optional() }).strict().parse(
       Object.fromEntries(searchParams.entries()),
     );
-    const requestedTenantId = query.tenantId ?? parseRequestTenantId(rawBody);
+    const requestedTenantId = selectRequestTenantId(query.tenantId, parseRequestTenantId(rawBody));
     const tenantId = resolveWorkspaceId(session, requestedTenantId ?? null);
     const { tenantId: _tenantId, ...payload } = rawBody;
     const input = businessCalendarUpdateSchema.parse(payload);

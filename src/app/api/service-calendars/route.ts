@@ -9,7 +9,7 @@ import {
   listBusinessCalendars,
 } from '@/services/business-calendar';
 import { uuidSchema } from '@/lib/validations/params';
-import { businessCalendarErrorResponse, parseRequestTenantId, readJsonRecord } from './route-utils';
+import { businessCalendarErrorResponse, parseRequestTenantId, readJsonRecord, selectRequestTenantId } from './route-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const query = z.object({ tenantId: uuidSchema.optional() }).strict().parse(
       Object.fromEntries(searchParams.entries()),
     );
-    const requestedTenantId = query.tenantId ?? parseRequestTenantId(rawBody);
+    const requestedTenantId = selectRequestTenantId(query.tenantId, parseRequestTenantId(rawBody));
     const tenantId = resolveWorkspaceId(session, requestedTenantId ?? null);
     const { tenantId: _tenantId, ...payload } = rawBody;
     const input = businessCalendarInputSchema.parse(payload);

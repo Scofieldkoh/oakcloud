@@ -104,6 +104,7 @@ const calendarRecord = {
 describe('business calendar service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    evaluatorMock.evaluateDeadlineRule.mockReset();
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
     prismaMock.serviceCycle.findMany.mockResolvedValue([]);
     prismaMock.deadlineOccurrence.findMany.mockResolvedValue([]);
@@ -121,6 +122,7 @@ describe('business calendar service', () => {
       periodKey: '2026',
       periodStart: new Date('2026-01-01T00:00:00.000Z'),
       periodEnd: new Date('2026-12-31T00:00:00.000Z'),
+      origin: 'RULE',
     };
     const context = {
       tenantId: actor.tenantId,
@@ -239,6 +241,110 @@ describe('business calendar service', () => {
 
     expect(clockCalls).toBe(1);
     expect(impact.counts).toEqual({ recalculated: 0, preserved: 1, warnings: 0 });
+  });
+
+  it('preserves manual cycles without evaluating or fingerprinting their evaluator state', async () => {
+    const manualCycle = {
+      id: 'cycle-manual',
+      tenantId: actor.tenantId,
+      clientServiceId: 'service-manual',
+      ruleId: 'rule-manual',
+      ruleVersionId: 'version-manual',
+      companyId: 'company-manual',
+      periodKey: '2026',
+      periodStart: new Date('2026-01-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-12-31T00:00:00.000Z'),
+      origin: 'MANUAL_TRIGGER',
+    };
+    const manualContext = {
+      tenantId: actor.tenantId,
+      clientServiceId: manualCycle.clientServiceId,
+      ruleId: manualCycle.ruleId,
+      parameterValues: {},
+      scheduleEntries: [],
+      clientService: { tenantId: actor.tenantId, companyId: manualCycle.companyId, company: {} },
+      rule: {
+        tenantId: actor.tenantId,
+        currentVersion: {
+          id: manualCycle.ruleVersionId,
+          recurrence: {},
+          applicability: {},
+          milestoneTemplates: [],
+        },
+      },
+    };
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(calendarRecord);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([manualCycle]);
+    prismaMock.clientServiceDeadlineRule.findMany.mockResolvedValue([manualContext]);
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([{
+      id: 'deadline-manual',
+      tenantId: actor.tenantId,
+      calculatedDueDate: new Date('2026-08-20T00:00:00.000Z'),
+      operativeDueDate: new Date('2026-08-20T00:00:00.000Z'),
+      dateOverridden: false,
+      status: 'OPEN',
+      origin: 'MANUAL_TRIGGER',
+      cycleId: manualCycle.id,
+      milestoneKey: 'milestone-manual',
+      scheduleEntryKey: '',
+      cycle: manualCycle,
+    }]);
+    evaluatorMock.evaluateDeadlineRule.mockImplementation(() => {
+      throw new Error('manual cycles must never be evaluated');
+    });
+
+    const impact = await previewBusinessCalendarImpact('calendar-1', input, actor);
+
+    expect(evaluatorMock.evaluateDeadlineRule).not.toHaveBeenCalled();
+    expect(impact.counts).toEqual({ recalculated: 0, preserved: 1, warnings: 0 });
+  });
+
+  it('warns once for each zero-occurrence rule cycle missing evaluator context or input', async () => {
+    const missingContextCycle = {
+      id: 'cycle-missing-context',
+      tenantId: actor.tenantId,
+      clientServiceId: 'service-missing-context',
+      ruleId: 'rule-missing-context',
+      ruleVersionId: 'version-missing-context',
+      companyId: 'company-missing-context',
+      periodKey: '2026',
+      periodStart: new Date('2026-01-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-12-31T00:00:00.000Z'),
+      origin: 'RULE',
+    };
+    const missingInputCycle = {
+      id: 'cycle-missing-input',
+      tenantId: actor.tenantId,
+      clientServiceId: 'service-missing-input',
+      ruleId: 'rule-missing-input',
+      ruleVersionId: 'version-missing-input',
+      companyId: 'company-missing-input',
+      periodKey: '2026',
+      periodStart: new Date('2026-01-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-12-31T00:00:00.000Z'),
+      origin: 'RULE',
+    };
+    const missingInputContext = {
+      tenantId: actor.tenantId,
+      clientServiceId: missingInputCycle.clientServiceId,
+      ruleId: missingInputCycle.ruleId,
+      parameterValues: {},
+      scheduleEntries: [],
+      clientService: { tenantId: actor.tenantId, companyId: missingInputCycle.companyId, company: {} },
+      rule: { tenantId: actor.tenantId, currentVersion: null },
+    };
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(calendarRecord);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([missingContextCycle, missingInputCycle]);
+    prismaMock.clientServiceDeadlineRule.findMany.mockResolvedValue([missingInputContext]);
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([]);
+
+    const first = await previewBusinessCalendarImpact('calendar-1', input, actor);
+    const second = await previewBusinessCalendarImpact('calendar-1', input, actor);
+
+    expect(first.counts).toEqual({ recalculated: 0, preserved: 0, warnings: 2 });
+    expect(second.counts).toEqual(first.counts);
+    expect(second.previewFingerprint).toBe(first.previewFingerprint);
+    expect(evaluatorMock.evaluateDeadlineRule).not.toHaveBeenCalled();
   });
 
   it('returns an immutable Asia/Singapore calendar snapshot with tenant-scoped holidays', async () => {

@@ -22,6 +22,16 @@ export function parseRequestTenantId(body: JsonRecord): string | undefined {
   return uuidSchema.optional().parse(body.tenantId);
 }
 
+export function selectRequestTenantId(
+  queryTenantId: string | undefined,
+  bodyTenantId: string | undefined,
+): string | undefined {
+  if (queryTenantId && bodyTenantId && queryTenantId.toLowerCase() !== bodyTenantId.toLowerCase()) {
+    throw new ValidationError('Query and body tenantId values must match');
+  }
+  return queryTenantId ?? bodyTenantId;
+}
+
 export function businessCalendarErrorResponse(error: unknown, context: string) {
   if (error instanceof ZodError) {
     return createErrorResponse(

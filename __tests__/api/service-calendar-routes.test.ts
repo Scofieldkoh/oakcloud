@@ -266,4 +266,40 @@ describe('service calendar routes', () => {
     expect(unknown.status).toBe(400);
     expect(mocks.createBusinessCalendar).not.toHaveBeenCalled();
   });
+
+  it('validates both tenant sources and rejects mismatched collection POST metadata', async () => {
+    const invalidBody = await createCalendar(new NextRequest(`http://localhost/api/service-calendars?tenantId=${session.tenantId}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...validInput, tenantId: 'not-a-uuid' }),
+    }));
+    expect(invalidBody.status).toBe(400);
+    expect(mocks.createBusinessCalendar).not.toHaveBeenCalled();
+
+    const mismatched = await createCalendar(new NextRequest(`http://localhost/api/service-calendars?tenantId=${session.tenantId}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...validInput, tenantId: OTHER_TENANT_ID }),
+    }));
+    expect(mismatched.status).toBe(400);
+    expect(mocks.createBusinessCalendar).not.toHaveBeenCalled();
+  });
+
+  it('validates both tenant sources and rejects mismatched detail PATCH metadata', async () => {
+    const invalidBody = await updateCalendar(new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}?tenantId=${session.tenantId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...validInput, tenantId: 'not-a-uuid', expectedRevision: 1, proposedHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64) }),
+    }), { params: Promise.resolve({ id: CALENDAR_ID }) });
+    expect(invalidBody.status).toBe(400);
+    expect(mocks.updateBusinessCalendar).not.toHaveBeenCalled();
+
+    const mismatched = await updateCalendar(new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}?tenantId=${session.tenantId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...validInput, tenantId: OTHER_TENANT_ID, expectedRevision: 1, proposedHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64) }),
+    }), { params: Promise.resolve({ id: CALENDAR_ID }) });
+    expect(mismatched.status).toBe(400);
+    expect(mocks.updateBusinessCalendar).not.toHaveBeenCalled();
+  });
 });
