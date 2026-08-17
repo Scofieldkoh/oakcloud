@@ -286,6 +286,15 @@ describePostgres('deadline engine migration PostgreSQL integration', () => {
       await expect(insertOccurrence('cancellation-stale', {
         cancelled_by_id: 'user-a',
       })).rejects.toThrow();
+      await expect(insertOccurrence('cancellation-partial', {
+        status: 'CANCELLED',
+        cancelled_at: '2026-08-18 10:00:00',
+      })).rejects.toThrow();
+      await expect(insertOccurrence('cancellation-system-valid', {
+        status: 'CANCELLED',
+        cancelled_at: '2026-08-18 10:00:00',
+        cancellation_reason: 'System reconciliation removed future occurrence',
+      })).resolves.toBeDefined();
       await expect(insertOccurrence('completion-actor-stale', {
         completed_by_id: 'user-a',
       })).rejects.toThrow();

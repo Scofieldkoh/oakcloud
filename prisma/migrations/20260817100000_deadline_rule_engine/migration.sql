@@ -436,7 +436,7 @@ ALTER TABLE "deadline_occurrences"
   ),
   ADD CONSTRAINT "deadline_occurrences_cancellation_consistency"
   CHECK (
-    ("status" = 'CANCELLED' AND "cancelled_at" IS NOT NULL AND "cancelled_by_id" IS NOT NULL AND "cancellation_reason" IS NOT NULL)
+  ("status" = 'CANCELLED' AND "cancelled_at" IS NOT NULL AND "cancellation_reason" IS NOT NULL)
     OR
     ("status" <> 'CANCELLED' AND "cancelled_at" IS NULL AND "cancelled_by_id" IS NULL AND "cancellation_reason" IS NULL)
   ),

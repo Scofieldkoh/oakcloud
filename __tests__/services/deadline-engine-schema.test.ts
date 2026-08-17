@@ -37,6 +37,16 @@ describe('deadline engine schema', () => {
     expect(migration).toContain('WHERE \"status\" = \'PROCESSING\'');
     expect(schema).not.toContain('deadline_rule_versions_one_draft_idx');
     expect(schema).not.toContain('service_schedule_reconciliation_claim_idx');
+    expect(schema).not.toContain('service_schedule_reconciliation_expired_lease_idx');
+    expect(migration).toMatch(
+      /CREATE UNIQUE INDEX \"deadline_rule_versions_one_draft_idx\"\s+ON \"deadline_rule_versions\" \(\"rule_id\"\)\s+WHERE \"state\" = 'DRAFT';/,
+    );
+    expect(migration).toMatch(
+      /CREATE INDEX \"service_schedule_reconciliation_claim_idx\"\s+ON \"service_schedule_reconciliation_requests\" \(\"next_attempt_at\", \"id\"\)\s+WHERE \"status\" IN \('PENDING', 'FAILED'\);/,
+    );
+    expect(migration).toMatch(
+      /CREATE INDEX \"service_schedule_reconciliation_expired_lease_idx\"\s+ON \"service_schedule_reconciliation_requests\" \(\"lease_expires_at\", \"id\"\)\s+WHERE \"status\" = 'PROCESSING';/,
+    );
   });
 
   it.each([
@@ -77,6 +87,8 @@ describe('deadline engine schema', () => {
     expect(migration).toContain('"date_overridden" = TRUE AND "date_override" IS NOT NULL');
     expect(migration).toContain('"completed_at" IS NULL AND "completed_by_id" IS NULL');
     expect(migration).toContain('"waived_at" IS NULL AND "waived_by_id" IS NULL AND "waiver_reason" IS NULL');
+    expect(migration).toContain('("status" = \'CANCELLED\' AND "cancelled_at" IS NOT NULL AND "cancellation_reason" IS NOT NULL)');
+    expect(migration).toContain('"cancelled_by_id" IS NULL AND "cancellation_reason" IS NULL');
     expect(migration).toContain('"cancelled_at" IS NULL AND "cancelled_by_id" IS NULL AND "cancellation_reason" IS NULL');
     expect(migration).toContain('length(btrim("generation_key")) > 0');
   });
