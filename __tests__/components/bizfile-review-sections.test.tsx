@@ -168,6 +168,24 @@ describe("BizFileReviewSections", () => {
     }
   });
 
+  it("labels and maps the optional service display alias field", () => {
+    const onChange = vi.fn();
+    view(fullDraft, "entity", onChange);
+
+    const alias = screen.getByLabelText("Service display alias");
+    expect(alias).toHaveAttribute("maxLength", "40");
+    expect(alias).toHaveAccessibleDescription(
+      "Shown on service calendars; leave blank to use company initials",
+    );
+
+    fireEvent.change(alias, { target: { value: "OAK" } });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityDetails: expect.objectContaining({ displayAlias: "OAK" }),
+      }),
+    );
+  });
+
   it("keeps blank optional singleton groups editable", () => {
     const empty: BizFileReviewDraft = {
       entityDetails: { uen: "", name: "", entityType: "", status: "" },

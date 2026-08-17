@@ -111,6 +111,46 @@ describe('syncCompanyFromBizfileInTransaction', () => {
     expect(tx.company.update.mock.calls[0]?.[0]?.data).toEqual(expect.objectContaining({ displayAlias: null }));
   });
 
+  it('clears an existing alias when the reviewed BizFile value is explicitly null', async () => {
+    const explicitNull = {
+      ...data,
+      entityDetails: { ...data.entityDetails, displayAlias: null },
+    };
+
+    await syncCompanyFromBizfileInTransaction({
+      data: explicitNull,
+      documentId: 'doc-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      existingCompanyId: 'company-1',
+    }, tx as never);
+
+    expect(tx.company.update.mock.calls[0]?.[0]?.data).toEqual(
+      expect.objectContaining({ displayAlias: null }),
+    );
+  });
+
+  it.each([
+    ['omitted', undefined],
+    ['blank', '   '],
+  ] as const)('stores a null alias for a new company when the reviewed value is %s', async (_label, alias) => {
+    const entityDetails: typeof data.entityDetails & { displayAlias?: string | null } = {
+      ...data.entityDetails,
+    };
+    if (alias !== undefined) entityDetails.displayAlias = alias;
+
+    await syncCompanyFromBizfileInTransaction({
+      data: { ...data, entityDetails },
+      documentId: 'doc-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+    }, tx as never);
+
+    expect(tx.company.upsert.mock.calls[0]?.[0]?.create).toEqual(
+      expect.objectContaining({ displayAlias: null }),
+    );
+  });
+
   it('normalizes a supplied BizFile alias before updating an existing company', async () => {
     const suppliedAlias = {
       ...data,

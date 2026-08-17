@@ -106,6 +106,18 @@ describe('BizFile review validation', () => {
       .toContain('officers.0.cessationDate');
   });
 
+  it('rejects a service display alias longer than forty characters', () => {
+    expect(() => bizFileReviewSchema.parse({
+      entityDetails: {
+        uen: '1',
+        name: 'X',
+        displayAlias: 'A'.repeat(41),
+        entityType: 'PRIVATE_LIMITED',
+        status: 'LIVE',
+      },
+    })).toThrow();
+  });
+
   it.each([[30, 2], [31, 2], [31, 4]])('rejects impossible financial year end %i/%i', (endDay, endMonth) => {
     const draft = createEmptyBizFileReviewDraft();
     draft.entityDetails = { uen: '202626103M', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };

@@ -222,6 +222,14 @@ export function getDocumentExporter(): IDocumentExporter {
 }
 ```
 
+## Service administration ownership
+
+- Catalog mutations live at `/admin/services` and require Tenant Admin/Super Admin.
+- Company-scoped client-service selection continues through the Company Services APIs.
+- `ServiceFamily.displayColor` is the shared table/calendar/filter color.
+- Company service labels use `getCompanyDisplayLabel`; callers must not reimplement initials.
+- Deadline and billing schedules reuse the shared schedule engine introduced by the later plans.
+
 ## Service Categories
 
 ### 1. Company Services
@@ -268,10 +276,8 @@ export function getDocumentExporter(): IDocumentExporter {
 - Transactional fee-template replacement
 - `ServiceFamily` and `ServiceVariant` audit records
 
-Catalog operations reuse `document:read/create/update/delete`. Setup routes may
-resolve the SUPER_ADMIN's selected workspace, but generation-facing selectable
-reads always derive the workspace from the authenticated session and never
-accept a caller-supplied tenant ID.
+Generation-facing selectable reads continue to derive the workspace from the
+authenticated session and never accept a caller-supplied tenant ID.
 
 Catalog codes are normalized before service calls and uniqueness is enforced
 inside tenant scope. All catalog lookups include both `tenantId` and
