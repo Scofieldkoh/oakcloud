@@ -1,0 +1,177 @@
+import { describe, expect, it } from 'vitest';
+import {
+  applicabilityDefinitionSchema,
+  dateOperationSchema,
+  dateSourceSchema,
+  deadlineMilestoneSchema,
+  recurrenceSchema,
+  scheduleEntriesSchema,
+} from '@/lib/validations/service-schedule';
+
+describe('generic service schedule validation', () => {
+  it('accepts zero, four, and thirty-one entries for every service family', () => {
+    const entryExpressions = [
+      { kind: 'DAY_OF_MONTH', day: 15 },
+      { kind: 'BUSINESS_DAY_FROM_START', ordinal: 3 },
+      { kind: 'BUSINESS_DAY_FROM_END', ordinal: 2 },
+      {
+        kind: 'RELATIVE_TO_SOURCE',
+        source: { kind: 'CYCLE_END' },
+        offset: -3,
+        unit: 'BUSINESS_DAY',
+      },
+    ] as const;
+
+    expect(scheduleEntriesSchema.parse([])).toEqual([]);
+    for (const [index, expression] of entryExpressions.entries()) {
+      const entries = Array.from({ length: 4 }, (_, entryIndex) => ({
+        key: `${['accounting', 'payroll', 'tax', 'corporate'][index]}-${entryIndex + 1}`,
+        label: `Run ${entryIndex + 1}`,
+        expression,
+        businessDayAdjustment: 'NONE' as const,
+      }));
+      expect(scheduleEntriesSchema.parse(entries)).toHaveLength(4);
+    }
+
+    expect(scheduleEntriesSchema.parse(Array.from({ length: 31 }, (_, index) => ({
+      key: `entry-${index + 1}`,
+      label: `Run ${index + 1}`,
+      expression: { kind: 'DAY_OF_MONTH', day: (index % 31) + 1 },
+      businessDayAdjustment: 'NONE',
+    })))).toHaveLength(31);
+  });
+
+  it('normalizes labels and keys while retaining stable identity', () => {
+    expect(scheduleEntriesSchema.parse([{
+      key: '  filing-date  ',
+      label: '  Filing date  ',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+      businessDayAdjustment: 'NONE',
+    }])).toEqual([{
+      key: 'filing-date',
+      label: 'Filing date',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+      businessDayAdjustment: 'NONE',
+    }]);
+  });
+
+  it('rejects duplicate keys and more than thirty-one entries', () => {
+    const duplicate = {
+      key: 'same',
+      label: 'Same',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+      businessDayAdjustment: 'NONE',
+    };
+    expect(() => scheduleEntriesSchema.parse([duplicate, duplicate])).toThrow('unique');
+    expect(() => scheduleEntriesSchema.parse(Array.from({ length: 32 }, (_, index) => ({
+      ...duplicate,
+      key: `key-${index}`,
+    })))).toThrow('31');
+  });
+
+  it('rejects unknown fields, malformed keys, and invalid expression ranges', () => {
+    const base = {
+      key: 'filing-date',
+      label: 'Filing date',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+      businessDayAdjustment: 'NONE',
+    };
+    expect(() => scheduleEntriesSchema.parse({ ...base, extra: true })).toThrow();
+    expect(() => scheduleEntriesSchema.parse([{ ...base, key: '1-not-a-key' }])).toThrow();
+    expect(() => scheduleEntriesSchema.parse([{ ...base, expression: { kind: 'DAY_OF_MONTH', day: 32 } }])).toThrow();
+    expect(() => scheduleEntriesSchema.parse([{ ...base, expression: { kind: 'BUSINESS_DAY_FROM_START', ordinal: 0 } }])).toThrow();
+    expect(() => scheduleEntriesSchema.parse([{ ...base, expression: {
+      kind: 'RELATIVE_TO_SOURCE', source: { kind: 'COMPANY_FIELD', field: 'unknownCompanyField' }, offset: 0, unit: 'CALENDAR_DAY',
+    } }])).toThrow();
+  });
+
+  it('accepts only whitelisted date sources and strict date operations', () => {
+    const allowedSources = [
+      { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+      { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' },
+      { kind: 'COMPANY_FIELD', field: 'nextArDueDate' },
+      { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+      { kind: 'COMPANY_FIELD', field: 'incorporationDate' },
+      { kind: 'CYCLE_START' },
+      { kind: 'CYCLE_END' },
+      { kind: 'PARAMETER', key: 'monthsAfterFye' },
+      { kind: 'SCHEDULE_ENTRY', key: 'filing-date' },
+      { kind: 'MILESTONE', key: 'previous-filing' },
+    ];
+    for (const source of allowedSources) {
+      expect(dateSourceSchema.parse(source)).toEqual(source);
+    }
+    expect(() => dateSourceSchema.parse({ kind: 'COMPANY_FIELD', field: 'secretField' })).toThrow();
+    expect(() => dateSourceSchema.parse({ kind: 'COMPANY_FIELD', field: 'entityType' })).toThrow();
+    expect(() => dateSourceSchema.parse({ kind: 'SCHEDULE_ENTRY', key: 'not valid' })).toThrow();
+    expect(() => dateSourceSchema.parse({ kind: 'CYCLE_START', extra: true })).toThrow();
+
+    expect(dateOperationSchema.parse({ kind: 'ADD', offset: 0, unit: 'CALENDAR_DAY' })).toEqual({
+      kind: 'ADD', offset: 0, unit: 'CALENDAR_DAY',
+    });
+    expect(dateOperationSchema.parse({ kind: 'ADD', offset: -3660, unit: 'BUSINESS_DAY' })).toBeTruthy();
+    expect(() => dateOperationSchema.parse({ kind: 'ADD', offset: 3661, unit: 'CALENDAR_DAY' })).toThrow();
+    expect(() => dateOperationSchema.parse({ kind: 'ADD', offset: 1, unit: 'CALENDAR_DAY', extra: true })).toThrow();
+  });
+
+  it('validates versioned recurrence, milestone expressions, and generation modes', () => {
+    expect(recurrenceSchema.parse({ schemaVersion: 1, kind: 'MONTHLY', interval: 1 })).toEqual({
+      schemaVersion: 1, kind: 'MONTHLY', interval: 1,
+    });
+    expect(recurrenceSchema.parse({ schemaVersion: 1, kind: 'CUSTOM', interval: 2, unit: 'MONTH' })).toEqual({
+      schemaVersion: 1, kind: 'CUSTOM', interval: 2, unit: 'MONTH',
+    });
+    expect(() => recurrenceSchema.parse({ schemaVersion: 2, kind: 'MONTHLY', interval: 1 })).toThrow();
+    expect(() => recurrenceSchema.parse({ schemaVersion: 1, kind: 'CUSTOM', interval: 0, unit: 'MONTH' })).toThrow();
+    expect(() => recurrenceSchema.parse({ schemaVersion: 1, kind: 'MONTHLY', interval: 1, unknown: true })).toThrow();
+
+    const milestone = {
+      key: 'annual-return',
+      name: 'Annual return',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_SCHEDULE_ENTRY',
+      expression: {
+        kind: 'RELATIVE_TO_SOURCE',
+        source: { kind: 'SCHEDULE_ENTRY', key: 'filing-date' },
+        offset: -2,
+        unit: 'BUSINESS_DAY',
+      },
+      businessDayAdjustment: 'PREVIOUS',
+      displayOrder: 0,
+      isActive: true,
+    };
+    expect(deadlineMilestoneSchema.parse(milestone)).toEqual(milestone);
+    expect(() => deadlineMilestoneSchema.parse({ ...milestone, unexpected: true })).toThrow();
+    expect(() => deadlineMilestoneSchema.parse({
+      ...milestone,
+      generationMode: 'ONCE_PER_SCHEDULE_ENTRY',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+    })).toThrow('schedule');
+  });
+
+  it('bounds applicability groups, rejects unknown company fields, and preserves strict nesting', () => {
+    const definition = {
+      schemaVersion: 1,
+      kind: 'ALL',
+      conditions: [
+        { kind: 'FIELD_EQUALS', field: 'entityType', value: 'EXEMPTED_PRIVATE_LIMITED' },
+        { kind: 'FIELD_PRESENT', field: 'nextAgmDueDate' },
+      ],
+    };
+    expect(applicabilityDefinitionSchema.parse(definition)).toEqual(definition);
+    expect(() => applicabilityDefinitionSchema.parse({
+      ...definition,
+      conditions: [{ kind: 'FIELD_EQUALS', field: 'notACompanyField', value: 'x' }],
+    })).toThrow();
+    expect(() => applicabilityDefinitionSchema.parse({
+      ...definition,
+      conditions: Array.from({ length: 51 }, () => definition.conditions[0]),
+    })).toThrow('50');
+
+    let nested: Record<string, unknown> = { kind: 'ALL', conditions: [] };
+    for (let index = 0; index < 6; index += 1) nested = { kind: 'ALL', conditions: [nested] };
+    expect(() => applicabilityDefinitionSchema.parse({ schemaVersion: 1, ...nested })).toThrow();
+    expect(() => applicabilityDefinitionSchema.parse({ ...definition, unknown: true })).toThrow();
+  });
+});
