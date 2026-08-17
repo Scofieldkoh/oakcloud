@@ -2,6 +2,15 @@ import { render, screen } from '@testing-library/react';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const authState = vi.hoisted(() => ({
+  data: {
+    id: 'user-1',
+    email: 'user@example.com',
+    isSuperAdmin: false,
+    isWorkspaceAdmin: false,
+  },
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/tasks',
   useRouter: () => ({ push: vi.fn() }),
@@ -18,7 +27,7 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('@/hooks/use-auth', () => ({
-  useSession: () => ({ data: { id: 'user-1', email: 'user@example.com', isSuperAdmin: false, isWorkspaceAdmin: false } }),
+  useSession: () => authState,
   useLogout: () => ({ mutate: vi.fn() }),
 }));
 
@@ -40,6 +49,8 @@ import { useUIStore } from '@/stores/ui-store';
 
 describe('Sidebar task workspace destinations', () => {
   beforeEach(() => {
+    authState.data.isSuperAdmin = false;
+    authState.data.isWorkspaceAdmin = false;
     window.matchMedia = vi.fn().mockImplementation(() => ({
       matches: true,
       addEventListener: vi.fn(),
@@ -58,5 +69,16 @@ describe('Sidebar task workspace destinations', () => {
     expect(screen.queryByText('Workflow')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Projects' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Templates' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Services' })).not.toBeInTheDocument();
+  });
+
+  it('exposes Services in Administration to workspace administrators', () => {
+    authState.data.isWorkspaceAdmin = true;
+
+    render(<Sidebar />);
+
+    const servicesLink = screen.getByRole('link', { name: 'Services' });
+    expect(screen.getByRole('navigation', { name: 'Main menu' })).toContainElement(servicesLink);
+    expect(servicesLink).toHaveAttribute('href', '/admin/services');
   });
 });

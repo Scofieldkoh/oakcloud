@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
-import { ServiceCatalogPanel } from '@/components/services/admin/catalog/service-catalog-panel';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -43,7 +42,6 @@ import {
   X,
   Eye,
   ArrowLeft,
-  BriefcaseBusiness,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -53,7 +51,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Types
 // ============================================================================
 
-type TabType = 'templates' | 'partials' | 'services';
+type TabType = 'templates' | 'partials';
 
 interface DocumentTemplate {
   id: string;
@@ -1096,21 +1094,27 @@ function TemplatePartialsTab({
 export default function TemplatesPage() {
   const { data: session } = useSession();
   const { can } = usePermissions();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<TabType>(
-    initialTab === 'partials' || initialTab === 'services'
+    initialTab === 'partials'
       ? initialTab
       : 'templates'
   );
+  const isLegacyServicesTab = initialTab === 'services';
 
-  // Read tab from URL query parameter
+  // Read tab from URL query parameter and redirect the retired Services tab.
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'templates' || tabParam === 'partials' || tabParam === 'services') {
+    if (tabParam === 'services') {
+      router.replace('/admin/services');
+      return;
+    }
+    if (tabParam === 'templates' || tabParam === 'partials') {
       setActiveTab(tabParam);
     }
-  }, [searchParams]);
+  }, [router, searchParams]);
 
   const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
@@ -1139,7 +1143,15 @@ export default function TemplatesPage() {
       </div>
 
       {/* Tabs and Content */}
-      {activeTenantId && (
+      {isLegacyServicesTab ? (
+        <div
+          role="status"
+          aria-label="Redirecting to Services administration"
+          className="flex items-center justify-center py-12"
+        >
+          <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+        </div>
+      ) : activeTenantId ? (
         <>
           {/* Tab Navigation */}
           <div className="border-b border-border-primary mb-6">
@@ -1172,20 +1184,6 @@ export default function TemplatesPage() {
                   Partials
                 </span>
               </button>
-              <button
-                onClick={() => setActiveTab('services')}
-                className={cn(
-                  'pb-3 text-sm font-medium border-b-2 transition-colors',
-                  activeTab === 'services'
-                    ? 'border-accent-primary text-accent-primary'
-                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-secondary'
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <BriefcaseBusiness className="w-4 h-4" />
-                  Services
-                </span>
-              </button>
             </nav>
           </div>
 
@@ -1197,7 +1195,7 @@ export default function TemplatesPage() {
               canUpdate={can.updateDocument}
               canDelete={can.deleteDocument}
             />
-          ) : activeTab === 'partials' ? (
+          ) : (
             <TemplatePartialsTab
               activeTenantId={activeTenantId}
               canCreate={can.createDocument}
@@ -1205,16 +1203,9 @@ export default function TemplatesPage() {
               canDelete={can.deleteDocument}
               isSuperAdmin={session?.isSuperAdmin ?? false}
             />
-          ) : (
-            <ServiceCatalogPanel
-              workspaceId={activeTenantId}
-              canCreate={can.createDocument}
-              canUpdate={can.updateDocument}
-              canDelete={can.deleteDocument}
-            />
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

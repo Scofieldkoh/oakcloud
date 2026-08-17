@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Building2,
+  BriefcaseBusiness,
   Users,
   FileText,
   Settings,
@@ -79,6 +80,7 @@ const ungroupedAdminItems: NavItem[] = [
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
   { name: 'ACRA Records', href: '/admin/acra-data', icon: Database, adminOnly: true },
+  { name: 'Services', href: '/admin/services', icon: BriefcaseBusiness, adminOnly: true },
 ];
 
 // Grouped admin items
