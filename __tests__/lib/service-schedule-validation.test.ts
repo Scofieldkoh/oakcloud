@@ -226,6 +226,41 @@ describe('generic service schedule validation', () => {
     expect(() => applicabilityDefinitionSchema.parse({ ...definition, unknown: true })).toThrow();
   });
 
+  it('accepts fifty FIELD_PRESENT predicates at the leaf boundary', () => {
+    const definition = {
+      schemaVersion: 1,
+      kind: 'ALL',
+      conditions: Array.from({ length: 50 }, () => ({ kind: 'FIELD_PRESENT', field: 'entityType' })),
+    };
+    expect(applicabilityDefinitionSchema.parse(definition).conditions).toHaveLength(50);
+  });
+
+  it('accepts one FIELD_IN predicate with fifty correctly typed values', () => {
+    const definition = {
+      schemaVersion: 1,
+      kind: 'ALL',
+      conditions: [{
+        kind: 'FIELD_IN',
+        field: 'entityType',
+        values: Array.from({ length: 50 }, (_, index) => `ENTITY_${index}`),
+      }],
+    };
+    expect(applicabilityDefinitionSchema.parse(definition).conditions[0]).toEqual(definition.conditions[0]);
+  });
+
+  it('accepts fifty FIELD_IN predicates with one correctly typed value each', () => {
+    const definition = {
+      schemaVersion: 1,
+      kind: 'ALL',
+      conditions: Array.from({ length: 50 }, (_, index) => ({
+        kind: 'FIELD_IN',
+        field: 'entityType',
+        values: [`ENTITY_${index}`],
+      })),
+    };
+    expect(applicabilityDefinitionSchema.parse(definition).conditions).toHaveLength(50);
+  });
+
   it('uses one canonical reference-key contract for parameters and milestones', () => {
     const parameter = {
       key: 'monthsAfterFye',

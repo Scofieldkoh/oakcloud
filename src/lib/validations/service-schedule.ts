@@ -7,6 +7,15 @@ const MAX_APPLICABILITY_LEAVES = 50;
 const MAX_APPLICABILITY_DEPTH = 5;
 const MAX_APPLICABILITY_GROUP_CONDITIONS = 50;
 const MAX_APPLICABILITY_GROUPS = 25;
+// A legal AST has at most one semantic record per group or leaf, one
+// conditions array per group, and one values array per list leaf. The sum of
+// those independent maxima is a safe structural-container budget for the
+// generic pre-walk while preserving the smaller semantic-node cap below.
+const MAX_APPLICABILITY_STRUCTURAL_CONTAINERS =
+  MAX_APPLICABILITY_GROUPS + MAX_APPLICABILITY_LEAVES
+  + MAX_APPLICABILITY_GROUPS + MAX_APPLICABILITY_LEAVES;
+// This cap applies to semantic AST records (groups and predicates), not their
+// bounded conditions/values arrays.
 const MAX_APPLICABILITY_NODES = 100;
 // Every accepted applicability array is either a bounded conditions list or a
 // bounded FIELD_IN/FIELD_NOT_IN values list. Applying that same bound to
@@ -310,7 +319,8 @@ function guardRawApplicabilityInput(input: unknown): ApplicabilityGuardIssue | n
     { node: input, path: [], depth: 0, groupDepth: 0 },
   ];
   const seen = new WeakSet<object>();
-  let nodes = 0;
+  let structuralContainers = 0;
+  let semanticNodes = 0;
   let leaves = 0;
   let groups = 0;
 
@@ -322,9 +332,12 @@ function guardRawApplicabilityInput(input: unknown): ApplicabilityGuardIssue | n
     }
     seen.add(current.node);
 
-    nodes += 1;
-    if (nodes > MAX_APPLICABILITY_NODES) {
-      return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_NODES} nodes` };
+    structuralContainers += 1;
+    if (structuralContainers > MAX_APPLICABILITY_STRUCTURAL_CONTAINERS) {
+      return {
+        path: current.path,
+        message: `Applicability structures may contain at most ${MAX_APPLICABILITY_STRUCTURAL_CONTAINERS} containers`,
+      };
     }
     if (current.depth > MAX_APPLICABILITY_STRUCTURAL_DEPTH) {
       return {
@@ -363,6 +376,16 @@ function guardRawApplicabilityInput(input: unknown): ApplicabilityGuardIssue | n
     const kind = record.kind;
     const isGroup = kind === 'ALL' || kind === 'ANY';
     const groupDepth = isGroup ? current.groupDepth + 1 : current.groupDepth;
+    const isSemanticNode = isGroup || (typeof kind === 'string' && kind.startsWith('FIELD_'));
+    if (isSemanticNode) {
+      semanticNodes += 1;
+      if (semanticNodes > MAX_APPLICABILITY_NODES) {
+        return {
+          path: current.path,
+          message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_NODES} semantic nodes`,
+        };
+      }
+    }
     if (isGroup) {
       groups += 1;
       if (groups > MAX_APPLICABILITY_GROUPS) {
