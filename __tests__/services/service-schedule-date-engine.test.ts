@@ -128,5 +128,8 @@ describe('canonical configuration hashing', () => {
 
   it('returns a lowercase SHA-256 digest', () => {
     expect(hashConfiguration({ scheduleEntries: [] })).toMatch(/^[a-f0-9]{64}$/);
+    expect(hashConfiguration({ a: 1, b: 2 })).toBe(
+      '43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777',
+    );
   });
 });

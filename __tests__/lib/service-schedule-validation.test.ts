@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   applicabilityDefinitionSchema,
+  applicabilityPredicateSchema,
   dateOperationSchema,
   dateSourceSchema,
+  deadlineParameterDefinitionSchema,
   deadlineMilestoneSchema,
   recurrenceSchema,
   scheduleEntriesSchema,
@@ -124,6 +126,9 @@ describe('generic service schedule validation', () => {
     expect(() => recurrenceSchema.parse({ schemaVersion: 2, kind: 'MONTHLY', interval: 1 })).toThrow();
     expect(() => recurrenceSchema.parse({ schemaVersion: 1, kind: 'CUSTOM', interval: 0, unit: 'MONTH' })).toThrow();
     expect(() => recurrenceSchema.parse({ schemaVersion: 1, kind: 'MONTHLY', interval: 1, unknown: true })).toThrow();
+    const unknownKind = recurrenceSchema.safeParse({ schemaVersion: 1, kind: 'UNKNOWN', interval: 1 });
+    expect(unknownKind.success).toBe(false);
+    if (!unknownKind.success) expect(unknownKind.error.issues[0]?.path).toEqual(['kind']);
 
     const milestone = {
       key: 'annual-return',
@@ -173,5 +178,54 @@ describe('generic service schedule validation', () => {
     for (let index = 0; index < 6; index += 1) nested = { kind: 'ALL', conditions: [nested] };
     expect(() => applicabilityDefinitionSchema.parse({ schemaVersion: 1, ...nested })).toThrow();
     expect(() => applicabilityDefinitionSchema.parse({ ...definition, unknown: true })).toThrow();
+  });
+
+  it('uses one canonical reference-key contract for parameters and milestones', () => {
+    const parameter = {
+      key: 'monthsAfterFye',
+      label: 'Months after FYE',
+      description: null,
+      type: 'INTEGER',
+      required: true,
+    } as const;
+    expect(deadlineParameterDefinitionSchema.parse(parameter)).toEqual(parameter);
+    expect(dateSourceSchema.parse({ kind: 'PARAMETER', key: parameter.key })).toEqual({
+      kind: 'PARAMETER', key: parameter.key,
+    });
+
+    const milestone = {
+      key: 'annualReturnDue',
+      name: 'Annual Return due',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_CYCLE',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+      businessDayAdjustment: 'NONE',
+      displayOrder: 0,
+      isActive: true,
+    } as const;
+    expect(deadlineMilestoneSchema.parse(milestone)).toEqual(milestone);
+    expect(dateSourceSchema.parse({ kind: 'MILESTONE', key: milestone.key })).toEqual({
+      kind: 'MILESTONE', key: milestone.key,
+    });
+  });
+
+  it('rejects applicability predicates whose operators and values do not fit field types', () => {
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_TRUE', field: 'name' }).success).toBe(false);
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_COMPARE', field: 'isGstRegistered', operator: 'GT', value: 1 }).success).toBe(false);
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_EQUALS', field: 'currentOfficerCount', value: '3' }).success).toBe(false);
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_EQUALS', field: 'currentOfficerCount', value: 3 }).success).toBe(true);
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_COMPARE', field: 'nextAgmDueDate', operator: 'GTE', value: 'not-a-date' }).success).toBe(false);
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_EQUALS', field: 'entityType', value: 'EXEMPTED_PRIVATE_LIMITED' }).success).toBe(true);
+  });
+
+  it('rejects extreme raw applicability depth with a controlled Zod validation result', () => {
+    let nested: Record<string, unknown> = { kind: 'ALL', conditions: [] };
+    for (let index = 0; index < 5000; index += 1) nested = { kind: 'ALL', conditions: [nested] };
+
+    let result: ReturnType<typeof applicabilityDefinitionSchema.safeParse>;
+    expect(() => { result = applicabilityDefinitionSchema.safeParse({ schemaVersion: 1, ...nested }); }).not.toThrow();
+    expect(result!.success).toBe(false);
+    if (!result!.success) expect(result!.error.issues[0]?.message).toMatch(/nested|depth|levels/i);
   });
 });

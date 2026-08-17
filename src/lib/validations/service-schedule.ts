@@ -5,6 +5,9 @@ const KEY_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
 const MAX_DATE_OFFSET = 3660;
 const MAX_APPLICABILITY_LEAVES = 50;
 const MAX_APPLICABILITY_DEPTH = 5;
+const MAX_APPLICABILITY_GROUP_CONDITIONS = 50;
+const MAX_APPLICABILITY_GROUPS = 25;
+const MAX_APPLICABILITY_NODES = 100;
 
 function isRealGregorianDate(value: string): boolean {
   if (!DATE_ONLY_PATTERN.test(value)) return false;
@@ -48,26 +51,42 @@ const companyDateFieldSchema = z.enum([
 
 export const companyDateSourceFieldSchema = companyDateFieldSchema;
 
-const companyFieldSchema = z.enum([
+export const booleanCompanyFieldSchema = z.enum([
+  'isGstRegistered',
+  'isRegisteredCharity',
+  'isIPC',
+  'hasCharges',
+]);
+
+export const numericCompanyFieldSchema = z.enum([
+  'currentOfficerCount',
+  'currentShareholderCount',
+  'annualReceiptsOrExpenditure',
+]);
+
+export const dateCompanyFieldSchema = z.enum([
   'financialYearEnd',
   'nextAgmDueDate',
   'nextArDueDate',
   'accountsDueDate',
   'incorporationDate',
   'registrationDate',
+]);
+
+export const stringCompanyFieldSchema = z.enum([
   'entityType',
   'status',
-  'isGstRegistered',
-  'isRegisteredCharity',
-  'isIPC',
-  'hasCharges',
-  'currentOfficerCount',
-  'currentShareholderCount',
-  'annualReceiptsOrExpenditure',
   'primarySsicCode',
   'secondarySsicCode',
   'uen',
   'name',
+]);
+
+export const companyFieldSchema = z.union([
+  booleanCompanyFieldSchema,
+  numericCompanyFieldSchema,
+  dateCompanyFieldSchema,
+  stringCompanyFieldSchema,
 ]);
 
 /** Typed, whitelisted date sources. Unknown Company fields are rejected. */
@@ -138,9 +157,27 @@ export const scheduleEntriesSchema = z.array(scheduleEntrySchema).max(31, 'A sch
   }
 });
 
-const standardRecurrenceSchema = z.object({
+const monthlyRecurrenceSchema = z.object({
   schemaVersion: z.literal(1),
-  kind: z.enum(['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY']),
+  kind: z.literal('MONTHLY'),
+  interval: z.number().int().min(1).max(120).optional(),
+}).strict();
+
+const quarterlyRecurrenceSchema = z.object({
+  schemaVersion: z.literal(1),
+  kind: z.literal('QUARTERLY'),
+  interval: z.number().int().min(1).max(120).optional(),
+}).strict();
+
+const semiAnnuallyRecurrenceSchema = z.object({
+  schemaVersion: z.literal(1),
+  kind: z.literal('SEMI_ANNUALLY'),
+  interval: z.number().int().min(1).max(120).optional(),
+}).strict();
+
+const annuallyRecurrenceSchema = z.object({
+  schemaVersion: z.literal(1),
+  kind: z.literal('ANNUALLY'),
   interval: z.number().int().min(1).max(120).optional(),
 }).strict();
 
@@ -156,8 +193,11 @@ const customRecurrenceSchema = z.object({
   unit: z.literal('MONTH'),
 }).strict();
 
-export const recurrenceSchema = z.union([
-  standardRecurrenceSchema,
+export const recurrenceSchema = z.discriminatedUnion('kind', [
+  monthlyRecurrenceSchema,
+  quarterlyRecurrenceSchema,
+  semiAnnuallyRecurrenceSchema,
+  annuallyRecurrenceSchema,
   oneTimeRecurrenceSchema,
   customRecurrenceSchema,
 ]);
@@ -167,23 +207,52 @@ export const recurrenceDefinitionSchema = recurrenceSchema;
 
 const scalarSchema = z.union([z.string(), z.number().finite(), z.boolean()]);
 const comparisonValueSchema = z.union([z.string(), z.number().finite()]);
+const compareFieldSchema = z.union([numericCompanyFieldSchema, dateCompanyFieldSchema]);
 
-export const applicabilityPredicateSchema = z.discriminatedUnion('kind', [
+function fieldValueIssue(field: string, value: unknown): string | null {
+  if (booleanCompanyFieldSchema.options.includes(field as z.infer<typeof booleanCompanyFieldSchema>)) {
+    return typeof value === 'boolean' ? null : `${field} requires a boolean value`;
+  }
+  if (numericCompanyFieldSchema.options.includes(field as z.infer<typeof numericCompanyFieldSchema>)) {
+    return typeof value === 'number' && Number.isFinite(value) ? null : `${field} requires a numeric value`;
+  }
+  if (dateCompanyFieldSchema.options.includes(field as z.infer<typeof dateCompanyFieldSchema>)) {
+    return typeof value === 'string' && isRealGregorianDate(value) ? null : `${field} requires a real YYYY-MM-DD date`;
+  }
+  return typeof value === 'string' ? null : `${field} requires a string value`;
+}
+
+function addFieldValueIssue(ctx: z.RefinementCtx, field: string, value: unknown, path: (string | number)[]): void {
+  const message = fieldValueIssue(field, value);
+  if (message) ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
+}
+
+const applicabilityPredicateBaseSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('FIELD_EQUALS'), field: companyFieldSchema, value: scalarSchema }).strict(),
   z.object({ kind: z.literal('FIELD_NOT_EQUALS'), field: companyFieldSchema, value: scalarSchema }).strict(),
   z.object({ kind: z.literal('FIELD_IN'), field: companyFieldSchema, values: z.array(scalarSchema).min(1).max(MAX_APPLICABILITY_LEAVES) }).strict(),
   z.object({ kind: z.literal('FIELD_NOT_IN'), field: companyFieldSchema, values: z.array(scalarSchema).min(1).max(MAX_APPLICABILITY_LEAVES) }).strict(),
-  z.object({ kind: z.literal('FIELD_TRUE'), field: companyFieldSchema }).strict(),
-  z.object({ kind: z.literal('FIELD_FALSE'), field: companyFieldSchema }).strict(),
+  z.object({ kind: z.literal('FIELD_TRUE'), field: booleanCompanyFieldSchema }).strict(),
+  z.object({ kind: z.literal('FIELD_FALSE'), field: booleanCompanyFieldSchema }).strict(),
   z.object({ kind: z.literal('FIELD_PRESENT'), field: companyFieldSchema }).strict(),
   z.object({ kind: z.literal('FIELD_MISSING'), field: companyFieldSchema }).strict(),
   z.object({
     kind: z.literal('FIELD_COMPARE'),
-    field: companyFieldSchema,
+    field: compareFieldSchema,
     operator: z.enum(['GT', 'GTE', 'LT', 'LTE']),
     value: comparisonValueSchema,
   }).strict(),
 ]);
+
+export const applicabilityPredicateSchema = applicabilityPredicateBaseSchema.superRefine((value, ctx) => {
+  if (value.kind === 'FIELD_EQUALS' || value.kind === 'FIELD_NOT_EQUALS') {
+    addFieldValueIssue(ctx, value.field, value.value, ['value']);
+  } else if (value.kind === 'FIELD_IN' || value.kind === 'FIELD_NOT_IN') {
+    value.values.forEach((entry, index) => addFieldValueIssue(ctx, value.field, entry, ['values', index]));
+  } else if (value.kind === 'FIELD_COMPARE') {
+    addFieldValueIssue(ctx, value.field, value.value, ['value']);
+  }
+});
 
 type ApplicabilityNode = z.infer<typeof applicabilityPredicateSchema> | {
   kind: 'ALL' | 'ANY';
@@ -194,9 +263,83 @@ const applicabilityNodeSchema: z.ZodType<ApplicabilityNode> = z.lazy(() => z.uni
   applicabilityPredicateSchema,
   z.object({
     kind: z.enum(['ALL', 'ANY']),
-    conditions: z.array(applicabilityNodeSchema).max(MAX_APPLICABILITY_LEAVES),
+    conditions: z.array(applicabilityNodeSchema).max(MAX_APPLICABILITY_GROUP_CONDITIONS),
   }).strict(),
 ]));
+
+type RawApplicabilityRecord = Record<string, unknown>;
+
+function isRawApplicabilityRecord(value: unknown): value is RawApplicabilityRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+type ApplicabilityGuardIssue = { path: Array<string | number>; message: string };
+
+/**
+ * Inspect untrusted JSON iteratively before the recursive Zod AST parser is
+ * entered. This keeps malformed depth/size input from exhausting the JS call
+ * stack or consuming unbounded work.
+ */
+function guardRawApplicabilityInput(input: unknown): ApplicabilityGuardIssue | null {
+  if (!isRawApplicabilityRecord(input)) return null;
+  const stack: Array<{ node: unknown; path: Array<string | number>; depth: number }> = [
+    { node: input, path: [], depth: 1 },
+  ];
+  let nodes = 0;
+  let leaves = 0;
+  let groups = 0;
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    nodes += 1;
+    if (nodes > MAX_APPLICABILITY_NODES) {
+      return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_NODES} nodes` };
+    }
+    if (!isRawApplicabilityRecord(current.node)) continue;
+    const kind = current.node.kind;
+    if (kind === 'ALL' || kind === 'ANY') {
+      groups += 1;
+      if (groups > MAX_APPLICABILITY_GROUPS) {
+        return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_GROUPS} groups` };
+      }
+      if (current.depth > MAX_APPLICABILITY_DEPTH) {
+        return { path: current.path, message: `Applicability groups may be nested at most ${MAX_APPLICABILITY_DEPTH} levels` };
+      }
+      const conditions = current.node.conditions;
+      if (!Array.isArray(conditions)) continue;
+      if (conditions.length > MAX_APPLICABILITY_GROUP_CONDITIONS) {
+        return {
+          path: [...current.path, 'conditions'],
+          message: `Applicability groups may contain at most ${MAX_APPLICABILITY_GROUP_CONDITIONS} conditions`,
+        };
+      }
+      for (let index = conditions.length - 1; index >= 0; index -= 1) {
+        stack.push({
+          node: conditions[index],
+          path: [...current.path, 'conditions', index],
+          depth: current.depth + 1,
+        });
+      }
+    } else if (typeof kind === 'string' && kind.startsWith('FIELD_')) {
+      leaves += 1;
+      if (leaves > MAX_APPLICABILITY_LEAVES) {
+        return { path: current.path, message: `Applicability definitions may contain at most ${MAX_APPLICABILITY_LEAVES} leaf predicates` };
+      }
+    }
+  }
+  return null;
+}
+
+function guardApplicabilitySchema<T extends z.ZodTypeAny>(schema: T): z.ZodEffects<T, z.output<T>, z.input<T>> {
+  return z.preprocess((input, ctx) => {
+    const issue = guardRawApplicabilityInput(input);
+    if (issue) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: issue.path, message: issue.message });
+      return z.NEVER;
+    }
+    return input;
+  }, schema);
+}
 
 function checkApplicabilityBounds(node: ApplicabilityNode, depth: number, state: { leaves: number }): string | null {
   if (depth > MAX_APPLICABILITY_DEPTH) return `Applicability groups may be nested at most ${MAX_APPLICABILITY_DEPTH} levels`;
@@ -217,25 +360,27 @@ function checkApplicabilityBounds(node: ApplicabilityNode, depth: number, state:
 
 const applicabilityGroupBaseSchema = z.object({
   kind: z.enum(['ALL', 'ANY']),
-  conditions: z.array(applicabilityNodeSchema).max(MAX_APPLICABILITY_LEAVES),
+  conditions: z.array(applicabilityNodeSchema).max(MAX_APPLICABILITY_GROUP_CONDITIONS),
 }).strict();
 
-export const applicabilityGroupSchema = applicabilityGroupBaseSchema.superRefine((value, ctx) => {
+const boundedApplicabilityGroupSchema = applicabilityGroupBaseSchema.superRefine((value, ctx) => {
   const issue = checkApplicabilityBounds(value, 1, { leaves: 0 });
   if (issue) ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue });
 });
+export const applicabilityGroupSchema = guardApplicabilitySchema(boundedApplicabilityGroupSchema);
 
-export const applicabilityDefinitionSchema = z.object({
+const boundedApplicabilityDefinitionSchema = z.object({
   schemaVersion: z.literal(1),
   kind: z.enum(['ALL', 'ANY']),
-  conditions: z.array(applicabilityNodeSchema).max(MAX_APPLICABILITY_LEAVES),
+  conditions: z.array(applicabilityNodeSchema).max(MAX_APPLICABILITY_GROUP_CONDITIONS),
 }).strict().superRefine((value, ctx) => {
   const issue = checkApplicabilityBounds(value, 1, { leaves: 0 });
   if (issue) ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue });
 });
+export const applicabilityDefinitionSchema = guardApplicabilitySchema(boundedApplicabilityDefinitionSchema);
 
 export const deadlineParameterDefinitionSchema = z.object({
-  key: keySchema,
+  key: referenceKeySchema,
   label: z.string().trim().min(1).max(100),
   description: z.string().trim().max(500).nullable().optional(),
   type: z.enum(['STRING', 'INTEGER', 'DECIMAL', 'BOOLEAN', 'DATE', 'ENUM']),
@@ -251,7 +396,7 @@ export const deadlineParameterDefinitionSchema = z.object({
 });
 
 export const deadlineMilestoneSchema = z.object({
-  key: keySchema,
+  key: referenceKeySchema,
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(1000).nullable(),
   type: z.enum(['STATUTORY', 'CLIENT', 'INTERNAL']),
