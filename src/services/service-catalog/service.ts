@@ -12,6 +12,8 @@ import type {
   UpdateServiceVariantInput,
 } from '@/lib/validations/service-catalog';
 import { Prisma } from '@/generated/prisma';
+import { validateVariantRuleAssociations } from '@/services/deadline-rule/association-validation';
+import { hashConfiguration } from '@/services/service-schedule/hash';
 import type {
   ServiceCatalogDto,
   ServiceFamilyDto,
@@ -74,16 +76,7 @@ async function persistVariantDeadlineRules(
   tenantId: string,
   associations: NonNullable<import('@/lib/validations/service-catalog').CreateServiceVariantInput['deadlineRules']>,
 ) {
-  const ruleIds = associations.map((association) => association.ruleId);
-  const rules = ruleIds.length === 0
-    ? []
-    : await tx.deadlineRule.findMany({
-        where: { tenantId, id: { in: ruleIds }, archivedAt: null },
-        select: { id: true },
-      });
-  if (rules.length !== ruleIds.length) {
-    throw new NotFoundError('One or more deadline rules were not found in this workspace');
-  }
+  await validateVariantRuleAssociations(tx, tenantId, associations);
   await tx.serviceVariantDeadlineRule.deleteMany({
     where: { tenantId, serviceVariantId: variantId },
   });
@@ -99,6 +92,30 @@ async function persistVariantDeadlineRules(
       displayOrder: association.displayOrder,
     })),
   });
+}
+
+function deadlineRuleFingerprint(
+  associations: NonNullable<CreateServiceVariantInput['deadlineRules']>,
+): string {
+  return hashConfiguration(associations.map((association) => ({
+    ruleId: association.ruleId,
+    enabledByDefault: association.enabledByDefault,
+    parameterDefaults: association.parameterDefaults,
+    scheduleDefaults: association.scheduleDefaults,
+    displayOrder: association.displayOrder,
+  })));
+}
+
+function storedDeadlineRuleFingerprint(
+  associations: VariantRecord['deadlineRuleAssociations'] | undefined,
+): string {
+  return deadlineRuleFingerprint((associations ?? []).map((association) => ({
+    ruleId: association.ruleId,
+    enabledByDefault: association.enabledByDefault,
+    parameterDefaults: (association.parameterDefaults ?? {}) as Record<string, unknown>,
+    scheduleDefaults: (association.scheduleDefaults ?? []) as NonNullable<CreateServiceVariantInput['deadlineRules']>[number]['scheduleDefaults'],
+    displayOrder: association.displayOrder,
+  })));
 }
 
 function toVariantDto(variant: VariantRecord): ServiceVariantDto {
@@ -520,6 +537,13 @@ export async function createServiceVariant(
     if (input.deadlineRules !== undefined) {
       await persistVariantDeadlineRules(tx, variant.id, params.tenantId, input.deadlineRules);
     }
+    const postWrite = input.deadlineRules === undefined
+      ? variant
+      : await tx.serviceVariant.findFirst({
+          where: { id: variant.id, tenantId: params.tenantId, deletedAt: null },
+          include: variantInclude(params.tenantId),
+        });
+    if (!postWrite) throw new NotFoundError('Service variant not found after association update');
     await createAuditLog(
       {
         tenantId: params.tenantId,
@@ -529,11 +553,11 @@ export async function createServiceVariant(
         entityId: variant.id,
         entityName: variant.name,
         summary: `Created service variant "${variant.name}"`,
-        metadata: { version: variant.version },
+        metadata: { version: postWrite.version },
       },
       tx,
     );
-    return toVariantDto(variant);
+    return toVariantDto(postWrite);
   });
 }
 
@@ -581,12 +605,16 @@ export async function updateServiceVariant(
     const feesChanged =
       input.feeTemplates !== undefined &&
       feeFingerprint(input.feeTemplates) !== storedFeeFingerprint(existing.defaultFeeTemplates);
+    const deadlineRulesChanged =
+      input.deadlineRules !== undefined &&
+      deadlineRuleFingerprint(input.deadlineRules) !== storedDeadlineRuleFingerprint(existing.deadlineRuleAssociations);
     const materialChanged =
       (input.name !== undefined && input.name !== existing.name) ||
       (input.sowPartialId !== undefined && input.sowPartialId !== existing.sowPartialId) ||
       serviceCadence !== existing.serviceCadence ||
       customCadenceLabel !== existing.customCadenceLabel ||
-      feesChanged;
+      feesChanged ||
+      deadlineRulesChanged;
 
     if (feesChanged) {
       await tx.serviceVariantFeeTemplate.deleteMany({
@@ -623,6 +651,14 @@ export async function updateServiceVariant(
       await persistVariantDeadlineRules(tx, variant.id, params.tenantId, input.deadlineRules);
     }
 
+    const postWrite = input.deadlineRules === undefined
+      ? variant
+      : await tx.serviceVariant.findFirst({
+          where: { id: variant.id, tenantId: params.tenantId, deletedAt: null },
+          include: variantInclude(params.tenantId),
+        });
+    if (!postWrite) throw new NotFoundError('Service variant not found after association update');
+
     await createAuditLog(
       {
         tenantId: params.tenantId,
@@ -630,15 +666,15 @@ export async function updateServiceVariant(
         action: 'UPDATE',
         entityType: 'ServiceVariant',
         entityId: variant.id,
-        entityName: variant.name,
-        summary: `Updated service variant "${variant.name}"`,
+        entityName: postWrite.name,
+        summary: `Updated service variant "${postWrite.name}"`,
         metadata: materialChanged
-          ? { oldVersion: existing.version, newVersion: variant.version }
+          ? { oldVersion: existing.version, newVersion: postWrite.version }
           : undefined,
       },
       tx,
     );
-    return toVariantDto(variant);
+    return toVariantDto(postWrite);
   });
 }
 

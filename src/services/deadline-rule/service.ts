@@ -1,5 +1,5 @@
-import { computeChanges, createAuditLog } from '@/lib/audit';
-import { DeadlineApiError, ConflictError, NotFoundError } from '@/lib/errors';
+import { createAuditLog } from '@/lib/audit';
+import { ConflictError, DeadlineApiError, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import type { TenantAwareParams } from '@/lib/types';
@@ -12,7 +12,8 @@ import {
   type SearchDeadlineRulesInput,
   type ServiceVariantRuleAssociationInput,
 } from '@/lib/validations/deadline-rule';
-import { hashConfiguration } from '@/services/service-schedule/hash';
+import { canonicalDeadlineRuleDefinition, hashDeadlineRuleDefinition } from './canonical';
+import { validateVariantRuleAssociations } from './association-validation';
 import type {
   DeadlineMilestoneDto,
   DeadlineRuleDto,
@@ -162,7 +163,8 @@ function versionCreateData(
         label: parameter.label,
         type: parameter.type,
         isRequired: parameter.required,
-        validation: parameter.options === undefined ? undefined : json({ options: parameter.options }),
+        defaultValue: Prisma.JsonNull,
+        validation: parameter.options === undefined ? Prisma.JsonNull : json({ options: parameter.options }),
         helpText: parameter.description ?? null,
         displayOrder: index,
       })),
@@ -181,6 +183,44 @@ function versionCreateData(
         isActive: milestone.isActive,
       })),
     },
+  };
+}
+
+function inputFromVersion(rule: Pick<RuleRecord, 'code' | 'name' | 'description'>, version: VersionRecord): DeadlineRuleDraftInput {
+  return {
+    code: rule.code,
+    name: rule.name,
+    description: rule.description,
+    recurrence: version.recurrence as DeadlineRuleDraftInput['recurrence'],
+    applicability: version.applicability as DeadlineRuleDraftInput['applicability'],
+    parameters: version.parameterDefinitions.map((parameter) => {
+      const validation = parameter.validation;
+      const rawOptions = typeof validation === 'object' && validation !== null && !Array.isArray(validation)
+        ? (validation as Record<string, unknown>).options
+        : undefined;
+      const options = Array.isArray(rawOptions) && rawOptions.every((option: unknown) => typeof option === 'string')
+        ? rawOptions as string[]
+        : undefined;
+      return {
+        key: parameter.key,
+        label: parameter.label,
+        description: parameter.helpText,
+        type: parameter.type,
+        required: parameter.isRequired,
+        ...(options === undefined ? {} : { options }),
+      };
+    }),
+    milestones: version.milestoneTemplates.map((milestone) => ({
+      key: milestone.milestoneKey,
+      name: milestone.name,
+      description: milestone.description,
+      type: milestone.type,
+      generationMode: milestone.generationMode,
+      expression: milestone.dateExpression as DeadlineRuleDraftInput['milestones'][number]['expression'],
+      businessDayAdjustment: milestone.businessDayAdjustment,
+      displayOrder: milestone.displayOrder,
+      isActive: milestone.isActive,
+    })),
   };
 }
 
@@ -242,13 +282,7 @@ export async function createDeadlineRule(
   actor: TenantAwareParams,
 ): Promise<DeadlineRuleDto> {
   const input = deadlineRuleDraftSchema.parse(rawInput);
-  const configHash = hashConfiguration({
-    schemaVersion: 1,
-    recurrence: input.recurrence,
-    applicability: input.applicability,
-    parameters: input.parameters,
-    milestones: input.milestones,
-  });
+  const configHash = hashDeadlineRuleDefinition(input);
 
   return runSerializableTransaction(prisma, async (tx) => {
     const duplicate = await tx.deadlineRule.findFirst({
@@ -280,6 +314,11 @@ export async function createDeadlineRule(
       entityId: rule.id,
       entityName: rule.name,
       summary: `Created deadline rule "${rule.name}" draft`,
+      changes: {
+        definition: { old: null, new: canonicalDeadlineRuleDefinition(input) },
+        configHash: { old: null, new: configHash },
+        draftRevision: { old: null, new: draft.draftRevision },
+      },
       metadata: { code: rule.code, draftRevision: draft.draftRevision, configHash },
     }, tx);
 
@@ -301,41 +340,8 @@ async function createDraftFromPublished(
   if (!source) {
     throw new ConflictError('Deadline rule has no published version to copy');
   }
-  const input: DeadlineRuleDraftInput = {
-    code: rule.code,
-    name: rule.name,
-    description: rule.description,
-    recurrence: source.recurrence as DeadlineRuleDraftInput['recurrence'],
-    applicability: source.applicability as DeadlineRuleDraftInput['applicability'],
-    parameters: source.parameterDefinitions.map((parameter) => ({
-      key: parameter.key,
-      label: parameter.label,
-      description: parameter.helpText,
-      type: parameter.type,
-      required: parameter.isRequired,
-      ...(parameter.validation && typeof parameter.validation === 'object' && 'options' in parameter.validation
-        ? { options: (parameter.validation as { options: string[] }).options }
-        : {}),
-    })),
-    milestones: source.milestoneTemplates.map((milestone) => ({
-      key: milestone.milestoneKey,
-      name: milestone.name,
-      description: milestone.description,
-      type: milestone.type,
-      generationMode: milestone.generationMode,
-      expression: milestone.dateExpression as DeadlineRuleDraftInput['milestones'][number]['expression'],
-      businessDayAdjustment: milestone.businessDayAdjustment,
-      displayOrder: milestone.displayOrder,
-      isActive: milestone.isActive,
-    })),
-  };
-  const configHash = hashConfiguration({
-    schemaVersion: 1,
-    recurrence: input.recurrence,
-    applicability: input.applicability,
-    parameters: input.parameters,
-    milestones: input.milestones,
-  });
+  const input = inputFromVersion(rule, source);
+  const configHash = hashDeadlineRuleDefinition(input);
   const draft = await tx.deadlineRuleVersion.create({
     data: versionCreateData(rule.id, actor.tenantId, input, actor, configHash),
     include: versionInclude,
@@ -349,13 +355,7 @@ export async function updateDeadlineRuleDraft(
   actor: TenantAwareParams,
 ): Promise<DeadlineRuleDto> {
   const input = deadlineRuleDraftSchema.parse(rawInput);
-  const configHash = hashConfiguration({
-    schemaVersion: 1,
-    recurrence: input.recurrence,
-    applicability: input.applicability,
-    parameters: input.parameters,
-    milestones: input.milestones,
-  });
+  const configHash = hashDeadlineRuleDefinition(input);
 
   return runSerializableTransaction(prisma, async (tx) => {
     const rule = await tx.deadlineRule.findFirst({
@@ -364,6 +364,9 @@ export async function updateDeadlineRuleDraft(
     });
     if (!rule) throw new NotFoundError('Deadline rule not found');
     let typedRule = rule as RuleRecord;
+    if (input.code !== typedRule.code) {
+      throw new ValidationError('Deadline rule code is immutable once created');
+    }
     let draft = (typedRule.versions ?? []).find((version) => version.state === 'DRAFT');
     if (!draft) {
       draft = (await tx.deadlineRuleVersion.findFirst({
@@ -409,7 +412,8 @@ export async function updateDeadlineRuleDraft(
             label: parameter.label,
             type: parameter.type,
             isRequired: parameter.required,
-            validation: parameter.options === undefined ? undefined : json({ options: parameter.options }),
+            defaultValue: Prisma.JsonNull,
+            validation: parameter.options === undefined ? Prisma.JsonNull : json({ options: parameter.options }),
             helpText: parameter.description ?? null,
             displayOrder: index,
           })),
@@ -436,6 +440,8 @@ export async function updateDeadlineRuleDraft(
       where: { id: typedRule.id },
       data: { name: input.name, description: input.description, updatedById: actor.userId },
     });
+    const beforeDefinition = canonicalDeadlineRuleDefinition(inputFromVersion(typedRule, draft));
+    const afterDefinition = canonicalDeadlineRuleDefinition(input);
     await createAuditLog({
       tenantId: actor.tenantId,
       userId: actor.userId,
@@ -444,11 +450,11 @@ export async function updateDeadlineRuleDraft(
       entityId: draft.id,
       entityName: input.name,
       summary: `Updated deadline rule draft "${input.name}"`,
-      changes: computeChanges(
-        draft as unknown as Record<string, unknown>,
-        { ...input, configHash, draftRevision: nextRevision },
-        ['configHash', 'draftRevision', 'recurrence', 'applicability'],
-      ) ?? undefined,
+      changes: {
+        definition: { old: beforeDefinition, new: afterDefinition },
+        configHash: { old: draft.configHash, new: configHash },
+        draftRevision: { old: draft.draftRevision, new: nextRevision },
+      },
       metadata: { ruleId: id, draftRevision: nextRevision, configHash },
     }, tx);
 
@@ -477,15 +483,7 @@ export async function replaceVariantRuleAssociations(
     if (!variant) throw new NotFoundError('Service variant not found');
 
     const ruleIds = input.map((association) => association.ruleId);
-    const rules = ruleIds.length === 0
-      ? []
-      : await tx.deadlineRule.findMany({
-          where: { tenantId: actor.tenantId, id: { in: ruleIds }, archivedAt: null },
-          select: { id: true },
-        });
-    if (rules.length !== ruleIds.length) {
-      throw new NotFoundError('One or more deadline rules were not found in this workspace');
-    }
+    await validateVariantRuleAssociations(tx, actor.tenantId, input);
 
     await tx.serviceVariantDeadlineRule.deleteMany({
       where: { tenantId: actor.tenantId, serviceVariantId: variantId },

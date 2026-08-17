@@ -15,6 +15,13 @@ const prismaMock = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
   },
+  deadlineRule: {
+    findMany: vi.fn(),
+  },
+  serviceVariantDeadlineRule: {
+    deleteMany: vi.fn(),
+    createMany: vi.fn(),
+  },
   serviceVariantFeeTemplate: {
     deleteMany: vi.fn(),
   },
@@ -89,6 +96,7 @@ const existingVariant = {
       displayOrder: 0,
     },
   ],
+  deadlineRuleAssociations: [],
 };
 
 const existingFamily = {
@@ -440,5 +448,131 @@ describe('service catalog service', () => {
     expect(prismaMock.$transaction.mock.invocationCallOrder[0]).toBeLessThan(
       prismaMock.templatePartial.findFirst.mock.invocationCallOrder[0],
     );
+  });
+
+  it('reloads created variants after persisting deadline-rule associations', async () => {
+    const ruleId = '99999999-9999-4999-8999-999999999999';
+    const association = {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      serviceVariantId: existingVariant.id,
+      ruleId,
+      enabledByDefault: true,
+      parameterDefaults: {},
+      scheduleDefaults: [],
+      displayOrder: 0,
+      archivedAt: null,
+      createdAt: new Date('2026-08-18T00:00:00.000Z'),
+      rule: { id: ruleId, code: 'SG_ECI', name: 'ECI', currentVersionId: null },
+    };
+    prismaMock.serviceFamily.findFirst.mockResolvedValue({ id: existingVariant.familyId });
+    prismaMock.templatePartial.findFirst.mockResolvedValue({ id: existingVariant.sowPartialId });
+    prismaMock.serviceVariant.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ ...existingVariant, deadlineRuleAssociations: [association] });
+    prismaMock.serviceVariant.create.mockResolvedValue(existingVariant);
+    prismaMock.deadlineRule.findMany.mockResolvedValue([{
+      id: ruleId,
+      currentVersion: { parameterDefinitions: [] },
+      versions: [],
+    }]);
+
+    const result = await createServiceVariant({
+      familyId: existingVariant.familyId,
+      sowPartialId: existingVariant.sowPartialId,
+      code: existingVariant.code,
+      name: existingVariant.name,
+      description: existingVariant.description,
+      serviceCadence: 'MONTHLY',
+      customCadenceLabel: null,
+      displayOrder: existingVariant.displayOrder,
+      isActive: existingVariant.isActive,
+      feeTemplates: [],
+      deadlineRules: [{
+        ruleId,
+        enabledByDefault: true,
+        parameterDefaults: {},
+        scheduleDefaults: [],
+        displayOrder: 0,
+      }],
+    }, actor);
+
+    expect(prismaMock.serviceVariant.findFirst).toHaveBeenCalledTimes(2);
+    expect(result.deadlineRules?.[0]).toMatchObject({ ruleId, id: association.id });
+  });
+
+  it('versions association-only changes and returns the post-write association DTO', async () => {
+    const ruleId = '11111111-1111-4111-8111-111111111111';
+    const association = {
+      id: '22222222-2222-4222-8222-222222222222',
+      serviceVariantId: existingVariant.id,
+      ruleId,
+      enabledByDefault: true,
+      parameterDefaults: {},
+      scheduleDefaults: [],
+      displayOrder: 0,
+      archivedAt: null,
+      createdAt: new Date('2026-08-18T00:00:00.000Z'),
+      rule: { id: ruleId, code: 'SG_ECI', name: 'ECI', currentVersionId: null },
+    };
+    const postWrite = {
+      ...existingVariant,
+      version: 2,
+      deadlineRuleAssociations: [association],
+    };
+    prismaMock.serviceVariant.findFirst
+      .mockResolvedValueOnce(existingVariant)
+      .mockResolvedValueOnce(postWrite);
+    prismaMock.serviceVariant.update.mockResolvedValue({ ...existingVariant, version: 2 });
+    prismaMock.deadlineRule.findMany.mockResolvedValue([{
+      id: ruleId,
+      currentVersion: { parameterDefinitions: [] },
+      versions: [],
+    }]);
+
+    const result = await updateServiceVariant(existingVariant.id, {
+      customCadenceLabel: null,
+      deadlineRules: [{
+        ruleId,
+        enabledByDefault: true,
+        parameterDefaults: {},
+        scheduleDefaults: [],
+        displayOrder: 0,
+      }],
+    }, actor);
+
+    expect(prismaMock.serviceVariant.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ version: { increment: 1 } }),
+    }));
+    expect(prismaMock.serviceVariant.findFirst).toHaveBeenCalledTimes(2);
+    expect(result.version).toBe(2);
+    expect(result.deadlineRules?.[0]).toMatchObject({ ruleId, id: association.id });
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: { oldVersion: 1, newVersion: 2 },
+    }), prismaMock);
+  });
+
+  it('uses the shared parameter-default validator for catalog persistence', async () => {
+    const ruleId = '33333333-3333-4333-8333-333333333333';
+    prismaMock.serviceVariant.findFirst.mockResolvedValue(existingVariant);
+    prismaMock.serviceVariant.update.mockResolvedValue({ ...existingVariant, version: 1 });
+    prismaMock.deadlineRule.findMany.mockResolvedValue([{
+      id: ruleId,
+      currentVersion: {
+        parameterDefinitions: [{ key: 'monthsAfterFye', type: 'INTEGER', validation: null }],
+      },
+      versions: [],
+    }]);
+
+    await expect(updateServiceVariant(existingVariant.id, {
+      customCadenceLabel: null,
+      deadlineRules: [{
+        ruleId,
+        enabledByDefault: true,
+        parameterDefaults: { monthsAfterFye: 'six' },
+        scheduleDefaults: [],
+        displayOrder: 0,
+      }],
+    }, actor)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(prismaMock.serviceVariantDeadlineRule.deleteMany).not.toHaveBeenCalled();
   });
 });

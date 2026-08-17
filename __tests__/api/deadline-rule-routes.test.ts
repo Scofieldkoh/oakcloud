@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const session = {
-  id: 'user-1',
-  tenantId: 'tenant-1',
+  id: '11111111-1111-4111-8111-111111111111',
+  tenantId: '22222222-2222-4222-8222-222222222222',
   isSuperAdmin: false,
   isWorkspaceAdmin: true,
 };
@@ -74,7 +74,7 @@ describe('deadline rule routes', () => {
     const response = await POST(new NextRequest('http://localhost/api/service-catalog/deadline-rules', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...draft, tenantId: 'tenant-1' }),
+      body: JSON.stringify({ ...draft, tenantId: session.tenantId }),
     }));
     expect(response.status).toBe(201);
     expect(mocks.createDeadlineRule).toHaveBeenCalledWith(expect.objectContaining({ code: 'SG_ECI' }), {
@@ -84,21 +84,81 @@ describe('deadline rule routes', () => {
   });
 
   it('loads and updates one tenant-scoped draft', async () => {
-    mocks.getDeadlineRule.mockResolvedValue({ id: 'rule-1' });
-    mocks.updateDeadlineRuleDraft.mockResolvedValue({ id: 'rule-1' });
+    const ruleId = '33333333-3333-4333-8333-333333333333';
+    mocks.getDeadlineRule.mockResolvedValue({ id: ruleId });
+    mocks.updateDeadlineRuleDraft.mockResolvedValue({ id: ruleId });
     const getResponse = await getOne(
-      new NextRequest('http://localhost/api/service-catalog/deadline-rules/rule-1'),
-      { params: Promise.resolve({ id: 'rule-1' }) },
+      new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}`),
+      { params: Promise.resolve({ id: ruleId }) },
     );
     const patchResponse = await PATCH(
-      new NextRequest('http://localhost/api/service-catalog/deadline-rules/rule-1', {
+      new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...draft, expectedDraftRevision: 1 }),
       }),
-      { params: Promise.resolve({ id: 'rule-1' }) },
+      { params: Promise.resolve({ id: ruleId }) },
     );
     expect(getResponse.status).toBe(200);
     expect(patchResponse.status).toBe(200);
+  });
+
+  it('returns validation errors for malformed JSON, non-object JSON, invalid UUIDs, and tenant mismatches', async () => {
+    const invalidJson = await POST(new NextRequest('http://localhost/api/service-catalog/deadline-rules', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{"code":',
+    }));
+    expect(invalidJson.status).toBe(400);
+
+    const nonObject = await POST(new NextRequest('http://localhost/api/service-catalog/deadline-rules', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify([]),
+    }));
+    expect(nonObject.status).toBe(400);
+
+    const invalidQueryTenant = await GET(new NextRequest(
+      'http://localhost/api/service-catalog/deadline-rules?tenantId=tenant-1',
+    ));
+    expect(invalidQueryTenant.status).toBe(400);
+
+    const invalidId = await getOne(
+      new NextRequest('http://localhost/api/service-catalog/deadline-rules/not-a-uuid'),
+      { params: Promise.resolve({ id: 'not-a-uuid' }) },
+    );
+    expect(invalidId.status).toBe(400);
+
+    const mismatchedTenant = await POST(new NextRequest(
+      `http://localhost/api/service-catalog/deadline-rules?tenantId=${session.tenantId}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...draft, tenantId: '44444444-4444-4444-8444-444444444444' }),
+      },
+    ));
+    expect(mismatchedTenant.status).toBe(400);
+    expect(mocks.createDeadlineRule).not.toHaveBeenCalled();
+
+    const invalidPatchTenant = await PATCH(new NextRequest(
+      `http://localhost/api/service-catalog/deadline-rules/${'33333333-3333-4333-8333-333333333333'}?tenantId=${session.tenantId}`,
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...draft, tenantId: 'not-a-uuid' }),
+      },
+    ), { params: Promise.resolve({ id: '33333333-3333-4333-8333-333333333333' }) });
+    expect(invalidPatchTenant.status).toBe(400);
+
+    const mismatchedPatchTenant = await PATCH(new NextRequest(
+      `http://localhost/api/service-catalog/deadline-rules/${'33333333-3333-4333-8333-333333333333'}?tenantId=${session.tenantId}`,
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...draft, tenantId: '44444444-4444-4444-8444-444444444444' }),
+      },
+    ), { params: Promise.resolve({ id: '33333333-3333-4333-8333-333333333333' }) });
+    expect(mismatchedPatchTenant.status).toBe(400);
+    expect(mocks.updateDeadlineRuleDraft).not.toHaveBeenCalled();
   });
 });

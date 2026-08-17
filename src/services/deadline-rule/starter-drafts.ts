@@ -1,24 +1,8 @@
 import { Prisma } from '@/generated/prisma';
-import { hashConfiguration } from '@/services/service-schedule/hash';
+import type { CanonicalDeadlineRuleDefinition } from './canonical';
+import { hashDeadlineRuleDefinition } from './canonical';
 
-const STARTER_CALENDAR_NAME = 'Singapore Business Calendar';
-
-type StarterDefinition = {
-  code: string;
-  name: string;
-  description: string;
-  parameters: Array<{
-    key: string;
-    label: string;
-    type: 'INTEGER';
-    required: true;
-  }>;
-  milestones: Array<{
-    key: string;
-    name: string;
-    expression: Prisma.InputJsonValue;
-  }>;
-};
+export const STARTER_CALENDAR_NAME = 'Singapore Business Calendar';
 
 const annualRecurrence = {
   schemaVersion: 1,
@@ -26,78 +10,121 @@ const annualRecurrence = {
 } as const;
 
 const applicability = {
-  schemaVersion: 1,
-  kind: 'ALL',
+  schemaVersion: 1 as const,
+  kind: 'ALL' as const,
   conditions: [],
-} as const;
+};
 
-const STARTERS: StarterDefinition[] = [
+/**
+ * The single source of truth for the four statutory starter drafts. Rule
+ * rows, version rows, relational children, and hashes are all derived from
+ * these complete canonical objects.
+ */
+export const STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
   {
+    schemaVersion: 1,
     code: 'SG_AGM_DUE',
     name: 'Singapore AGM Due Date',
-    description: 'Starter statutory AGM deadline sourced from the Company next AGM due date.',
+    description: 'Starter statutory AGM rule sourced from Company.nextAgmDueDate',
+    recurrence: annualRecurrence,
+    applicability,
     parameters: [],
     milestones: [{
       key: 'agm-due',
       name: 'AGM due date',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_CYCLE',
       expression: {
         kind: 'SOURCE',
         source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' },
       },
+      businessDayAdjustment: 'NONE',
+      displayOrder: 0,
+      isActive: true,
     }],
   },
   {
+    schemaVersion: 1,
     code: 'SG_ANNUAL_RETURN',
     name: 'Singapore Annual Return',
-    description: 'Starter statutory Annual Return deadline sourced from the Company next AR due date.',
+    description: 'Starter statutory Annual Return rule sourced from Company.nextArDueDate',
+    recurrence: annualRecurrence,
+    applicability,
     parameters: [],
     milestones: [{
       key: 'annual-return-due',
       name: 'Annual Return due date',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_CYCLE',
       expression: {
         kind: 'SOURCE',
         source: { kind: 'COMPANY_FIELD', field: 'nextArDueDate' },
       },
+      businessDayAdjustment: 'NONE',
+      displayOrder: 0,
+      isActive: true,
     }],
   },
   {
+    schemaVersion: 1,
     code: 'SG_ECI',
     name: 'Singapore ECI',
-    description: 'Starter statutory ECI deadline based on Company FYE and a required month parameter.',
+    description: 'Starter statutory ECI rule requiring monthsAfterFye',
+    recurrence: annualRecurrence,
+    applicability,
     parameters: [{
       key: 'monthsAfterFye',
       label: 'Months after FYE',
+      description: null,
       type: 'INTEGER',
       required: true,
     }],
     milestones: [{
       key: 'eci-due',
       name: 'ECI due date',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_CYCLE',
       expression: {
         kind: 'ADD_MONTHS',
         source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
         amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
       },
+      businessDayAdjustment: 'NONE',
+      displayOrder: 0,
+      isActive: true,
     }],
   },
   {
+    schemaVersion: 1,
     code: 'SG_FORM_C',
     name: 'Singapore Form C',
-    description: 'Starter statutory Form C deadline based on Company FYE and a required month parameter.',
+    description: 'Starter statutory Form C rule requiring monthsAfterFye',
+    recurrence: annualRecurrence,
+    applicability,
     parameters: [{
       key: 'monthsAfterFye',
       label: 'Months after FYE',
+      description: null,
       type: 'INTEGER',
       required: true,
     }],
     milestones: [{
       key: 'form-c-due',
       name: 'Form C due date',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_CYCLE',
       expression: {
         kind: 'ADD_MONTHS',
         source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
         amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
       },
+      businessDayAdjustment: 'NONE',
+      displayOrder: 0,
+      isActive: true,
     }],
   },
 ];
@@ -105,50 +132,45 @@ const STARTERS: StarterDefinition[] = [
 function createVersionData(
   tenantId: string,
   ruleId: string,
-  starter: StarterDefinition,
+  definition: CanonicalDeadlineRuleDefinition,
 ): Prisma.DeadlineRuleVersionCreateInput {
-  const config = {
-    schemaVersion: 1,
-    recurrence: annualRecurrence,
-    applicability,
-    parameters: starter.parameters,
-    milestones: starter.milestones,
-  };
   return {
     tenant: { connect: { id: tenantId } },
     rule: { connect: { id: ruleId } },
     version: 0,
     state: 'DRAFT',
-    schemaVersion: 1,
-    recurrence: annualRecurrence,
-    applicability,
-    configHash: hashConfiguration(config),
+    schemaVersion: definition.schemaVersion,
+    recurrence: definition.recurrence,
+    applicability: definition.applicability,
+    configHash: hashDeadlineRuleDefinition(definition),
     draftRevision: 1,
     parameterDefinitions: {
-      create: starter.parameters.map((parameter, index) => ({
+      create: definition.parameters.map((parameter, index) => ({
         tenant: { connect: { id: tenantId } },
         key: parameter.key,
         label: parameter.label,
         type: parameter.type,
         isRequired: parameter.required,
         defaultValue: Prisma.JsonNull,
-        validation: Prisma.JsonNull,
-        helpText: null,
+        validation: parameter.options === undefined
+          ? Prisma.JsonNull
+          : { options: parameter.options },
+        helpText: parameter.description,
         displayOrder: index,
       })),
     },
     milestoneTemplates: {
-      create: starter.milestones.map((milestone, index) => ({
+      create: definition.milestones.map((milestone) => ({
         tenant: { connect: { id: tenantId } },
         milestoneKey: milestone.key,
         name: milestone.name,
-        description: null,
-        type: 'STATUTORY',
-        generationMode: 'ONCE_PER_CYCLE',
+        description: milestone.description,
+        type: milestone.type,
+        generationMode: milestone.generationMode,
         dateExpression: milestone.expression,
-        businessDayAdjustment: 'NONE',
-        displayOrder: index,
-        isActive: true,
+        businessDayAdjustment: milestone.businessDayAdjustment,
+        displayOrder: milestone.displayOrder,
+        isActive: milestone.isActive,
       })),
     },
   };
@@ -157,30 +179,38 @@ function createVersionData(
 async function ensureStarterRule(
   tx: Prisma.TransactionClient,
   tenantId: string,
-  starter: StarterDefinition,
+  definition: CanonicalDeadlineRuleDefinition,
 ): Promise<void> {
   let rule = await tx.deadlineRule.findFirst({
-    where: { tenantId, code: starter.code },
+    where: { tenantId, code: definition.code },
   });
   if (!rule) {
     rule = await tx.deadlineRule.create({
       data: {
         tenantId,
-        code: starter.code,
-        name: starter.name,
-        description: starter.description,
+        code: definition.code,
+        name: definition.name,
+        description: definition.description,
         isActive: true,
       },
     });
+  } else if (
+    rule.name !== definition.name
+    || rule.description !== definition.description
+    || rule.isActive === false
+    || rule.archivedAt !== null && rule.archivedAt !== undefined
+  ) {
+    // A pre-existing custom same-code rule is never mutated by provisioning.
+    return;
   }
 
   const draft = await tx.deadlineRuleVersion.findFirst({
     where: { tenantId, ruleId: rule.id, state: 'DRAFT' },
   });
-  if (draft) return;
+  if (draft || rule.currentVersionId) return;
 
   await tx.deadlineRuleVersion.create({
-    data: createVersionData(tenantId, rule.id, starter),
+    data: createVersionData(tenantId, rule.id, definition),
   });
 }
 
@@ -210,9 +240,7 @@ export async function createServiceScheduleStarterData(
     });
   }
 
-  for (const starter of STARTERS) {
-    await ensureStarterRule(tx, tenantId, starter);
+  for (const definition of STARTER_DEFINITIONS) {
+    await ensureStarterRule(tx, tenantId, definition);
   }
 }
-
-export { STARTER_CALENDAR_NAME };
