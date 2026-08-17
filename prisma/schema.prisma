@@ -1492,7 +1492,7 @@ model DeadlineRuleParameterDefinition {
   createdAt     DateTime              @default(now()) @map("created_at")
   updatedAt     DateTime              @updatedAt @map("updated_at")
   tenant        Workspace             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ruleVersion   DeadlineRuleVersion   @relation(fields: [ruleVersionId], references: [id], onDelete: Cascade)
+  ruleVersion   DeadlineRuleVersion   @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
 
   @@unique([ruleVersionId, key])
   @@index([tenantId, ruleVersionId, displayOrder])
@@ -1515,7 +1515,7 @@ model DeadlineMilestoneTemplate {
   createdAt             DateTime                        @default(now()) @map("created_at")
   updatedAt             DateTime                        @updatedAt @map("updated_at")
   tenant                Workspace                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ruleVersion           DeadlineRuleVersion             @relation(fields: [ruleVersionId], references: [id], onDelete: Cascade)
+  ruleVersion           DeadlineRuleVersion             @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
 
   @@unique([ruleVersionId, milestoneKey])
   @@index([tenantId, ruleVersionId, displayOrder])

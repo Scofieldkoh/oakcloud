@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { createErrorResponse as createApiHelperErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse as createApiHandlerErrorResponse } from '@/lib/api-error-handler';
 import { DeadlineApiError, ErrorCodes } from '@/lib/errors';
 
 describe('deadline API errors', () => {
@@ -16,5 +18,36 @@ describe('deadline API errors', () => {
       'invalid status',
       400 as 409,
     )).toThrow('Deadline errors must use HTTP 409 or 422');
+  });
+
+  it('serializes typed deadline errors through the API helper response', async () => {
+    const response = createApiHelperErrorResponse(
+      new DeadlineApiError(ErrorCodes.VERSION_CONFLICT, 'Draft changed', 409),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Draft changed',
+      code: 'VERSION_CONFLICT',
+    });
+  });
+
+  it('serializes explicit validation errors through the API handler response', async () => {
+    const response = createApiHandlerErrorResponse(
+      ErrorCodes.MISSING_RULE_INPUT,
+      'Input missing',
+      422,
+      { field: 'financialYearEnd' },
+    );
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: 'MISSING_RULE_INPUT',
+        message: 'Input missing',
+        details: { field: 'financialYearEnd' },
+      },
+    });
   });
 });

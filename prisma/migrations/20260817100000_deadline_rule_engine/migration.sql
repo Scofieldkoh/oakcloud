@@ -335,13 +335,13 @@ ALTER TABLE "deadline_rule_parameter_definitions"
   ADD CONSTRAINT "deadline_rule_parameter_definitions_tenant_id_fkey"
   FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT "deadline_rule_parameter_definitions_rule_version_id_fkey"
-  FOREIGN KEY ("rule_version_id") REFERENCES "deadline_rule_versions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  FOREIGN KEY ("rule_version_id") REFERENCES "deadline_rule_versions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE "deadline_milestone_templates"
   ADD CONSTRAINT "deadline_milestone_templates_tenant_id_fkey"
   FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT "deadline_milestone_templates_rule_version_id_fkey"
-  FOREIGN KEY ("rule_version_id") REFERENCES "deadline_rule_versions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  FOREIGN KEY ("rule_version_id") REFERENCES "deadline_rule_versions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE "service_variant_deadline_rules"
   ADD CONSTRAINT "service_variant_deadline_rules_tenant_id_fkey"
@@ -418,22 +418,34 @@ ALTER TABLE "service_schedule_reconciliation_requests"
 ALTER TABLE "deadline_occurrences"
   ADD CONSTRAINT "deadline_occurrences_override_consistency"
   CHECK (
-    ("date_overridden" = FALSE AND "date_override_reason" IS NULL AND "date_overridden_at" IS NULL AND "date_overridden_by_id" IS NULL)
+    ("date_overridden" = FALSE AND "date_override" IS NULL AND "date_override_reason" IS NULL AND "date_overridden_at" IS NULL AND "date_overridden_by_id" IS NULL)
     OR
-    ("date_overridden" = TRUE AND "date_override_reason" IS NOT NULL AND "date_overridden_at" IS NOT NULL AND "date_overridden_by_id" IS NOT NULL)
+    ("date_overridden" = TRUE AND "date_override" IS NOT NULL AND "date_override_reason" IS NOT NULL AND "date_overridden_at" IS NOT NULL AND "date_overridden_by_id" IS NOT NULL)
   ),
   ADD CONSTRAINT "deadline_occurrences_completion_consistency"
-  CHECK (("status" = 'COMPLETED') = ("completed_at" IS NOT NULL)),
+  CHECK (
+    ("status" = 'COMPLETED' AND "completed_at" IS NOT NULL AND "completed_by_id" IS NOT NULL)
+    OR
+    ("status" <> 'COMPLETED' AND "completed_at" IS NULL AND "completed_by_id" IS NULL)
+  ),
   ADD CONSTRAINT "deadline_occurrences_waiver_consistency"
-  CHECK (("status" = 'WAIVED') = ("waived_at" IS NOT NULL AND "waiver_reason" IS NOT NULL)),
+  CHECK (
+    ("status" = 'WAIVED' AND "waived_at" IS NOT NULL AND "waived_by_id" IS NOT NULL AND "waiver_reason" IS NOT NULL)
+    OR
+    ("status" <> 'WAIVED' AND "waived_at" IS NULL AND "waived_by_id" IS NULL AND "waiver_reason" IS NULL)
+  ),
   ADD CONSTRAINT "deadline_occurrences_cancellation_consistency"
-  CHECK (("status" = 'CANCELLED') = ("cancelled_at" IS NOT NULL AND "cancellation_reason" IS NOT NULL)),
+  CHECK (
+    ("status" = 'CANCELLED' AND "cancelled_at" IS NOT NULL AND "cancelled_by_id" IS NOT NULL AND "cancellation_reason" IS NOT NULL)
+    OR
+    ("status" <> 'CANCELLED' AND "cancelled_at" IS NULL AND "cancelled_by_id" IS NULL AND "cancellation_reason" IS NULL)
+  ),
   ADD CONSTRAINT "deadline_occurrences_stable_keys_nonempty"
   CHECK (length("milestone_key") > 0);
 
 ALTER TABLE "service_cycles"
   ADD CONSTRAINT "service_cycles_generation_key_nonempty"
-  CHECK (length("generation_key") > 0);
+  CHECK (length(btrim("generation_key")) > 0);
 
 INSERT INTO "business_calendars" (
   "id", "tenant_id", "name", "jurisdiction_code", "time_zone", "weekend_days",
