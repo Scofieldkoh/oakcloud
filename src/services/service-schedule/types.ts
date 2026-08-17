@@ -42,8 +42,9 @@ export type ScheduleEntry = {
   businessDayAdjustment: BusinessDayAdjustment;
 };
 
-export type MilestoneExpression = ScheduleEntryExpression;
-export type DateExpression = ScheduleEntryExpression;
+/** Milestones may use a schedule primitive or any of the Task 2 operations. */
+export type MilestoneExpression = ScheduleEntryExpression | DateOperation;
+export type DateExpression = ScheduleEntryExpression | DateOperation;
 
 export type DateOperation =
   | {
@@ -76,7 +77,7 @@ export type MilestoneDefinition = {
   description: string | null;
   type: 'STATUTORY' | 'CLIENT' | 'INTERNAL';
   generationMode: 'ONCE_PER_CYCLE' | 'ONCE_PER_SCHEDULE_ENTRY';
-  expression: ScheduleEntryExpression;
+  expression: MilestoneExpression;
   businessDayAdjustment: BusinessDayAdjustment;
   displayOrder: number;
   isActive: boolean;
