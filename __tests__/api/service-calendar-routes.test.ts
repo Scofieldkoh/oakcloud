@@ -226,6 +226,17 @@ describe('service calendar routes', () => {
     expect(invalidPatch.status).toBe(400);
     expect(mocks.updateBusinessCalendar).not.toHaveBeenCalled();
 
+    const invalidPatchQuery = await updateCalendar(
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}?tenantId=not-a-uuid`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...validInput, expectedRevision: 1, proposedHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64) }),
+      }),
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
+    );
+    expect(invalidPatchQuery.status).toBe(400);
+    expect(mocks.updateBusinessCalendar).not.toHaveBeenCalled();
+
     const invalidImpact = await previewCalendar(
       new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}/impact`, {
         method: 'POST',

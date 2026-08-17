@@ -606,9 +606,9 @@ async function computeImpact(
   current: CalendarRecord,
   input: CanonicalCalendarInput,
   tenantId: string,
-  now: () => DateOnly = currentDateInSingapore,
+  now?: () => DateOnly,
 ): Promise<BusinessCalendarImpact> {
-  const today = now();
+  const today = now ? now() : currentDateInSingapore();
   const proposedCalendar = buildProposedSnapshot(current, input);
   const proposedHash = buildProposedHash(current, input);
   const data = await loadImpactData(db, current.id, tenantId);

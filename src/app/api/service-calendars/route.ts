@@ -32,7 +32,11 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
     requireServiceAdministrator(session);
     const rawBody = await readJsonRecord(request);
-    const requestedTenantId = parseRequestTenantId(rawBody);
+    const { searchParams } = new URL(request.url);
+    const query = z.object({ tenantId: uuidSchema.optional() }).strict().parse(
+      Object.fromEntries(searchParams.entries()),
+    );
+    const requestedTenantId = query.tenantId ?? parseRequestTenantId(rawBody);
     const tenantId = resolveWorkspaceId(session, requestedTenantId ?? null);
     const { tenantId: _tenantId, ...payload } = rawBody;
     const input = businessCalendarInputSchema.parse(payload);
