@@ -76,6 +76,76 @@ describe('syncCompanyFromBizfileInTransaction', () => {
     ])).not.toContain('ACRA-1');
   });
 
+  it('does not clear an existing alias when BizFile omits it', async () => {
+    const omittedAlias = {
+      ...data,
+      entityDetails: { ...data.entityDetails, displayAlias: undefined },
+    };
+
+    await syncCompanyFromBizfileInTransaction({
+      data: omittedAlias,
+      documentId: 'doc-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      existingCompanyId: 'company-1',
+    }, tx as never);
+
+    const updateData = tx.company.update.mock.calls[0]?.[0]?.data as Record<string, unknown>;
+    expect(Object.prototype.hasOwnProperty.call(updateData, 'displayAlias')).toBe(false);
+  });
+
+  it('clears an existing alias when the reviewed BizFile value is blank', async () => {
+    const blankAlias = {
+      ...data,
+      entityDetails: { ...data.entityDetails, displayAlias: '   ' },
+    };
+
+    await syncCompanyFromBizfileInTransaction({
+      data: blankAlias,
+      documentId: 'doc-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      existingCompanyId: 'company-1',
+    }, tx as never);
+
+    expect(tx.company.update.mock.calls[0]?.[0]?.data).toEqual(expect.objectContaining({ displayAlias: null }));
+  });
+
+  it('normalizes a supplied BizFile alias before updating an existing company', async () => {
+    const suppliedAlias = {
+      ...data,
+      entityDetails: { ...data.entityDetails, displayAlias: ' OAK ' },
+    };
+
+    await syncCompanyFromBizfileInTransaction({
+      data: suppliedAlias,
+      documentId: 'doc-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      existingCompanyId: 'company-1',
+    }, tx as never);
+
+    expect(tx.company.update.mock.calls[0]?.[0]?.data).toEqual(expect.objectContaining({ displayAlias: 'OAK' }));
+  });
+
+  it('normalizes a supplied BizFile alias when creating a company', async () => {
+    const suppliedAlias = {
+      ...data,
+      entityDetails: { ...data.entityDetails, displayAlias: ' OAK ' },
+    };
+
+    await syncCompanyFromBizfileInTransaction({
+      data: suppliedAlias,
+      documentId: 'doc-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+    }, tx as never);
+
+    expect(tx.company.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ displayAlias: 'OAK' }),
+    }));
+  });
+
   it('persists the nominee shareholder flag from reviewed BizFile data', async () => {
     const nomineeData = {
       ...data,

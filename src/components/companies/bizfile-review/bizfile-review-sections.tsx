@@ -88,6 +88,15 @@ export function EntitySection({ draft, onChange, issues }: Props) {
           error={issue(issues, "entityDetails.name")}
         />
         <ReviewField
+          id="entity-display-alias"
+          label="Service display alias"
+          value={entity.displayAlias ?? ""}
+          maxLength={40}
+          hint="Shown on service calendars; leave blank to use company initials"
+          onChange={(e) => set("displayAlias", e.target.value)}
+          error={issue(issues, "entityDetails.displayAlias")}
+        />
+        <ReviewField
           id="entity-former-name"
           label="Former name"
           value={entity.formerName ?? ""}

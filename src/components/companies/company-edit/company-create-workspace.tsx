@@ -12,6 +12,7 @@ export const emptyCompanyProfile: CompanyCreateProfile = {
   identity: {
     uen: '',
     name: '',
+    displayAlias: null,
     entityType: 'PRIVATE_LIMITED',
     status: 'LIVE',
     statusDate: null,

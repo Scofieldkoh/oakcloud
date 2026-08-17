@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { CompanyCreateWorkspace } from '@/components/companies/company-edit/company-create-workspace';
 
 describe('CompanyCreateWorkspace', () => {
+  it('prompts for an optional service display alias during company creation', () => {
+    render(<CompanyCreateWorkspace onSubmit={vi.fn()} />);
+
+    expect(screen.getByLabelText('Service display alias')).toHaveAttribute('maxlength', '40');
+    expect(screen.getByText('Shown on service calendars; leave blank to use company initials')).toBeInTheDocument();
+  });
+
   it('renders enum-backed profile fields as searchable dropdowns', () => {
     render(<CompanyCreateWorkspace onSubmit={vi.fn()} />);
 
@@ -50,12 +57,14 @@ describe('CompanyCreateWorkspace', () => {
 
     fireEvent.change(screen.getByLabelText('Uen'), { target: { value: '202400001A' } });
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Example Pte. Ltd.' } });
+    fireEvent.change(screen.getByLabelText('Service display alias'), { target: { value: 'OAK' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Add company' }));
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       identity: expect.objectContaining({
         uen: '202400001A',
         name: 'Example Pte. Ltd.',
+        displayAlias: 'OAK',
       }),
       officers: { officers: [] },
       shareholders: { shareholders: [] },

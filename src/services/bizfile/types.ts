@@ -21,6 +21,8 @@ export interface ExtractedBizFileData {
   entityDetails: {
     uen: string;
     name: string;
+    /** User-maintained service label; not extracted from the BizFile. */
+    displayAlias?: string | null;
     formerName?: string;
     dateOfNameChange?: string;
     formerNames?: Array<{ name: string; effectiveFrom?: string; effectiveTo?: string }>;

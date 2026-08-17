@@ -82,6 +82,7 @@ export const bizFileReviewSchema = z.object({
   entityDetails: z.object({
     uen: reviewString,
     name: reviewString,
+    displayAlias: z.string().trim().max(40).nullable().optional(),
     formerName: optionalString,
     dateOfNameChange: optionalDate,
     formerNames: z.array(z.object({ name: requiredString, effectiveFrom: optionalDate, effectiveTo: optionalDate })).optional(),
@@ -221,6 +222,15 @@ function normalize(value: unknown, root = false): unknown {
 export function normalizeBizFileReviewDraft(draft: BizFileReviewDraft): ExtractedBizFileData {
   const normalized = normalize(draft, true) as ExtractedBizFileData;
   normalized.entityDetails = normalize(draft.entityDetails, true) as ExtractedBizFileData['entityDetails'];
+  // Keep an explicitly edited blank alias distinguishable from an omitted field.
+  // The sync layer uses omission to preserve existing aliases and blank/null to clear them.
+  if (draft.entityDetails.displayAlias === undefined) {
+    delete normalized.entityDetails.displayAlias;
+  } else {
+    normalized.entityDetails.displayAlias = draft.entityDetails.displayAlias == null
+      ? null
+      : draft.entityDetails.displayAlias.trim();
+  }
   normalized.entityDetails.entityType = canonicalizeEntityType(normalized.entityDetails.entityType) as string;
   normalized.entityDetails.status = canonicalizeCompanyStatus(normalized.entityDetails.status) as string;
   normalized.officers?.forEach((officer) => { officer.role = canonicalizeOfficerRole(officer.role) as string; if (officer.identificationType) officer.identificationType = canonicalizeIdentificationType(officer.identificationType) as string; });

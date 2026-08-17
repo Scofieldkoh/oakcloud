@@ -67,6 +67,31 @@ describe('CompanyProfileSections', () => {
     expect(screen.getByText('Show share capital breakdown').closest('details')).toHaveAttribute('open');
   });
 
+  it('shows the stored alias and the resolved service display label', () => {
+    const aliased = {
+      ...(company as object),
+      displayAlias: 'OAK',
+    } as never;
+
+    render(<CompanyProfileSections company={aliased} companyId="company-1" />);
+
+    expect(screen.getByText('Service display alias')).toBeInTheDocument();
+    expect(screen.getByText('Service display label')).toBeInTheDocument();
+    expect(screen.getAllByText('OAK')).toHaveLength(2);
+  });
+
+  it('falls back to meaningful company initials when no alias is stored', () => {
+    const withoutAlias = {
+      ...(company as object),
+      name: 'Oaktree Accounting & Corporate Solution Pte. Ltd.',
+      displayAlias: null,
+    } as never;
+
+    render(<CompanyProfileSections company={withoutAlias} companyId="company-1" />);
+
+    expect(screen.getByText('OACS')).toBeInTheDocument();
+  });
+
   it('shows the ACRA badge when the stored dates match the ACRA record', () => {
     const withAcra = {
       ...(company as object),

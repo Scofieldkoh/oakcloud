@@ -9,6 +9,7 @@ import {
   mapOfficerRole,
 } from './types';
 import { buildFullAddress, normalizeExtractedData } from './normalizer';
+import { normalizeCompanyAlias } from '@/lib/company-display-label';
 
 export interface SyncCompanyFromBizfileArgs {
   data: ExtractedBizFileData;
@@ -92,6 +93,10 @@ export async function syncCompanyFromBizfileInTransaction(
 ): Promise<SyncCompanyFromBizfileResult> {
   const data = normalizeExtractedData(args.data);
   const { entityDetails } = data;
+  const aliasUpdate = entityDetails.displayAlias === undefined
+    ? {}
+    : { displayAlias: normalizeCompanyAlias(entityDetails.displayAlias) };
+  const createAlias = normalizeCompanyAlias(entityDetails.displayAlias);
   const created = !args.existingCompanyId;
   const company = created
     ? await tx.company.upsert({
@@ -100,6 +105,7 @@ export async function syncCompanyFromBizfileInTransaction(
           tenantId: args.tenantId,
           uen: entityDetails.uen,
           name: entityDetails.name,
+          displayAlias: createAlias,
           entityType: mapEntityType(entityDetails.entityType),
           status: mapCompanyStatus(entityDetails.status),
         },
@@ -114,6 +120,7 @@ export async function syncCompanyFromBizfileInTransaction(
     data: {
       uen: entityDetails.uen,
       name: entityDetails.name,
+      ...aliasUpdate,
       formerName: entityDetails.formerName ?? null,
       dateOfNameChange: dateOrNull(entityDetails.dateOfNameChange),
       entityType: mapEntityType(entityDetails.entityType),

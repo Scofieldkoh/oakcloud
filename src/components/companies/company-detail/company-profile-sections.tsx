@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
+import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import type { CompanyWithRelations } from '@/services/company/types';
 import { ActiveBadge, OfficerRoleBadge, ShareholderTypeBadge } from './company-profile-badges';
 
@@ -143,6 +144,10 @@ export function CompanyProfileSections({ company, companyId, onRetrieveAcra, isR
       </Section>
 
       <Section title="Additional company information">
+        <div className="grid gap-4 border-b border-border-primary p-3 text-sm sm:grid-cols-2">
+          <div><FieldLabel>Service display alias</FieldLabel><p>{company.displayAlias ?? '-'}</p></div>
+          <div><FieldLabel>Service display label</FieldLabel><p>{getCompanyDisplayLabel(company)}</p></div>
+        </div>
         <div className="divide-y divide-border-primary text-sm">
           <details className="group px-3 py-2.5">
             <summary className="cursor-pointer font-medium text-text-primary">Company history</summary>
