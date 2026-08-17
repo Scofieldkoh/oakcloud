@@ -40,6 +40,7 @@ export type ServiceFamilyMinAggregateOutputType = {
   code: string | null
   name: string | null
   description: string | null
+  displayColor: string | null
   displayOrder: number | null
   isActive: boolean | null
   createdAt: Date | null
@@ -53,6 +54,7 @@ export type ServiceFamilyMaxAggregateOutputType = {
   code: string | null
   name: string | null
   description: string | null
+  displayColor: string | null
   displayOrder: number | null
   isActive: boolean | null
   createdAt: Date | null
@@ -66,6 +68,7 @@ export type ServiceFamilyCountAggregateOutputType = {
   code: number
   name: number
   description: number
+  displayColor: number
   displayOrder: number
   isActive: number
   createdAt: number
@@ -89,6 +92,7 @@ export type ServiceFamilyMinAggregateInputType = {
   code?: true
   name?: true
   description?: true
+  displayColor?: true
   displayOrder?: true
   isActive?: true
   createdAt?: true
@@ -102,6 +106,7 @@ export type ServiceFamilyMaxAggregateInputType = {
   code?: true
   name?: true
   description?: true
+  displayColor?: true
   displayOrder?: true
   isActive?: true
   createdAt?: true
@@ -115,6 +120,7 @@ export type ServiceFamilyCountAggregateInputType = {
   code?: true
   name?: true
   description?: true
+  displayColor?: true
   displayOrder?: true
   isActive?: true
   createdAt?: true
@@ -215,6 +221,7 @@ export type ServiceFamilyGroupByOutputType = {
   code: string
   name: string
   description: string | null
+  displayColor: string
   displayOrder: number
   isActive: boolean
   createdAt: Date
@@ -251,6 +258,7 @@ export type ServiceFamilyWhereInput = {
   code?: Prisma.StringFilter<"ServiceFamily"> | string
   name?: Prisma.StringFilter<"ServiceFamily"> | string
   description?: Prisma.StringNullableFilter<"ServiceFamily"> | string | null
+  displayColor?: Prisma.StringFilter<"ServiceFamily"> | string
   displayOrder?: Prisma.IntFilter<"ServiceFamily"> | number
   isActive?: Prisma.BoolFilter<"ServiceFamily"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ServiceFamily"> | Date | string
@@ -266,6 +274,7 @@ export type ServiceFamilyOrderByWithRelationInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  displayColor?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -285,6 +294,7 @@ export type ServiceFamilyWhereUniqueInput = Prisma.AtLeast<{
   code?: Prisma.StringFilter<"ServiceFamily"> | string
   name?: Prisma.StringFilter<"ServiceFamily"> | string
   description?: Prisma.StringNullableFilter<"ServiceFamily"> | string | null
+  displayColor?: Prisma.StringFilter<"ServiceFamily"> | string
   displayOrder?: Prisma.IntFilter<"ServiceFamily"> | number
   isActive?: Prisma.BoolFilter<"ServiceFamily"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ServiceFamily"> | Date | string
@@ -300,6 +310,7 @@ export type ServiceFamilyOrderByWithAggregationInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  displayColor?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -321,6 +332,7 @@ export type ServiceFamilyScalarWhereWithAggregatesInput = {
   code?: Prisma.StringWithAggregatesFilter<"ServiceFamily"> | string
   name?: Prisma.StringWithAggregatesFilter<"ServiceFamily"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"ServiceFamily"> | string | null
+  displayColor?: Prisma.StringWithAggregatesFilter<"ServiceFamily"> | string
   displayOrder?: Prisma.IntWithAggregatesFilter<"ServiceFamily"> | number
   isActive?: Prisma.BoolWithAggregatesFilter<"ServiceFamily"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ServiceFamily"> | Date | string
@@ -333,6 +345,7 @@ export type ServiceFamilyCreateInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -348,6 +361,7 @@ export type ServiceFamilyUncheckedCreateInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -361,6 +375,7 @@ export type ServiceFamilyUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -376,6 +391,7 @@ export type ServiceFamilyUncheckedUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -390,6 +406,7 @@ export type ServiceFamilyCreateManyInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -402,6 +419,7 @@ export type ServiceFamilyUpdateManyMutationInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -415,6 +433,7 @@ export type ServiceFamilyUncheckedUpdateManyInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -443,6 +462,7 @@ export type ServiceFamilyCountOrderByAggregateInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  displayColor?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -460,6 +480,7 @@ export type ServiceFamilyMaxOrderByAggregateInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  displayColor?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -473,6 +494,7 @@ export type ServiceFamilyMinOrderByAggregateInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  displayColor?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -550,6 +572,7 @@ export type ServiceFamilyCreateWithoutTenantInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -563,6 +586,7 @@ export type ServiceFamilyUncheckedCreateWithoutTenantInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -606,6 +630,7 @@ export type ServiceFamilyScalarWhereInput = {
   code?: Prisma.StringFilter<"ServiceFamily"> | string
   name?: Prisma.StringFilter<"ServiceFamily"> | string
   description?: Prisma.StringNullableFilter<"ServiceFamily"> | string | null
+  displayColor?: Prisma.StringFilter<"ServiceFamily"> | string
   displayOrder?: Prisma.IntFilter<"ServiceFamily"> | number
   isActive?: Prisma.BoolFilter<"ServiceFamily"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ServiceFamily"> | Date | string
@@ -618,6 +643,7 @@ export type ServiceFamilyCreateWithoutVariantsInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -632,6 +658,7 @@ export type ServiceFamilyUncheckedCreateWithoutVariantsInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -660,6 +687,7 @@ export type ServiceFamilyUpdateWithoutVariantsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -674,6 +702,7 @@ export type ServiceFamilyUncheckedUpdateWithoutVariantsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -686,6 +715,7 @@ export type ServiceFamilyCreateManyTenantInput = {
   code: string
   name: string
   description?: string | null
+  displayColor?: string
   displayOrder?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -698,6 +728,7 @@ export type ServiceFamilyUpdateWithoutTenantInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -711,6 +742,7 @@ export type ServiceFamilyUncheckedUpdateWithoutTenantInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -724,6 +756,7 @@ export type ServiceFamilyUncheckedUpdateManyWithoutTenantInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayColor?: Prisma.StringFieldUpdateOperationsInput | string
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -768,6 +801,7 @@ export type ServiceFamilySelect<ExtArgs extends runtime.Types.Extensions.Interna
   code?: boolean
   name?: boolean
   description?: boolean
+  displayColor?: boolean
   displayOrder?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -784,6 +818,7 @@ export type ServiceFamilySelectCreateManyAndReturn<ExtArgs extends runtime.Types
   code?: boolean
   name?: boolean
   description?: boolean
+  displayColor?: boolean
   displayOrder?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -798,6 +833,7 @@ export type ServiceFamilySelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   code?: boolean
   name?: boolean
   description?: boolean
+  displayColor?: boolean
   displayOrder?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -812,6 +848,7 @@ export type ServiceFamilySelectScalar = {
   code?: boolean
   name?: boolean
   description?: boolean
+  displayColor?: boolean
   displayOrder?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -819,7 +856,7 @@ export type ServiceFamilySelectScalar = {
   deletedAt?: boolean
 }
 
-export type ServiceFamilyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "code" | "name" | "description" | "displayOrder" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["serviceFamily"]>
+export type ServiceFamilyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "code" | "name" | "description" | "displayColor" | "displayOrder" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["serviceFamily"]>
 export type ServiceFamilyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   variants?: boolean | Prisma.ServiceFamily$variantsArgs<ExtArgs>
@@ -844,6 +881,7 @@ export type $ServiceFamilyPayload<ExtArgs extends runtime.Types.Extensions.Inter
     code: string
     name: string
     description: string | null
+    displayColor: string
     displayOrder: number
     isActive: boolean
     createdAt: Date
@@ -1279,6 +1317,7 @@ export interface ServiceFamilyFieldRefs {
   readonly code: Prisma.FieldRef<"ServiceFamily", 'String'>
   readonly name: Prisma.FieldRef<"ServiceFamily", 'String'>
   readonly description: Prisma.FieldRef<"ServiceFamily", 'String'>
+  readonly displayColor: Prisma.FieldRef<"ServiceFamily", 'String'>
   readonly displayOrder: Prisma.FieldRef<"ServiceFamily", 'Int'>
   readonly isActive: Prisma.FieldRef<"ServiceFamily", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"ServiceFamily", 'DateTime'>

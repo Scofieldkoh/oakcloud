@@ -55,6 +55,7 @@ export type CompanyMinAggregateOutputType = {
   tenantId: string | null
   uen: string | null
   name: string | null
+  displayAlias: string | null
   formerName: string | null
   dateOfNameChange: Date | null
   entityType: $Enums.EntityType | null
@@ -107,6 +108,7 @@ export type CompanyMaxAggregateOutputType = {
   tenantId: string | null
   uen: string | null
   name: string | null
+  displayAlias: string | null
   formerName: string | null
   dateOfNameChange: Date | null
   entityType: $Enums.EntityType | null
@@ -159,6 +161,7 @@ export type CompanyCountAggregateOutputType = {
   tenantId: number
   uen: number
   name: number
+  displayAlias: number
   formerName: number
   dateOfNameChange: number
   entityType: number
@@ -238,6 +241,7 @@ export type CompanyMinAggregateInputType = {
   tenantId?: true
   uen?: true
   name?: true
+  displayAlias?: true
   formerName?: true
   dateOfNameChange?: true
   entityType?: true
@@ -290,6 +294,7 @@ export type CompanyMaxAggregateInputType = {
   tenantId?: true
   uen?: true
   name?: true
+  displayAlias?: true
   formerName?: true
   dateOfNameChange?: true
   entityType?: true
@@ -342,6 +347,7 @@ export type CompanyCountAggregateInputType = {
   tenantId?: true
   uen?: true
   name?: true
+  displayAlias?: true
   formerName?: true
   dateOfNameChange?: true
   entityType?: true
@@ -482,6 +488,7 @@ export type CompanyGroupByOutputType = {
   tenantId: string
   uen: string
   name: string
+  displayAlias: string | null
   formerName: string | null
   dateOfNameChange: Date | null
   entityType: $Enums.EntityType
@@ -558,6 +565,7 @@ export type CompanyWhereInput = {
   tenantId?: Prisma.StringFilter<"Company"> | string
   uen?: Prisma.StringFilter<"Company"> | string
   name?: Prisma.StringFilter<"Company"> | string
+  displayAlias?: Prisma.StringNullableFilter<"Company"> | string | null
   formerName?: Prisma.StringNullableFilter<"Company"> | string | null
   dateOfNameChange?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   entityType?: Prisma.EnumEntityTypeFilter<"Company"> | $Enums.EntityType
@@ -638,6 +646,7 @@ export type CompanyOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   uen?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  displayAlias?: Prisma.SortOrderInput | Prisma.SortOrder
   formerName?: Prisma.SortOrderInput | Prisma.SortOrder
   dateOfNameChange?: Prisma.SortOrderInput | Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -722,6 +731,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   tenantId?: Prisma.StringFilter<"Company"> | string
   uen?: Prisma.StringFilter<"Company"> | string
   name?: Prisma.StringFilter<"Company"> | string
+  displayAlias?: Prisma.StringNullableFilter<"Company"> | string | null
   formerName?: Prisma.StringNullableFilter<"Company"> | string | null
   dateOfNameChange?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   entityType?: Prisma.EnumEntityTypeFilter<"Company"> | $Enums.EntityType
@@ -802,6 +812,7 @@ export type CompanyOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   uen?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  displayAlias?: Prisma.SortOrderInput | Prisma.SortOrder
   formerName?: Prisma.SortOrderInput | Prisma.SortOrder
   dateOfNameChange?: Prisma.SortOrderInput | Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -863,6 +874,7 @@ export type CompanyScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"Company"> | string
   uen?: Prisma.StringWithAggregatesFilter<"Company"> | string
   name?: Prisma.StringWithAggregatesFilter<"Company"> | string
+  displayAlias?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   formerName?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   dateOfNameChange?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   entityType?: Prisma.EnumEntityTypeWithAggregatesFilter<"Company"> | $Enums.EntityType
@@ -915,6 +927,7 @@ export type CompanyCreateInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -995,6 +1008,7 @@ export type CompanyUncheckedCreateInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -1073,6 +1087,7 @@ export type CompanyUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -1153,6 +1168,7 @@ export type CompanyUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -1232,6 +1248,7 @@ export type CompanyCreateManyInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -1284,6 +1301,7 @@ export type CompanyUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -1337,6 +1355,7 @@ export type CompanyUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -1415,6 +1434,7 @@ export type CompanyCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   uen?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  displayAlias?: Prisma.SortOrder
   formerName?: Prisma.SortOrder
   dateOfNameChange?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -1480,6 +1500,7 @@ export type CompanyMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   uen?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  displayAlias?: Prisma.SortOrder
   formerName?: Prisma.SortOrder
   dateOfNameChange?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -1532,6 +1553,7 @@ export type CompanyMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   uen?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  displayAlias?: Prisma.SortOrder
   formerName?: Prisma.SortOrder
   dateOfNameChange?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -2051,6 +2073,7 @@ export type CompanyCreateWithoutTenantInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -2129,6 +2152,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -2237,6 +2261,7 @@ export type CompanyScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"Company"> | string
   uen?: Prisma.StringFilter<"Company"> | string
   name?: Prisma.StringFilter<"Company"> | string
+  displayAlias?: Prisma.StringNullableFilter<"Company"> | string | null
   formerName?: Prisma.StringNullableFilter<"Company"> | string | null
   dateOfNameChange?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   entityType?: Prisma.EnumEntityTypeFilter<"Company"> | $Enums.EntityType
@@ -2289,6 +2314,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -2368,6 +2394,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -2461,6 +2488,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -2540,6 +2568,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -2617,6 +2646,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -2696,6 +2726,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -2789,6 +2820,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -2868,6 +2900,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -2945,6 +2978,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -3024,6 +3058,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -3117,6 +3152,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -3196,6 +3232,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -3273,6 +3310,7 @@ export type CompanyCreateWithoutAddressesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -3352,6 +3390,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -3445,6 +3484,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -3524,6 +3564,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -3601,6 +3642,7 @@ export type CompanyCreateWithoutContactsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -3680,6 +3722,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -3773,6 +3816,7 @@ export type CompanyUpdateWithoutContactsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -3852,6 +3896,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -3929,6 +3974,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4008,6 +4054,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4101,6 +4148,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -4180,6 +4228,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -4257,6 +4306,7 @@ export type CompanyCreateWithoutOfficersInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4336,6 +4386,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4429,6 +4480,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -4508,6 +4560,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -4585,6 +4638,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4664,6 +4718,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4757,6 +4812,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -4836,6 +4892,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -4913,6 +4970,7 @@ export type CompanyCreateWithoutAuditorInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -4992,6 +5050,7 @@ export type CompanyUncheckedCreateWithoutAuditorInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -5085,6 +5144,7 @@ export type CompanyUpdateWithoutAuditorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -5164,6 +5224,7 @@ export type CompanyUncheckedUpdateWithoutAuditorInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -5241,6 +5302,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -5320,6 +5382,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -5413,6 +5476,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -5492,6 +5556,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -5569,6 +5634,7 @@ export type CompanyCreateWithoutChargesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -5648,6 +5714,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -5741,6 +5808,7 @@ export type CompanyUpdateWithoutChargesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -5820,6 +5888,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -5897,6 +5966,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -5976,6 +6046,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -6069,6 +6140,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -6148,6 +6220,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -6225,6 +6298,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -6304,6 +6378,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -6397,6 +6472,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -6476,6 +6552,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -6553,6 +6630,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -6632,6 +6710,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -6725,6 +6804,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -6804,6 +6884,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -6881,6 +6962,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -6960,6 +7042,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -7053,6 +7136,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -7132,6 +7216,7 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -7209,6 +7294,7 @@ export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -7288,6 +7374,7 @@ export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -7381,6 +7468,7 @@ export type CompanyUpdateWithoutPrimaryGenerationBatchesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -7460,6 +7548,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -7537,6 +7626,7 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -7616,6 +7706,7 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -7709,6 +7800,7 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -7788,6 +7880,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -7865,6 +7958,7 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -7944,6 +8038,7 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -8037,6 +8132,7 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -8116,6 +8212,7 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -8193,6 +8290,7 @@ export type CompanyCreateWithoutClientServicesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -8272,6 +8370,7 @@ export type CompanyUncheckedCreateWithoutClientServicesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -8365,6 +8464,7 @@ export type CompanyUpdateWithoutClientServicesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -8444,6 +8544,7 @@ export type CompanyUncheckedUpdateWithoutClientServicesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -8521,6 +8622,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -8600,6 +8702,7 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -8693,6 +8796,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -8772,6 +8876,7 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -8849,6 +8954,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -8928,6 +9034,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -9021,6 +9128,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -9100,6 +9208,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -9177,6 +9286,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -9256,6 +9366,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -9349,6 +9460,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -9428,6 +9540,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -9505,6 +9618,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -9584,6 +9698,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -9677,6 +9792,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -9756,6 +9872,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -9833,6 +9950,7 @@ export type CompanyCreateWithoutTasksInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -9912,6 +10030,7 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -10005,6 +10124,7 @@ export type CompanyUpdateWithoutTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10084,6 +10204,7 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10161,6 +10282,7 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -10240,6 +10362,7 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -10333,6 +10456,7 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10412,6 +10536,7 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10489,6 +10614,7 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -10568,6 +10694,7 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   tenantId: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -10661,6 +10788,7 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10740,6 +10868,7 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10817,6 +10946,7 @@ export type CompanyCreateManyTenantInput = {
   id?: string
   uen: string
   name: string
+  displayAlias?: string | null
   formerName?: string | null
   dateOfNameChange?: Date | string | null
   entityType?: $Enums.EntityType
@@ -10869,6 +10999,7 @@ export type CompanyUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -10947,6 +11078,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -11025,6 +11157,7 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
@@ -11325,6 +11458,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   tenantId?: boolean
   uen?: boolean
   name?: boolean
+  displayAlias?: boolean
   formerName?: boolean
   dateOfNameChange?: boolean
   entityType?: boolean
@@ -11406,6 +11540,7 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   tenantId?: boolean
   uen?: boolean
   name?: boolean
+  displayAlias?: boolean
   formerName?: boolean
   dateOfNameChange?: boolean
   entityType?: boolean
@@ -11460,6 +11595,7 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   tenantId?: boolean
   uen?: boolean
   name?: boolean
+  displayAlias?: boolean
   formerName?: boolean
   dateOfNameChange?: boolean
   entityType?: boolean
@@ -11514,6 +11650,7 @@ export type CompanySelectScalar = {
   tenantId?: boolean
   uen?: boolean
   name?: boolean
+  displayAlias?: boolean
   formerName?: boolean
   dateOfNameChange?: boolean
   entityType?: boolean
@@ -11562,7 +11699,7 @@ export type CompanySelectScalar = {
   taskIntegrationContext?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "displayAlias" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
@@ -11636,6 +11773,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     tenantId: string
     uen: string
     name: string
+    displayAlias: string | null
     formerName: string | null
     dateOfNameChange: Date | null
     entityType: $Enums.EntityType
@@ -12136,6 +12274,7 @@ export interface CompanyFieldRefs {
   readonly tenantId: Prisma.FieldRef<"Company", 'String'>
   readonly uen: Prisma.FieldRef<"Company", 'String'>
   readonly name: Prisma.FieldRef<"Company", 'String'>
+  readonly displayAlias: Prisma.FieldRef<"Company", 'String'>
   readonly formerName: Prisma.FieldRef<"Company", 'String'>
   readonly dateOfNameChange: Prisma.FieldRef<"Company", 'DateTime'>
   readonly entityType: Prisma.FieldRef<"Company", 'EntityType'>
