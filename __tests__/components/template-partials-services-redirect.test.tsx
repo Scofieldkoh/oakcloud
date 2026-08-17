@@ -5,10 +5,14 @@ const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
 }));
+const pageState = vi.hoisted(() => ({
+  searchParams: new URLSearchParams('tab=services'),
+  activeTenantId: 'tenant-1' as string | null,
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => navigation,
-  useSearchParams: () => new URLSearchParams('tab=services'),
+  useSearchParams: () => pageState.searchParams,
 }));
 
 vi.mock('@/hooks/use-auth', () => ({
@@ -28,7 +32,7 @@ vi.mock('@/hooks/use-permissions', () => ({
 }));
 
 vi.mock('@/components/ui/workspace-selector', () => ({
-  useActiveWorkspaceId: () => 'tenant-1',
+  useActiveWorkspaceId: () => pageState.activeTenantId,
 }));
 
 vi.mock('@/components/services/admin/catalog/service-catalog-panel', () => ({
@@ -40,6 +44,8 @@ import TemplatesPage from '@/app/(dashboard)/template-partials/page';
 describe('TemplatesPage legacy Services tab redirect', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pageState.searchParams = new URLSearchParams('tab=services');
+    pageState.activeTenantId = 'tenant-1';
   });
 
   it('redirects legacy Services URLs without rendering a document tab', () => {
@@ -50,5 +56,15 @@ describe('TemplatesPage legacy Services tab redirect', () => {
     expect(screen.queryByRole('button', { name: 'Document Templates' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Partials' })).not.toBeInTheDocument();
     expect(screen.queryByText('Service catalog content')).not.toBeInTheDocument();
+  });
+
+  it('describes only document templates and reusable partials on the normal page', () => {
+    pageState.searchParams = new URLSearchParams('tab=templates');
+    pageState.activeTenantId = null;
+
+    render(<TemplatesPage />);
+
+    expect(screen.getByText('Manage document templates and reusable partials.')).toBeVisible();
+    expect(screen.queryByText(/service offerings/i)).not.toBeInTheDocument();
   });
 });

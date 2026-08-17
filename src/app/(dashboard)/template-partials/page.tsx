@@ -1137,7 +1137,7 @@ export default function TemplatesPage() {
             Templates
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Manage document templates, reusable partials, and service offerings.
+            Manage document templates and reusable partials.
           </p>
         </div>
       </div>
