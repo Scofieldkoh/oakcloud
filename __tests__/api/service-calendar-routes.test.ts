@@ -3,18 +3,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/lib/errors';
 
 const session = {
-  id: 'user-1',
-  tenantId: 'tenant-1',
+  id: '11111111-1111-4111-8111-111111111111',
+  tenantId: '22222222-2222-4222-8222-222222222222',
   isSuperAdmin: false,
   isWorkspaceAdmin: true,
 };
+
+const CALENDAR_ID = '33333333-3333-4333-8333-333333333333';
+const OTHER_TENANT_ID = '44444444-4444-4444-8444-444444444444';
 
 const mocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
   requireServiceAdministrator: vi.fn(),
   resolveWorkspaceId: vi.fn(),
   listBusinessCalendars: vi.fn(),
-  getBusinessCalendarSnapshot: vi.fn(),
+  getBusinessCalendar: vi.fn(),
   createBusinessCalendar: vi.fn(),
   updateBusinessCalendar: vi.fn(),
   previewBusinessCalendarImpact: vi.fn(),
@@ -28,7 +31,7 @@ vi.mock('@/lib/api-helpers', async (importOriginal) => ({
 }));
 vi.mock('@/services/business-calendar', () => ({
   listBusinessCalendars: mocks.listBusinessCalendars,
-  getBusinessCalendarSnapshot: mocks.getBusinessCalendarSnapshot,
+  getBusinessCalendar: mocks.getBusinessCalendar,
   createBusinessCalendar: mocks.createBusinessCalendar,
   updateBusinessCalendar: mocks.updateBusinessCalendar,
   previewBusinessCalendarImpact: mocks.previewBusinessCalendarImpact,
@@ -56,15 +59,19 @@ describe('service calendar routes', () => {
     mocks.requireAuth.mockResolvedValue(session);
     mocks.resolveWorkspaceId.mockReturnValue(session.tenantId);
     mocks.listBusinessCalendars.mockResolvedValue({ calendars: [] });
-    mocks.getBusinessCalendarSnapshot.mockResolvedValue({
-      id: 'calendar-1',
+    mocks.getBusinessCalendar.mockResolvedValue({
+      id: CALENDAR_ID,
+      name: 'Singapore Business Calendar',
+      jurisdictionCode: 'SG',
       timeZone: 'Asia/Singapore',
+      weekendDays: [0, 6],
       revision: 1,
-      weekendDays: new Set([0, 6]),
-      holidays: new Set(['2026-08-09']),
+      isActive: false,
+      archivedAt: '2026-08-10T00:00:00.000Z',
+      holidays: [{ id: '55555555-5555-4555-8555-555555555555', date: '2026-08-09', name: 'National Day', description: null, isActive: false }],
     });
-    mocks.createBusinessCalendar.mockResolvedValue({ id: 'calendar-1', ...validInput, revision: 1 });
-    mocks.updateBusinessCalendar.mockResolvedValue({ id: 'calendar-1', ...validInput, revision: 2 });
+    mocks.createBusinessCalendar.mockResolvedValue({ id: CALENDAR_ID, ...validInput, revision: 1 });
+    mocks.updateBusinessCalendar.mockResolvedValue({ id: CALENDAR_ID, ...validInput, revision: 2 });
     mocks.previewBusinessCalendarImpact.mockResolvedValue({
       calendarId: 'calendar-1',
       expectedRevision: 1,
@@ -76,11 +83,11 @@ describe('service calendar routes', () => {
   });
 
   it('requires auth/admin and resolves the workspace for list reads', async () => {
-    const response = await listCalendars(new NextRequest('http://localhost/api/service-calendars?tenantId=tenant-2'));
+    const response = await listCalendars(new NextRequest(`http://localhost/api/service-calendars?tenantId=${OTHER_TENANT_ID}`));
 
     expect(mocks.requireAuth).toHaveBeenCalledOnce();
     expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
-    expect(mocks.resolveWorkspaceId).toHaveBeenCalledWith(session, 'tenant-2');
+    expect(mocks.resolveWorkspaceId).toHaveBeenCalledWith(session, OTHER_TENANT_ID);
     expect(mocks.listBusinessCalendars).toHaveBeenCalledWith({ tenantId: session.tenantId, userId: session.id });
     expect(response.status).toBe(200);
   });
@@ -89,11 +96,11 @@ describe('service calendar routes', () => {
     const response = await createCalendar(new NextRequest('http://localhost/api/service-calendars', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...validInput, tenantId: 'tenant-2' }),
+      body: JSON.stringify({ ...validInput, tenantId: OTHER_TENANT_ID }),
     }));
 
     expect(mocks.requireServiceAdministrator).toHaveBeenCalledWith(session);
-    expect(mocks.resolveWorkspaceId).toHaveBeenCalledWith(session, 'tenant-2');
+    expect(mocks.resolveWorkspaceId).toHaveBeenCalledWith(session, OTHER_TENANT_ID);
     expect(mocks.createBusinessCalendar).toHaveBeenCalledWith(validInput, { tenantId: session.tenantId, userId: session.id });
     expect(response.status).toBe(201);
   });
@@ -112,11 +119,11 @@ describe('service calendar routes', () => {
 
   it('reads and updates a calendar using tenant-scoped service calls', async () => {
     const getResponse = await getCalendar(
-      new NextRequest('http://localhost/api/service-calendars/calendar-1?tenantId=tenant-2'),
-      { params: Promise.resolve({ id: 'calendar-1' }) },
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}?tenantId=${OTHER_TENANT_ID}`),
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
     );
     const patchResponse = await updateCalendar(
-      new NextRequest('http://localhost/api/service-calendars/calendar-1', {
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -124,15 +131,25 @@ describe('service calendar routes', () => {
           expectedRevision: 1,
           proposedHash: 'a'.repeat(64),
           previewFingerprint: 'b'.repeat(64),
-          tenantId: 'tenant-2',
+          tenantId: OTHER_TENANT_ID,
         }),
       }),
-      { params: Promise.resolve({ id: 'calendar-1' }) },
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
     );
 
-    expect(mocks.getBusinessCalendarSnapshot).toHaveBeenCalledWith('calendar-1', { tenantId: session.tenantId, userId: session.id });
+    expect(mocks.getBusinessCalendar).toHaveBeenCalledWith(CALENDAR_ID, { tenantId: session.tenantId, userId: session.id });
+    await expect(getResponse.json()).resolves.toMatchObject({
+      id: CALENDAR_ID,
+      name: 'Singapore Business Calendar',
+      jurisdictionCode: 'SG',
+      timeZone: 'Asia/Singapore',
+      weekendDays: [0, 6],
+      revision: 1,
+      isActive: false,
+      holidays: [{ name: 'National Day', date: '2026-08-09', isActive: false }],
+    });
     expect(mocks.updateBusinessCalendar).toHaveBeenCalledWith(
-      'calendar-1',
+      CALENDAR_ID,
       expect.objectContaining({ expectedRevision: 1, proposedHash: 'a'.repeat(64) }),
       { tenantId: session.tenantId, userId: session.id },
     );
@@ -142,16 +159,16 @@ describe('service calendar routes', () => {
 
   it('returns impact previews with stable samples and typed conflicts', async () => {
     const response = await previewCalendar(
-      new NextRequest('http://localhost/api/service-calendars/calendar-1/impact?tenantId=tenant-2', {
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}/impact?tenantId=${OTHER_TENANT_ID}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...validInput, tenantId: 'tenant-2' }),
+        body: JSON.stringify({ ...validInput, tenantId: OTHER_TENANT_ID }),
       }),
-      { params: Promise.resolve({ id: 'calendar-1' }) },
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
     );
 
     expect(mocks.previewBusinessCalendarImpact).toHaveBeenCalledWith(
-      'calendar-1',
+      CALENDAR_ID,
       validInput,
       { tenantId: session.tenantId, userId: session.id },
     );
@@ -159,12 +176,12 @@ describe('service calendar routes', () => {
 
     mocks.updateBusinessCalendar.mockRejectedValueOnce(new ConflictError('Preview changed'));
     const conflictResponse = await updateCalendar(
-      new NextRequest('http://localhost/api/service-calendars/calendar-1', {
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...validInput, expectedRevision: 1, proposedHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64) }),
       }),
-      { params: Promise.resolve({ id: 'calendar-1' }) },
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
     );
     expect(conflictResponse.status).toBe(409);
   });
@@ -178,11 +195,64 @@ describe('service calendar routes', () => {
 
     mocks.requireServiceAdministrator.mockReset();
     mocks.requireServiceAdministrator.mockImplementation(() => undefined);
-    mocks.getBusinessCalendarSnapshot.mockRejectedValueOnce(new NotFoundError('Business calendar not found'));
+    mocks.getBusinessCalendar.mockRejectedValueOnce(new NotFoundError('Business calendar not found'));
     const missing = await getCalendar(
-      new NextRequest('http://localhost/api/service-calendars/calendar-1'),
-      { params: Promise.resolve({ id: 'calendar-1' }) },
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}`),
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
     );
     expect(missing.status).toBe(404);
+  });
+
+  it('rejects invalid UUID route and tenant inputs before service calls', async () => {
+    const invalidList = await listCalendars(new NextRequest('http://localhost/api/service-calendars?tenantId=tenant-2'));
+    expect(invalidList.status).toBe(400);
+    expect(mocks.listBusinessCalendars).not.toHaveBeenCalled();
+
+    const invalidDetail = await getCalendar(
+      new NextRequest('http://localhost/api/service-calendars/not-a-uuid'),
+      { params: Promise.resolve({ id: 'not-a-uuid' }) },
+    );
+    expect(invalidDetail.status).toBe(400);
+    expect(mocks.getBusinessCalendar).not.toHaveBeenCalled();
+
+    const invalidPatch = await updateCalendar(
+      new NextRequest('http://localhost/api/service-calendars/not-a-uuid', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...validInput, tenantId: 'not-a-uuid', expectedRevision: 1, proposedHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64) }),
+      }),
+      { params: Promise.resolve({ id: 'not-a-uuid' }) },
+    );
+    expect(invalidPatch.status).toBe(400);
+    expect(mocks.updateBusinessCalendar).not.toHaveBeenCalled();
+
+    const invalidImpact = await previewCalendar(
+      new NextRequest(`http://localhost/api/service-calendars/${CALENDAR_ID}/impact`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...validInput, tenantId: 'not-a-uuid' }),
+      }),
+      { params: Promise.resolve({ id: CALENDAR_ID }) },
+    );
+    expect(invalidImpact.status).toBe(400);
+    expect(mocks.previewBusinessCalendarImpact).not.toHaveBeenCalled();
+  });
+
+  it('maps malformed JSON and unknown metadata to validation responses', async () => {
+    const malformed = await createCalendar(new NextRequest('http://localhost/api/service-calendars', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{"name":',
+    }));
+    expect(malformed.status).toBe(400);
+    await expect(malformed.json()).resolves.toMatchObject({ success: false, error: { code: 'VALIDATION_ERROR' } });
+
+    const unknown = await createCalendar(new NextRequest('http://localhost/api/service-calendars', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...validInput, metadata: true }),
+    }));
+    expect(unknown.status).toBe(400);
+    expect(mocks.createBusinessCalendar).not.toHaveBeenCalled();
   });
 });

@@ -11,4 +11,5 @@ export type {
   BusinessCalendarImpact,
   BusinessCalendarImpactSample,
   BusinessCalendarListDto,
+  BusinessCalendarImpactOptions,
 } from './service';

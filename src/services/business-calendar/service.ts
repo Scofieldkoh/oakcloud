@@ -114,6 +114,11 @@ export type BusinessCalendarImpact = {
   samples: BusinessCalendarImpactSample[];
 };
 
+export type BusinessCalendarImpactOptions = {
+  /** Injectable civil-date clock for deterministic preview/update tests. */
+  now?: () => DateOnly;
+};
+
 type ImpactDecision = {
   deadlineId: string;
   oldDate: DateOnly;
@@ -157,6 +162,7 @@ type ImpactCycle = {
   periodKey: string;
   periodStart: Date | string;
   periodEnd: Date | string;
+  origin?: string;
 };
 
 type RuleContext = {
@@ -464,7 +470,6 @@ async function loadImpactData(db: CalendarDb, calendarId: string, tenantId: stri
     db.deadlineOccurrence.findMany({
       where: {
         tenantId,
-        origin: 'RULE',
         cycle: { tenantId, businessCalendarId: calendarId },
       },
       select: {
@@ -490,13 +495,14 @@ async function loadImpactData(db: CalendarDb, calendarId: string, tenantId: stri
             periodStart: true,
             periodEnd: true,
             companyId: true,
+            origin: true,
           },
         },
       },
       orderBy: [{ id: 'asc' }],
     }),
     db.serviceCycle.findMany({
-      where: { tenantId, businessCalendarId: calendarId, origin: 'RULE' },
+      where: { tenantId, businessCalendarId: calendarId },
       select: {
         id: true,
         tenantId: true,
@@ -507,6 +513,7 @@ async function loadImpactData(db: CalendarDb, calendarId: string, tenantId: stri
         periodKey: true,
         periodStart: true,
         periodEnd: true,
+        origin: true,
       },
       orderBy: [{ id: 'asc' }],
     }),
@@ -599,7 +606,9 @@ async function computeImpact(
   current: CalendarRecord,
   input: CanonicalCalendarInput,
   tenantId: string,
+  now: () => DateOnly = currentDateInSingapore,
 ): Promise<BusinessCalendarImpact> {
+  const today = now();
   const proposedCalendar = buildProposedSnapshot(current, input);
   const proposedHash = buildProposedHash(current, input);
   const data = await loadImpactData(db, current.id, tenantId);
@@ -640,6 +649,10 @@ async function computeImpact(
       evaluationWarnings.set(cycle.id, reason);
     }
   }
+  // Warnings describe failed/non-applicable evaluator cycles, not occurrence
+  // rows. This keeps an empty failed cycle visible and prevents one failure
+  // from being multiplied by the number of materialized occurrences.
+  counts.warnings = evaluationWarnings.size;
 
   for (const occurrence of data.occurrences) {
     const oldDate = dateForOccurrence(occurrence);
@@ -648,20 +661,35 @@ async function computeImpact(
     const key = `${occurrence.milestoneKey ?? ''}:${occurrence.scheduleEntryKey ?? ''}`;
     const next = evaluated?.get(key);
     const warning = cycle ? evaluationWarnings.get(cycle.id) : undefined;
-    if (warning) {
-      counts.warnings += 1;
-      decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'WARN', reason: warning });
-      continue;
-    }
-    // Historical, overridden, and absent evaluator rows are preserved. The
-    // reconciliation worker will refresh hidden calculated dates for an
-    // override while leaving its operative date unchanged.
+    // Lifecycle, origin, overrides, and historical dates are immutable before
+    // evaluator status is considered. A warning must never rewrite one of
+    // these rows as WARN.
     if (occurrence.status !== undefined && occurrence.status !== 'OPEN') {
       counts.preserved += 1;
       decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'PRESERVE', reason: 'Stored lifecycle state is immutable for calendar updates' });
       continue;
     }
-    if (!next || occurrence.dateOverridden || oldDate < currentDateForImpact()) {
+    if ((occurrence.origin !== undefined && occurrence.origin !== 'RULE')
+      || (cycle?.origin !== undefined && cycle.origin !== 'RULE')) {
+      counts.preserved += 1;
+      decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'PRESERVE', reason: 'Manual occurrence is immutable for calendar updates' });
+      continue;
+    }
+    if (occurrence.dateOverridden) {
+      counts.preserved += 1;
+      decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'PRESERVE', reason: 'Occurrence has a manual date override' });
+      continue;
+    }
+    if (oldDate < today) {
+      counts.preserved += 1;
+      decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'PRESERVE', reason: 'Occurrence date is historical' });
+      continue;
+    }
+    if (warning) {
+      decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'WARN', reason: warning });
+      continue;
+    }
+    if (!next) {
       counts.preserved += 1;
       decisions.push({ deadlineId: occurrence.id, oldDate, newDate: oldDate, action: 'PRESERVE', reason: !next ? 'No changed evaluated date' : 'Occurrence is immutable for this update' });
       continue;
@@ -689,6 +717,7 @@ async function computeImpact(
     calendarId: current.id,
     expectedRevision: current.revision,
     proposedHash,
+    today,
     counts,
     relevantInputs,
     evaluatedInputs,
@@ -704,12 +733,6 @@ async function computeImpact(
     counts,
     samples: decisions.slice(0, MAX_IMPACT_SAMPLES).map(({ deadlineId, oldDate, newDate }) => ({ deadlineId, oldDate, newDate })),
   };
-}
-
-function currentDateForImpact(): DateOnly {
-  // The evaluator and reconciliation worker share this canonical Singapore
-  // civil-date helper; never derive eligibility from the host/server zone.
-  return currentDateInSingapore();
 }
 
 export async function listBusinessCalendars(params: TenantAwareParams): Promise<BusinessCalendarListDto> {
@@ -787,10 +810,11 @@ export async function previewBusinessCalendarImpact(
   id: string,
   input: BusinessCalendarInput,
   params: TenantAwareParams,
+  options: BusinessCalendarImpactOptions = {},
 ): Promise<BusinessCalendarImpact> {
   const parsed = normalizeCalendarInput(input as Record<string, unknown>);
   const current = await findCalendarRecord(prisma, id, params.tenantId);
-  return computeImpact(prisma, current, parsed, params.tenantId);
+  return computeImpact(prisma, current, parsed, params.tenantId, options.now);
 }
 
 export async function updateBusinessCalendar(
@@ -801,6 +825,7 @@ export async function updateBusinessCalendar(
     previewFingerprint: string;
   }),
   params: TenantAwareParams,
+  options: BusinessCalendarImpactOptions = {},
 ): Promise<BusinessCalendarDto> {
   const {
     expectedRevision,
@@ -828,7 +853,7 @@ export async function updateBusinessCalendar(
       );
     }
 
-    const impact = await computeImpact(tx, current, parsed, params.tenantId);
+    const impact = await computeImpact(tx, current, parsed, params.tenantId, options.now);
     if (proposedHash !== impact.proposedHash || previewFingerprint !== impact.previewFingerprint) {
       throw new DeadlineApiError(
         ErrorCodes.IMPACT_CHANGED,

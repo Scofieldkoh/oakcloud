@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes } from '@/lib/errors';
+import type { DateOnly } from '@/services/service-schedule';
 import {
   businessCalendarInputSchema,
   businessCalendarUpdateSchema,
@@ -45,8 +46,13 @@ const auditMock = vi.hoisted(() => ({
   }),
 }));
 
+const evaluatorMock = vi.hoisted(() => ({
+  evaluateDeadlineRule: vi.fn(),
+}));
+
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/audit', () => auditMock);
+vi.mock('@/services/service-schedule/evaluator', () => evaluatorMock);
 
 import {
   createBusinessCalendar,
@@ -102,6 +108,137 @@ describe('business calendar service', () => {
     prismaMock.serviceCycle.findMany.mockResolvedValue([]);
     prismaMock.deadlineOccurrence.findMany.mockResolvedValue([]);
     prismaMock.clientServiceDeadlineRule.findMany.mockResolvedValue([]);
+  });
+
+  it('counts failed cycles once and preserves immutable rows before warning classification', async () => {
+    const cycle = {
+      id: 'cycle-1',
+      tenantId: actor.tenantId,
+      clientServiceId: 'service-1',
+      ruleId: 'rule-1',
+      ruleVersionId: 'version-1',
+      companyId: 'company-1',
+      periodKey: '2026',
+      periodStart: new Date('2026-01-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-12-31T00:00:00.000Z'),
+    };
+    const context = {
+      tenantId: actor.tenantId,
+      clientServiceId: 'service-1',
+      ruleId: 'rule-1',
+      parameterValues: {},
+      scheduleEntries: [],
+      clientService: { tenantId: actor.tenantId, companyId: 'company-1', company: {} },
+      rule: {
+        tenantId: actor.tenantId,
+        currentVersion: {
+          id: 'version-1',
+          recurrence: {},
+          applicability: {},
+          milestoneTemplates: [],
+        },
+      },
+    };
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(calendarRecord);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([cycle]);
+    prismaMock.clientServiceDeadlineRule.findMany.mockResolvedValue([context]);
+    evaluatorMock.evaluateDeadlineRule.mockImplementation(() => {
+      throw new Error('missing evaluator input');
+    });
+
+    const emptyCycleImpact = await previewBusinessCalendarImpact('calendar-1', input, actor);
+    expect(emptyCycleImpact.counts).toEqual({ recalculated: 0, preserved: 0, warnings: 1 });
+
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([{
+      id: 'deadline-completed',
+      tenantId: actor.tenantId,
+      calculatedDueDate: new Date('2026-08-15T00:00:00.000Z'),
+      operativeDueDate: new Date('2026-08-15T00:00:00.000Z'),
+      dateOverridden: false,
+      status: 'COMPLETED',
+      origin: 'RULE',
+      cycleId: cycle.id,
+      milestoneKey: 'milestone-1',
+      scheduleEntryKey: '',
+      cycle,
+    }]);
+
+    const immutableImpact = await previewBusinessCalendarImpact('calendar-1', input, actor);
+    expect(immutableImpact.counts).toEqual({ recalculated: 0, preserved: 1, warnings: 1 });
+  });
+
+  it('uses one injected Singapore date for every impact decision', async () => {
+    const cycle = {
+      id: 'cycle-clock',
+      tenantId: actor.tenantId,
+      clientServiceId: 'service-clock',
+      ruleId: 'rule-clock',
+      ruleVersionId: 'version-clock',
+      companyId: 'company-clock',
+      periodKey: '2026',
+      periodStart: new Date('2026-01-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-12-31T00:00:00.000Z'),
+    };
+    const context = {
+      tenantId: actor.tenantId,
+      clientServiceId: cycle.clientServiceId,
+      ruleId: cycle.ruleId,
+      parameterValues: {},
+      scheduleEntries: [],
+      clientService: { tenantId: actor.tenantId, companyId: cycle.companyId, company: {} },
+      rule: {
+        tenantId: actor.tenantId,
+        currentVersion: {
+          id: cycle.ruleVersionId,
+          recurrence: {},
+          applicability: {},
+          milestoneTemplates: [{
+            milestoneKey: 'milestone-1',
+            name: 'Milestone',
+            description: null,
+            type: 'STATUTORY' as const,
+            generationMode: 'ONCE_PER_CYCLE' as const,
+            dateExpression: {},
+            businessDayAdjustment: 'NONE' as const,
+            displayOrder: 1,
+            isActive: true,
+          }],
+        },
+      },
+    };
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(calendarRecord);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([cycle]);
+    prismaMock.clientServiceDeadlineRule.findMany.mockResolvedValue([context]);
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([{
+      id: 'deadline-clock',
+      tenantId: actor.tenantId,
+      calculatedDueDate: new Date('2026-08-20T00:00:00.000Z'),
+      operativeDueDate: new Date('2026-08-19T00:00:00.000Z'),
+      dateOverridden: false,
+      status: 'OPEN',
+      origin: 'RULE',
+      cycleId: cycle.id,
+      milestoneKey: 'milestone-1',
+      scheduleEntryKey: '',
+      cycle,
+    }]);
+    evaluatorMock.evaluateDeadlineRule.mockReturnValue({
+      byKey: {
+        'milestone-1:': { calculatedDueDate: '2026-08-20' },
+      },
+      evaluationHash: 'a'.repeat(64),
+      sourceSnapshot: {},
+      applicability: { state: 'APPLICABLE' },
+    });
+    const boundaryDates = ['2026-08-20', '2026-08-18'];
+    let clockCalls = 0;
+
+    const impact = await previewBusinessCalendarImpact('calendar-1', input, actor, {
+      now: () => (boundaryDates[clockCalls++] ?? '2026-08-18') as DateOnly,
+    });
+
+    expect(clockCalls).toBe(1);
+    expect(impact.counts).toEqual({ recalculated: 0, preserved: 1, warnings: 0 });
   });
 
   it('returns an immutable Asia/Singapore calendar snapshot with tenant-scoped holidays', async () => {
