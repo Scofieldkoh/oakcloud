@@ -213,14 +213,20 @@ describe('evaluateDeadlineRule', () => {
         generationMode: 'ONCE_PER_SCHEDULE_ENTRY',
         expression: {
           kind: 'RELATIVE_TO_SOURCE',
-          source: { kind: 'SCHEDULE_ENTRY', key: 'run-1' },
+          source: { kind: 'CURRENT_SCHEDULE_ENTRY' },
           offset: 0,
           unit: 'CALENDAR_DAY',
         },
       })],
     }));
 
-    expect(result.occurrences.filter((item) => item.milestoneKey === 'service-run')).toHaveLength(4);
+    expect(result.occurrences.filter((item) => item.milestoneKey === 'service-run'))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ scheduleEntryKey: 'run-1', calculatedDueDate: '2026-08-01' }),
+        expect.objectContaining({ scheduleEntryKey: 'run-8', calculatedDueDate: '2026-08-08' }),
+        expect.objectContaining({ scheduleEntryKey: 'run-15', calculatedDueDate: '2026-08-15' }),
+        expect.objectContaining({ scheduleEntryKey: 'run-22', calculatedDueDate: '2026-08-22' }),
+      ]));
     expect(Object.keys(result.byKey)).toEqual([
       'service-run:run-1', 'service-run:run-8', 'service-run:run-15', 'service-run:run-22',
     ]);
@@ -295,7 +301,7 @@ describe('evaluateDeadlineRule', () => {
         milestone('business', { kind: 'ADD_BUSINESS_DAYS', amount: 1 }),
         milestone('added', { kind: 'ADD', offset: -1, unit: 'CALENDAR_DAY' }),
         milestone('adjust', { kind: 'ADJUST_BUSINESS_DAY', adjustment: 'NEXT' }),
-      ] as never,
+      ],
     }));
 
     expect(result.byKey['months:']?.calculatedDueDate).toBe('2026-02-28');
@@ -305,16 +311,197 @@ describe('evaluateDeadlineRule', () => {
     expect(result.byKey['adjust:']?.calculatedDueDate).toBe('2026-02-02');
   });
 
+  it('binds a repeated milestone to the current schedule entry and preserves each date', () => {
+    const result = evaluateDeadlineRule(input({
+      scheduleEntries: [
+        entry('one', { kind: 'DAY_OF_MONTH', day: 1 }),
+        entry('two', { kind: 'DAY_OF_MONTH', day: 2 }),
+      ],
+      milestones: [milestone('per-entry', {
+        generationMode: 'ONCE_PER_SCHEDULE_ENTRY',
+        expression: {
+          kind: 'RELATIVE_TO_SOURCE',
+          source: { kind: 'CURRENT_SCHEDULE_ENTRY' },
+          offset: 0,
+          unit: 'CALENDAR_DAY',
+        },
+      })],
+    }));
+
+    expect(result.byKey['per-entry:one']?.calculatedDueDate).toBe('2026-08-01');
+    expect(result.byKey['per-entry:two']?.calculatedDueDate).toBe('2026-08-02');
+  });
+
+  it('uses a stored company date before an explicitly configured coalesce fallback', () => {
+    const expression: RuleDateExpression = {
+      kind: 'COALESCE',
+      candidates: [
+        { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+        {
+          kind: 'ADD_MONTHS',
+          source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+          amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+        },
+      ],
+    };
+    const result = evaluateDeadlineRule(input({
+      company: { nextAgmDueDate: '2027-05-31', financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: 5 },
+      milestones: [milestone('agm-due', expression)],
+    }));
+
+    expect(result.byKey['agm-due:']?.calculatedDueDate).toBe('2027-05-31');
+    expect(result.sourceSnapshot).toEqual(expect.objectContaining({
+      company: { nextAgmDueDate: '2027-05-31' },
+      parameters: {},
+    }));
+    expect(result.occurrences[0]?.explanation.join(' ')).toContain('Company.nextAgmDueDate');
+  });
+
+  it('uses a configured fallback when the stored company date is absent and records its inputs', () => {
+    const result = evaluateDeadlineRule(input({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: 5 },
+      milestones: [milestone('agm-due', {
+        kind: 'COALESCE',
+        candidates: [
+          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          {
+            kind: 'ADD_MONTHS',
+            source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+            amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+          },
+        ],
+      })],
+    }));
+
+    expect(result.byKey['agm-due:']?.calculatedDueDate).toBe('2027-05-31');
+    expect(result.sourceSnapshot).toEqual(expect.objectContaining({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: 5 },
+    }));
+    expect(result.occurrences[0]?.explanation.join(' ')).toEqual(expect.stringContaining('Company.financialYearEnd'));
+  });
+
+  it('returns typed missing input when every coalesce candidate is unavailable', () => {
+    expectMissingInput(() => evaluateDeadlineRule(input({
+      milestones: [milestone('agm-due', {
+        kind: 'COALESCE',
+        candidates: [
+          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          {
+            kind: 'ADD_MONTHS',
+            source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+            amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+          },
+        ],
+      })],
+    })));
+  });
+
+  it('evaluates FYE plus a typed integer months-after-FYE parameter', () => {
+    const result = evaluateDeadlineRule(input({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: 3 },
+      milestones: [milestone('accounts-due', {
+        kind: 'ADD_MONTHS',
+        source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+        amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+      })],
+    }));
+
+    expect(result.byKey['accounts-due:']?.calculatedDueDate).toBe('2027-03-31');
+    expect(result.occurrences[0]?.explanation.join(' ')).toContain('Parameter.monthsAfterFye');
+    expect(result.evaluationHash).not.toBe(evaluateDeadlineRule(input({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: 4 },
+      milestones: [milestone('accounts-due', {
+        kind: 'ADD_MONTHS',
+        source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+        amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+      })],
+    })).evaluationHash);
+  });
+
+  it('rejects missing, wrong-type, and out-of-range integer operands with typed errors', () => {
+    expectMissingInput(() => evaluateDeadlineRule(input({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: {},
+      milestones: [milestone('accounts-due', {
+        kind: 'ADD_MONTHS',
+        source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+        amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+      })],
+    })));
+    expect(() => evaluateDeadlineRule(input({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: '3' },
+      milestones: [milestone('accounts-due', {
+        kind: 'ADD_MONTHS',
+        source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+        amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+      })],
+    }))).toThrow(ValidationError);
+    expect(() => evaluateDeadlineRule(input({
+      company: { financialYearEnd: '2026-12-31' },
+      parameters: { monthsAfterFye: 3661 },
+      milestones: [milestone('accounts-due', {
+        kind: 'ADD_MONTHS',
+        source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+        amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+      })],
+    }))).toThrow(ValidationError);
+  });
+
+  it('accepts operation milestones through the persisted strict schema', async () => {
+    const { deadlineMilestoneSchema } = await import('@/lib/validations/service-schedule');
+    expect(deadlineMilestoneSchema.parse({
+      key: 'accounts-due',
+      name: 'Accounts due',
+      description: null,
+      type: 'STATUTORY',
+      generationMode: 'ONCE_PER_CYCLE',
+      expression: { kind: 'ADD_MONTHS', amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' } },
+      businessDayAdjustment: 'NONE',
+      displayOrder: 0,
+      isActive: true,
+    }).expression.kind).toBe('ADD_MONTHS');
+  });
+
+  it('rejects CURRENT_SCHEDULE_ENTRY outside a repeated milestone context', () => {
+    expect(() => evaluateDeadlineRule(input({
+      milestones: [milestone('invalid-current', {
+        kind: 'RELATIVE_TO_SOURCE',
+        source: { kind: 'CURRENT_SCHEDULE_ENTRY' },
+        offset: 0,
+        unit: 'CALENDAR_DAY',
+      })],
+    }))).toThrow(ValidationError);
+  });
+
+  it('rejects an invalid coalesce candidate even when a stored primary exists', () => {
+    expect(() => evaluateDeadlineRule(input({
+      company: { nextAgmDueDate: '2027-05-31' },
+      milestones: [milestone('invalid-fallback', {
+        kind: 'COALESCE',
+        candidates: [
+          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          { kind: 'UNSUPPORTED' },
+        ],
+      } as never)],
+    }))).toThrow(ValidationError);
+  });
+
   it('rejects circular, missing, ambiguous, self, and duplicate dependencies deterministically', () => {
     expect(() => evaluateDeadlineRule(input({
       milestones: [
         milestone('a', { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'MILESTONE', key: 'b' }, offset: 0, unit: 'CALENDAR_DAY' }),
         milestone('b', { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'MILESTONE', key: 'a' }, offset: 0, unit: 'CALENDAR_DAY' }),
-      ] as never,
+      ],
     }))).toThrow(/circular/i);
 
     expect(() => evaluateDeadlineRule(input({
-      milestones: [milestone('a', { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'SCHEDULE_ENTRY', key: 'missing' }, offset: 0, unit: 'CALENDAR_DAY' })] as never,
+      milestones: [milestone('a', { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'SCHEDULE_ENTRY', key: 'missing' }, offset: 0, unit: 'CALENDAR_DAY' })],
     }))).toThrow(/missing/i);
 
     expect(() => evaluateDeadlineRule(input({
@@ -329,13 +516,18 @@ describe('evaluateDeadlineRule', () => {
         }),
         milestone('per-entry', {
           generationMode: 'ONCE_PER_SCHEDULE_ENTRY',
-          expression: { kind: 'DAY_OF_MONTH', day: 1 },
+          expression: {
+            kind: 'RELATIVE_TO_SOURCE',
+            source: { kind: 'CURRENT_SCHEDULE_ENTRY' },
+            offset: 0,
+            unit: 'CALENDAR_DAY',
+          },
         }),
-      ] as never,
+      ],
     }))).toThrow(/ambiguous/i);
 
     expect(() => evaluateDeadlineRule(input({
-      milestones: [milestone('self', { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'MILESTONE', key: 'self' }, offset: 0, unit: 'CALENDAR_DAY' })] as never,
+      milestones: [milestone('self', { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'MILESTONE', key: 'self' }, offset: 0, unit: 'CALENDAR_DAY' })],
     }))).toThrow(/self|circular/i);
 
     expect(() => evaluateDeadlineRule(input({
@@ -403,6 +595,20 @@ describe('evaluateDeadlineRule', () => {
       milestones: [milestone('bad', {
         expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'UNKNOWN' } as never, offset: 0, unit: 'CALENDAR_DAY' },
       })],
+    }))).toThrow(ValidationError);
+  });
+
+  it.each([true, false])('rejects cyclic schedule extras before %s applicability snapshotting', (isApplicable) => {
+    const cyclicEntry = entry('cycle', { kind: 'DAY_OF_MONTH', day: 1 }) as ScheduleEntry & Record<string, unknown>;
+    cyclicEntry.extra = cyclicEntry;
+    expect(() => evaluateDeadlineRule(input({
+      applicability: isApplicable ? applicable : {
+        schemaVersion: 1,
+        kind: 'ALL',
+        conditions: [{ kind: 'FIELD_EQUALS', field: 'entityType', value: 'PRIVATE_COMPANY' }],
+      },
+      company: isApplicable ? {} : { entityType: 'PUBLIC_COMPANY' },
+      scheduleEntries: [cyclicEntry],
     }))).toThrow(ValidationError);
   });
 

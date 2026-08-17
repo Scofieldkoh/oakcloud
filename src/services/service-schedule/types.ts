@@ -22,7 +22,11 @@ export type DateSource =
   | { kind: 'CYCLE_START' | 'CYCLE_END' }
   | { kind: 'PARAMETER'; key: string }
   | { kind: 'SCHEDULE_ENTRY'; key: string }
-  | { kind: 'MILESTONE'; key: string };
+  | { kind: 'MILESTONE'; key: string }
+  | { kind: 'CURRENT_SCHEDULE_ENTRY' };
+
+/** Integer operation operands may be persisted literals or typed parameters. */
+export type IntegerOperand = number | { kind: 'INTEGER_PARAMETER'; key: string };
 
 export type ScheduleEntryExpression =
   | { kind: 'DAY_OF_MONTH'; day: number }
@@ -31,7 +35,7 @@ export type ScheduleEntryExpression =
   | {
       kind: 'RELATIVE_TO_SOURCE';
       source: DateSource;
-      offset: number;
+      offset: IntegerOperand;
       unit: 'CALENDAR_DAY' | 'BUSINESS_DAY';
     };
 
@@ -42,27 +46,33 @@ export type ScheduleEntry = {
   businessDayAdjustment: BusinessDayAdjustment;
 };
 
-/** Milestones may use a schedule primitive or any of the Task 2 operations. */
-export type MilestoneExpression = ScheduleEntryExpression | DateOperation;
-export type DateExpression = ScheduleEntryExpression | DateOperation;
-
 export type DateOperation =
   | {
       kind: 'RELATIVE_TO_SOURCE';
       source: DateSource;
-      offset: number;
+      offset: IntegerOperand;
       unit: 'CALENDAR_DAY' | 'BUSINESS_DAY';
     }
   | {
       kind: 'ADD';
       source?: DateSource;
-      offset: number;
+      offset: IntegerOperand;
       unit: 'CALENDAR_DAY' | 'BUSINESS_DAY';
     }
-  | { kind: 'ADD_CALENDAR_DAYS'; amount: number }
-  | { kind: 'ADD_BUSINESS_DAYS'; amount: number }
-  | { kind: 'ADD_MONTHS'; amount: number }
+  | { kind: 'ADD_CALENDAR_DAYS'; source?: DateSource; amount: IntegerOperand }
+  | { kind: 'ADD_BUSINESS_DAYS'; source?: DateSource; amount: IntegerOperand }
+  | { kind: 'ADD_MONTHS'; source?: DateSource; amount: IntegerOperand }
   | { kind: 'ADJUST_BUSINESS_DAY'; adjustment: BusinessDayAdjustment };
+
+export type DirectSourceExpression = { kind: 'SOURCE'; source: DateSource };
+export type CoalesceExpression = { kind: 'COALESCE'; candidates: MilestoneExpression[] };
+
+/** The versioned expression language persisted by milestones and consumers. */
+export type MilestoneExpression = ScheduleEntryExpression
+  | DateOperation
+  | DirectSourceExpression
+  | CoalesceExpression;
+export type DateExpression = MilestoneExpression;
 
 export type RuleRecurrenceDefinition =
   | { schemaVersion: 1; kind: 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'ANNUALLY'; interval?: number }

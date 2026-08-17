@@ -145,6 +145,7 @@ describe('generic service schedule validation', () => {
       { kind: 'PARAMETER', key: 'monthsAfterFye' },
       { kind: 'SCHEDULE_ENTRY', key: 'filing-date' },
       { kind: 'MILESTONE', key: 'previous-filing' },
+      { kind: 'CURRENT_SCHEDULE_ENTRY' },
     ];
     for (const source of allowedSources) {
       expect(dateSourceSchema.parse(source)).toEqual(source);
@@ -199,6 +200,13 @@ describe('generic service schedule validation', () => {
       generationMode: 'ONCE_PER_SCHEDULE_ENTRY',
       expression: { kind: 'DAY_OF_MONTH', day: 1 },
     })).toThrow('schedule');
+
+    const cyclicExpression: Record<string, unknown> = { kind: 'COALESCE', candidates: [] };
+    cyclicExpression.candidates = [cyclicExpression];
+    const cyclicMilestone = { ...milestone, generationMode: 'ONCE_PER_CYCLE', expression: cyclicExpression };
+    let cyclicResult: ReturnType<typeof deadlineMilestoneSchema.safeParse>;
+    expect(() => { cyclicResult = deadlineMilestoneSchema.safeParse(cyclicMilestone); }).not.toThrow();
+    expect(cyclicResult!.success).toBe(false);
   });
 
   it('bounds applicability groups, rejects unknown company fields, and preserves strict nesting', () => {

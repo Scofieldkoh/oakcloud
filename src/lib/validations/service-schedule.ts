@@ -3,6 +3,9 @@ import { z } from 'zod';
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const KEY_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
 const MAX_DATE_OFFSET = 3660;
+const MAX_EXPRESSION_CANDIDATES = 31;
+const MAX_EXPRESSION_DEPTH = 32;
+const MAX_EXPRESSION_NODES = 1_000;
 const MAX_APPLICABILITY_LEAVES = 50;
 const MAX_APPLICABILITY_DEPTH = 5;
 const MAX_APPLICABILITY_GROUP_CONDITIONS = 50;
@@ -116,16 +119,21 @@ export const dateSourceSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('PARAMETER'), key: referenceKeySchema }).strict(),
   z.object({ kind: z.literal('SCHEDULE_ENTRY'), key: keySchema }).strict(),
   z.object({ kind: z.literal('MILESTONE'), key: referenceKeySchema }).strict(),
+  z.object({ kind: z.literal('CURRENT_SCHEDULE_ENTRY') }).strict(),
 ]);
 
 const dateOffsetSchema = z.number().int().min(-MAX_DATE_OFFSET).max(MAX_DATE_OFFSET);
+export const integerOperandSchema = z.union([
+  dateOffsetSchema,
+  z.object({ kind: z.literal('INTEGER_PARAMETER'), key: referenceKeySchema }).strict(),
+]);
 const dateUnitSchema = z.enum(['CALENDAR_DAY', 'BUSINESS_DAY']);
 const businessDayAdjustmentSchema = z.enum(['NONE', 'PREVIOUS', 'NEXT']);
 
 const relativeToSourceSchema = z.object({
   kind: z.literal('RELATIVE_TO_SOURCE'),
   source: dateSourceSchema,
-  offset: dateOffsetSchema,
+  offset: integerOperandSchema,
   unit: dateUnitSchema,
 }).strict();
 
@@ -141,19 +149,113 @@ export const dateOperationSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('ADD'),
     source: dateSourceSchema.optional(),
-    offset: dateOffsetSchema,
+    offset: integerOperandSchema,
     unit: dateUnitSchema,
   }).strict(),
-  z.object({ kind: z.literal('ADD_CALENDAR_DAYS'), amount: dateOffsetSchema }).strict(),
-  z.object({ kind: z.literal('ADD_BUSINESS_DAYS'), amount: dateOffsetSchema }).strict(),
-  z.object({ kind: z.literal('ADD_MONTHS'), amount: dateOffsetSchema }).strict(),
+  z.object({
+    kind: z.literal('ADD_CALENDAR_DAYS'),
+    source: dateSourceSchema.optional(),
+    amount: integerOperandSchema,
+  }).strict(),
+  z.object({
+    kind: z.literal('ADD_BUSINESS_DAYS'),
+    source: dateSourceSchema.optional(),
+    amount: integerOperandSchema,
+  }).strict(),
+  z.object({
+    kind: z.literal('ADD_MONTHS'),
+    source: dateSourceSchema.optional(),
+    amount: integerOperandSchema,
+  }).strict(),
   z.object({ kind: z.literal('ADJUST_BUSINESS_DAY'), adjustment: businessDayAdjustmentSchema }).strict(),
 ]);
 
 // Milestones and schedule entries intentionally use the same constrained
 // expression language. This keeps billing and deadline consumers on one DSL.
-export const milestoneExpressionSchema = scheduleEntryExpressionSchema;
-export const dateExpressionSchema = milestoneExpressionSchema;
+// SOURCE is the explicit direct-source form used by COALESCE candidates.
+// COALESCE is recursive, but bounded at every candidate list and defended by
+// the evaluator's iterative raw graph guard before Zod traverses it.
+const directSourceExpressionSchema = z.object({
+  kind: z.literal('SOURCE'),
+  source: dateSourceSchema,
+}).strict();
+
+type DateExpressionSchemaInput =
+  | z.infer<typeof scheduleEntryExpressionSchema>
+  | z.infer<typeof dateOperationSchema>
+  | z.infer<typeof directSourceExpressionSchema>
+  | { kind: 'COALESCE'; candidates: DateExpressionSchemaInput[] };
+
+const coalesceExpressionSchema = z.object({
+  kind: z.literal('COALESCE'),
+  candidates: z.array(z.lazy(() => recursiveDateExpressionSchema))
+    .min(1)
+    .max(MAX_EXPRESSION_CANDIDATES),
+}).strict();
+const recursiveDateExpressionSchema: z.ZodType<DateExpressionSchemaInput> = z.lazy(() => z.union([
+  scheduleEntryExpressionSchema,
+  dateOperationSchema,
+  directSourceExpressionSchema,
+  coalesceExpressionSchema,
+]));
+
+function guardExpressionGraph(value: unknown, ctx: z.RefinementCtx): boolean {
+  const seen = new WeakSet<object>();
+  const stack: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }];
+  let nodes = 0;
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (current.value === null || typeof current.value !== 'object') continue;
+    if (current.value instanceof Date || current.value instanceof Set || current.value instanceof Map) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date expressions must contain only JSON values' });
+      return false;
+    }
+    if (seen.has(current.value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date expressions cannot contain cycles or shared references' });
+      return false;
+    }
+    if (current.depth > MAX_EXPRESSION_DEPTH) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Date expressions may be nested at most ${MAX_EXPRESSION_DEPTH} levels` });
+      return false;
+    }
+    seen.add(current.value);
+    nodes += 1;
+    if (nodes > MAX_EXPRESSION_NODES) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Date expressions may contain at most ${MAX_EXPRESSION_NODES} nodes` });
+      return false;
+    }
+    if (Array.isArray(current.value)) {
+      if (current.value.length > MAX_EXPRESSION_NODES) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date expression arrays exceed the structural bound' });
+        return false;
+      }
+      for (let index = current.value.length - 1; index >= 0; index -= 1) {
+        stack.push({ value: current.value[index], depth: current.depth + 1 });
+      }
+      continue;
+    }
+    if (Object.getPrototypeOf(current.value) !== Object.prototype && Object.getPrototypeOf(current.value) !== null) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date expressions must contain only plain objects' });
+      return false;
+    }
+    const keys = Object.keys(current.value);
+    if (keys.length > MAX_EXPRESSION_NODES) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date expression objects exceed the structural bound' });
+      return false;
+    }
+    for (const key of keys) {
+      stack.push({ value: (current.value as Record<string, unknown>)[key], depth: current.depth + 1 });
+    }
+  }
+  return true;
+}
+
+const guardedDateExpressionSchema = z.preprocess((value, ctx) => {
+  return guardExpressionGraph(value, ctx) ? value : z.NEVER;
+}, recursiveDateExpressionSchema) as z.ZodType<DateExpressionSchemaInput>;
+
+export const milestoneExpressionSchema = guardedDateExpressionSchema;
+export const dateExpressionSchema = guardedDateExpressionSchema;
 
 export const scheduleEntrySchema = z.object({
   key: keySchema,
@@ -479,6 +581,28 @@ export const deadlineParameterDefinitionSchema = z.object({
   }
 });
 
+function expressionHasScheduleEntrySource(value: unknown, seen = new Set<object>()): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  const expression = value as Record<string, unknown>;
+  if (expression.kind === 'RELATIVE_TO_SOURCE' || expression.kind === 'SOURCE') {
+    const source = expression.source;
+    if (typeof source === 'object' && source !== null) {
+      const sourceKind = (source as Record<string, unknown>).kind;
+      if (sourceKind === 'SCHEDULE_ENTRY' || sourceKind === 'CURRENT_SCHEDULE_ENTRY') return true;
+    }
+  }
+  if (typeof expression.source === 'object' && expression.source !== null) {
+    const sourceKind = (expression.source as Record<string, unknown>).kind;
+    if (sourceKind === 'SCHEDULE_ENTRY' || sourceKind === 'CURRENT_SCHEDULE_ENTRY') return true;
+  }
+  if (expression.kind === 'COALESCE' && Array.isArray(expression.candidates)) {
+    return expression.candidates.some((candidate) => expressionHasScheduleEntrySource(candidate, seen));
+  }
+  return false;
+}
+
 export const deadlineMilestoneSchema = z.object({
   key: referenceKeySchema,
   name: z.string().trim().min(1).max(200),
@@ -491,14 +615,27 @@ export const deadlineMilestoneSchema = z.object({
   isActive: z.boolean(),
 }).strict().superRefine((value, ctx) => {
   if (value.generationMode === 'ONCE_PER_SCHEDULE_ENTRY') {
-    const source = value.expression.kind === 'RELATIVE_TO_SOURCE' ? value.expression.source : null;
-    if (!source || source.kind !== 'SCHEDULE_ENTRY') {
+    if (!expressionHasScheduleEntrySource(value.expression)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['expression'],
         message: 'ONCE_PER_SCHEDULE_ENTRY milestones require a schedule entry source',
       });
     }
+  }
+});
+
+export const deadlineMilestonesSchema = z.array(deadlineMilestoneSchema).max(100).superRefine((milestones, ctx) => {
+  const seen = new Set<string>();
+  for (const [index, milestone] of milestones.entries()) {
+    if (seen.has(milestone.key)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, 'key'],
+        message: 'Milestone keys must be unique',
+      });
+    }
+    seen.add(milestone.key);
   }
 });
 
@@ -512,8 +649,10 @@ export const scheduleEntriesConfigSchema = scheduleConfigSchema;
 
 export type DateOnlyInput = z.infer<typeof dateOnlySchema>;
 export type DateSourceInput = z.infer<typeof dateSourceSchema>;
+export type IntegerOperandInput = z.infer<typeof integerOperandSchema>;
 export type DateOperationInput = z.infer<typeof dateOperationSchema>;
 export type ScheduleEntryExpressionInput = z.infer<typeof scheduleEntryExpressionSchema>;
+export type DateExpressionInput = z.infer<typeof dateExpressionSchema>;
 export type ScheduleEntryInput = z.infer<typeof scheduleEntrySchema>;
 export type ScheduleEntriesInput = z.infer<typeof scheduleEntriesSchema>;
 export type RuleRecurrenceInput = z.infer<typeof recurrenceSchema>;
@@ -521,6 +660,7 @@ export type ApplicabilityPredicateInput = z.infer<typeof applicabilityPredicateS
 export type ApplicabilityDefinitionInput = z.infer<typeof applicabilityDefinitionSchema>;
 export type DeadlineParameterDefinitionInput = z.infer<typeof deadlineParameterDefinitionSchema>;
 export type DeadlineMilestoneInput = z.infer<typeof deadlineMilestoneSchema>;
+export type DeadlineMilestonesInput = z.infer<typeof deadlineMilestonesSchema>;
 
 export {
   KEY_PATTERN,
