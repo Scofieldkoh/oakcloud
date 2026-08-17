@@ -20,9 +20,9 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
 
-import { ServiceCatalogPanel } from '@/components/documents/service-catalog/service-catalog-panel';
-import { ServiceFamilyForm } from '@/components/documents/service-catalog/service-family-form';
-import { ServiceVariantForm } from '@/components/documents/service-catalog/service-variant-form';
+import { ServiceCatalogPanel } from '@/components/services/admin/catalog/service-catalog-panel';
+import { ServiceFamilyForm } from '@/components/services/admin/catalog/service-family-form';
+import { ServiceVariantForm } from '@/components/services/admin/catalog/service-variant-form';
 
 const family = {
   id: 'family-1',

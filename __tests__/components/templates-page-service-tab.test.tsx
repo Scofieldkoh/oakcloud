@@ -22,7 +22,7 @@ vi.mock('@/hooks/use-permissions', () => ({
 vi.mock('@/components/ui/workspace-selector', () => ({
   useActiveWorkspaceId: () => 'tenant-1',
 }));
-vi.mock('@/components/documents/service-catalog/service-catalog-panel', () => ({
+vi.mock('@/components/services/admin/catalog/service-catalog-panel', () => ({
   ServiceCatalogPanel: () => <div>Service catalog content</div>,
 }));
 

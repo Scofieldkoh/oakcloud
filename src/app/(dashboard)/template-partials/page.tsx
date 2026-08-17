@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
-import { ServiceCatalogPanel } from '@/components/documents/service-catalog/service-catalog-panel';
+import { ServiceCatalogPanel } from '@/components/services/admin/catalog/service-catalog-panel';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
