@@ -500,7 +500,10 @@ export async function updateCompany(
     return updatedCompany;
   });
 
-  const changes = computeChanges(existing as Record<string, unknown>, data, TRACKED_FIELDS as string[]);
+  const auditData = data.displayAlias === undefined
+    ? data
+    : { ...data, displayAlias: normalizeCompanyAlias(data.displayAlias) };
+  const changes = computeChanges(existing as Record<string, unknown>, auditData, TRACKED_FIELDS as string[]);
 
   if (changes) {
     const changedFields = Object.keys(changes).join(', ');
@@ -519,7 +522,7 @@ export async function updateCompany(
     });
   }
 
-  return company;
+  return serializeCompany(company);
 }
 
 // ============================================================================

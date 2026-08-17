@@ -68,7 +68,7 @@ describe('company profile section services', () => {
 
     expect(identity.data).toEqual(expect.objectContaining({ displayAlias: 'OAK' }));
 
-    await mutateCompanyProfileSection(tx, 'company-1', 'identity', {
+    await mutateCompanyProfileSection(tx as never, 'company-1', 'identity', {
       uen: '202400001A',
       name: 'Example Pte. Ltd.',
       displayAlias: '   ',
@@ -80,6 +80,20 @@ describe('company profile section services', () => {
 
     expect(tx.company.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ displayAlias: null }),
+    }));
+
+    tx.company.update.mockClear();
+    await mutateCompanyProfileSection(tx as never, 'company-1', 'identity', {
+      uen: '202400001A',
+      name: 'Example Pte. Ltd.',
+      entityType: 'PRIVATE_LIMITED',
+      status: 'LIVE',
+      statusDate: null,
+      incorporationDate: '2020-01-01',
+    });
+
+    expect(tx.company.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.not.objectContaining({ displayAlias: expect.anything() }),
     }));
   });
 });
