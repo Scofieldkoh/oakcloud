@@ -3,6 +3,7 @@ import {
   createServiceFamilySchema,
   createServiceVariantSchema,
   searchServiceCatalogSchema,
+  updateServiceFamilySchema,
   updateServiceVariantSchema,
 } from '@/lib/validations/service-catalog';
 
@@ -14,6 +15,29 @@ describe('service catalog validation', () => {
     });
 
     expect(result.code).toBe('CORP-SEC');
+  });
+
+  it('normalizes family colors to uppercase six-digit hex', () => {
+    expect(
+      createServiceFamilySchema.parse({
+        code: 'PAYROLL',
+        name: 'Payroll',
+        displayColor: ' #3f6da8 ',
+      }).displayColor,
+    ).toBe('#3F6DA8');
+  });
+
+  it('defaults new family colors and rejects non-hex updates', () => {
+    expect(
+      createServiceFamilySchema.parse({
+        code: 'ACCOUNTING',
+        name: 'Accounting',
+      }).displayColor,
+    ).toBe('#2F6F5E');
+
+    expect(() =>
+      updateServiceFamilySchema.parse({ displayColor: 'blue' }),
+    ).toThrow(/six-digit hex/i);
   });
 
   it('requires custom cadence labels and clears them for standard cadences', () => {

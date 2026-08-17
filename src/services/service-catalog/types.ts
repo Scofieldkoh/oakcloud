@@ -39,6 +39,7 @@ export interface ServiceFamilyDto {
   code: string;
   name: string;
   description: string | null;
+  displayColor: string;
   displayOrder: number;
   isActive: boolean;
   variants: ServiceVariantDto[];

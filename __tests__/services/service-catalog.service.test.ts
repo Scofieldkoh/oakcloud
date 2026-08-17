@@ -25,6 +25,21 @@ const prismaMock = vi.hoisted(() => ({
 }));
 const auditMock = vi.hoisted(() => ({
   createAuditLog: vi.fn(),
+  computeChanges: vi.fn(
+    (
+      existing: Record<string, unknown>,
+      input: Record<string, unknown>,
+      fields: string[],
+    ) => {
+      const changes: Record<string, { old: unknown; new: unknown }> = {};
+      for (const field of fields) {
+        if (input[field] !== undefined && existing[field] !== input[field]) {
+          changes[field] = { old: existing[field], new: input[field] };
+        }
+      }
+      return Object.keys(changes).length > 0 ? changes : null;
+    },
+  ),
 }));
 
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
@@ -36,6 +51,7 @@ import {
   getServiceVariant,
   getSelectableServiceVariants,
   listServiceCatalog,
+  updateServiceFamily,
   updateServiceVariant,
 } from '@/services/service-catalog';
 
@@ -75,6 +91,19 @@ const existingVariant = {
   ],
 };
 
+const existingFamily = {
+  id: 'family-1',
+  tenantId: actor.tenantId,
+  code: 'ACCOUNTING',
+  name: 'Accounting',
+  description: null,
+  displayColor: '#2F6F5E',
+  displayOrder: 0,
+  isActive: true,
+  deletedAt: null,
+  variants: [],
+};
+
 describe('service catalog service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -106,6 +135,7 @@ describe('service catalog service', () => {
           code: 'CORP-SEC',
           name: 'Corporate Secretarial',
           description: null,
+          displayColor: '#2F6F5E',
           displayOrder: 0,
           isActive: true,
         },
@@ -213,6 +243,29 @@ describe('service catalog service', () => {
     });
   });
 
+  it('maps family display colors in catalog results', async () => {
+    prismaMock.serviceFamily.findMany.mockResolvedValue([
+      {
+        ...existingFamily,
+        displayColor: '#3F6DA8',
+        variants: [],
+      },
+    ]);
+    prismaMock.serviceFamily.count.mockResolvedValue(1);
+
+    const result = await listServiceCatalog(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'displayOrder',
+        sortOrder: 'asc',
+      },
+      actor,
+    );
+
+    expect(result.families[0]).toMatchObject({ displayColor: '#3F6DA8' });
+  });
+
   it('applies the same tenant boundary to setup and selectable variant reads', async () => {
     prismaMock.serviceVariant.findFirst.mockResolvedValue(existingVariant);
     prismaMock.serviceVariant.findMany.mockResolvedValue([]);
@@ -253,6 +306,7 @@ describe('service catalog service', () => {
       code: 'TAX',
       name: 'Tax',
       description: null,
+      displayColor: '#3F6DA8',
       displayOrder: 0,
       isActive: true,
       deletedAt: null,
@@ -264,6 +318,7 @@ describe('service catalog service', () => {
         code: 'TAX',
         name: 'Tax',
         description: null,
+        displayColor: '#3F6DA8',
         displayOrder: 0,
         isActive: true,
       },
@@ -272,7 +327,41 @@ describe('service catalog service', () => {
 
     expect(prismaMock.$transaction).toHaveBeenCalledOnce();
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({ entityId: 'family-2' }),
+      expect.objectContaining({
+        entityId: 'family-2',
+        changes: {
+          displayColor: { old: null, new: '#3F6DA8' },
+        },
+      }),
+      prismaMock,
+    );
+  });
+
+  it('persists and audits a family color update', async () => {
+    prismaMock.serviceFamily.findFirst.mockResolvedValue(existingFamily);
+    prismaMock.serviceFamily.update.mockResolvedValue({
+      ...existingFamily,
+      displayColor: '#3F6DA8',
+    });
+
+    const result = await updateServiceFamily(
+      existingFamily.id,
+      { displayColor: '#3F6DA8' },
+      actor,
+    );
+
+    expect(result.displayColor).toBe('#3F6DA8');
+    expect(prismaMock.serviceFamily.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { displayColor: '#3F6DA8' },
+      }),
+    );
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        changes: {
+          displayColor: { old: '#2F6F5E', new: '#3F6DA8' },
+        },
+      }),
       prismaMock,
     );
   });

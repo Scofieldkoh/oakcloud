@@ -21,6 +21,7 @@ vi.mock('@/components/ui/toast', () => ({
 }));
 
 import { ServiceCatalogPanel } from '@/components/documents/service-catalog/service-catalog-panel';
+import { ServiceFamilyForm } from '@/components/documents/service-catalog/service-family-form';
 import { ServiceVariantForm } from '@/components/documents/service-catalog/service-variant-form';
 
 const family = {
@@ -28,6 +29,7 @@ const family = {
   code: 'ACCOUNTING',
   name: 'Accounting',
   description: null,
+  displayColor: '#2F6F5E',
   displayOrder: 0,
   isActive: true,
   variants: [{
@@ -270,5 +272,35 @@ describe('ServiceVariantForm', () => {
         ],
       }),
     );
+  });
+});
+
+describe('ServiceFamilyForm', () => {
+  it('submits an accessible normalized display color with family text beside the swatch', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ServiceFamilyForm
+        initialValue={family}
+        onCancel={vi.fn()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(screen.getByLabelText('Display color')).toHaveValue('#2f6f5e');
+    expect(
+      screen.getByText('Used for family badges, filters, table accents, and calendar events.'),
+    ).toBeVisible();
+    expect(screen.getByText('Accounting')).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Display color'), {
+      target: { value: '#3f6da8' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save family' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ displayColor: '#3F6DA8' }),
+      );
+    });
   });
 });

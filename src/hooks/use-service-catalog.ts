@@ -99,7 +99,11 @@ export function useCreateServiceFamily(workspaceId: string | undefined) {
         await fetch('/api/service-catalog/families', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...input, tenantId: workspaceId }),
+          body: JSON.stringify({
+            ...input,
+            displayColor: input.displayColor.trim().toUpperCase(),
+            tenantId: workspaceId,
+          }),
         }),
       ),
     onSuccess: invalidate,
@@ -120,7 +124,13 @@ export function useUpdateServiceFamily(workspaceId: string | undefined) {
         await fetch(`/api/service-catalog/families/${id}`, {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...input, tenantId: workspaceId }),
+          body: JSON.stringify({
+            ...input,
+            ...(input.displayColor === undefined
+              ? {}
+              : { displayColor: input.displayColor.trim().toUpperCase() }),
+            tenantId: workspaceId,
+          }),
         }),
       ),
     onSuccess: invalidate,

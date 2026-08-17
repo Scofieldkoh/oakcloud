@@ -1,4 +1,4 @@
-import { createAuditLog } from '@/lib/audit';
+import { computeChanges, createAuditLog } from '@/lib/audit';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
@@ -96,6 +96,7 @@ function toFamilyDto(family: FamilyRecord): ServiceFamilyDto {
     code: family.code,
     name: family.name,
     description: family.description,
+    displayColor: family.displayColor,
     displayOrder: family.displayOrder,
     isActive: family.isActive,
     variants: family.variants.map(toVariantDto),
@@ -346,6 +347,9 @@ export async function createServiceFamily(
       entityId: family.id,
       entityName: family.name,
       summary: `Created service family "${family.name}"`,
+      changes: {
+        displayColor: { old: null, new: family.displayColor },
+      },
     }, tx);
     return toFamilyDto(family);
   });
@@ -369,6 +373,11 @@ export async function updateServiceFamily(
       data: input,
       include: familyInclude(params.tenantId),
     });
+    const changes = computeChanges(
+      existing as unknown as Record<string, unknown>,
+      input as unknown as Record<string, unknown>,
+      ['code', 'name', 'description', 'displayColor', 'displayOrder', 'isActive'],
+    );
     await createAuditLog({
       tenantId: params.tenantId,
       userId: params.userId,
@@ -377,6 +386,7 @@ export async function updateServiceFamily(
       entityId: family.id,
       entityName: family.name,
       summary: `Updated service family "${family.name}"`,
+      changes: changes ?? undefined,
     }, tx);
     return toFamilyDto(family);
   });

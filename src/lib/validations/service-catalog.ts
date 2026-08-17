@@ -38,6 +38,12 @@ export const billingFrequencySchema = z.enum([
   'CUSTOM',
 ]);
 
+export const serviceFamilyColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9A-Fa-f]{6}$/, 'Choose a six-digit hex color')
+  .transform((value) => value.toUpperCase());
+
 export const serviceVariantFeeTemplateSchema = z
   .object({
     id: z.string().uuid().optional(),
@@ -71,6 +77,7 @@ const familyFields = {
   code: codeSchema,
   name: z.string().trim().min(1).max(200),
   description: nullableText(5000),
+  displayColor: serviceFamilyColorSchema,
   displayOrder: z.number().int().min(0),
   isActive: z.boolean(),
 };
@@ -79,6 +86,7 @@ export const createServiceFamilySchema = z.object({
   code: familyFields.code,
   name: familyFields.name,
   description: familyFields.description,
+  displayColor: familyFields.displayColor.default('#2F6F5E'),
   displayOrder: familyFields.displayOrder.default(0),
   isActive: familyFields.isActive.default(true),
 });
@@ -87,6 +95,7 @@ export const updateServiceFamilySchema = z.object({
   code: familyFields.code.optional(),
   name: familyFields.name.optional(),
   description: familyFields.description,
+  displayColor: familyFields.displayColor.optional(),
   displayOrder: familyFields.displayOrder.optional(),
   isActive: familyFields.isActive.optional(),
 });

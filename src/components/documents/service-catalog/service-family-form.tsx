@@ -9,6 +9,8 @@ import type {
 } from '@/lib/validations/service-catalog';
 import type { ServiceFamilyDto } from '@/services/service-catalog/types';
 
+const DEFAULT_FAMILY_COLOR = '#2F6F5E';
+
 interface ServiceFamilyFormProps {
   initialValue?: ServiceFamilyDto;
   onCancel: () => void;
@@ -27,6 +29,9 @@ export function ServiceFamilyForm({
   const [code, setCode] = useState(initialValue?.code ?? '');
   const [name, setName] = useState(initialValue?.name ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
+  const [displayColor, setDisplayColor] = useState(
+    initialValue?.displayColor ?? DEFAULT_FAMILY_COLOR,
+  );
   const [displayOrder, setDisplayOrder] = useState(
     String(initialValue?.displayOrder ?? 0),
   );
@@ -38,6 +43,7 @@ export function ServiceFamilyForm({
       code,
       name,
       description: description || null,
+      displayColor: displayColor.trim().toUpperCase(),
       displayOrder: Number.parseInt(displayOrder, 10) || 0,
       isActive,
     });
@@ -61,6 +67,26 @@ export function ServiceFamilyForm({
             placeholder="Accounting"
             required
           />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormInput
+            id="service-family-color"
+            label="Display color"
+            type="color"
+            value={displayColor}
+            onChange={(event) => setDisplayColor(event.target.value.toUpperCase())}
+            hint="Used for family badges, filters, table accents, and calendar events."
+          />
+          <div className="flex min-h-9 items-center gap-2 self-end rounded-lg border border-border-primary bg-background-primary px-3 py-2">
+            <span
+              aria-hidden="true"
+              className="h-5 w-5 shrink-0 rounded-full border border-border-secondary"
+              style={{ backgroundColor: displayColor }}
+            />
+            <span className="text-sm text-text-primary">
+              {name || 'Family color preview'}
+            </span>
+          </div>
         </div>
         <label className="block text-xs font-medium text-text-secondary">
           Description
