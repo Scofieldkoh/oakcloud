@@ -639,6 +639,8 @@ export type CompanyWhereInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementListRelationFilter
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityListRelationFilter
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
+  serviceCycles?: Prisma.ServiceCycleListRelationFilter
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -720,6 +722,8 @@ export type CompanyOrderByWithRelationInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementOrderByRelationAggregateInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityOrderByRelationAggregateInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchOrderByRelationAggregateInput
+  serviceCycles?: Prisma.ServiceCycleOrderByRelationAggregateInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -805,6 +809,8 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   primaryServiceAgreements?: Prisma.ServiceAgreementListRelationFilter
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityListRelationFilter
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
+  serviceCycles?: Prisma.ServiceCycleListRelationFilter
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
 }, "id" | "tenantId_uen">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -1001,6 +1007,8 @@ export type CompanyCreateInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -1081,6 +1089,8 @@ export type CompanyUncheckedCreateInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -1161,6 +1171,8 @@ export type CompanyUpdateInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1241,6 +1253,8 @@ export type CompanyUncheckedUpdateInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -1959,6 +1973,34 @@ export type CompanyUpdateOneRequiredWithoutClientServicesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutClientServicesInput, Prisma.CompanyUpdateWithoutClientServicesInput>, Prisma.CompanyUncheckedUpdateWithoutClientServicesInput>
 }
 
+export type CompanyCreateNestedOneWithoutServiceCyclesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutServiceCyclesInput, Prisma.CompanyUncheckedCreateWithoutServiceCyclesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutServiceCyclesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutServiceCyclesInput, Prisma.CompanyUncheckedCreateWithoutServiceCyclesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutServiceCyclesInput
+  upsert?: Prisma.CompanyUpsertWithoutServiceCyclesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutServiceCyclesInput, Prisma.CompanyUpdateWithoutServiceCyclesInput>, Prisma.CompanyUncheckedUpdateWithoutServiceCyclesInput>
+}
+
+export type CompanyCreateNestedOneWithoutDeadlineOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlineOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutDeadlineOccurrencesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlineOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutDeadlineOccurrencesInput
+  upsert?: Prisma.CompanyUpsertWithoutDeadlineOccurrencesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutDeadlineOccurrencesInput, Prisma.CompanyUpdateWithoutDeadlineOccurrencesInput>, Prisma.CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput>
+}
+
 export type CompanyCreateNestedOneWithoutEsigningEnvelopesInput = {
   create?: Prisma.XOR<Prisma.CompanyCreateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedCreateWithoutEsigningEnvelopesInput>
   connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutEsigningEnvelopesInput
@@ -2146,6 +2188,8 @@ export type CompanyCreateWithoutTenantInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -2225,6 +2269,8 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -2387,6 +2433,8 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2466,6 +2514,8 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2561,6 +2611,8 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2640,6 +2692,8 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2719,6 +2773,8 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -2798,6 +2854,8 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -2893,6 +2951,8 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -2972,6 +3032,8 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -3051,6 +3113,8 @@ export type CompanyCreateWithoutFormerNamesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -3130,6 +3194,8 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -3225,6 +3291,8 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -3304,6 +3372,8 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -3383,6 +3453,8 @@ export type CompanyCreateWithoutAddressesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -3462,6 +3534,8 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -3557,6 +3631,8 @@ export type CompanyUpdateWithoutAddressesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -3636,6 +3712,8 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -3715,6 +3793,8 @@ export type CompanyCreateWithoutContactsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -3794,6 +3874,8 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -3889,6 +3971,8 @@ export type CompanyUpdateWithoutContactsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -3968,6 +4052,8 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -4047,6 +4133,8 @@ export type CompanyCreateWithoutContactDetailsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -4126,6 +4214,8 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -4221,6 +4311,8 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -4300,6 +4392,8 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -4379,6 +4473,8 @@ export type CompanyCreateWithoutOfficersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -4458,6 +4554,8 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -4553,6 +4651,8 @@ export type CompanyUpdateWithoutOfficersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -4632,6 +4732,8 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -4711,6 +4813,8 @@ export type CompanyCreateWithoutShareCapitalInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -4790,6 +4894,8 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -4885,6 +4991,8 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -4964,6 +5072,8 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditorInput = {
@@ -5043,6 +5153,8 @@ export type CompanyCreateWithoutAuditorInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditorInput = {
@@ -5122,6 +5234,8 @@ export type CompanyUncheckedCreateWithoutAuditorInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditorInput = {
@@ -5217,6 +5331,8 @@ export type CompanyUpdateWithoutAuditorInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditorInput = {
@@ -5296,6 +5412,8 @@ export type CompanyUncheckedUpdateWithoutAuditorInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -5375,6 +5493,8 @@ export type CompanyCreateWithoutShareholdersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -5454,6 +5574,8 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -5549,6 +5671,8 @@ export type CompanyUpdateWithoutShareholdersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -5628,6 +5752,8 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -5707,6 +5833,8 @@ export type CompanyCreateWithoutChargesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -5786,6 +5914,8 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -5881,6 +6011,8 @@ export type CompanyUpdateWithoutChargesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -5960,6 +6092,8 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -6039,6 +6173,8 @@ export type CompanyCreateWithoutDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -6118,6 +6254,8 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -6213,6 +6351,8 @@ export type CompanyUpdateWithoutDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -6292,6 +6432,8 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -6371,6 +6513,8 @@ export type CompanyCreateWithoutAuditLogsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -6450,6 +6594,8 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -6545,6 +6691,8 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -6624,6 +6772,8 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -6703,6 +6853,8 @@ export type CompanyCreateWithoutNoteTabsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -6782,6 +6934,8 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -6877,6 +7031,8 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -6956,6 +7112,8 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -7035,6 +7193,8 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -7114,6 +7274,8 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -7209,6 +7371,8 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -7288,6 +7452,8 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
@@ -7367,6 +7533,8 @@ export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
@@ -7446,6 +7614,8 @@ export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPrimaryGenerationBatchesInput = {
@@ -7541,6 +7711,8 @@ export type CompanyUpdateWithoutPrimaryGenerationBatchesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
@@ -7620,6 +7792,8 @@ export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
@@ -7699,6 +7873,8 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
@@ -7778,6 +7954,8 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPrimaryServiceAgreementsInput = {
@@ -7873,6 +8051,8 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
@@ -7952,6 +8132,8 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
@@ -8031,6 +8213,8 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
@@ -8110,6 +8294,8 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutServiceAgreementEntitiesInput = {
@@ -8205,6 +8391,8 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
@@ -8284,6 +8472,8 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutClientServicesInput = {
@@ -8363,6 +8553,8 @@ export type CompanyCreateWithoutClientServicesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutClientServicesInput = {
@@ -8442,6 +8634,8 @@ export type CompanyUncheckedCreateWithoutClientServicesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutClientServicesInput = {
@@ -8537,6 +8731,8 @@ export type CompanyUpdateWithoutClientServicesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutClientServicesInput = {
@@ -8616,6 +8812,688 @@ export type CompanyUncheckedUpdateWithoutClientServicesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutServiceCyclesInput = {
+  id?: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorUncheckedCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutServiceCyclesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutServiceCyclesInput, Prisma.CompanyUncheckedCreateWithoutServiceCyclesInput>
+}
+
+export type CompanyUpsertWithoutServiceCyclesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutServiceCyclesInput, Prisma.CompanyUncheckedUpdateWithoutServiceCyclesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutServiceCyclesInput, Prisma.CompanyUncheckedCreateWithoutServiceCyclesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutServiceCyclesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutServiceCyclesInput, Prisma.CompanyUncheckedUpdateWithoutServiceCyclesInput>
+}
+
+export type CompanyUpdateWithoutServiceCyclesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUncheckedUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutDeadlineOccurrencesInput = {
+  id?: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorUncheckedCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutDeadlineOccurrencesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlineOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutDeadlineOccurrencesInput>
+}
+
+export type CompanyUpsertWithoutDeadlineOccurrencesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutDeadlineOccurrencesInput, Prisma.CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutDeadlineOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutDeadlineOccurrencesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutDeadlineOccurrencesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutDeadlineOccurrencesInput, Prisma.CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput>
+}
+
+export type CompanyUpdateWithoutDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUncheckedUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningEnvelopesInput = {
@@ -8695,6 +9573,8 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -8774,6 +9654,8 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -8869,6 +9751,8 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -8948,6 +9832,8 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -9027,6 +9913,8 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -9106,6 +9994,8 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -9201,6 +10091,8 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -9280,6 +10172,8 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -9359,6 +10253,8 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -9438,6 +10334,8 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -9533,6 +10431,8 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -9612,6 +10512,8 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -9691,6 +10593,8 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -9770,6 +10674,8 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -9865,6 +10771,8 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -9944,6 +10852,8 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTasksInput = {
@@ -10023,6 +10933,8 @@ export type CompanyCreateWithoutTasksInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTasksInput = {
@@ -10102,6 +11014,8 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTasksInput = {
@@ -10197,6 +11111,8 @@ export type CompanyUpdateWithoutTasksInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTasksInput = {
@@ -10276,6 +11192,8 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskStageOutcomesInput = {
@@ -10355,6 +11273,8 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -10434,6 +11354,8 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -10529,6 +11451,8 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -10608,6 +11532,8 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskRecoveryContextsInput = {
@@ -10687,6 +11613,8 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
@@ -10766,6 +11694,8 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskRecoveryContextsInput = {
@@ -10861,6 +11791,8 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
@@ -10940,6 +11872,8 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyTenantInput = {
@@ -11072,6 +12006,8 @@ export type CompanyUpdateWithoutTenantInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -11151,6 +12087,8 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -11237,6 +12175,8 @@ export type CompanyCountOutputType = {
   primaryServiceAgreements: number
   serviceAgreementEntities: number
   primaryGenerationBatches: number
+  serviceCycles: number
+  deadlineOccurrences: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -11265,6 +12205,8 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   primaryServiceAgreements?: boolean | CompanyCountOutputTypeCountPrimaryServiceAgreementsArgs
   serviceAgreementEntities?: boolean | CompanyCountOutputTypeCountServiceAgreementEntitiesArgs
   primaryGenerationBatches?: boolean | CompanyCountOutputTypeCountPrimaryGenerationBatchesArgs
+  serviceCycles?: boolean | CompanyCountOutputTypeCountServiceCyclesArgs
+  deadlineOccurrences?: boolean | CompanyCountOutputTypeCountDeadlineOccurrencesArgs
 }
 
 /**
@@ -11452,6 +12394,20 @@ export type CompanyCountOutputTypeCountPrimaryGenerationBatchesArgs<ExtArgs exte
   where?: Prisma.DocumentGenerationBatchWhereInput
 }
 
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountServiceCyclesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ServiceCycleWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
 
 export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -11532,6 +12488,8 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   primaryServiceAgreements?: boolean | Prisma.Company$primaryServiceAgreementsArgs<ExtArgs>
   serviceAgreementEntities?: boolean | Prisma.Company$serviceAgreementEntitiesArgs<ExtArgs>
   primaryGenerationBatches?: boolean | Prisma.Company$primaryGenerationBatchesArgs<ExtArgs>
+  serviceCycles?: boolean | Prisma.Company$serviceCyclesArgs<ExtArgs>
+  deadlineOccurrences?: boolean | Prisma.Company$deadlineOccurrencesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -11728,6 +12686,8 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   primaryServiceAgreements?: boolean | Prisma.Company$primaryServiceAgreementsArgs<ExtArgs>
   serviceAgreementEntities?: boolean | Prisma.Company$serviceAgreementEntitiesArgs<ExtArgs>
   primaryGenerationBatches?: boolean | Prisma.Company$primaryGenerationBatchesArgs<ExtArgs>
+  serviceCycles?: boolean | Prisma.Company$serviceCyclesArgs<ExtArgs>
+  deadlineOccurrences?: boolean | Prisma.Company$deadlineOccurrencesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -11767,6 +12727,8 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     primaryServiceAgreements: Prisma.$ServiceAgreementPayload<ExtArgs>[]
     serviceAgreementEntities: Prisma.$ServiceAgreementEntityPayload<ExtArgs>[]
     primaryGenerationBatches: Prisma.$DocumentGenerationBatchPayload<ExtArgs>[]
+    serviceCycles: Prisma.$ServiceCyclePayload<ExtArgs>[]
+    deadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -12241,6 +13203,8 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   primaryServiceAgreements<T extends Prisma.Company$primaryServiceAgreementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$primaryServiceAgreementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceAgreementEntities<T extends Prisma.Company$serviceAgreementEntitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$serviceAgreementEntitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementEntityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   primaryGenerationBatches<T extends Prisma.Company$primaryGenerationBatchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$primaryGenerationBatchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  serviceCycles<T extends Prisma.Company$serviceCyclesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$serviceCyclesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deadlineOccurrences<T extends Prisma.Company$deadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$deadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -13333,6 +14297,54 @@ export type Company$primaryGenerationBatchesArgs<ExtArgs extends runtime.Types.E
   take?: number
   skip?: number
   distinct?: Prisma.DocumentGenerationBatchScalarFieldEnum | Prisma.DocumentGenerationBatchScalarFieldEnum[]
+}
+
+/**
+ * Company.serviceCycles
+ */
+export type Company$serviceCyclesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceCycle
+   */
+  select?: Prisma.ServiceCycleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceCycle
+   */
+  omit?: Prisma.ServiceCycleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceCycleInclude<ExtArgs> | null
+  where?: Prisma.ServiceCycleWhereInput
+  orderBy?: Prisma.ServiceCycleOrderByWithRelationInput | Prisma.ServiceCycleOrderByWithRelationInput[]
+  cursor?: Prisma.ServiceCycleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ServiceCycleScalarFieldEnum | Prisma.ServiceCycleScalarFieldEnum[]
+}
+
+/**
+ * Company.deadlineOccurrences
+ */
+export type Company$deadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrence
+   */
+  select?: Prisma.DeadlineOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrence
+   */
+  omit?: Prisma.DeadlineOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceOrderByWithRelationInput | Prisma.DeadlineOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
 }
 
 /**

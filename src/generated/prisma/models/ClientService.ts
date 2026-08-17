@@ -296,6 +296,9 @@ export type ClientServiceWhereInput = {
   agreementItem?: Prisma.XOR<Prisma.ServiceAgreementItemNullableScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput> | null
   serviceVariant?: Prisma.XOR<Prisma.ServiceVariantScalarRelationFilter, Prisma.ServiceVariantWhereInput>
   feeLines?: Prisma.ClientServiceFeeLineListRelationFilter
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleListRelationFilter
+  serviceCycles?: Prisma.ServiceCycleListRelationFilter
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
 }
 
 export type ClientServiceOrderByWithRelationInput = {
@@ -324,6 +327,9 @@ export type ClientServiceOrderByWithRelationInput = {
   agreementItem?: Prisma.ServiceAgreementItemOrderByWithRelationInput
   serviceVariant?: Prisma.ServiceVariantOrderByWithRelationInput
   feeLines?: Prisma.ClientServiceFeeLineOrderByRelationAggregateInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleOrderByRelationAggregateInput
+  serviceCycles?: Prisma.ServiceCycleOrderByRelationAggregateInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
 }
 
 export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
@@ -356,6 +362,9 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   agreementItem?: Prisma.XOR<Prisma.ServiceAgreementItemNullableScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput> | null
   serviceVariant?: Prisma.XOR<Prisma.ServiceVariantScalarRelationFilter, Prisma.ServiceVariantWhereInput>
   feeLines?: Prisma.ClientServiceFeeLineListRelationFilter
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleListRelationFilter
+  serviceCycles?: Prisma.ServiceCycleListRelationFilter
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
 }, "id" | "agreementItemId_companyId">
 
 export type ClientServiceOrderByWithAggregationInput = {
@@ -429,6 +438,9 @@ export type ClientServiceCreateInput = {
   agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateInput = {
@@ -452,6 +464,9 @@ export type ClientServiceUncheckedCreateInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUpdateInput = {
@@ -475,6 +490,9 @@ export type ClientServiceUpdateInput = {
   agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateInput = {
@@ -498,6 +516,9 @@ export type ClientServiceUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateManyInput = {
@@ -877,6 +898,48 @@ export type ClientServiceUpdateOneRequiredWithoutFeeLinesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutFeeLinesInput, Prisma.ClientServiceUpdateWithoutFeeLinesInput>, Prisma.ClientServiceUncheckedUpdateWithoutFeeLinesInput>
 }
 
+export type ClientServiceCreateNestedOneWithoutDeadlineRulesInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineRulesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineRulesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutDeadlineRulesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+}
+
+export type ClientServiceUpdateOneRequiredWithoutDeadlineRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineRulesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineRulesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutDeadlineRulesInput
+  upsert?: Prisma.ClientServiceUpsertWithoutDeadlineRulesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutDeadlineRulesInput, Prisma.ClientServiceUpdateWithoutDeadlineRulesInput>, Prisma.ClientServiceUncheckedUpdateWithoutDeadlineRulesInput>
+}
+
+export type ClientServiceCreateNestedOneWithoutServiceCyclesInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutServiceCyclesInput, Prisma.ClientServiceUncheckedCreateWithoutServiceCyclesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutServiceCyclesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+}
+
+export type ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutServiceCyclesInput, Prisma.ClientServiceUncheckedCreateWithoutServiceCyclesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutServiceCyclesInput
+  upsert?: Prisma.ClientServiceUpsertWithoutServiceCyclesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutServiceCyclesInput, Prisma.ClientServiceUpdateWithoutServiceCyclesInput>, Prisma.ClientServiceUncheckedUpdateWithoutServiceCyclesInput>
+}
+
+export type ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutDeadlineOccurrencesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+}
+
+export type ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutDeadlineOccurrencesInput
+  upsert?: Prisma.ClientServiceUpsertWithoutDeadlineOccurrencesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUpdateWithoutDeadlineOccurrencesInput>, Prisma.ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput>
+}
+
 export type ClientServiceCreateWithoutTenantInput = {
   id?: string
   source?: $Enums.ClientServiceSource
@@ -897,6 +960,9 @@ export type ClientServiceCreateWithoutTenantInput = {
   agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutTenantInput = {
@@ -919,6 +985,9 @@ export type ClientServiceUncheckedCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutTenantInput = {
@@ -992,6 +1061,9 @@ export type ClientServiceCreateWithoutCompanyInput = {
   agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutCompanyInput = {
@@ -1014,6 +1086,9 @@ export type ClientServiceUncheckedCreateWithoutCompanyInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutCompanyInput = {
@@ -1062,6 +1137,9 @@ export type ClientServiceCreateWithoutServiceVariantInput = {
   agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
   agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
@@ -1084,6 +1162,9 @@ export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutServiceVariantInput = {
@@ -1132,6 +1213,9 @@ export type ClientServiceCreateWithoutAgreementInput = {
   agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutAgreementInput = {
@@ -1154,6 +1238,9 @@ export type ClientServiceUncheckedCreateWithoutAgreementInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutAgreementInput = {
@@ -1202,6 +1289,9 @@ export type ClientServiceCreateWithoutAgreementItemInput = {
   agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
@@ -1224,6 +1314,9 @@ export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
   deletedAt?: Date | string | null
   deletedReason?: string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutAgreementItemInput = {
@@ -1272,6 +1365,9 @@ export type ClientServiceCreateWithoutFeeLinesInput = {
   agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
   agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
   serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
@@ -1294,6 +1390,9 @@ export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutFeeLinesInput = {
@@ -1332,6 +1431,9 @@ export type ClientServiceUpdateWithoutFeeLinesInput = {
   agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
   agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
@@ -1354,6 +1456,357 @@ export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceCreateWithoutDeadlineRulesInput = {
+  id?: string
+  source?: $Enums.ClientServiceSource
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
+  company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
+  feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceUncheckedCreateWithoutDeadlineRulesInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
+  serviceVariantId: string
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceCreateOrConnectWithoutDeadlineRulesInput = {
+  where: Prisma.ClientServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineRulesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineRulesInput>
+}
+
+export type ClientServiceUpsertWithoutDeadlineRulesInput = {
+  update: Prisma.XOR<Prisma.ClientServiceUpdateWithoutDeadlineRulesInput, Prisma.ClientServiceUncheckedUpdateWithoutDeadlineRulesInput>
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineRulesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineRulesInput>
+  where?: Prisma.ClientServiceWhereInput
+}
+
+export type ClientServiceUpdateToOneWithWhereWithoutDeadlineRulesInput = {
+  where?: Prisma.ClientServiceWhereInput
+  data: Prisma.XOR<Prisma.ClientServiceUpdateWithoutDeadlineRulesInput, Prisma.ClientServiceUncheckedUpdateWithoutDeadlineRulesInput>
+}
+
+export type ClientServiceUpdateWithoutDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
+  serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
+  feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceUncheckedUpdateWithoutDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceCreateWithoutServiceCyclesInput = {
+  id?: string
+  source?: $Enums.ClientServiceSource
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
+  company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
+  feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceUncheckedCreateWithoutServiceCyclesInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
+  serviceVariantId: string
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceCreateOrConnectWithoutServiceCyclesInput = {
+  where: Prisma.ClientServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutServiceCyclesInput, Prisma.ClientServiceUncheckedCreateWithoutServiceCyclesInput>
+}
+
+export type ClientServiceUpsertWithoutServiceCyclesInput = {
+  update: Prisma.XOR<Prisma.ClientServiceUpdateWithoutServiceCyclesInput, Prisma.ClientServiceUncheckedUpdateWithoutServiceCyclesInput>
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutServiceCyclesInput, Prisma.ClientServiceUncheckedCreateWithoutServiceCyclesInput>
+  where?: Prisma.ClientServiceWhereInput
+}
+
+export type ClientServiceUpdateToOneWithWhereWithoutServiceCyclesInput = {
+  where?: Prisma.ClientServiceWhereInput
+  data: Prisma.XOR<Prisma.ClientServiceUpdateWithoutServiceCyclesInput, Prisma.ClientServiceUncheckedUpdateWithoutServiceCyclesInput>
+}
+
+export type ClientServiceUpdateWithoutServiceCyclesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
+  serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
+  feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceUncheckedUpdateWithoutServiceCyclesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceCreateWithoutDeadlineOccurrencesInput = {
+  id?: string
+  source?: $Enums.ClientServiceSource
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
+  company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
+  feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
+  serviceVariantId: string
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceCreateOrConnectWithoutDeadlineOccurrencesInput = {
+  where: Prisma.ClientServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput>
+}
+
+export type ClientServiceUpsertWithoutDeadlineOccurrencesInput = {
+  update: Prisma.XOR<Prisma.ClientServiceUpdateWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput>
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput>
+  where?: Prisma.ClientServiceWhereInput
+}
+
+export type ClientServiceUpdateToOneWithWhereWithoutDeadlineOccurrencesInput = {
+  where?: Prisma.ClientServiceWhereInput
+  data: Prisma.XOR<Prisma.ClientServiceUpdateWithoutDeadlineOccurrencesInput, Prisma.ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput>
+}
+
+export type ClientServiceUpdateWithoutDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
+  serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
+  feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateManyTenantInput = {
@@ -1397,6 +1850,9 @@ export type ClientServiceUpdateWithoutTenantInput = {
   agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutTenantInput = {
@@ -1419,6 +1875,9 @@ export type ClientServiceUncheckedUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutTenantInput = {
@@ -1483,6 +1942,9 @@ export type ClientServiceUpdateWithoutCompanyInput = {
   agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
@@ -1505,6 +1967,9 @@ export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutCompanyInput = {
@@ -1569,6 +2034,9 @@ export type ClientServiceUpdateWithoutServiceVariantInput = {
   agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
   agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
@@ -1591,6 +2059,9 @@ export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutServiceVariantInput = {
@@ -1655,6 +2126,9 @@ export type ClientServiceUpdateWithoutAgreementInput = {
   agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
@@ -1677,6 +2151,9 @@ export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutAgreementInput = {
@@ -1741,6 +2218,9 @@ export type ClientServiceUpdateWithoutAgreementItemInput = {
   agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
   serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
@@ -1763,6 +2243,9 @@ export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutAgreementItemInput = {
@@ -1793,10 +2276,16 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementItemInput = {
 
 export type ClientServiceCountOutputType = {
   feeLines: number
+  deadlineRules: number
+  serviceCycles: number
+  deadlineOccurrences: number
 }
 
 export type ClientServiceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   feeLines?: boolean | ClientServiceCountOutputTypeCountFeeLinesArgs
+  deadlineRules?: boolean | ClientServiceCountOutputTypeCountDeadlineRulesArgs
+  serviceCycles?: boolean | ClientServiceCountOutputTypeCountServiceCyclesArgs
+  deadlineOccurrences?: boolean | ClientServiceCountOutputTypeCountDeadlineOccurrencesArgs
 }
 
 /**
@@ -1814,6 +2303,27 @@ export type ClientServiceCountOutputTypeDefaultArgs<ExtArgs extends runtime.Type
  */
 export type ClientServiceCountOutputTypeCountFeeLinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ClientServiceFeeLineWhereInput
+}
+
+/**
+ * ClientServiceCountOutputType without action
+ */
+export type ClientServiceCountOutputTypeCountDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceDeadlineRuleWhereInput
+}
+
+/**
+ * ClientServiceCountOutputType without action
+ */
+export type ClientServiceCountOutputTypeCountServiceCyclesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ServiceCycleWhereInput
+}
+
+/**
+ * ClientServiceCountOutputType without action
+ */
+export type ClientServiceCountOutputTypeCountDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
 }
 
 
@@ -1843,6 +2353,9 @@ export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
   feeLines?: boolean | Prisma.ClientService$feeLinesArgs<ExtArgs>
+  deadlineRules?: boolean | Prisma.ClientService$deadlineRulesArgs<ExtArgs>
+  serviceCycles?: boolean | Prisma.ClientService$serviceCyclesArgs<ExtArgs>
+  deadlineOccurrences?: boolean | Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs>
   _count?: boolean | Prisma.ClientServiceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["clientService"]>
 
@@ -1930,6 +2443,9 @@ export type ClientServiceInclude<ExtArgs extends runtime.Types.Extensions.Intern
   agreementItem?: boolean | Prisma.ClientService$agreementItemArgs<ExtArgs>
   serviceVariant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
   feeLines?: boolean | Prisma.ClientService$feeLinesArgs<ExtArgs>
+  deadlineRules?: boolean | Prisma.ClientService$deadlineRulesArgs<ExtArgs>
+  serviceCycles?: boolean | Prisma.ClientService$serviceCyclesArgs<ExtArgs>
+  deadlineOccurrences?: boolean | Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs>
   _count?: boolean | Prisma.ClientServiceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ClientServiceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1956,6 +2472,9 @@ export type $ClientServicePayload<ExtArgs extends runtime.Types.Extensions.Inter
     agreementItem: Prisma.$ServiceAgreementItemPayload<ExtArgs> | null
     serviceVariant: Prisma.$ServiceVariantPayload<ExtArgs>
     feeLines: Prisma.$ClientServiceFeeLinePayload<ExtArgs>[]
+    deadlineRules: Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>[]
+    serviceCycles: Prisma.$ServiceCyclePayload<ExtArgs>[]
+    deadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2377,6 +2896,9 @@ export interface Prisma__ClientServiceClient<T, Null = never, ExtArgs extends ru
   agreementItem<T extends Prisma.ClientService$agreementItemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$agreementItemArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementItemClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   serviceVariant<T extends Prisma.ServiceVariantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceVariantDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceVariantClient<runtime.Types.Result.GetResult<Prisma.$ServiceVariantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   feeLines<T extends Prisma.ClientService$feeLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$feeLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceFeeLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deadlineRules<T extends Prisma.ClientService$deadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$deadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  serviceCycles<T extends Prisma.ClientService$serviceCyclesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$serviceCyclesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deadlineOccurrences<T extends Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2880,6 +3402,78 @@ export type ClientService$feeLinesArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.ClientServiceFeeLineScalarFieldEnum | Prisma.ClientServiceFeeLineScalarFieldEnum[]
+}
+
+/**
+ * ClientService.deadlineRules
+ */
+export type ClientService$deadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientServiceDeadlineRule
+   */
+  select?: Prisma.ClientServiceDeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientServiceDeadlineRule
+   */
+  omit?: Prisma.ClientServiceDeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceDeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceDeadlineRuleWhereInput
+  orderBy?: Prisma.ClientServiceDeadlineRuleOrderByWithRelationInput | Prisma.ClientServiceDeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceDeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceDeadlineRuleScalarFieldEnum | Prisma.ClientServiceDeadlineRuleScalarFieldEnum[]
+}
+
+/**
+ * ClientService.serviceCycles
+ */
+export type ClientService$serviceCyclesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceCycle
+   */
+  select?: Prisma.ServiceCycleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceCycle
+   */
+  omit?: Prisma.ServiceCycleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceCycleInclude<ExtArgs> | null
+  where?: Prisma.ServiceCycleWhereInput
+  orderBy?: Prisma.ServiceCycleOrderByWithRelationInput | Prisma.ServiceCycleOrderByWithRelationInput[]
+  cursor?: Prisma.ServiceCycleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ServiceCycleScalarFieldEnum | Prisma.ServiceCycleScalarFieldEnum[]
+}
+
+/**
+ * ClientService.deadlineOccurrences
+ */
+export type ClientService$deadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrence
+   */
+  select?: Prisma.DeadlineOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrence
+   */
+  omit?: Prisma.DeadlineOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceOrderByWithRelationInput | Prisma.DeadlineOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
 }
 
 /**

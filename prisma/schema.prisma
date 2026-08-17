@@ -8,74 +8,85 @@ datasource db {
 }
 
 model Workspace {
-  id                          String                       @id @default(uuid())
-  name                        String
-  slug                        String                       @unique
-  status                      WorkspaceStatus              @default(PENDING_SETUP)
-  contactEmail                String?
-  contactPhone                String?
-  settings                    Json?
-  maxUsers                    Int                          @default(50)
-  maxCompanies                Int                          @default(100)
-  maxStorageMb                Int                          @default(10240)
-  logoUrl                     String?
-  primaryColor                String?                      @default("#294d44")
-  createdAt                   DateTime                     @default(now())
-  updatedAt                   DateTime                     @updatedAt
-  deletedAt                   DateTime?
-  deletedReason               String?
-  activatedAt                 DateTime?
-  suspendedAt                 DateTime?
-  suspendReason               String?
-  aiConversations             AiConversation[]
-  auditLogs                   AuditLog[]
-  backupSchedule              BackupSchedule?
-  chartOfAccounts             ChartOfAccount[]
-  companies                   Company[]
-  connectorUsageLogs          ConnectorUsageLog[]
-  connectors                  Connector[]
-  contactDetails              ContactDetail[]
-  contacts                    Contact[]
-  documentTemplates           DocumentTemplate[]
-  documents                   Document[]
-  exchangeRates               ExchangeRate[]
-  formFields                  FormField[]
-  formOptionPresets           FormOptionPreset[]
-  formUrlHealth               FormUrlHealth[]
-  formDrafts                  FormDraft[]
-  formSubmissions             FormSubmission[]
-  formUploads                 FormUpload[]
-  forms                       Form[]
-  generatedDocuments          GeneratedDocument[]
-  esigningEmailDeliveries     EsigningEmailDelivery[]
-  esigningEnvelopes           EsigningEnvelope[]
-  taskEsigningPreparations    TaskEsigningPreparation[]
-  roles                       Role[]
-  templatePartials            TemplatePartial[]
-  serviceFamilies             ServiceFamily[]
-  serviceVariants             ServiceVariant[]
-  serviceVariantFeeTemplates  ServiceVariantFeeTemplate[]
-  serviceAgreements           ServiceAgreement[]
-  serviceAgreementEntities    ServiceAgreementEntity[]
-  serviceAgreementItems       ServiceAgreementItem[]
-  serviceAgreementItemEntities ServiceAgreementItemEntity[]
-  serviceAgreementFeeLines    ServiceAgreementFeeLine[]
-  clientServices              ClientService[]
-  clientServiceFeeLines       ClientServiceFeeLine[]
-  backups                     WorkspaceBackup[]
-  connectorAccess             WorkspaceConnectorAccess[]
-  letterhead                  WorkspaceLetterhead?
-  users                       User[]
-  taskPipelines               TaskPipeline[]
-  taskPipelineVersions        TaskPipelineVersion[]
-  taskPipelineStages          TaskPipelineStage[]
-  tasks                       Task[]
-  taskStages                  TaskStage[]
-  taskStageChecklistItems     TaskStageChecklistItem[]
-  taskStageOutcomes           TaskStageOutcome[]
-  taskCompanyRecoveryContexts TaskCompanyRecoveryContext[]
-  documentGenerationBatches   DocumentGenerationBatch[]
-  documentGenerationBatchItems DocumentGenerationBatchItem[]
+  id                               String                                 @id @default(uuid())
+  name                             String
+  slug                             String                                 @unique
+  status                           WorkspaceStatus                        @default(PENDING_SETUP)
+  contactEmail                     String?
+  contactPhone                     String?
+  settings                         Json?
+  maxUsers                         Int                                    @default(50)
+  maxCompanies                     Int                                    @default(100)
+  maxStorageMb                     Int                                    @default(10240)
+  logoUrl                          String?
+  primaryColor                     String?                                @default("#294d44")
+  createdAt                        DateTime                               @default(now())
+  updatedAt                        DateTime                               @updatedAt
+  deletedAt                        DateTime?
+  deletedReason                    String?
+  activatedAt                      DateTime?
+  suspendedAt                      DateTime?
+  suspendReason                    String?
+  aiConversations                  AiConversation[]
+  auditLogs                        AuditLog[]
+  backupSchedule                   BackupSchedule?
+  chartOfAccounts                  ChartOfAccount[]
+  companies                        Company[]
+  connectorUsageLogs               ConnectorUsageLog[]
+  connectors                       Connector[]
+  contactDetails                   ContactDetail[]
+  contacts                         Contact[]
+  documentTemplates                DocumentTemplate[]
+  documents                        Document[]
+  exchangeRates                    ExchangeRate[]
+  formFields                       FormField[]
+  formOptionPresets                FormOptionPreset[]
+  formUrlHealth                    FormUrlHealth[]
+  formDrafts                       FormDraft[]
+  formSubmissions                  FormSubmission[]
+  formUploads                      FormUpload[]
+  forms                            Form[]
+  generatedDocuments               GeneratedDocument[]
+  esigningEmailDeliveries          EsigningEmailDelivery[]
+  esigningEnvelopes                EsigningEnvelope[]
+  taskEsigningPreparations         TaskEsigningPreparation[]
+  roles                            Role[]
+  templatePartials                 TemplatePartial[]
+  serviceFamilies                  ServiceFamily[]
+  serviceVariants                  ServiceVariant[]
+  serviceVariantFeeTemplates       ServiceVariantFeeTemplate[]
+  serviceAgreements                ServiceAgreement[]
+  serviceAgreementEntities         ServiceAgreementEntity[]
+  serviceAgreementItems            ServiceAgreementItem[]
+  serviceAgreementItemEntities     ServiceAgreementItemEntity[]
+  serviceAgreementFeeLines         ServiceAgreementFeeLine[]
+  clientServices                   ClientService[]
+  clientServiceFeeLines            ClientServiceFeeLine[]
+  deadlineRules                    DeadlineRule[]
+  deadlineRuleVersions             DeadlineRuleVersion[]
+  deadlineRuleParameterDefinitions DeadlineRuleParameterDefinition[]
+  deadlineMilestoneTemplates       DeadlineMilestoneTemplate[]
+  serviceVariantDeadlineRules      ServiceVariantDeadlineRule[]
+  clientServiceDeadlineRules       ClientServiceDeadlineRule[]
+  businessCalendars                BusinessCalendar[]
+  businessHolidays                 BusinessHoliday[]
+  serviceCycles                    ServiceCycle[]
+  deadlineOccurrences              DeadlineOccurrence[]
+  reconciliationRequests           ServiceScheduleReconciliationRequest[]
+  backups                          WorkspaceBackup[]
+  connectorAccess                  WorkspaceConnectorAccess[]
+  letterhead                       WorkspaceLetterhead?
+  users                            User[]
+  taskPipelines                    TaskPipeline[]
+  taskPipelineVersions             TaskPipelineVersion[]
+  taskPipelineStages               TaskPipelineStage[]
+  tasks                            Task[]
+  taskStages                       TaskStage[]
+  taskStageChecklistItems          TaskStageChecklistItem[]
+  taskStageOutcomes                TaskStageOutcome[]
+  taskCompanyRecoveryContexts      TaskCompanyRecoveryContext[]
+  documentGenerationBatches        DocumentGenerationBatch[]
+  documentGenerationBatchItems     DocumentGenerationBatchItem[]
 
   @@index([slug])
   @@index([status])
@@ -147,43 +158,55 @@ model UserRoleAssignment {
 }
 
 model User {
-  id                                String                    @id @default(uuid())
-  email                             String                    @unique
-  passwordHash                      String
-  firstName                         String
-  lastName                          String
-  isActive                          Boolean                   @default(true)
-  lastLoginAt                       DateTime?
-  createdAt                         DateTime                  @default(now())
-  updatedAt                         DateTime                  @updatedAt
-  deletedAt                         DateTime?
-  mustChangePassword                Boolean                   @default(false)
-  passwordResetToken                String?                   @unique
-  passwordResetExpires              DateTime?
-  passwordChangedAt                 DateTime?
-  tenantId                          String?
-  aiConversations                   AiConversation[]          @relation("ConversationOwner")
-  auditLogs                         AuditLog[]
-  connectorUsageLogs                ConnectorUsageLog[]
-  hiddenComments                    DocumentComment[]         @relation("CommentHider")
-  resolvedComments                  DocumentComment[]         @relation("CommentResolver")
-  authoredComments                  DocumentComment[]         @relation("CommentAuthor")
-  documentDrafts                    DocumentDraft[]           @relation("DraftAuthor")
-  createdTemplates                  DocumentTemplate[]        @relation("TemplateCreator")
-  uploadedDocuments                 Document[]
-  createdDocuments                  GeneratedDocument[]       @relation("DocumentCreator")
-  createdEsigningEnvelopes          EsigningEnvelope[]        @relation("EsigningEnvelopeCreatedBy")
-  initiatedTaskEsigningPreparations TaskEsigningPreparation[] @relation("TaskEsigningPreparationInitiator")
-  finalizedDocuments                GeneratedDocument[]       @relation("DocumentFinalizer")
-  createdPartials                   TemplatePartial[]         @relation("PartialCreator")
-  companyAssignments                UserCompanyAssignment[]
-  preferences                       UserPreference[]
-  roleAssignments                   UserRoleAssignment[]
-  tenant                            Workspace?                @relation(fields: [tenantId], references: [id])
-  ownedTasks                        Task[]                    @relation("TaskOwner")
-  assignedTaskStages                TaskStage[]               @relation("TaskStageAssignee")
-  requestedServiceAgreementActivations ServiceAgreement[]     @relation("ServiceAgreementActivationRequester")
-  createdGenerationBatches             DocumentGenerationBatch[] @relation("DocumentGenerationBatchCreator")
+  id                                   String                                 @id @default(uuid())
+  email                                String                                 @unique
+  passwordHash                         String
+  firstName                            String
+  lastName                             String
+  isActive                             Boolean                                @default(true)
+  lastLoginAt                          DateTime?
+  createdAt                            DateTime                               @default(now())
+  updatedAt                            DateTime                               @updatedAt
+  deletedAt                            DateTime?
+  mustChangePassword                   Boolean                                @default(false)
+  passwordResetToken                   String?                                @unique
+  passwordResetExpires                 DateTime?
+  passwordChangedAt                    DateTime?
+  tenantId                             String?
+  aiConversations                      AiConversation[]                       @relation("ConversationOwner")
+  auditLogs                            AuditLog[]
+  connectorUsageLogs                   ConnectorUsageLog[]
+  hiddenComments                       DocumentComment[]                      @relation("CommentHider")
+  resolvedComments                     DocumentComment[]                      @relation("CommentResolver")
+  authoredComments                     DocumentComment[]                      @relation("CommentAuthor")
+  documentDrafts                       DocumentDraft[]                        @relation("DraftAuthor")
+  createdTemplates                     DocumentTemplate[]                     @relation("TemplateCreator")
+  uploadedDocuments                    Document[]
+  createdDocuments                     GeneratedDocument[]                    @relation("DocumentCreator")
+  createdEsigningEnvelopes             EsigningEnvelope[]                     @relation("EsigningEnvelopeCreatedBy")
+  initiatedTaskEsigningPreparations    TaskEsigningPreparation[]              @relation("TaskEsigningPreparationInitiator")
+  finalizedDocuments                   GeneratedDocument[]                    @relation("DocumentFinalizer")
+  createdPartials                      TemplatePartial[]                      @relation("PartialCreator")
+  companyAssignments                   UserCompanyAssignment[]
+  preferences                          UserPreference[]
+  roleAssignments                      UserRoleAssignment[]
+  tenant                               Workspace?                             @relation(fields: [tenantId], references: [id])
+  ownedTasks                           Task[]                                 @relation("TaskOwner")
+  assignedTaskStages                   TaskStage[]                            @relation("TaskStageAssignee")
+  requestedServiceAgreementActivations ServiceAgreement[]                     @relation("ServiceAgreementActivationRequester")
+  createdGenerationBatches             DocumentGenerationBatch[]              @relation("DocumentGenerationBatchCreator")
+  createdDeadlineRules                 DeadlineRule[]                         @relation("DeadlineRuleCreator")
+  updatedDeadlineRules                 DeadlineRule[]                         @relation("DeadlineRuleUpdater")
+  archivedDeadlineRules                DeadlineRule[]                         @relation("DeadlineRuleArchiver")
+  createdDeadlineRuleVersions          DeadlineRuleVersion[]                  @relation("DeadlineRuleVersionCreator")
+  publishedDeadlineRuleVersions        DeadlineRuleVersion[]                  @relation("DeadlineRuleVersionPublisher")
+  updatedClientServiceDeadlineRules    ClientServiceDeadlineRule[]            @relation("ClientServiceDeadlineRuleUpdater")
+  createdServiceCycles                 ServiceCycle[]                         @relation("ServiceCycleCreator")
+  overriddenDeadlineOccurrences        DeadlineOccurrence[]                   @relation("DeadlineOccurrenceOverrideActor")
+  completedDeadlineOccurrences         DeadlineOccurrence[]                   @relation("DeadlineOccurrenceCompletionActor")
+  waivedDeadlineOccurrences            DeadlineOccurrence[]                   @relation("DeadlineOccurrenceWaiverActor")
+  cancelledDeadlineOccurrences         DeadlineOccurrence[]                   @relation("DeadlineOccurrenceCancellationActor")
+  requestedScheduleReconciliations     ServiceScheduleReconciliationRequest[] @relation("ScheduleReconciliationRequester")
 
   @@index([email])
   @@index([tenantId])
@@ -314,9 +337,11 @@ model Company {
   tasks                       Task[]
   taskStageOutcomes           TaskStageOutcome[]
   taskRecoveryContexts        TaskCompanyRecoveryContext[]
-  primaryServiceAgreements    ServiceAgreement[]       @relation("ServiceAgreementPrimaryCompany")
+  primaryServiceAgreements    ServiceAgreement[]           @relation("ServiceAgreementPrimaryCompany")
   serviceAgreementEntities    ServiceAgreementEntity[]
-  primaryGenerationBatches    DocumentGenerationBatch[] @relation("DocumentGenerationBatchPrimaryCompany")
+  primaryGenerationBatches    DocumentGenerationBatch[]    @relation("DocumentGenerationBatchPrimaryCompany")
+  serviceCycles               ServiceCycle[]
+  deadlineOccurrences         DeadlineOccurrence[]
 
   @@unique([tenantId, uen])
   @@index([tenantId])
@@ -383,33 +408,33 @@ model CompanyAddress {
 }
 
 model Contact {
-  id                   String               @id @default(uuid())
-  tenantId             String
-  contactType          ContactType          @default(INDIVIDUAL)
-  firstName            String?
-  lastName             String?
-  fullName             String
-  canonicalName        String?
-  alias                String?
-  canonicalAlias       String?
-  identificationType   IdentificationType?
-  identificationNumber String?
-  nationality          String?
-  dateOfBirth          DateTime?
-  corporateName        String?
-  corporateUen         String?
-  fullAddress          String?
-  isActive             Boolean              @default(true)
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  deletedAt            DateTime?
-  chargeHoldings       CompanyCharge[]
-  companyRelations     CompanyContact[]
-  officerPositions     CompanyOfficer[]
-  shareholdings        CompanyShareholder[]
-  contactDetails       ContactDetail[]
-  tenant               Workspace            @relation(fields: [tenantId], references: [id])
-  noteTabs             NoteTab[]
+  id                          String               @id @default(uuid())
+  tenantId                    String
+  contactType                 ContactType          @default(INDIVIDUAL)
+  firstName                   String?
+  lastName                    String?
+  fullName                    String
+  canonicalName               String?
+  alias                       String?
+  canonicalAlias              String?
+  identificationType          IdentificationType?
+  identificationNumber        String?
+  nationality                 String?
+  dateOfBirth                 DateTime?
+  corporateName               String?
+  corporateUen                String?
+  fullAddress                 String?
+  isActive                    Boolean              @default(true)
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  deletedAt                   DateTime?
+  chargeHoldings              CompanyCharge[]
+  companyRelations            CompanyContact[]
+  officerPositions            CompanyOfficer[]
+  shareholdings               CompanyShareholder[]
+  contactDetails              ContactDetail[]
+  tenant                      Workspace            @relation(fields: [tenantId], references: [id])
+  noteTabs                    NoteTab[]
   authorizedServiceAgreements ServiceAgreement[]
 
   @@unique([tenantId, identificationType, identificationNumber])
@@ -798,24 +823,24 @@ model NoteTab {
 }
 
 model DocumentTemplate {
-  id                 String                          @id @default(uuid())
-  tenantId           String                          @map("tenant_id")
-  name               String                          @db.VarChar(200)
-  description        String?
-  category           DocumentTemplateCategory        @default(OTHER)
-  compositionType DocumentTemplateCompositionType @default(STANDARD) @map("composition_type")
-  content            String
-  contentJson        Json?                           @map("content_json")
-  placeholders       Json                            @default("[]")
-  isActive           Boolean                         @default(true) @map("is_active")
-  version            Int                             @default(1)
-  createdById        String                          @map("created_by_id")
-  createdAt          DateTime                        @default(now()) @map("created_at")
-  updatedAt          DateTime                        @updatedAt @map("updated_at")
-  deletedAt          DateTime?                       @map("deleted_at")
-  createdBy          User                            @relation("TemplateCreator", fields: [createdById], references: [id])
-  tenant             Workspace                       @relation(fields: [tenantId], references: [id])
-  generatedDocuments GeneratedDocument[]
+  id                   String                          @id @default(uuid())
+  tenantId             String                          @map("tenant_id")
+  name                 String                          @db.VarChar(200)
+  description          String?
+  category             DocumentTemplateCategory        @default(OTHER)
+  compositionType      DocumentTemplateCompositionType @default(STANDARD) @map("composition_type")
+  content              String
+  contentJson          Json?                           @map("content_json")
+  placeholders         Json                            @default("[]")
+  isActive             Boolean                         @default(true) @map("is_active")
+  version              Int                             @default(1)
+  createdById          String                          @map("created_by_id")
+  createdAt            DateTime                        @default(now()) @map("created_at")
+  updatedAt            DateTime                        @updatedAt @map("updated_at")
+  deletedAt            DateTime?                       @map("deleted_at")
+  createdBy            User                            @relation("TemplateCreator", fields: [createdById], references: [id])
+  tenant               Workspace                       @relation(fields: [tenantId], references: [id])
+  generatedDocuments   GeneratedDocument[]
   generationBatchItems DocumentGenerationBatchItem[]
 
   @@index([tenantId])
@@ -826,33 +851,33 @@ model DocumentTemplate {
 }
 
 model GeneratedDocument {
-  id                        String                     @id @default(uuid())
-  tenantId                  String                     @map("tenant_id")
-  templateId                String?                    @map("template_id")
-  templateVersion           Int?                       @map("template_version")
-  companyId                 String?                    @map("company_id")
-  title                     String                     @db.VarChar(300)
+  id                        String                       @id @default(uuid())
+  tenantId                  String                       @map("tenant_id")
+  templateId                String?                      @map("template_id")
+  templateVersion           Int?                         @map("template_version")
+  companyId                 String?                      @map("company_id")
+  title                     String                       @db.VarChar(300)
   content                   String
-  contentJson               Json?                      @map("content_json")
-  status                    GeneratedDocumentStatus    @default(DRAFT)
-  finalizedAt               DateTime?                  @map("finalized_at")
-  finalizedById             String?                    @map("finalized_by_id")
-  unfinalizedAt             DateTime?                  @map("unfinalized_at")
-  useLetterhead             Boolean                    @default(true) @map("use_letterhead")
-  placeholderData           Json?                      @map("placeholder_data")
+  contentJson               Json?                        @map("content_json")
+  status                    GeneratedDocumentStatus      @default(DRAFT)
+  finalizedAt               DateTime?                    @map("finalized_at")
+  finalizedById             String?                      @map("finalized_by_id")
+  unfinalizedAt             DateTime?                    @map("unfinalized_at")
+  useLetterhead             Boolean                      @default(true) @map("use_letterhead")
+  placeholderData           Json?                        @map("placeholder_data")
   metadata                  Json?
-  createdById               String                     @map("created_by_id")
-  createdAt                 DateTime                   @default(now()) @map("created_at")
-  updatedAt                 DateTime                   @updatedAt @map("updated_at")
-  deletedAt                 DateTime?                  @map("deleted_at")
+  createdById               String                       @map("created_by_id")
+  createdAt                 DateTime                     @default(now()) @map("created_at")
+  updatedAt                 DateTime                     @updatedAt @map("updated_at")
+  deletedAt                 DateTime?                    @map("deleted_at")
   comments                  DocumentComment[]
   drafts                    DocumentDraft[]
   sections                  DocumentSection[]
-  company                   Company?                   @relation(fields: [companyId], references: [id])
-  createdBy                 User                       @relation("DocumentCreator", fields: [createdById], references: [id])
-  finalizedBy               User?                      @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
-  template                  DocumentTemplate?          @relation(fields: [templateId], references: [id])
-  tenant                    Workspace                  @relation(fields: [tenantId], references: [id])
+  company                   Company?                     @relation(fields: [companyId], references: [id])
+  createdBy                 User                         @relation("DocumentCreator", fields: [createdById], references: [id])
+  finalizedBy               User?                        @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
+  template                  DocumentTemplate?            @relation(fields: [templateId], references: [id])
+  tenant                    Workspace                    @relation(fields: [tenantId], references: [id])
   taskStageOutcomes         TaskStageOutcome[]
   esigningEnvelopeDocuments EsigningEnvelopeDocument[]
   taskEsigningPreparations  TaskEsigningPreparation[]
@@ -898,31 +923,31 @@ model DocumentGenerationBatch {
 }
 
 model DocumentGenerationBatchItem {
-  id                  String                            @id @default(uuid())
-  tenantId            String                            @map("tenant_id")
-  batchId             String                            @map("batch_id")
-  templateId          String                            @map("template_id")
-  generatedDocumentId String                            @unique @map("generated_document_id")
-  templateVersion     Int                               @map("template_version")
-  displayOrder        Int                               @map("display_order")
-  status              DocumentGenerationBatchItemStatus @default(NOT_STARTED)
-  configuration       Json                              @default("{}")
-  previewContent      String?                           @map("preview_content")
-  editedContent       String?                           @map("edited_content")
-  editedContentJson   Json?                             @map("edited_content_json")
-  previewFingerprint  String?                           @map("preview_fingerprint") @db.VarChar(64)
-  reviewedFingerprint String?                           @map("reviewed_fingerprint") @db.VarChar(64)
-  validationDiagnostics Json?                           @map("validation_diagnostics")
-  lastError           Json?                             @map("last_error")
-  generationAttemptId String?                           @map("generation_attempt_id") @db.VarChar(36)
-  generationClaimedAt DateTime?                         @map("generation_claimed_at")
-  createdAt           DateTime                          @default(now()) @map("created_at")
-  updatedAt           DateTime                          @updatedAt @map("updated_at")
-  tenant              Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  batch               DocumentGenerationBatch           @relation("DocumentGenerationBatchItems", fields: [batchId], references: [id], onDelete: Cascade)
-  template            DocumentTemplate                  @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  generatedDocument   GeneratedDocument                 @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
-  activeForBatches    DocumentGenerationBatch[]         @relation("ActiveDocumentGenerationBatchItem")
+  id                    String                            @id @default(uuid())
+  tenantId              String                            @map("tenant_id")
+  batchId               String                            @map("batch_id")
+  templateId            String                            @map("template_id")
+  generatedDocumentId   String                            @unique @map("generated_document_id")
+  templateVersion       Int                               @map("template_version")
+  displayOrder          Int                               @map("display_order")
+  status                DocumentGenerationBatchItemStatus @default(NOT_STARTED)
+  configuration         Json                              @default("{}")
+  previewContent        String?                           @map("preview_content")
+  editedContent         String?                           @map("edited_content")
+  editedContentJson     Json?                             @map("edited_content_json")
+  previewFingerprint    String?                           @map("preview_fingerprint") @db.VarChar(64)
+  reviewedFingerprint   String?                           @map("reviewed_fingerprint") @db.VarChar(64)
+  validationDiagnostics Json?                             @map("validation_diagnostics")
+  lastError             Json?                             @map("last_error")
+  generationAttemptId   String?                           @map("generation_attempt_id") @db.VarChar(36)
+  generationClaimedAt   DateTime?                         @map("generation_claimed_at")
+  createdAt             DateTime                          @default(now()) @map("created_at")
+  updatedAt             DateTime                          @updatedAt @map("updated_at")
+  tenant                Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batch                 DocumentGenerationBatch           @relation("DocumentGenerationBatchItems", fields: [batchId], references: [id], onDelete: Cascade)
+  template              DocumentTemplate                  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  generatedDocument     GeneratedDocument                 @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
+  activeForBatches      DocumentGenerationBatch[]         @relation("ActiveDocumentGenerationBatchItem")
 
   @@unique([batchId, templateId])
   @@unique([batchId, displayOrder])
@@ -1034,21 +1059,21 @@ model DocumentDraft {
 }
 
 model TemplatePartial {
-  id              String           @id @default(uuid())
-  tenantId        String           @map("tenant_id")
-  name            String           @db.VarChar(100)
-  displayName     String?          @map("display_name") @db.VarChar(200)
-  description     String?
-  content         String
-  placeholders    Json             @default("[]")
-  version     Int       @default(1)
-  createdById     String           @map("created_by_id")
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
-  deletedAt       DateTime?        @map("deleted_at")
-  createdBy       User             @relation("PartialCreator", fields: [createdById], references: [id])
-  tenant          Workspace        @relation(fields: [tenantId], references: [id])
-  serviceVariants ServiceVariant[]
+  id                    String                 @id @default(uuid())
+  tenantId              String                 @map("tenant_id")
+  name                  String                 @db.VarChar(100)
+  displayName           String?                @map("display_name") @db.VarChar(200)
+  description           String?
+  content               String
+  placeholders          Json                   @default("[]")
+  version               Int                    @default(1)
+  createdById           String                 @map("created_by_id")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  deletedAt             DateTime?              @map("deleted_at")
+  createdBy             User                   @relation("PartialCreator", fields: [createdById], references: [id])
+  tenant                Workspace              @relation(fields: [tenantId], references: [id])
+  serviceVariants       ServiceVariant[]
   serviceAgreementItems ServiceAgreementItem[]
 
   @@unique([tenantId, name])
@@ -1078,27 +1103,28 @@ model ServiceFamily {
 }
 
 model ServiceVariant {
-  id                  String                      @id @default(uuid())
-  tenantId            String                      @map("tenant_id")
-  familyId            String                      @map("family_id")
-  sowPartialId        String                      @map("sow_partial_id")
-  code                String                      @db.VarChar(100)
-  name                String                      @db.VarChar(200)
-  description         String?
-  serviceCadence      ServiceCadence              @map("service_cadence")
-  customCadenceLabel  String?                     @map("custom_cadence_label") @db.VarChar(100)
-  displayOrder        Int                         @default(0) @map("display_order")
-  version             Int                         @default(1)
-  isActive            Boolean                     @default(true) @map("is_active")
-  createdAt           DateTime                    @default(now()) @map("created_at")
-  updatedAt           DateTime                    @updatedAt @map("updated_at")
-  deletedAt           DateTime?                   @map("deleted_at")
-  tenant              Workspace                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  family              ServiceFamily               @relation(fields: [familyId], references: [id], onDelete: Restrict)
-  sowPartial          TemplatePartial             @relation(fields: [sowPartialId], references: [id], onDelete: Restrict)
-  defaultFeeTemplates ServiceVariantFeeTemplate[]
-  serviceAgreementItems ServiceAgreementItem[]
-  clientServices       ClientService[]
+  id                       String                       @id @default(uuid())
+  tenantId                 String                       @map("tenant_id")
+  familyId                 String                       @map("family_id")
+  sowPartialId             String                       @map("sow_partial_id")
+  code                     String                       @db.VarChar(100)
+  name                     String                       @db.VarChar(200)
+  description              String?
+  serviceCadence           ServiceCadence               @map("service_cadence")
+  customCadenceLabel       String?                      @map("custom_cadence_label") @db.VarChar(100)
+  displayOrder             Int                          @default(0) @map("display_order")
+  version                  Int                          @default(1)
+  isActive                 Boolean                      @default(true) @map("is_active")
+  createdAt                DateTime                     @default(now()) @map("created_at")
+  updatedAt                DateTime                     @updatedAt @map("updated_at")
+  deletedAt                DateTime?                    @map("deleted_at")
+  tenant                   Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  family                   ServiceFamily                @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  sowPartial               TemplatePartial              @relation(fields: [sowPartialId], references: [id], onDelete: Restrict)
+  defaultFeeTemplates      ServiceVariantFeeTemplate[]
+  serviceAgreementItems    ServiceAgreementItem[]
+  clientServices           ClientService[]
+  deadlineRuleAssociations ServiceVariantDeadlineRule[]
 
   @@unique([tenantId, code])
   @@index([tenantId, familyId, deletedAt, isActive])
@@ -1127,36 +1153,36 @@ model ServiceVariantFeeTemplate {
 }
 
 model ServiceAgreement {
-  id                               String                    @id @default(uuid())
-  tenantId                         String                    @map("tenant_id")
-  generatedDocumentId String @unique @map("generated_document_id")
-  primaryCompanyId                 String                    @map("primary_company_id")
-  authorizedContactId              String?                   @map("authorized_contact_id")
-  authorizedRepresentativeSnapshot Json                     @map("authorized_representative_snapshot")
-  agreementDate                    DateTime                  @map("agreement_date") @db.Date
-  effectiveDate                    DateTime?                 @map("effective_date") @db.Date
-  termMonths                       Int                       @default(12) @map("term_months")
-  status                           ServiceAgreementStatus    @default(DRAFT)
-  signedAt                         DateTime?                  @map("signed_at")
-  activatedAt                      DateTime?                  @map("activated_at")
-  activationStatus                 ServiceAgreementActivationStatus @default(NOT_READY) @map("activation_status")
+  id                               String                            @id @default(uuid())
+  tenantId                         String                            @map("tenant_id")
+  generatedDocumentId              String                            @unique @map("generated_document_id")
+  primaryCompanyId                 String                            @map("primary_company_id")
+  authorizedContactId              String?                           @map("authorized_contact_id")
+  authorizedRepresentativeSnapshot Json                              @map("authorized_representative_snapshot")
+  agreementDate                    DateTime                          @map("agreement_date") @db.Date
+  effectiveDate                    DateTime?                         @map("effective_date") @db.Date
+  termMonths                       Int                               @default(12) @map("term_months")
+  status                           ServiceAgreementStatus            @default(DRAFT)
+  signedAt                         DateTime?                         @map("signed_at")
+  activatedAt                      DateTime?                         @map("activated_at")
+  activationStatus                 ServiceAgreementActivationStatus  @default(NOT_READY) @map("activation_status")
   activationSource                 ServiceAgreementActivationSource? @map("activation_source")
-  activationAttemptCount           Int                       @default(0) @map("activation_attempt_count")
-  activationAvailableAt            DateTime?                 @map("activation_available_at")
-  activationClaimedAt              DateTime?                 @map("activation_claimed_at")
-  activationLeaseExpiresAt         DateTime?                 @map("activation_lease_expires_at")
-  activationClaimToken             String?                   @map("activation_claim_token") @db.VarChar(36)
-  activationLastError              String?                   @map("activation_last_error")
-  activationRequestedById          String?                   @map("activation_requested_by_id")
-  activationReason                 String?                   @map("activation_reason") @db.VarChar(1000)
-  cancelledAt                      DateTime?                  @map("cancelled_at")
-  createdAt                        DateTime                  @default(now()) @map("created_at")
-  updatedAt                        DateTime                  @updatedAt @map("updated_at")
-  tenant                           Workspace                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  generatedDocument                GeneratedDocument         @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
-  primaryCompany                   Company                   @relation("ServiceAgreementPrimaryCompany", fields: [primaryCompanyId], references: [id], onDelete: Restrict)
-  authorizedContact                Contact?                  @relation(fields: [authorizedContactId], references: [id], onDelete: SetNull)
-  activationRequestedBy            User?                     @relation("ServiceAgreementActivationRequester", fields: [activationRequestedById], references: [id], onDelete: SetNull)
+  activationAttemptCount           Int                               @default(0) @map("activation_attempt_count")
+  activationAvailableAt            DateTime?                         @map("activation_available_at")
+  activationClaimedAt              DateTime?                         @map("activation_claimed_at")
+  activationLeaseExpiresAt         DateTime?                         @map("activation_lease_expires_at")
+  activationClaimToken             String?                           @map("activation_claim_token") @db.VarChar(36)
+  activationLastError              String?                           @map("activation_last_error")
+  activationRequestedById          String?                           @map("activation_requested_by_id")
+  activationReason                 String?                           @map("activation_reason") @db.VarChar(1000)
+  cancelledAt                      DateTime?                         @map("cancelled_at")
+  createdAt                        DateTime                          @default(now()) @map("created_at")
+  updatedAt                        DateTime                          @updatedAt @map("updated_at")
+  tenant                           Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generatedDocument                GeneratedDocument                 @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
+  primaryCompany                   Company                           @relation("ServiceAgreementPrimaryCompany", fields: [primaryCompanyId], references: [id], onDelete: Restrict)
+  authorizedContact                Contact?                          @relation(fields: [authorizedContactId], references: [id], onDelete: SetNull)
+  activationRequestedBy            User?                             @relation("ServiceAgreementActivationRequester", fields: [activationRequestedById], references: [id], onDelete: SetNull)
   entities                         ServiceAgreementEntity[]
   items                            ServiceAgreementItem[]
   clientServices                   ClientService[]
@@ -1221,13 +1247,13 @@ model ServiceAgreementItem {
 }
 
 model ServiceAgreementItemEntity {
-  id                String                  @id @default(uuid())
-  tenantId          String                  @map("tenant_id")
-  itemId            String                  @map("item_id")
-  agreementEntityId String                  @map("agreement_entity_id")
-  tenant            Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  item              ServiceAgreementItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  agreementEntity   ServiceAgreementEntity  @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
+  id                String                 @id @default(uuid())
+  tenantId          String                 @map("tenant_id")
+  itemId            String                 @map("item_id")
+  agreementEntityId String                 @map("agreement_entity_id")
+  tenant            Workspace              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  item              ServiceAgreementItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  agreementEntity   ServiceAgreementEntity @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
 
   @@unique([itemId, agreementEntityId])
   @@index([tenantId, agreementEntityId])
@@ -1235,22 +1261,22 @@ model ServiceAgreementItemEntity {
 }
 
 model ServiceAgreementFeeLine {
-  id                   String                  @id @default(uuid())
-  tenantId             String                  @map("tenant_id")
-  itemId               String                  @map("item_id")
-  agreementEntityId    String                  @map("agreement_entity_id")
-  description          String                  @db.VarChar(500)
-  amount               Decimal                 @db.Decimal(18, 2)
-  currency             String                  @default("SGD") @db.VarChar(3)
-  billingFrequency     BillingFrequency        @map("billing_frequency")
-  customFrequencyLabel String?                 @map("custom_frequency_label") @db.VarChar(100)
-  billingStartDate     DateTime?               @map("billing_start_date") @db.Date
-  displayOrder         Int                     @default(0) @map("display_order")
-  createdAt            DateTime                @default(now()) @map("created_at")
-  updatedAt            DateTime                @updatedAt @map("updated_at")
-  tenant               Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  item                 ServiceAgreementItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  agreementEntity      ServiceAgreementEntity  @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
+  id                    String                 @id @default(uuid())
+  tenantId              String                 @map("tenant_id")
+  itemId                String                 @map("item_id")
+  agreementEntityId     String                 @map("agreement_entity_id")
+  description           String                 @db.VarChar(500)
+  amount                Decimal                @db.Decimal(18, 2)
+  currency              String                 @default("SGD") @db.VarChar(3)
+  billingFrequency      BillingFrequency       @map("billing_frequency")
+  customFrequencyLabel  String?                @map("custom_frequency_label") @db.VarChar(100)
+  billingStartDate      DateTime?              @map("billing_start_date") @db.Date
+  displayOrder          Int                    @default(0) @map("display_order")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  tenant                Workspace              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  item                  ServiceAgreementItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  agreementEntity       ServiceAgreementEntity @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
   clientServiceFeeLines ClientServiceFeeLine[]
 
   @@index([tenantId, itemId, displayOrder])
@@ -1259,31 +1285,34 @@ model ServiceAgreementFeeLine {
 }
 
 model ClientService {
-  id                   String               @id @default(uuid())
-  tenantId             String               @map("tenant_id")
-  companyId            String               @map("company_id")
-  source               ClientServiceSource  @default(AGREEMENT)
-  agreementId          String?              @map("agreement_id")
-  agreementItemId      String?              @map("agreement_item_id")
-  serviceVariantId     String               @map("service_variant_id")
-  familyName           String               @map("family_name") @db.VarChar(200)
-  serviceName          String               @map("service_name") @db.VarChar(200)
-  status               ClientServiceStatus  @default(ACTIVE)
-  serviceCadence       ServiceCadence       @map("service_cadence")
-  customCadenceLabel   String?              @map("custom_cadence_label") @db.VarChar(100)
-  startDate            DateTime             @map("start_date") @db.Date
-  endDate              DateTime?            @map("end_date") @db.Date
-  fieldValues          Json                 @default("{}") @map("field_values")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
-  deletedAt            DateTime?            @map("deleted_at")
-  deletedReason        String?              @map("deleted_reason")
-  tenant               Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  company              Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  agreement            ServiceAgreement?    @relation(fields: [agreementId], references: [id], onDelete: Restrict)
-  agreementItem        ServiceAgreementItem? @relation(fields: [agreementItemId], references: [id], onDelete: Restrict)
-  serviceVariant       ServiceVariant       @relation(fields: [serviceVariantId], references: [id], onDelete: Restrict)
-  feeLines             ClientServiceFeeLine[]
+  id                  String                      @id @default(uuid())
+  tenantId            String                      @map("tenant_id")
+  companyId           String                      @map("company_id")
+  source              ClientServiceSource         @default(AGREEMENT)
+  agreementId         String?                     @map("agreement_id")
+  agreementItemId     String?                     @map("agreement_item_id")
+  serviceVariantId    String                      @map("service_variant_id")
+  familyName          String                      @map("family_name") @db.VarChar(200)
+  serviceName         String                      @map("service_name") @db.VarChar(200)
+  status              ClientServiceStatus         @default(ACTIVE)
+  serviceCadence      ServiceCadence              @map("service_cadence")
+  customCadenceLabel  String?                     @map("custom_cadence_label") @db.VarChar(100)
+  startDate           DateTime                    @map("start_date") @db.Date
+  endDate             DateTime?                   @map("end_date") @db.Date
+  fieldValues         Json                        @default("{}") @map("field_values")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  updatedAt           DateTime                    @updatedAt @map("updated_at")
+  deletedAt           DateTime?                   @map("deleted_at")
+  deletedReason       String?                     @map("deleted_reason")
+  tenant              Workspace                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company             Company                     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  agreement           ServiceAgreement?           @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  agreementItem       ServiceAgreementItem?       @relation(fields: [agreementItemId], references: [id], onDelete: Restrict)
+  serviceVariant      ServiceVariant              @relation(fields: [serviceVariantId], references: [id], onDelete: Restrict)
+  feeLines            ClientServiceFeeLine[]
+  deadlineRules       ClientServiceDeadlineRule[]
+  serviceCycles       ServiceCycle[]
+  deadlineOccurrences DeadlineOccurrence[]
 
   @@unique([agreementItemId, companyId])
   @@index([tenantId, companyId, status, deletedAt])
@@ -1296,6 +1325,70 @@ model ClientService {
 enum ClientServiceSource {
   AGREEMENT
   MANUAL
+}
+
+enum DeadlineRuleVersionState {
+  DRAFT
+  PUBLISHED
+}
+
+enum DeadlineParameterType {
+  DATE
+  INTEGER
+  DECIMAL
+  STRING
+  BOOLEAN
+  ENUM
+}
+
+enum DeadlineMilestoneGenerationMode {
+  ONCE_PER_CYCLE
+  ONCE_PER_SCHEDULE_ENTRY
+}
+
+enum BusinessDayAdjustment {
+  NONE
+  PREVIOUS
+  NEXT
+}
+
+enum DeadlineApplicabilityState {
+  APPLICABLE
+  NOT_APPLICABLE
+  MISSING_INPUT
+}
+
+enum ServiceCycleOrigin {
+  RULE
+  MANUAL_TRIGGER
+}
+
+enum DeadlineType {
+  STATUTORY
+  CLIENT
+  INTERNAL
+}
+
+enum DeadlineOccurrenceStatus {
+  OPEN
+  COMPLETED
+  WAIVED
+  CANCELLED
+}
+
+enum ScheduleReconciliationScopeType {
+  TENANT
+  COMPANY
+  CLIENT_SERVICE
+  RULE
+  BUSINESS_CALENDAR
+}
+
+enum ScheduleReconciliationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 model ClientServiceFeeLine {
@@ -1319,6 +1412,314 @@ model ClientServiceFeeLine {
   @@unique([clientServiceId, sourceAgreementFeeLineId])
   @@index([tenantId, clientServiceId, displayOrder])
   @@map("client_service_fee_lines")
+}
+
+model DeadlineRule {
+  id                  String                       @id @default(uuid())
+  tenantId            String                       @map("tenant_id")
+  code                String                       @db.VarChar(100)
+  name                String                       @db.VarChar(200)
+  description         String?
+  isActive            Boolean                      @default(true) @map("is_active")
+  archivedAt          DateTime?                    @map("archived_at")
+  archivedById        String?                      @map("archived_by_id")
+  archiveReason       String?                      @map("archive_reason")
+  currentVersionId    String?                      @unique @map("current_version_id")
+  createdById         String?                      @map("created_by_id")
+  updatedById         String?                      @map("updated_by_id")
+  createdAt           DateTime                     @default(now()) @map("created_at")
+  updatedAt           DateTime                     @updatedAt @map("updated_at")
+  tenant              Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  currentVersion      DeadlineRuleVersion?         @relation("DeadlineRuleCurrentVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  versions            DeadlineRuleVersion[]        @relation("DeadlineRuleVersions")
+  variantAssociations ServiceVariantDeadlineRule[]
+  clientAssociations  ClientServiceDeadlineRule[]
+  serviceCycles       ServiceCycle[]
+  createdBy           User?                        @relation("DeadlineRuleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy           User?                        @relation("DeadlineRuleUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  archivedBy          User?                        @relation("DeadlineRuleArchiver", fields: [archivedById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("deadline_rules")
+}
+
+model DeadlineRuleVersion {
+  id                   String                            @id @default(uuid())
+  tenantId             String                            @map("tenant_id")
+  ruleId               String                            @map("rule_id")
+  version              Int
+  state                DeadlineRuleVersionState
+  schemaVersion        Int                               @map("schema_version")
+  recurrence           Json                              @default("{}")
+  applicability        Json                              @default("{}")
+  configHash           String                            @map("config_hash") @db.VarChar(64)
+  draftRevision        Int                               @default(1) @map("draft_revision")
+  publishedAt          DateTime?                         @map("published_at")
+  publishedById        String?                           @map("published_by_id")
+  createdById          String?                           @map("created_by_id")
+  createdAt            DateTime                          @default(now()) @map("created_at")
+  updatedAt            DateTime                          @updatedAt @map("updated_at")
+  tenant               Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rule                 DeadlineRule                      @relation("DeadlineRuleVersions", fields: [ruleId], references: [id], onDelete: Restrict)
+  currentForRule       DeadlineRule?                     @relation("DeadlineRuleCurrentVersion")
+  publishedBy          User?                             @relation("DeadlineRuleVersionPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
+  createdBy            User?                             @relation("DeadlineRuleVersionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  parameterDefinitions DeadlineRuleParameterDefinition[]
+  milestoneTemplates   DeadlineMilestoneTemplate[]
+  clientConfigurations ClientServiceDeadlineRule[]
+  serviceCycles        ServiceCycle[]
+  deadlineOccurrences  DeadlineOccurrence[]
+
+  @@unique([ruleId, version])
+  @@index([tenantId, state])
+  @@index([ruleId, state])
+  @@map("deadline_rule_versions")
+}
+
+model DeadlineRuleParameterDefinition {
+  id            String                @id @default(uuid())
+  tenantId      String                @map("tenant_id")
+  ruleVersionId String                @map("rule_version_id")
+  key           String                @db.VarChar(100)
+  label         String                @db.VarChar(200)
+  type          DeadlineParameterType
+  isRequired    Boolean               @default(false) @map("is_required")
+  defaultValue  Json?                 @map("default_value")
+  validation    Json?                 @map("validation")
+  helpText      String?               @map("help_text")
+  displayOrder  Int                   @default(0) @map("display_order")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  tenant        Workspace             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ruleVersion   DeadlineRuleVersion   @relation(fields: [ruleVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleVersionId, key])
+  @@index([tenantId, ruleVersionId, displayOrder])
+  @@map("deadline_rule_parameter_definitions")
+}
+
+model DeadlineMilestoneTemplate {
+  id                    String                          @id @default(uuid())
+  tenantId              String                          @map("tenant_id")
+  ruleVersionId         String                          @map("rule_version_id")
+  milestoneKey          String                          @map("milestone_key") @db.VarChar(100)
+  name                  String                          @db.VarChar(200)
+  description           String?
+  type                  DeadlineType
+  generationMode        DeadlineMilestoneGenerationMode @map("generation_mode")
+  dateExpression        Json                            @map("date_expression")
+  businessDayAdjustment BusinessDayAdjustment           @map("business_day_adjustment")
+  displayOrder          Int                             @default(0) @map("display_order")
+  isActive              Boolean                         @default(true) @map("is_active")
+  createdAt             DateTime                        @default(now()) @map("created_at")
+  updatedAt             DateTime                        @updatedAt @map("updated_at")
+  tenant                Workspace                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ruleVersion           DeadlineRuleVersion             @relation(fields: [ruleVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleVersionId, milestoneKey])
+  @@index([tenantId, ruleVersionId, displayOrder])
+  @@map("deadline_milestone_templates")
+}
+
+model ServiceVariantDeadlineRule {
+  id                String         @id @default(uuid())
+  tenantId          String         @map("tenant_id")
+  serviceVariantId  String         @map("service_variant_id")
+  ruleId            String         @map("rule_id")
+  enabledByDefault  Boolean        @default(true) @map("enabled_by_default")
+  parameterDefaults Json           @default("{}") @map("parameter_defaults")
+  scheduleDefaults  Json           @default("[]") @map("schedule_defaults")
+  displayOrder      Int            @default(0) @map("display_order")
+  archivedAt        DateTime?      @map("archived_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  tenant            Workspace      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  serviceVariant    ServiceVariant @relation(fields: [serviceVariantId], references: [id], onDelete: Restrict)
+  rule              DeadlineRule   @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+
+  @@unique([serviceVariantId, ruleId])
+  @@index([tenantId, serviceVariantId, displayOrder])
+  @@index([tenantId, ruleId])
+  @@map("service_variant_deadline_rules")
+}
+
+model ClientServiceDeadlineRule {
+  id                     String                     @id @default(uuid())
+  tenantId               String                     @map("tenant_id")
+  clientServiceId        String                     @map("client_service_id")
+  ruleId                 String                     @map("rule_id")
+  enabled                Boolean                    @default(true)
+  parameterValues        Json                       @default("{}") @map("parameter_values")
+  parameterProvenance    Json                       @default("{}") @map("parameter_provenance")
+  scheduleEntries        Json                       @default("[]") @map("schedule_entries")
+  lastEvaluatedVersionId String?                    @map("last_evaluated_version_id")
+  applicabilityState     DeadlineApplicabilityState @default(MISSING_INPUT) @map("applicability_state")
+  applicabilityReason    String?                    @map("applicability_reason")
+  configHash             String?                    @map("config_hash") @db.VarChar(64)
+  createdAt              DateTime                   @default(now()) @map("created_at")
+  updatedAt              DateTime                   @updatedAt @map("updated_at")
+  updatedById            String?                    @map("updated_by_id")
+  tenant                 Workspace                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clientService          ClientService              @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  rule                   DeadlineRule               @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  lastEvaluatedVersion   DeadlineRuleVersion?       @relation(fields: [lastEvaluatedVersionId], references: [id], onDelete: Restrict)
+  updatedBy              User?                      @relation("ClientServiceDeadlineRuleUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([clientServiceId, ruleId])
+  @@index([tenantId, clientServiceId, enabled])
+  @@index([tenantId, ruleId])
+  @@map("client_service_deadline_rules")
+}
+
+model BusinessCalendar {
+  id               String            @id @default(uuid())
+  tenantId         String            @map("tenant_id")
+  name             String            @db.VarChar(100)
+  jurisdictionCode String            @map("jurisdiction_code") @db.VarChar(10)
+  timeZone         String            @map("time_zone") @db.VarChar(100)
+  weekendDays      Int[]             @default([0, 6]) @map("weekend_days")
+  revision         Int               @default(1)
+  isActive         Boolean           @default(true) @map("is_active")
+  archivedAt       DateTime?         @map("archived_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  tenant           Workspace         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  holidays         BusinessHoliday[]
+  serviceCycles    ServiceCycle[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("business_calendars")
+}
+
+model BusinessHoliday {
+  id          String           @id @default(uuid())
+  tenantId    String           @map("tenant_id")
+  calendarId  String           @map("calendar_id")
+  date        DateTime         @db.Date
+  name        String           @db.VarChar(100)
+  description String?          @db.VarChar(500)
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  tenant      Workspace        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  calendar    BusinessCalendar @relation(fields: [calendarId], references: [id], onDelete: Restrict)
+
+  @@unique([calendarId, date])
+  @@index([tenantId, calendarId, date])
+  @@map("business_holidays")
+}
+
+model ServiceCycle {
+  id                       String               @id @default(uuid())
+  tenantId                 String               @map("tenant_id")
+  companyId                String               @map("company_id")
+  clientServiceId          String               @map("client_service_id")
+  ruleId                   String               @map("rule_id")
+  ruleVersionId            String               @map("rule_version_id")
+  businessCalendarId       String?              @map("business_calendar_id")
+  businessCalendarRevision Int?                 @map("business_calendar_revision")
+  periodKey                String               @map("period_key")
+  periodStart              DateTime             @map("period_start") @db.Date
+  periodEnd                DateTime             @map("period_end") @db.Date
+  generationKey            String               @map("generation_key")
+  origin                   ServiceCycleOrigin
+  recurrenceAnchor         Json                 @default("{}") @map("recurrence_anchor")
+  sourceSnapshot           Json                 @default("{}") @map("source_snapshot")
+  evaluationHash           String               @map("evaluation_hash") @db.VarChar(64)
+  createdById              String?              @map("created_by_id")
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+  tenant                   Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company                  Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  clientService            ClientService        @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  rule                     DeadlineRule         @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  ruleVersion              DeadlineRuleVersion  @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
+  businessCalendar         BusinessCalendar?    @relation(fields: [businessCalendarId], references: [id], onDelete: Restrict)
+  createdBy                User?                @relation("ServiceCycleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  occurrences              DeadlineOccurrence[]
+
+  @@unique([tenantId, clientServiceId, ruleId, periodKey, generationKey, origin])
+  @@index([tenantId, companyId, periodStart, periodEnd])
+  @@index([tenantId, clientServiceId, periodStart])
+  @@index([tenantId, ruleId, periodKey])
+  @@map("service_cycles")
+}
+
+model DeadlineOccurrence {
+  id                 String                   @id @default(uuid())
+  tenantId           String                   @map("tenant_id")
+  companyId          String                   @map("company_id")
+  clientServiceId    String                   @map("client_service_id")
+  cycleId            String                   @map("cycle_id")
+  ruleVersionId      String                   @map("rule_version_id")
+  milestoneKey       String                   @map("milestone_key")
+  scheduleEntryKey   String                   @default("") @map("schedule_entry_key")
+  deadlineType       DeadlineType             @map("deadline_type")
+  calculatedDueDate  DateTime                 @map("calculated_due_date") @db.Date
+  operativeDueDate   DateTime                 @map("operative_due_date") @db.Date
+  dateOverridden     Boolean                  @default(false) @map("date_overridden")
+  dateOverride       DateTime?                @map("date_override") @db.Date
+  dateOverrideReason String?                  @map("date_override_reason")
+  dateOverriddenById String?                  @map("date_overridden_by_id")
+  dateOverriddenAt   DateTime?                @map("date_overridden_at")
+  status             DeadlineOccurrenceStatus @default(OPEN)
+  completedAt        DateTime?                @map("completed_at")
+  completedById      String?                  @map("completed_by_id")
+  waivedAt           DateTime?                @map("waived_at")
+  waivedById         String?                  @map("waived_by_id")
+  waiverReason       String?                  @map("waiver_reason")
+  cancelledAt        DateTime?                @map("cancelled_at")
+  cancelledById      String?                  @map("cancelled_by_id")
+  cancellationReason String?                  @map("cancellation_reason")
+  origin             ServiceCycleOrigin       @default(RULE)
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
+  tenant             Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company            Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  clientService      ClientService            @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  cycle              ServiceCycle             @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  ruleVersion        DeadlineRuleVersion      @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
+  dateOverriddenBy   User?                    @relation("DeadlineOccurrenceOverrideActor", fields: [dateOverriddenById], references: [id], onDelete: SetNull)
+  completedBy        User?                    @relation("DeadlineOccurrenceCompletionActor", fields: [completedById], references: [id], onDelete: SetNull)
+  waivedBy           User?                    @relation("DeadlineOccurrenceWaiverActor", fields: [waivedById], references: [id], onDelete: SetNull)
+  cancelledBy        User?                    @relation("DeadlineOccurrenceCancellationActor", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, cycleId, milestoneKey, scheduleEntryKey])
+  @@index([tenantId, operativeDueDate, status])
+  @@index([tenantId, companyId, operativeDueDate, status])
+  @@index([tenantId, clientServiceId, operativeDueDate])
+  @@map("deadline_occurrences")
+}
+
+model ServiceScheduleReconciliationRequest {
+  id               String                          @id @default(uuid())
+  tenantId         String                          @map("tenant_id")
+  scopeType        ScheduleReconciliationScopeType @map("scope_type")
+  scopeId          String                          @map("scope_id")
+  triggerType      String                          @map("trigger_type")
+  correlationId    String                          @map("correlation_id")
+  dedupeKey        String                          @unique @map("dedupe_key")
+  status           ScheduleReconciliationStatus    @default(PENDING)
+  attemptCount     Int                             @default(0) @map("attempt_count")
+  leaseOwner       String?                         @map("lease_owner")
+  leaseExpiresAt   DateTime?                       @map("lease_expires_at")
+  nextAttemptAt    DateTime                        @default(now()) @map("next_attempt_at")
+  lastErrorCode    String?                         @map("last_error_code")
+  lastErrorMessage String?                         @map("last_error_message")
+  createdAt        DateTime                        @default(now()) @map("created_at")
+  startedAt        DateTime?                       @map("started_at")
+  completedAt      DateTime?                       @map("completed_at")
+  updatedAt        DateTime                        @updatedAt @map("updated_at")
+  summary          Json                            @default("{}")
+  requestedById    String?                         @map("requested_by_id")
+  tenant           Workspace                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requestedBy      User?                           @relation("ScheduleReconciliationRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, nextAttemptAt])
+  @@index([scopeType, scopeId, status])
+  @@map("service_schedule_reconciliation_requests")
 }
 
 model AiConversation {
@@ -1359,12 +1760,12 @@ model EsigningEnvelope {
   pdfGenerationAttempts     Int                               @default(0)
   pdfGenerationClaimedAt    DateTime?
   pdfGenerationError        String?
-  autoFilingStatus          EsigningPostCompletionStatus     @default(NOT_REQUIRED)
+  autoFilingStatus          EsigningPostCompletionStatus      @default(NOT_REQUIRED)
   autoFilingAttempts        Int                               @default(0)
   autoFilingAvailableAt     DateTime?
   autoFilingClaimedAt       DateTime?
   autoFilingLeaseExpiresAt  DateTime?
-  autoFilingClaimToken      String?                       @db.VarChar(36)
+  autoFilingClaimToken      String?                           @db.VarChar(36)
   autoFilingError           String?
   consentVersion            String                            @default("1.0")
   consentDisclosureSnapshot Json?
@@ -1532,7 +1933,7 @@ model EsigningEnvelopeEvent {
 }
 
 model EsigningEmailDelivery {
-  id               String                       @id @default(uuid())
+  id               String                         @id @default(uuid())
   tenantId         String
   envelopeId       String
   recipientId      String?
@@ -1541,20 +1942,20 @@ model EsigningEmailDelivery {
   targetKey        String
   toEmail          String
   subject          String
-  status           EsigningEmailDeliveryStatus  @default(PENDING)
-  attemptCount     Int                          @default(0)
-  availableAt      DateTime                     @default(now())
+  status           EsigningEmailDeliveryStatus    @default(PENDING)
+  attemptCount     Int                            @default(0)
+  availableAt      DateTime                       @default(now())
   claimedAt        DateTime?
   leaseExpiresAt   DateTime?
-  claimToken       String?                      @db.VarChar(36)
+  claimToken       String?                        @db.VarChar(36)
   lastAttemptedAt  DateTime?
   sentAt           DateTime?
   lastError        String?
-  createdAt        DateTime                     @default(now())
-  updatedAt        DateTime                     @updatedAt
-  tenant           Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  envelope         EsigningEnvelope             @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
-  recipient        EsigningEnvelopeRecipient?   @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                       @default(now())
+  updatedAt        DateTime                       @updatedAt
+  tenant           Workspace                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  envelope         EsigningEnvelope               @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  recipient        EsigningEnvelopeRecipient?     @relation(fields: [recipientId], references: [id], onDelete: SetNull)
   deliveryAttempts EsigningEmailDeliveryAttempt[]
 
   @@unique([envelopeId, kind, targetKey])
@@ -1565,14 +1966,14 @@ model EsigningEmailDelivery {
 }
 
 model EsigningEmailDeliveryAttempt {
-  id                String                 @id @default(uuid())
+  id                String                @id @default(uuid())
   deliveryId        String
   toEmail           String
   subject           String
   succeeded         Boolean
   providerMessageId String?
   error             String?
-  attemptedAt       DateTime               @default(now())
+  attemptedAt       DateTime              @default(now())
   delivery          EsigningEmailDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
 
   @@index([deliveryId, attemptedAt])
@@ -2233,30 +2634,30 @@ model Form {
 }
 
 model FormField {
-  id               String            @id @default(uuid())
-  formId           String            @map("form_id")
-  tenantId         String            @map("tenant_id")
-  optionPresetId   String?           @map("option_preset_id")
-  type             FormFieldType
-  label            String?
-  key              String            @map("field_key")
-  placeholder      String?
-  subtext          String?
-  helpText         String?           @map("help_text")
-  inputType        String?           @map("input_type")
-  options          Json?
-  validation       Json?
-  condition        Json?
-  isRequired       Boolean           @default(false) @map("is_required")
-  hideLabel        Boolean           @default(false) @map("hide_label")
-  isReadOnly       Boolean           @default(false) @map("is_read_only")
-  layoutWidth      Int               @default(100) @map("layout_width")
-  position         Int
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  form             Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
-  tenant           Workspace         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  optionPreset     FormOptionPreset? @relation(fields: [optionPresetId], references: [id], onDelete: Restrict)
+  id             String            @id @default(uuid())
+  formId         String            @map("form_id")
+  tenantId       String            @map("tenant_id")
+  optionPresetId String?           @map("option_preset_id")
+  type           FormFieldType
+  label          String?
+  key            String            @map("field_key")
+  placeholder    String?
+  subtext        String?
+  helpText       String?           @map("help_text")
+  inputType      String?           @map("input_type")
+  options        Json?
+  validation     Json?
+  condition      Json?
+  isRequired     Boolean           @default(false) @map("is_required")
+  hideLabel      Boolean           @default(false) @map("hide_label")
+  isReadOnly     Boolean           @default(false) @map("is_read_only")
+  layoutWidth    Int               @default(100) @map("layout_width")
+  position       Int
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  form           Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
+  tenant         Workspace         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  optionPreset   FormOptionPreset? @relation(fields: [optionPresetId], references: [id], onDelete: Restrict)
 
   @@unique([formId, key])
   @@index([formId, position])
@@ -2847,32 +3248,32 @@ model TaskCompanyRecoveryContext {
 }
 
 model AcraEntity {
-  id                             String   @id @default(uuid())
-  uen                            String   @unique
-  entityName                     String   @map("entity_name")
-  entityStatus                   String   @map("entity_status")
-  entityType                     String   @map("entity_type")
-  companyTypeDescription         String?  @map("company_type_description")
-  registrationIncorporateDate    String?  @map("registration_incorporate_date")
-  block                          String?  @map("block")
-  streetName                     String?  @map("street_name")
-  levelNo                        String?  @map("level_no")
-  unitNo                         String?  @map("unit_no")
-  buildingName                   String?  @map("building_name")
-  postalCode                     String?  @map("postal_code")
-  address                        String?  @map("address")
-  accountDueDate                 String?  @map("account_due_date")
-  annualReturnDate               String?  @map("annual_return_date")
-  primarySsicCode                String?  @map("primary_ssic_code")
-  primarySsicDescription         String?  @map("primary_ssic_description")
-  secondarySsicCode              String?  @map("secondary_ssic_code")
-  secondarySsicDescription       String?  @map("secondary_ssic_description")
-  noOfOfficers                   String?  @map("no_of_officers")
-  formerEntityName1              String?  @map("former_entity_name1")
-  uenOfAuditFirm1                String?  @map("uen_of_audit_firm1")
-  dataAsOf                       String   @map("data_as_of")
-  createdAt                      DateTime @default(now()) @map("created_at")
-  updatedAt                      DateTime @updatedAt @map("updated_at")
+  id                          String   @id @default(uuid())
+  uen                         String   @unique
+  entityName                  String   @map("entity_name")
+  entityStatus                String   @map("entity_status")
+  entityType                  String   @map("entity_type")
+  companyTypeDescription      String?  @map("company_type_description")
+  registrationIncorporateDate String?  @map("registration_incorporate_date")
+  block                       String?  @map("block")
+  streetName                  String?  @map("street_name")
+  levelNo                     String?  @map("level_no")
+  unitNo                      String?  @map("unit_no")
+  buildingName                String?  @map("building_name")
+  postalCode                  String?  @map("postal_code")
+  address                     String?  @map("address")
+  accountDueDate              String?  @map("account_due_date")
+  annualReturnDate            String?  @map("annual_return_date")
+  primarySsicCode             String?  @map("primary_ssic_code")
+  primarySsicDescription      String?  @map("primary_ssic_description")
+  secondarySsicCode           String?  @map("secondary_ssic_code")
+  secondarySsicDescription    String?  @map("secondary_ssic_description")
+  noOfOfficers                String?  @map("no_of_officers")
+  formerEntityName1           String?  @map("former_entity_name1")
+  uenOfAuditFirm1             String?  @map("uen_of_audit_firm1")
+  dataAsOf                    String   @map("data_as_of")
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
 
   @@map("acra_entity")
 }

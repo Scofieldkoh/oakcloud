@@ -17,9 +17,27 @@ export const ErrorCodes = {
   BAD_REQUEST: 'BAD_REQUEST',
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  VERSION_CONFLICT: 'VERSION_CONFLICT',
+  IMPACT_CHANGED: 'IMPACT_CHANGED',
+  RULE_NOT_APPLICABLE: 'RULE_NOT_APPLICABLE',
+  MISSING_RULE_INPUT: 'MISSING_RULE_INPUT',
+  SCHEDULE_LIMIT_EXCEEDED: 'SCHEDULE_LIMIT_EXCEEDED',
+  DUPLICATE_SCHEDULE_ENTRY: 'DUPLICATE_SCHEDULE_ENTRY',
+  OCCURRENCE_IMMUTABLE: 'OCCURRENCE_IMMUTABLE',
+  RECONCILIATION_PENDING: 'RECONCILIATION_PENDING',
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
+
+export type DeadlineErrorCode =
+  | typeof ErrorCodes.VERSION_CONFLICT
+  | typeof ErrorCodes.IMPACT_CHANGED
+  | typeof ErrorCodes.RULE_NOT_APPLICABLE
+  | typeof ErrorCodes.MISSING_RULE_INPUT
+  | typeof ErrorCodes.SCHEDULE_LIMIT_EXCEEDED
+  | typeof ErrorCodes.DUPLICATE_SCHEDULE_ENTRY
+  | typeof ErrorCodes.OCCURRENCE_IMMUTABLE
+  | typeof ErrorCodes.RECONCILIATION_PENDING;
 
 export class ApiError extends Error {
   constructor(
@@ -30,6 +48,27 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+}
+
+/**
+ * Typed errors emitted by the deadline/schedule domain.
+ *
+ * Deadline conflicts are client-resolvable (409), while invalid rule input
+ * and applicability failures are semantically invalid requests (422).
+ */
+export class DeadlineApiError extends ApiError {
+  constructor(
+    code: DeadlineErrorCode,
+    message: string,
+    statusCode: 409 | 422,
+    details?: unknown,
+  ) {
+    if (statusCode !== 409 && statusCode !== 422) {
+      throw new RangeError('Deadline errors must use HTTP 409 or 422');
+    }
+    super(code, message, statusCode, details);
+    this.name = 'DeadlineApiError';
   }
 }
 

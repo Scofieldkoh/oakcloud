@@ -783,6 +783,176 @@ export type EnumClientServiceStatusWithAggregatesFilter<$PrismaModel = never> = 
   _max?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
 }
 
+export type EnumDeadlineRuleVersionStateFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleVersionState | Prisma.EnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel> | $Enums.DeadlineRuleVersionState
+}
+
+export type EnumDeadlineRuleVersionStateWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleVersionState | Prisma.EnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleVersionStateWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineRuleVersionState
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel>
+}
+
+export type EnumDeadlineParameterTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineParameterType | Prisma.EnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineParameterTypeFilter<$PrismaModel> | $Enums.DeadlineParameterType
+}
+
+export type EnumDeadlineParameterTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineParameterType | Prisma.EnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineParameterTypeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineParameterType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineParameterTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineParameterTypeFilter<$PrismaModel>
+}
+
+export type EnumDeadlineTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineType | Prisma.EnumDeadlineTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineTypeFilter<$PrismaModel> | $Enums.DeadlineType
+}
+
+export type EnumDeadlineMilestoneGenerationModeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineMilestoneGenerationMode | Prisma.EnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel> | $Enums.DeadlineMilestoneGenerationMode
+}
+
+export type EnumBusinessDayAdjustmentFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessDayAdjustment | Prisma.EnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessDayAdjustmentFilter<$PrismaModel> | $Enums.BusinessDayAdjustment
+}
+
+export type EnumDeadlineTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineType | Prisma.EnumDeadlineTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineTypeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineTypeFilter<$PrismaModel>
+}
+
+export type EnumDeadlineMilestoneGenerationModeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineMilestoneGenerationMode | Prisma.EnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineMilestoneGenerationModeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineMilestoneGenerationMode
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel>
+}
+
+export type EnumBusinessDayAdjustmentWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessDayAdjustment | Prisma.EnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessDayAdjustmentWithAggregatesFilter<$PrismaModel> | $Enums.BusinessDayAdjustment
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBusinessDayAdjustmentFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBusinessDayAdjustmentFilter<$PrismaModel>
+}
+
+export type EnumDeadlineApplicabilityStateFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineApplicabilityState | Prisma.EnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel> | $Enums.DeadlineApplicabilityState
+}
+
+export type EnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineApplicabilityState | Prisma.EnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineApplicabilityState
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
+}
+
+export type EnumServiceCycleOriginFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceCycleOrigin | Prisma.EnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel> | $Enums.ServiceCycleOrigin
+}
+
+export type EnumServiceCycleOriginWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceCycleOrigin | Prisma.EnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceCycleOriginWithAggregatesFilter<$PrismaModel> | $Enums.ServiceCycleOrigin
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel>
+}
+
+export type EnumDeadlineOccurrenceStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOccurrenceStatus | Prisma.EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel> | $Enums.DeadlineOccurrenceStatus
+}
+
+export type EnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOccurrenceStatus | Prisma.EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineOccurrenceStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
+}
+
+export type EnumScheduleReconciliationScopeTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationScopeType | Prisma.EnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel> | $Enums.ScheduleReconciliationScopeType
+}
+
+export type EnumScheduleReconciliationStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationStatus | Prisma.EnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationStatusFilter<$PrismaModel> | $Enums.ScheduleReconciliationStatus
+}
+
+export type EnumScheduleReconciliationScopeTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationScopeType | Prisma.EnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationScopeTypeWithAggregatesFilter<$PrismaModel> | $Enums.ScheduleReconciliationScopeType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel>
+}
+
+export type EnumScheduleReconciliationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationStatus | Prisma.EnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationStatusWithAggregatesFilter<$PrismaModel> | $Enums.ScheduleReconciliationStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumScheduleReconciliationStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumScheduleReconciliationStatusFilter<$PrismaModel>
+}
+
 export type EnumEsigningEnvelopeStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.EsigningEnvelopeStatus | Prisma.EnumEsigningEnvelopeStatusFieldRefInput<$PrismaModel>
   in?: $Enums.EsigningEnvelopeStatus[] | Prisma.ListEnumEsigningEnvelopeStatusFieldRefInput<$PrismaModel>
@@ -2610,6 +2780,176 @@ export type NestedEnumClientServiceStatusWithAggregatesFilter<$PrismaModel = nev
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleVersionState | Prisma.EnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel> | $Enums.DeadlineRuleVersionState
+}
+
+export type NestedEnumDeadlineRuleVersionStateWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineRuleVersionState | Prisma.EnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineRuleVersionState[] | Prisma.ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineRuleVersionStateWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineRuleVersionState
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineParameterTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineParameterType | Prisma.EnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineParameterTypeFilter<$PrismaModel> | $Enums.DeadlineParameterType
+}
+
+export type NestedEnumDeadlineParameterTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineParameterType | Prisma.EnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineParameterType[] | Prisma.ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineParameterTypeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineParameterType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineParameterTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineParameterTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineType | Prisma.EnumDeadlineTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineTypeFilter<$PrismaModel> | $Enums.DeadlineType
+}
+
+export type NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineMilestoneGenerationMode | Prisma.EnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel> | $Enums.DeadlineMilestoneGenerationMode
+}
+
+export type NestedEnumBusinessDayAdjustmentFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessDayAdjustment | Prisma.EnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessDayAdjustmentFilter<$PrismaModel> | $Enums.BusinessDayAdjustment
+}
+
+export type NestedEnumDeadlineTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineType | Prisma.EnumDeadlineTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineType[] | Prisma.ListEnumDeadlineTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineTypeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineMilestoneGenerationModeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineMilestoneGenerationMode | Prisma.EnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineMilestoneGenerationMode[] | Prisma.ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineMilestoneGenerationModeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineMilestoneGenerationMode
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineMilestoneGenerationModeFilter<$PrismaModel>
+}
+
+export type NestedEnumBusinessDayAdjustmentWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessDayAdjustment | Prisma.EnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessDayAdjustment[] | Prisma.ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessDayAdjustmentWithAggregatesFilter<$PrismaModel> | $Enums.BusinessDayAdjustment
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBusinessDayAdjustmentFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBusinessDayAdjustmentFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineApplicabilityState | Prisma.EnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel> | $Enums.DeadlineApplicabilityState
+}
+
+export type NestedEnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineApplicabilityState | Prisma.EnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineApplicabilityState[] | Prisma.ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineApplicabilityState
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
+}
+
+export type NestedEnumServiceCycleOriginFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceCycleOrigin | Prisma.EnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel> | $Enums.ServiceCycleOrigin
+}
+
+export type NestedEnumServiceCycleOriginWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceCycleOrigin | Prisma.EnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceCycleOriginWithAggregatesFilter<$PrismaModel> | $Enums.ServiceCycleOrigin
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel>
+}
+
+export type NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOccurrenceStatus | Prisma.EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel> | $Enums.DeadlineOccurrenceStatus
+}
+
+export type NestedEnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOccurrenceStatus | Prisma.EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineOccurrenceStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationScopeType | Prisma.EnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel> | $Enums.ScheduleReconciliationScopeType
+}
+
+export type NestedEnumScheduleReconciliationStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationStatus | Prisma.EnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationStatusFilter<$PrismaModel> | $Enums.ScheduleReconciliationStatus
+}
+
+export type NestedEnumScheduleReconciliationScopeTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationScopeType | Prisma.EnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationScopeType[] | Prisma.ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationScopeTypeWithAggregatesFilter<$PrismaModel> | $Enums.ScheduleReconciliationScopeType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumScheduleReconciliationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ScheduleReconciliationStatus | Prisma.EnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ScheduleReconciliationStatus[] | Prisma.ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumScheduleReconciliationStatusWithAggregatesFilter<$PrismaModel> | $Enums.ScheduleReconciliationStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumScheduleReconciliationStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumScheduleReconciliationStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumEsigningEnvelopeStatusFilter<$PrismaModel = never> = {

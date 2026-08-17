@@ -284,6 +284,18 @@ export type UserWhereInput = {
   assignedTaskStages?: Prisma.TaskStageListRelationFilter
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementListRelationFilter
   createdGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
+  createdDeadlineRules?: Prisma.DeadlineRuleListRelationFilter
+  updatedDeadlineRules?: Prisma.DeadlineRuleListRelationFilter
+  archivedDeadlineRules?: Prisma.DeadlineRuleListRelationFilter
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionListRelationFilter
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionListRelationFilter
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleListRelationFilter
+  createdServiceCycles?: Prisma.ServiceCycleListRelationFilter
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -324,6 +336,18 @@ export type UserOrderByWithRelationInput = {
   assignedTaskStages?: Prisma.TaskStageOrderByRelationAggregateInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementOrderByRelationAggregateInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchOrderByRelationAggregateInput
+  createdDeadlineRules?: Prisma.DeadlineRuleOrderByRelationAggregateInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleOrderByRelationAggregateInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleOrderByRelationAggregateInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionOrderByRelationAggregateInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionOrderByRelationAggregateInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleOrderByRelationAggregateInput
+  createdServiceCycles?: Prisma.ServiceCycleOrderByRelationAggregateInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -367,6 +391,18 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   assignedTaskStages?: Prisma.TaskStageListRelationFilter
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementListRelationFilter
   createdGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
+  createdDeadlineRules?: Prisma.DeadlineRuleListRelationFilter
+  updatedDeadlineRules?: Prisma.DeadlineRuleListRelationFilter
+  archivedDeadlineRules?: Prisma.DeadlineRuleListRelationFilter
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionListRelationFilter
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionListRelationFilter
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleListRelationFilter
+  createdServiceCycles?: Prisma.ServiceCycleListRelationFilter
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestListRelationFilter
 }, "id" | "email" | "passwordResetToken">
 
 export type UserOrderByWithAggregationInput = {
@@ -448,6 +484,18 @@ export type UserCreateInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -487,6 +535,18 @@ export type UserUncheckedCreateInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUpdateInput = {
@@ -526,6 +586,18 @@ export type UserUpdateInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -565,6 +637,18 @@ export type UserUncheckedUpdateInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -974,6 +1058,198 @@ export type UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput 
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUpdateWithoutRequestedServiceAgreementActivationsInput>, Prisma.UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput>
 }
 
+export type UserCreateNestedOneWithoutCreatedDeadlineRulesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedDeadlineRulesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutUpdatedDeadlineRulesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUpdatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUpdatedDeadlineRulesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutArchivedDeadlineRulesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutArchivedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutArchivedDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutArchivedDeadlineRulesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutCreatedDeadlineRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedDeadlineRulesInput
+  upsert?: Prisma.UserUpsertWithoutCreatedDeadlineRulesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedDeadlineRulesInput, Prisma.UserUpdateWithoutCreatedDeadlineRulesInput>, Prisma.UserUncheckedUpdateWithoutCreatedDeadlineRulesInput>
+}
+
+export type UserUpdateOneWithoutUpdatedDeadlineRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUpdatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUpdatedDeadlineRulesInput
+  upsert?: Prisma.UserUpsertWithoutUpdatedDeadlineRulesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUpdatedDeadlineRulesInput, Prisma.UserUpdateWithoutUpdatedDeadlineRulesInput>, Prisma.UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput>
+}
+
+export type UserUpdateOneWithoutArchivedDeadlineRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutArchivedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutArchivedDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutArchivedDeadlineRulesInput
+  upsert?: Prisma.UserUpsertWithoutArchivedDeadlineRulesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutArchivedDeadlineRulesInput, Prisma.UserUpdateWithoutArchivedDeadlineRulesInput>, Prisma.UserUncheckedUpdateWithoutArchivedDeadlineRulesInput>
+}
+
+export type UserCreateNestedOneWithoutPublishedDeadlineRuleVersionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPublishedDeadlineRuleVersionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutCreatedDeadlineRuleVersionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedDeadlineRuleVersionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutPublishedDeadlineRuleVersionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPublishedDeadlineRuleVersionsInput
+  upsert?: Prisma.UserUpsertWithoutPublishedDeadlineRuleVersionsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUpdateWithoutPublishedDeadlineRuleVersionsInput>, Prisma.UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput>
+}
+
+export type UserUpdateOneWithoutCreatedDeadlineRuleVersionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedDeadlineRuleVersionsInput
+  upsert?: Prisma.UserUpsertWithoutCreatedDeadlineRuleVersionsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUpdateWithoutCreatedDeadlineRuleVersionsInput>, Prisma.UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput>
+}
+
+export type UserCreateNestedOneWithoutUpdatedClientServiceDeadlineRulesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUpdatedClientServiceDeadlineRulesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutUpdatedClientServiceDeadlineRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUpdatedClientServiceDeadlineRulesInput
+  upsert?: Prisma.UserUpsertWithoutUpdatedClientServiceDeadlineRulesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUpdateWithoutUpdatedClientServiceDeadlineRulesInput>, Prisma.UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput>
+}
+
+export type UserCreateNestedOneWithoutCreatedServiceCyclesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedServiceCyclesInput, Prisma.UserUncheckedCreateWithoutCreatedServiceCyclesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedServiceCyclesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutCreatedServiceCyclesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedServiceCyclesInput, Prisma.UserUncheckedCreateWithoutCreatedServiceCyclesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedServiceCyclesInput
+  upsert?: Prisma.UserUpsertWithoutCreatedServiceCyclesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedServiceCyclesInput, Prisma.UserUpdateWithoutCreatedServiceCyclesInput>, Prisma.UserUncheckedUpdateWithoutCreatedServiceCyclesInput>
+}
+
+export type UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOverriddenDeadlineOccurrencesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCompletedDeadlineOccurrencesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWaivedDeadlineOccurrencesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutCancelledDeadlineOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCancelledDeadlineOccurrencesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOverriddenDeadlineOccurrencesInput
+  upsert?: Prisma.UserUpsertWithoutOverriddenDeadlineOccurrencesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUpdateWithoutOverriddenDeadlineOccurrencesInput>, Prisma.UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput>
+}
+
+export type UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCompletedDeadlineOccurrencesInput
+  upsert?: Prisma.UserUpsertWithoutCompletedDeadlineOccurrencesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUpdateWithoutCompletedDeadlineOccurrencesInput>, Prisma.UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput>
+}
+
+export type UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWaivedDeadlineOccurrencesInput
+  upsert?: Prisma.UserUpsertWithoutWaivedDeadlineOccurrencesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUpdateWithoutWaivedDeadlineOccurrencesInput>, Prisma.UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput>
+}
+
+export type UserUpdateOneWithoutCancelledDeadlineOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCancelledDeadlineOccurrencesInput
+  upsert?: Prisma.UserUpsertWithoutCancelledDeadlineOccurrencesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUpdateWithoutCancelledDeadlineOccurrencesInput>, Prisma.UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput>
+}
+
+export type UserCreateNestedOneWithoutRequestedScheduleReconciliationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestedScheduleReconciliationsInput, Prisma.UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestedScheduleReconciliationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutRequestedScheduleReconciliationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestedScheduleReconciliationsInput, Prisma.UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestedScheduleReconciliationsInput
+  upsert?: Prisma.UserUpsertWithoutRequestedScheduleReconciliationsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestedScheduleReconciliationsInput, Prisma.UserUpdateWithoutRequestedScheduleReconciliationsInput>, Prisma.UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput>
+}
+
 export type UserCreateNestedOneWithoutAiConversationsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutAiConversationsInput, Prisma.UserUncheckedCreateWithoutAiConversationsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutAiConversationsInput
@@ -1086,6 +1362,18 @@ export type UserCreateWithoutTenantInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutTenantInput = {
@@ -1124,6 +1412,18 @@ export type UserUncheckedCreateWithoutTenantInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutTenantInput = {
@@ -1209,6 +1509,18 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -1247,6 +1559,18 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -1301,6 +1625,18 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -1339,6 +1675,18 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutPreferencesInput = {
@@ -1377,6 +1725,18 @@ export type UserCreateWithoutPreferencesInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -1415,6 +1775,18 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -1469,6 +1841,18 @@ export type UserUpdateWithoutPreferencesInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -1507,6 +1891,18 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCompanyAssignmentsInput = {
@@ -1545,6 +1941,18 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
@@ -1583,6 +1991,18 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCompanyAssignmentsInput = {
@@ -1637,6 +2057,18 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
@@ -1675,6 +2107,18 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutUploadedDocumentsInput = {
@@ -1713,6 +2157,18 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
@@ -1751,6 +2207,18 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutUploadedDocumentsInput = {
@@ -1805,6 +2273,18 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
@@ -1843,6 +2323,18 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1881,6 +2373,18 @@ export type UserCreateWithoutAuditLogsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1919,6 +2423,18 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1973,6 +2489,18 @@ export type UserUpdateWithoutAuditLogsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -2011,6 +2539,18 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutConnectorUsageLogsInput = {
@@ -2049,6 +2589,18 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -2087,6 +2639,18 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -2141,6 +2705,18 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -2179,6 +2755,18 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedTemplatesInput = {
@@ -2217,6 +2805,18 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
@@ -2255,6 +2855,18 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedTemplatesInput = {
@@ -2309,6 +2921,18 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
@@ -2347,6 +2971,18 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedDocumentsInput = {
@@ -2385,6 +3021,18 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
@@ -2423,6 +3071,18 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedDocumentsInput = {
@@ -2466,6 +3126,18 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
@@ -2504,6 +3176,18 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutFinalizedDocumentsInput = {
@@ -2558,6 +3242,18 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
@@ -2596,6 +3292,18 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutFinalizedDocumentsInput = {
@@ -2645,6 +3353,18 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
@@ -2683,6 +3403,18 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedGenerationBatchesInput = {
@@ -2721,6 +3453,18 @@ export type UserCreateWithoutCreatedGenerationBatchesInput = {
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedGenerationBatchesInput = {
@@ -2759,6 +3503,18 @@ export type UserUncheckedCreateWithoutCreatedGenerationBatchesInput = {
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedGenerationBatchesInput = {
@@ -2813,6 +3569,18 @@ export type UserUpdateWithoutCreatedGenerationBatchesInput = {
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedGenerationBatchesInput = {
@@ -2851,6 +3619,18 @@ export type UserUncheckedUpdateWithoutCreatedGenerationBatchesInput = {
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutHiddenCommentsInput = {
@@ -2889,6 +3669,18 @@ export type UserCreateWithoutHiddenCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutHiddenCommentsInput = {
@@ -2927,6 +3719,18 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutHiddenCommentsInput = {
@@ -2970,6 +3774,18 @@ export type UserCreateWithoutResolvedCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutResolvedCommentsInput = {
@@ -3008,6 +3824,18 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutResolvedCommentsInput = {
@@ -3051,6 +3879,18 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
@@ -3089,6 +3929,18 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAuthoredCommentsInput = {
@@ -3143,6 +3995,18 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
@@ -3181,6 +4045,18 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutResolvedCommentsInput = {
@@ -3230,6 +4106,18 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
@@ -3268,6 +4156,18 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutAuthoredCommentsInput = {
@@ -3317,6 +4217,18 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
@@ -3355,6 +4267,18 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutDocumentDraftsInput = {
@@ -3393,6 +4317,18 @@ export type UserCreateWithoutDocumentDraftsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutDocumentDraftsInput = {
@@ -3431,6 +4367,18 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutDocumentDraftsInput = {
@@ -3485,6 +4433,18 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
@@ -3523,6 +4483,18 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedPartialsInput = {
@@ -3561,6 +4533,18 @@ export type UserCreateWithoutCreatedPartialsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedPartialsInput = {
@@ -3599,6 +4583,18 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedPartialsInput = {
@@ -3653,6 +4649,18 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
@@ -3691,6 +4699,18 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutRequestedServiceAgreementActivationsInput = {
@@ -3729,6 +4749,18 @@ export type UserCreateWithoutRequestedServiceAgreementActivationsInput = {
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput = {
@@ -3767,6 +4799,18 @@ export type UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput 
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutRequestedServiceAgreementActivationsInput = {
@@ -3821,6 +4865,18 @@ export type UserUpdateWithoutRequestedServiceAgreementActivationsInput = {
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput = {
@@ -3859,6 +4915,2610 @@ export type UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput 
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutCreatedDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutCreatedDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutCreatedDeadlineRulesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRulesInput>
+}
+
+export type UserCreateWithoutUpdatedDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutUpdatedDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutUpdatedDeadlineRulesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutUpdatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedDeadlineRulesInput>
+}
+
+export type UserCreateWithoutArchivedDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutArchivedDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutArchivedDeadlineRulesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutArchivedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutArchivedDeadlineRulesInput>
+}
+
+export type UserUpsertWithoutCreatedDeadlineRulesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutCreatedDeadlineRulesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRulesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCreatedDeadlineRulesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutCreatedDeadlineRulesInput>
+}
+
+export type UserUpdateWithoutCreatedDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCreatedDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUpsertWithoutUpdatedDeadlineRulesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutUpdatedDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutUpdatedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedDeadlineRulesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutUpdatedDeadlineRulesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutUpdatedDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput>
+}
+
+export type UserUpdateWithoutUpdatedDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUpsertWithoutArchivedDeadlineRulesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutArchivedDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutArchivedDeadlineRulesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutArchivedDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutArchivedDeadlineRulesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutArchivedDeadlineRulesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutArchivedDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutArchivedDeadlineRulesInput>
+}
+
+export type UserUpdateWithoutArchivedDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutArchivedDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutPublishedDeadlineRuleVersionsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutPublishedDeadlineRuleVersionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput>
+}
+
+export type UserCreateWithoutCreatedDeadlineRuleVersionsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutCreatedDeadlineRuleVersionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput>
+}
+
+export type UserUpsertWithoutPublishedDeadlineRuleVersionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPublishedDeadlineRuleVersionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPublishedDeadlineRuleVersionsInput, Prisma.UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput>
+}
+
+export type UserUpdateWithoutPublishedDeadlineRuleVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUpsertWithoutCreatedDeadlineRuleVersionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCreatedDeadlineRuleVersionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedDeadlineRuleVersionsInput, Prisma.UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput>
+}
+
+export type UserUpdateWithoutCreatedDeadlineRuleVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutUpdatedClientServiceDeadlineRulesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput>
+}
+
+export type UserUpsertWithoutUpdatedClientServiceDeadlineRulesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutUpdatedClientServiceDeadlineRulesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutUpdatedClientServiceDeadlineRulesInput, Prisma.UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput>
+}
+
+export type UserUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutCreatedServiceCyclesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutCreatedServiceCyclesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutCreatedServiceCyclesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedServiceCyclesInput, Prisma.UserUncheckedCreateWithoutCreatedServiceCyclesInput>
+}
+
+export type UserUpsertWithoutCreatedServiceCyclesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedServiceCyclesInput, Prisma.UserUncheckedUpdateWithoutCreatedServiceCyclesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedServiceCyclesInput, Prisma.UserUncheckedCreateWithoutCreatedServiceCyclesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCreatedServiceCyclesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedServiceCyclesInput, Prisma.UserUncheckedUpdateWithoutCreatedServiceCyclesInput>
+}
+
+export type UserUpdateWithoutCreatedServiceCyclesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCreatedServiceCyclesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutOverriddenDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutOverriddenDeadlineOccurrencesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput>
+}
+
+export type UserCreateWithoutCompletedDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutCompletedDeadlineOccurrencesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput>
+}
+
+export type UserCreateWithoutWaivedDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutWaivedDeadlineOccurrencesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput>
+}
+
+export type UserCreateWithoutCancelledDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutCancelledDeadlineOccurrencesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput>
+}
+
+export type UserUpsertWithoutOverriddenDeadlineOccurrencesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutOverriddenDeadlineOccurrencesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutOverriddenDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput>
+}
+
+export type UserUpdateWithoutOverriddenDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUpsertWithoutCompletedDeadlineOccurrencesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCompletedDeadlineOccurrencesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCompletedDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput>
+}
+
+export type UserUpdateWithoutCompletedDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUpsertWithoutWaivedDeadlineOccurrencesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutWaivedDeadlineOccurrencesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutWaivedDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput>
+}
+
+export type UserUpdateWithoutWaivedDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUpsertWithoutCancelledDeadlineOccurrencesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCancelledDeadlineOccurrencesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCancelledDeadlineOccurrencesInput, Prisma.UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput>
+}
+
+export type UserUpdateWithoutCancelledDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutRequestedScheduleReconciliationsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+}
+
+export type UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+}
+
+export type UserCreateOrConnectWithoutRequestedScheduleReconciliationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestedScheduleReconciliationsInput, Prisma.UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput>
+}
+
+export type UserUpsertWithoutRequestedScheduleReconciliationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestedScheduleReconciliationsInput, Prisma.UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestedScheduleReconciliationsInput, Prisma.UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestedScheduleReconciliationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestedScheduleReconciliationsInput, Prisma.UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput>
+}
+
+export type UserUpdateWithoutRequestedScheduleReconciliationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
 }
 
 export type UserCreateWithoutAiConversationsInput = {
@@ -3897,6 +7557,18 @@ export type UserCreateWithoutAiConversationsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAiConversationsInput = {
@@ -3935,6 +7607,18 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAiConversationsInput = {
@@ -3989,6 +7673,18 @@ export type UserUpdateWithoutAiConversationsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiConversationsInput = {
@@ -4027,6 +7723,18 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
@@ -4065,6 +7773,18 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
@@ -4103,6 +7823,18 @@ export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedEsigningEnvelopesInput = {
@@ -4157,6 +7889,18 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
@@ -4195,6 +7939,18 @@ export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutOwnedTasksInput = {
@@ -4233,6 +7989,18 @@ export type UserCreateWithoutOwnedTasksInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutOwnedTasksInput = {
@@ -4271,6 +8039,18 @@ export type UserUncheckedCreateWithoutOwnedTasksInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutOwnedTasksInput = {
@@ -4325,6 +8105,18 @@ export type UserUpdateWithoutOwnedTasksInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOwnedTasksInput = {
@@ -4363,6 +8155,18 @@ export type UserUncheckedUpdateWithoutOwnedTasksInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutAssignedTaskStagesInput = {
@@ -4401,6 +8205,18 @@ export type UserCreateWithoutAssignedTaskStagesInput = {
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
@@ -4439,6 +8255,18 @@ export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAssignedTaskStagesInput = {
@@ -4493,6 +8321,18 @@ export type UserUpdateWithoutAssignedTaskStagesInput = {
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
@@ -4531,6 +8371,18 @@ export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4569,6 +8421,18 @@ export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4607,6 +8471,18 @@ export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4661,6 +8537,18 @@ export type UserUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4699,6 +8587,18 @@ export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateManyTenantInput = {
@@ -4754,6 +8654,18 @@ export type UserUpdateWithoutTenantInput = {
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTenantInput = {
@@ -4792,6 +8704,18 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -4838,6 +8762,18 @@ export type UserCountOutputType = {
   assignedTaskStages: number
   requestedServiceAgreementActivations: number
   createdGenerationBatches: number
+  createdDeadlineRules: number
+  updatedDeadlineRules: number
+  archivedDeadlineRules: number
+  createdDeadlineRuleVersions: number
+  publishedDeadlineRuleVersions: number
+  updatedClientServiceDeadlineRules: number
+  createdServiceCycles: number
+  overriddenDeadlineOccurrences: number
+  completedDeadlineOccurrences: number
+  waivedDeadlineOccurrences: number
+  cancelledDeadlineOccurrences: number
+  requestedScheduleReconciliations: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4862,6 +8798,18 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   assignedTaskStages?: boolean | UserCountOutputTypeCountAssignedTaskStagesArgs
   requestedServiceAgreementActivations?: boolean | UserCountOutputTypeCountRequestedServiceAgreementActivationsArgs
   createdGenerationBatches?: boolean | UserCountOutputTypeCountCreatedGenerationBatchesArgs
+  createdDeadlineRules?: boolean | UserCountOutputTypeCountCreatedDeadlineRulesArgs
+  updatedDeadlineRules?: boolean | UserCountOutputTypeCountUpdatedDeadlineRulesArgs
+  archivedDeadlineRules?: boolean | UserCountOutputTypeCountArchivedDeadlineRulesArgs
+  createdDeadlineRuleVersions?: boolean | UserCountOutputTypeCountCreatedDeadlineRuleVersionsArgs
+  publishedDeadlineRuleVersions?: boolean | UserCountOutputTypeCountPublishedDeadlineRuleVersionsArgs
+  updatedClientServiceDeadlineRules?: boolean | UserCountOutputTypeCountUpdatedClientServiceDeadlineRulesArgs
+  createdServiceCycles?: boolean | UserCountOutputTypeCountCreatedServiceCyclesArgs
+  overriddenDeadlineOccurrences?: boolean | UserCountOutputTypeCountOverriddenDeadlineOccurrencesArgs
+  completedDeadlineOccurrences?: boolean | UserCountOutputTypeCountCompletedDeadlineOccurrencesArgs
+  waivedDeadlineOccurrences?: boolean | UserCountOutputTypeCountWaivedDeadlineOccurrencesArgs
+  cancelledDeadlineOccurrences?: boolean | UserCountOutputTypeCountCancelledDeadlineOccurrencesArgs
+  requestedScheduleReconciliations?: boolean | UserCountOutputTypeCountRequestedScheduleReconciliationsArgs
 }
 
 /**
@@ -5021,6 +8969,90 @@ export type UserCountOutputTypeCountCreatedGenerationBatchesArgs<ExtArgs extends
   where?: Prisma.DocumentGenerationBatchWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCreatedDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineRuleWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountUpdatedDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineRuleWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountArchivedDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineRuleWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCreatedDeadlineRuleVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineRuleVersionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPublishedDeadlineRuleVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineRuleVersionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountUpdatedClientServiceDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceDeadlineRuleWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCreatedServiceCyclesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ServiceCycleWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountOverriddenDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCompletedDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountWaivedDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCancelledDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestedScheduleReconciliationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -5060,6 +9092,18 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   assignedTaskStages?: boolean | Prisma.User$assignedTaskStagesArgs<ExtArgs>
   requestedServiceAgreementActivations?: boolean | Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs>
   createdGenerationBatches?: boolean | Prisma.User$createdGenerationBatchesArgs<ExtArgs>
+  createdDeadlineRules?: boolean | Prisma.User$createdDeadlineRulesArgs<ExtArgs>
+  updatedDeadlineRules?: boolean | Prisma.User$updatedDeadlineRulesArgs<ExtArgs>
+  archivedDeadlineRules?: boolean | Prisma.User$archivedDeadlineRulesArgs<ExtArgs>
+  createdDeadlineRuleVersions?: boolean | Prisma.User$createdDeadlineRuleVersionsArgs<ExtArgs>
+  publishedDeadlineRuleVersions?: boolean | Prisma.User$publishedDeadlineRuleVersionsArgs<ExtArgs>
+  updatedClientServiceDeadlineRules?: boolean | Prisma.User$updatedClientServiceDeadlineRulesArgs<ExtArgs>
+  createdServiceCycles?: boolean | Prisma.User$createdServiceCyclesArgs<ExtArgs>
+  overriddenDeadlineOccurrences?: boolean | Prisma.User$overriddenDeadlineOccurrencesArgs<ExtArgs>
+  completedDeadlineOccurrences?: boolean | Prisma.User$completedDeadlineOccurrencesArgs<ExtArgs>
+  waivedDeadlineOccurrences?: boolean | Prisma.User$waivedDeadlineOccurrencesArgs<ExtArgs>
+  cancelledDeadlineOccurrences?: boolean | Prisma.User$cancelledDeadlineOccurrencesArgs<ExtArgs>
+  requestedScheduleReconciliations?: boolean | Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -5143,6 +9187,18 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   assignedTaskStages?: boolean | Prisma.User$assignedTaskStagesArgs<ExtArgs>
   requestedServiceAgreementActivations?: boolean | Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs>
   createdGenerationBatches?: boolean | Prisma.User$createdGenerationBatchesArgs<ExtArgs>
+  createdDeadlineRules?: boolean | Prisma.User$createdDeadlineRulesArgs<ExtArgs>
+  updatedDeadlineRules?: boolean | Prisma.User$updatedDeadlineRulesArgs<ExtArgs>
+  archivedDeadlineRules?: boolean | Prisma.User$archivedDeadlineRulesArgs<ExtArgs>
+  createdDeadlineRuleVersions?: boolean | Prisma.User$createdDeadlineRuleVersionsArgs<ExtArgs>
+  publishedDeadlineRuleVersions?: boolean | Prisma.User$publishedDeadlineRuleVersionsArgs<ExtArgs>
+  updatedClientServiceDeadlineRules?: boolean | Prisma.User$updatedClientServiceDeadlineRulesArgs<ExtArgs>
+  createdServiceCycles?: boolean | Prisma.User$createdServiceCyclesArgs<ExtArgs>
+  overriddenDeadlineOccurrences?: boolean | Prisma.User$overriddenDeadlineOccurrencesArgs<ExtArgs>
+  completedDeadlineOccurrences?: boolean | Prisma.User$completedDeadlineOccurrencesArgs<ExtArgs>
+  waivedDeadlineOccurrences?: boolean | Prisma.User$waivedDeadlineOccurrencesArgs<ExtArgs>
+  cancelledDeadlineOccurrences?: boolean | Prisma.User$cancelledDeadlineOccurrencesArgs<ExtArgs>
+  requestedScheduleReconciliations?: boolean | Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -5177,6 +9233,18 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     assignedTaskStages: Prisma.$TaskStagePayload<ExtArgs>[]
     requestedServiceAgreementActivations: Prisma.$ServiceAgreementPayload<ExtArgs>[]
     createdGenerationBatches: Prisma.$DocumentGenerationBatchPayload<ExtArgs>[]
+    createdDeadlineRules: Prisma.$DeadlineRulePayload<ExtArgs>[]
+    updatedDeadlineRules: Prisma.$DeadlineRulePayload<ExtArgs>[]
+    archivedDeadlineRules: Prisma.$DeadlineRulePayload<ExtArgs>[]
+    createdDeadlineRuleVersions: Prisma.$DeadlineRuleVersionPayload<ExtArgs>[]
+    publishedDeadlineRuleVersions: Prisma.$DeadlineRuleVersionPayload<ExtArgs>[]
+    updatedClientServiceDeadlineRules: Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>[]
+    createdServiceCycles: Prisma.$ServiceCyclePayload<ExtArgs>[]
+    overriddenDeadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    completedDeadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    waivedDeadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    cancelledDeadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    requestedScheduleReconciliations: Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -5610,6 +9678,18 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   assignedTaskStages<T extends Prisma.User$assignedTaskStagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignedTaskStagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   requestedServiceAgreementActivations<T extends Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdGenerationBatches<T extends Prisma.User$createdGenerationBatchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdGenerationBatchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  createdDeadlineRules<T extends Prisma.User$createdDeadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdDeadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  updatedDeadlineRules<T extends Prisma.User$updatedDeadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$updatedDeadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  archivedDeadlineRules<T extends Prisma.User$archivedDeadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$archivedDeadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  createdDeadlineRuleVersions<T extends Prisma.User$createdDeadlineRuleVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdDeadlineRuleVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRuleVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  publishedDeadlineRuleVersions<T extends Prisma.User$publishedDeadlineRuleVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$publishedDeadlineRuleVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineRuleVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  updatedClientServiceDeadlineRules<T extends Prisma.User$updatedClientServiceDeadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$updatedClientServiceDeadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  createdServiceCycles<T extends Prisma.User$createdServiceCyclesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdServiceCyclesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  overriddenDeadlineOccurrences<T extends Prisma.User$overriddenDeadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$overriddenDeadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  completedDeadlineOccurrences<T extends Prisma.User$completedDeadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$completedDeadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  waivedDeadlineOccurrences<T extends Prisma.User$waivedDeadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$waivedDeadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cancelledDeadlineOccurrences<T extends Prisma.User$cancelledDeadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cancelledDeadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requestedScheduleReconciliations<T extends Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6570,6 +10650,294 @@ export type User$createdGenerationBatchesArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.DocumentGenerationBatchScalarFieldEnum | Prisma.DocumentGenerationBatchScalarFieldEnum[]
+}
+
+/**
+ * User.createdDeadlineRules
+ */
+export type User$createdDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineRule
+   */
+  select?: Prisma.DeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineRule
+   */
+  omit?: Prisma.DeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.DeadlineRuleWhereInput
+  orderBy?: Prisma.DeadlineRuleOrderByWithRelationInput | Prisma.DeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineRuleScalarFieldEnum | Prisma.DeadlineRuleScalarFieldEnum[]
+}
+
+/**
+ * User.updatedDeadlineRules
+ */
+export type User$updatedDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineRule
+   */
+  select?: Prisma.DeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineRule
+   */
+  omit?: Prisma.DeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.DeadlineRuleWhereInput
+  orderBy?: Prisma.DeadlineRuleOrderByWithRelationInput | Prisma.DeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineRuleScalarFieldEnum | Prisma.DeadlineRuleScalarFieldEnum[]
+}
+
+/**
+ * User.archivedDeadlineRules
+ */
+export type User$archivedDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineRule
+   */
+  select?: Prisma.DeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineRule
+   */
+  omit?: Prisma.DeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.DeadlineRuleWhereInput
+  orderBy?: Prisma.DeadlineRuleOrderByWithRelationInput | Prisma.DeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineRuleScalarFieldEnum | Prisma.DeadlineRuleScalarFieldEnum[]
+}
+
+/**
+ * User.createdDeadlineRuleVersions
+ */
+export type User$createdDeadlineRuleVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineRuleVersion
+   */
+  select?: Prisma.DeadlineRuleVersionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineRuleVersion
+   */
+  omit?: Prisma.DeadlineRuleVersionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineRuleVersionInclude<ExtArgs> | null
+  where?: Prisma.DeadlineRuleVersionWhereInput
+  orderBy?: Prisma.DeadlineRuleVersionOrderByWithRelationInput | Prisma.DeadlineRuleVersionOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineRuleVersionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineRuleVersionScalarFieldEnum | Prisma.DeadlineRuleVersionScalarFieldEnum[]
+}
+
+/**
+ * User.publishedDeadlineRuleVersions
+ */
+export type User$publishedDeadlineRuleVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineRuleVersion
+   */
+  select?: Prisma.DeadlineRuleVersionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineRuleVersion
+   */
+  omit?: Prisma.DeadlineRuleVersionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineRuleVersionInclude<ExtArgs> | null
+  where?: Prisma.DeadlineRuleVersionWhereInput
+  orderBy?: Prisma.DeadlineRuleVersionOrderByWithRelationInput | Prisma.DeadlineRuleVersionOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineRuleVersionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineRuleVersionScalarFieldEnum | Prisma.DeadlineRuleVersionScalarFieldEnum[]
+}
+
+/**
+ * User.updatedClientServiceDeadlineRules
+ */
+export type User$updatedClientServiceDeadlineRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientServiceDeadlineRule
+   */
+  select?: Prisma.ClientServiceDeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientServiceDeadlineRule
+   */
+  omit?: Prisma.ClientServiceDeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceDeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceDeadlineRuleWhereInput
+  orderBy?: Prisma.ClientServiceDeadlineRuleOrderByWithRelationInput | Prisma.ClientServiceDeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceDeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceDeadlineRuleScalarFieldEnum | Prisma.ClientServiceDeadlineRuleScalarFieldEnum[]
+}
+
+/**
+ * User.createdServiceCycles
+ */
+export type User$createdServiceCyclesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceCycle
+   */
+  select?: Prisma.ServiceCycleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceCycle
+   */
+  omit?: Prisma.ServiceCycleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceCycleInclude<ExtArgs> | null
+  where?: Prisma.ServiceCycleWhereInput
+  orderBy?: Prisma.ServiceCycleOrderByWithRelationInput | Prisma.ServiceCycleOrderByWithRelationInput[]
+  cursor?: Prisma.ServiceCycleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ServiceCycleScalarFieldEnum | Prisma.ServiceCycleScalarFieldEnum[]
+}
+
+/**
+ * User.overriddenDeadlineOccurrences
+ */
+export type User$overriddenDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrence
+   */
+  select?: Prisma.DeadlineOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrence
+   */
+  omit?: Prisma.DeadlineOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceOrderByWithRelationInput | Prisma.DeadlineOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * User.completedDeadlineOccurrences
+ */
+export type User$completedDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrence
+   */
+  select?: Prisma.DeadlineOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrence
+   */
+  omit?: Prisma.DeadlineOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceOrderByWithRelationInput | Prisma.DeadlineOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * User.waivedDeadlineOccurrences
+ */
+export type User$waivedDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrence
+   */
+  select?: Prisma.DeadlineOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrence
+   */
+  omit?: Prisma.DeadlineOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceOrderByWithRelationInput | Prisma.DeadlineOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * User.cancelledDeadlineOccurrences
+ */
+export type User$cancelledDeadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrence
+   */
+  select?: Prisma.DeadlineOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrence
+   */
+  omit?: Prisma.DeadlineOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceOrderByWithRelationInput | Prisma.DeadlineOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * User.requestedScheduleReconciliations
+ */
+export type User$requestedScheduleReconciliationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceScheduleReconciliationRequest
+   */
+  select?: Prisma.ServiceScheduleReconciliationRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceScheduleReconciliationRequest
+   */
+  omit?: Prisma.ServiceScheduleReconciliationRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceScheduleReconciliationRequestInclude<ExtArgs> | null
+  where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
+  orderBy?: Prisma.ServiceScheduleReconciliationRequestOrderByWithRelationInput | Prisma.ServiceScheduleReconciliationRequestOrderByWithRelationInput[]
+  cursor?: Prisma.ServiceScheduleReconciliationRequestWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ServiceScheduleReconciliationRequestScalarFieldEnum | Prisma.ServiceScheduleReconciliationRequestScalarFieldEnum[]
 }
 
 /**

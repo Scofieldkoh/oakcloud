@@ -430,6 +430,17 @@ export const ModelName = {
   ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
   ClientService: 'ClientService',
   ClientServiceFeeLine: 'ClientServiceFeeLine',
+  DeadlineRule: 'DeadlineRule',
+  DeadlineRuleVersion: 'DeadlineRuleVersion',
+  DeadlineRuleParameterDefinition: 'DeadlineRuleParameterDefinition',
+  DeadlineMilestoneTemplate: 'DeadlineMilestoneTemplate',
+  ServiceVariantDeadlineRule: 'ServiceVariantDeadlineRule',
+  ClientServiceDeadlineRule: 'ClientServiceDeadlineRule',
+  BusinessCalendar: 'BusinessCalendar',
+  BusinessHoliday: 'BusinessHoliday',
+  ServiceCycle: 'ServiceCycle',
+  DeadlineOccurrence: 'DeadlineOccurrence',
+  ServiceScheduleReconciliationRequest: 'ServiceScheduleReconciliationRequest',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
@@ -508,7 +519,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3913,6 +3924,820 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ClientServiceFeeLineCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ClientServiceFeeLineCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineRule: {
+      payload: Prisma.$DeadlineRulePayload<ExtArgs>
+      fields: Prisma.DeadlineRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        update: {
+          args: Prisma.DeadlineRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRulePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineRule>
+        }
+        groupBy: {
+          args: Prisma.DeadlineRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineRuleVersion: {
+      payload: Prisma.$DeadlineRuleVersionPayload<ExtArgs>
+      fields: Prisma.DeadlineRuleVersionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineRuleVersionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineRuleVersionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineRuleVersionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineRuleVersionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineRuleVersionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineRuleVersionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineRuleVersionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineRuleVersionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineRuleVersionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>
+        }
+        update: {
+          args: Prisma.DeadlineRuleVersionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineRuleVersionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineRuleVersionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineRuleVersionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineRuleVersionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleVersionPayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineRuleVersionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineRuleVersion>
+        }
+        groupBy: {
+          args: Prisma.DeadlineRuleVersionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleVersionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineRuleVersionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleVersionCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineRuleParameterDefinition: {
+      payload: Prisma.$DeadlineRuleParameterDefinitionPayload<ExtArgs>
+      fields: Prisma.DeadlineRuleParameterDefinitionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineRuleParameterDefinitionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineRuleParameterDefinitionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineRuleParameterDefinitionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineRuleParameterDefinitionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineRuleParameterDefinitionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineRuleParameterDefinitionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineRuleParameterDefinitionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineRuleParameterDefinitionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineRuleParameterDefinitionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>
+        }
+        update: {
+          args: Prisma.DeadlineRuleParameterDefinitionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineRuleParameterDefinitionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineRuleParameterDefinitionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineRuleParameterDefinitionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineRuleParameterDefinitionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineRuleParameterDefinitionPayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineRuleParameterDefinitionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineRuleParameterDefinition>
+        }
+        groupBy: {
+          args: Prisma.DeadlineRuleParameterDefinitionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleParameterDefinitionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineRuleParameterDefinitionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineRuleParameterDefinitionCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineMilestoneTemplate: {
+      payload: Prisma.$DeadlineMilestoneTemplatePayload<ExtArgs>
+      fields: Prisma.DeadlineMilestoneTemplateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineMilestoneTemplateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineMilestoneTemplateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineMilestoneTemplateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineMilestoneTemplateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineMilestoneTemplateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineMilestoneTemplateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineMilestoneTemplateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineMilestoneTemplateCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineMilestoneTemplateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>
+        }
+        update: {
+          args: Prisma.DeadlineMilestoneTemplateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineMilestoneTemplateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineMilestoneTemplateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineMilestoneTemplateUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineMilestoneTemplateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineMilestoneTemplatePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineMilestoneTemplateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineMilestoneTemplate>
+        }
+        groupBy: {
+          args: Prisma.DeadlineMilestoneTemplateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineMilestoneTemplateGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineMilestoneTemplateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineMilestoneTemplateCountAggregateOutputType> | number
+        }
+      }
+    }
+    ServiceVariantDeadlineRule: {
+      payload: Prisma.$ServiceVariantDeadlineRulePayload<ExtArgs>
+      fields: Prisma.ServiceVariantDeadlineRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ServiceVariantDeadlineRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ServiceVariantDeadlineRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>
+        }
+        findFirst: {
+          args: Prisma.ServiceVariantDeadlineRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ServiceVariantDeadlineRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>
+        }
+        findMany: {
+          args: Prisma.ServiceVariantDeadlineRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>[]
+        }
+        create: {
+          args: Prisma.ServiceVariantDeadlineRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>
+        }
+        createMany: {
+          args: Prisma.ServiceVariantDeadlineRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ServiceVariantDeadlineRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>[]
+        }
+        delete: {
+          args: Prisma.ServiceVariantDeadlineRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>
+        }
+        update: {
+          args: Prisma.ServiceVariantDeadlineRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.ServiceVariantDeadlineRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ServiceVariantDeadlineRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ServiceVariantDeadlineRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.ServiceVariantDeadlineRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceVariantDeadlineRulePayload>
+        }
+        aggregate: {
+          args: Prisma.ServiceVariantDeadlineRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateServiceVariantDeadlineRule>
+        }
+        groupBy: {
+          args: Prisma.ServiceVariantDeadlineRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ServiceVariantDeadlineRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ServiceVariantDeadlineRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ServiceVariantDeadlineRuleCountAggregateOutputType> | number
+        }
+      }
+    }
+    ClientServiceDeadlineRule: {
+      payload: Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>
+      fields: Prisma.ClientServiceDeadlineRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ClientServiceDeadlineRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ClientServiceDeadlineRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>
+        }
+        findFirst: {
+          args: Prisma.ClientServiceDeadlineRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ClientServiceDeadlineRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>
+        }
+        findMany: {
+          args: Prisma.ClientServiceDeadlineRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>[]
+        }
+        create: {
+          args: Prisma.ClientServiceDeadlineRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>
+        }
+        createMany: {
+          args: Prisma.ClientServiceDeadlineRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ClientServiceDeadlineRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>[]
+        }
+        delete: {
+          args: Prisma.ClientServiceDeadlineRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>
+        }
+        update: {
+          args: Prisma.ClientServiceDeadlineRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.ClientServiceDeadlineRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ClientServiceDeadlineRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ClientServiceDeadlineRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.ClientServiceDeadlineRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceDeadlineRulePayload>
+        }
+        aggregate: {
+          args: Prisma.ClientServiceDeadlineRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateClientServiceDeadlineRule>
+        }
+        groupBy: {
+          args: Prisma.ClientServiceDeadlineRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceDeadlineRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ClientServiceDeadlineRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceDeadlineRuleCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessCalendar: {
+      payload: Prisma.$BusinessCalendarPayload<ExtArgs>
+      fields: Prisma.BusinessCalendarFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessCalendarFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessCalendarFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessCalendarFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessCalendarFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessCalendarFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessCalendarCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessCalendarCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessCalendarCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessCalendarDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>
+        }
+        update: {
+          args: Prisma.BusinessCalendarUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessCalendarDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessCalendarUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessCalendarUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessCalendarUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessCalendarPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessCalendarAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessCalendar>
+        }
+        groupBy: {
+          args: Prisma.BusinessCalendarGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessCalendarGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessCalendarCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessCalendarCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessHoliday: {
+      payload: Prisma.$BusinessHolidayPayload<ExtArgs>
+      fields: Prisma.BusinessHolidayFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessHolidayFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessHolidayFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessHolidayFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessHolidayFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessHolidayFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessHolidayCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessHolidayCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessHolidayCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessHolidayDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>
+        }
+        update: {
+          args: Prisma.BusinessHolidayUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessHolidayDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessHolidayUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessHolidayUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessHolidayUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessHolidayPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessHolidayAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessHoliday>
+        }
+        groupBy: {
+          args: Prisma.BusinessHolidayGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessHolidayGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessHolidayCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessHolidayCountAggregateOutputType> | number
+        }
+      }
+    }
+    ServiceCycle: {
+      payload: Prisma.$ServiceCyclePayload<ExtArgs>
+      fields: Prisma.ServiceCycleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ServiceCycleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ServiceCycleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>
+        }
+        findFirst: {
+          args: Prisma.ServiceCycleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ServiceCycleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>
+        }
+        findMany: {
+          args: Prisma.ServiceCycleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>[]
+        }
+        create: {
+          args: Prisma.ServiceCycleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>
+        }
+        createMany: {
+          args: Prisma.ServiceCycleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ServiceCycleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>[]
+        }
+        delete: {
+          args: Prisma.ServiceCycleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>
+        }
+        update: {
+          args: Prisma.ServiceCycleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>
+        }
+        deleteMany: {
+          args: Prisma.ServiceCycleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ServiceCycleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ServiceCycleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>[]
+        }
+        upsert: {
+          args: Prisma.ServiceCycleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceCyclePayload>
+        }
+        aggregate: {
+          args: Prisma.ServiceCycleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateServiceCycle>
+        }
+        groupBy: {
+          args: Prisma.ServiceCycleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ServiceCycleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ServiceCycleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ServiceCycleCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineOccurrence: {
+      payload: Prisma.$DeadlineOccurrencePayload<ExtArgs>
+      fields: Prisma.DeadlineOccurrenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineOccurrenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineOccurrenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineOccurrenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineOccurrenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineOccurrenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineOccurrenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineOccurrenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineOccurrenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineOccurrenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>
+        }
+        update: {
+          args: Prisma.DeadlineOccurrenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineOccurrenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineOccurrenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineOccurrenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineOccurrenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrencePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineOccurrenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineOccurrence>
+        }
+        groupBy: {
+          args: Prisma.DeadlineOccurrenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineOccurrenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineOccurrenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineOccurrenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    ServiceScheduleReconciliationRequest: {
+      payload: Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>
+      fields: Prisma.ServiceScheduleReconciliationRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ServiceScheduleReconciliationRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ServiceScheduleReconciliationRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.ServiceScheduleReconciliationRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ServiceScheduleReconciliationRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>
+        }
+        findMany: {
+          args: Prisma.ServiceScheduleReconciliationRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>[]
+        }
+        create: {
+          args: Prisma.ServiceScheduleReconciliationRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>
+        }
+        createMany: {
+          args: Prisma.ServiceScheduleReconciliationRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ServiceScheduleReconciliationRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.ServiceScheduleReconciliationRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>
+        }
+        update: {
+          args: Prisma.ServiceScheduleReconciliationRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.ServiceScheduleReconciliationRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ServiceScheduleReconciliationRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ServiceScheduleReconciliationRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.ServiceScheduleReconciliationRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ServiceScheduleReconciliationRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.ServiceScheduleReconciliationRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateServiceScheduleReconciliationRequest>
+        }
+        groupBy: {
+          args: Prisma.ServiceScheduleReconciliationRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ServiceScheduleReconciliationRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ServiceScheduleReconciliationRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ServiceScheduleReconciliationRequestCountAggregateOutputType> | number
         }
       }
     }
@@ -9514,6 +10339,241 @@ export const ClientServiceFeeLineScalarFieldEnum = {
 export type ClientServiceFeeLineScalarFieldEnum = (typeof ClientServiceFeeLineScalarFieldEnum)[keyof typeof ClientServiceFeeLineScalarFieldEnum]
 
 
+export const DeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  isActive: 'isActive',
+  archivedAt: 'archivedAt',
+  archivedById: 'archivedById',
+  archiveReason: 'archiveReason',
+  currentVersionId: 'currentVersionId',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineRuleScalarFieldEnum = (typeof DeadlineRuleScalarFieldEnum)[keyof typeof DeadlineRuleScalarFieldEnum]
+
+
+export const DeadlineRuleVersionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ruleId: 'ruleId',
+  version: 'version',
+  state: 'state',
+  schemaVersion: 'schemaVersion',
+  recurrence: 'recurrence',
+  applicability: 'applicability',
+  configHash: 'configHash',
+  draftRevision: 'draftRevision',
+  publishedAt: 'publishedAt',
+  publishedById: 'publishedById',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineRuleVersionScalarFieldEnum = (typeof DeadlineRuleVersionScalarFieldEnum)[keyof typeof DeadlineRuleVersionScalarFieldEnum]
+
+
+export const DeadlineRuleParameterDefinitionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ruleVersionId: 'ruleVersionId',
+  key: 'key',
+  label: 'label',
+  type: 'type',
+  isRequired: 'isRequired',
+  defaultValue: 'defaultValue',
+  validation: 'validation',
+  helpText: 'helpText',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineRuleParameterDefinitionScalarFieldEnum = (typeof DeadlineRuleParameterDefinitionScalarFieldEnum)[keyof typeof DeadlineRuleParameterDefinitionScalarFieldEnum]
+
+
+export const DeadlineMilestoneTemplateScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ruleVersionId: 'ruleVersionId',
+  milestoneKey: 'milestoneKey',
+  name: 'name',
+  description: 'description',
+  type: 'type',
+  generationMode: 'generationMode',
+  dateExpression: 'dateExpression',
+  businessDayAdjustment: 'businessDayAdjustment',
+  displayOrder: 'displayOrder',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineMilestoneTemplateScalarFieldEnum = (typeof DeadlineMilestoneTemplateScalarFieldEnum)[keyof typeof DeadlineMilestoneTemplateScalarFieldEnum]
+
+
+export const ServiceVariantDeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  serviceVariantId: 'serviceVariantId',
+  ruleId: 'ruleId',
+  enabledByDefault: 'enabledByDefault',
+  parameterDefaults: 'parameterDefaults',
+  scheduleDefaults: 'scheduleDefaults',
+  displayOrder: 'displayOrder',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceVariantDeadlineRuleScalarFieldEnum = (typeof ServiceVariantDeadlineRuleScalarFieldEnum)[keyof typeof ServiceVariantDeadlineRuleScalarFieldEnum]
+
+
+export const ClientServiceDeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  clientServiceId: 'clientServiceId',
+  ruleId: 'ruleId',
+  enabled: 'enabled',
+  parameterValues: 'parameterValues',
+  parameterProvenance: 'parameterProvenance',
+  scheduleEntries: 'scheduleEntries',
+  lastEvaluatedVersionId: 'lastEvaluatedVersionId',
+  applicabilityState: 'applicabilityState',
+  applicabilityReason: 'applicabilityReason',
+  configHash: 'configHash',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+} as const
+
+export type ClientServiceDeadlineRuleScalarFieldEnum = (typeof ClientServiceDeadlineRuleScalarFieldEnum)[keyof typeof ClientServiceDeadlineRuleScalarFieldEnum]
+
+
+export const BusinessCalendarScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  jurisdictionCode: 'jurisdictionCode',
+  timeZone: 'timeZone',
+  weekendDays: 'weekendDays',
+  revision: 'revision',
+  isActive: 'isActive',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessCalendarScalarFieldEnum = (typeof BusinessCalendarScalarFieldEnum)[keyof typeof BusinessCalendarScalarFieldEnum]
+
+
+export const BusinessHolidayScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  calendarId: 'calendarId',
+  date: 'date',
+  name: 'name',
+  description: 'description',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessHolidayScalarFieldEnum = (typeof BusinessHolidayScalarFieldEnum)[keyof typeof BusinessHolidayScalarFieldEnum]
+
+
+export const ServiceCycleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  ruleId: 'ruleId',
+  ruleVersionId: 'ruleVersionId',
+  businessCalendarId: 'businessCalendarId',
+  businessCalendarRevision: 'businessCalendarRevision',
+  periodKey: 'periodKey',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  generationKey: 'generationKey',
+  origin: 'origin',
+  recurrenceAnchor: 'recurrenceAnchor',
+  sourceSnapshot: 'sourceSnapshot',
+  evaluationHash: 'evaluationHash',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceCycleScalarFieldEnum = (typeof ServiceCycleScalarFieldEnum)[keyof typeof ServiceCycleScalarFieldEnum]
+
+
+export const DeadlineOccurrenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  cycleId: 'cycleId',
+  ruleVersionId: 'ruleVersionId',
+  milestoneKey: 'milestoneKey',
+  scheduleEntryKey: 'scheduleEntryKey',
+  deadlineType: 'deadlineType',
+  calculatedDueDate: 'calculatedDueDate',
+  operativeDueDate: 'operativeDueDate',
+  dateOverridden: 'dateOverridden',
+  dateOverride: 'dateOverride',
+  dateOverrideReason: 'dateOverrideReason',
+  dateOverriddenById: 'dateOverriddenById',
+  dateOverriddenAt: 'dateOverriddenAt',
+  status: 'status',
+  completedAt: 'completedAt',
+  completedById: 'completedById',
+  waivedAt: 'waivedAt',
+  waivedById: 'waivedById',
+  waiverReason: 'waiverReason',
+  cancelledAt: 'cancelledAt',
+  cancelledById: 'cancelledById',
+  cancellationReason: 'cancellationReason',
+  origin: 'origin',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineOccurrenceScalarFieldEnum = (typeof DeadlineOccurrenceScalarFieldEnum)[keyof typeof DeadlineOccurrenceScalarFieldEnum]
+
+
+export const ServiceScheduleReconciliationRequestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  scopeType: 'scopeType',
+  scopeId: 'scopeId',
+  triggerType: 'triggerType',
+  correlationId: 'correlationId',
+  dedupeKey: 'dedupeKey',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  leaseOwner: 'leaseOwner',
+  leaseExpiresAt: 'leaseExpiresAt',
+  nextAttemptAt: 'nextAttemptAt',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  createdAt: 'createdAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  updatedAt: 'updatedAt',
+  summary: 'summary',
+  requestedById: 'requestedById'
+} as const
+
+export type ServiceScheduleReconciliationRequestScalarFieldEnum = (typeof ServiceScheduleReconciliationRequestScalarFieldEnum)[keyof typeof ServiceScheduleReconciliationRequestScalarFieldEnum]
+
+
 export const AiConversationScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -11258,6 +12318,146 @@ export type ListEnumClientServiceStatusFieldRefInput<$PrismaModel> = FieldRefInp
 
 
 /**
+ * Reference to a field of type 'DeadlineRuleVersionState'
+ */
+export type EnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineRuleVersionState'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineRuleVersionState[]'
+ */
+export type ListEnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineRuleVersionState[]'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineParameterType'
+ */
+export type EnumDeadlineParameterTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineParameterType'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineParameterType[]'
+ */
+export type ListEnumDeadlineParameterTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineParameterType[]'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineType'
+ */
+export type EnumDeadlineTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineType'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineType[]'
+ */
+export type ListEnumDeadlineTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineType[]'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineMilestoneGenerationMode'
+ */
+export type EnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineMilestoneGenerationMode'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineMilestoneGenerationMode[]'
+ */
+export type ListEnumDeadlineMilestoneGenerationModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineMilestoneGenerationMode[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessDayAdjustment'
+ */
+export type EnumBusinessDayAdjustmentFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessDayAdjustment'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessDayAdjustment[]'
+ */
+export type ListEnumBusinessDayAdjustmentFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessDayAdjustment[]'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineApplicabilityState'
+ */
+export type EnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineApplicabilityState'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineApplicabilityState[]'
+ */
+export type ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineApplicabilityState[]'>
+
+
+
+/**
+ * Reference to a field of type 'ServiceCycleOrigin'
+ */
+export type EnumServiceCycleOriginFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceCycleOrigin'>
+
+
+
+/**
+ * Reference to a field of type 'ServiceCycleOrigin[]'
+ */
+export type ListEnumServiceCycleOriginFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceCycleOrigin[]'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineOccurrenceStatus'
+ */
+export type EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOccurrenceStatus'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineOccurrenceStatus[]'
+ */
+export type ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOccurrenceStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'ScheduleReconciliationScopeType'
+ */
+export type EnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScheduleReconciliationScopeType'>
+
+
+
+/**
+ * Reference to a field of type 'ScheduleReconciliationScopeType[]'
+ */
+export type ListEnumScheduleReconciliationScopeTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScheduleReconciliationScopeType[]'>
+
+
+
+/**
+ * Reference to a field of type 'ScheduleReconciliationStatus'
+ */
+export type EnumScheduleReconciliationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScheduleReconciliationStatus'>
+
+
+
+/**
+ * Reference to a field of type 'ScheduleReconciliationStatus[]'
+ */
+export type ListEnumScheduleReconciliationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScheduleReconciliationStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'EsigningEnvelopeStatus'
  */
 export type EnumEsigningEnvelopeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeStatus'>
@@ -12265,6 +13465,17 @@ export type GlobalOmitConfig = {
   serviceAgreementFeeLine?: Prisma.ServiceAgreementFeeLineOmit
   clientService?: Prisma.ClientServiceOmit
   clientServiceFeeLine?: Prisma.ClientServiceFeeLineOmit
+  deadlineRule?: Prisma.DeadlineRuleOmit
+  deadlineRuleVersion?: Prisma.DeadlineRuleVersionOmit
+  deadlineRuleParameterDefinition?: Prisma.DeadlineRuleParameterDefinitionOmit
+  deadlineMilestoneTemplate?: Prisma.DeadlineMilestoneTemplateOmit
+  serviceVariantDeadlineRule?: Prisma.ServiceVariantDeadlineRuleOmit
+  clientServiceDeadlineRule?: Prisma.ClientServiceDeadlineRuleOmit
+  businessCalendar?: Prisma.BusinessCalendarOmit
+  businessHoliday?: Prisma.BusinessHolidayOmit
+  serviceCycle?: Prisma.ServiceCycleOmit
+  deadlineOccurrence?: Prisma.DeadlineOccurrenceOmit
+  serviceScheduleReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestOmit
   aiConversation?: Prisma.AiConversationOmit
   esigningEnvelope?: Prisma.EsigningEnvelopeOmit
   esigningEnvelopeDocument?: Prisma.EsigningEnvelopeDocumentOmit

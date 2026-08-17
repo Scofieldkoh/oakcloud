@@ -270,6 +270,61 @@ export type ClientService = Prisma.ClientServiceModel
  */
 export type ClientServiceFeeLine = Prisma.ClientServiceFeeLineModel
 /**
+ * Model DeadlineRule
+ *
+ */
+export type DeadlineRule = Prisma.DeadlineRuleModel
+/**
+ * Model DeadlineRuleVersion
+ *
+ */
+export type DeadlineRuleVersion = Prisma.DeadlineRuleVersionModel
+/**
+ * Model DeadlineRuleParameterDefinition
+ *
+ */
+export type DeadlineRuleParameterDefinition = Prisma.DeadlineRuleParameterDefinitionModel
+/**
+ * Model DeadlineMilestoneTemplate
+ *
+ */
+export type DeadlineMilestoneTemplate = Prisma.DeadlineMilestoneTemplateModel
+/**
+ * Model ServiceVariantDeadlineRule
+ *
+ */
+export type ServiceVariantDeadlineRule = Prisma.ServiceVariantDeadlineRuleModel
+/**
+ * Model ClientServiceDeadlineRule
+ *
+ */
+export type ClientServiceDeadlineRule = Prisma.ClientServiceDeadlineRuleModel
+/**
+ * Model BusinessCalendar
+ *
+ */
+export type BusinessCalendar = Prisma.BusinessCalendarModel
+/**
+ * Model BusinessHoliday
+ *
+ */
+export type BusinessHoliday = Prisma.BusinessHolidayModel
+/**
+ * Model ServiceCycle
+ *
+ */
+export type ServiceCycle = Prisma.ServiceCycleModel
+/**
+ * Model DeadlineOccurrence
+ *
+ */
+export type DeadlineOccurrence = Prisma.DeadlineOccurrenceModel
+/**
+ * Model ServiceScheduleReconciliationRequest
+ *
+ */
+export type ServiceScheduleReconciliationRequest = Prisma.ServiceScheduleReconciliationRequestModel
+/**
  * Model AiConversation
  *
  */

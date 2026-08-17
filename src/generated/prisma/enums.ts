@@ -40,6 +40,100 @@ export const ClientServiceSource = {
 export type ClientServiceSource = (typeof ClientServiceSource)[keyof typeof ClientServiceSource]
 
 
+export const DeadlineRuleVersionState = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type DeadlineRuleVersionState = (typeof DeadlineRuleVersionState)[keyof typeof DeadlineRuleVersionState]
+
+
+export const DeadlineParameterType = {
+  DATE: 'DATE',
+  INTEGER: 'INTEGER',
+  DECIMAL: 'DECIMAL',
+  STRING: 'STRING',
+  BOOLEAN: 'BOOLEAN',
+  ENUM: 'ENUM'
+} as const
+
+export type DeadlineParameterType = (typeof DeadlineParameterType)[keyof typeof DeadlineParameterType]
+
+
+export const DeadlineMilestoneGenerationMode = {
+  ONCE_PER_CYCLE: 'ONCE_PER_CYCLE',
+  ONCE_PER_SCHEDULE_ENTRY: 'ONCE_PER_SCHEDULE_ENTRY'
+} as const
+
+export type DeadlineMilestoneGenerationMode = (typeof DeadlineMilestoneGenerationMode)[keyof typeof DeadlineMilestoneGenerationMode]
+
+
+export const BusinessDayAdjustment = {
+  NONE: 'NONE',
+  PREVIOUS: 'PREVIOUS',
+  NEXT: 'NEXT'
+} as const
+
+export type BusinessDayAdjustment = (typeof BusinessDayAdjustment)[keyof typeof BusinessDayAdjustment]
+
+
+export const DeadlineApplicabilityState = {
+  APPLICABLE: 'APPLICABLE',
+  NOT_APPLICABLE: 'NOT_APPLICABLE',
+  MISSING_INPUT: 'MISSING_INPUT'
+} as const
+
+export type DeadlineApplicabilityState = (typeof DeadlineApplicabilityState)[keyof typeof DeadlineApplicabilityState]
+
+
+export const ServiceCycleOrigin = {
+  RULE: 'RULE',
+  MANUAL_TRIGGER: 'MANUAL_TRIGGER'
+} as const
+
+export type ServiceCycleOrigin = (typeof ServiceCycleOrigin)[keyof typeof ServiceCycleOrigin]
+
+
+export const DeadlineType = {
+  STATUTORY: 'STATUTORY',
+  CLIENT: 'CLIENT',
+  INTERNAL: 'INTERNAL'
+} as const
+
+export type DeadlineType = (typeof DeadlineType)[keyof typeof DeadlineType]
+
+
+export const DeadlineOccurrenceStatus = {
+  OPEN: 'OPEN',
+  COMPLETED: 'COMPLETED',
+  WAIVED: 'WAIVED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type DeadlineOccurrenceStatus = (typeof DeadlineOccurrenceStatus)[keyof typeof DeadlineOccurrenceStatus]
+
+
+export const ScheduleReconciliationScopeType = {
+  TENANT: 'TENANT',
+  COMPANY: 'COMPANY',
+  CLIENT_SERVICE: 'CLIENT_SERVICE',
+  RULE: 'RULE',
+  BUSINESS_CALENDAR: 'BUSINESS_CALENDAR'
+} as const
+
+export type ScheduleReconciliationScopeType = (typeof ScheduleReconciliationScopeType)[keyof typeof ScheduleReconciliationScopeType]
+
+
+export const ScheduleReconciliationStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type ScheduleReconciliationStatus = (typeof ScheduleReconciliationStatus)[keyof typeof ScheduleReconciliationStatus]
+
+
 export const TaskStatus = {
   NOT_STARTED: 'NOT_STARTED',
   IN_PROGRESS: 'IN_PROGRESS',

@@ -306,6 +306,7 @@ export type ServiceVariantWhereInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateListRelationFilter
   serviceAgreementItems?: Prisma.ServiceAgreementItemListRelationFilter
   clientServices?: Prisma.ClientServiceListRelationFilter
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleListRelationFilter
 }
 
 export type ServiceVariantOrderByWithRelationInput = {
@@ -330,6 +331,7 @@ export type ServiceVariantOrderByWithRelationInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateOrderByRelationAggregateInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemOrderByRelationAggregateInput
   clientServices?: Prisma.ClientServiceOrderByRelationAggregateInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleOrderByRelationAggregateInput
 }
 
 export type ServiceVariantWhereUniqueInput = Prisma.AtLeast<{
@@ -358,6 +360,7 @@ export type ServiceVariantWhereUniqueInput = Prisma.AtLeast<{
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateListRelationFilter
   serviceAgreementItems?: Prisma.ServiceAgreementItemListRelationFilter
   clientServices?: Prisma.ClientServiceListRelationFilter
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleListRelationFilter
 }, "id" | "tenantId_code">
 
 export type ServiceVariantOrderByWithAggregationInput = {
@@ -423,6 +426,7 @@ export type ServiceVariantCreateInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateInput = {
@@ -444,6 +448,7 @@ export type ServiceVariantUncheckedCreateInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUpdateInput = {
@@ -465,6 +470,7 @@ export type ServiceVariantUpdateInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateInput = {
@@ -486,6 +492,7 @@ export type ServiceVariantUncheckedUpdateInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantCreateManyInput = {
@@ -795,6 +802,20 @@ export type ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceVariantUpdateToOneWithWhereWithoutClientServicesInput, Prisma.ServiceVariantUpdateWithoutClientServicesInput>, Prisma.ServiceVariantUncheckedUpdateWithoutClientServicesInput>
 }
 
+export type ServiceVariantCreateNestedOneWithoutDeadlineRuleAssociationsInput = {
+  create?: Prisma.XOR<Prisma.ServiceVariantCreateWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUncheckedCreateWithoutDeadlineRuleAssociationsInput>
+  connectOrCreate?: Prisma.ServiceVariantCreateOrConnectWithoutDeadlineRuleAssociationsInput
+  connect?: Prisma.ServiceVariantWhereUniqueInput
+}
+
+export type ServiceVariantUpdateOneRequiredWithoutDeadlineRuleAssociationsNestedInput = {
+  create?: Prisma.XOR<Prisma.ServiceVariantCreateWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUncheckedCreateWithoutDeadlineRuleAssociationsInput>
+  connectOrCreate?: Prisma.ServiceVariantCreateOrConnectWithoutDeadlineRuleAssociationsInput
+  upsert?: Prisma.ServiceVariantUpsertWithoutDeadlineRuleAssociationsInput
+  connect?: Prisma.ServiceVariantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceVariantUpdateToOneWithWhereWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUpdateWithoutDeadlineRuleAssociationsInput>, Prisma.ServiceVariantUncheckedUpdateWithoutDeadlineRuleAssociationsInput>
+}
+
 export type ServiceVariantCreateWithoutTenantInput = {
   id?: string
   code: string
@@ -813,6 +834,7 @@ export type ServiceVariantCreateWithoutTenantInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateWithoutTenantInput = {
@@ -833,6 +855,7 @@ export type ServiceVariantUncheckedCreateWithoutTenantInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantCreateOrConnectWithoutTenantInput = {
@@ -900,6 +923,7 @@ export type ServiceVariantCreateWithoutSowPartialInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateWithoutSowPartialInput = {
@@ -920,6 +944,7 @@ export type ServiceVariantUncheckedCreateWithoutSowPartialInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantCreateOrConnectWithoutSowPartialInput = {
@@ -966,6 +991,7 @@ export type ServiceVariantCreateWithoutFamilyInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateWithoutFamilyInput = {
@@ -986,6 +1012,7 @@ export type ServiceVariantUncheckedCreateWithoutFamilyInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantCreateOrConnectWithoutFamilyInput = {
@@ -1032,6 +1059,7 @@ export type ServiceVariantCreateWithoutDefaultFeeTemplatesInput = {
   sowPartial: Prisma.TemplatePartialCreateNestedOneWithoutServiceVariantsInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateWithoutDefaultFeeTemplatesInput = {
@@ -1052,6 +1080,7 @@ export type ServiceVariantUncheckedCreateWithoutDefaultFeeTemplatesInput = {
   deletedAt?: Date | string | null
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
   clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantCreateOrConnectWithoutDefaultFeeTemplatesInput = {
@@ -1088,6 +1117,7 @@ export type ServiceVariantUpdateWithoutDefaultFeeTemplatesInput = {
   sowPartial?: Prisma.TemplatePartialUpdateOneRequiredWithoutServiceVariantsNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateWithoutDefaultFeeTemplatesInput = {
@@ -1108,6 +1138,7 @@ export type ServiceVariantUncheckedUpdateWithoutDefaultFeeTemplatesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantCreateWithoutServiceAgreementItemsInput = {
@@ -1128,6 +1159,7 @@ export type ServiceVariantCreateWithoutServiceAgreementItemsInput = {
   sowPartial: Prisma.TemplatePartialCreateNestedOneWithoutServiceVariantsInput
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateWithoutServiceAgreementItemsInput = {
@@ -1148,6 +1180,7 @@ export type ServiceVariantUncheckedCreateWithoutServiceAgreementItemsInput = {
   deletedAt?: Date | string | null
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
   clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantCreateOrConnectWithoutServiceAgreementItemsInput = {
@@ -1184,6 +1217,7 @@ export type ServiceVariantUpdateWithoutServiceAgreementItemsInput = {
   sowPartial?: Prisma.TemplatePartialUpdateOneRequiredWithoutServiceVariantsNestedInput
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateWithoutServiceAgreementItemsInput = {
@@ -1204,6 +1238,7 @@ export type ServiceVariantUncheckedUpdateWithoutServiceAgreementItemsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
   clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantCreateWithoutClientServicesInput = {
@@ -1224,6 +1259,7 @@ export type ServiceVariantCreateWithoutClientServicesInput = {
   sowPartial: Prisma.TemplatePartialCreateNestedOneWithoutServiceVariantsInput
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantUncheckedCreateWithoutClientServicesInput = {
@@ -1244,6 +1280,7 @@ export type ServiceVariantUncheckedCreateWithoutClientServicesInput = {
   deletedAt?: Date | string | null
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutServiceVariantInput
 }
 
 export type ServiceVariantCreateOrConnectWithoutClientServicesInput = {
@@ -1280,6 +1317,7 @@ export type ServiceVariantUpdateWithoutClientServicesInput = {
   sowPartial?: Prisma.TemplatePartialUpdateOneRequiredWithoutServiceVariantsNestedInput
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateWithoutClientServicesInput = {
@@ -1300,6 +1338,107 @@ export type ServiceVariantUncheckedUpdateWithoutClientServicesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
+}
+
+export type ServiceVariantCreateWithoutDeadlineRuleAssociationsInput = {
+  id?: string
+  code: string
+  name: string
+  description?: string | null
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  displayOrder?: number
+  version?: number
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceVariantsInput
+  family: Prisma.ServiceFamilyCreateNestedOneWithoutVariantsInput
+  sowPartial: Prisma.TemplatePartialCreateNestedOneWithoutServiceVariantsInput
+  defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutVariantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutServiceVariantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutServiceVariantInput
+}
+
+export type ServiceVariantUncheckedCreateWithoutDeadlineRuleAssociationsInput = {
+  id?: string
+  tenantId: string
+  familyId: string
+  sowPartialId: string
+  code: string
+  name: string
+  description?: string | null
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  displayOrder?: number
+  version?: number
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutVariantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutServiceVariantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutServiceVariantInput
+}
+
+export type ServiceVariantCreateOrConnectWithoutDeadlineRuleAssociationsInput = {
+  where: Prisma.ServiceVariantWhereUniqueInput
+  create: Prisma.XOR<Prisma.ServiceVariantCreateWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUncheckedCreateWithoutDeadlineRuleAssociationsInput>
+}
+
+export type ServiceVariantUpsertWithoutDeadlineRuleAssociationsInput = {
+  update: Prisma.XOR<Prisma.ServiceVariantUpdateWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUncheckedUpdateWithoutDeadlineRuleAssociationsInput>
+  create: Prisma.XOR<Prisma.ServiceVariantCreateWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUncheckedCreateWithoutDeadlineRuleAssociationsInput>
+  where?: Prisma.ServiceVariantWhereInput
+}
+
+export type ServiceVariantUpdateToOneWithWhereWithoutDeadlineRuleAssociationsInput = {
+  where?: Prisma.ServiceVariantWhereInput
+  data: Prisma.XOR<Prisma.ServiceVariantUpdateWithoutDeadlineRuleAssociationsInput, Prisma.ServiceVariantUncheckedUpdateWithoutDeadlineRuleAssociationsInput>
+}
+
+export type ServiceVariantUpdateWithoutDeadlineRuleAssociationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceVariantsNestedInput
+  family?: Prisma.ServiceFamilyUpdateOneRequiredWithoutVariantsNestedInput
+  sowPartial?: Prisma.TemplatePartialUpdateOneRequiredWithoutServiceVariantsNestedInput
+  defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+}
+
+export type ServiceVariantUncheckedUpdateWithoutDeadlineRuleAssociationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyId?: Prisma.StringFieldUpdateOperationsInput | string
+  sowPartialId?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantCreateManyTenantInput = {
@@ -1337,6 +1476,7 @@ export type ServiceVariantUpdateWithoutTenantInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateWithoutTenantInput = {
@@ -1357,6 +1497,7 @@ export type ServiceVariantUncheckedUpdateWithoutTenantInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateManyWithoutTenantInput = {
@@ -1411,6 +1552,7 @@ export type ServiceVariantUpdateWithoutSowPartialInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateWithoutSowPartialInput = {
@@ -1431,6 +1573,7 @@ export type ServiceVariantUncheckedUpdateWithoutSowPartialInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateManyWithoutSowPartialInput = {
@@ -1485,6 +1628,7 @@ export type ServiceVariantUpdateWithoutFamilyInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateWithoutFamilyInput = {
@@ -1505,6 +1649,7 @@ export type ServiceVariantUncheckedUpdateWithoutFamilyInput = {
   defaultFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutServiceVariantNestedInput
   clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutServiceVariantNestedInput
+  deadlineRuleAssociations?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutServiceVariantNestedInput
 }
 
 export type ServiceVariantUncheckedUpdateManyWithoutFamilyInput = {
@@ -1533,12 +1678,14 @@ export type ServiceVariantCountOutputType = {
   defaultFeeTemplates: number
   serviceAgreementItems: number
   clientServices: number
+  deadlineRuleAssociations: number
 }
 
 export type ServiceVariantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   defaultFeeTemplates?: boolean | ServiceVariantCountOutputTypeCountDefaultFeeTemplatesArgs
   serviceAgreementItems?: boolean | ServiceVariantCountOutputTypeCountServiceAgreementItemsArgs
   clientServices?: boolean | ServiceVariantCountOutputTypeCountClientServicesArgs
+  deadlineRuleAssociations?: boolean | ServiceVariantCountOutputTypeCountDeadlineRuleAssociationsArgs
 }
 
 /**
@@ -1572,6 +1719,13 @@ export type ServiceVariantCountOutputTypeCountClientServicesArgs<ExtArgs extends
   where?: Prisma.ClientServiceWhereInput
 }
 
+/**
+ * ServiceVariantCountOutputType without action
+ */
+export type ServiceVariantCountOutputTypeCountDeadlineRuleAssociationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ServiceVariantDeadlineRuleWhereInput
+}
+
 
 export type ServiceVariantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1595,6 +1749,7 @@ export type ServiceVariantSelect<ExtArgs extends runtime.Types.Extensions.Intern
   defaultFeeTemplates?: boolean | Prisma.ServiceVariant$defaultFeeTemplatesArgs<ExtArgs>
   serviceAgreementItems?: boolean | Prisma.ServiceVariant$serviceAgreementItemsArgs<ExtArgs>
   clientServices?: boolean | Prisma.ServiceVariant$clientServicesArgs<ExtArgs>
+  deadlineRuleAssociations?: boolean | Prisma.ServiceVariant$deadlineRuleAssociationsArgs<ExtArgs>
   _count?: boolean | Prisma.ServiceVariantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["serviceVariant"]>
 
@@ -1666,6 +1821,7 @@ export type ServiceVariantInclude<ExtArgs extends runtime.Types.Extensions.Inter
   defaultFeeTemplates?: boolean | Prisma.ServiceVariant$defaultFeeTemplatesArgs<ExtArgs>
   serviceAgreementItems?: boolean | Prisma.ServiceVariant$serviceAgreementItemsArgs<ExtArgs>
   clientServices?: boolean | Prisma.ServiceVariant$clientServicesArgs<ExtArgs>
+  deadlineRuleAssociations?: boolean | Prisma.ServiceVariant$deadlineRuleAssociationsArgs<ExtArgs>
   _count?: boolean | Prisma.ServiceVariantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ServiceVariantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1688,6 +1844,7 @@ export type $ServiceVariantPayload<ExtArgs extends runtime.Types.Extensions.Inte
     defaultFeeTemplates: Prisma.$ServiceVariantFeeTemplatePayload<ExtArgs>[]
     serviceAgreementItems: Prisma.$ServiceAgreementItemPayload<ExtArgs>[]
     clientServices: Prisma.$ClientServicePayload<ExtArgs>[]
+    deadlineRuleAssociations: Prisma.$ServiceVariantDeadlineRulePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2105,6 +2262,7 @@ export interface Prisma__ServiceVariantClient<T, Null = never, ExtArgs extends r
   defaultFeeTemplates<T extends Prisma.ServiceVariant$defaultFeeTemplatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceVariant$defaultFeeTemplatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceVariantFeeTemplatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceAgreementItems<T extends Prisma.ServiceVariant$serviceAgreementItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceVariant$serviceAgreementItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   clientServices<T extends Prisma.ServiceVariant$clientServicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceVariant$clientServicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deadlineRuleAssociations<T extends Prisma.ServiceVariant$deadlineRuleAssociationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceVariant$deadlineRuleAssociationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceVariantDeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2614,6 +2772,30 @@ export type ServiceVariant$clientServicesArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.ClientServiceScalarFieldEnum | Prisma.ClientServiceScalarFieldEnum[]
+}
+
+/**
+ * ServiceVariant.deadlineRuleAssociations
+ */
+export type ServiceVariant$deadlineRuleAssociationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceVariantDeadlineRule
+   */
+  select?: Prisma.ServiceVariantDeadlineRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceVariantDeadlineRule
+   */
+  omit?: Prisma.ServiceVariantDeadlineRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceVariantDeadlineRuleInclude<ExtArgs> | null
+  where?: Prisma.ServiceVariantDeadlineRuleWhereInput
+  orderBy?: Prisma.ServiceVariantDeadlineRuleOrderByWithRelationInput | Prisma.ServiceVariantDeadlineRuleOrderByWithRelationInput[]
+  cursor?: Prisma.ServiceVariantDeadlineRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ServiceVariantDeadlineRuleScalarFieldEnum | Prisma.ServiceVariantDeadlineRuleScalarFieldEnum[]
 }
 
 /**

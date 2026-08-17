@@ -97,6 +97,17 @@ export const ModelName = {
   ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
   ClientService: 'ClientService',
   ClientServiceFeeLine: 'ClientServiceFeeLine',
+  DeadlineRule: 'DeadlineRule',
+  DeadlineRuleVersion: 'DeadlineRuleVersion',
+  DeadlineRuleParameterDefinition: 'DeadlineRuleParameterDefinition',
+  DeadlineMilestoneTemplate: 'DeadlineMilestoneTemplate',
+  ServiceVariantDeadlineRule: 'ServiceVariantDeadlineRule',
+  ClientServiceDeadlineRule: 'ClientServiceDeadlineRule',
+  BusinessCalendar: 'BusinessCalendar',
+  BusinessHoliday: 'BusinessHoliday',
+  ServiceCycle: 'ServiceCycle',
+  DeadlineOccurrence: 'DeadlineOccurrence',
+  ServiceScheduleReconciliationRequest: 'ServiceScheduleReconciliationRequest',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
@@ -1073,6 +1084,241 @@ export const ClientServiceFeeLineScalarFieldEnum = {
 } as const
 
 export type ClientServiceFeeLineScalarFieldEnum = (typeof ClientServiceFeeLineScalarFieldEnum)[keyof typeof ClientServiceFeeLineScalarFieldEnum]
+
+
+export const DeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  isActive: 'isActive',
+  archivedAt: 'archivedAt',
+  archivedById: 'archivedById',
+  archiveReason: 'archiveReason',
+  currentVersionId: 'currentVersionId',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineRuleScalarFieldEnum = (typeof DeadlineRuleScalarFieldEnum)[keyof typeof DeadlineRuleScalarFieldEnum]
+
+
+export const DeadlineRuleVersionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ruleId: 'ruleId',
+  version: 'version',
+  state: 'state',
+  schemaVersion: 'schemaVersion',
+  recurrence: 'recurrence',
+  applicability: 'applicability',
+  configHash: 'configHash',
+  draftRevision: 'draftRevision',
+  publishedAt: 'publishedAt',
+  publishedById: 'publishedById',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineRuleVersionScalarFieldEnum = (typeof DeadlineRuleVersionScalarFieldEnum)[keyof typeof DeadlineRuleVersionScalarFieldEnum]
+
+
+export const DeadlineRuleParameterDefinitionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ruleVersionId: 'ruleVersionId',
+  key: 'key',
+  label: 'label',
+  type: 'type',
+  isRequired: 'isRequired',
+  defaultValue: 'defaultValue',
+  validation: 'validation',
+  helpText: 'helpText',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineRuleParameterDefinitionScalarFieldEnum = (typeof DeadlineRuleParameterDefinitionScalarFieldEnum)[keyof typeof DeadlineRuleParameterDefinitionScalarFieldEnum]
+
+
+export const DeadlineMilestoneTemplateScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ruleVersionId: 'ruleVersionId',
+  milestoneKey: 'milestoneKey',
+  name: 'name',
+  description: 'description',
+  type: 'type',
+  generationMode: 'generationMode',
+  dateExpression: 'dateExpression',
+  businessDayAdjustment: 'businessDayAdjustment',
+  displayOrder: 'displayOrder',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineMilestoneTemplateScalarFieldEnum = (typeof DeadlineMilestoneTemplateScalarFieldEnum)[keyof typeof DeadlineMilestoneTemplateScalarFieldEnum]
+
+
+export const ServiceVariantDeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  serviceVariantId: 'serviceVariantId',
+  ruleId: 'ruleId',
+  enabledByDefault: 'enabledByDefault',
+  parameterDefaults: 'parameterDefaults',
+  scheduleDefaults: 'scheduleDefaults',
+  displayOrder: 'displayOrder',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceVariantDeadlineRuleScalarFieldEnum = (typeof ServiceVariantDeadlineRuleScalarFieldEnum)[keyof typeof ServiceVariantDeadlineRuleScalarFieldEnum]
+
+
+export const ClientServiceDeadlineRuleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  clientServiceId: 'clientServiceId',
+  ruleId: 'ruleId',
+  enabled: 'enabled',
+  parameterValues: 'parameterValues',
+  parameterProvenance: 'parameterProvenance',
+  scheduleEntries: 'scheduleEntries',
+  lastEvaluatedVersionId: 'lastEvaluatedVersionId',
+  applicabilityState: 'applicabilityState',
+  applicabilityReason: 'applicabilityReason',
+  configHash: 'configHash',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+} as const
+
+export type ClientServiceDeadlineRuleScalarFieldEnum = (typeof ClientServiceDeadlineRuleScalarFieldEnum)[keyof typeof ClientServiceDeadlineRuleScalarFieldEnum]
+
+
+export const BusinessCalendarScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  jurisdictionCode: 'jurisdictionCode',
+  timeZone: 'timeZone',
+  weekendDays: 'weekendDays',
+  revision: 'revision',
+  isActive: 'isActive',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessCalendarScalarFieldEnum = (typeof BusinessCalendarScalarFieldEnum)[keyof typeof BusinessCalendarScalarFieldEnum]
+
+
+export const BusinessHolidayScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  calendarId: 'calendarId',
+  date: 'date',
+  name: 'name',
+  description: 'description',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessHolidayScalarFieldEnum = (typeof BusinessHolidayScalarFieldEnum)[keyof typeof BusinessHolidayScalarFieldEnum]
+
+
+export const ServiceCycleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  ruleId: 'ruleId',
+  ruleVersionId: 'ruleVersionId',
+  businessCalendarId: 'businessCalendarId',
+  businessCalendarRevision: 'businessCalendarRevision',
+  periodKey: 'periodKey',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  generationKey: 'generationKey',
+  origin: 'origin',
+  recurrenceAnchor: 'recurrenceAnchor',
+  sourceSnapshot: 'sourceSnapshot',
+  evaluationHash: 'evaluationHash',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceCycleScalarFieldEnum = (typeof ServiceCycleScalarFieldEnum)[keyof typeof ServiceCycleScalarFieldEnum]
+
+
+export const DeadlineOccurrenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  cycleId: 'cycleId',
+  ruleVersionId: 'ruleVersionId',
+  milestoneKey: 'milestoneKey',
+  scheduleEntryKey: 'scheduleEntryKey',
+  deadlineType: 'deadlineType',
+  calculatedDueDate: 'calculatedDueDate',
+  operativeDueDate: 'operativeDueDate',
+  dateOverridden: 'dateOverridden',
+  dateOverride: 'dateOverride',
+  dateOverrideReason: 'dateOverrideReason',
+  dateOverriddenById: 'dateOverriddenById',
+  dateOverriddenAt: 'dateOverriddenAt',
+  status: 'status',
+  completedAt: 'completedAt',
+  completedById: 'completedById',
+  waivedAt: 'waivedAt',
+  waivedById: 'waivedById',
+  waiverReason: 'waiverReason',
+  cancelledAt: 'cancelledAt',
+  cancelledById: 'cancelledById',
+  cancellationReason: 'cancellationReason',
+  origin: 'origin',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeadlineOccurrenceScalarFieldEnum = (typeof DeadlineOccurrenceScalarFieldEnum)[keyof typeof DeadlineOccurrenceScalarFieldEnum]
+
+
+export const ServiceScheduleReconciliationRequestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  scopeType: 'scopeType',
+  scopeId: 'scopeId',
+  triggerType: 'triggerType',
+  correlationId: 'correlationId',
+  dedupeKey: 'dedupeKey',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  leaseOwner: 'leaseOwner',
+  leaseExpiresAt: 'leaseExpiresAt',
+  nextAttemptAt: 'nextAttemptAt',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  createdAt: 'createdAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  updatedAt: 'updatedAt',
+  summary: 'summary',
+  requestedById: 'requestedById'
+} as const
+
+export type ServiceScheduleReconciliationRequestScalarFieldEnum = (typeof ServiceScheduleReconciliationRequestScalarFieldEnum)[keyof typeof ServiceScheduleReconciliationRequestScalarFieldEnum]
 
 
 export const AiConversationScalarFieldEnum = {
