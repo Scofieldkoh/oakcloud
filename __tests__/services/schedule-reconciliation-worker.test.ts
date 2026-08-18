@@ -70,11 +70,23 @@ describe('schedule reconciliation worker', () => {
       where: expect.objectContaining({ id: 'request-1', tenantId: 'tenant-1', status: 'PROCESSING' }),
       data: expect.objectContaining({ status: 'COMPLETED', leaseOwner: null, leaseExpiresAt: null }),
     }));
+    expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mock.calls.filter(([call]) => (
+      call.where?.leaseOwner !== undefined && call.data?.leaseExpiresAt instanceof Date
+    ))).not.toHaveLength(0);
   });
 
   it('reclaims expired processing work and completes permanent missing-input outcomes with warnings', async () => {
     mocks.prisma.$queryRaw.mockResolvedValue([{ ...request, attemptCount: 1 }]);
-    mocks.reconcile.mockRejectedValueOnce(Object.assign(new Error('rule input is missing'), { code: 'MISSING_RULE_INPUT' }));
+    mocks.reconcile.mockResolvedValueOnce({
+      tenantId: 'tenant-1', clientServiceId: 'service-1', reconciliationRequestId: 'request-1',
+      writeMode: 'OBSERVE',
+      counts: { created: 0, recalculated: 0, cancelled: 0, preserved: 0, noChange: 0 },
+      preservedByReason: { MANUAL_TRIGGER: 0, HISTORICAL: 0, COMPLETED: 0, WAIVED: 0, CANCELLED: 0, OVERRIDDEN: 0 },
+      warnings: [{
+        code: 'MISSING_INPUT', message: 'Company.entityType is required', ruleId: 'rule-1',
+        missingFields: ['entityType'], permanent: true,
+      }],
+    });
 
     const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
 
@@ -83,7 +95,8 @@ describe('schedule reconciliation worker', () => {
       data: expect.objectContaining({ status: 'COMPLETED', completedAt: expect.any(Date), leaseOwner: null }),
     }));
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mock.calls.at(-1)?.[0].data.summary)
-      .toEqual(expect.objectContaining({ warnings: [expect.stringContaining('MISSING_RULE_INPUT')] }));
+      .toEqual(expect.objectContaining({ warnings: [expect.objectContaining({ code: 'MISSING_INPUT', permanent: true })] }));
+    expect(mocks.reconcile).toHaveBeenCalledTimes(1);
   });
 
   it('backs off transient failures using the bounded retry schedule', async () => {

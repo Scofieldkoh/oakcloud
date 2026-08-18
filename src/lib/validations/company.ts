@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { companyProfileSectionSchemas } from '@/lib/validations/company-profile';
+import { optionalDateOnlySchema } from '@/lib/validations/date-only';
 
 export const entityTypeEnum = z.enum([
   'PRIVATE_LIMITED',
@@ -65,8 +66,8 @@ export const createCompanySchema = z.object({
   fyeAsAtLastAr: dateStringTransform,
   lastAgmDate: dateStringTransform,
   lastArFiledDate: dateStringTransform,
-  nextAgmDueDate: dateStringTransform,
-  nextArDueDate: dateStringTransform,
+  nextAgmDueDate: optionalDateOnlySchema,
+  nextArDueDate: optionalDateOnlySchema,
   accountsDueDate: dateStringTransform,
   homeCurrency: z.string().max(3).default('SGD'),
   paidUpCapitalCurrency: z.string().default('SGD'),

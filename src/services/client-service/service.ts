@@ -137,6 +137,13 @@ export async function updateClientService(id: string, input: UpdateClientService
       ...(fieldValuesChanged ? { fieldValues: { old: '[redacted]', new: '[redacted]' } } : {}),
       ...(feesChanged ? { feeLines: { old: feeSummaryBefore, new: feeSummaryAfter } } : {}),
     };
+    const scheduleConfigurationChanged = [
+      'status',
+      'serviceCadence',
+      'customCadenceLabel',
+      'startDate',
+      'endDate',
+    ].some((field) => Object.prototype.hasOwnProperty.call(scalarChanges, field)) || fieldValuesChanged;
     await createAuditLog({
       tenantId: params.tenantId,
       userId: params.userId,
@@ -148,14 +155,16 @@ export async function updateClientService(id: string, input: UpdateClientService
       changes,
       summary: `Updated operational service${feesChanged ? ` and ${input.feeLines?.length ?? 0} fee line(s)` : ''}`,
     }, tx);
-    await enqueueScheduleReconciliation(tx, {
-      tenantId: params.tenantId,
-      scopeType: 'CLIENT_SERVICE',
-      scopeId: id,
-      triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED',
-      correlationId: `client-service-update-${id}-${Date.now()}`,
-      requestedById: params.userId,
-    });
+    if (scheduleConfigurationChanged) {
+      await enqueueScheduleReconciliation(tx, {
+        tenantId: params.tenantId,
+        scopeType: 'CLIENT_SERVICE',
+        scopeId: id,
+        triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED',
+        correlationId: `client-service-update-${id}-${Date.now()}`,
+        requestedById: params.userId,
+      });
+    }
     return result;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   return toClientServiceDto(updated);

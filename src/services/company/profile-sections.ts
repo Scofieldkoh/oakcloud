@@ -274,9 +274,9 @@ async function replaceAddress(
 }
 
 export async function mutateCompanyProfileSection(tx: Tx, companyId: string, section: CompanyProfileSectionId, rawData: unknown) {
-  const data = companyProfileSectionSchemas[section].parse(rawData) as Record<string, any>;
   switch (section) {
-    case 'identity':
+    case 'identity': {
+      const data = companyProfileSectionSchemas.identity.parse(rawData);
       await tx.company.update({ where: { id: companyId }, data: {
         uen: data.uen, name: data.name, entityType: data.entityType, status: data.status,
         statusDate: dateOrNull(data.statusDate), incorporationDate: dateOrNull(data.incorporationDate),
@@ -285,11 +285,15 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
           : {}),
       } });
       break;
-    case 'addresses':
+    }
+    case 'addresses': {
+      const data = companyProfileSectionSchemas.addresses.parse(rawData);
       await replaceAddress(tx, companyId, 'REGISTERED_OFFICE', data.registered);
       await replaceAddress(tx, companyId, 'MAILING', data.mailing);
       break;
-    case 'activities':
+    }
+    case 'activities': {
+      const data = companyProfileSectionSchemas.activities.parse(rawData);
       await tx.company.update({ where: { id: companyId }, data: {
         primarySsicCode: data.primary?.code ?? null,
         primarySsicDescription: data.primary?.description ?? null,
@@ -297,7 +301,9 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         secondarySsicDescription: data.secondary?.description ?? null,
       } });
       break;
-    case 'compliance':
+    }
+    case 'compliance': {
+      const data = companyProfileSectionSchemas.compliance.parse(rawData);
       await tx.company.update({ where: { id: companyId }, data: {
         financialYearEndDay: data.financialYearEndDay,
         financialYearEndMonth: data.financialYearEndMonth,
@@ -310,7 +316,9 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         accountsDueDate: dateOrNull(data.accountsDueDate),
       } });
       break;
-    case 'officers':
+    }
+    case 'officers': {
+      const data = companyProfileSectionSchemas.officers.parse(rawData);
       await tx.companyOfficer.deleteMany({ where: { companyId } });
       for (const officer of data.officers) await tx.companyOfficer.create({ data: {
         companyId, name: officer.name, role: officer.role,
@@ -320,9 +328,11 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         // An officer is active as long as there is no cessation date.
         isCurrent: !officer.cessationDate,
       } });
-      await tx.company.update({ where: { id: companyId }, data: { currentOfficerCount: data.officers.filter((item: any) => !item.cessationDate).length } });
+      await tx.company.update({ where: { id: companyId }, data: { currentOfficerCount: data.officers.filter((item) => !item.cessationDate).length } });
       break;
-    case 'shareholders':
+    }
+    case 'shareholders': {
+      const data = companyProfileSectionSchemas.shareholders.parse(rawData);
       await tx.companyShareholder.deleteMany({ where: { companyId } });
       for (const shareholder of data.shareholders) await tx.companyShareholder.create({ data: {
         companyId, name: shareholder.name, shareholderType: shareholder.shareholderType,
@@ -333,9 +343,11 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         percentageHeld: shareholder.percentageHeld, currency: shareholder.currency,
         isCurrent: shareholder.isCurrent ?? true,
       } });
-      await tx.company.update({ where: { id: companyId }, data: { currentShareholderCount: data.shareholders.filter((item: any) => item.isCurrent ?? true).length } });
+      await tx.company.update({ where: { id: companyId }, data: { currentShareholderCount: data.shareholders.filter((item) => item.isCurrent ?? true).length } });
       break;
-    case 'capital':
+    }
+    case 'capital': {
+      const data = companyProfileSectionSchemas.capital.parse(rawData);
       await tx.company.update({ where: { id: companyId }, data: {
         paidUpCapitalCurrency: data.paidUpCapitalCurrency, paidUpCapitalAmount: data.paidUpCapitalAmount,
         issuedCapitalCurrency: data.issuedCapitalCurrency, issuedCapitalAmount: data.issuedCapitalAmount,
@@ -347,7 +359,9 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         totalValue: capital.totalValue, isPaidUp: capital.isPaidUp, isTreasury: capital.isTreasury,
       } });
       break;
-    case 'charges':
+    }
+    case 'charges': {
+      const data = companyProfileSectionSchemas.charges.parse(rawData);
       await tx.companyCharge.deleteMany({ where: { companyId } });
       for (const charge of data.charges) await tx.companyCharge.create({ data: {
         companyId, chargeNumber: charge.chargeNumber, chargeType: charge.chargeType,
@@ -358,11 +372,13 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         isFullyDischarged: charge.isFullyDischarged ?? Boolean(charge.dischargeDate),
       } });
       await tx.company.update({ where: { id: companyId }, data: {
-        hasCharges: data.charges.some((item: any) => !(item.isFullyDischarged ?? item.dischargeDate)),
-        activeChargeCount: data.charges.filter((item: any) => !(item.isFullyDischarged ?? item.dischargeDate)).length,
+        hasCharges: data.charges.some((item) => !(item.isFullyDischarged ?? item.dischargeDate)),
+        activeChargeCount: data.charges.filter((item) => !(item.isFullyDischarged ?? item.dischargeDate)).length,
       } });
       break;
-    case 'additional':
+    }
+    case 'additional': {
+      const data = companyProfileSectionSchemas.additional.parse(rawData);
       await tx.company.update({ where: { id: companyId }, data: {
         formerName: data.formerName, dateOfNameChange: dateOrNull(data.dateOfNameChange),
         registrationDate: dateOrNull(data.registrationDate),
@@ -380,6 +396,7 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
       } });
       else await tx.companyAuditor.deleteMany({ where: { companyId } });
       break;
+    }
   }
 }
 

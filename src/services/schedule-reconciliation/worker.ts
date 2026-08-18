@@ -10,6 +10,7 @@ import type {
   DeadlineReconciliationCounts,
   DeadlineReconciliationPreservedCounts,
   DeadlineReconciliationResult,
+  DeadlineReconciliationWarning,
 } from './types';
 
 const log = createLogger('schedule-reconciliation-worker');
@@ -24,6 +25,14 @@ const PERMANENT_ERROR_CODES = new Set([
   'SCHEDULE_LIMIT_EXCEEDED',
   'DUPLICATE_SCHEDULE_ENTRY',
 ]);
+
+class LeaseLostError extends Error {
+  readonly code = 'LEASE_LOST';
+
+  constructor() {
+    super('Reconciliation lease is no longer owned by this worker');
+  }
+}
 
 export type ProcessBatchOptions = {
   limit?: number;
@@ -184,24 +193,49 @@ async function resolveClientServiceIds(
   }
 }
 
+async function renewLease(req: ClaimedRequest, leaseMs: number, clock: () => Date): Promise<void> {
+  const now = clock();
+  const renewed = await prisma.serviceScheduleReconciliationRequest.updateMany({
+    where: {
+      id: req.id,
+      tenantId: req.tenantId,
+      status: 'PROCESSING',
+      leaseOwner: req.leaseOwner,
+      leaseExpiresAt: { gt: now },
+    },
+    data: { leaseExpiresAt: new Date(now.getTime() + leaseMs) },
+  });
+  if (renewed.count !== 1) throw new LeaseLostError();
+}
+
 async function processSingleRequest(
   req: ClaimedRequest,
   now: Date,
+  leaseMs: number,
+  leaseClock: () => Date,
 ): Promise<{ success: boolean; summaries: DeadlineReconciliationResult[] }> {
   try {
+    const assertLease = () => renewLease(req, leaseMs, leaseClock);
+    await assertLease();
     const flags = await getServiceWorkspaceFlagsForTenant(req.tenantId);
     if (!flags.workspaceEnabled) {
-      await prisma.serviceScheduleReconciliationRequest.updateMany({
+      const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
         where: { id: req.id, tenantId: req.tenantId, status: 'PROCESSING', leaseOwner: req.leaseOwner },
         data: {
           status: 'COMPLETED',
           completedAt: now,
           leaseOwner: null,
           leaseExpiresAt: null,
-          summary: { warnings: ['Services workspace is disabled for this workspace'] } as never,
+          summary: {
+            warnings: [{
+              code: 'WORKSPACE_DISABLED',
+              message: 'Services workspace is disabled for this workspace',
+              permanent: true,
+            }],
+          } as never,
         },
       });
-      return { success: true, summaries: [] };
+      return { success: completed.count === 1, summaries: [] };
     }
     const writeMode = flags.deadlineWritesEnabled ? 'APPLY' : 'OBSERVE';
     const operation = req.triggerType === 'RULE_ARCHIVED' ? 'ARCHIVE' as const : 'PUBLISH' as const;
@@ -228,9 +262,10 @@ async function processSingleRequest(
       OVERRIDDEN: 0,
     };
 
-    const allWarnings: string[] = [];
+    const allWarnings: DeadlineReconciliationWarning[] = [];
 
     for (const clientServiceId of clientServiceIds) {
+      await assertLease();
       const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({
         tenantId: req.tenantId,
         clientServiceId,
@@ -240,7 +275,9 @@ async function processSingleRequest(
         horizonEnd,
         writeMode,
         reconciliationRequestId: req.id,
+        assertLease,
       }, tx));
+      await assertLease();
 
       summaries.push(result);
 
@@ -257,7 +294,7 @@ async function processSingleRequest(
       allWarnings.push(...result.warnings);
     }
 
-    await prisma.serviceScheduleReconciliationRequest.updateMany({
+    const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
       where: {
         id: req.id,
         tenantId: req.tenantId,
@@ -278,7 +315,7 @@ async function processSingleRequest(
       },
     });
 
-    return { success: true, summaries };
+    return { success: completed.count === 1, summaries: completed.count === 1 ? summaries : [] };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorCode = (error as { code?: string })?.code ?? 'RECONCILIATION_FAILED';
@@ -288,6 +325,8 @@ async function processSingleRequest(
       tenantId: req.tenantId,
       error,
     });
+
+    if (errorCode === 'LEASE_LOST') return { success: false, summaries: [] };
 
     const isPermanent = PERMANENT_ERROR_CODES.has(errorCode);
     const backoffIndex = Math.min(req.attemptCount - 1, BACKOFF_MINUTES.length - 1);
@@ -310,7 +349,7 @@ async function processSingleRequest(
           lastErrorCode: errorCode,
           lastErrorMessage: errorMessage,
           summary: {
-            warnings: [`${errorCode}: ${errorMessage}`],
+            warnings: [{ code: errorCode, message: errorMessage, permanent: true }],
             permanent: true,
           } as never,
           nextAttemptAt: now,
@@ -350,6 +389,7 @@ export async function processScheduleReconciliationBatch(
   const concurrency = Math.min(Math.max(options.concurrency ?? 4, 1), 20);
   const now = options.now ?? new Date();
   const leaseMs = options.leaseMs ?? LEASE_MS;
+  const leaseClock = options.now ? () => now : () => new Date();
 
   const claims = await claimRequests(limit, now, leaseMs);
   let completed = 0;
@@ -359,7 +399,7 @@ export async function processScheduleReconciliationBatch(
   for (let offset = 0; offset < claims.length; offset += concurrency) {
     const chunk = claims.slice(offset, offset + concurrency);
     const results = await Promise.all(
-      chunk.map((req) => processSingleRequest(req, now)),
+      chunk.map((req) => processSingleRequest(req, now, leaseMs, leaseClock)),
     );
 
     for (const res of results) {

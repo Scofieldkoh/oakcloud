@@ -24,6 +24,7 @@ export type {
   DeadlineReconciliationPreservedCounts,
   DeadlineReconciliationCounts,
   DeadlineReconciliationOperation,
+  DeadlineReconciliationWarning,
   DeadlineReconciliationResult,
   ReconcileClientServiceDeadlinesInput,
   StoredDeadline,

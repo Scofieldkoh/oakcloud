@@ -18,6 +18,7 @@ import type {
   PreserveReason,
   ReconcileClientServiceDeadlinesInput,
   StoredDeadline,
+  DeadlineReconciliationWarning,
 } from './types';
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -71,6 +72,29 @@ async function updateOccurrence(
   }
 }
 
+async function upsertOccurrence(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  cycleId: string,
+  data: Record<string, unknown>,
+): Promise<{ id: string; [key: string]: unknown }> {
+  if (typeof db.deadlineOccurrence.upsert === 'function') {
+    return db.deadlineOccurrence.upsert({
+      where: {
+        tenantId_cycleId_milestoneKey_scheduleEntryKey: {
+          tenantId,
+          cycleId,
+          milestoneKey: String(data.milestoneKey),
+          scheduleEntryKey: String(data.scheduleEntryKey ?? ''),
+        },
+      },
+      create: data as never,
+      update: {},
+    }) as Promise<{ id: string; [key: string]: unknown }>;
+  }
+  return db.deadlineOccurrence.create({ data: data as never }) as Promise<{ id: string; [key: string]: unknown }>;
+}
+
 async function updateClientRule(
   db: Prisma.TransactionClient | typeof prisma,
   tenantId: string,
@@ -113,6 +137,36 @@ function defaultCalendar(id = 'default'): BusinessCalendarSnapshot {
     weekendDays: new Set([0, 6]),
     holidays: new Set(),
   };
+}
+
+function missingInputWarning(
+  ruleId: string,
+  ruleVersionId: string,
+  message: string,
+  missingFields: string[],
+): DeadlineReconciliationWarning {
+  return {
+    code: 'MISSING_INPUT',
+    message,
+    ruleId,
+    ruleVersionId,
+    missingFields,
+    permanent: true,
+  };
+}
+
+function missingFieldsFromError(error: unknown): string[] {
+  const details = (error as { details?: unknown })?.details;
+  if (details && typeof details === 'object' && 'source' in details) {
+    const source = (details as { source?: { kind?: string; field?: string; key?: string } }).source;
+    if (source?.kind === 'COMPANY_FIELD' && source.field) return [source.field];
+    if (source?.kind === 'PARAMETER' && source.key) return [`parameter:${source.key}`];
+  }
+  if (details && typeof details === 'object' && 'parameter' in details) {
+    const parameter = (details as { parameter?: unknown }).parameter;
+    if (typeof parameter === 'string') return [`parameter:${parameter}`];
+  }
+  return [];
 }
 
 export function classifyDeadlineChange(
@@ -223,7 +277,11 @@ export async function reconcileClientServiceDeadlines(
     OVERRIDDEN: 0,
   };
 
-  const warnings: string[] = [];
+  const warnings: DeadlineReconciliationWarning[] = [];
+  const skipCleanupRuleIds = new Set<string>();
+  const skipCleanupCycleIds = new Set<string>();
+
+  await input.assertLease?.();
 
   const clientService = await db.clientService.findFirst({
     where: { id: clientServiceId, tenantId },
@@ -247,7 +305,7 @@ export async function reconcileClientServiceDeadlines(
   });
 
   if (!clientService) {
-    warnings.push(`Client service ${clientServiceId} not found`);
+    warnings.push({ code: 'CLIENT_SERVICE_NOT_FOUND', message: `Client service ${clientServiceId} not found`, permanent: true });
     return {
       tenantId,
       clientServiceId,
@@ -277,6 +335,7 @@ export async function reconcileClientServiceDeadlines(
 
   if (isClientServiceInactive) {
     for (const cycle of existingCycles) {
+      await input.assertLease?.();
       for (const occ of cycle.occurrences) {
         processedOccurrenceIds.add(occ.id);
         const stored = toStoredDeadline(occ);
@@ -356,6 +415,7 @@ export async function reconcileClientServiceDeadlines(
   }
 
   for (const clientRule of clientService.deadlineRules) {
+    await input.assertLease?.();
     const rule = clientRule.rule;
     if (input.ruleId && rule.id !== input.ruleId) continue;
 
@@ -402,7 +462,7 @@ export async function reconcileClientServiceDeadlines(
 
     const version = rule.currentVersion;
     if (!version) {
-      warnings.push(`Rule ${rule.id} (${rule.name}) has no published version`);
+      warnings.push({ code: 'RULE_VERSION_MISSING', message: `Rule ${rule.id} (${rule.name}) has no published version`, ruleId: rule.id, permanent: true });
       continue;
     }
 
@@ -456,6 +516,15 @@ export async function reconcileClientServiceDeadlines(
       initialEval.applicability.state === 'NOT_APPLICABLE' ||
       initialEval.applicability.state === 'MISSING_INPUT'
     ) {
+      if (initialEval.applicability.state === 'MISSING_INPUT') {
+        skipCleanupRuleIds.add(rule.id);
+        warnings.push(missingInputWarning(
+          rule.id,
+          version.id,
+          initialEval.applicability.reason,
+          initialEval.applicability.missingFields,
+        ));
+      }
       if (writeMode === 'APPLY') {
         await updateClientRule(db, tenantId, clientServiceId, clientRule.id, {
           applicabilityState: initialEval.applicability.state,
@@ -476,24 +545,47 @@ export async function reconcileClientServiceDeadlines(
     }
 
     for (const period of periods) {
-      const evaluation = evaluateDeadlineRule({
-        ruleId: rule.id,
-        ruleVersionId: version.id,
-        recurrence: version.recurrence as never,
-        applicability: version.applicability as never,
-        parameters: asRecord(clientRule.parameterValues),
-        scheduleEntries: Array.isArray(clientRule.scheduleEntries)
-          ? (clientRule.scheduleEntries as never)
-          : [],
-        milestones: milestonesInput,
-        company: companySource,
-        period: {
-          key: period.periodKey,
-          start: period.start,
-          end: period.end,
-        },
-        calendar: businessCalendar,
-      });
+      await input.assertLease?.();
+      let evaluation: ReturnType<typeof evaluateDeadlineRule>;
+      try {
+        evaluation = evaluateDeadlineRule({
+          ruleId: rule.id,
+          ruleVersionId: version.id,
+          recurrence: version.recurrence as never,
+          applicability: version.applicability as never,
+          parameters: asRecord(clientRule.parameterValues),
+          scheduleEntries: Array.isArray(clientRule.scheduleEntries)
+            ? (clientRule.scheduleEntries as never)
+            : [],
+          milestones: milestonesInput,
+          company: companySource,
+          period: {
+            key: period.periodKey,
+            start: period.start,
+            end: period.end,
+          },
+          calendar: businessCalendar,
+        });
+      } catch (error) {
+        const errorCode = (error as { code?: string })?.code;
+        if (errorCode !== 'MISSING_RULE_INPUT') throw error;
+        const message = error instanceof Error ? error.message : 'Rule input is missing';
+        const cycleForWarning = cycleByKey.get(`${rule.id}|${period.periodKey}|${ROLLING_PLAN_VERSION}|RULE`);
+        if (cycleForWarning) skipCleanupCycleIds.add(cycleForWarning.id);
+        warnings.push(missingInputWarning(rule.id, version.id, message, missingFieldsFromError(error)));
+        continue;
+      }
+      if (evaluation.applicability.state === 'MISSING_INPUT') {
+        const cycleForWarning = cycleByKey.get(`${rule.id}|${period.periodKey}|${ROLLING_PLAN_VERSION}|RULE`);
+        if (cycleForWarning) skipCleanupCycleIds.add(cycleForWarning.id);
+        warnings.push(missingInputWarning(
+          rule.id,
+          version.id,
+          evaluation.applicability.reason,
+          evaluation.applicability.missingFields,
+        ));
+        continue;
+      }
 
       const cycleKey = `${rule.id}|${period.periodKey}|${ROLLING_PLAN_VERSION}|RULE`;
       let cycle: typeof existingCycles[number] | undefined = cycleByKey.get(cycleKey);
@@ -501,6 +593,7 @@ export async function reconcileClientServiceDeadlines(
       const evaluationHash = evaluation.evaluationHash ?? hashConfiguration(evaluation);
 
       if (!cycle && writeMode === 'APPLY') {
+        await input.assertLease?.();
         cycle = await db.serviceCycle.upsert({
           where: {
             tenantId_clientServiceId_ruleId_periodKey_generationKey_origin: {
@@ -540,6 +633,7 @@ export async function reconcileClientServiceDeadlines(
         cycleByKey.set(cycleKey, cycle);
         occurrencesByCycleId.set(cycle.id, cycle.occurrences ?? []);
       } else if (cycle && writeMode === 'APPLY') {
+        await input.assertLease?.();
         await updateCycleSnapshot(db, tenantId, clientServiceId, cycle.id, {
           ruleVersionId: version.id,
           evaluationHash,
@@ -581,8 +675,8 @@ export async function reconcileClientServiceDeadlines(
           case 'CREATE': {
             counts.created += 1;
             if (writeMode === 'APPLY' && cycle) {
-          const createdOcc = await db.deadlineOccurrence.create({
-                data: {
+              await input.assertLease?.();
+              const createdOcc = await upsertOccurrence(db, tenantId, cycle.id, {
                   tenantId,
                   companyId: clientService.companyId,
                   clientServiceId,
@@ -595,10 +689,9 @@ export async function reconcileClientServiceDeadlines(
                   operativeDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
                   dateOverridden: false,
                   status: 'OPEN',
-              origin: 'RULE',
-            },
-          });
-              occMap.set(occKey, createdOcc);
+                  origin: 'RULE',
+              });
+              occMap.set(occKey, createdOcc as typeof existingOccurrences[number]);
               processedOccurrenceIds.add(createdOcc.id);
             }
             break;
@@ -606,6 +699,7 @@ export async function reconcileClientServiceDeadlines(
           case 'RECALCULATE': {
             counts.recalculated += 1;
             if (writeMode === 'APPLY' && existingOcc) {
+              await input.assertLease?.();
               await updateOccurrence(db, tenantId, clientServiceId, existingOcc.id, {
                 calculatedDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
                 operativeDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
@@ -618,9 +712,9 @@ export async function reconcileClientServiceDeadlines(
             counts.preserved += 1;
             preservedByReason[decision.reason] += 1;
             if (decision.reason === 'OVERRIDDEN' && writeMode === 'APPLY' && existingOcc) {
+              await input.assertLease?.();
               await updateOccurrence(db, tenantId, clientServiceId, existingOcc.id, {
                 calculatedDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
-                ruleVersionId: version.id,
               });
             }
             break;
@@ -633,6 +727,7 @@ export async function reconcileClientServiceDeadlines(
       }
 
       // Any remaining occurrences in this cycle that are not in evaluated deadlines
+      await input.assertLease?.();
       for (const occ of existingOccurrences) {
         const occKey = `${occ.milestoneKey}|${occ.scheduleEntryKey}`;
         if (!activeEvaluatedOccKeys.has(occKey)) {
@@ -647,6 +742,7 @@ export async function reconcileClientServiceDeadlines(
           if (isOpenFutureRule) {
             counts.cancelled += 1;
             if (writeMode === 'APPLY') {
+              await input.assertLease?.();
               await updateOccurrence(db, tenantId, clientServiceId, occ.id, {
                 status: 'CANCELLED',
                 cancelledAt: new Date(),
@@ -666,7 +762,9 @@ export async function reconcileClientServiceDeadlines(
 
   // Check any remaining unprocessed occurrences for this client service
   for (const cycle of existingCycles) {
-    if (operation === 'ARCHIVE' && input.ruleId && cycle.ruleId !== input.ruleId) continue;
+    if (input.ruleId && cycle.ruleId !== input.ruleId) continue;
+    if (skipCleanupRuleIds.has(cycle.ruleId) || skipCleanupCycleIds.has(cycle.id)) continue;
+    await input.assertLease?.();
     for (const occ of cycle.occurrences) {
       if (!processedOccurrenceIds.has(occ.id)) {
         processedOccurrenceIds.add(occ.id);
@@ -680,6 +778,7 @@ export async function reconcileClientServiceDeadlines(
         if (isOpenFutureRule) {
           counts.cancelled += 1;
           if (writeMode === 'APPLY') {
+            await input.assertLease?.();
             await updateOccurrence(db, tenantId, clientServiceId, occ.id, {
               status: 'CANCELLED',
               cancelledAt: new Date(),

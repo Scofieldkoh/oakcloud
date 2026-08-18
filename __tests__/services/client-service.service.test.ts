@@ -57,6 +57,35 @@ describe('client service service', () => {
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ entityType: 'ClientService', action: 'UPDATE' }), prismaMock);
   });
 
+  it('does not enqueue reconciliation for display-name-only edits', async () => {
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce(record)
+      .mockResolvedValueOnce({ ...record, serviceName: 'Renamed service' });
+
+    await updateClientService(record.id, {
+      updatedAt: record.updatedAt.toISOString(),
+      serviceName: 'Renamed service',
+    }, actor);
+
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
+  it('does not enqueue reconciliation for fee-only edits', async () => {
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce(record)
+      .mockResolvedValueOnce({ ...record, feeLines: [{ ...record.feeLines[0], amount: { toString: () => '650.00', toFixed: () => '650.00' } }] });
+
+    await updateClientService(record.id, {
+      updatedAt: record.updatedAt.toISOString(),
+      feeLines: [{
+        id: 'fee-1', description: 'Annual fee', amount: '650.00', currency: 'SGD',
+        billingFrequency: 'ANNUALLY', billingStartDate: '2026-07-30', displayOrder: 0,
+      }],
+    }, actor);
+
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
   it('rejects a stale competing editor before replacing fees', async () => {
     prismaMock.clientService.findFirst.mockResolvedValue(record);
     await expect(updateClientService(record.id, {

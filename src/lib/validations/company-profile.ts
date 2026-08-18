@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
+import { optionalDateOnlySchema } from '@/lib/validations/date-only';
 import {
   BIZFILE_ENTITY_TYPE_OPTIONS,
   BIZFILE_IDENTIFICATION_TYPE_OPTIONS,
@@ -8,7 +9,7 @@ import {
 } from '@/services/bizfile/canonical-values';
 
 const optionalText = z.string().trim().nullable().optional();
-const optionalDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional();
+const optionalDate = optionalDateOnlySchema;
 const requiredText = z.string().trim().min(1);
 const address = z.object({
   block: optionalText,

@@ -269,4 +269,65 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
     });
     expect(requests.every((r) => r.status === 'COMPLETED')).toBe(true);
   });
+
+  it('survives concurrent reconciliation and reclaimed processing with one stable occurrence', async () => {
+    const { reconcileClientServiceDeadlines, enqueueScheduleReconciliation, processScheduleReconciliationBatch } =
+      await import('@/services/schedule-reconciliation');
+
+    await prisma.deadlineOccurrence.deleteMany({ where: { tenantId, clientServiceId } });
+    await prisma.serviceCycle.deleteMany({ where: { tenantId, clientServiceId } });
+    await prisma.serviceScheduleReconciliationRequest.deleteMany({ where: { tenantId, scopeId: clientServiceId } });
+
+    const reconciliationInput = {
+      tenantId,
+      clientServiceId,
+      today: '2026-08-18' as const,
+      horizonEnd: '2027-08-18' as const,
+      writeMode: 'APPLY' as const,
+      reconciliationRequestId: randomUUID(),
+    };
+    const attempts = await Promise.all([
+      prisma.$transaction((tx) => reconcileClientServiceDeadlines(reconciliationInput, tx)),
+      prisma.$transaction((tx) => reconcileClientServiceDeadlines({
+        ...reconciliationInput,
+        reconciliationRequestId: randomUUID(),
+      }, tx)),
+    ]);
+    expect(attempts).toHaveLength(2);
+
+    const occurrences = await prisma.deadlineOccurrence.findMany({ where: { tenantId, clientServiceId } });
+    expect(occurrences).toHaveLength(1);
+
+    await enqueueScheduleReconciliation(prisma, {
+      tenantId,
+      scopeType: 'CLIENT_SERVICE',
+      scopeId: clientServiceId,
+      triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED',
+      correlationId: 'reclaimed-worker-request',
+      requestedById: null,
+      notBefore: new Date('2026-08-18T01:00:00.000Z'),
+    });
+    const request = await prisma.serviceScheduleReconciliationRequest.findFirst({
+      where: { tenantId, scopeId: clientServiceId, triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED' },
+    });
+    expect(request).not.toBeNull();
+    await prisma.serviceScheduleReconciliationRequest.update({
+      where: { id: request!.id },
+      data: {
+        status: 'PROCESSING',
+        leaseOwner: 'expired-worker',
+        leaseExpiresAt: new Date('2026-08-18T00:59:00.000Z'),
+      },
+    });
+
+    const reclaimed = await processScheduleReconciliationBatch({
+      limit: 1,
+      concurrency: 1,
+      now: new Date('2026-08-18T01:00:00.000Z'),
+    });
+    expect(reclaimed).toMatchObject({ claimed: 1, completed: 1, failed: 0 });
+    expect(await prisma.serviceScheduleReconciliationRequest.findUnique({ where: { id: request!.id } }))
+      .toMatchObject({ status: 'COMPLETED', leaseOwner: null, leaseExpiresAt: null });
+    expect(await prisma.deadlineOccurrence.count({ where: { tenantId, clientServiceId } })).toBe(1);
+  });
 });

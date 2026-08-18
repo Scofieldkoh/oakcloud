@@ -422,10 +422,11 @@ describe('reconcileClientServiceDeadlines', () => {
       businessCalendar: { findFirst: vi.fn().mockResolvedValue(null) },
       clientServiceDeadlineRule: { update: vi.fn().mockResolvedValue({}) },
       deadlineOccurrence: {
-        create: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
+        upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => ({
           id: 'occ-created',
-          ...data,
+          ...create,
         })),
+        create: vi.fn(),
         update: vi.fn().mockResolvedValue({}),
       },
     };
@@ -451,12 +452,18 @@ describe('reconcileClientServiceDeadlines', () => {
       }),
       create: expect.objectContaining({ sourceSnapshot: expect.anything() }),
     }));
-    expect(dbMock.deadlineOccurrence.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
+    expect(dbMock.deadlineOccurrence.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        tenantId_cycleId_milestoneKey_scheduleEntryKey: expect.objectContaining({
+          tenantId: 'tenant-1', cycleId: 'cycle-1', milestoneKey: 'agm-due', scheduleEntryKey: '',
+        }),
+      }),
+      create: expect.objectContaining({
         milestoneKey: 'agm-due',
         calculatedDueDate: new Date('2026-09-30T00:00:00.000Z'),
         operativeDueDate: new Date('2026-09-30T00:00:00.000Z'),
       }),
+      update: {},
     }));
   });
 
@@ -488,8 +495,8 @@ describe('reconcileClientServiceDeadlines', () => {
     }, dbMock as never);
 
     expect(result.counts.created).toBeGreaterThan(0);
-    expect(dbMock.deadlineOccurrence.create.mock.calls
-      .map((call) => call[0].data.calculatedDueDate.toISOString()))
+    expect(dbMock.deadlineOccurrence.upsert.mock.calls
+      .map((call) => call[0].create.calculatedDueDate.toISOString()))
       .toContain('2026-12-31T00:00:00.000Z');
   });
 
@@ -511,11 +518,10 @@ describe('reconcileClientServiceDeadlines', () => {
     }, dbMock as never);
 
     expect(result.preservedByReason.OVERRIDDEN).toBe(1);
-    expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledWith({
       where: { id: 'occ-overridden' },
-      data: expect.objectContaining({ calculatedDueDate: new Date('2026-09-30T00:00:00.000Z') }),
-    }));
-    expect(dbMock.deadlineOccurrence.update.mock.calls[0]?.[0].data).not.toHaveProperty('operativeDueDate');
+      data: { calculatedDueDate: new Date('2026-09-30T00:00:00.000Z') },
+    });
     expect(dbMock.serviceCycle.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'cycle-1' },
       data: expect.objectContaining({ sourceSnapshot: expect.anything() }),
@@ -586,11 +592,70 @@ describe('reconcileClientServiceDeadlines', () => {
 
     expect(result.counts).toMatchObject({ cancelled: 1, preserved: 3, created: 0, recalculated: 0 });
     expect(dbMock.serviceCycle.upsert).not.toHaveBeenCalled();
-    expect(dbMock.deadlineOccurrence.create).not.toHaveBeenCalled();
+    expect(dbMock.deadlineOccurrence.upsert).not.toHaveBeenCalled();
     expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledTimes(1);
     expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'occ-archive-open' },
       data: expect.objectContaining({ status: 'CANCELLED' }),
     }));
+  });
+
+  it('does not cancel another rule during a rule-scoped publish cleanup', async () => {
+    const dbMock = reconciliationDb([{
+      id: 'cycle-other', tenantId: 'tenant-1', clientServiceId: 'cs-1', ruleId: 'rule-2',
+      periodKey: 'OTHER', generationKey: 'rolling-v1', origin: 'RULE', occurrences: [{
+        id: 'occ-other', cycleId: 'cycle-other', milestoneKey: 'other', scheduleEntryKey: '',
+        deadlineType: 'STATUTORY', calculatedDueDate: new Date('2026-09-01T00:00:00.000Z'),
+        operativeDueDate: new Date('2026-09-01T00:00:00.000Z'), dateOverridden: false, status: 'OPEN',
+        origin: 'RULE', ruleVersionId: 'version-2',
+      }],
+    }]);
+
+    await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1', ruleId: 'rule-1', operation: 'PUBLISH',
+      today: '2026-08-18', horizonEnd: '2027-08-18', writeMode: 'APPLY', reconciliationRequestId: 'req-publish-scope',
+    }, dbMock as never);
+
+    expect(dbMock.deadlineOccurrence.update).not.toHaveBeenCalled();
+  });
+
+  it('does not cancel another rule during a rule-scoped archive cleanup', async () => {
+    const dbMock = reconciliationDb([{
+      id: 'cycle-other', tenantId: 'tenant-1', clientServiceId: 'cs-1', ruleId: 'rule-2',
+      periodKey: 'OTHER', generationKey: 'rolling-v1', origin: 'RULE', occurrences: [{
+        id: 'occ-other', cycleId: 'cycle-other', milestoneKey: 'other', scheduleEntryKey: '',
+        deadlineType: 'STATUTORY', calculatedDueDate: new Date('2026-09-01T00:00:00.000Z'),
+        operativeDueDate: new Date('2026-09-01T00:00:00.000Z'), dateOverridden: false, status: 'OPEN',
+        origin: 'RULE', ruleVersionId: 'version-2',
+      }],
+    }], reconciliationRule({ isActive: false, archivedAt: new Date('2026-08-18T00:00:00.000Z') }));
+
+    await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1', ruleId: 'rule-1', operation: 'ARCHIVE',
+      today: '2026-08-18', horizonEnd: '2027-08-18', writeMode: 'APPLY', reconciliationRequestId: 'req-archive-scope',
+    }, dbMock as never);
+
+    expect(dbMock.deadlineOccurrence.update).not.toHaveBeenCalled();
+  });
+
+  it('returns a structured permanent warning for production evaluator missing input', async () => {
+    const dbMock = reconciliationDb([], reconciliationRule({
+      currentVersion: {
+        id: 'version-1', recurrence: { schemaVersion: 1, kind: 'ONE_TIME' },
+        applicability: {
+          schemaVersion: 1, kind: 'ALL',
+          conditions: [{ kind: 'FIELD_EQUALS', field: 'entityType', value: 'PRIVATE_LIMITED' }],
+        }, configHash: 'config-1', parameterDefinitions: [], milestoneTemplates: [],
+      },
+    }));
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1', today: '2026-08-18', horizonEnd: '2027-08-18',
+      writeMode: 'APPLY', reconciliationRequestId: 'req-missing-input',
+    }, dbMock as never);
+
+    expect(result.warnings).toEqual([expect.objectContaining({
+      code: 'MISSING_INPUT', ruleId: 'rule-1', permanent: true, missingFields: ['entityType'],
+    })]);
   });
 });

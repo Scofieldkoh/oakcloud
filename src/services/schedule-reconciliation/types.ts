@@ -62,6 +62,15 @@ export type DeadlineReconciliationCounts = {
 
 export type DeadlineReconciliationOperation = 'PUBLISH' | 'ARCHIVE';
 
+export type DeadlineReconciliationWarning = {
+  code: string;
+  message: string;
+  ruleId?: string;
+  ruleVersionId?: string;
+  missingFields?: string[];
+  permanent?: boolean;
+};
+
 export type DeadlineReconciliationResult = {
   tenantId: string;
   clientServiceId: string;
@@ -69,7 +78,7 @@ export type DeadlineReconciliationResult = {
   writeMode: 'OBSERVE' | 'APPLY';
   counts: DeadlineReconciliationCounts;
   preservedByReason: DeadlineReconciliationPreservedCounts;
-  warnings: string[];
+  warnings: DeadlineReconciliationWarning[];
 };
 
 export type ReconcileClientServiceDeadlinesInput = {
@@ -81,6 +90,7 @@ export type ReconcileClientServiceDeadlinesInput = {
   horizonEnd: DateOnly;
   writeMode: 'OBSERVE' | 'APPLY';
   reconciliationRequestId: string;
+  assertLease?: () => Promise<void>;
 };
 
 export type StoredDeadline = {
