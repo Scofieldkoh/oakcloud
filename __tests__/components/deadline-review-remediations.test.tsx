@@ -4,6 +4,8 @@ import {
   defaultDeadlineViewPreference,
   parseDeadlineUrlState,
 } from '@/components/services/deadlines/deadline-workspace';
+import { parseDeadlineSearchParams } from '@/lib/validations/deadline';
+import { parseDeadlineViewPreference } from '@/lib/validations/services-preferences';
 import { addCalendarDays, addMonthsClamped, currentDateInSingapore, type DateOnly } from '@/services/service-schedule';
 
 const hooks = vi.hoisted(() => ({
@@ -20,6 +22,7 @@ const navigation = vi.hoisted(() => ({
   searchParams: new URLSearchParams(),
   replace: vi.fn(),
 }));
+const media = vi.hoisted(() => ({ isLargeDesktop: vi.fn(() => true) }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/services',
@@ -36,7 +39,7 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreference: hooks.useUserPreference,
   useUpsertUserPreference: hooks.useUpsertUserPreference,
 }));
-vi.mock('@/hooks/use-media-query', () => ({ useIsLargeDesktop: () => true }));
+vi.mock('@/hooks/use-media-query', () => ({ useIsLargeDesktop: media.isLargeDesktop }));
 
 import { DeadlineWorkspace } from '@/components/services/deadlines/deadline-workspace';
 
@@ -68,7 +71,10 @@ function setup() {
 }
 
 describe('Task 12 review remediations', () => {
-  beforeEach(setup);
+  beforeEach(() => {
+    media.isLargeDesktop.mockReturnValue(true);
+    setup();
+  });
 
   it('canonicalizes malformed, partial, reversed, and oversized URL ranges before querying', () => {
     const parsed = parseDeadlineUrlState(
@@ -91,6 +97,70 @@ describe('Task 12 review remediations', () => {
     );
     expect(boundary.from).toBe('2026-08-01');
     expect(boundary.to).toBe('2026-09-30');
+
+    const partial = parseDeadlineUrlState(
+      'deadlineView=CALENDAR&from=2026-08-15&to=2026-09-20&page=4',
+      defaultDeadlineViewPreference,
+      true,
+      '2026-08-19',
+    );
+    expect(partial.from).toBe('2026-08-01');
+    expect(partial.to).toBe('2026-09-30');
+    expect(partial.page).toBe(4);
+  });
+
+  it('validates inline transport filters and repairs malformed saved columns', () => {
+    expect(parseDeadlineSearchParams(new URLSearchParams({
+      from: '2026-08-01',
+      to: '2026-08-31',
+      companyQuery: ' Oaktree ',
+      serviceQuery: ' Annual Return ',
+      milestoneQuery: ' annual-return ',
+    }))).toEqual(expect.objectContaining({ companyQuery: 'Oaktree', serviceQuery: 'Annual Return', milestoneQuery: 'annual-return' }));
+
+    const parsed = parseDeadlineViewPreference({
+      version: 1,
+      defaultView: 'TABLE',
+      monthCount: 2,
+      visibleTypes: ['CLIENT'],
+      familyIds: [],
+      tableColumnOrder: ['actions', 'unknown', 'company'],
+      tableColumnWidths: { dueDate: 40, company: 901, unknown: 220, timing: 'wide' },
+      tableColumnVisibility: { actions: false, company: false, unknown: false },
+      sortBy: 'dueDate',
+      sortOrder: 'asc',
+      pageSize: 20,
+    });
+    expect(parsed.tableColumnOrder).toEqual(['actions', 'company', 'dueDate', 'timing', 'familyService', 'milestone', 'type', 'status', 'cycleOrigin']);
+    expect(parsed.tableColumnWidths).toEqual({ dueDate: 96, company: 800 });
+    expect(parsed.tableColumnVisibility).toEqual(expect.objectContaining({ actions: true, company: false }));
+    expect(parsed.tableColumnVisibility).not.toHaveProperty('unknown');
+  });
+
+  it('canonicalizes calendar history after async preferences and viewport transitions without loops', () => {
+    navigation.searchParams = new URLSearchParams('deadlineView=CALENDAR&from=2026-08-01&to=2026-09-30&page=4');
+    const view = render(<DeadlineWorkspace />);
+    const initialCalls = navigation.replace.mock.calls.length;
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('page=1'), { scroll: false });
+
+    hooks.useUserPreference.mockReturnValue({
+      data: { value: { ...defaultDeadlineViewPreference, monthCount: 3 } },
+      isLoading: false,
+    });
+    view.rerender(<DeadlineWorkspace />);
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('from=2026-08-01'), { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('to=2026-10-31'), { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('page=1'), { scroll: false });
+
+    media.isLargeDesktop.mockReturnValue(false);
+    view.rerender(<DeadlineWorkspace />);
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('from=2026-08-01'), { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('to=2026-08-31'), { scroll: false });
+    const stableCalls = navigation.replace.mock.calls.length;
+    view.rerender(<DeadlineWorkspace />);
+    expect(navigation.replace.mock.calls.length).toBe(stableCalls);
+    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ from: '2026-08-01', to: '2026-08-31', mode: 'CALENDAR', page: 1 }));
+    expect(initialCalls).toBeGreaterThan(0);
   });
 
   it('renders server-backed inline deadline filters and resets the page', () => {
@@ -160,6 +230,32 @@ describe('Task 12 review remediations', () => {
       expect.objectContaining({ pageSize: 50 }),
     ]));
     await waitFor(() => expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50 })));
+  });
+
+  it('requires one selected deadline type and restores explicit URL/preference values', () => {
+    navigation.searchParams = new URLSearchParams('types=CLIENT');
+    hooks.useUserPreference.mockReturnValue({
+      data: { value: { ...defaultDeadlineViewPreference, visibleTypes: ['STATUTORY'] } },
+      isLoading: false,
+    });
+    render(<DeadlineWorkspace />);
+
+    const client = screen.getByRole('button', { name: 'Client' });
+    expect(client).toHaveAttribute('aria-pressed', 'true');
+    expect(client).toBeDisabled();
+    navigation.replace.mockReset();
+    hooks.preferenceMutation.mockReset();
+    fireEvent.click(client);
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(hooks.preferenceMutation).not.toHaveBeenCalled();
+  });
+
+  it('shows actionable company-id and due-range deviation badges', () => {
+    navigation.searchParams = new URLSearchParams('companies=22222222-2222-4222-8222-222222222222&from=2026-09-01&to=2026-09-30');
+    render(<DeadlineWorkspace />);
+
+    expect(screen.getByRole('button', { name: /Remove Companies:/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Remove Due:/ })).toBeVisible();
   });
 
   it('exposes a saved table column chooser', () => {

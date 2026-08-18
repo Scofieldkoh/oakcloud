@@ -176,19 +176,20 @@ export function parseDeadlineUrlState(
   const candidateFrom = readDate(params.get('from'));
   const candidateTo = readDate(params.get('to'));
   const focusMonth = dateFromMonth(candidateFrom ?? `${today.slice(0, 7)}-01` as DateOnly);
-  const range = hasValidRange(candidateFrom, candidateTo)
-    ? { from: candidateFrom, to: candidateTo! }
-    : view === 'CALENDAR' ? safeCalendarRange(focusMonth, monthCount, today) : currentRange(today);
+  const range = view === 'CALENDAR'
+    ? safeCalendarRange(focusMonth, monthCount, today)
+    : hasValidRange(candidateFrom, candidateTo) ? { from: candidateFrom, to: candidateTo! } : currentRange(today);
   const hasTypes = params.has('types');
   const hasFamilies = params.has('families');
   const visibleTypes = preference.visibleTypes.length > 0 ? preference.visibleTypes : TYPE_VALUES;
+  const requestedTypes = hasTypes ? readTypes(params.get('types')) : [];
   const familyIds = preference.familyIds.filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id));
   const fallbackPageSize = PAGE_SIZE_VALUES.includes(preference.pageSize as (typeof PAGE_SIZE_VALUES)[number]) ? preference.pageSize : 20;
   return {
     view,
     from: range.from,
     to: range.to,
-    types: hasTypes ? readTypes(params.get('types')) : visibleTypes,
+    types: requestedTypes.length > 0 ? requestedTypes : visibleTypes,
     families: hasFamilies ? readUuidList(params.get('families')) : familyIds,
     companies: readUuidList(params.get('companies')),
     companyQuery: params.get('companyQuery')?.trim().slice(0, 200) ?? '',
@@ -250,8 +251,8 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   }, [parsedPreference, preference.isLoading]);
 
   const urlState = useMemo(
-    () => parseDeadlineUrlState(effectiveSearchKey, parsedPreference, isLargeDesktop),
-    [effectiveSearchKey, isLargeDesktop, parsedPreference],
+    () => parseDeadlineUrlState(effectiveSearchKey, calendarMonthCountOverride === null ? parsedPreference : { ...parsedPreference, monthCount: calendarMonthCountOverride }, isLargeDesktop),
+    [calendarMonthCountOverride, effectiveSearchKey, isLargeDesktop, parsedPreference],
   );
 
   const replaceUrl = useCallback((next: Partial<Record<string, string | undefined>>) => {
@@ -310,13 +311,15 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   const paramsForRange = useMemo(() => {
     const params = new URLSearchParams(effectiveSearchKey);
-    return { from: readDate(params.get('from')), to: readDate(params.get('to')) };
+    return { from: readDate(params.get('from')), to: readDate(params.get('to')), rawFrom: params.get('from'), rawTo: params.get('to'), rawPage: params.get('page') };
   }, [effectiveSearchKey]);
 
   useEffect(() => {
-    if (hasValidRange(paramsForRange.from, paramsForRange.to)) return;
+    const calendarRangeChanged = urlState.view === 'CALENDAR' && (paramsForRange.rawFrom !== urlState.from || paramsForRange.rawTo !== urlState.to || paramsForRange.rawPage !== '1');
+    const tableRangeInvalid = urlState.view === 'TABLE' && !hasValidRange(paramsForRange.from, paramsForRange.to);
+    if (!calendarRangeChanged && !tableRangeInvalid) return;
     replaceUrl({ from: urlState.from, to: urlState.to, page: '1' });
-  }, [paramsForRange.from, paramsForRange.to, replaceUrl, urlState.from, urlState.to]);
+  }, [paramsForRange.from, paramsForRange.rawFrom, paramsForRange.rawPage, paramsForRange.rawTo, paramsForRange.to, replaceUrl, urlState.from, urlState.to, urlState.view]);
 
   const query: DeadlineSearchInput = {
     from: urlState.from,
@@ -347,6 +350,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   const updateTypes = (type: DeadlineFilterType) => {
     const selected = new Set(urlState.types);
+    if (selected.has(type) && selected.size === 1) return;
     if (selected.has(type)) selected.delete(type);
     else selected.add(type);
     const nextTypes = [...selected].filter((value) => TYPE_VALUES.includes(value));
@@ -441,6 +445,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   if (urlState.milestoneQuery) activeBadges.push({ key: 'milestoneQuery', label: `Milestone: ${urlState.milestoneQuery}`, onRemove: () => updateInlineFilters({ milestoneQuery: '' }) });
   if (urlState.statuses.length > 0) activeBadges.push({ key: 'statuses', label: `Status: ${urlState.statuses.map(formatBadgeValue).join(', ')}`, onRemove: () => updateInlineFilters({ status: '' }) });
   if (urlState.origin) activeBadges.push({ key: 'origin', label: `Source: ${formatBadgeValue(urlState.origin)}`, onRemove: () => updateInlineFilters({ origin: '' }) });
+  if (urlState.companies.length > 0) activeBadges.push({ key: 'companies', label: `Companies: ${urlState.companies.length} selected`, onRemove: () => replaceUrl({ companies: undefined, page: '1' }) });
+  const hasExplicitDueRange = urlState.view === 'TABLE' && (paramsForRange.rawFrom !== null || paramsForRange.rawTo !== null);
+  if (hasExplicitDueRange) activeBadges.push({ key: 'dueRange', label: `Due: ${urlState.from} – ${urlState.to}`, onRemove: () => replaceUrl({ from: undefined, to: undefined, page: '1' }) });
 
   const filtered = activeBadges.length > 0 || urlState.from !== currentDateInSingapore() || urlState.openOnly || urlState.companies.length > 0;
   const total = deadlines.data?.mode === 'TABLE' ? deadlines.data.total : 0;
@@ -550,7 +557,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         <DeadlineCalendar
           items={undefined}
           focusMonth={dateFromMonth(urlState.from)}
-          monthCount={calendarMonthCountOverride ?? parsedPreference.monthCount}
+          monthCount={calendarMonthCount}
           preferenceValue={currentPreference}
           search={query}
           canEdit={canWrite}

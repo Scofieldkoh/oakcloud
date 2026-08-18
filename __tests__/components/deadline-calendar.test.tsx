@@ -96,6 +96,18 @@ describe('DeadlineCalendar', () => {
     expect(monthCountChange).toHaveBeenCalledWith(3);
   });
 
+  it('keeps the rendered months controlled by updated focus and count props', () => {
+    media.isLargeDesktop.mockReturnValue(true);
+    hooks.useDeadlines.mockReturnValue({ data: { mode: 'CALENDAR', items: [], truncated: false }, isLoading: false, isFetching: false, error: null });
+    const view = render(<DeadlineCalendar items={[]} focusMonth={new Date(2026, 7, 1)} monthCount={2} />);
+    expect(screen.getAllByRole('grid', { name: /calendar/i })).toHaveLength(2);
+
+    view.rerender(<DeadlineCalendar items={[]} focusMonth={new Date(2026, 8, 1)} monthCount={3} />);
+
+    expect(screen.getAllByRole('grid', { name: /calendar/i })).toHaveLength(3);
+    expect(screen.getByRole('grid', { name: /September 2026/i })).toBeVisible();
+  });
+
   it('shows company label and full name in an event popover', () => {
     media.isLargeDesktop.mockReturnValue(true);
     hooks.useDeadlines.mockReturnValue({
@@ -160,6 +172,22 @@ describe('DeadlineCalendar', () => {
     expect(onUpdate).toHaveBeenCalledWith(completed, expect.objectContaining({ status: 'OPEN', reason: 'Correction required' }));
   });
 
+  it('keeps cancelled occurrences read-only even for editable users', () => {
+    const onUpdate = vi.fn();
+    const cancelled = { ...occurrence, status: 'CANCELLED' as const, dateOverridden: true };
+    render(<DeadlineEvent occurrence={cancelled} canEdit onUpdate={onUpdate} onResetOverride={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /OACS Annual Return/ }));
+
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Waive' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reopen' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Override date' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reset date' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit notes' })).not.toBeInTheDocument();
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
   it('reports live column resize and persists the final width on pointer release', () => {
     const onLiveResize = vi.fn();
     const onResizeEnd = vi.fn();
@@ -182,6 +210,15 @@ describe('DeadlineCalendar', () => {
 
     expect(onLiveResize).toHaveBeenCalledWith('dueDate', 180);
     expect(onResizeEnd).toHaveBeenCalledWith('dueDate', 180);
+    expect(screen.getAllByRole('columnheader')[0]).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
+    expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 166);
+    expect(onResizeEnd).toHaveBeenLastCalledWith('dueDate', 166);
+  });
+
+  it('disables the next page control for an empty result set', () => {
+    render(<DeadlineTable items={[]} page={1} total={0} totalPages={0} limit={20} onPageChange={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
   });
 
   it('transfers focus and dismisses event and table action dialogs accessibly', () => {
@@ -209,6 +246,27 @@ describe('DeadlineCalendar', () => {
     expect(actionTrigger).toHaveFocus();
     expect(screen.getByRole('combobox')).toHaveClass('min-h-11');
     expect(screen.getByRole('button', { name: 'Previous page' })).toHaveClass('min-h-11', 'min-w-11');
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+  });
+
+  it('contains focus within the single table action layer without nested modal semantics', () => {
+    render(<DeadlineTable items={[occurrence]} page={1} total={1} totalPages={1} limit={20} canEdit onUpdate={vi.fn()} onPageChange={vi.fn()} />);
+    fireEvent.click(screen.getAllByRole('button', { name: /Actions for OACS Annual Return/ })[0]!);
+    const actionDialog = screen.getByRole('dialog', { name: 'Deadline actions' });
+    fireEvent.click(within(actionDialog).getByRole('button', { name: /^OACS Annual Return$/ }));
+
+    const details = screen.getByRole('dialog', { name: /OACS deadline details/i });
+    expect(details).not.toHaveAttribute('aria-modal');
+    const focusables = within(actionDialog).getAllByRole('button');
+    const first = screen.getByRole('button', { name: 'Close deadline details' });
+    const last = focusables[focusables.length - 1]!;
+    first.focus();
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+    expect(last).toHaveFocus();
+    last.focus();
+    fireEvent.keyDown(last, { key: 'Tab' });
+    expect(first).toHaveFocus();
+    expect(screen.getAllByRole('dialog').filter((dialog) => dialog.getAttribute('aria-modal') === 'true')).toHaveLength(1);
   });
 
   it('uses a compact event cap and exposes the remaining agenda on smaller viewports', () => {

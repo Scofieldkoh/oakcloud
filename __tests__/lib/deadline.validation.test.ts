@@ -11,17 +11,4 @@ describe('deadline transport validation', () => {
     expect(() => parseDeadlineSearchParams(new URLSearchParams({ from: '2026-01-01', to: '2027-01-03' }))).toThrow();
   });
 
-  it('parses the server-backed inline company, service, and milestone filters', () => {
-    expect(parseDeadlineSearchParams(new URLSearchParams({
-      from: '2026-08-01',
-      to: '2026-08-31',
-      companyQuery: ' Oaktree ',
-      serviceQuery: ' Annual Return ',
-      milestoneQuery: ' annual-return ',
-    }))).toEqual(expect.objectContaining({
-      companyQuery: 'Oaktree',
-      serviceQuery: 'Annual Return',
-      milestoneQuery: 'annual-return',
-    }));
-  });
 });

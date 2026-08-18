@@ -223,10 +223,10 @@ export function Pagination({
           <button
             type="button"
             onClick={() => goToPage(page + 1)}
-            disabled={page === totalPages}
+            disabled={totalPages <= 1 || page >= totalPages}
             className={cn(
               cn('flex items-center justify-center rounded-xl transition-colors', largeTouchTargets ? 'min-h-11 min-w-11' : 'h-8 w-8'),
-              page === totalPages
+              totalPages <= 1 || page >= totalPages
                 ? 'cursor-not-allowed text-text-muted'
                 : 'text-text-primary hover:bg-background-primary'
             )}

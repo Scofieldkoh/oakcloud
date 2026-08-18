@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-react';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Pagination } from '@/components/ui/pagination';
@@ -150,6 +150,8 @@ function actionDialogPosition(trigger: HTMLButtonElement): { left: number; top: 
   return { left, top };
 }
 
+const FOCUSABLE_SELECTOR = 'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), a[href]:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
+
 function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpdate, onResetOverride }: { occurrence: DeadlineOccurrenceDto; canEdit: boolean; isPending: boolean; mutationError?: unknown; onUpdate?: DeadlineTableProps['onUpdate']; onResetOverride?: DeadlineTableProps['onResetOverride'] }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -180,13 +182,34 @@ function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpda
     };
   }, [open]);
 
+  const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      setOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+    if (event.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   return (
     <div className="relative flex items-center justify-end">
       <button ref={triggerRef} type="button" aria-label={`Actions for ${occurrence.company.displayLabel} ${milestoneLabel(occurrence)}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary">
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
       {open ? (
-        <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Deadline actions" className="fixed z-30 w-[min(22.5rem,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-elevated p-2 shadow-elevation-2" style={{ left: position.left, top: position.top }} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); setOpen(false); triggerRef.current?.focus(); } }}>
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Deadline actions" className="fixed z-30 w-[min(22.5rem,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-elevated p-2 shadow-elevation-2" style={{ left: position.left, top: position.top }} onKeyDown={handleDialogKeyDown}>
           <DeadlineEvent occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />
           {!canEdit ? <p className="px-2 py-2 text-xs text-text-muted">Read-only access</p> : null}
         </div>
@@ -229,14 +252,14 @@ function MobileDeadlineCard({ occurrence, canEdit, isPending, mutationError, onU
   );
 }
 
-function SortableHeader({ columnId, sortBy, sortOrder, onSort, onResize }: { columnId: DeadlineTableColumnId; sortBy: DeadlineSortBy; sortOrder: 'asc' | 'desc'; onSort?: (sortBy: DeadlineSortBy) => void; onResize: (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLButtonElement>) => void }) {
+function SortableHeader({ columnId, sortBy, sortOrder, onSort, onResize, onResizeKeyboard }: { columnId: DeadlineTableColumnId; sortBy: DeadlineSortBy; sortOrder: 'asc' | 'desc'; onSort?: (sortBy: DeadlineSortBy) => void; onResize: (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLButtonElement>) => void; onResizeKeyboard: (columnId: DeadlineTableColumnId, delta: number) => void }) {
   const field = sortFields[columnId];
   const active = field === sortBy;
   const label = deadlineColumnLabels[columnId];
   return (
-    <th scope="col" className="relative px-4 py-3 text-left text-xs font-medium text-text-secondary">
+    <th scope="col" aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-4 py-3 text-left text-xs font-medium text-text-secondary">
       {field && onSort ? <button type="button" aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`} onClick={() => onSort(field)} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary"><span>{label}</span>{active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}</button> : <span>{label}</span>}
-      {columnId !== 'actions' ? <button type="button" aria-label={`Resize ${label} column`} onPointerDown={(event) => onResize(columnId, event)} className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none" /> : null}
+      {columnId !== 'actions' ? <button type="button" aria-label={`Resize ${label} column`} onPointerDown={(event) => onResize(columnId, event)} onKeyDown={(event) => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); onResizeKeyboard(columnId, event.key === 'ArrowRight' ? 16 : -16); } }} className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none" /> : null}
     </th>
   );
 }
@@ -282,6 +305,12 @@ export function DeadlineTable({
     window.addEventListener('pointermove', pointerMove);
     window.addEventListener('pointerup', pointerUp, { once: true });
   };
+  const resizeColumnByKeyboard = (columnId: DeadlineTableColumnId, delta: number) => {
+    const initial = columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId];
+    const next = Math.max(96, initial + delta);
+    onColumnWidthChange?.(columnId, next);
+    onColumnResizeEnd?.(columnId, next);
+  };
 
   return (
     <>
@@ -293,7 +322,7 @@ export function DeadlineTable({
           <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
             <table className="min-w-[1500px] w-full table-fixed border-collapse" aria-label="Deadline occurrences table">
               <colgroup>{visibleColumns.map((column) => <col key={column} style={{ width: `${columnWidths[column] ?? defaultDeadlineColumnWidths[column]}px` }} />)}</colgroup>
-              <thead><tr className="border-b border-border-primary bg-background-tertiary/70">{visibleColumns.map((column) => <SortableHeader key={column} columnId={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} />)}</tr></thead>
+              <thead><tr className="border-b border-border-primary bg-background-tertiary/70">{visibleColumns.map((column) => <SortableHeader key={column} columnId={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} onResizeKeyboard={resizeColumnByKeyboard} />)}</tr></thead>
               <tbody>{items.map((occurrence, index) => <tr key={occurrence.id} className={cn('border-b border-border-primary border-l-4 transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')} style={{ borderLeftColor: occurrence.family.displayColor ?? '#58736a' }}>{visibleColumns.map((column) => <DesktopCell key={column} occurrence={occurrence} column={column} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />)}</tr>)}</tbody>
             </table>
           </div>

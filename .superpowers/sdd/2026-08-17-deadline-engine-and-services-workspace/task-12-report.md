@@ -37,13 +37,17 @@ because the deadline workspace/calendar imports were absent:
 
 ### GREEN
 
-- Focused Task 12 component suite: 19 tests passed across four files,
-  including canonical URL ranges, malformed URL fallback, server-backed
+- Focused Task 12 component/browser support suite: 29 tests passed across six
+  files, including canonical URL ranges, malformed URL fallback, server-backed
   filters, preference precedence, page-size persistence, lifecycle actions,
-  dialog focus/escape/outside/return behavior, compact agenda caps, and live
-  table-column resize persistence.
-- Relevant Task 10/11 compatibility suite: 113 tests passed across 12 files,
-  including deadline service/routes/hooks/validation and service-roster
+  dialog focus/escape/outside/return behavior, compact agenda caps, controlled
+  month transitions, and live table-column resize persistence.
+- Relevant Task 10/11 compatibility suite: 110 tests passed across exactly 12
+  files. The compatibility command was:
+
+      npm.cmd run test:run -- __tests__/services/deadline.service.test.ts __tests__/api/deadline-routes.test.ts __tests__/hooks/use-deadlines.test.ts __tests__/lib/deadline.validation.test.ts __tests__/components/service-roster.test.tsx __tests__/components/service-roster-preferences.test.ts __tests__/components/async-search-select.test.tsx __tests__/services/service-roster.service.test.ts __tests__/api/service-roster-families-route.test.ts __tests__/api/service-roster-route.test.ts __tests__/hooks/use-service-roster.test.ts __tests__/api/services-settings-route.test.ts
+
+  It covers deadline service/routes/hooks/validation and service-roster
   preference/facet/security behavior.
 - Chromium browser fixtures: 2 tests passed in
   `__tests__/browser/services-deadlines.browser.test.tsx`.
@@ -68,6 +72,26 @@ because the deadline workspace/calendar imports were absent:
 - Loading, retryable error, filtered/unfiltered empty, family-facet error,
   calendar truncation, and compact agenda states are distinct; event cues
   include family/type/timing/lifecycle text and full source identity.
+
+### Rereview remediation evidence — pending rereview
+
+- The calendar now has one controlled Singapore focus-month/count source;
+  URL ranges are canonical full rendered-month spans across navigation,
+  preference arrival, month-count changes, responsive transitions, and
+  hydration without replacement loops.
+- Saved column payloads accept only known IDs, append missing defaults, clamp
+  valid widths, ignore malformed/unknown fields, and always show Actions.
+  CANCELLED events are read-only, at least one deadline type remains selected,
+  and the non-modal event disclosure plus single-layer action dialog have
+  keyboard focus containment and return behavior.
+- Company alias/UEN and normalized milestone searches are server-backed;
+  company/due-range deviations are actionable, pagination disables terminal
+  Next controls, and table sorting/resizing exposes ARIA and keyboard cues.
+
+The final rereview remains pending. The focused remediation suite (29 tests),
+Chromium browser fixture (2 tests), exact compatibility selection (110 tests),
+TypeScript check, scoped ESLint (`--max-warnings 0`, zero warnings), and diff
+check are the bounded evidence for this handoff.
 
 No repository-wide suite, baseline/full build, full lint, live database, or
 migration gate was run; those remain deferred to the integrated Plan 2 gate.

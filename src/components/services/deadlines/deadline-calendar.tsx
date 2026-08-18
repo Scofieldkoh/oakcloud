@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { addMonths, format, startOfMonth } from 'date-fns';
 import { DayPicker, type DayProps } from 'react-day-picker';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -97,12 +97,13 @@ export function DeadlineCalendar({
   const isLargeDesktop = useIsLargeDesktop();
   const parsedPreference = preferenceValue ?? parseDeadlineViewPreference(undefined);
   const defaultMonth = dateFromDateOnly(currentDateInSingapore());
-  const [month, setMonth] = useState<Date>(providedFocusMonth ?? startOfMonth(defaultMonth));
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(providedFocusMonth ?? startOfMonth(defaultMonth));
-  const [localMonthCount, setLocalMonthCount] = useState<1 | 2 | 3 | null>(providedMonthCount ?? parsedPreference.monthCount);
+  const focusMonth = startOfMonth(providedFocusMonth ?? defaultMonth);
+  const focusMonthTime = focusMonth.getTime();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(focusMonth);
+  const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date | undefined>(focusMonth);
 
-  const visibleMonthCount = !isLargeDesktop ? 1 : (localMonthCount ?? 2);
-  const range = useMemo(() => search?.from && search?.to ? { from: search.from as DateOnly, to: search.to as DateOnly } : monthRange(month, visibleMonthCount), [month, search?.from, search?.to, visibleMonthCount]);
+  const visibleMonthCount = !isLargeDesktop ? 1 : (providedMonthCount ?? parsedPreference.monthCount ?? 2);
+  const range = search?.from && search?.to ? { from: search.from as DateOnly, to: search.to as DateOnly } : monthRange(focusMonth, visibleMonthCount);
   const query = useDeadlines({ ...search, ...range, mode: 'CALENDAR' });
   const items = useMemo(() => providedItems ?? (query.data?.mode === 'CALENDAR' ? query.data.items : []), [providedItems, query.data]);
   const truncated = query.data?.mode === 'CALENDAR' && query.data.truncated;
@@ -116,7 +117,12 @@ export function DeadlineCalendar({
     }
     return groups;
   }, [items]);
-  const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date | undefined>(selectedDate);
+  useEffect(() => {
+    const nextMonth = new Date(focusMonthTime);
+    setSelectedDate(nextMonth);
+    setSelectedAgendaDate(nextMonth);
+  }, [focusMonthTime]);
+
   const agendaItems = selectedAgendaDate ? eventsForDate(items, selectedAgendaDate) : [];
   const eventsPerDay = isLargeDesktop ? 3 : 1;
   const showCalendarSurface = providedItems !== undefined || (!query.error && (!query.isLoading || Boolean(query.data)));
@@ -125,13 +131,11 @@ export function DeadlineCalendar({
     const parsed = Number(value);
     if (parsed !== 1 && parsed !== 2 && parsed !== 3) return;
     const next = parsed as 1 | 2 | 3;
-    setLocalMonthCount(next);
     onMonthCountChange?.(next);
   };
 
   const navigateMonth = (nextMonth: Date) => {
     const normalized = startOfMonth(nextMonth);
-    setMonth(normalized);
     setSelectedDate(normalized);
     setSelectedAgendaDate(normalized);
     onMonthChange?.(normalized);
@@ -152,8 +156,8 @@ export function DeadlineCalendar({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => navigateMonth(dateFromDateOnly(currentDateInSingapore()))} className="min-h-11 rounded-lg border border-border-primary px-3 text-xs font-medium text-text-primary hover:bg-background-tertiary">Today</button>
-          <button type="button" aria-label="Previous month" onClick={() => navigateMonth(addMonths(month, -visibleMonthCount))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-primary text-text-primary hover:bg-background-tertiary"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
-          <button type="button" aria-label="Next month" onClick={() => navigateMonth(addMonths(month, visibleMonthCount))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-primary text-text-primary hover:bg-background-tertiary"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
+          <button type="button" aria-label="Previous month" onClick={() => navigateMonth(addMonths(focusMonth, -visibleMonthCount))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-primary text-text-primary hover:bg-background-tertiary"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
+          <button type="button" aria-label="Next month" onClick={() => navigateMonth(addMonths(focusMonth, visibleMonthCount))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-primary text-text-primary hover:bg-background-tertiary"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
         </div>
         <label className="flex min-h-11 items-center gap-2 text-xs text-text-secondary"><span>Visible months</span><select aria-label="Visible months" disabled={!isLargeDesktop} value={visibleMonthCount} onChange={(event) => changeMonthCount(event.target.value)} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"><option value="1">1 month</option><option value="2">2 months</option><option value="3">3 months</option></select></label>
       </div>
@@ -166,7 +170,7 @@ export function DeadlineCalendar({
         <>
           <div className={cn('rounded-xl border border-border-primary bg-background-secondary p-2 sm:p-3', query.isFetching && 'opacity-70')}>
             <DayPicker
-              month={month}
+              month={focusMonth}
               onMonthChange={navigateMonth}
               mode="single"
               selected={selectedDate}

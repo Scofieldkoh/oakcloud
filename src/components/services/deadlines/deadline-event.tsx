@@ -153,6 +153,7 @@ export function DeadlineEvent({
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
+        tabIndex={open ? -1 : 0}
         aria-label={label}
         onClick={(event) => {
           event.stopPropagation();
@@ -176,7 +177,6 @@ export function DeadlineEvent({
         <div
           ref={dialogRef}
           role="dialog"
-          aria-modal="true"
           aria-label={`${companyLabel} deadline details`}
           className="fixed z-50 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-elevated p-4 text-sm shadow-elevation-2"
           style={{ left: position.left, top: position.top }}
@@ -207,7 +207,7 @@ export function DeadlineEvent({
             </dl>
             {occurrence.notes ? <p className="border-t border-border-primary pt-3 text-xs text-text-secondary"><span className="font-medium text-text-primary">Notes:</span> {occurrence.notes}</p> : null}
             {mutationError ? <p role="alert" className="text-xs text-status-error">Unable to save this deadline. Please retry.</p> : null}
-            {canEdit && onUpdate ? (
+            {canEdit && onUpdate && occurrence.status !== 'CANCELLED' ? (
               <div className="flex flex-wrap gap-2 border-t border-border-primary pt-3">
                 {occurrence.status === 'OPEN' ? <button type="button" disabled={isPending} onClick={() => onUpdate(occurrence, { expectedUpdatedAt: occurrence.updatedAt, status: 'COMPLETED' })} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border-primary px-3 text-xs font-medium text-text-primary hover:bg-background-tertiary disabled:opacity-50"><Check className="h-3.5 w-3.5" aria-hidden="true" />Mark complete</button> : null}
                 {occurrence.status === 'OPEN' ? <button type="button" disabled={isPending} onClick={() => openAction('waive')} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border-primary px-3 text-xs font-medium text-text-primary hover:bg-background-tertiary disabled:opacity-50">Waive</button> : null}

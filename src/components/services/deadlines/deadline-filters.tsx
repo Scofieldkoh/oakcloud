@@ -77,6 +77,7 @@ export function DeadlineFilters({
             key={type}
             type="button"
             aria-pressed={selected}
+            disabled={selected && selectedTypes.length === 1}
             onClick={() => onToggleType(type)}
             className={cn(
               'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors',

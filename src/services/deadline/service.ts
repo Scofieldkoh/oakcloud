@@ -294,6 +294,10 @@ function occurrenceIntegrityWhere(
   };
 }
 
+function normalizeMilestoneQuery(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 /** Build the tenant/access/date predicate used by both count and row queries. */
 export function deadlineWhereForSearch(
   input: DeadlineSearch,
@@ -306,7 +310,13 @@ export function deadlineWhereForSearch(
     company: {
       tenantId: scope.tenantId,
       deletedAt: null,
-      ...(input.companyQuery ? { name: { contains: input.companyQuery, mode: 'insensitive' } } : {}),
+      ...(input.companyQuery ? {
+        OR: [
+          { name: { contains: input.companyQuery, mode: 'insensitive' } },
+          { displayAlias: { contains: input.companyQuery, mode: 'insensitive' } },
+          { uen: { contains: input.companyQuery, mode: 'insensitive' } },
+        ],
+      } : {}),
     },
     operativeDueDate: {
       gte: toDateInput(input.from as `${number}-${number}-${number}`),
@@ -314,7 +324,7 @@ export function deadlineWhereForSearch(
     },
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
-    ...(input.milestoneQuery ? { milestoneKey: { contains: input.milestoneQuery, mode: 'insensitive' } } : {}),
+    ...(input.milestoneQuery ? { milestoneKey: { contains: normalizeMilestoneQuery(input.milestoneQuery), mode: 'insensitive' } } : {}),
     clientService: {
       tenantId: scope.tenantId,
       ...(input.serviceQuery ? { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } } : {}),

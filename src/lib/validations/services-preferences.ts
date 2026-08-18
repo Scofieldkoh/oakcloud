@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const UUID = z.string().uuid();
+const DEADLINE_COLUMN_IDS = ['dueDate', 'timing', 'company', 'familyService', 'milestone', 'type', 'status', 'cycleOrigin', 'actions'] as const;
 
 export const deadlineViewPreferenceSchema = z.object({
   version: z.literal(1),
@@ -39,11 +40,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function parseDeadlineViewPreference(value: unknown): DeadlineViewPreference {
   if (!isRecord(value) || value.version !== 1) return defaultDeadlineViewPreference;
 
+  const rawWidths = isRecord(value.tableColumnWidths) ? value.tableColumnWidths : {};
+  const rawOrder = Array.isArray(value.tableColumnOrder) ? value.tableColumnOrder : [];
+  const rawVisibility = isRecord(value.tableColumnVisibility) ? value.tableColumnVisibility : {};
   const parsed = deadlineViewPreferenceSchema.safeParse({
     ...value,
-    tableColumnWidths: value.tableColumnWidths ?? {},
-    tableColumnOrder: value.tableColumnOrder ?? [],
-    tableColumnVisibility: value.tableColumnVisibility ?? {},
+    tableColumnWidths: {},
+    tableColumnOrder: [],
+    tableColumnVisibility: {},
     sortBy: value.sortBy ?? 'dueDate',
     sortOrder: value.sortOrder ?? 'asc',
     pageSize: value.pageSize ?? 20,
@@ -51,12 +55,19 @@ export function parseDeadlineViewPreference(value: unknown): DeadlineViewPrefere
   if (!parsed.success) return defaultDeadlineViewPreference;
 
   const widths = Object.fromEntries(
-    Object.entries(parsed.data.tableColumnWidths).map(([column, width]) => [column, Math.min(800, Math.max(96, Math.round(width)))]),
+    DEADLINE_COLUMN_IDS
+      .filter((column) => typeof rawWidths[column] === 'number' && Number.isFinite(rawWidths[column]))
+      .map((column) => [column, Math.min(800, Math.max(96, Math.round(rawWidths[column] as number)))]),
   );
+  const knownOrder = rawOrder.filter((column): column is (typeof DEADLINE_COLUMN_IDS)[number] => typeof column === 'string' && DEADLINE_COLUMN_IDS.includes(column as (typeof DEADLINE_COLUMN_IDS)[number]));
+  const tableColumnOrder = [...new Set([...knownOrder, ...DEADLINE_COLUMN_IDS])];
+  const tableColumnVisibility = Object.fromEntries(DEADLINE_COLUMN_IDS.map((column) => [column, column === 'actions' ? true : rawVisibility[column] !== false]));
   return {
     ...defaultDeadlineViewPreference,
     ...parsed.data,
+    visibleTypes: parsed.data.visibleTypes.length > 0 ? parsed.data.visibleTypes : defaultDeadlineViewPreference.visibleTypes,
     tableColumnWidths: widths,
-    tableColumnOrder: [...new Set(parsed.data.tableColumnOrder)],
+    tableColumnOrder,
+    tableColumnVisibility,
   };
 }
