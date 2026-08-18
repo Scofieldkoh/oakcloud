@@ -287,6 +287,62 @@ export function canonicalDeadlineRuleAudit(validation: ClientRuleConfigValidatio
   };
 }
 
+type PersistedDeadlineRuleVersionAudit = {
+  id: string;
+  ruleId: string;
+  state?: 'PUBLISHED' | 'DRAFT';
+  configHash?: string;
+};
+
+function canonicalPersistedDeadlineRuleAudit(
+  rows: ClientServiceDeadlineRuleRecord[],
+  versions: Map<string, PersistedDeadlineRuleVersionAudit>,
+) {
+  return {
+    rules: rows.slice(0, 100).map((row) => {
+      const version = row.lastEvaluatedVersionId ? versions.get(row.lastEvaluatedVersionId) : undefined;
+      const historicalVersion = version?.ruleId === row.ruleId ? version : undefined;
+      return {
+        ruleId: row.ruleId,
+        enabled: row.enabled,
+        parameterValues: isRecord(row.parameterValues) ? row.parameterValues : {},
+        parameterProvenance: isRecord(row.parameterProvenance) ? row.parameterProvenance : {},
+        scheduleEntries: Array.isArray(row.scheduleEntries) ? row.scheduleEntries : [],
+        publishedVersionId: historicalVersion?.id ?? null,
+        publishedConfigHash: historicalVersion?.configHash ?? null,
+        configHash: row.configHash ?? null,
+        applicabilityState: row.applicabilityState,
+        applicabilityReason: row.applicabilityReason,
+      };
+    }),
+  };
+}
+
+async function loadPersistedDeadlineRuleVersions(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  rows: ClientServiceDeadlineRuleRecord[],
+): Promise<Map<string, PersistedDeadlineRuleVersionAudit>> {
+  const ids = [...new Set(rows.map((row) => row.lastEvaluatedVersionId).filter((id): id is string => Boolean(id)))];
+  const delegate = (db as unknown as {
+    deadlineRuleVersion?: { findMany?: (args: unknown) => Promise<unknown> };
+  }).deadlineRuleVersion;
+  if (ids.length === 0 || !delegate?.findMany) return new Map();
+  const raw = await delegate.findMany({
+    where: { tenantId, id: { in: ids } },
+    select: { id: true, ruleId: true, state: true, configHash: true },
+  });
+  return new Map((Array.isArray(raw) ? raw : []).map((version) => {
+    const value = version as Partial<PersistedDeadlineRuleVersionAudit>;
+    return [value.id!, {
+      id: value.id!,
+      ruleId: value.ruleId!,
+      state: value.state,
+      configHash: value.configHash,
+    }];
+  }));
+}
+
 export async function persistClientServiceDeadlineRules(
   tx: Prisma.TransactionClient,
   input: {
@@ -579,23 +635,38 @@ export async function previewClientServiceDeadlineConfiguration(
       skipCleanupRuleIds.add(configuration.ruleId);
       continue;
     }
+    const evaluatePeriod = (period: typeof periods[number]) => evaluateDeadlineRule({
+      ruleId: configuration.ruleId,
+      ruleVersionId: version.id,
+      recurrence: version.recurrence as never,
+      applicability: version.applicability as never,
+      parameters: configuration.parameterValues as Record<string, unknown>,
+      scheduleEntries: configuration.scheduleEntries as never,
+      milestones: previewMilestones(version.milestoneTemplates),
+      company: normalizeCompanyRuleSource(company, today),
+      period: { key: period.periodKey, start: period.start, end: period.end },
+      calendar,
+    });
+    const firstPeriod = periods[0] ?? { periodKey: 'INITIAL', start: today, end: horizonEnd };
+    try {
+      evaluatePeriod(firstPeriod);
+    } catch (error) {
+      if ((error as { code?: string })?.code !== ErrorCodes.MISSING_RULE_INPUT) throw error;
+      counts.missingInput += 1;
+      warnings.push({
+        ruleId: configuration.ruleId,
+        state: 'MISSING_INPUT',
+        reason: error instanceof Error ? error.message : 'Rule evaluation requires input',
+      });
+      skipCleanupRuleIds.add(configuration.ruleId);
+      continue;
+    }
     for (const period of periods) {
       const cycle = cyclesByKey.get(`${configuration.ruleId}|${period.periodKey}`);
       const cycleId = cycle?.id ?? `${id}|${configuration.ruleId}|${period.periodKey}|${ROLLING_PLAN_VERSION}`;
       let evaluation;
       try {
-        evaluation = evaluateDeadlineRule({
-          ruleId: configuration.ruleId,
-          ruleVersionId: version.id,
-          recurrence: version.recurrence as never,
-          applicability: version.applicability as never,
-          parameters: configuration.parameterValues as Record<string, unknown>,
-          scheduleEntries: configuration.scheduleEntries as never,
-          milestones: previewMilestones(version.milestoneTemplates),
-          company: normalizeCompanyRuleSource(company, today),
-          period: { key: period.periodKey, start: period.start, end: period.end },
-          calendar,
-        });
+        evaluation = evaluatePeriod(period);
       } catch (error) {
         counts.missingInput += 1;
         counts.warnings += 1;
@@ -673,6 +744,7 @@ export async function previewClientServiceDeadlineConfiguration(
     }
   }
 
+  counts.warnings = warnings.length;
   const proposedConfigHash = hashConfiguration(validation.normalized.map((rule, index) => ({
     ...rule,
     versionId: validation.states[index]?.versionId ?? null,
@@ -888,14 +960,22 @@ export async function updateClientService(id: string, input: UpdateClientService
     const reconciliationCorrelationId = scheduleConfigurationChanged
       ? `client-service-update-${id}-${Date.now()}`
       : null;
+    const persistedDeadlineRuleRows = ((current as ClientServiceRecord & { deadlineRules?: ClientServiceDeadlineRuleRecord[] }).deadlineRules ?? []);
+    const persistedDeadlineRuleVersions = scheduleConfigurationChanged
+      ? await loadPersistedDeadlineRuleVersions(tx, params.tenantId, persistedDeadlineRuleRows)
+      : new Map<string, PersistedDeadlineRuleVersionAudit>();
+    const oldDeadlineRuleAudit = canonicalPersistedDeadlineRuleAudit(persistedDeadlineRuleRows, persistedDeadlineRuleVersions);
+    const newDeadlineRuleAudit = deadlineRulesChanged
+      ? canonicalDeadlineRuleAudit(deadlineRuleValidation ?? currentDeadlineRuleValidation)
+      : oldDeadlineRuleAudit;
     const changes = {
       ...scalarChanges,
       ...(fieldValuesChanged ? { fieldValues: { old: '[redacted]', new: '[redacted]' } } : {}),
       ...(feesChanged ? { feeLines: { old: feeSummaryBefore, new: feeSummaryAfter } } : {}),
       ...(scheduleConfigurationChanged ? {
         deadlineRules: {
-          old: canonicalDeadlineRuleAudit(currentDeadlineRuleValidation),
-          new: canonicalDeadlineRuleAudit(deadlineRuleValidation ?? currentDeadlineRuleValidation),
+          old: oldDeadlineRuleAudit,
+          new: newDeadlineRuleAudit,
         },
       } : {}),
       ...(reconciliationCorrelationId ? { reconciliationCorrelationId: { old: null, new: reconciliationCorrelationId } } : {}),

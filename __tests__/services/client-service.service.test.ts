@@ -7,6 +7,7 @@ const prismaMock = vi.hoisted(() => ({
   clientServiceFeeLine: { deleteMany: vi.fn(), createMany: vi.fn() },
   clientServiceDeadlineRule: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
   serviceVariantDeadlineRule: { findMany: vi.fn() },
+  deadlineRuleVersion: { findMany: vi.fn() },
   serviceCycle: { findMany: vi.fn() },
   businessCalendar: { findFirst: vi.fn() },
   deadlineRule: { findMany: vi.fn() },
@@ -299,6 +300,221 @@ describe('client service service', () => {
     expect(prismaMock.clientServiceDeadlineRule.deleteMany).not.toHaveBeenCalled();
     expect(prismaMock.clientServiceDeadlineRule.createMany).not.toHaveBeenCalled();
     expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
+  it('protects every existing cycle when the first-period evaluator throws missing input', async () => {
+    const ruleId = '66666666-6666-4666-8666-666666666666';
+    const versionId = '77777777-7777-4777-8777-777777777777';
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([{
+      ruleId,
+      rule: {
+        id: ruleId,
+        isActive: true,
+        archivedAt: null,
+        currentVersionId: versionId,
+        currentVersion: {
+          id: versionId,
+          state: 'PUBLISHED',
+          recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+          applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+          parameterDefinitions: [],
+          milestoneTemplates: [{
+            milestoneKey: 'missing-source',
+            name: 'Missing source',
+            description: null,
+            type: 'CLIENT',
+            generationMode: 'ONCE_PER_CYCLE',
+            dateExpression: {
+              kind: 'RELATIVE_TO_SOURCE',
+              source: { kind: 'SCHEDULE_ENTRY', key: 'missing-entry' },
+              offset: 0,
+              unit: 'CALENDAR_DAY',
+            },
+            businessDayAdjustment: 'NONE',
+            displayOrder: 0,
+            isActive: true,
+          }],
+        },
+      },
+    }]);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([
+      {
+        id: 'cycle-outside-a',
+        ruleId,
+        periodKey: 'outside-a',
+        occurrences: [{
+          id: 'occurrence-outside-a',
+          cycleId: 'cycle-outside-a',
+          milestoneKey: 'missing-source',
+          scheduleEntryKey: '',
+          deadlineType: 'CLIENT',
+          calculatedDueDate: new Date('2026-12-15'),
+          operativeDueDate: new Date('2026-12-15'),
+          dateOverridden: false,
+          status: 'OPEN',
+          origin: 'RULE',
+          ruleVersionId: versionId,
+        }],
+      },
+      {
+        id: 'cycle-outside-b',
+        ruleId,
+        periodKey: 'outside-b',
+        occurrences: [{
+          id: 'occurrence-outside-b',
+          cycleId: 'cycle-outside-b',
+          milestoneKey: 'missing-source',
+          scheduleEntryKey: '',
+          deadlineType: 'CLIENT',
+          calculatedDueDate: new Date('2026-12-20'),
+          operativeDueDate: new Date('2026-12-20'),
+          dateOverridden: false,
+          status: 'OPEN',
+          origin: 'RULE',
+          ruleVersionId: versionId,
+        }],
+      },
+    ]);
+
+    const impact = await previewClientServiceDeadlineConfiguration(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      deadlineRules: [{ ruleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] }],
+      scheduleSnapshot: {
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: null,
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, actor);
+
+    expect(impact.counts.cancelled).toBe(0);
+    expect(impact.warnings).toEqual([expect.objectContaining({ ruleId, state: 'MISSING_INPUT' })]);
+  });
+
+  it('keeps warning counts equal to warnings for disabled and applicability outcomes', async () => {
+    const disabledRuleId = '88888888-8888-4888-8888-888888888888';
+    const notApplicableRuleId = '99999999-9999-4999-8999-999999999999';
+    const missingRuleId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const association = (ruleId: string, applicability: unknown, parameterDefinitions: unknown[] = []) => ({
+      ruleId,
+      rule: {
+        id: ruleId,
+        isActive: true,
+        archivedAt: null,
+        currentVersionId: `version-${ruleId}`,
+        currentVersion: {
+          id: `version-${ruleId}`,
+          state: 'PUBLISHED',
+          recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+          applicability,
+          parameterDefinitions,
+          milestoneTemplates: [],
+        },
+      },
+    });
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([
+      association(disabledRuleId, { schemaVersion: 1, kind: 'ALL', conditions: [] }),
+      association(notApplicableRuleId, { kind: 'FIELD_PRESENT', field: 'name' }),
+      association(missingRuleId, { schemaVersion: 1, kind: 'ALL', conditions: [] }, [{ key: 'requiredDays', type: 'INTEGER', isRequired: true, validation: null }]),
+    ]);
+
+    const impact = await previewClientServiceDeadlineConfiguration(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      deadlineRules: [
+        { ruleId: disabledRuleId, enabled: false, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+        { ruleId: notApplicableRuleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+        { ruleId: missingRuleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+      ],
+      scheduleSnapshot: {
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: null,
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, actor);
+
+    expect(impact.warnings).toHaveLength(3);
+    expect(impact.counts.warnings).toBe(impact.warnings.length);
+  });
+
+  it('audits persisted rule history when a republished version precedes a schedule-only edit', async () => {
+    const ruleId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const oldVersionId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    const currentVersionId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+    const persistedConfigHash = 'e'.repeat(64);
+    const oldPublishedConfigHash = 'f'.repeat(64);
+    const currentPublishedConfigHash = '0'.repeat(64);
+    const persistedRule = {
+      id: 'client-rule-history',
+      ruleId,
+      enabled: true,
+      parameterValues: { monthsAfterFye: 12 },
+      parameterProvenance: { monthsAfterFye: 'CLIENT_OVERRIDE' },
+      scheduleEntries: [],
+      lastEvaluatedVersionId: oldVersionId,
+      applicabilityState: 'APPLICABLE',
+      applicabilityReason: null,
+      configHash: persistedConfigHash,
+      updatedAt: new Date('2026-07-30T00:00:00Z'),
+    };
+    const currentAssociation = {
+      ruleId,
+      rule: {
+        id: ruleId,
+        isActive: true,
+        archivedAt: null,
+        currentVersionId,
+        currentVersion: {
+          id: currentVersionId,
+          state: 'PUBLISHED',
+          configHash: currentPublishedConfigHash,
+          recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+          applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+          parameterDefinitions: [{ key: 'monthsAfterFye', type: 'INTEGER', isRequired: false, validation: null }],
+          milestoneTemplates: [],
+        },
+      },
+    };
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [persistedRule] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([currentAssociation]);
+    prismaMock.deadlineRuleVersion.findMany.mockResolvedValue([{ id: oldVersionId, ruleId, state: 'PUBLISHED', configHash: oldPublishedConfigHash }]);
+    (auditMock.computeChanges as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue({ status: { old: 'ACTIVE', new: 'PAUSED' } });
+
+    const rules = [{ ruleId, enabled: true, parameterValues: { monthsAfterFye: 12 }, parameterProvenance: { monthsAfterFye: 'CLIENT_OVERRIDE' as const }, scheduleEntries: [] }];
+    const impact = await previewClientServiceDeadlineConfiguration(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      deadlineRules: rules,
+      scheduleSnapshot: {
+        status: 'PAUSED',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: null,
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, actor);
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      status: 'PAUSED',
+      impactFingerprint: impact.previewFingerprint,
+    }, actor);
+
+    const changes = auditMock.createAuditLog.mock.calls.at(-1)?.[0]?.changes as Record<string, unknown>;
+    const deadlineRules = changes.deadlineRules as { old: { rules: Array<Record<string, unknown>> }; new: { rules: Array<Record<string, unknown>> } };
+    expect(deadlineRules.old.rules[0]).toEqual(expect.objectContaining({
+      publishedVersionId: oldVersionId,
+      publishedConfigHash: oldPublishedConfigHash,
+      configHash: persistedConfigHash,
+      applicabilityState: 'APPLICABLE',
+    }));
+    expect(deadlineRules.new.rules[0]).toEqual(deadlineRules.old.rules[0]);
   });
 
   it('returns a full observe fingerprint capped only in samples', async () => {
