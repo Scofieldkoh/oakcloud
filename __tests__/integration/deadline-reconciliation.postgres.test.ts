@@ -207,6 +207,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
     await prisma.clientServiceDeadlineRule.deleteMany({ where: { tenantId } });
     await prisma.clientService.deleteMany({ where: { tenantId } });
     await prisma.deadlineMilestoneTemplate.deleteMany({ where: { ruleVersion: { rule: { tenantId } } } });
+    await prisma.deadlineRule.updateMany({ where: { tenantId }, data: { currentVersionId: null } });
     await prisma.deadlineRuleVersion.deleteMany({ where: { rule: { tenantId } } });
     await prisma.deadlineRule.deleteMany({ where: { tenantId } });
     await prisma.serviceVariant.deleteMany({ where: { tenantId } });

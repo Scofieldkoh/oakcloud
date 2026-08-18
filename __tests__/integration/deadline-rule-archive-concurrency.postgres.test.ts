@@ -74,6 +74,10 @@ describePostgres('deadline-rule archive draft concurrency PostgreSQL integration
   });
 
   afterAll(async () => {
+    await prisma.deadlineRule.update({
+      where: { id: ruleId },
+      data: { currentVersionId: null },
+    });
     await prisma.deadlineRuleVersion.deleteMany({ where: { tenantId } });
     await prisma.deadlineRule.deleteMany({ where: { tenantId } });
     await prisma.auditLog.deleteMany({ where: { tenantId } });
