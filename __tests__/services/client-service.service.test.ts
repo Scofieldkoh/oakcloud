@@ -5,6 +5,7 @@ const prismaMock = vi.hoisted(() => ({
   clientServiceFeeLine: { deleteMany: vi.fn(), createMany: vi.fn() },
   serviceAgreement: { findMany: vi.fn() },
   serviceAgreementFeeLine: { update: vi.fn() },
+  serviceScheduleReconciliationRequest: { findUnique: vi.fn(), upsert: vi.fn() },
   $transaction: vi.fn(),
 }));
 const auditMock = vi.hoisted(() => ({ createAuditLog: vi.fn(), computeChanges: vi.fn(() => null) }));
@@ -31,6 +32,8 @@ describe('client service service', () => {
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
     prismaMock.serviceAgreement.findMany.mockResolvedValue([]);
     prismaMock.clientService.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue(null);
+    prismaMock.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({ id: 'req-1', dedupeKey: 'k-1' });
   });
 
   it('tenant-scopes company lists and returns fixed-point fees without legal wording', async () => {
@@ -68,7 +71,10 @@ describe('client service service', () => {
     prismaMock.clientService.findFirst.mockResolvedValue(record);
     prismaMock.clientService.update.mockResolvedValue(record);
     await expect(archiveClientService(record.id, 'Client requested termination', actor)).resolves.toEqual({ id: record.id, archived: true });
-    expect(prismaMock.clientService.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deletedReason: 'Client requested termination' }) }));
+    expect(prismaMock.clientService.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: record.id, tenantId: actor.tenantId, deletedAt: null }),
+      data: expect.objectContaining({ deletedReason: 'Client requested termination' }),
+    }));
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'DELETE' }), prismaMock);
   });
 

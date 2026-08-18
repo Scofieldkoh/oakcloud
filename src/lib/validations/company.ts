@@ -65,6 +65,8 @@ export const createCompanySchema = z.object({
   fyeAsAtLastAr: dateStringTransform,
   lastAgmDate: dateStringTransform,
   lastArFiledDate: dateStringTransform,
+  nextAgmDueDate: dateStringTransform,
+  nextArDueDate: dateStringTransform,
   accountsDueDate: dateStringTransform,
   homeCurrency: z.string().max(3).default('SGD'),
   paidUpCapitalCurrency: z.string().default('SGD'),

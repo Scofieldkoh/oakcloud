@@ -1,0 +1,733 @@
+import { compareDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
+import { evaluateDeadlineRule, type DeadlineRuleEvaluationInput } from '@/services/service-schedule/evaluator';
+import { hashConfiguration } from '@/services/service-schedule/hash';
+import type {
+  BusinessCalendarSnapshot,
+  CompanyRuleSource,
+  DateOnly,
+} from '@/services/service-schedule';
+import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
+import { planRollingPeriods, ROLLING_PLAN_VERSION } from './planner';
+import type {
+  ClassifyDeadlineChangeResult,
+  DeadlineReconciliationCounts,
+  DeadlineReconciliationPreservedCounts,
+  DeadlineReconciliationResult,
+  EvaluatedDeadlineForDiff,
+  PreserveReason,
+  ReconcileClientServiceDeadlinesInput,
+  StoredDeadline,
+} from './types';
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function safeDateOnly(value: unknown): DateOnly | null {
+  if (typeof value === 'string') {
+    const trimmed = value.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed as DateOnly;
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10) as DateOnly;
+  }
+  return null;
+}
+
+function normalizeCompanySource(value: unknown, today?: DateOnly): CompanyRuleSource {
+  const source = asRecord(value);
+  const result: Record<string, unknown> = {};
+  const dateFields = new Set([
+    'financialYearEnd',
+    'nextAgmDueDate',
+    'nextArDueDate',
+    'accountsDueDate',
+    'incorporationDate',
+    'registrationDate',
+  ]);
+  const supported = new Set([
+    'isGstRegistered',
+    'isRegisteredCharity',
+    'isIPC',
+    'hasCharges',
+    'currentOfficerCount',
+    'currentShareholderCount',
+    'annualReceiptsOrExpenditure',
+    ...dateFields,
+    'entityType',
+    'status',
+    'primarySsicCode',
+    'secondarySsicCode',
+    'uen',
+    'name',
+  ]);
+  for (const [key, raw] of Object.entries(source)) {
+    if (!supported.has(key) || raw === null || raw === undefined) continue;
+    if (dateFields.has(key)) {
+      const date = safeDateOnly(raw);
+      if (date) result[key] = date;
+    } else if (typeof raw === 'boolean' || typeof raw === 'number' || typeof raw === 'string') {
+      result[key] = raw;
+    }
+  }
+
+  // Company stores the FYE as a day/month pair. The evaluator consumes a
+  // date-only source, so materialise the current occurrence year's date when
+  // no explicit snapshot date is available.
+  if (!result.financialYearEnd && today) {
+    const day = source.financialYearEndDay;
+    const month = source.financialYearEndMonth;
+    if (
+      typeof day === 'number' && Number.isInteger(day) && day >= 1 && day <= 31
+      && typeof month === 'number' && Number.isInteger(month) && month >= 1 && month <= 12
+    ) {
+      const candidate = `${today.slice(0, 4)}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` as DateOnly;
+      try {
+        parseDateOnly(candidate);
+        result.financialYearEnd = candidate;
+      } catch {
+        // Invalid legacy day/month data remains absent and is reported by the
+        // evaluator as a typed missing input instead of being fabricated.
+      }
+    }
+  }
+  return result as CompanyRuleSource;
+}
+
+function cycleSourceSnapshot(evaluation: {
+  sourceSnapshot: Record<string, unknown>;
+  occurrences: Array<{ milestoneKey: string; scheduleEntryKey: string; explanation: string[] }>;
+}): Record<string, unknown> {
+  return {
+    ...evaluation.sourceSnapshot,
+    explanations: Object.fromEntries(
+      evaluation.occurrences.map((occurrence) => [
+        `${occurrence.milestoneKey}|${occurrence.scheduleEntryKey}`,
+        occurrence.explanation,
+      ]),
+    ),
+  };
+}
+
+async function updateOccurrence(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  clientServiceId: string,
+  id: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  // updateMany keeps the tenant and client-service predicates in the SQL
+  // write. The fallback only supports lightweight unit-test doubles.
+  if (typeof db.deadlineOccurrence.updateMany === 'function') {
+    await db.deadlineOccurrence.updateMany({
+      where: { id, tenantId, clientServiceId },
+      data: data as never,
+    });
+  } else {
+    await db.deadlineOccurrence.update({ where: { id }, data: data as never });
+  }
+}
+
+async function updateClientRule(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  clientServiceId: string,
+  id: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  if (typeof db.clientServiceDeadlineRule.updateMany === 'function') {
+    await db.clientServiceDeadlineRule.updateMany({
+      where: { id, tenantId, clientServiceId },
+      data: data as never,
+    });
+  } else {
+    await db.clientServiceDeadlineRule.update({ where: { id }, data: data as never });
+  }
+}
+
+async function updateCycleSnapshot(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  clientServiceId: string,
+  id: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  if (typeof db.serviceCycle.updateMany === 'function') {
+    await db.serviceCycle.updateMany({
+      where: { id, tenantId, clientServiceId },
+      data: data as never,
+    });
+  } else {
+    await db.serviceCycle.update({ where: { id }, data: data as never });
+  }
+}
+
+function defaultCalendar(id = 'default'): BusinessCalendarSnapshot {
+  return {
+    id,
+    timeZone: 'Asia/Singapore',
+    revision: 1,
+    weekendDays: new Set([0, 6]),
+    holidays: new Set(),
+  };
+}
+
+export function classifyDeadlineChange(
+  existing: StoredDeadline | null,
+  proposed: EvaluatedDeadlineForDiff,
+  today: DateOnly,
+): ClassifyDeadlineChangeResult {
+  if (!existing) {
+    return { action: 'CREATE' };
+  }
+
+  if (existing.origin !== 'RULE') {
+    return { action: 'PRESERVE', reason: 'MANUAL_TRIGGER' };
+  }
+
+  if (compareDateOnly(existing.operativeDueDate, today) < 0) {
+    return { action: 'PRESERVE', reason: 'HISTORICAL' };
+  }
+
+  if (existing.status === 'COMPLETED') {
+    return { action: 'PRESERVE', reason: 'COMPLETED' };
+  }
+
+  if (existing.status === 'WAIVED') {
+    return { action: 'PRESERVE', reason: 'WAIVED' };
+  }
+
+  if (existing.status === 'CANCELLED') {
+    return { action: 'PRESERVE', reason: 'CANCELLED' };
+  }
+
+  if (existing.dateOverridden) {
+    return { action: 'PRESERVE', reason: 'OVERRIDDEN' };
+  }
+
+  if (
+    existing.calculatedDueDate !== proposed.dueDate ||
+    existing.operativeDueDate !== proposed.dueDate ||
+    existing.ruleVersionId !== proposed.ruleVersionId
+  ) {
+    return { action: 'RECALCULATE' };
+  }
+
+  return { action: 'NO_CHANGE' };
+}
+
+function classifyExistingPreserveReason(existing: StoredDeadline, today: DateOnly): PreserveReason {
+  if (existing.origin !== 'RULE') return 'MANUAL_TRIGGER';
+  if (compareDateOnly(existing.operativeDueDate, today) < 0) return 'HISTORICAL';
+  if (existing.status === 'COMPLETED') return 'COMPLETED';
+  if (existing.status === 'WAIVED') return 'WAIVED';
+  if (existing.status === 'CANCELLED') return 'CANCELLED';
+  if (existing.dateOverridden) return 'OVERRIDDEN';
+  return 'HISTORICAL';
+}
+
+function toStoredDeadline(occurrence: {
+  id: string;
+  cycleId: string;
+  milestoneKey: string;
+  scheduleEntryKey: string;
+  deadlineType: string;
+  calculatedDueDate: Date | string;
+  operativeDueDate: Date | string;
+  dateOverridden: boolean;
+  status: string;
+  origin: string;
+  ruleVersionId: string;
+}): StoredDeadline {
+  return {
+    id: occurrence.id,
+    cycleId: occurrence.cycleId,
+    milestoneKey: occurrence.milestoneKey,
+    scheduleEntryKey: occurrence.scheduleEntryKey,
+    deadlineType: occurrence.deadlineType,
+    calculatedDueDate: safeDateOnly(occurrence.calculatedDueDate)!,
+    operativeDueDate: safeDateOnly(occurrence.operativeDueDate)!,
+    dateOverridden: occurrence.dateOverridden,
+    status: occurrence.status,
+    origin: occurrence.origin,
+    ruleVersionId: occurrence.ruleVersionId,
+  };
+}
+
+export async function reconcileClientServiceDeadlines(
+  input: ReconcileClientServiceDeadlinesInput,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<DeadlineReconciliationResult> {
+  const { tenantId, clientServiceId, today, horizonEnd, writeMode, reconciliationRequestId } = input;
+  parseDateOnly(today);
+  parseDateOnly(horizonEnd);
+
+  const counts: DeadlineReconciliationCounts = {
+    created: 0,
+    recalculated: 0,
+    cancelled: 0,
+    preserved: 0,
+    noChange: 0,
+  };
+
+  const preservedByReason: DeadlineReconciliationPreservedCounts = {
+    MANUAL_TRIGGER: 0,
+    HISTORICAL: 0,
+    COMPLETED: 0,
+    WAIVED: 0,
+    CANCELLED: 0,
+    OVERRIDDEN: 0,
+  };
+
+  const warnings: string[] = [];
+
+  const clientService = await db.clientService.findFirst({
+    where: { id: clientServiceId, tenantId },
+    include: {
+      company: true,
+      deadlineRules: {
+        include: {
+          rule: {
+            include: {
+              currentVersion: {
+                include: {
+                  parameterDefinitions: true,
+                  milestoneTemplates: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!clientService) {
+    warnings.push(`Client service ${clientServiceId} not found`);
+    return {
+      tenantId,
+      clientServiceId,
+      reconciliationRequestId,
+      writeMode,
+      counts,
+      preservedByReason,
+      warnings,
+    };
+  }
+
+  // Load existing cycles and occurrences for this client service
+  const existingCycles = await db.serviceCycle.findMany({
+    where: { tenantId, clientServiceId },
+    include: {
+      occurrences: true,
+    },
+  });
+
+  const processedOccurrenceIds = new Set<string>();
+
+  const serviceEndDate = safeDateOnly(clientService.endDate);
+  const isClientServiceInactive =
+    clientService.deletedAt !== null
+    || clientService.status === 'ENDED'
+    || (serviceEndDate !== null && compareDateOnly(serviceEndDate, today) < 0);
+
+  if (isClientServiceInactive) {
+    for (const cycle of existingCycles) {
+      for (const occ of cycle.occurrences) {
+        processedOccurrenceIds.add(occ.id);
+        const stored = toStoredDeadline(occ);
+        const isOpenFutureRule =
+          stored.status === 'OPEN' &&
+          stored.origin === 'RULE' &&
+          !stored.dateOverridden &&
+          compareDateOnly(stored.operativeDueDate, today) >= 0;
+
+        if (isOpenFutureRule) {
+          counts.cancelled += 1;
+          if (writeMode === 'APPLY') {
+            await updateOccurrence(db, tenantId, clientServiceId, occ.id, {
+              status: 'CANCELLED',
+              cancelledAt: new Date(),
+              cancelledById: null,
+              cancellationReason: 'Client service archived or deleted',
+            });
+          }
+        } else {
+          counts.preserved += 1;
+          const reason = classifyExistingPreserveReason(stored, today);
+          preservedByReason[reason] += 1;
+        }
+      }
+    }
+
+    return {
+      tenantId,
+      clientServiceId,
+      reconciliationRequestId,
+      writeMode,
+      counts,
+      preservedByReason,
+      warnings,
+    };
+  }
+
+  // Load business calendar
+  const activeCalendarRecord = await db.businessCalendar.findFirst({
+    where: { tenantId, isActive: true, archivedAt: null },
+    include: {
+      holidays: {
+        where: { tenantId, isActive: true },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      },
+    },
+  });
+
+  const businessCalendar: BusinessCalendarSnapshot = activeCalendarRecord
+    ? {
+        id: activeCalendarRecord.id,
+        timeZone: activeCalendarRecord.timeZone,
+        revision: activeCalendarRecord.revision,
+        weekendDays: new Set(activeCalendarRecord.weekendDays),
+        holidays: new Set(
+          activeCalendarRecord.holidays
+            .map((h) => safeDateOnly(h.date))
+            .filter((d): d is DateOnly => d !== null),
+        ),
+      }
+    : defaultCalendar();
+
+  const companySource = normalizeCompanySource(clientService.company, today);
+
+  // Group existing occurrences by cycleId
+  const occurrencesByCycleId = new Map<string, typeof existingCycles[number]['occurrences']>();
+  for (const cycle of existingCycles) {
+    occurrencesByCycleId.set(cycle.id, cycle.occurrences);
+  }
+
+  // Find or map cycles by cycle identity: clientServiceId|ruleId|periodKey|generationKey|origin
+  const cycleByKey = new Map<string, typeof existingCycles[number]>();
+  for (const cycle of existingCycles) {
+    const key = `${cycle.ruleId}|${cycle.periodKey}|${cycle.generationKey}|${cycle.origin}`;
+    cycleByKey.set(key, cycle);
+  }
+
+  for (const clientRule of clientService.deadlineRules) {
+    const rule = clientRule.rule;
+    if (!clientRule.enabled) {
+      if (writeMode === 'APPLY') {
+        await updateClientRule(db, tenantId, clientServiceId, clientRule.id, {
+          applicabilityState: 'NOT_APPLICABLE',
+          applicabilityReason: 'Rule disabled for client service',
+        });
+      }
+      continue;
+    }
+
+    const version = rule.currentVersion;
+    if (!version) {
+      warnings.push(`Rule ${rule.id} (${rule.name}) has no published version`);
+      continue;
+    }
+
+    const milestonesInput: DeadlineRuleEvaluationInput['milestones'] = (
+      version.milestoneTemplates ?? []
+    ).map((m, index) => ({
+      key: m.milestoneKey,
+      name: m.name,
+      description: m.description,
+      type: m.type as 'STATUTORY' | 'CLIENT' | 'INTERNAL',
+      generationMode: m.generationMode as 'ONCE_PER_CYCLE' | 'ONCE_PER_SCHEDULE_ENTRY',
+      expression: m.dateExpression as never,
+      businessDayAdjustment: m.businessDayAdjustment as 'NONE' | 'PREVIOUS' | 'NEXT',
+      displayOrder: m.displayOrder ?? index,
+      isActive: m.isActive !== false,
+    }));
+
+    const periods = planRollingPeriods(
+      version.recurrence as never,
+      today,
+      horizonEnd,
+    );
+
+    // Evaluate first period to check applicability
+    const firstPeriod = periods[0] ?? {
+      periodKey: 'INITIAL',
+      start: today,
+      end: horizonEnd,
+    };
+
+    const initialEval = evaluateDeadlineRule({
+      ruleId: rule.id,
+      ruleVersionId: version.id,
+      recurrence: version.recurrence as never,
+      applicability: version.applicability as never,
+      parameters: asRecord(clientRule.parameterValues),
+      scheduleEntries: Array.isArray(clientRule.scheduleEntries)
+        ? (clientRule.scheduleEntries as never)
+        : [],
+      milestones: milestonesInput,
+      company: companySource,
+      period: {
+        key: firstPeriod.periodKey,
+        start: firstPeriod.start,
+        end: firstPeriod.end,
+      },
+      calendar: businessCalendar,
+    });
+
+    if (
+      initialEval.applicability.state === 'NOT_APPLICABLE' ||
+      initialEval.applicability.state === 'MISSING_INPUT'
+    ) {
+      if (writeMode === 'APPLY') {
+        await updateClientRule(db, tenantId, clientServiceId, clientRule.id, {
+          applicabilityState: initialEval.applicability.state,
+          applicabilityReason: initialEval.applicability.reason,
+          lastEvaluatedVersionId: version.id,
+        });
+      }
+      continue;
+    }
+
+    if (writeMode === 'APPLY') {
+      await updateClientRule(db, tenantId, clientServiceId, clientRule.id, {
+        applicabilityState: 'APPLICABLE',
+        applicabilityReason: null,
+        lastEvaluatedVersionId: version.id,
+        configHash: version.configHash,
+      });
+    }
+
+    for (const period of periods) {
+      const evaluation = evaluateDeadlineRule({
+        ruleId: rule.id,
+        ruleVersionId: version.id,
+        recurrence: version.recurrence as never,
+        applicability: version.applicability as never,
+        parameters: asRecord(clientRule.parameterValues),
+        scheduleEntries: Array.isArray(clientRule.scheduleEntries)
+          ? (clientRule.scheduleEntries as never)
+          : [],
+        milestones: milestonesInput,
+        company: companySource,
+        period: {
+          key: period.periodKey,
+          start: period.start,
+          end: period.end,
+        },
+        calendar: businessCalendar,
+      });
+
+      const cycleKey = `${rule.id}|${period.periodKey}|${ROLLING_PLAN_VERSION}|RULE`;
+      let cycle: typeof existingCycles[number] | undefined = cycleByKey.get(cycleKey);
+      const sourceSnapshot = cycleSourceSnapshot(evaluation);
+      const evaluationHash = evaluation.evaluationHash ?? hashConfiguration(evaluation);
+
+      if (!cycle && writeMode === 'APPLY') {
+        cycle = await db.serviceCycle.upsert({
+          where: {
+            tenantId_clientServiceId_ruleId_periodKey_generationKey_origin: {
+              tenantId,
+              clientServiceId,
+              ruleId: rule.id,
+              periodKey: period.periodKey,
+              generationKey: ROLLING_PLAN_VERSION,
+              origin: 'RULE',
+            },
+          },
+          create: {
+            tenantId,
+            companyId: clientService.companyId,
+            clientServiceId,
+            ruleId: rule.id,
+            ruleVersionId: version.id,
+            businessCalendarId: activeCalendarRecord?.id ?? null,
+            businessCalendarRevision: activeCalendarRecord?.revision ?? null,
+            periodKey: period.periodKey,
+            periodStart: new Date(`${period.start}T00:00:00.000Z`),
+            periodEnd: new Date(`${period.end}T00:00:00.000Z`),
+            generationKey: ROLLING_PLAN_VERSION,
+            origin: 'RULE',
+            evaluationHash,
+            recurrenceAnchor: { periodKey: period.periodKey },
+            sourceSnapshot: sourceSnapshot as Prisma.InputJsonValue,
+          },
+          update: {
+            ruleVersionId: version.id,
+            evaluationHash,
+            businessCalendarRevision: activeCalendarRecord?.revision ?? null,
+            sourceSnapshot: sourceSnapshot as Prisma.InputJsonValue,
+          },
+          include: { occurrences: true },
+        }) as typeof existingCycles[number];
+        cycleByKey.set(cycleKey, cycle);
+        occurrencesByCycleId.set(cycle.id, cycle.occurrences ?? []);
+      } else if (cycle && writeMode === 'APPLY') {
+        await updateCycleSnapshot(db, tenantId, clientServiceId, cycle.id, {
+          ruleVersionId: version.id,
+          evaluationHash,
+          sourceSnapshot,
+          businessCalendarRevision: activeCalendarRecord?.revision ?? null,
+        });
+      }
+
+      const existingOccurrences = cycle ? (occurrencesByCycleId.get(cycle.id) ?? []) : [];
+      const occMap = new Map<string, typeof existingOccurrences[number]>();
+      for (const occ of existingOccurrences) {
+        occMap.set(`${occ.milestoneKey}|${occ.scheduleEntryKey}`, occ);
+      }
+
+      const activeEvaluatedOccKeys = new Set<string>();
+
+      for (const proposedDeadline of evaluation.occurrences) {
+        const occKey = `${proposedDeadline.milestoneKey}|${proposedDeadline.scheduleEntryKey}`;
+        activeEvaluatedOccKeys.add(occKey);
+
+        const existingOcc = occMap.get(occKey);
+        const stored = existingOcc ? toStoredDeadline(existingOcc) : null;
+        if (existingOcc) {
+          processedOccurrenceIds.add(existingOcc.id);
+        }
+
+        const proposedForDiff: EvaluatedDeadlineForDiff = {
+          milestoneKey: proposedDeadline.milestoneKey,
+          scheduleEntryKey: proposedDeadline.scheduleEntryKey,
+          deadlineType: proposedDeadline.type,
+          dueDate: proposedDeadline.calculatedDueDate,
+          ruleVersionId: version.id,
+          explanation: proposedDeadline.explanation,
+        };
+
+        const decision = classifyDeadlineChange(stored, proposedForDiff, today);
+
+        switch (decision.action) {
+          case 'CREATE': {
+            counts.created += 1;
+            if (writeMode === 'APPLY' && cycle) {
+          const createdOcc = await db.deadlineOccurrence.create({
+                data: {
+                  tenantId,
+                  companyId: clientService.companyId,
+                  clientServiceId,
+                  cycleId: cycle.id,
+                  ruleVersionId: version.id,
+                  milestoneKey: proposedDeadline.milestoneKey,
+                  scheduleEntryKey: proposedDeadline.scheduleEntryKey,
+                  deadlineType: proposedDeadline.type,
+                  calculatedDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
+                  operativeDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
+                  dateOverridden: false,
+                  status: 'OPEN',
+              origin: 'RULE',
+            },
+          });
+              occMap.set(occKey, createdOcc);
+              processedOccurrenceIds.add(createdOcc.id);
+            }
+            break;
+          }
+          case 'RECALCULATE': {
+            counts.recalculated += 1;
+            if (writeMode === 'APPLY' && existingOcc) {
+              await updateOccurrence(db, tenantId, clientServiceId, existingOcc.id, {
+                calculatedDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
+                operativeDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
+                ruleVersionId: version.id,
+              });
+            }
+            break;
+          }
+          case 'PRESERVE': {
+            counts.preserved += 1;
+            preservedByReason[decision.reason] += 1;
+            if (decision.reason === 'OVERRIDDEN' && writeMode === 'APPLY' && existingOcc) {
+              await updateOccurrence(db, tenantId, clientServiceId, existingOcc.id, {
+                calculatedDueDate: new Date(`${proposedDeadline.calculatedDueDate}T00:00:00.000Z`),
+                ruleVersionId: version.id,
+              });
+            }
+            break;
+          }
+          case 'NO_CHANGE': {
+            counts.noChange += 1;
+            break;
+          }
+        }
+      }
+
+      // Any remaining occurrences in this cycle that are not in evaluated deadlines
+      for (const occ of existingOccurrences) {
+        const occKey = `${occ.milestoneKey}|${occ.scheduleEntryKey}`;
+        if (!activeEvaluatedOccKeys.has(occKey)) {
+          processedOccurrenceIds.add(occ.id);
+          const stored = toStoredDeadline(occ);
+          const isOpenFutureRule =
+            stored.status === 'OPEN' &&
+            stored.origin === 'RULE' &&
+            !stored.dateOverridden &&
+            compareDateOnly(stored.operativeDueDate, today) >= 0;
+
+          if (isOpenFutureRule) {
+            counts.cancelled += 1;
+            if (writeMode === 'APPLY') {
+              await updateOccurrence(db, tenantId, clientServiceId, occ.id, {
+                status: 'CANCELLED',
+                cancelledAt: new Date(),
+                cancelledById: null,
+                cancellationReason: 'Rule reconciliation changed',
+              });
+            }
+          } else {
+            counts.preserved += 1;
+            const reason = classifyExistingPreserveReason(stored, today);
+            preservedByReason[reason] += 1;
+          }
+        }
+      }
+    }
+  }
+
+  // Check any remaining unprocessed occurrences for this client service
+  for (const cycle of existingCycles) {
+    for (const occ of cycle.occurrences) {
+      if (!processedOccurrenceIds.has(occ.id)) {
+        processedOccurrenceIds.add(occ.id);
+        const stored = toStoredDeadline(occ);
+        const isOpenFutureRule =
+          stored.status === 'OPEN' &&
+          stored.origin === 'RULE' &&
+          !stored.dateOverridden &&
+          compareDateOnly(stored.operativeDueDate, today) >= 0;
+
+        if (isOpenFutureRule) {
+          counts.cancelled += 1;
+          if (writeMode === 'APPLY') {
+            await updateOccurrence(db, tenantId, clientServiceId, occ.id, {
+              status: 'CANCELLED',
+              cancelledAt: new Date(),
+              cancelledById: null,
+              cancellationReason: 'Removed during reconciliation',
+            });
+          }
+        } else {
+          counts.preserved += 1;
+          const reason = classifyExistingPreserveReason(stored, today);
+          preservedByReason[reason] += 1;
+        }
+      }
+    }
+  }
+
+  return {
+    tenantId,
+    clientServiceId,
+    reconciliationRequestId,
+    writeMode,
+    counts,
+    preservedByReason,
+    warnings,
+  };
+}

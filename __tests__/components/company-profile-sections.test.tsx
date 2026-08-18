@@ -129,4 +129,19 @@ describe('CompanyProfileSections', () => {
     expect(badges).toHaveLength(1);
     expect(badges[0]).toHaveTextContent('ACRA 14 August 2026');
   });
+
+  it('renders next AGM and Annual Return due dates', () => {
+    const withDueDates = {
+      ...(company as object),
+      nextAgmDueDate: new Date('2026-06-30'),
+      nextArDueDate: new Date('2026-07-31'),
+    } as never;
+
+    render(<CompanyProfileSections company={withDueDates} companyId="company-1" />);
+
+    expect(screen.getByText('Next AGM due date')).toBeInTheDocument();
+    expect(screen.getByText('30 June 2026')).toBeInTheDocument();
+    expect(screen.getByText('Next Annual Return due date')).toBeInTheDocument();
+    expect(screen.getByText('31 July 2026')).toBeInTheDocument();
+  });
 });

@@ -581,6 +581,44 @@ describe('Company Service', () => {
       }));
     });
 
+    it('does not enqueue reconciliation when a schedule source is submitted unchanged', async () => {
+      const existingCompany = {
+        id: 'company-1',
+        name: 'Example Company Pte Ltd',
+        uen: '202400001A',
+        entityType: 'PRIVATE_LIMITED',
+        incorporationDate: new Date('2020-01-01T00:00:00.000Z'),
+        financialYearEndDay: 31,
+        financialYearEndMonth: 12,
+        nextAgmDueDate: null,
+        nextArDueDate: null,
+        accountsDueDate: null,
+        tenantId: 'tenant-1',
+        deletedAt: null,
+      };
+      const txCompany = {
+        update: vi.fn().mockResolvedValue({ ...existingCompany }),
+      };
+      const tx = { company: txCompany, companyAddress: { findFirst: vi.fn() } };
+
+      vi.mocked(prisma.company.findFirst).mockResolvedValue(existingCompany as never);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(tx as never) as never);
+
+      await expect(updateCompany(
+        {
+          id: 'company-1',
+          entityType: 'PRIVATE_LIMITED',
+          incorporationDate: '2020-01-01',
+          financialYearEndDay: 31,
+          financialYearEndMonth: 12,
+          nextAgmDueDate: null,
+          nextArDueDate: null,
+          accountsDueDate: null,
+        } as UpdateCompanyInput,
+        { tenantId: 'tenant-1', userId: 'user-1' },
+      )).resolves.toMatchObject({ id: 'company-1' });
+    });
+
     it('should reject duplicate UEN within tenant', async () => {
       const existingCompany = {
         id: 'existing-company',

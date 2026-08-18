@@ -8,6 +8,7 @@ import { Prisma } from '@/generated/prisma';
 import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './errors';
 import { summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 
 const parseDateOnly = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
@@ -98,6 +99,55 @@ export async function createManualClientService(
       });
 
       const feeSummary = summarizeClientServiceFees(input.feeLines);
+
+      const variantRules = tx.serviceVariantDeadlineRule?.findMany
+        ? await tx.serviceVariantDeadlineRule.findMany({
+            where: {
+              serviceVariantId: variant.id,
+              tenantId: params.tenantId,
+              enabledByDefault: true,
+              archivedAt: null,
+              rule: {
+                tenantId: params.tenantId,
+                isActive: true,
+                archivedAt: null,
+                currentVersionId: { not: null },
+              },
+            },
+            select: { ruleId: true, enabledByDefault: true, parameterDefaults: true, scheduleDefaults: true },
+          })
+        : [];
+
+      const enabledVariantRules = variantRules.filter((variantRule) => variantRule.enabledByDefault !== false);
+      if (enabledVariantRules.length > 0 && tx.clientServiceDeadlineRule?.createMany) {
+        await tx.clientServiceDeadlineRule.createMany({
+          data: enabledVariantRules.map((vr) => {
+            const parameterValues = (vr.parameterDefaults && typeof vr.parameterDefaults === 'object' && !Array.isArray(vr.parameterDefaults))
+              ? vr.parameterDefaults as Record<string, unknown>
+              : {};
+            return {
+            tenantId: params.tenantId,
+            clientServiceId: service.id,
+            ruleId: vr.ruleId,
+            enabled: true,
+            parameterValues: parameterValues as Prisma.InputJsonValue,
+            parameterProvenance: Object.fromEntries(Object.keys(parameterValues).map((key) => [key, 'CATALOG_DEFAULT'])) as Prisma.InputJsonValue,
+            scheduleEntries: (Array.isArray(vr.scheduleDefaults) ? vr.scheduleDefaults : []) as Prisma.InputJsonValue,
+            applicabilityState: 'MISSING_INPUT',
+            };
+          }),
+        });
+      }
+
+      await enqueueScheduleReconciliation(tx, {
+        tenantId: params.tenantId,
+        scopeType: 'CLIENT_SERVICE',
+        scopeId: service.id,
+        triggerType: 'CLIENT_SERVICE_CREATED',
+        correlationId: `manual-service-${service.id}-${Date.now()}`,
+        requestedById: params.userId ?? null,
+      });
+
       await createAuditLog({
         tenantId: params.tenantId,
         userId: params.userId,

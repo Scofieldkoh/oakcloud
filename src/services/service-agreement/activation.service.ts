@@ -9,6 +9,7 @@ import type { TenantAwareParams } from '@/lib/types';
 import type { MarkServiceAgreementEffectiveInput } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
 import type { ServiceAgreementActivationDto } from '@/services/client-service';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 
 const log = createLogger('service-agreement-activation');
 const activationInclude = {
@@ -201,6 +202,54 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
             await tx.clientServiceFeeLine.createMany({ data: fees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, displayOrder: fee.displayOrder })) });
           }
           if (created) {
+            const variantRules = tx.serviceVariantDeadlineRule?.findMany
+              ? await tx.serviceVariantDeadlineRule.findMany({
+                  where: {
+                    serviceVariantId: item.serviceVariantId,
+                    tenantId: agreement.tenantId,
+                    enabledByDefault: true,
+                    archivedAt: null,
+                    rule: {
+                      tenantId: agreement.tenantId,
+                      isActive: true,
+                      archivedAt: null,
+                      currentVersionId: { not: null },
+                    },
+                  },
+                  select: { ruleId: true, enabledByDefault: true, parameterDefaults: true, scheduleDefaults: true },
+                })
+              : [];
+
+            const enabledVariantRules = variantRules.filter((variantRule) => variantRule.enabledByDefault !== false);
+            if (enabledVariantRules.length > 0 && tx.clientServiceDeadlineRule?.createMany) {
+              await tx.clientServiceDeadlineRule.createMany({
+                data: enabledVariantRules.map((vr) => {
+                  const parameterValues = (vr.parameterDefaults && typeof vr.parameterDefaults === 'object' && !Array.isArray(vr.parameterDefaults))
+                    ? vr.parameterDefaults as Record<string, unknown>
+                    : {};
+                  return {
+                    tenantId: agreement.tenantId,
+                    clientServiceId: service.id,
+                    ruleId: vr.ruleId,
+                    enabled: true,
+                    parameterValues: parameterValues as Prisma.InputJsonValue,
+                    parameterProvenance: Object.fromEntries(Object.keys(parameterValues).map((key) => [key, 'CATALOG_DEFAULT'])) as Prisma.InputJsonValue,
+                    scheduleEntries: (Array.isArray(vr.scheduleDefaults) ? vr.scheduleDefaults : []) as Prisma.InputJsonValue,
+                    applicabilityState: 'MISSING_INPUT',
+                  };
+                }),
+              });
+            }
+
+            await enqueueScheduleReconciliation(tx, {
+              tenantId: agreement.tenantId,
+              scopeType: 'CLIENT_SERVICE',
+              scopeId: service.id,
+              triggerType: 'SERVICE_AGREEMENT_ACTIVATED',
+              correlationId: `agreement-activation-${agreement.id}-${service.id}`,
+              requestedById: agreement.activationRequestedById ?? null,
+            });
+
             await createAuditLog({ tenantId: agreement.tenantId, userId: agreement.activationRequestedById ?? undefined, companyId, entityType: 'ClientService', entityId: service.id, entityName: item.variantNameSnapshot, action: 'CREATE', changeSource: agreement.activationSource === 'MANUAL' ? 'MANUAL' : 'SYSTEM', summary: 'Created operational service from signed Service Agreement' }, tx);
           }
         }

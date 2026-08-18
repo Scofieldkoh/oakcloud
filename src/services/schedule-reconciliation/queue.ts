@@ -72,7 +72,10 @@ function followUpDedupeKey(
     canonicalKey,
     followUp: true,
     correlationId: input.correlationId,
-    requestedAt: requestedAt.toISOString(),
+    // Coalesce source changes that arrive during the same minute while still
+    // allowing a later minute to request another follow-up after a live
+    // worker has claimed the canonical row.
+    requestedAtMinute: minuteContaining(requestedAt).toISOString(),
     attempt,
   });
 }

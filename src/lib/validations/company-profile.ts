@@ -75,6 +75,8 @@ export const complianceSectionSchema = z.object({
   homeCurrency: optionalText,
   lastAgmDate: optionalDate,
   lastArFiledDate: optionalDate,
+  nextAgmDueDate: optionalDate,
+  nextArDueDate: optionalDate,
   accountsDueDate: optionalDate,
 });
 export const capitalSectionSchema = z.object({

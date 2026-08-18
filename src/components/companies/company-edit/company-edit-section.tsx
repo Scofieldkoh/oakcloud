@@ -40,6 +40,8 @@ function fieldLabel(path: string[]): string {
   const meaningful = path.filter((part) => !/^\d+$/.test(part));
   const last = meaningful.at(-1) ?? 'value';
   if (last === 'displayAlias') return 'Service display alias';
+  if (last === 'nextAgmDueDate') return 'Next AGM due date';
+  if (last === 'nextArDueDate') return 'Next Annual Return due date';
   const parent = meaningful.at(-2);
   const prefix = parent === 'registered' || parent === 'mailing' ? `${words(parent)} ` : '';
   const label = `${prefix}${words(last)}`;
@@ -47,7 +49,7 @@ function fieldLabel(path: string[]): string {
 }
 
 function isDateField(key: string): boolean {
-  return /date|effectiveFrom|effectiveTo|fyeAsAtLastAr/i.test(key);
+  return /date|effectiveFrom|effectiveTo|fyeAsAtLastAr|nextAgmDueDate|nextArDueDate/i.test(key);
 }
 
 export function CompanyProfileValueEditor({ value, path, onChange }: { value: unknown; path: string[]; onChange: (value: unknown) => void }) {

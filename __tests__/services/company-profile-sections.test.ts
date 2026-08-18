@@ -7,7 +7,7 @@ const company = {
   statusDate: null, incorporationDate: new Date('2020-01-01'), registrationDate: new Date('2020-01-02'),
   primarySsicCode: null, primarySsicDescription: null, secondarySsicCode: null, secondarySsicDescription: null,
   financialYearEndDay: 31, financialYearEndMonth: 12, fyeAsAtLastAr: null, homeCurrency: 'SGD',
-  lastAgmDate: null, lastArFiledDate: null, accountsDueDate: null,
+  lastAgmDate: null, lastArFiledDate: null, nextAgmDueDate: null, nextArDueDate: null, accountsDueDate: null,
   paidUpCapitalCurrency: 'SGD', paidUpCapitalAmount: 1000,
   issuedCapitalCurrency: 'SGD', issuedCapitalAmount: 1000,
   addresses: [], formerNames: [], officers: [], shareholders: [], shareCapital: [], charges: [], auditor: null,
@@ -19,6 +19,11 @@ const tx = {
 };
 
 vi.mock('@/lib/prisma', () => ({ prisma: { $transaction: mocks.transaction, company: tx.company } }));
+
+const enqueueMock = vi.fn();
+vi.mock('@/services/schedule-reconciliation', () => ({
+  enqueueScheduleReconciliation: (...args: unknown[]) => enqueueMock(...args),
+}));
 
 describe('company profile section services', () => {
   beforeEach(() => {
@@ -95,5 +100,77 @@ describe('company profile section services', () => {
     expect(tx.company.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.not.objectContaining({ displayAlias: expect.anything() }),
     }));
+  });
+
+  it('updates compliance next AGM/AR due dates and enqueues company source reconciliation', async () => {
+    const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
+      '@/services/company/profile-sections'
+    );
+    const current = await getCompanyProfileSection('company-1', 'tenant-1', 'compliance');
+
+    await saveCompanyProfileSection({
+      companyId: 'company-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      section: 'compliance',
+      ifMatchVersion: current.version,
+      data: {
+        financialYearEndDay: 31,
+        financialYearEndMonth: 12,
+        fyeAsAtLastAr: null,
+        homeCurrency: 'SGD',
+        lastAgmDate: null,
+        lastArFiledDate: null,
+        nextAgmDueDate: '2026-06-30',
+        nextArDueDate: '2026-07-31',
+        accountsDueDate: null,
+      },
+    });
+
+    expect(tx.company.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          nextAgmDueDate: new Date('2026-06-30T00:00:00.000Z'),
+          nextArDueDate: new Date('2026-07-31T00:00:00.000Z'),
+        }),
+      }),
+    );
+
+    expect(enqueueMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        scopeType: 'COMPANY',
+        triggerType: 'COMPANY_SOURCE_CHANGED',
+      }),
+    );
+  });
+
+  it('does not enqueue when compliance edits leave all schedule source fields unchanged', async () => {
+    enqueueMock.mockClear();
+    const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
+      '@/services/company/profile-sections'
+    );
+    const current = await getCompanyProfileSection('company-1', 'tenant-1', 'compliance');
+
+    await saveCompanyProfileSection({
+      companyId: 'company-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      section: 'compliance',
+      ifMatchVersion: current.version,
+      data: {
+        financialYearEndDay: 31,
+        financialYearEndMonth: 12,
+        fyeAsAtLastAr: '2026-01-01',
+        homeCurrency: 'USD',
+        lastAgmDate: '2026-02-01',
+        lastArFiledDate: '2026-03-01',
+        nextAgmDueDate: null,
+        nextArDueDate: null,
+        accountsDueDate: null,
+      },
+    });
+
+    expect(enqueueMock).not.toHaveBeenCalled();
   });
 });

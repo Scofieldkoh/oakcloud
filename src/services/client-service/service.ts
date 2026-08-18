@@ -7,6 +7,7 @@ import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
 import { clientServiceInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
 import { summarizeClientServiceFees } from './fee-summary';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 
 function parseDate(value: string | null | undefined): Date | null | undefined {
   if (value === undefined) return undefined;
@@ -147,6 +148,14 @@ export async function updateClientService(id: string, input: UpdateClientService
       changes,
       summary: `Updated operational service${feesChanged ? ` and ${input.feeLines?.length ?? 0} fee line(s)` : ''}`,
     }, tx);
+    await enqueueScheduleReconciliation(tx, {
+      tenantId: params.tenantId,
+      scopeType: 'CLIENT_SERVICE',
+      scopeId: id,
+      triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED',
+      correlationId: `client-service-update-${id}-${Date.now()}`,
+      requestedById: params.userId,
+    });
     return result;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   return toClientServiceDto(updated);
@@ -155,7 +164,19 @@ export async function updateClientService(id: string, input: UpdateClientService
 export async function archiveClientService(id: string, reason: string, params: TenantAwareParams): Promise<{ id: string; archived: true }> {
   await prisma.$transaction(async (tx) => {
     const current = await requireService(id, params.tenantId, tx);
-    await tx.clientService.update({ where: { id }, data: { deletedAt: new Date(), deletedReason: reason } });
+    const archived = await tx.clientService.updateMany({
+      where: { id, tenantId: params.tenantId, deletedAt: null },
+      data: { deletedAt: new Date(), deletedReason: reason },
+    });
+    if (archived.count !== 1) throw new ConflictError('Client service changed while archiving');
+    await enqueueScheduleReconciliation(tx, {
+      tenantId: params.tenantId,
+      scopeType: 'CLIENT_SERVICE',
+      scopeId: id,
+      triggerType: 'CLIENT_SERVICE_ARCHIVED',
+      correlationId: `client-service-archive-${id}-${Date.now()}`,
+      requestedById: params.userId,
+    });
     await createAuditLog({ tenantId: params.tenantId, userId: params.userId, companyId: current.companyId, entityType: 'ClientService', entityId: id, entityName: current.serviceName, action: 'DELETE', reason, summary: 'Archived operational service' }, tx);
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   return { id, archived: true };

@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { syncCompanyFromBizfileInTransaction } from '@/services/bizfile/company-sync';
 
+const enqueueMock = vi.hoisted(() => vi.fn());
+vi.mock('@/services/schedule-reconciliation', () => ({ enqueueScheduleReconciliation: enqueueMock }));
+
 const tx = {
-  company: { upsert: vi.fn(), update: vi.fn() },
+  company: { upsert: vi.fn(), update: vi.fn(), findFirst: vi.fn() },
   companyFormerName: { deleteMany: vi.fn(), create: vi.fn() },
   companyAddress: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn() },
   shareCapital: { deleteMany: vi.fn(), create: vi.fn() },
@@ -46,6 +49,7 @@ describe('syncCompanyFromBizfileInTransaction', () => {
     vi.clearAllMocks();
     tx.company.upsert.mockResolvedValue({ id: 'company-1' });
     tx.companyAddress.findFirst.mockResolvedValue(null);
+    tx.company.findFirst.mockResolvedValue(null);
   });
 
   it.each([
@@ -199,5 +203,17 @@ describe('syncCompanyFromBizfileInTransaction', () => {
     expect(tx.companyShareholder.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ isNominee: true }),
     }));
+  });
+
+  it('does not enqueue when an existing BizFile sync leaves approved source fields unchanged', async () => {
+    tx.company.findFirst.mockResolvedValue({
+      id: 'company-1', tenantId: 'tenant-1', entityType: 'PRIVATE_LIMITED',
+      incorporationDate: new Date('2020-01-01'), financialYearEndDay: 31, financialYearEndMonth: 12,
+      accountsDueDate: new Date('2026-06-30'),
+    });
+
+    await expect(syncCompanyFromBizfileInTransaction({
+      data, documentId: 'doc-1', tenantId: 'tenant-1', userId: 'user-1', existingCompanyId: 'company-1',
+    }, tx as never)).resolves.toMatchObject({ companyId: 'company-1', created: false });
   });
 });

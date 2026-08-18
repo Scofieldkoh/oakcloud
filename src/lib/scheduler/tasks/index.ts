@@ -19,3 +19,4 @@ export { formUrlHealthTask } from './form-url-health.task';
 export { processingRevisionBackfillTask } from './processing-revision-backfill.task';
 export { summaryCountRefreshTask } from './summary-count-refresh.task';
 export { serviceAgreementActivationTask } from './service-agreement-activation.task';
+export { serviceScheduleReconciliationTask } from './service-schedule-reconciliation.task';

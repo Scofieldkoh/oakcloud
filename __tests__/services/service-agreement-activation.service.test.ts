@@ -5,6 +5,9 @@ const prismaMock = vi.hoisted(() => ({
   serviceAgreement: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
   clientService: { findUnique: vi.fn(), create: vi.fn(), count: vi.fn(), update: vi.fn() },
   clientServiceFeeLine: { createMany: vi.fn() },
+  serviceVariantDeadlineRule: { findMany: vi.fn() },
+  clientServiceDeadlineRule: { createMany: vi.fn() },
+  serviceScheduleReconciliationRequest: { findUnique: vi.fn(), upsert: vi.fn() },
   generatedDocument: { updateMany: vi.fn() },
   esigningEnvelopeDocument: { findMany: vi.fn() },
   $transaction: vi.fn(),
@@ -46,6 +49,11 @@ describe('service agreement activation', () => {
     prismaMock.serviceAgreement.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.generatedDocument.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.serviceAgreement.update.mockResolvedValue({ ...agreement, activationStatus: 'COMPLETED', activationAttemptCount: 1 });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([]);
+    prismaMock.clientServiceDeadlineRule.createMany.mockResolvedValue({ count: 0 });
+    prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue(null);
+    prismaMock.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({ id: 'req-1', dedupeKey: 'k-1' });
+    prismaMock.$queryRaw.mockResolvedValue([{ id: 'req-1', dedupe_key: 'canonical', status: 'PENDING', next_attempt_at: new Date() }]);
   });
 
   afterEach(() => {
@@ -60,6 +68,32 @@ describe('service agreement activation', () => {
     expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ source: 'AGREEMENT' }) }));
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledTimes(1);
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ sourceAgreementFeeLineId: 'agreement-fee-1' })] }));
+  });
+
+  it('attaches enabled catalog defaults to each activated service before enqueueing reconciliation', async () => {
+    prismaMock.serviceAgreement.findFirst.mockResolvedValue(agreement);
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([
+      {
+        ruleId: 'rule-default', enabledByDefault: true,
+        parameterDefaults: { filingMonth: 'June' },
+        scheduleDefaults: [{ key: 'filing', label: 'Filing' }],
+      },
+      { ruleId: 'rule-opt-in', enabledByDefault: false, parameterDefaults: {}, scheduleDefaults: [] },
+    ]);
+
+    await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
+
+    expect(prismaMock.serviceVariantDeadlineRule.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ enabledByDefault: true, archivedAt: null }),
+      select: expect.objectContaining({ parameterDefaults: true, scheduleDefaults: true }),
+    }));
+    expect(prismaMock.clientServiceDeadlineRule.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.arrayContaining([expect.objectContaining({
+        ruleId: 'rule-default', parameterValues: { filingMonth: 'June' },
+        parameterProvenance: { filingMonth: 'CATALOG_DEFAULT' }, scheduleEntries: [{ key: 'filing', label: 'Filing' }],
+      })]),
+    }));
+    expect(prismaMock.clientServiceDeadlineRule.createMany.mock.calls[0]?.[0].data).toHaveLength(1);
   });
 
   it('creates an independent agreement service when a manual row with null lineage already exists', async () => {

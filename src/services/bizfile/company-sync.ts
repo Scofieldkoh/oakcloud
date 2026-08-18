@@ -10,6 +10,7 @@ import {
 } from './types';
 import { buildFullAddress, normalizeExtractedData } from './normalizer';
 import { normalizeCompanyAlias } from '@/lib/company-display-label';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 
 export interface SyncCompanyFromBizfileArgs {
   data: ExtractedBizFileData;
@@ -47,6 +48,12 @@ function dateOrNull(value: string | null | undefined): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function dateKey(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
 }
 
 async function syncAddress(
@@ -114,6 +121,23 @@ export async function syncCompanyFromBizfileInTransaction(
       })
     : { id: args.existingCompanyId! };
   const companyId = company.id;
+  const existingSource = !created && typeof tx.company.findFirst === 'function'
+    ? await tx.company.findFirst({
+        where: { id: companyId, tenantId: args.tenantId, deletedAt: null },
+        select: {
+          entityType: true,
+          incorporationDate: true,
+          financialYearEndDay: true,
+          financialYearEndMonth: true,
+          accountsDueDate: true,
+        },
+      })
+    : null;
+  const scheduleSourceChanged = created || !existingSource || existingSource.entityType !== mapEntityType(entityDetails.entityType)
+    || dateKey(existingSource.incorporationDate) !== dateKey(entityDetails.incorporationDate)
+    || existingSource.financialYearEndDay !== (data.financialYear?.endDay ?? null)
+    || existingSource.financialYearEndMonth !== (data.financialYear?.endMonth ?? null)
+    || dateKey(existingSource.accountsDueDate) !== dateKey(data.compliance?.accountsDueDate);
 
   await tx.company.update({
     where: { id: companyId },
@@ -292,6 +316,17 @@ export async function syncCompanyFromBizfileInTransaction(
       activeChargeCount: (data.charges ?? []).filter((charge) => !charge.dischargeDate).length,
     },
   });
+
+  if (scheduleSourceChanged) {
+    await enqueueScheduleReconciliation(tx, {
+      tenantId: args.tenantId,
+      scopeType: 'COMPANY',
+      scopeId: companyId,
+      triggerType: 'BIZFILE_SOURCE_CHANGED',
+      correlationId: args.documentId,
+      requestedById: args.userId,
+    });
+  }
 
   await tx.auditLog.createMany({
     data: changedSections.map((section) => ({

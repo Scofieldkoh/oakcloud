@@ -10,6 +10,7 @@ import {
   type CompanyProfileSectionData,
 } from '@/lib/validations/company-profile';
 import { normalizeCompanyAlias } from '@/lib/company-display-label';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 
 const profileCompanyArgs = {
   include: {
@@ -58,6 +59,31 @@ function date(value: Date | null | undefined): string | null {
 
 function dateOrNull(value: string | null | undefined): Date | null {
   return value ? new Date(`${value}T00:00:00.000Z`) : null;
+}
+
+function profileDateKey(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+function profileScheduleSourceChanged(
+  section: CompanyProfileSectionId,
+  current: Record<string, unknown>,
+  next: Record<string, unknown>,
+): boolean {
+  if (section === 'identity') {
+    return next.entityType !== current.entityType
+      || profileDateKey(next.incorporationDate) !== profileDateKey(current.incorporationDate);
+  }
+  if (section === 'compliance') {
+    return next.financialYearEndDay !== current.financialYearEndDay
+      || next.financialYearEndMonth !== current.financialYearEndMonth
+      || profileDateKey(next.nextAgmDueDate) !== profileDateKey(current.nextAgmDueDate)
+      || profileDateKey(next.nextArDueDate) !== profileDateKey(current.nextArDueDate)
+      || profileDateKey(next.accountsDueDate) !== profileDateKey(current.accountsDueDate);
+  }
+  return false;
 }
 
 function selectSection(company: ProfileCompany, section: CompanyProfileSectionId): CompanyProfileSectionData {
@@ -130,6 +156,8 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
       homeCurrency: company.homeCurrency,
       lastAgmDate: date(company.lastAgmDate),
       lastArFiledDate: date(company.lastArFiledDate),
+      nextAgmDueDate: date(company.nextAgmDueDate),
+      nextArDueDate: date(company.nextArDueDate),
       accountsDueDate: date(company.accountsDueDate),
     };
     case 'capital': return {
@@ -277,6 +305,8 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         homeCurrency: data.homeCurrency,
         lastAgmDate: dateOrNull(data.lastAgmDate),
         lastArFiledDate: dateOrNull(data.lastArFiledDate),
+        nextAgmDueDate: dateOrNull(data.nextAgmDueDate),
+        nextArDueDate: dateOrNull(data.nextArDueDate),
         accountsDueDate: dateOrNull(data.accountsDueDate),
       } });
       break;
@@ -359,7 +389,22 @@ export async function saveCompanyProfileSection<T = CompanyProfileSectionData>(
   return prisma.$transaction(async (tx) => {
     const current = await getCompanyProfileSection<T>(args.companyId, args.tenantId, args.section, tx);
     if (current.version !== args.ifMatchVersion) throw new CompanyProfileConflictError(current);
-    await mutateCompanyProfileSection(tx, args.companyId, args.section, args.data);
+    const parsedData = companyProfileSectionSchemas[args.section].parse(args.data) as Record<string, unknown>;
+    await mutateCompanyProfileSection(tx, args.companyId, args.section, parsedData);
+    if (profileScheduleSourceChanged(
+      args.section,
+      current.data as Record<string, unknown>,
+      parsedData,
+    )) {
+      await enqueueScheduleReconciliation(tx, {
+        tenantId: args.tenantId,
+        scopeType: 'COMPANY',
+        scopeId: args.companyId,
+        triggerType: 'COMPANY_SOURCE_CHANGED',
+        correlationId: `company-profile-${args.section}-${Date.now()}`,
+        requestedById: args.userId,
+      });
+    }
     await tx.auditLog.create({ data: {
       tenantId: args.tenantId,
       userId: args.userId,

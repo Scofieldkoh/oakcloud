@@ -23,6 +23,7 @@ import type { Company } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { normalizeCompanyAlias } from '@/lib/company-display-label';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 import {
   safelyCaptureCompanyTaskStageIds,
   safelyReconcileCompanyTaskOutcomes,
@@ -134,6 +135,11 @@ const TRACKED_FIELDS: (keyof Company)[] = [
   'financialYearEndDay',
   'financialYearEndMonth',
   'fyeAsAtLastAr',
+  'lastAgmDate',
+  'lastArFiledDate',
+  'nextAgmDueDate',
+  'nextArDueDate',
+  'accountsDueDate',
   'homeCurrency',
   'paidUpCapitalAmount',
   'issuedCapitalAmount',
@@ -155,6 +161,27 @@ const COMPANY_SCOPE_INCLUDE = {
 function serializeCompany<T extends { displayAlias?: string | null }>(company: T): T {
   if (!Object.prototype.hasOwnProperty.call(company, 'displayAlias')) return company;
   return { ...company, displayAlias: normalizeCompanyAlias(company.displayAlias) };
+}
+
+function dateKey(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+}
+
+function scheduleSourceChanged(data: UpdateCompanyInput, existing: Company): boolean {
+  const scalarChanged = (key: keyof UpdateCompanyInput, existingKey: keyof Company = key as keyof Company) =>
+    data[key] !== undefined && data[key] !== existing[existingKey];
+  const dateChanged = (key: keyof UpdateCompanyInput, existingKey: keyof Company) =>
+    data[key] !== undefined && dateKey(data[key]) !== dateKey(existing[existingKey]);
+
+  return scalarChanged('entityType')
+    || scalarChanged('financialYearEndDay')
+    || scalarChanged('financialYearEndMonth')
+    || dateChanged('nextAgmDueDate', 'nextAgmDueDate')
+    || dateChanged('nextArDueDate', 'nextArDueDate')
+    || dateChanged('accountsDueDate', 'accountsDueDate')
+    || dateChanged('incorporationDate', 'incorporationDate');
 }
 
 // ============================================================================
@@ -231,6 +258,11 @@ export async function createCompany(
       financialYearEndDay: data.financialYearEndDay,
       financialYearEndMonth: data.financialYearEndMonth,
       fyeAsAtLastAr: data.fyeAsAtLastAr ? new Date(data.fyeAsAtLastAr) : null,
+      lastAgmDate: data.lastAgmDate ? new Date(data.lastAgmDate) : null,
+      lastArFiledDate: data.lastArFiledDate ? new Date(data.lastArFiledDate) : null,
+      nextAgmDueDate: data.nextAgmDueDate ? new Date(data.nextAgmDueDate) : null,
+      nextArDueDate: data.nextArDueDate ? new Date(data.nextArDueDate) : null,
+      accountsDueDate: data.accountsDueDate ? new Date(data.accountsDueDate) : null,
       homeCurrency: data.homeCurrency,
       paidUpCapitalCurrency: data.paidUpCapitalCurrency,
       paidUpCapitalAmount: data.paidUpCapitalAmount,
@@ -370,6 +402,10 @@ export async function updateCompany(
     updateData.lastAgmDate = data.lastAgmDate ? new Date(data.lastAgmDate) : null;
   if (data.lastArFiledDate !== undefined)
     updateData.lastArFiledDate = data.lastArFiledDate ? new Date(data.lastArFiledDate) : null;
+  if (data.nextAgmDueDate !== undefined)
+    updateData.nextAgmDueDate = data.nextAgmDueDate ? new Date(data.nextAgmDueDate) : null;
+  if (data.nextArDueDate !== undefined)
+    updateData.nextArDueDate = data.nextArDueDate ? new Date(data.nextArDueDate) : null;
   if (data.accountsDueDate !== undefined)
     updateData.accountsDueDate = data.accountsDueDate ? new Date(data.accountsDueDate) : null;
   if (data.homeCurrency !== undefined) updateData.homeCurrency = data.homeCurrency;
@@ -495,6 +531,17 @@ export async function updateCompany(
           });
         }
       }
+    }
+
+    if (scheduleSourceChanged(data, existing)) {
+      await enqueueScheduleReconciliation(tx, {
+        tenantId,
+        scopeType: 'COMPANY',
+        scopeId: updatedCompany.id,
+        triggerType: 'COMPANY_SOURCE_CHANGED',
+        correlationId: `company-update-${updatedCompany.id}-${Date.now()}`,
+        requestedById: userId,
+      });
     }
 
     return updatedCompany;
