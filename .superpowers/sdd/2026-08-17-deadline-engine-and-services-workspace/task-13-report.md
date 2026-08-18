@@ -1,6 +1,6 @@
 # Task 13 report — manual historical-cycle preview and apply
 
-Status: implementation-complete / pending review
+Status: implementation-complete / pending rereview
 
 ## Scope delivered
 
@@ -51,14 +51,46 @@ npm.cmd run test:run -- __tests__/services/manual-deadline-cycle.test.ts __tests
 The Task 13 service tests cover no-write preview, no-billing apply, adjusted
 dates/completion, stale fingerprints, and idempotent existing generations.
 
+## Independent review remediation — pending rereview
+
+- Selection, operative-date, lifecycle, completion-date, and notes edits now
+  remain apply-only metadata against the current preview fingerprint. Rule,
+  period, parameter, schedule, and source inputs still invalidate the preview.
+- Apply enforces the tenant deadline-write rollout flag in the service and
+  route, while roster and Company detail triggers require edit permission,
+  workspace-enabled settings, and deadline writes enabled. Loading and
+  unavailable service-detail states fail closed in the roster launcher.
+- The dialog selects only enabled active client rules with a consistent current
+  published-version relationship and initializes every configured parameter and
+  repeatable schedule entry from the client-service detail projection.
+- Unique-key losers escape the aborted transaction and resolve the committed
+  winner in a fresh serializable transaction. Selection generation identity is
+  sorted by milestone and schedule-entry identity before hashing.
+- Milestone templates are loaded for post-load integrity checking and every
+  template must match both the actor tenant and selected rule version before
+  evaluation or disclosure; mismatches fail closed without writes or audit.
+- Structured `{ error, code, details }` API responses now surface their safe
+  `error` message in the dialog.
+
+Review RED/GREEN additions cover the direct post-preview exclusion/date/status/
+completion/notes flow, rollout disabled and settings-loading gates, four-entry
+rule configuration, fresh-transaction P2002 behavior, reordered multi-entry
+idempotency, cross-tenant milestone rejection, and structured error display.
+
 ## Compatibility evidence
 
 - Pure evaluator plus Task 11 deadline service/routes/hooks: 4 files passed,
   81 tests passed.
 - Relevant Task 8 client-service service/manual-create/catalog/validation/
   impact/hook subset: 6 files passed, 70 tests passed.
+- Rereview rerun of that six-file Task 8 selection: 81 tests passed. The
+  accepted 70/70 evidence above remains the ledger baseline; this checkout's
+  current upstream tests include the additional compatibility cases.
 - Task 12 deadline workspace/calendar and roster compatibility: 7 files
   passed, 66 tests passed.
+- Expanded Task 13/evaluator/Task 11/Task 12 selection: 13 files passed,
+  196 tests passed. Exact accepted 12-file compatibility selection: 112 tests
+  passed (the added settings-loading regression is included).
 - Company-services component compatibility: 1 file passed, 24 tests passed.
 
 One separate compatibility command also included the existing
@@ -72,6 +104,9 @@ Task 8 subset above is green. This unrelated assertion was not modified.
 - Scoped ESLint with `--max-warnings 0` over changed Task 13 source/routes/
   components/tests — pass with zero warnings/errors.
 - `git diff --check` — pass.
+- Known unrelated `__tests__/services/client-service-schema.test.ts`: 1
+  pre-existing exact-format assertion failed; 4/5 assertions passed and the
+  test/schema were not modified.
 - No repository-wide baseline, full build/lint, Prisma generation/migration,
   live database, or broader Plan 2 gate was run. Task 14 was not started.
 
