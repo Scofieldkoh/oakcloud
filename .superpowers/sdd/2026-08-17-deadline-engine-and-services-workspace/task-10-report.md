@@ -2,7 +2,7 @@
 
 Status: remediation-complete / awaiting rereview
 
-Implementation commit: `5d6d7f6`
+Implementation commit: `c653b3c`
 
 ## Scope delivered
 

@@ -67,7 +67,7 @@
 | 7 | PASS | `3e6d035`, `c747dee`, `c0a1c05`, `41c12dd`, `c80e1c6` | Final review: 0 Critical / 0 Important / 0 Minor; 30 focused tests and 69 Task 6 compatibility tests; PostgreSQL gates remain deferred without `TEST_DATABASE_URL` |
 | 8 | PASS | `c2abca9`, `da3d31b`, `cd0cba4`, `27604d1` | Final review: 0 Critical / 0 Important / 0 Minor; 20 focused historical-audit tests plus full Task 8 correction/regression gates |
 | 9 | PASS | `9d2e3ea`, `90087f0` | Rereview: 0 Critical / 0 Important / 1 unrelated pre-existing Minor; 33 focused tests plus 166 compatibility tests |
-| 10 | remediation-complete / awaiting rereview | `5d6d7f6` | Review FAIL findings I1–I4/M1–M3 addressed; focused evidence recorded in `task-10-report.md`; awaiting independent rereview |
+| 10 | remediation-complete / awaiting rereview | `c653b3c` | Review FAIL findings I1–I4/M1–M3 addressed; focused evidence recorded in `task-10-report.md`; awaiting independent rereview |
 | 11 | pending | — | — |
 | 12 | pending | — | — |
 | 13 | pending | — | — |
