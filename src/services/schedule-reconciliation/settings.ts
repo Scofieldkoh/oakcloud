@@ -43,3 +43,13 @@ export async function requireServicesWorkspaceEnabled(
     throw new NotFoundError('Services workspace is disabled for this workspace');
   }
 }
+
+export async function requireDeadlineWritesEnabled(
+  tenantId: string,
+  db: { workspace: { findUnique: (args: { where: { id: string }; select: { settings: true } }) => Promise<{ settings: unknown } | null> } } = prisma,
+): Promise<void> {
+  const flags = await getServiceWorkspaceFlagsForTenant(tenantId, db);
+  if (!flags.deadlineWritesEnabled) {
+    throw new NotFoundError('Deadline occurrence writes are disabled for this workspace');
+  }
+}

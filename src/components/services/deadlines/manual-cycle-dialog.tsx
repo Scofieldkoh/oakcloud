@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
+import type { ClientServiceDto } from '@/services/client-service';
 import type { ManualDeadlineCyclePreview } from '@/services/deadline/manual-cycle';
 
 type ParameterRow = { key: string; value: string };
@@ -14,6 +15,7 @@ type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string
 export interface ManualCycleDialogProps {
   isOpen: boolean;
   clientServiceId: string;
+  service?: Pick<ClientServiceDto, 'deadlineRules'>;
   onClose: () => void;
   onApplied?: () => void;
   canApply?: boolean;
@@ -51,8 +53,9 @@ function parametersFromRows(rows: ParameterRow[]): Record<string, JsonValue> {
 
 function responseError(response: Response, fallback: string): Promise<Error> {
   return response.json().catch(() => null).then((body: unknown) => {
-    if (body && typeof body === 'object' && 'message' in body && typeof body.message === 'string') {
-      return new Error(body.message);
+    if (body && typeof body === 'object') {
+      if ('error' in body && typeof body.error === 'string') return new Error(body.error);
+      if ('message' in body && typeof body.message === 'string') return new Error(body.message);
     }
     return new Error(fallback);
   });
@@ -61,6 +64,7 @@ function responseError(response: Response, fallback: string): Promise<Error> {
 export function ManualCycleDialog({
   isOpen,
   clientServiceId,
+  service,
   onClose,
   onApplied,
   canApply = true,
@@ -81,8 +85,40 @@ export function ManualCycleDialog({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'preview' | 'apply' | null>(null);
 
+  const availableRules = useMemo(
+    () => (service?.deadlineRules ?? []).filter((rule) => rule.enabled
+      && rule.rule?.isActive
+      && !rule.rule.archivedAt
+      && Boolean(rule.rule.currentVersion?.id)
+      && rule.rule.currentVersionId === rule.rule.currentVersion?.id),
+    [service?.deadlineRules],
+  );
+  const selectedRule = availableRules.find((rule) => rule.rule?.currentVersion?.id === ruleVersionId) ?? availableRules[0];
+
+  const resetFromRule = (rule: typeof availableRules[number] | undefined) => {
+    const versionId = rule?.rule?.currentVersion?.id ?? '';
+    setRuleVersionId(versionId);
+    setParameterRows(rule ? Object.entries(rule.parameterValues).map(([key, value]) => ({ key, value: typeof value === 'string' ? value : JSON.stringify(value) ?? '' })) : [...INITIAL_PARAMETERS]);
+    setScheduleEntries(rule ? [...rule.scheduleEntries] : []);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    resetFromRule(availableRules[0]);
+    setPeriodKey('');
+    setPeriodStart('');
+    setPeriodEnd('');
+    setSourceValuesText('');
+    setNotes('');
+    setPreview(null);
+    setError(null);
+  // The dialog receives a stable client-service detail object from its launcher.
+  // Reset only when that detail or the open state changes, not on input edits.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientServiceId, isOpen, service]);
+
   const identity = (milestone: { milestoneKey: string; scheduleEntryKey: string }) => `${milestone.milestoneKey}::${milestone.scheduleEntryKey}`;
-  const hasRequiredInputs = Boolean(ruleVersionId.trim() && periodKey.trim() && periodStart && periodEnd);
+  const hasRequiredInputs = Boolean(selectedRule?.rule?.currentVersion?.id && periodKey.trim() && periodStart && periodEnd);
   const previewBody = useMemo(() => ({
     ruleVersionId: ruleVersionId.trim(),
     periodKey: periodKey.trim(),
@@ -211,8 +247,11 @@ export function ManualCycleDialog({
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="lg:col-span-2">
-              <label htmlFor="manual-cycle-rule-version" className="label">Rule version ID</label>
-              <input id="manual-cycle-rule-version" className="input input-sm min-h-11 w-full" value={ruleVersionId} onChange={(event) => { invalidatePreview(); setRuleVersionId(event.target.value); }} placeholder="Published version UUID" />
+              <label htmlFor="manual-cycle-rule" className="label">Rule</label>
+              <select id="manual-cycle-rule" className="input input-sm min-h-11 w-full" value={selectedRule?.rule?.currentVersion?.id ?? ''} disabled={availableRules.length === 0} onChange={(event) => { const nextRule = availableRules.find((rule) => rule.rule?.currentVersion?.id === event.target.value); invalidatePreview(); resetFromRule(nextRule); }}>
+                {availableRules.length === 0 ? <option value="">No published rules available</option> : null}
+                {availableRules.map((rule) => <option key={rule.id} value={rule.rule!.currentVersion!.id}>{rule.rule!.name} · v{rule.rule!.currentVersion!.version}</option>)}
+              </select>
             </div>
             <div>
               <label htmlFor="manual-cycle-period-key" className="label">Period key</label>
@@ -227,6 +266,8 @@ export function ManualCycleDialog({
               <input id="manual-cycle-period-end" type="date" className="input input-sm min-h-11 w-full" value={periodEnd} onChange={(event) => { invalidatePreview(); setPeriodEnd(event.target.value); }} />
             </div>
           </div>
+          {!service ? <Alert variant="warning" compact>Client service configuration is still loading. Close and retry when the service details are available.</Alert> : null}
+          {service && availableRules.length === 0 ? <Alert variant="warning" compact>No enabled published deadline rules are associated with this client service.</Alert> : null}
         </section>
 
         <section className="space-y-3" aria-labelledby="manual-cycle-inputs-heading">
@@ -276,7 +317,7 @@ export function ManualCycleDialog({
                   <article key={key} className="space-y-3 rounded-lg border border-border-primary bg-background-primary p-3">
                     <div className="flex flex-wrap items-start gap-3">
                       <label className="flex min-h-11 min-w-11 items-center gap-2 text-sm text-text-primary">
-                        <input type="checkbox" className="h-4 w-4" checked={included} onChange={(event) => { invalidatePreview(); setIncludeByIdentity((values) => ({ ...values, [key]: event.target.checked })); }} />
+                        <input type="checkbox" className="h-4 w-4" checked={included} onChange={(event) => { setError(null); setIncludeByIdentity((values) => ({ ...values, [key]: event.target.checked })); }} />
                         <span className="font-medium">{milestone.name}</span>
                       </label>
                       <span className="text-xs text-text-secondary">Calculated {milestone.calculatedDueDate}</span>
@@ -285,18 +326,18 @@ export function ManualCycleDialog({
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div>
                         <label htmlFor={`manual-cycle-date-${key}`} className="label">Operative date</label>
-                        <input id={`manual-cycle-date-${key}`} type="date" disabled={!included} className="input input-sm min-h-11 w-full" value={dateByIdentity[key] ?? milestone.operativeDueDate} onChange={(event) => { invalidatePreview(); setDateByIdentity((values) => ({ ...values, [key]: event.target.value })); }} />
+                        <input id={`manual-cycle-date-${key}`} type="date" disabled={!included} className="input input-sm min-h-11 w-full" value={dateByIdentity[key] ?? milestone.operativeDueDate} onChange={(event) => { setError(null); setDateByIdentity((values) => ({ ...values, [key]: event.target.value })); }} />
                       </div>
                       <div>
                         <label htmlFor={`manual-cycle-status-${key}`} className="label">Status</label>
-                        <select id={`manual-cycle-status-${key}`} disabled={!included} className="input input-sm min-h-11 w-full" value={status} onChange={(event) => { invalidatePreview(); setStatusByIdentity((values) => ({ ...values, [key]: event.target.value as 'OPEN' | 'COMPLETED' })); }}>
+                        <select id={`manual-cycle-status-${key}`} disabled={!included} className="input input-sm min-h-11 w-full" value={status} onChange={(event) => { setError(null); setStatusByIdentity((values) => ({ ...values, [key]: event.target.value as 'OPEN' | 'COMPLETED' })); }}>
                           <option value="OPEN">Open</option>
                           <option value="COMPLETED">Completed</option>
                         </select>
                       </div>
                       <div>
                         <label htmlFor={`manual-cycle-completion-${key}`} className="label">Completion date</label>
-                        <input id={`manual-cycle-completion-${key}`} type="date" disabled={!included || status !== 'COMPLETED'} className="input input-sm min-h-11 w-full" value={completionDateByIdentity[key] ?? ''} onChange={(event) => { invalidatePreview(); setCompletionDateByIdentity((values) => ({ ...values, [key]: event.target.value })); }} />
+                        <input id={`manual-cycle-completion-${key}`} type="date" disabled={!included || status !== 'COMPLETED'} className="input input-sm min-h-11 w-full" value={completionDateByIdentity[key] ?? ''} onChange={(event) => { setError(null); setCompletionDateByIdentity((values) => ({ ...values, [key]: event.target.value })); }} />
                       </div>
                     </div>
                     {milestone.explanation.length > 0 ? <details><summary className="min-h-11 cursor-pointer py-2 text-xs font-medium text-text-secondary">Why this date?</summary><ul className="list-disc space-y-1 pl-5 text-xs text-text-secondary">{milestone.explanation.map((reason) => <li key={reason}>{reason}</li>)}</ul></details> : null}
@@ -306,7 +347,7 @@ export function ManualCycleDialog({
             </div>
             <div>
               <label htmlFor="manual-cycle-notes" className="label">Notes</label>
-              <textarea id="manual-cycle-notes" className="input min-h-20 w-full resize-y" value={notes} onChange={(event) => { invalidatePreview(); setNotes(event.target.value); }} placeholder="Why this historical cycle was triggered" maxLength={5000} />
+              <textarea id="manual-cycle-notes" className="input min-h-20 w-full resize-y" value={notes} onChange={(event) => { setError(null); setNotes(event.target.value); }} placeholder="Why this historical cycle was triggered" maxLength={5000} />
             </div>
           </section>
         ) : null}

@@ -9,7 +9,9 @@ const hooksMock = vi.hoisted(() => ({
       && (status === undefined || error.status === status)
   )),
 }));
+const servicesSettingsMock = vi.hoisted(() => ({ useServicesWorkspaceSettings: vi.fn() }));
 vi.mock('@/hooks/use-client-services', () => hooksMock);
+vi.mock('@/hooks/use-services-workspace-settings', () => servicesSettingsMock);
 
 import { CompanyServicesTab } from '@/components/companies/company-detail/company-services-tab';
 import { CompanyTabs } from '@/components/companies/company-detail/company-tabs';
@@ -75,6 +77,7 @@ describe('CompanyServicesTab', () => {
     hooksMock.useRetryServiceAgreementActivation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     hooksMock.useManualClientServiceCatalogOptions.mockReturnValue({ data: catalogOptions, isLoading: false, error: null });
     hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: true }, isLoading: false, error: null });
   });
 
   it('shows compact service identity, fee, and signed agreement source', async () => {
@@ -108,6 +111,17 @@ describe('CompanyServicesTab', () => {
   it('hides add actions from read-only users', () => {
     render(<CompanyServicesTab companyId="company-1" canEdit={false} />);
     expect(screen.queryByRole('button', { name: 'Add service' })).not.toBeInTheDocument();
+  });
+
+  it('hides historical trigger actions while the workspace is disabled or observe-only', () => {
+    servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: false, deadlineWritesEnabled: true }, isLoading: false, error: null });
+    const { unmount } = render(<CompanyServicesTab companyId="company-1" canEdit />);
+    expect(screen.queryByRole('button', { name: /Trigger historical cycle/i })).not.toBeInTheDocument();
+    unmount();
+
+    servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: false }, isLoading: false, error: null });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    expect(screen.queryByRole('button', { name: /Trigger historical cycle/i })).not.toBeInTheDocument();
   });
 
   it('shows one add action beside the controls for editors', () => {

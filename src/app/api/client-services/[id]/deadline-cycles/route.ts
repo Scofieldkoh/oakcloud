@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { requirePermission } from '@/lib/rbac';
-import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
+import { requireDeadlineWritesEnabled, requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
 import { getClientService } from '@/services/client-service';
 import { createManualDeadlineCycle } from '@/services/deadline';
 import { manualDeadlineCycleApplySchema } from '@/services/deadline/manual-cycle';
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest, { params }: Context): Promise<N
     await requireServicesWorkspaceEnabled(actor.tenantId);
     const service = await getClientService(id, actor);
     await requirePermission(session, 'company', 'update', service.companyId);
+    await requireDeadlineWritesEnabled(actor.tenantId);
     const body = await request.json().catch(() => { throw new z.ZodError([]); });
     const input = manualDeadlineCycleApplySchema.parse(body);
     return NextResponse.json(await createManualDeadlineCycle(id, input, actor));

@@ -9,6 +9,7 @@ const hooks = vi.hoisted(() => ({
   useServiceCatalog: vi.fn(),
   useServiceRosterFamilies: vi.fn(),
 }));
+const servicesSettingsMock = vi.hoisted(() => ({ useServicesWorkspaceSettings: vi.fn() }));
 
 const navigation = vi.hoisted(() => ({
   searchParams: new URLSearchParams(),
@@ -28,6 +29,7 @@ vi.mock('@/hooks/use-user-preferences', () => ({
 }));
 vi.mock('@/hooks/use-service-catalog', () => ({ useServiceCatalog: hooks.useServiceCatalog }));
 vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: hooks.useServiceRosterFamilies }));
+vi.mock('@/hooks/use-services-workspace-settings', () => servicesSettingsMock);
 vi.mock('@/hooks/use-all-company-options', () => ({
   useAllCompanyOptions: () => ({ data: [], isLoading: false, error: null }),
   useCompanyOptionsPage: () => ({ data: { options: [], hasMore: false, page: 0 }, isLoading: false, error: null }),
@@ -153,9 +155,25 @@ function setup() {
   hooks.useUpsertUserPreference.mockReturnValue({ mutate: vi.fn(), isPending: false });
   hooks.useServiceCatalog.mockReturnValue({ data: { families: [{ ...family, variants: [] }], total: 1 }, isLoading: false });
   hooks.useServiceRosterFamilies.mockReturnValue({ data: [family, advisoryFamily], isLoading: false, error: null });
+  servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: true }, isLoading: false, error: null });
 }
 
 describe('ServiceRoster', () => {
+  it('hides the historical trigger when workspace writes are disabled', () => {
+    setup();
+    servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: false }, isLoading: false, error: null });
+    render(<ServiceRoster workspaceId="workspace-1" canEdit />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions for Monthly accounting' })[0]);
+    expect(screen.queryByText('Trigger historical cycle')).not.toBeInTheDocument();
+  });
+
+  it('keeps the historical trigger hidden while workspace settings load', () => {
+    setup();
+    servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: undefined, isLoading: true, error: null });
+    render(<ServiceRoster workspaceId="workspace-1" canEdit />);
+    expect(screen.queryByText('Trigger historical cycle')).not.toBeInTheDocument();
+  });
+
   it('places family filters beside Active, Paused, and Ended in one Service filters group', () => {
     setup();
     render(<ServiceRoster workspaceId="workspace-1" />);

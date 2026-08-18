@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
 import { useClientService } from '@/hooks/use-client-services';
+import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { useServiceRoster, type ServiceRosterSearchInput } from '@/hooks/use-service-roster';
 import { useServiceRosterFamilies } from '@/hooks/use-service-roster-families';
 import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-preferences';
@@ -139,6 +140,20 @@ function ServiceEditorLauncher({ item, onClose }: { item: ServiceRosterItem; onC
   return <ClientServiceEditor service={service.data} isOpen onClose={onClose} />;
 }
 
+function ManualCycleLauncher({ item, canApply, onClose, onApplied }: { item: ServiceRosterItem; canApply: boolean; onClose: () => void; onApplied: () => void }) {
+  const service = useClientService(item.id);
+  if (service.isLoading) return <p role="status" className="sr-only">Loading deadline rule configuration…</p>;
+  if (service.error || !service.data) {
+    return <Alert variant="error" title="Historical cycle unavailable">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span>{service.error instanceof Error ? service.error.message : 'Unable to load the client service deadline rules.'}</span>
+        <Button size="xs" variant="secondary" className="min-h-11" onClick={onClose}>Close</Button>
+      </div>
+    </Alert>;
+  }
+  return <ManualCycleDialog clientServiceId={item.id} service={service.data} isOpen canApply={canApply} onClose={onClose} onApplied={onApplied} />;
+}
+
 function activeFilterLabel(
   query: string,
   filters: ServiceRosterInlineFilters,
@@ -160,6 +175,10 @@ function activeFilterLabel(
 }
 
 export function ServiceRoster({ canEdit = true, canCreate = true, families: providedFamilies }: ServiceRosterProps) {
+  const workspaceSettings = useServicesWorkspaceSettings();
+  const canTrigger = canEdit
+    && workspaceSettings.data?.workspaceEnabled === true
+    && workspaceSettings.data?.deadlineWritesEnabled === true;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -502,7 +521,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           onColumnWidthChange={updateColumns}
           onColumnResizeEnd={finishColumnResize}
           onEdit={setEditing}
-          onTrigger={setTriggering}
+          onTrigger={canTrigger ? setTriggering : undefined}
         />
       ) : null}
 
@@ -524,7 +543,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
 
       <AddClientServiceDialog isOpen={addOpen} onClose={() => setAddOpen(false)} onCreated={() => roster.refetch?.()} />
       {editing ? <ServiceEditorLauncher item={editing} onClose={() => { setEditing(null); roster.refetch?.(); }} /> : null}
-      {triggering ? <ManualCycleDialog clientServiceId={triggering.id} isOpen canApply={canEdit} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); roster.refetch?.(); }} /> : null}
+      {canTrigger && triggering ? <ManualCycleLauncher item={triggering} canApply={canTrigger} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); roster.refetch?.(); }} /> : null}
     </section>
   );
 }

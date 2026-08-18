@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
   requirePermission: vi.fn(),
   requireServicesWorkspaceEnabled: vi.fn(),
+  requireDeadlineWritesEnabled: vi.fn(),
   getClientService: vi.fn(),
   previewManualDeadlineCycle: vi.fn(),
   createManualDeadlineCycle: vi.fn(),
@@ -12,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
 vi.mock('@/lib/rbac', () => ({ requirePermission: mocks.requirePermission }));
-vi.mock('@/services/schedule-reconciliation', () => ({ requireServicesWorkspaceEnabled: mocks.requireServicesWorkspaceEnabled }));
+vi.mock('@/services/schedule-reconciliation', () => ({ requireServicesWorkspaceEnabled: mocks.requireServicesWorkspaceEnabled, requireDeadlineWritesEnabled: mocks.requireDeadlineWritesEnabled }));
 vi.mock('@/services/client-service', () => ({ getClientService: mocks.getClientService }));
 vi.mock('@/services/deadline', () => ({
   previewManualDeadlineCycle: mocks.previewManualDeadlineCycle,
@@ -41,6 +42,7 @@ describe('manual deadline cycle routes', () => {
     mocks.requireAuth.mockResolvedValue(session);
     mocks.requirePermission.mockResolvedValue(undefined);
     mocks.requireServicesWorkspaceEnabled.mockResolvedValue(undefined);
+    mocks.requireDeadlineWritesEnabled.mockResolvedValue(undefined);
     mocks.getClientService.mockResolvedValue({ id: serviceId, companyId });
     mocks.previewManualDeadlineCycle.mockResolvedValue({ milestones: [], previewFingerprint: 'a'.repeat(64) });
     mocks.createManualDeadlineCycle.mockResolvedValue({ cycleId: 'cycle-1', occurrenceIds: [] });
@@ -63,6 +65,7 @@ describe('manual deadline cycle routes', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', companyId);
+    expect(mocks.requireDeadlineWritesEnabled).toHaveBeenCalledWith(tenantId);
     expect(mocks.createManualDeadlineCycle).toHaveBeenCalledWith(serviceId, expect.objectContaining(applyBody), expect.objectContaining({ tenantId, userId: session.id }));
   });
 

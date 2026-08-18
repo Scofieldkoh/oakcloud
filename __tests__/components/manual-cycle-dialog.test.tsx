@@ -13,6 +13,25 @@ const preview = {
   ],
   previewFingerprint: 'a'.repeat(64),
 };
+const configuredService = {
+  deadlineRules: [{
+    id: 'rule-row-1',
+    ruleId: 'rule-1',
+    enabled: true,
+    parameterValues: { monthsAfterFye: 2 },
+    parameterProvenance: {},
+    scheduleEntries: [
+      { key: 'first-entry', label: 'First entry', expression: { kind: 'DAY_OF_MONTH', day: 1 }, businessDayAdjustment: 'NONE' },
+      { key: 'second-entry', label: 'Second entry', expression: { kind: 'DAY_OF_MONTH', day: 2 }, businessDayAdjustment: 'NONE' },
+      { key: 'third-entry', label: 'Third entry', expression: { kind: 'DAY_OF_MONTH', day: 3 }, businessDayAdjustment: 'NONE' },
+      { key: 'fourth-entry', label: 'Fourth entry', expression: { kind: 'DAY_OF_MONTH', day: 4 }, businessDayAdjustment: 'NONE' },
+    ],
+    rule: {
+      id: 'rule-1', code: 'ANNUAL_RETURN', name: 'Annual return', isActive: true, archivedAt: null, currentVersionId: preview.ruleVersionId,
+      currentVersion: { id: preview.ruleVersionId, version: 3, configHash: 'b'.repeat(64), recurrence: {}, applicability: {}, parameters: [] },
+    },
+  }],
+} as never;
 
 describe('ManualCycleDialog', () => {
   beforeEach(() => {
@@ -23,11 +42,13 @@ describe('ManualCycleDialog', () => {
   });
 
   it('keeps Apply disabled until a current preview exists and invalidates it on edits', async () => {
-    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" onClose={vi.fn()} />);
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" service={configuredService} onClose={vi.fn()} />);
 
     const apply = screen.getByRole('button', { name: 'Apply cycle' });
     expect(apply).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Rule version ID'), { target: { value: preview.ruleVersionId } });
+    await waitFor(() => expect(screen.getByLabelText('Rule')).toHaveValue(preview.ruleVersionId));
+    expect(screen.getByDisplayValue('monthsAfterFye')).toBeVisible();
+    expect(screen.getByText('4 of 31 schedule entries configured')).toBeVisible();
     fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2024' } });
     fireEvent.change(screen.getByLabelText('Period start'), { target: { value: '2024-01-01' } });
     fireEvent.change(screen.getByLabelText('Period end'), { target: { value: '2024-12-31' } });
@@ -38,5 +59,47 @@ describe('ManualCycleDialog', () => {
 
     fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2023' } });
     expect(apply).toBeDisabled();
+  });
+
+  it('keeps the current preview while editing selections, completion, dates, and notes', async () => {
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" service={configuredService} onClose={vi.fn()} />);
+    await waitFor(() => expect(screen.getByLabelText('Rule')).toHaveValue(preview.ruleVersionId));
+    fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2024' } });
+    fireEvent.change(screen.getByLabelText('Period start'), { target: { value: '2024-01-01' } });
+    fireEvent.change(screen.getByLabelText('Period end'), { target: { value: '2024-12-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview cycle' }));
+    await waitFor(() => expect(screen.getByText('Client records')).toBeVisible());
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Statutory filing' }));
+    fireEvent.change(screen.getAllByLabelText('Operative date')[0], { target: { value: '2024-01-20' } });
+    fireEvent.change(screen.getAllByLabelText('Status')[0], { target: { value: 'COMPLETED' } });
+    fireEvent.change(screen.getAllByLabelText('Completion date')[0], { target: { value: '2024-01-21' } });
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Completed from inherited records.' } });
+
+    expect(screen.getByRole('button', { name: 'Apply cycle' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply cycle' }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    const applyRequest = vi.mocked(fetch).mock.calls[1]?.[1] as RequestInit;
+    const applyBody = JSON.parse(String(applyRequest.body)) as { notes: string; selections: Array<Record<string, unknown>> };
+    expect(applyBody.notes).toBe('Completed from inherited records.');
+    expect(applyBody.selections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ milestoneKey: 'client-records', include: true, operativeDueDate: '2024-01-20', status: 'COMPLETED', completionDate: '2024-01-21' }),
+      expect.objectContaining({ milestoneKey: 'statutory-filing', include: false }),
+    ]));
+  });
+
+  it('surfaces the safe message from a structured API error response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      error: 'The published rule changed. Preview again before applying.',
+      code: 'IMPACT_CHANGED',
+      details: { preview: { ruleVersionId: preview.ruleVersionId } },
+    }), { status: 409, headers: { 'content-type': 'application/json' } })));
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" service={configuredService} onClose={vi.fn()} />);
+    await waitFor(() => expect(screen.getByLabelText('Rule')).toHaveValue(preview.ruleVersionId));
+    fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2024' } });
+    fireEvent.change(screen.getByLabelText('Period start'), { target: { value: '2024-01-01' } });
+    fireEvent.change(screen.getByLabelText('Period end'), { target: { value: '2024-12-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview cycle' }));
+    expect(await screen.findByText('The published rule changed. Preview again before applying.')).toBeVisible();
   });
 });

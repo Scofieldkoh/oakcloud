@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createAuditLog } from '@/lib/audit';
 import {
   DeadlineApiError,
+  ConflictError,
   ErrorCodes,
   NotFoundError,
   ValidationError,
@@ -30,6 +31,7 @@ import {
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import { scheduleEntriesSchema } from '@/lib/validations/service-schedule';
 import { dateOnlySchema } from '@/lib/validations/date-only';
+import { requireDeadlineWritesEnabled } from '@/services/schedule-reconciliation';
 
 const UUID = z.string().uuid();
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
@@ -256,6 +258,18 @@ function versionMilestones(version: VersionRecord): DeadlineRuleEvaluationInput[
   }));
 }
 
+function validateVersionMilestones(version: VersionRecord, actor: ManualCycleActor): void {
+  const milestones = version.milestoneTemplates;
+  if (!Array.isArray(milestones)) {
+    throw new NotFoundError('Published deadline rule version is not available for this client service');
+  }
+  for (const milestone of milestones) {
+    if (!isRecord(milestone) || milestone.tenantId !== actor.tenantId || milestone.ruleVersionId !== version.id) {
+      throw new NotFoundError('Published deadline rule version is not available for this client service');
+    }
+  }
+}
+
 function sourceSnapshotWithManualInputs(
   evaluation: DeadlineRuleEvaluationResult,
   input: z.output<typeof manualDeadlineCyclePreviewSchema>,
@@ -359,10 +373,18 @@ async function loadClientService(
             include: {
               versions: {
                 where: { tenantId: actor.tenantId, state: 'PUBLISHED' },
-                include: { parameterDefinitions: true, milestoneTemplates: true },
+                include: {
+                  parameterDefinitions: { where: { tenantId: actor.tenantId } },
+                  milestoneTemplates: true,
+                },
                 orderBy: { version: 'desc' },
               },
-              currentVersion: { include: { parameterDefinitions: true, milestoneTemplates: true } },
+              currentVersion: {
+                include: {
+                  parameterDefinitions: { where: { tenantId: actor.tenantId } },
+                  milestoneTemplates: true,
+                },
+              },
             },
           },
         },
@@ -403,7 +425,11 @@ async function loadVersion(
   if (!version && versionDelegate?.findFirst) {
     const raw = await versionDelegate.findFirst({
       where: { id: ruleVersionId, tenantId: actor.tenantId, state: 'PUBLISHED' },
-      include: { rule: true, parameterDefinitions: true, milestoneTemplates: true },
+      include: {
+        rule: true,
+        parameterDefinitions: { where: { tenantId: actor.tenantId } },
+        milestoneTemplates: true,
+      },
     });
     const candidate = asVersion(raw);
     if (candidate) {
@@ -426,6 +452,7 @@ async function loadVersion(
   ) {
     throw new ValidationError('Manual cycles require an active, published rule version enabled for this client service');
   }
+  validateVersionMilestones(version, actor);
   return { clientRule: matchedRule, version, rule };
 }
 
@@ -540,6 +567,42 @@ function isPrismaCode(error: unknown, code: string): boolean {
   return isRecord(error) && error.code === code;
 }
 
+class ManualCycleUniqueRace extends Error {
+  constructor() {
+    super('Another request created this manual cycle concurrently');
+    this.name = 'ManualCycleUniqueRace';
+  }
+}
+
+type ParsedManualCycleApplyInput = z.output<typeof manualDeadlineCycleApplySchema>;
+
+function canonicalSelectionProjection(
+  selections: ParsedManualCycleApplyInput['selections'],
+): Array<Record<string, unknown>> {
+  return [...selections]
+    .sort((left, right) => left.milestoneKey.localeCompare(right.milestoneKey) || left.scheduleEntryKey.localeCompare(right.scheduleEntryKey))
+    .map((selection) => ({
+      milestoneKey: selection.milestoneKey,
+      scheduleEntryKey: selection.scheduleEntryKey,
+      include: selection.include,
+      operativeDueDate: selection.operativeDueDate ?? null,
+      status: selection.status ?? null,
+      completionDate: selection.completionDate ?? null,
+    }));
+}
+
+function selectionSummary(selections: ParsedManualCycleApplyInput['selections']): {
+  includedCount: number;
+  excludedCount: number;
+  completedCount: number;
+} {
+  return {
+    includedCount: selections.filter((selection) => selection.include).length,
+    excludedCount: selections.filter((selection) => !selection.include).length,
+    completedCount: selections.filter((selection) => selection.include && selection.status === 'COMPLETED').length,
+  };
+}
+
 async function findExistingCycle(db: Database, data: { tenantId: string; clientServiceId: string; ruleId: string; periodKey: string; generationKey: string }) {
   const delegate = db.serviceCycle as unknown as {
     findUnique?: (args: unknown) => Promise<unknown>;
@@ -602,16 +665,22 @@ function existingResult(
   };
 }
 
-async function applyManualCycle(
+type PreparedManualCycle = {
+  input: ParsedManualCycleApplyInput;
+  preview: ManualDeadlineCyclePreview;
+  selections: Map<string, z.output<typeof selectionSchema>>;
+  generationKey: string;
+  selectionSummary: ReturnType<typeof selectionSummary>;
+};
+
+async function prepareManualCycle(
   tx: Database,
   clientServiceId: string,
   rawInput: ManualDeadlineCycleApplyInput,
   actor: ManualCycleActor,
-): Promise<ManualDeadlineCycleResult> {
+): Promise<PreparedManualCycle> {
   const input = parseApplyInput(rawInput);
-  // Notes are persisted as apply metadata and deliberately do not participate
-  // in the evaluator fingerprint: changing free text must not turn a valid
-  // date preview into a false stale-preview conflict.
+  await requireDeadlineWritesEnabled(actor.tenantId, tx);
   const preview = await buildPreview(tx, clientServiceId, input, actor);
   if (preview.previewFingerprint !== input.previewFingerprint) {
     throw new DeadlineApiError(
@@ -622,12 +691,56 @@ async function applyManualCycle(
     );
   }
   const selections = validateSelections(input.selections, preview.milestones);
-  const generationKey = `MANUAL_TRIGGER:${hashConfiguration({ previewFingerprint: input.previewFingerprint, selections: input.selections, notes: input.notes })}`;
-  const selectionSummary = {
-    includedCount: input.selections.filter((selection) => selection.include).length,
-    excludedCount: input.selections.filter((selection) => !selection.include).length,
-    completedCount: input.selections.filter((selection) => selection.include && selection.status === 'COMPLETED').length,
+  const generationKey = `MANUAL_TRIGGER:${hashConfiguration({
+    previewFingerprint: input.previewFingerprint,
+    selections: canonicalSelectionProjection(input.selections),
+    notes: input.notes,
+  })}`;
+  return {
+    input,
+    preview,
+    selections,
+    generationKey,
+    selectionSummary: selectionSummary(input.selections),
   };
+}
+
+async function resolveManualCycleAfterRace(
+  tx: Database,
+  clientServiceId: string,
+  rawInput: ManualDeadlineCycleApplyInput,
+  actor: ManualCycleActor,
+): Promise<ManualDeadlineCycleResult> {
+  const prepared = await prepareManualCycle(tx, clientServiceId, rawInput, actor);
+  const existing = await findExistingCycle(tx, {
+    tenantId: actor.tenantId,
+    clientServiceId,
+    ruleId: prepared.preview.ruleId,
+    periodKey: prepared.preview.periodKey,
+    generationKey: prepared.generationKey,
+  });
+  const alreadyApplied = existingResult(
+    existing,
+    clientServiceId,
+    prepared.preview.previewFingerprint,
+    prepared.input.notes,
+    prepared.generationKey,
+    prepared.selectionSummary,
+  );
+  if (alreadyApplied) return alreadyApplied;
+  throw new ConflictError('Manual cycle creation raced with another request; retry the apply operation.');
+}
+
+async function applyManualCycle(
+  tx: Database,
+  clientServiceId: string,
+  rawInput: ManualDeadlineCycleApplyInput,
+  actor: ManualCycleActor,
+): Promise<ManualDeadlineCycleResult> {
+  // Notes and selection choices are apply metadata; only the evaluator inputs
+  // are represented by the preview fingerprint. A stale input is rejected
+  // before any cycle, occurrence, or audit write.
+  const { input, preview, selections, generationKey, selectionSummary } = await prepareManualCycle(tx, clientServiceId, rawInput, actor);
   const existing = await findExistingCycle(tx, {
     tenantId: actor.tenantId,
     clientServiceId,
@@ -670,16 +783,7 @@ async function applyManualCycle(
     // lose the cycle's unique-key race. Treat that winner as the idempotent
     // result instead of emitting a duplicate or leaking a raw Prisma error.
     if (!isPrismaCode(error, 'P2002')) throw error;
-    const concurrent = await findExistingCycle(tx, {
-      tenantId: actor.tenantId,
-      clientServiceId,
-      ruleId: preview.ruleId,
-      periodKey: preview.periodKey,
-      generationKey,
-    });
-    const concurrentResult = existingResult(concurrent, clientServiceId, preview.previewFingerprint, input.notes, generationKey, selectionSummary);
-    if (concurrentResult) return concurrentResult;
-    throw error;
+    throw new ManualCycleUniqueRace();
   }
   if (!isRecord(cycle) || typeof cycle.id !== 'string') throw new ValidationError('Manual cycle was not created');
 
@@ -807,5 +911,13 @@ export async function createManualDeadlineCycle(
   third?: ManualCycleActor,
 ): Promise<ManualDeadlineCycleResult> {
   const { clientServiceId, input, actor } = invocation(first, second, third);
-  return runSerializableTransaction(prisma, (tx) => applyManualCycle(tx, clientServiceId, input, actor));
+  try {
+    return await runSerializableTransaction(prisma, (tx) => applyManualCycle(tx, clientServiceId, input, actor));
+  } catch (error) {
+    // A unique-key violation aborts the interactive transaction in PostgreSQL;
+    // it is not legal to query that transaction afterward. Recompute in a
+    // fresh serializable transaction and resolve the committed winner there.
+    if (!(error instanceof ManualCycleUniqueRace)) throw error;
+    return runSerializableTransaction(prisma, (tx) => resolveManualCycleAfterRace(tx, clientServiceId, input, actor));
+  }
 }

@@ -3,6 +3,7 @@ export { planRollingPeriods, planRollingScope, ROLLING_HORIZON_MONTHS, ROLLING_P
 export {
   getServiceWorkspaceFlags,
   getServiceWorkspaceFlagsForTenant,
+  requireDeadlineWritesEnabled,
   requireServicesWorkspaceEnabled,
 } from './settings';
 export {

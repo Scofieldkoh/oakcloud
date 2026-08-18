@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { formatDate } from '@/lib/utils';
 import { useClientServices, useRetryServiceAgreementActivation } from '@/hooks/use-client-services';
+import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import type { ClientServiceDto } from '@/services/client-service';
 import { ClientServiceEditor } from './client-service-editor';
 import { ClientServiceCreator } from './client-service-creator';
@@ -36,6 +37,10 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
   const [creating, setCreating] = useState(false);
   const [createdService, setCreatedService] = useState<ClientServiceDto | null>(null);
   const { data, isLoading, error, refetch } = useClientServices(companyId, { query: deferredQuery || undefined, status, page, limit });
+  const workspaceSettings = useServicesWorkspaceSettings();
+  const canTrigger = canEdit
+    && workspaceSettings.data?.workspaceEnabled === true
+    && workspaceSettings.data?.deadlineWritesEnabled === true;
   const retryActivation = useRetryServiceAgreementActivation();
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / limit));
   const filtered = Boolean(query.trim()) || Boolean(status);
@@ -99,12 +104,12 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
           <Link className="mt-2 inline-flex text-sm text-oak-light hover:underline" href={service.agreement.href}>
             {service.agreement.title || 'Service Agreement'}
           </Link>
-        ) : null}</div>{canEdit ? <div className="flex flex-wrap gap-2"><Button size="xs" variant="secondary" className="min-h-11" leftIcon={<History />} onClick={() => setTriggering(service)} aria-label={`Trigger historical cycle for ${service.serviceName}`}>Trigger cycle</Button><Button size="xs" variant="secondary" className="min-h-11" leftIcon={<Pencil />} onClick={() => setEditing(service)} aria-label="Edit service">Edit</Button></div> : null}</article>;
+        ) : null}</div>{canEdit ? <div className="flex flex-wrap gap-2">{canTrigger ? <Button size="xs" variant="secondary" className="min-h-11" leftIcon={<History />} onClick={() => setTriggering(service)} aria-label={`Trigger historical cycle for ${service.serviceName}`}>Trigger cycle</Button> : null}<Button size="xs" variant="secondary" className="min-h-11" leftIcon={<Pencil />} onClick={() => setEditing(service)} aria-label="Edit service">Edit</Button></div> : null}</article>;
       })}</div>}
       {(data?.total ?? 0) > limit ? <div className="border-t border-border-primary"><Pagination page={page} totalPages={totalPages} total={data?.total ?? 0} limit={limit} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} /></div> : null}
     </CompanyAccentSection>
     {editing ? <ClientServiceEditor key={editing.id} service={editing} isOpen onClose={() => setEditing(null)} /> : null}
     {creating ? <ClientServiceCreator companyId={companyId} isOpen onClose={() => setCreating(false)} onCreated={(service) => { setCreating(false); setCreatedService(service); }} /> : null}
-    {triggering ? <ManualCycleDialog clientServiceId={triggering.id} isOpen canApply={canEdit} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); void refetch?.(); }} /> : null}
+    {canTrigger && triggering ? <ManualCycleDialog clientServiceId={triggering.id} service={triggering} isOpen canApply={canTrigger} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); void refetch?.(); }} /> : null}
   </div>;
 }
