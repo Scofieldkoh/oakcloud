@@ -301,7 +301,7 @@ function canonicalPersistedDeadlineRuleAudit(
   return {
     rules: rows.slice(0, 100).map((row) => {
       const version = row.lastEvaluatedVersionId ? versions.get(row.lastEvaluatedVersionId) : undefined;
-      const historicalVersion = version?.ruleId === row.ruleId ? version : undefined;
+      const historicalVersion = version?.ruleId === row.ruleId && version.state === 'PUBLISHED' ? version : undefined;
       return {
         ruleId: row.ruleId,
         enabled: row.enabled,
@@ -323,13 +323,15 @@ async function loadPersistedDeadlineRuleVersions(
   tenantId: string,
   rows: ClientServiceDeadlineRuleRecord[],
 ): Promise<Map<string, PersistedDeadlineRuleVersionAudit>> {
-  const ids = [...new Set(rows.map((row) => row.lastEvaluatedVersionId).filter((id): id is string => Boolean(id)))];
+  const identities = rows
+    .filter((row): row is ClientServiceDeadlineRuleRecord & { lastEvaluatedVersionId: string } => Boolean(row.lastEvaluatedVersionId))
+    .map((row) => ({ id: row.lastEvaluatedVersionId, ruleId: row.ruleId }));
   const delegate = (db as unknown as {
     deadlineRuleVersion?: { findMany?: (args: unknown) => Promise<unknown> };
   }).deadlineRuleVersion;
-  if (ids.length === 0 || !delegate?.findMany) return new Map();
+  if (identities.length === 0 || !delegate?.findMany) return new Map();
   const raw = await delegate.findMany({
-    where: { tenantId, id: { in: ids } },
+    where: { tenantId, state: 'PUBLISHED', OR: identities },
     select: { id: true, ruleId: true, state: true, configHash: true },
   });
   return new Map((Array.isArray(raw) ? raw : []).map((version) => {
