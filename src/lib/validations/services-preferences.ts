@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 const UUID = z.string().uuid();
 const DEADLINE_COLUMN_IDS = ['dueDate', 'timing', 'company', 'familyService', 'milestone', 'type', 'status', 'cycleOrigin', 'actions'] as const;
+export const DEADLINE_COLUMN_WIDTH_MIN = 96;
+export const DEADLINE_COLUMN_WIDTH_MAX = 800;
 
 export const deadlineViewPreferenceSchema = z.object({
   version: z.literal(1),
@@ -9,7 +11,7 @@ export const deadlineViewPreferenceSchema = z.object({
   monthCount: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   visibleTypes: z.array(z.enum(['STATUTORY', 'CLIENT', 'INTERNAL'])).max(3),
   familyIds: z.array(UUID).max(50),
-  tableColumnWidths: z.record(z.string(), z.number().finite().min(96).max(800)).default({}),
+  tableColumnWidths: z.record(z.string(), z.number().finite().min(DEADLINE_COLUMN_WIDTH_MIN).max(DEADLINE_COLUMN_WIDTH_MAX)).default({}),
   tableColumnOrder: z.array(z.string()).max(20).default([]),
   tableColumnVisibility: z.record(z.string(), z.boolean()).default({}),
   sortBy: z.enum(['dueDate', 'company', 'family', 'service', 'type', 'status']).default('dueDate'),
@@ -57,7 +59,7 @@ export function parseDeadlineViewPreference(value: unknown): DeadlineViewPrefere
   const widths = Object.fromEntries(
     DEADLINE_COLUMN_IDS
       .filter((column) => typeof rawWidths[column] === 'number' && Number.isFinite(rawWidths[column]))
-      .map((column) => [column, Math.min(800, Math.max(96, Math.round(rawWidths[column] as number)))]),
+      .map((column) => [column, Math.min(DEADLINE_COLUMN_WIDTH_MAX, Math.max(DEADLINE_COLUMN_WIDTH_MIN, Math.round(rawWidths[column] as number)))]),
   );
   const knownOrder = rawOrder.filter((column): column is (typeof DEADLINE_COLUMN_IDS)[number] => typeof column === 'string' && DEADLINE_COLUMN_IDS.includes(column as (typeof DEADLINE_COLUMN_IDS)[number]));
   const tableColumnOrder = [...new Set([...knownOrder, ...DEADLINE_COLUMN_IDS])];

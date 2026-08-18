@@ -7,7 +7,8 @@ import { Pagination } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
-import { DeadlineEvent, milestoneLabel } from './deadline-event';
+import { DEADLINE_COLUMN_WIDTH_MAX, DEADLINE_COLUMN_WIDTH_MIN } from '@/lib/validations/services-preferences';
+import { DeadlineEventPanel, milestoneLabel } from './deadline-event';
 
 export const DEADLINE_TABLE_COLUMNS = [
   'dueDate',
@@ -158,6 +159,11 @@ function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpda
   const dialogRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: 16, top: 16 });
 
+  const close = () => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
   useEffect(() => {
     if (!open || !triggerRef.current) return;
     setPosition(actionDialogPosition(triggerRef.current));
@@ -165,28 +171,18 @@ function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpda
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
-      setOpen(false);
-      triggerRef.current?.focus();
-    };
-    const handleOutside = (event: MouseEvent) => {
-      if (!dialogRef.current?.contains(event.target as Node) && !triggerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
+      close();
     };
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleOutside);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleOutside);
     };
   }, [open]);
 
   const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       event.stopPropagation();
-      setOpen(false);
-      triggerRef.current?.focus();
+      close();
       return;
     }
     if (event.key !== 'Tab' || !dialogRef.current) return;
@@ -209,10 +205,19 @@ function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpda
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
       {open ? (
-        <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Deadline actions" className="fixed z-30 w-[min(22.5rem,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-elevated p-2 shadow-elevation-2" style={{ left: position.left, top: position.top }} onKeyDown={handleDialogKeyDown}>
-          <DeadlineEvent occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />
-          {!canEdit ? <p className="px-2 py-2 text-xs text-text-muted">Read-only access</p> : null}
-        </div>
+        <>
+          <div
+            data-testid="deadline-actions-backdrop"
+            aria-hidden="true"
+            className="fixed inset-0 z-20 bg-transparent"
+            onMouseDown={(event) => { event.preventDefault(); event.stopPropagation(); close(); }}
+            onClick={(event) => { event.preventDefault(); event.stopPropagation(); }}
+          />
+          <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Deadline actions" className="fixed z-30 w-[min(22.5rem,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-elevated p-4 shadow-elevation-2" style={{ left: position.left, top: position.top }} onKeyDown={handleDialogKeyDown}>
+            <DeadlineEventPanel occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} onClose={close} />
+            {!canEdit ? <p className="px-2 py-2 text-xs text-text-muted">Read-only access</p> : null}
+          </div>
+        </>
       ) : null}
     </div>
   );
@@ -288,26 +293,41 @@ export function DeadlineTable({
   onResetOverride,
 }: DeadlineTableProps) {
   const visibleColumns = useMemo(() => columnOrder.filter((column) => columnVisibility[column]), [columnOrder, columnVisibility]);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => {
+    resizeCleanupRef.current?.();
+  }, []);
+
+  const clampColumnWidth = (width: number) => Math.min(DEADLINE_COLUMN_WIDTH_MAX, Math.max(DEADLINE_COLUMN_WIDTH_MIN, Math.round(width)));
   const startResize = (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    resizeCleanupRef.current?.();
     const startX = event.clientX;
-    const initial = columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId];
+    const initial = clampColumnWidth(columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId]);
     let latestWidth = initial;
     const pointerMove = (moveEvent: PointerEvent) => {
-      latestWidth = Math.max(96, initial + moveEvent.clientX - startX);
+      latestWidth = clampColumnWidth(initial + moveEvent.clientX - startX);
       onColumnWidthChange?.(columnId, latestWidth);
     };
-    const pointerUp = () => {
+    const cleanup = () => {
       window.removeEventListener('pointermove', pointerMove);
-      onColumnResizeEnd?.(columnId, latestWidth);
       window.removeEventListener('pointerup', pointerUp);
+      window.removeEventListener('pointercancel', pointerCancel);
+      if (resizeCleanupRef.current === cleanup) resizeCleanupRef.current = null;
     };
+    const pointerUp = () => {
+      cleanup();
+      onColumnResizeEnd?.(columnId, latestWidth);
+    };
+    const pointerCancel = () => cleanup();
+    resizeCleanupRef.current = cleanup;
     window.addEventListener('pointermove', pointerMove);
-    window.addEventListener('pointerup', pointerUp, { once: true });
+    window.addEventListener('pointerup', pointerUp);
+    window.addEventListener('pointercancel', pointerCancel);
   };
   const resizeColumnByKeyboard = (columnId: DeadlineTableColumnId, delta: number) => {
-    const initial = columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId];
-    const next = Math.max(96, initial + delta);
+    const initial = clampColumnWidth(columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId]);
+    const next = clampColumnWidth(initial + delta);
     onColumnWidthChange?.(columnId, next);
     onColumnResizeEnd?.(columnId, next);
   };

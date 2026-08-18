@@ -252,10 +252,26 @@ describe('Task 12 review remediations', () => {
 
   it('shows actionable company-id and due-range deviation badges', () => {
     navigation.searchParams = new URLSearchParams('companies=22222222-2222-4222-8222-222222222222&from=2026-09-01&to=2026-09-30');
-    render(<DeadlineWorkspace />);
+    const view = render(<DeadlineWorkspace />);
 
     expect(screen.getByRole('button', { name: /Remove Companies:/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /Remove Due:/ })).toBeVisible();
+
+    const today = currentDateInSingapore();
+    const defaultTo = addCalendarDays(today, 30);
+    fireEvent.click(screen.getByRole('button', { name: /Remove Due:/ }));
+    expect(navigation.replace).toHaveBeenLastCalledWith(
+      expect.stringContaining(`from=${today}`),
+      { scroll: false },
+    );
+    expect(navigation.replace).toHaveBeenLastCalledWith(
+      expect.stringContaining(`to=${defaultTo}`),
+      { scroll: false },
+    );
+
+    navigation.searchParams = new URLSearchParams(`from=${today}&to=${defaultTo}`);
+    view.rerender(<DeadlineWorkspace />);
+    expect(screen.queryByRole('button', { name: /Remove Due:/ })).not.toBeInTheDocument();
   });
 
   it('exposes a saved table column chooser', () => {

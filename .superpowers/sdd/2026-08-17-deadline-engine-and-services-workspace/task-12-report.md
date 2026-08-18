@@ -1,6 +1,6 @@
 # Task 12 report — deadline table/calendar views and preferences
 
-Status: implementation-complete / pending rereview
+Status: implementation-complete / pending final rereview
 
 ## Scope delivered
 
@@ -92,6 +92,27 @@ The final rereview remains pending. The focused remediation suite (29 tests),
 Chromium browser fixture (2 tests), exact compatibility selection (110 tests),
 TypeScript check, scoped ESLint (`--max-warnings 0`, zero warnings), and diff
 check are the bounded evidence for this handoff.
+
+### Second rereview remediation — pending final rereview
+
+- Shared event details/actions now live in `DeadlineEventPanel`, which has no
+  trigger or dialog semantics. Calendar events wrap it in one non-modal
+  disclosure dialog; table Actions render it directly in one modal dialog with
+  a fixed backdrop that intercepts background activation, Escape/outside
+  dismissal, focus return, and Tab/Shift+Tab containment.
+- Due-range badges compare the effective table range with the Singapore
+  semantic default. The default has no badge, and removal writes the default
+  range explicitly so clearing a custom range is durable without a
+  canonicalization/re-add loop.
+- Live pointer and keyboard resizing share the saved 96–800px bounds; pointer
+  cancel, pointer release, and component unmount all remove global listeners.
+
+The second-rereview corrections were covered by the exact focused selection
+(6 files / 29 tests), including one-dialog/backdrop activation, default-range
+badge clearing, pointer cancellation, keyboard upper-bound, and unmount cleanup
+assertions. The exact 12-file compatibility selection (110 tests), Chromium
+fixture (2 tests), TypeScript check, and scoped zero-warning ESLint all pass.
+Final rereview remains pending.
 
 No repository-wide suite, baseline/full build, full lint, live database, or
 migration gate was run; those remain deferred to the integrated Plan 2 gate.

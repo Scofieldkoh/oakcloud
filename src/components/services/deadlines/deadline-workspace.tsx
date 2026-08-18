@@ -446,8 +446,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   if (urlState.statuses.length > 0) activeBadges.push({ key: 'statuses', label: `Status: ${urlState.statuses.map(formatBadgeValue).join(', ')}`, onRemove: () => updateInlineFilters({ status: '' }) });
   if (urlState.origin) activeBadges.push({ key: 'origin', label: `Source: ${formatBadgeValue(urlState.origin)}`, onRemove: () => updateInlineFilters({ origin: '' }) });
   if (urlState.companies.length > 0) activeBadges.push({ key: 'companies', label: `Companies: ${urlState.companies.length} selected`, onRemove: () => replaceUrl({ companies: undefined, page: '1' }) });
-  const hasExplicitDueRange = urlState.view === 'TABLE' && (paramsForRange.rawFrom !== null || paramsForRange.rawTo !== null);
-  if (hasExplicitDueRange) activeBadges.push({ key: 'dueRange', label: `Due: ${urlState.from} – ${urlState.to}`, onRemove: () => replaceUrl({ from: undefined, to: undefined, page: '1' }) });
+  const defaultTableRange = currentRange(currentDateInSingapore());
+  const hasDueRangeDeviation = urlState.view === 'TABLE' && (urlState.from !== defaultTableRange.from || urlState.to !== defaultTableRange.to);
+  if (hasDueRangeDeviation) activeBadges.push({ key: 'dueRange', label: `Due: ${urlState.from} – ${urlState.to}`, onRemove: () => replaceUrl({ from: defaultTableRange.from, to: defaultTableRange.to, page: '1' }) });
 
   const filtered = activeBadges.length > 0 || urlState.from !== currentDateInSingapore() || urlState.openOnly || urlState.companies.length > 0;
   const total = deadlines.data?.mode === 'TABLE' ? deadlines.data.total : 0;

@@ -191,7 +191,7 @@ describe('DeadlineCalendar', () => {
   it('reports live column resize and persists the final width on pointer release', () => {
     const onLiveResize = vi.fn();
     const onResizeEnd = vi.fn();
-    render(
+    const { unmount } = render(
       <DeadlineTable
         items={[occurrence]}
         page={1}
@@ -214,6 +214,39 @@ describe('DeadlineCalendar', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
     expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 166);
     expect(onResizeEnd).toHaveBeenLastCalledWith('dueDate', 166);
+
+    onLiveResize.mockClear();
+    onResizeEnd.mockClear();
+    const resizeHandle = screen.getByRole('button', { name: 'Resize Operative due date column' });
+    fireEvent.pointerDown(resizeHandle, { clientX: 100 });
+    fireEvent.pointerMove(window, { clientX: 1_000 });
+    expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 800);
+    fireEvent.pointerCancel(window);
+    expect(onResizeEnd).not.toHaveBeenCalled();
+    fireEvent.pointerMove(window, { clientX: 1_200 });
+    expect(onLiveResize).toHaveBeenCalledTimes(1);
+
+    unmount();
+    const boundedLiveResize = vi.fn();
+    const boundedResizeEnd = vi.fn();
+    render(
+      <DeadlineTable
+        items={[occurrence]}
+        columnWidths={{ dueDate: 800 }}
+        onColumnWidthChange={boundedLiveResize}
+        onColumnResizeEnd={boundedResizeEnd}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
+    expect(boundedLiveResize).toHaveBeenLastCalledWith('dueDate', 800);
+    expect(boundedResizeEnd).toHaveBeenLastCalledWith('dueDate', 800);
+
+    const unmountLiveResize = vi.fn();
+    const activeView = render(<DeadlineTable items={[occurrence]} onColumnWidthChange={unmountLiveResize} />);
+    fireEvent.pointerDown(within(activeView.container).getByRole('button', { name: 'Resize Operative due date column' }), { clientX: 100 });
+    activeView.unmount();
+    fireEvent.pointerMove(window, { clientX: 300 });
+    expect(unmountLiveResize).not.toHaveBeenCalled();
   });
 
   it('disables the next page control for an empty result set', () => {
@@ -235,13 +268,31 @@ describe('DeadlineCalendar', () => {
     expect(eventTrigger).toHaveFocus();
 
     unmount();
-    render(<DeadlineTable items={[occurrence]} page={1} total={1} totalPages={1} limit={20} canEdit onUpdate={vi.fn()} onPageChange={vi.fn()} onLimitChange={vi.fn()} />);
+    let backgroundActivations = 0;
+    render(
+      <>
+        <button type="button" onClick={() => { backgroundActivations += 1; }}>Background action</button>
+        <DeadlineTable items={[occurrence]} page={1} total={1} totalPages={1} limit={20} canEdit onUpdate={vi.fn()} onPageChange={vi.fn()} onLimitChange={vi.fn()} />
+      </>,
+    );
     const actionTrigger = screen.getAllByRole('button', { name: /Actions for OACS Annual Return/ })[0]!;
     fireEvent.click(actionTrigger);
     const actionDialog = screen.getByRole('dialog', { name: 'Deadline actions' });
     expect(actionDialog).toBeVisible();
-    expect(within(actionDialog).getByRole('button', { name: /^OACS Annual Return$/ })).toHaveFocus();
-    fireEvent.keyDown(actionDialog, { key: 'Escape' });
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(within(actionDialog).getByText('Oaktree Accounting & Corporate Solution Pte. Ltd.')).toBeVisible();
+    expect(within(actionDialog).getByRole('button', { name: 'Close deadline details' })).toHaveFocus();
+    const backdrop = screen.getByTestId('deadline-actions-backdrop');
+    fireEvent.mouseDown(backdrop);
+    fireEvent.click(backdrop);
+    expect(backgroundActivations).toBe(0);
+    expect(screen.queryByRole('dialog', { name: 'Deadline actions' })).not.toBeInTheDocument();
+    expect(actionTrigger).toHaveFocus();
+
+    fireEvent.click(actionTrigger);
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    const reopenedDialog = screen.getByRole('dialog', { name: 'Deadline actions' });
+    fireEvent.keyDown(reopenedDialog, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Deadline actions' })).not.toBeInTheDocument();
     expect(actionTrigger).toHaveFocus();
     expect(screen.getByRole('combobox')).toHaveClass('min-h-11');
@@ -253,10 +304,8 @@ describe('DeadlineCalendar', () => {
     render(<DeadlineTable items={[occurrence]} page={1} total={1} totalPages={1} limit={20} canEdit onUpdate={vi.fn()} onPageChange={vi.fn()} />);
     fireEvent.click(screen.getAllByRole('button', { name: /Actions for OACS Annual Return/ })[0]!);
     const actionDialog = screen.getByRole('dialog', { name: 'Deadline actions' });
-    fireEvent.click(within(actionDialog).getByRole('button', { name: /^OACS Annual Return$/ }));
-
-    const details = screen.getByRole('dialog', { name: /OACS deadline details/i });
-    expect(details).not.toHaveAttribute('aria-modal');
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(actionDialog).toHaveAttribute('aria-modal', 'true');
     const focusables = within(actionDialog).getAllByRole('button');
     const first = screen.getByRole('button', { name: 'Close deadline details' });
     const last = focusables[focusables.length - 1]!;
