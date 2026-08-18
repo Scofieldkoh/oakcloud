@@ -2,7 +2,7 @@
 
 Status: final-review-complete / PASS
 
-Implementation commits: `58bb422`, `634106e`
+Implementation commits: `58bb422`, `634106e`, `864868b`
 
 ## Scope delivered
 
@@ -20,7 +20,8 @@ Implementation commits: `58bb422`, `634106e`
 - RED: rereview boundary tests failed for archived-only family facets/page-local error fallback, delayed resize preference snapshots, real combobox/listbox semantics and touch targets, 200-page-size parsing, undersized column controls, and typed family-route 404 handling.
 - GREEN: rereview correction suite — 13 files / 66 tests passed.
 - RED/GREEN: final-review accessibility tests failed for the selected combobox label target and visibility-label hit area, then passed after retaining the selected combobox state and stretching the labels.
-- GREEN: final-review narrow component suite — 4 files / 15 tests passed.
+- RED/GREEN: final accessibility rereview tests failed for Enter-selection focus loss and nested clear composition, then passed with explicit focus transfer and sibling clear controls; unsupported `aria-valuetext` was removed.
+- GREEN: final-review narrow component suite — 4 files / 17 tests passed.
 - Accepted Task9/shared regression suite — 12 files / 113 tests passed.
 - Chromium Services Admin + Company Services suite — 2 files / 4 tests passed.
 - `npm.cmd exec -- tsc --noEmit --pretty false` — pass.
@@ -34,7 +35,7 @@ Implementation commits: `58bb422`, `634106e`
 - Company search includes typed query, page, limit, `hasMore`, and Next/Previous behavior; the Add dialog mounts the shared creator only after a selected accessible company.
 - Preference restore defensively handles unknown columns/invalid widths/version, preserves default columns/actions, restricts page sizes to the roster/API contract, and covers order, visibility, sorting, page size, resize-end persistence, and the cross-action pending-resize race.
 - The real Add Service selector exposes label association, combobox/listbox ownership and active descendant, option selection, named clear action, and 44px mobile controls; the family route preserves typed errors.
-- Selected values retain the labelled combobox target and value text; clear and reselect remain available. Each column-visibility label fills its 44px customization row.
+- Selected values retain the labelled combobox target and value text; Enter selection retains focus, Backspace/Delete and sibling clear return focus to the input, and keyboard reselection remains available. Each column-visibility label fills its 44px customization row.
 - Browser navigation updates request state from URL changes; family text remains semantic and colour-independent.
 
 ## Assumptions and residual risks
