@@ -1,0 +1,135 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+
+const mocks = vi.hoisted(() => ({
+  requireAuth: vi.fn(),
+  requirePermission: vi.fn(),
+  requireServicesWorkspaceEnabled: vi.fn(),
+  getCompanyReadScope: vi.fn(),
+  listDeadlines: vi.fn(),
+  getDeadlineOccurrence: vi.fn(),
+  updateDeadlineOccurrence: vi.fn(),
+  resetDeadlineDateOverride: vi.fn(),
+}));
+
+vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
+vi.mock('@/lib/rbac', () => ({ requirePermission: mocks.requirePermission }));
+vi.mock('@/services/schedule-reconciliation', () => ({ requireServicesWorkspaceEnabled: mocks.requireServicesWorkspaceEnabled }));
+vi.mock('@/lib/api/company-query', () => ({ getCompanyReadScope: mocks.getCompanyReadScope }));
+vi.mock('@/services/deadline', () => ({
+  listDeadlines: mocks.listDeadlines,
+  getDeadlineOccurrence: mocks.getDeadlineOccurrence,
+  updateDeadlineOccurrence: mocks.updateDeadlineOccurrence,
+  resetDeadlineDateOverride: mocks.resetDeadlineDateOverride,
+}));
+
+import { GET as listGET } from '@/app/api/deadlines/route';
+import { GET as detailGET, PATCH as detailPATCH } from '@/app/api/deadlines/[id]/route';
+import { POST as resetPOST } from '@/app/api/deadlines/[id]/reset-date-override/route';
+
+const tenantId = '11111111-1111-4111-8111-111111111111';
+const companyId = '22222222-2222-4222-8222-222222222222';
+const deadlineId = '33333333-3333-4333-8333-333333333333';
+const session = {
+  id: 'user-1',
+  email: 'user@example.com',
+  firstName: 'Test',
+  lastName: 'User',
+  tenantId,
+  isSuperAdmin: false,
+  isWorkspaceAdmin: false,
+  hasAllCompaniesAccess: false,
+  companyIds: [companyId],
+};
+const deadline = {
+  id: deadlineId,
+  tenantId,
+  companyId,
+  status: 'OPEN',
+  updatedAt: '2026-08-10T00:00:00.000Z',
+};
+
+describe('deadline routes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requireAuth.mockResolvedValue(session);
+    mocks.requirePermission.mockResolvedValue(undefined);
+    mocks.requireServicesWorkspaceEnabled.mockResolvedValue(undefined);
+    mocks.getCompanyReadScope.mockReturnValue({ tenantId, options: { companyIds: [companyId] } });
+    mocks.listDeadlines.mockResolvedValue({ mode: 'TABLE', items: [], total: 0, page: 1, limit: 50, totalPages: 0 });
+    mocks.getDeadlineOccurrence.mockResolvedValue(deadline);
+    mocks.updateDeadlineOccurrence.mockResolvedValue(deadline);
+    mocks.resetDeadlineDateOverride.mockResolvedValue(deadline);
+  });
+
+  it('scopes list access to company:read and the derived accessible companies', async () => {
+    const response = await listGET(new NextRequest(`http://localhost/api/deadlines?from=2026-08-01&to=2026-08-31`));
+
+    expect(response.status).toBe(200);
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'read');
+    expect(mocks.requireServicesWorkspaceEnabled).toHaveBeenCalledWith(tenantId);
+    expect(mocks.getCompanyReadScope).toHaveBeenCalledWith(session);
+    expect(mocks.listDeadlines).toHaveBeenCalledWith(expect.objectContaining({ from: '2026-08-01', to: '2026-08-31' }), {
+      tenantId,
+      companyIds: [companyId],
+    });
+  });
+
+  it('rejects unknown and duplicate query keys before querying', async () => {
+    const response = await listGET(new NextRequest('http://localhost/api/deadlines?from=2026-08-01&to=2026-08-31&unknown=value'));
+    expect(response.status).toBe(400);
+    expect(mocks.listDeadlines).not.toHaveBeenCalled();
+
+    const duplicate = await listGET(new NextRequest('http://localhost/api/deadlines?from=2026-08-01&from=2026-08-02&to=2026-08-31'));
+    expect(duplicate.status).toBe(400);
+    expect(mocks.listDeadlines).not.toHaveBeenCalled();
+  });
+
+  it('loads the occurrence before checking company:update for lifecycle mutation', async () => {
+    const response = await detailPATCH(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expectedUpdatedAt: deadline.updatedAt, status: 'COMPLETED', reason: 'Filed' }),
+      }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getDeadlineOccurrence).toHaveBeenCalledWith(deadlineId, { tenantId, userId: session.id });
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', companyId);
+    expect(mocks.updateDeadlineOccurrence).toHaveBeenCalledWith(deadlineId, expect.objectContaining({ status: 'COMPLETED' }), { tenantId, userId: session.id });
+  });
+
+  it('checks company:update for reset override after loading the occurrence', async () => {
+    const response = await resetPOST(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}/reset-date-override`, {
+        method: 'POST',
+        body: JSON.stringify({ expectedUpdatedAt: deadline.updatedAt, reason: 'Reset after review' }),
+      }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', companyId);
+    expect(mocks.resetDeadlineDateOverride).toHaveBeenCalledWith(deadlineId, expect.objectContaining({ expectedUpdatedAt: deadline.updatedAt }), { tenantId, userId: session.id });
+  });
+
+  it('returns tenant-scoped detail only after company:read', async () => {
+    const response = await detailGET(new NextRequest(`http://localhost/api/deadlines/${deadlineId}`), {
+      params: Promise.resolve({ id: deadlineId }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'read', companyId);
+    expect(mocks.getDeadlineOccurrence).toHaveBeenCalledWith(deadlineId, { tenantId, userId: session.id });
+  });
+
+  it('returns a validation error for an invalid occurrence id', async () => {
+    const response = await detailGET(new NextRequest('http://localhost/api/deadlines/not-a-uuid'), {
+      params: Promise.resolve({ id: 'not-a-uuid' }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.getDeadlineOccurrence).not.toHaveBeenCalled();
+  });
+});
