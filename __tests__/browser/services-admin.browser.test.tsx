@@ -117,6 +117,7 @@ describe('Services administration browser surface', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/api/auth/session')) return json(session);
+      if (url.includes('/api/services/settings')) return json({ workspaceEnabled: true, deadlineWritesEnabled: true });
       if (url.includes('/api/service-catalog?')) return json({ families: [family], total: 1 });
       if (url.includes('/api/template-partials?')) return json({ partials: [] });
       return json({});

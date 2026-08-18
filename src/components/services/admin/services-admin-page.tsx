@@ -2,7 +2,35 @@
 
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
+import { useEffect, useState } from 'react';
 import { ServiceCatalogPanel } from './catalog/service-catalog-panel';
+import { DeadlineRulesPanel } from './deadline-rules-panel';
+import { BusinessCalendarPanel } from './business-calendar-panel';
+
+type ServicesAdminTab = 'catalog' | 'rules' | 'calendar';
+
+const TAB_QUERY = 'tab';
+const TAB_VALUES: ServicesAdminTab[] = ['catalog', 'rules', 'calendar'];
+
+function tabFromLocation(): ServicesAdminTab {
+  if (typeof window === 'undefined') return 'catalog';
+  const value = new URLSearchParams(window.location.search).get(TAB_QUERY);
+  if (value === 'service-catalog') return 'catalog';
+  if (value === 'deadline-rules') return 'rules';
+  if (value === 'business-calendar') return 'calendar';
+  return TAB_VALUES.includes(value as ServicesAdminTab)
+    ? (value as ServicesAdminTab)
+    : 'catalog';
+}
+
+function tabId(tab: ServicesAdminTab) {
+  return tab === 'catalog' ? 'service-catalog-tab' : `${tab === 'rules' ? 'deadline-rules' : 'business-calendar'}-tab`;
+}
+
+function panelId(tab: ServicesAdminTab) {
+  return tab === 'catalog' ? 'service-catalog-panel' : `${tab === 'rules' ? 'deadline-rules' : 'business-calendar'}-panel`;
+}
 
 export function ServicesAdminPage() {
   const { data: session, isLoading } = useSession();
@@ -13,6 +41,22 @@ export function ServicesAdminPage() {
   const canAdminister = Boolean(
     session && (session.isSuperAdmin || session.isWorkspaceAdmin),
   );
+  const settings = useServicesWorkspaceSettings();
+  const [activeTab, setActiveTab] = useState<ServicesAdminTab>(tabFromLocation);
+
+  useEffect(() => {
+    const handlePopState = () => setActiveTab(tabFromLocation());
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const selectTab = (tab: ServicesAdminTab) => {
+    setActiveTab(tab);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set(TAB_QUERY, tab);
+    window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
 
   if (isLoading) {
     return (
@@ -23,6 +67,41 @@ export function ServicesAdminPage() {
       >
         Loading services administration…
       </div>
+    );
+  }
+
+  if (settings.isLoading) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="p-4 text-sm text-text-secondary sm:p-6"
+      >
+        Loading Services administration settings…
+      </div>
+    );
+  }
+
+  if (settings.error) {
+    return (
+      <main className="p-4 sm:p-6">
+        <div role="alert" className="space-y-3 rounded-lg border border-status-error/30 bg-status-error/5 p-6 text-sm text-status-error">
+          <p>Unable to load Services administration settings.</p>
+          <button type="button" className="min-h-[44px] rounded-lg border border-status-error/40 px-4 text-sm font-medium text-status-error focus:outline-none focus-visible:ring-2 focus-visible:ring-status-error/30" onClick={() => void settings.refetch()}>
+            Retry
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (settings.data?.workspaceEnabled !== true) {
+    return (
+      <main className="p-4 sm:p-6">
+        <div role="status" className="rounded-lg border border-border-primary bg-background-secondary p-6 text-sm text-text-secondary">
+          Services administration is unavailable for this workspace.
+        </div>
+      </main>
     );
   }
 
@@ -69,7 +148,7 @@ export function ServicesAdminPage() {
           Services administration
         </h1>
         <p className="text-sm text-text-secondary">
-          Manage service offerings and their presentation.
+          Manage service offerings, deadline rules, and business calendars.
         </p>
       </header>
 
@@ -78,32 +157,68 @@ export function ServicesAdminPage() {
         aria-label="Services administration sections"
         className="flex flex-wrap gap-x-2 border-b border-border-primary"
       >
-        <button
-          type="button"
-          role="tab"
-          id="service-catalog-tab"
-          aria-selected="true"
-          aria-controls="service-catalog-panel"
-          tabIndex={0}
-          className="min-h-11 border-b-2 border-oak-primary px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8"
-        >
-          Service catalog
-        </button>
+        {([
+          ['catalog', 'Service catalog'],
+          ['rules', 'Deadline rules'],
+          ['calendar', 'Business calendar'],
+        ] as const).map(([tab, label]) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            id={tabId(tab)}
+            aria-selected={activeTab === tab}
+            aria-controls={panelId(tab)}
+            tabIndex={activeTab === tab ? 0 : -1}
+            onClick={() => selectTab(tab)}
+            className={`min-h-11 border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8 ${
+              activeTab === tab
+                ? 'border-oak-primary text-text-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <section
-        id="service-catalog-panel"
-        role="tabpanel"
-        aria-labelledby="service-catalog-tab"
-        className="pt-1"
-      >
-        <ServiceCatalogPanel
-          workspaceId={workspaceId}
-          canCreate
-          canUpdate
-          canDelete
-        />
-      </section>
+      {activeTab === 'catalog' ? (
+        <section
+          id="service-catalog-panel"
+          role="tabpanel"
+          aria-labelledby="service-catalog-tab"
+          className="pt-1"
+        >
+          <ServiceCatalogPanel
+            workspaceId={workspaceId}
+            canCreate
+            canUpdate
+            canDelete
+          />
+        </section>
+      ) : null}
+
+      {activeTab === 'rules' ? (
+        <section
+          id="deadline-rules-panel"
+          role="tabpanel"
+          aria-labelledby="deadline-rules-tab"
+          className="pt-1"
+        >
+          <DeadlineRulesPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} />
+        </section>
+      ) : null}
+
+      {activeTab === 'calendar' ? (
+        <section
+          id="business-calendar-panel"
+          role="tabpanel"
+          aria-labelledby="business-calendar-tab"
+          className="pt-1"
+        >
+          <BusinessCalendarPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} />
+        </section>
+      ) : null}
     </main>
   );
 }

@@ -11,7 +11,15 @@ import type {
   ServiceVariantFeeTemplateInput,
   UpdateServiceVariantInput,
 } from '@/lib/validations/service-catalog';
-import type { ServiceVariantDto } from '@/services/service-catalog/types';
+import type {
+  ServiceVariantRuleAssociationInput,
+} from '@/lib/validations/deadline-rule';
+import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
+import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
+import type {
+  ServiceVariantDeadlineRuleDto,
+  ServiceVariantDto,
+} from '@/services/service-catalog/types';
 
 export interface ServicePartialOption {
   id: string;
@@ -29,6 +37,65 @@ interface ServiceVariantFormProps {
     input: CreateServiceVariantInput | UpdateServiceVariantInput,
   ) => Promise<void>;
   isSubmitting?: boolean;
+  availableDeadlineRules?: Array<{ id: string; code: string; name: string }>;
+}
+
+type ParameterDefaultType = 'STRING' | 'INTEGER' | 'DECIMAL' | 'BOOLEAN' | 'DATE' | 'ENUM';
+
+type DeadlineRuleFormRow = ServiceVariantRuleAssociationInput & {
+  parameterTypes: Record<string, ParameterDefaultType>;
+};
+
+function inferParameterType(value: unknown): ParameterDefaultType {
+  if (typeof value === 'boolean') return 'BOOLEAN';
+  if (typeof value === 'number') return Number.isInteger(value) ? 'INTEGER' : 'DECIMAL';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return 'DATE';
+  return 'STRING';
+}
+
+function toScheduleEntries(value: unknown): ScheduleEntryInput[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is ScheduleEntryInput => (
+    typeof entry === 'object'
+    && entry !== null
+    && typeof (entry as Record<string, unknown>).key === 'string'
+    && typeof (entry as Record<string, unknown>).label === 'string'
+    && typeof (entry as Record<string, unknown>).expression === 'object'
+    && (entry as Record<string, unknown>).expression !== null
+    && typeof (entry as Record<string, unknown>).businessDayAdjustment === 'string'
+  ));
+}
+
+function ruleRowFromDto(rule: ServiceVariantDeadlineRuleDto): DeadlineRuleFormRow {
+  const parameterDefaults = rule.parameterDefaults ?? {};
+  return {
+    ruleId: rule.ruleId,
+    enabledByDefault: rule.enabledByDefault,
+    parameterDefaults,
+    scheduleDefaults: toScheduleEntries(rule.scheduleDefaults),
+    displayOrder: rule.displayOrder,
+    parameterTypes: Object.fromEntries(
+      Object.entries(parameterDefaults).map(([key, value]) => [key, inferParameterType(value)]),
+    ),
+  };
+}
+
+function emptyRuleRow(displayOrder: number): DeadlineRuleFormRow {
+  return {
+    ruleId: '',
+    enabledByDefault: true,
+    parameterDefaults: {},
+    scheduleDefaults: [],
+    displayOrder,
+    parameterTypes: {},
+  };
+}
+
+function parseParameterValue(value: string, type: ParameterDefaultType): unknown {
+  if (type === 'BOOLEAN') return value === 'true';
+  if (type === 'INTEGER') return Number.parseInt(value, 10);
+  if (type === 'DECIMAL') return Number.parseFloat(value);
+  return value;
 }
 
 const CADENCES: Array<{ value: ServiceCadence; label: string }> = [
@@ -68,6 +135,7 @@ export function ServiceVariantForm({
   onCancel,
   onSubmit,
   isSubmitting = false,
+  availableDeadlineRules = [],
 }: ServiceVariantFormProps) {
   const [code, setCode] = useState(initialValue?.code ?? '');
   const [name, setName] = useState(initialValue?.name ?? '');
@@ -92,6 +160,9 @@ export function ServiceVariantForm({
       ...fee,
       defaultAmount: fee.defaultAmount,
     })) ?? [],
+  );
+  const [deadlineRules, setDeadlineRules] = useState<DeadlineRuleFormRow[]>(
+    initialValue?.deadlineRules?.map(ruleRowFromDto) ?? [],
   );
 
   const updateFee = (
@@ -129,6 +200,88 @@ export function ServiceVariantForm({
     );
   };
 
+  const updateDeadlineRule = (
+    index: number,
+    values: Partial<DeadlineRuleFormRow>,
+  ) => {
+    setDeadlineRules((current) => current.map((rule, ruleIndex) => (
+      ruleIndex === index ? { ...rule, ...values } : rule
+    )));
+  };
+
+  const moveDeadlineRule = (index: number, direction: -1 | 1) => {
+    setDeadlineRules((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next.map((rule, displayOrderValue) => ({
+        ...rule,
+        displayOrder: displayOrderValue,
+      }));
+    });
+  };
+
+  const removeDeadlineRule = (index: number) => {
+    setDeadlineRules((current) => current
+      .filter((_, ruleIndex) => ruleIndex !== index)
+      .map((rule, displayOrderValue) => ({ ...rule, displayOrder: displayOrderValue })));
+  };
+
+  const addParameterDefault = (ruleIndex: number) => {
+    const row = deadlineRules[ruleIndex];
+    if (!row) return;
+    let key = 'parameter';
+    let suffix = 2;
+    while (Object.prototype.hasOwnProperty.call(row.parameterDefaults, key)) {
+      key = `parameter${suffix}`;
+      suffix += 1;
+    }
+    updateDeadlineRule(ruleIndex, {
+      parameterDefaults: { ...row.parameterDefaults, [key]: '' },
+      parameterTypes: { ...row.parameterTypes, [key]: 'STRING' },
+    });
+  };
+
+  const updateParameterDefault = (
+    ruleIndex: number,
+    key: string,
+    value: string,
+    type: ParameterDefaultType,
+  ) => {
+    const row = deadlineRules[ruleIndex];
+    if (!row) return;
+    updateDeadlineRule(ruleIndex, {
+      parameterDefaults: {
+        ...row.parameterDefaults,
+        [key]: parseParameterValue(value, type),
+      },
+      parameterTypes: { ...row.parameterTypes, [key]: type },
+    });
+  };
+
+  const renameParameterDefault = (ruleIndex: number, oldKey: string, newKey: string) => {
+    const row = deadlineRules[ruleIndex];
+    if (!row || !newKey || oldKey === newKey || Object.prototype.hasOwnProperty.call(row.parameterDefaults, newKey)) return;
+    const parameterDefaults = { ...row.parameterDefaults };
+    const parameterTypes = { ...row.parameterTypes };
+    parameterDefaults[newKey] = parameterDefaults[oldKey];
+    parameterTypes[newKey] = parameterTypes[oldKey] ?? inferParameterType(parameterDefaults[oldKey]);
+    delete parameterDefaults[oldKey];
+    delete parameterTypes[oldKey];
+    updateDeadlineRule(ruleIndex, { parameterDefaults, parameterTypes });
+  };
+
+  const removeParameterDefault = (ruleIndex: number, key: string) => {
+    const row = deadlineRules[ruleIndex];
+    if (!row) return;
+    const parameterDefaults = { ...row.parameterDefaults };
+    const parameterTypes = { ...row.parameterTypes };
+    delete parameterDefaults[key];
+    delete parameterTypes[key];
+    updateDeadlineRule(ruleIndex, { parameterDefaults, parameterTypes });
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit({
@@ -149,6 +302,10 @@ export function ServiceVariantForm({
           fee.billingFrequency === 'CUSTOM'
             ? fee.customFrequencyLabel
             : null,
+        displayOrder: index,
+      })),
+      deadlineRules: deadlineRules.map(({ parameterTypes: _parameterTypes, ...rule }, index) => ({
+        ...rule,
         displayOrder: index,
       })),
     });
@@ -385,6 +542,132 @@ export function ServiceVariantForm({
                     >
                       <Trash2 className="h-3.5 w-3.5 text-status-error" />
                     </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="border-t border-border-primary pt-4" aria-labelledby="deadline-rules-heading">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 id="deadline-rules-heading" className="text-sm font-semibold text-text-primary">
+                Deadline rules
+              </h3>
+              <p className="text-xs text-text-muted">
+                Configure associations, typed parameter defaults, and repeatable schedule entries (0–31 per rule).
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="min-h-[44px]"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setDeadlineRules((current) => [...current, emptyRuleRow(current.length)])}
+              disabled={deadlineRules.length >= 100}
+            >
+              Add deadline rule
+            </Button>
+          </div>
+
+          {deadlineRules.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border-primary p-4 text-center text-xs text-text-muted">
+              No deadline rules associated with this variant.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {deadlineRules.map((rule, index) => (
+                <div
+                  key={`${rule.ruleId || 'new-rule'}-${index}`}
+                  className="space-y-4 rounded-lg border border-border-primary bg-background-primary p-3"
+                >
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
+                    <label className="block text-xs font-medium text-text-secondary">
+                      Deadline rule
+                      {availableDeadlineRules.length > 0 ? (
+                        <select
+                          aria-label={`Deadline rule ${index + 1}`}
+                          value={rule.ruleId}
+                          onChange={(event) => updateDeadlineRule(index, { ruleId: event.target.value })}
+                          className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                          required
+                        >
+                          <option value="">Select a rule</option>
+                          {availableDeadlineRules.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.code} · {option.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <FormInput
+                          label=""
+                          aria-label={`Deadline rule ${index + 1}`}
+                          value={rule.ruleId}
+                          onChange={(event) => updateDeadlineRule(index, { ruleId: event.target.value })}
+                          placeholder="Rule UUID"
+                          required
+                          className="mt-2 min-h-[44px]"
+                        />
+                      )}
+                    </label>
+                    <label className="flex min-h-[44px] items-center gap-2 text-sm text-text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={rule.enabledByDefault}
+                        onChange={(event) => updateDeadlineRule(index, { enabledByDefault: event.target.checked })}
+                      />
+                      Enabled by default
+                    </label>
+                    <FormInput
+                      label="Display order"
+                      type="number"
+                      min={0}
+                      value={String(rule.displayOrder)}
+                      onChange={(event) => updateDeadlineRule(index, { displayOrder: Number.parseInt(event.target.value, 10) || 0 })}
+                      className="min-h-[44px]"
+                    />
+                  </div>
+
+                  <section aria-labelledby={`deadline-parameters-${index}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h4 id={`deadline-parameters-${index}`} className="text-xs font-semibold text-text-primary">Parameter defaults</h4>
+                        <p className="mt-1 text-xs text-text-muted">Values are sent as typed JSON defaults.</p>
+                      </div>
+                      <Button type="button" size="xs" variant="secondary" className="min-h-[44px]" onClick={() => addParameterDefault(index)}>Add parameter</Button>
+                    </div>
+                    {Object.keys(rule.parameterDefaults).length === 0 ? (
+                      <p className="mt-2 text-xs text-text-muted">No parameter defaults.</p>
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        {Object.entries(rule.parameterDefaults).map(([key, value]) => {
+                          const type = rule.parameterTypes[key] ?? inferParameterType(value);
+                          const stringValue = type === 'BOOLEAN' ? String(value) : String(value ?? '');
+                          return (
+                            <div key={key} className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_140px_minmax(0,1fr)_auto] sm:items-end">
+                              <FormInput label="Parameter key" value={key} onChange={(event) => renameParameterDefault(index, key, event.target.value.trim())} className="min-h-[44px]" />
+                              <label className="block text-xs font-medium text-text-secondary">Type<select aria-label={`Parameter type ${key}`} value={type} onChange={(event) => updateParameterDefault(index, key, stringValue, event.target.value as ParameterDefaultType)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="STRING">Text</option><option value="INTEGER">Integer</option><option value="DECIMAL">Decimal</option><option value="BOOLEAN">Boolean</option><option value="DATE">Date</option><option value="ENUM">Enum</option></select></label>
+                              {type === 'BOOLEAN' ? <label className="block text-xs font-medium text-text-secondary">Value<select aria-label={`Parameter value ${key}`} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="true">True</option><option value="false">False</option></select></label> : <FormInput label="Value" type={type === 'DATE' ? 'date' : type === 'INTEGER' || type === 'DECIMAL' ? 'number' : 'text'} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="min-h-[44px]" />}
+                              <Button type="button" size="xs" variant="ghost" iconOnly className="min-h-[44px] min-w-[44px]" aria-label={`Remove parameter ${key}`} onClick={() => removeParameterDefault(index, key)}><Trash2 className="h-4 w-4 text-status-error" /></Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+
+                  <ScheduleEntryEditor
+                    value={rule.scheduleDefaults}
+                    onChange={(scheduleDefaults) => updateDeadlineRule(index, { scheduleDefaults })}
+                  />
+
+                  <div className="flex flex-wrap justify-end gap-1 border-t border-border-secondary pt-2">
+                    <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" aria-label={`Move deadline rule ${index + 1} up`} disabled={index === 0} onClick={() => moveDeadlineRule(index, -1)}><ArrowUp className="h-3.5 w-3.5" /></Button>
+                    <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" aria-label={`Move deadline rule ${index + 1} down`} disabled={index === deadlineRules.length - 1} onClick={() => moveDeadlineRule(index, 1)}><ArrowDown className="h-3.5 w-3.5" /></Button>
+                    <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" aria-label={`Remove deadline rule ${index + 1}`} onClick={() => removeDeadlineRule(index)}><Trash2 className="h-3.5 w-3.5 text-status-error" /></Button>
                   </div>
                 </div>
               ))}

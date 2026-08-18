@@ -87,6 +87,11 @@ function useCatalogInvalidation(workspaceId: string | undefined) {
       queryClient.invalidateQueries({
         queryKey: serviceCatalogKeys.selectable(workspaceId),
       }),
+      // Client-facing service options include variant deadline-rule
+      // associations and must not retain a pre-edit association set.
+      queryClient.invalidateQueries({
+        queryKey: ['client-service-catalog-options', workspaceId],
+      }),
     ]);
   };
 }
