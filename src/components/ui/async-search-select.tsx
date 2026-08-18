@@ -91,8 +91,10 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectedControlRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const focusTargetRef = useRef<'selected' | 'input' | null>(null);
 
   // Mount check for portal
   useEffect(() => {
@@ -121,6 +123,16 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       setSelectedItem(matchingOption);
     }
   }, [options, selectedItem?.id, value]);
+
+  useEffect(() => {
+    if (focusTargetRef.current === 'selected' && selectedItem) {
+      selectedControlRef.current?.focus();
+      focusTargetRef.current = null;
+    } else if (focusTargetRef.current === 'input' && !selectedItem) {
+      inputRef.current?.focus();
+      focusTargetRef.current = null;
+    }
+  }, [selectedItem]);
 
   // Update position when opening
   useEffect(() => {
@@ -181,6 +193,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
 
   const handleSelect = useCallback(
     (item: T) => {
+      focusTargetRef.current = 'selected';
       setSelectedItem(item);
       onChange(item.id, item);
       setIsOpen(false);
@@ -190,6 +203,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   );
 
   const handleClear = useCallback(() => {
+    focusTargetRef.current = 'input';
     setSelectedItem(null);
     onChange('', null);
     onSearchChange('');
@@ -285,22 +299,10 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       {/* Selected Item Display or Search Input */}
       <div
         ref={containerRef}
-        id={selectedItem ? inputId : undefined}
-        role={selectedItem ? 'combobox' : undefined}
-        aria-labelledby={selectedItem && label ? labelId : undefined}
-        aria-label={selectedItem && !label ? selectedItem.label : undefined}
-        aria-expanded={selectedItem ? false : undefined}
-        aria-controls={selectedItem ? listboxId : undefined}
-        aria-haspopup={selectedItem ? 'listbox' : undefined}
-        aria-readonly={selectedItem ? true : undefined}
-        aria-valuetext={selectedItem ? selectedItem.label : undefined}
-        tabIndex={selectedItem ? 0 : undefined}
-        onKeyDown={selectedItem ? handleSelectedKeyDown : undefined}
         className={cn(
           'w-full flex min-h-11 items-center gap-2 rounded-lg border',
           'bg-background-secondary/30 border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
-          selectedItem && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
           'transition-colors',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary'
@@ -308,7 +310,22 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       >
         {selectedItem ? (
           // Show selected item
-          renderSelected ? renderSelected(selectedItem) : defaultRenderSelected(selectedItem)
+          <div
+            ref={selectedControlRef}
+            id={inputId}
+            role="combobox"
+            aria-labelledby={label ? labelId : undefined}
+            aria-label={label ? undefined : selectedItem.label}
+            aria-expanded="false"
+            aria-controls={listboxId}
+            aria-haspopup="listbox"
+            aria-readonly="true"
+            tabIndex={0}
+            onKeyDown={handleSelectedKeyDown}
+            className="flex min-h-11 min-w-0 flex-1 items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
+          >
+            {renderSelected ? renderSelected(selectedItem) : defaultRenderSelected(selectedItem)}
+          </div>
         ) : (
           // Show search input
           <>

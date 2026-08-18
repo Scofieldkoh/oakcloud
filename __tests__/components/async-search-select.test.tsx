@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
@@ -7,6 +7,27 @@ const options: AsyncSearchSelectOption[] = [
   { id: 'company-1', label: 'Acme Holdings', description: '202600001A' },
   { id: 'company-2', label: 'Beta Services', description: '202600002B' },
 ];
+
+function mockScrollIntoView() {
+  const original = HTMLElement.prototype.scrollIntoView;
+  const spy = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    writable: true,
+    value: spy,
+  });
+  return () => {
+    if (original) {
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+        configurable: true,
+        writable: true,
+        value: original,
+      });
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    }
+  };
+}
 
 describe('AsyncSearchSelect', () => {
   it('exposes labelled combobox and listbox semantics with accessible paging and clear controls', async () => {
@@ -21,6 +42,7 @@ describe('AsyncSearchSelect', () => {
       y: 10,
       toJSON: () => ({}),
     });
+    const restoreScrollIntoView = mockScrollIntoView();
     const onChange = vi.fn();
     const onSearchChange = vi.fn();
 
@@ -73,17 +95,91 @@ describe('AsyncSearchSelect', () => {
       expect(screen.getByRole('button', { name: 'Previous' })).toHaveClass('min-h-11');
       expect(screen.getByRole('button', { name: 'Next' })).toHaveClass('min-h-11');
 
-      fireEvent.click(option);
+      act(() => input.focus());
+      fireEvent.keyDown(input, { key: 'Enter' });
       expect(onChange).toHaveBeenCalledWith('company-1', options[0]);
-      const selectedCombobox = screen.getByRole('combobox', { name: 'Company' });
+      const selectedCombobox = await waitFor(() => screen.getByRole('combobox', { name: 'Company' }));
       expect(selectedCombobox).toHaveAttribute('id', input.id);
       expect(selectedCombobox).toHaveAttribute('aria-expanded', 'false');
       expect(selectedCombobox).toHaveTextContent('Acme Holdings');
+      expect(document.activeElement).toBe(selectedCombobox);
+      expect(selectedCombobox).not.toHaveAttribute('aria-valuetext');
       const clear = screen.getByRole('button', { name: 'Clear Company' });
       expect(clear).toHaveClass('min-h-11', 'min-w-11');
+      expect(selectedCombobox).not.toContainElement(clear);
+      expect(selectedCombobox.parentElement).toContainElement(clear);
       fireEvent.click(clear);
       expect(onChange).toHaveBeenLastCalledWith('', null);
+      expect(document.activeElement).toBe(screen.getByRole('combobox', { name: 'Company' }));
     } finally {
+      restoreScrollIntoView();
+      getBoundingClientRect.mockRestore();
+    }
+  });
+
+  it.each(['Backspace', 'Delete'] as const)('clears with %s and supports keyboard reselection', async (clearKey) => {
+    const getBoundingClientRect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: 10,
+      bottom: 54,
+      left: 20,
+      right: 340,
+      width: 320,
+      height: 44,
+      x: 20,
+      y: 10,
+      toJSON: () => ({}),
+    });
+    const restoreScrollIntoView = mockScrollIntoView();
+    const onChange = vi.fn();
+    const onSearchChange = vi.fn();
+
+    try {
+      function Harness() {
+        const [value, setValue] = useState('');
+        return (
+          <AsyncSearchSelect
+            label="Company"
+            value={value}
+            options={options}
+            isLoading={false}
+            searchQuery=""
+            onSearchChange={onSearchChange}
+            onChange={(id, item) => {
+              onChange(id, item);
+              setValue(id);
+            }}
+          />
+        );
+      }
+
+      render(<Harness />);
+      const input = screen.getByRole('combobox', { name: 'Company' });
+      act(() => input.focus());
+      fireEvent.focus(input);
+      await waitFor(() => screen.getByRole('listbox'));
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      const selectedCombobox = await waitFor(() => screen.getByRole('combobox', { name: 'Company' }));
+      expect(document.activeElement).toBe(selectedCombobox);
+      fireEvent.keyDown(selectedCombobox, { key: clearKey });
+
+      const clearedInput = await waitFor(() => screen.getByRole('combobox', { name: 'Company' }));
+      expect(document.activeElement).toBe(clearedInput);
+      expect(onChange).toHaveBeenLastCalledWith('', null);
+
+      act(() => clearedInput.focus());
+      fireEvent.keyDown(clearedInput, { key: 'ArrowDown' });
+      const reselectionListbox = await waitFor(() => screen.getByRole('listbox'));
+      fireEvent.keyDown(clearedInput, { key: 'ArrowDown' });
+      fireEvent.keyDown(clearedInput, { key: 'Enter' });
+
+      const reselectedCombobox = await waitFor(() => screen.getByRole('combobox', { name: 'Company' }));
+      expect(reselectedCombobox).toHaveTextContent('Beta Services');
+      expect(document.activeElement).toBe(reselectedCombobox);
+      expect(onChange).toHaveBeenLastCalledWith('company-2', options[1]);
+      expect(reselectionListbox).not.toBeInTheDocument();
+    } finally {
+      restoreScrollIntoView();
       getBoundingClientRect.mockRestore();
     }
   });
