@@ -6,6 +6,7 @@ import {
   deadlineKeys,
   deadlineSearchParams,
   normalizeDeadlineSearch,
+  useDeadline,
   useDeadlines,
   useResetDeadlineDateOverride,
   useUpdateDeadlineOccurrence,
@@ -65,6 +66,19 @@ describe('use deadlines hooks', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(queryClient.getQueryCache().findAll({ queryKey: deadlineKeys.list(search) })).toHaveLength(1);
+  });
+
+  it('forwards an AbortSignal through the detail deadline fetch', async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 'deadline-1' }));
+    const { wrapper } = createHarness();
+
+    renderHook(() => useDeadline('deadline-1'), { wrapper });
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/deadlines/deadline-1',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it('invalidates deadlines, roster summaries, and the changed occurrence after update', async () => {

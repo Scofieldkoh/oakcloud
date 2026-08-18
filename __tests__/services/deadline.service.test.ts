@@ -201,6 +201,44 @@ describe('deadline service', () => {
     await expect(getDeadlineOccurrence('deadline-1', actor)).rejects.toMatchObject({ code: ErrorCodes.NOT_FOUND });
   });
 
+  it('returns not found for a mismatched DeadlineRuleVersion tenant', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({
+      ...occurrence,
+      ruleVersion: { tenantId: 'tenant-2' },
+    });
+
+    await expect(getDeadlineOccurrence('deadline-1', actor)).rejects.toMatchObject({ code: ErrorCodes.NOT_FOUND });
+  });
+
+  it('rejects update when a required relation has another tenant without writing or auditing', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({
+      ...occurrence,
+      ruleVersion: { tenantId: 'tenant-2' },
+    });
+
+    await expect(updateDeadlineOccurrence('deadline-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: 'COMPLETED',
+      reason: 'Filed',
+    }, actor)).rejects.toMatchObject({ code: ErrorCodes.NOT_FOUND });
+    expect(prismaMock.deadlineOccurrence.updateMany).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rejects reset when a required relation has another tenant without writing or auditing', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({
+      ...occurrence,
+      cycle: { ...occurrence.cycle, tenantId: 'tenant-2' },
+    });
+
+    await expect(resetDeadlineDateOverride('deadline-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      reason: 'Reset',
+    }, actor)).rejects.toMatchObject({ code: ErrorCodes.NOT_FOUND });
+    expect(prismaMock.deadlineOccurrence.updateMany).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
+  });
+
   it('filters a malformed related tenant from list DTOs defensively', async () => {
     prismaMock.deadlineOccurrence.findMany.mockResolvedValue([
       { ...occurrence, company: { ...occurrence.company, tenantId: 'tenant-2' } },

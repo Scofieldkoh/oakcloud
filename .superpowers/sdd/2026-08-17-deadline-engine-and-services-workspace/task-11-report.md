@@ -7,6 +7,8 @@ DTOs, Singapore date-only timing derivation, lifecycle and override mutations,
 auditing, API routes, and React Query hooks. The correction pass also remediated
 the independent review findings for requested Company filtering, related-row
 tenant integrity, ID-route non-oracle behavior, and readable persisted notes.
+The follow-up rereview passed with 0 Critical / 0 Important / 1 coverage Minor;
+the remaining coverage item was closed by the regression tests recorded below.
 
 ## TDD evidence
 
@@ -37,13 +39,13 @@ Company intersection, relation-tenant guards, notes/audit state, and safe
 
 ### GREEN
 
-Final focused Task 11 correction suite:
+Final focused Task 11 correction and rereview suite:
 
 ```text
-45 tests passed across 4 files
-__tests__/services/deadline.service.test.ts — 28
+49 tests passed across 4 files
+__tests__/services/deadline.service.test.ts — 31
 __tests__/api/deadline-routes.test.ts — 11
-__tests__/hooks/use-deadlines.test.ts — 4
+__tests__/hooks/use-deadlines.test.ts — 5
 __tests__/lib/deadline.validation.test.ts — 2
 ```
 
@@ -79,6 +81,10 @@ migration application was run; those remain deferred to the integrated gate.
 - Detail and mutation reads use the same tenant-integrity relation predicate;
   malformed Company, ClientService, variant, family, Cycle, or RuleVersion
   relationships return `NOT_FOUND`, including for Super Admin actors.
+- Regression coverage explicitly rejects a mismatched RuleVersion tenant at
+  detail, update, and reset entry points without an occurrence write or audit;
+  the detail React Query hook is mounted and verified to forward its
+  `AbortSignal`.
 - Calendar mode fetches one row beyond the 5,000 response cap, omits page
   semantics, and emits `truncated` plus a warning only when more than 5,000
   safe rows exist. Table mode uses bounded skip/take, deterministic sorting,
@@ -121,6 +127,5 @@ migration application was run; those remain deferred to the integrated gate.
   would require the normal release ordering (migration before writes).
 - Calendar truncation uses a `take: 5001` probe so exactly 5,000 results are
   distinguishable from a larger result set.
-- The progress ledger remains `pending` until an independent fresh rereview
-  confirms this correction pass; this report records implementation evidence,
-  not a rereview verdict.
+- The independent rereview result is PASS with 0 Critical / 0 Important / 1
+  coverage Minor; the coverage Minor is closed by the regression tests above.
