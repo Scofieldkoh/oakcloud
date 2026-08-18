@@ -23,6 +23,7 @@ import {
   type ServiceRosterSortBy,
 } from './service-roster-table';
 import { ClientServiceEditor } from '@/components/companies/company-detail/client-service-editor';
+import { ManualCycleDialog } from '@/components/services/deadlines/manual-cycle-dialog';
 
 const TABLE_PREFERENCE_KEY = 'services.roster.table.v1';
 const STATUS_VALUES = ['ACTIVE', 'PAUSED', 'ENDED'] as const;
@@ -219,6 +220,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
   };
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceRosterItem | null>(null);
+  const [triggering, setTriggering] = useState<ServiceRosterItem | null>(null);
 
   const rosterSearch: ServiceRosterSearchInput = {
     query: query.trim() || undefined,
@@ -500,6 +502,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           onColumnWidthChange={updateColumns}
           onColumnResizeEnd={finishColumnResize}
           onEdit={setEditing}
+          onTrigger={setTriggering}
         />
       ) : null}
 
@@ -521,6 +524,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
 
       <AddClientServiceDialog isOpen={addOpen} onClose={() => setAddOpen(false)} onCreated={() => roster.refetch?.()} />
       {editing ? <ServiceEditorLauncher item={editing} onClose={() => { setEditing(null); roster.refetch?.(); }} /> : null}
+      {triggering ? <ManualCycleDialog clientServiceId={triggering.id} isOpen canApply={canEdit} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); roster.refetch?.(); }} /> : null}
     </section>
   );
 }

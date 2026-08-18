@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BriefcaseBusiness, Pencil, Plus, Search, X } from 'lucide-react';
+import { BriefcaseBusiness, History, Pencil, Plus, Search, X } from 'lucide-react';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useClientServices, useRetryServiceAgreementActivation } from '@/hooks/u
 import type { ClientServiceDto } from '@/services/client-service';
 import { ClientServiceEditor } from './client-service-editor';
 import { ClientServiceCreator } from './client-service-creator';
+import { ManualCycleDialog } from '@/components/services/deadlines/manual-cycle-dialog';
 
 const label = (value: string) => value.toLowerCase().replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase());
 const currencySymbols: Record<string, string> = { SGD: 'S$', USD: 'US$', EUR: '\u20ac', GBP: '\u00a3', JPY: '\u00a5', HKD: 'HK$', AUD: 'A$', MYR: 'RM' };
@@ -31,9 +32,10 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
   const [limit, setLimit] = useState(20);
   const [retryError, setRetryError] = useState('');
   const [editing, setEditing] = useState<ClientServiceDto | null>(null);
+  const [triggering, setTriggering] = useState<ClientServiceDto | null>(null);
   const [creating, setCreating] = useState(false);
   const [createdService, setCreatedService] = useState<ClientServiceDto | null>(null);
-  const { data, isLoading, error } = useClientServices(companyId, { query: deferredQuery || undefined, status, page, limit });
+  const { data, isLoading, error, refetch } = useClientServices(companyId, { query: deferredQuery || undefined, status, page, limit });
   const retryActivation = useRetryServiceAgreementActivation();
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / limit));
   const filtered = Boolean(query.trim()) || Boolean(status);
@@ -97,11 +99,12 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
           <Link className="mt-2 inline-flex text-sm text-oak-light hover:underline" href={service.agreement.href}>
             {service.agreement.title || 'Service Agreement'}
           </Link>
-        ) : null}</div>{canEdit ? <Button size="xs" variant="secondary" leftIcon={<Pencil />} onClick={() => setEditing(service)} aria-label="Edit service">Edit</Button> : null}</article>;
+        ) : null}</div>{canEdit ? <div className="flex flex-wrap gap-2"><Button size="xs" variant="secondary" className="min-h-11" leftIcon={<History />} onClick={() => setTriggering(service)} aria-label={`Trigger historical cycle for ${service.serviceName}`}>Trigger cycle</Button><Button size="xs" variant="secondary" className="min-h-11" leftIcon={<Pencil />} onClick={() => setEditing(service)} aria-label="Edit service">Edit</Button></div> : null}</article>;
       })}</div>}
       {(data?.total ?? 0) > limit ? <div className="border-t border-border-primary"><Pagination page={page} totalPages={totalPages} total={data?.total ?? 0} limit={limit} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} /></div> : null}
     </CompanyAccentSection>
     {editing ? <ClientServiceEditor key={editing.id} service={editing} isOpen onClose={() => setEditing(null)} /> : null}
     {creating ? <ClientServiceCreator companyId={companyId} isOpen onClose={() => setCreating(false)} onCreated={(service) => { setCreating(false); setCreatedService(service); }} /> : null}
+    {triggering ? <ManualCycleDialog clientServiceId={triggering.id} isOpen canApply={canEdit} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); void refetch?.(); }} /> : null}
   </div>;
 }

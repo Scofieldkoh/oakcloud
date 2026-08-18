@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal, Pencil, ExternalLink, AlertTriangle } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal, Pencil, ExternalLink, AlertTriangle, History } from 'lucide-react';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,7 @@ interface ServiceRosterTableProps {
   onColumnWidthChange: (columnId: ServiceRosterColumnId, width: number) => void;
   onColumnResizeEnd: (columnId: ServiceRosterColumnId, width: number) => void;
   onEdit: (item: ServiceRosterItem) => void;
+  onTrigger?: (item: ServiceRosterItem) => void;
 }
 
 export const columnLabels: Record<ServiceRosterColumnId, string> = {
@@ -136,7 +137,7 @@ function WarningCell({ item }: { item: ServiceRosterItem }) {
   );
 }
 
-function ServiceActions({ item, canEdit, onEdit }: { item: ServiceRosterItem; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
+function ServiceActions({ item, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
   const companyHref = `/companies/${item.companyId}?tab=services`;
   return (
     <Dropdown>
@@ -152,6 +153,7 @@ function ServiceActions({ item, canEdit, onEdit }: { item: ServiceRosterItem; ca
         {canEdit ? (
           <>
             <DropdownSeparator />
+            {onTrigger ? <DropdownItem icon={<History className="h-4 w-4" />} onClick={() => onTrigger(item)}>Trigger historical cycle</DropdownItem> : null}
             <DropdownItem icon={<Pencil className="h-4 w-4" />} onClick={() => onEdit(item)}>Edit service</DropdownItem>
           </>
         ) : null}
@@ -227,7 +229,7 @@ function InlineFilterRow({ columns, filters, onChange }: { columns: ServiceRoste
   );
 }
 
-function DesktopCell({ item, column, canEdit, onEdit }: { item: ServiceRosterItem; column: ServiceRosterColumnId; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
+function DesktopCell({ item, column, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; column: ServiceRosterColumnId; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
   switch (column) {
     case 'company': return <td className="max-w-0 px-4 py-3 align-top"><CompanyCell item={item} /></td>;
     case 'family': return <td className="px-4 py-3 align-top"><FamilyBadge item={item} /></td>;
@@ -237,25 +239,25 @@ function DesktopCell({ item, column, canEdit, onEdit }: { item: ServiceRosterIte
     case 'nextDeadline': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatDate(item.nextDeadline?.operativeDueDate ?? null)}</td>;
     case 'startEnd': return <td className="px-4 py-3 align-top text-sm text-text-secondary"><span className="whitespace-nowrap">{formatDate(item.startDate)}</span><span className="mx-1 text-text-muted">–</span><span className="whitespace-nowrap">{formatDate(item.endDate)}</span></td>;
     case 'warnings': return <td className="px-4 py-3 align-top"><WarningCell item={item} /></td>;
-    case 'actions': return <td className="px-4 py-3 align-top"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} /></td>;
+    case 'actions': return <td className="px-4 py-3 align-top"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} /></td>;
   }
 }
 
-function DesktopRow({ item, index, columns, canEdit, onEdit }: { item: ServiceRosterItem; index: number; columns: ServiceRosterColumnId[]; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
+function DesktopRow({ item, index, columns, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; index: number; columns: ServiceRosterColumnId[]; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
   return (
     <tr className={cn('border-b border-border-primary transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')}>
-      {columns.map((column) => <DesktopCell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} />)}
+      {columns.map((column) => <DesktopCell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />)}
     </tr>
   );
 }
 
-function MobileRosterCard({ item, canEdit, onEdit }: { item: ServiceRosterItem; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
+function MobileRosterCard({ item, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
   return (
     <MobileCard
       title={<CompanyCell item={item} />}
       subtitle={<span title={item.serviceName}>{item.serviceName}</span>}
       badge={<span className={cn('badge', statusClass(item.status))}>{statusLabel(item.status)}</span>}
-      actions={<ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} />}
+      actions={<ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />}
       details={(
         <CardDetailsGrid>
           <CardDetailItem label="Family" value={<FamilyBadge item={item} />} />
@@ -284,6 +286,7 @@ export function ServiceRosterTable({
   onColumnWidthChange,
   onColumnResizeEnd,
   onEdit,
+  onTrigger,
 }: ServiceRosterTableProps) {
   const visibleColumns = columnOrder.filter((column) => columnVisibility[column]);
   const startResize = (columnId: ServiceRosterColumnId, event: React.PointerEvent<HTMLButtonElement>) => {
@@ -308,7 +311,7 @@ export function ServiceRosterTable({
   return (
     <>
       <div className="space-y-3 md:hidden" aria-label="Services roster cards">
-        {items.map((item) => <MobileRosterCard key={item.id} item={item} canEdit={canEdit} onEdit={onEdit} />)}
+        {items.map((item) => <MobileRosterCard key={item.id} item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />)}
       </div>
       <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
         <table className="min-w-[1280px] w-full table-fixed border-collapse" aria-label="Services roster table">
@@ -324,7 +327,7 @@ export function ServiceRosterTable({
             <InlineFilterRow columns={visibleColumns} filters={inlineFilters} onChange={onInlineFilterChange} />
           </thead>
           <tbody>
-            {items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} columns={visibleColumns} canEdit={canEdit} onEdit={onEdit} />)}
+            {items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} columns={visibleColumns} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />)}
           </tbody>
         </table>
       </div>

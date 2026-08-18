@@ -13,6 +13,13 @@ export {
   updateDeadlineOccurrence,
 } from './service';
 
+export {
+  createManualDeadlineCycle,
+  manualDeadlineCycleApplySchema,
+  manualDeadlineCyclePreviewSchema,
+  previewManualDeadlineCycle,
+} from './manual-cycle';
+
 export type {
   DeadlineActor,
   DeadlineCalendarResult,
@@ -28,3 +35,12 @@ export type {
   DeadlineTiming,
   ListDeadlinesOptions,
 } from './types';
+
+export type {
+  ManualCycleActor,
+  ManualDeadlineCycleApplyInput,
+  ManualDeadlineCycleInput,
+  ManualDeadlineCyclePreview,
+  ManualDeadlineCycleResult,
+  ManualDeadlineMilestone,
+} from './manual-cycle';
