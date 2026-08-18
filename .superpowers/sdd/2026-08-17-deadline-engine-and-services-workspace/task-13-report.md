@@ -1,6 +1,8 @@
 # Task 13 report — manual historical-cycle preview and apply
 
-Status: implementation-complete / pending final rereview
+Status: PASS / final-review-complete
+
+Final review: **PASS — 0 Critical / 0 Important / 0 Minor.**
 
 ## Scope delivered
 
@@ -117,6 +119,12 @@ isolated separately: 1 pre-existing assertion fails and 4/5 assertions pass;
 the test and Prisma schema remain untouched.
 
 ## Verification and boundaries
+
+- Final review confirmed the dedicated options selector, typed parameter
+  preservation, post-preview apply-only edits, rollout/RBAC gates, tenant
+  integrity, race-safe idempotency, and no-billing/no-reconciliation
+  guarantees.
+- Final implementation commit: `aa42dbe5` (`fix: harden manual cycle rule options`).
 
 - `npx.cmd tsc --noEmit --pretty false` — pass.
 - Scoped ESLint with `--max-warnings 0` over changed Task 13 source/routes/
