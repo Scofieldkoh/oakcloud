@@ -4,6 +4,7 @@ export {
   getDeadline,
   getDeadlineOccurrence,
   listDeadlines,
+  requestedDeadlineCompanyIds,
   resetDateOverride,
   resetDeadlineDateOverride,
   searchDeadlines,

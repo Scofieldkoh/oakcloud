@@ -10540,6 +10540,7 @@ export const DeadlineOccurrenceScalarFieldEnum = {
   cancelledAt: 'cancelledAt',
   cancelledById: 'cancelledById',
   cancellationReason: 'cancellationReason',
+  notes: 'notes',
   origin: 'origin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

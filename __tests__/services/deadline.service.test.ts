@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes } from '@/lib/errors';
+import type { DeadlineDb } from '@/services/deadline';
 
 const prismaMock = vi.hoisted(() => ({
   deadlineOccurrence: {
@@ -19,8 +20,10 @@ vi.mock('@/lib/audit', () => auditMock);
 
 import {
   deriveDeadlineTiming,
+  getDeadlineOccurrence,
   listDeadlines,
   resetDeadlineDateOverride,
+  toDeadlineDto,
   updateDeadlineOccurrence,
 } from '@/services/deadline';
 
@@ -120,6 +123,166 @@ describe('deadline service', () => {
     }));
   });
 
+  it('applies a requested company filter for all-company access', async () => {
+    const requestedCompanyId = '44444444-4444-4444-8444-444444444444';
+    await listDeadlines({ ...search, companyIds: [requestedCompanyId] }, actor);
+
+    expect(prismaMock.deadlineOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ companyId: { in: [requestedCompanyId] } }),
+    }));
+  });
+
+  it('preserves all accessible companies when all-company access has no requested filter', async () => {
+    await listDeadlines(search, { ...actor, companyIds: undefined });
+
+    const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where).not.toHaveProperty('companyId');
+  });
+
+  it('intersects requested company IDs with restricted access in SQL', async () => {
+    const accessibleCompanyIds = [
+      '44444444-4444-4444-8444-444444444444',
+      '55555555-5555-4555-8555-555555555555',
+    ];
+    await listDeadlines({ ...search, companyIds: [accessibleCompanyIds[1]!, '66666666-6666-4666-8666-666666666666'] }, {
+      ...actor,
+      companyIds: accessibleCompanyIds,
+    });
+
+    expect(prismaMock.deadlineOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ companyId: { in: [accessibleCompanyIds[1]] } }),
+    }));
+  });
+
+  it('short-circuits when requested companies have no accessible intersection', async () => {
+    const result = await listDeadlines({ ...search, companyIds: ['66666666-6666-4666-8666-666666666666'] }, {
+      ...actor,
+      companyIds: ['44444444-4444-4444-8444-444444444444'],
+    });
+
+    expect(result).toMatchObject({ mode: 'TABLE', items: [], total: 0, totalPages: 0 });
+    expect(prismaMock.deadlineOccurrence.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.deadlineOccurrence.count).not.toHaveBeenCalled();
+  });
+
+  it('adds same-tenant predicates for every required related record', async () => {
+    await listDeadlines(search, actor);
+
+    const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where.company).toEqual({ tenantId: actor.tenantId, deletedAt: null });
+    expect(args.where.clientService).toEqual(expect.objectContaining({
+      tenantId: actor.tenantId,
+      serviceVariant: expect.objectContaining({
+        tenantId: actor.tenantId,
+        family: { tenantId: actor.tenantId },
+      }),
+    }));
+    expect(args.where.cycle).toEqual({ tenantId: actor.tenantId });
+    expect(args.where.ruleVersion).toEqual({ tenantId: actor.tenantId });
+  });
+
+  it('returns not found for a detail row with a mismatched related tenant', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({
+      ...occurrence,
+      clientService: { ...occurrence.clientService, tenantId: 'tenant-2' },
+    });
+
+    await expect(getDeadlineOccurrence('deadline-1', actor)).rejects.toMatchObject({ code: ErrorCodes.NOT_FOUND });
+  });
+
+  it.each([
+    ['company', { company: { ...occurrence.company, tenantId: 'tenant-2' } }],
+    ['service variant', { clientService: { ...occurrence.clientService, serviceVariant: { tenantId: 'tenant-2', family: { tenantId: actor.tenantId } } } }],
+    ['service family', { clientService: { ...occurrence.clientService, serviceVariant: { tenantId: actor.tenantId, family: { tenantId: 'tenant-2' } } } }],
+    ['cycle', { cycle: { ...occurrence.cycle, tenantId: 'tenant-2' } }],
+  ])('returns not found for a mismatched %s relation', async (_relation, mismatch) => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({ ...occurrence, ...mismatch });
+
+    await expect(getDeadlineOccurrence('deadline-1', actor)).rejects.toMatchObject({ code: ErrorCodes.NOT_FOUND });
+  });
+
+  it('filters a malformed related tenant from list DTOs defensively', async () => {
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([
+      { ...occurrence, company: { ...occurrence.company, tenantId: 'tenant-2' } },
+    ]);
+
+    const result = await listDeadlines(search, actor);
+
+    expect(result.items).toEqual([]);
+  });
+
+  it('returns persisted notes in the occurrence DTO', () => {
+    expect(toDeadlineDto({ ...occurrence, notes: 'Bring signed copy' })).toMatchObject({ notes: 'Bring signed copy' });
+  });
+
+  it('persists notes and audits every changed lifecycle field', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({ ...occurrence, notes: 'Old note' });
+
+    const result = await updateDeadlineOccurrence('deadline-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: 'COMPLETED',
+      completionDate: '2026-08-19',
+      notes: 'Filed with signed copy',
+      reason: 'Filing completed',
+    }, actor);
+
+    expect(result.notes).toBe('Filed with signed copy');
+    expect(prismaMock.deadlineOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ notes: 'Filed with signed copy', completedById: actor.userId }),
+    }));
+    const [audit] = auditMock.createAuditLog.mock.calls[0] as [{ changes: Record<string, unknown> }];
+    expect(audit.changes).toEqual(expect.objectContaining({
+      status: expect.any(Object),
+      completedAt: expect.any(Object),
+      completedById: expect.any(Object),
+      waivedAt: expect.any(Object),
+      waiverReason: expect.any(Object),
+      dateOverrideReason: expect.any(Object),
+      notes: { old: 'Old note', new: 'Filed with signed copy' },
+    }));
+  });
+
+  it('rolls back the occurrence write when the audit transaction fails', async () => {
+    let persistedStatus: string = occurrence.status;
+    let stagedStatus: string = persistedStatus;
+    const txUpdateMany = vi.fn(async ({ data }: { data: { status?: string } }) => {
+      stagedStatus = data.status ?? stagedStatus;
+      return { count: 1 };
+    });
+    const tx = {
+      deadlineOccurrence: {
+        findMany: vi.fn(), count: vi.fn(), findFirst: vi.fn(),
+        updateMany: txUpdateMany,
+      },
+    } as unknown as DeadlineDb;
+    const db = {
+      deadlineOccurrence: {
+        findMany: vi.fn(), count: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(occurrence),
+        updateMany: vi.fn(),
+      },
+      $transaction: vi.fn(async (callback: (transaction: DeadlineDb) => Promise<unknown>) => {
+        try {
+          const result = await callback(tx);
+          persistedStatus = stagedStatus;
+          return result;
+        } catch (error) {
+          stagedStatus = persistedStatus;
+          throw error;
+        }
+      }),
+    } as unknown as DeadlineDb;
+    auditMock.createAuditLog.mockRejectedValueOnce(new Error('audit write failed'));
+
+    await expect(updateDeadlineOccurrence('deadline-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(), status: 'COMPLETED', reason: 'Filed',
+    }, actor, db)).rejects.toThrow('audit write failed');
+    expect(txUpdateMany).toHaveBeenCalledTimes(1);
+    expect(persistedStatus).toBe('OPEN');
+    expect(stagedStatus).toBe('OPEN');
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+  });
+
   it('returns no rows when every deadline type is deselected', async () => {
     const result = await listDeadlines({ ...search, types: [] }, actor);
 
@@ -139,6 +302,16 @@ describe('deadline service', () => {
     expect(prismaMock.deadlineOccurrence.updateMany).not.toHaveBeenCalled();
   });
 
+  it('requires a reason when reopening a completed occurrence', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({ ...occurrence, status: 'COMPLETED' });
+
+    await expect(updateDeadlineOccurrence('deadline-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: 'OPEN',
+    }, actor)).rejects.toMatchObject({ code: ErrorCodes.VALIDATION_ERROR });
+    expect(prismaMock.deadlineOccurrence.updateMany).not.toHaveBeenCalled();
+  });
+
   it('limits calendar results to 5,000 occurrences and reports truncation', async () => {
     prismaMock.deadlineOccurrence.findMany.mockResolvedValue(
       Array.from({ length: 5001 }, (_, index) => ({ ...occurrence, id: `deadline-${index}` })),
@@ -149,6 +322,40 @@ describe('deadline service', () => {
     expect(result).toMatchObject({ mode: 'CALENDAR', truncated: true, warning: expect.any(String) });
     expect(result.items).toHaveLength(5000);
     expect(prismaMock.deadlineOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 5001 }));
+  });
+
+  it('does not mark exactly 5,000 calendar rows as truncated', async () => {
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue(
+      Array.from({ length: 5000 }, (_, index) => ({ ...occurrence, id: `deadline-${index}` })),
+    );
+
+    const result = await listDeadlines({ ...search, mode: 'CALENDAR' }, actor);
+
+    expect(result).toMatchObject({ mode: 'CALENDAR', truncated: false });
+    expect(result.items).toHaveLength(5000);
+  });
+
+  it('uses table pagination, deterministic sorting, and Singapore timing predicates', async () => {
+    await listDeadlines({ ...search, page: 3, limit: 10, sortBy: 'company', sortOrder: 'desc', timing: ['DUE'] }, actor, prismaMock, { today: '2026-08-17' });
+
+    const [findManyArgs] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: unknown; skip: number; take: number; orderBy: unknown }];
+    const [countArgs] = prismaMock.deadlineOccurrence.count.mock.calls[0] as [{ where: unknown }];
+    expect(findManyArgs.skip).toBe(20);
+    expect(findManyArgs.take).toBe(10);
+    expect(findManyArgs.orderBy).toEqual([{ company: { name: 'desc' } }, { operativeDueDate: 'asc' }, { id: 'asc' }]);
+    expect(findManyArgs.where).toEqual(countArgs.where);
+    expect(findManyArgs.where).toEqual(expect.objectContaining({
+      AND: [expect.objectContaining({ status: 'OPEN', OR: [{ operativeDueDate: new Date('2026-08-17T00:00:00.000Z') }] })],
+    }));
+  });
+
+  it('turns an optimistic update miss into a version conflict without an audit', async () => {
+    prismaMock.deadlineOccurrence.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(updateDeadlineOccurrence('deadline-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(), status: 'COMPLETED', reason: 'Filed',
+    }, actor)).rejects.toMatchObject({ code: ErrorCodes.VERSION_CONFLICT });
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
   });
 
   it('resets an override to the calculated due date with an optimistic timestamp', async () => {

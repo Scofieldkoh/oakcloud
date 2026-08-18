@@ -21,6 +21,8 @@ export interface DeadlineScope {
 export interface DeadlineActor {
   tenantId: string;
   userId: string;
+  /** Optional accessible-company scope for record reads. Undefined means all. */
+  companyIds?: string[];
 }
 
 export interface DeadlineCompanyDto {
@@ -80,6 +82,7 @@ export interface DeadlineOccurrenceDto {
   cancelledAt: string | null;
   cancelledById: string | null;
   cancellationReason: string | null;
+  notes: string | null;
   origin: 'RULE' | 'MANUAL_TRIGGER';
   createdAt: string;
   updatedAt: string;

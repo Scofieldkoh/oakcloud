@@ -65,31 +65,37 @@ type DeadlineRecord = {
   cancelledAt: Date | string | null;
   cancelledById: string | null;
   cancellationReason: string | null;
+  notes?: string | null;
   origin: 'RULE' | 'MANUAL_TRIGGER';
   createdAt: Date | string;
   updatedAt: Date | string;
   company?: {
     id?: string;
+    tenantId?: string;
     name?: string;
     displayAlias?: string | null;
     uen?: string | null;
   } | null;
   clientService?: {
     id?: string;
+    tenantId?: string;
     serviceName?: string;
     familyName?: string;
     serviceVariant?: {
       id?: string;
+      tenantId?: string;
       name?: string;
-      family?: { id?: string; name?: string; displayColor?: string | null } | null;
+      family?: { id?: string; tenantId?: string; name?: string; displayColor?: string | null } | null;
     } | null;
   } | null;
   cycle?: {
     id?: string;
+    tenantId?: string;
     periodKey?: string;
     periodStart?: Date | string;
     periodEnd?: Date | string;
   } | null;
+  ruleVersion?: { tenantId?: string } | null;
 };
 
 type DeadlineDbRecord = DeadlineRecord & Record<string, unknown>;
@@ -130,6 +136,27 @@ function familyFromRecord(record: DeadlineDbRecord) {
   };
 }
 
+function tenantMatches(value: unknown, tenantId: string): boolean {
+  if (value === null) return false;
+  if (value === undefined) return true;
+  if (typeof value !== 'object') return false;
+  if (!Object.prototype.hasOwnProperty.call(value, 'tenantId')) return true;
+  const relatedTenantId = (value as { tenantId?: unknown }).tenantId;
+  return relatedTenantId === undefined || relatedTenantId === tenantId;
+}
+
+function hasTenantIntegrity(record: DeadlineDbRecord, tenantId: string): boolean {
+  const variant = record.clientService?.serviceVariant;
+  const family = variant?.family;
+  return record.tenantId === tenantId
+    && tenantMatches(record.company, tenantId)
+    && tenantMatches(record.clientService, tenantId)
+    && tenantMatches(variant, tenantId)
+    && tenantMatches(family, tenantId)
+    && tenantMatches(record.cycle, tenantId)
+    && tenantMatches(record.ruleVersion, tenantId);
+}
+
 function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${number}` = currentDateInSingapore()): DeadlineOccurrenceDto {
   const record = asRecord(recordValue);
   const company = record.company ?? {};
@@ -167,6 +194,7 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
     cancelledAt: asInstant(record.cancelledAt),
     cancelledById: record.cancelledById,
     cancellationReason: record.cancellationReason,
+    notes: record.notes ?? null,
     origin: record.origin,
     createdAt: asInstant(record.createdAt)!,
     updatedAt: asInstant(record.updatedAt)!,
@@ -234,12 +262,45 @@ function timingWhere(
   return { status: 'OPEN', OR: predicates };
 }
 
+export function requestedDeadlineCompanyIds(
+  input: Pick<DeadlineSearch, 'companyIds'>,
+  scope: DeadlineScope,
+): string[] | undefined {
+  if (scope.companyIds === undefined) return input.companyIds.length > 0 ? [...input.companyIds] : undefined;
+  if (input.companyIds.length === 0) return [...scope.companyIds];
+  const accessible = new Set(scope.companyIds);
+  return input.companyIds.filter((companyId) => accessible.has(companyId));
+}
+
+function occurrenceIntegrityWhere(
+  id: string,
+  tenantId: string,
+  companyIds?: string[],
+): Prisma.DeadlineOccurrenceWhereInput {
+  return {
+    id,
+    tenantId,
+    ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
+    company: { tenantId, deletedAt: null },
+    clientService: {
+      tenantId,
+      serviceVariant: {
+        tenantId,
+        family: { tenantId },
+      },
+    },
+    cycle: { tenantId },
+    ruleVersion: { tenantId },
+  };
+}
+
 /** Build the tenant/access/date predicate used by both count and row queries. */
 export function deadlineWhereForSearch(
   input: DeadlineSearch,
   scope: DeadlineScope,
   today: `${number}-${number}-${number}` = currentDateInSingapore(),
 ): Prisma.DeadlineOccurrenceWhereInput {
+  const companyIds = requestedDeadlineCompanyIds(input, scope);
   const where: Prisma.DeadlineOccurrenceWhereInput = {
     tenantId: scope.tenantId,
     company: { tenantId: scope.tenantId, deletedAt: null },
@@ -247,14 +308,18 @@ export function deadlineWhereForSearch(
       gte: toDateInput(input.from as `${number}-${number}-${number}`),
       lte: toDateInput(input.to as `${number}-${number}-${number}`),
     },
-    ...(scope.companyIds === undefined ? {} : { companyId: { in: scope.companyIds } }),
+    ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
-    ...(input.familyIds.length > 0 ? {
-      clientService: {
+    clientService: {
+      tenantId: scope.tenantId,
+      serviceVariant: {
         tenantId: scope.tenantId,
-        serviceVariant: { tenantId: scope.tenantId, familyId: { in: input.familyIds } },
+        family: { tenantId: scope.tenantId },
+        ...(input.familyIds.length > 0 ? { familyId: { in: input.familyIds } } : {}),
       },
-    } : {}),
+    },
+    cycle: { tenantId: scope.tenantId },
+    ruleVersion: { tenantId: scope.tenantId },
     ...(input.origin ? { origin: input.origin } : {}),
   };
 
@@ -270,22 +335,25 @@ export function deadlineWhereForSearch(
 
 function includeForDeadline(): Prisma.DeadlineOccurrenceInclude {
   return {
-    company: { select: { id: true, name: true, displayAlias: true, uen: true } },
+    company: { select: { id: true, tenantId: true, name: true, displayAlias: true, uen: true } },
     clientService: {
       select: {
         id: true,
+        tenantId: true,
         serviceName: true,
         familyName: true,
         serviceVariant: {
           select: {
             id: true,
+            tenantId: true,
             name: true,
-            family: { select: { id: true, name: true, displayColor: true } },
+            family: { select: { id: true, tenantId: true, name: true, displayColor: true } },
           },
         },
       },
     },
-    cycle: { select: { id: true, periodKey: true, periodStart: true, periodEnd: true } },
+    cycle: { select: { id: true, tenantId: true, periodKey: true, periodStart: true, periodEnd: true } },
+    ruleVersion: { select: { tenantId: true } },
   };
 }
 
@@ -319,7 +387,8 @@ export async function listDeadlines(
   options: ListDeadlinesOptions = {},
 ): Promise<DeadlineListResult> {
   const parsed = deadlineSearchSchema.parse(input);
-  if (scope.companyIds?.length === 0 || parsed.types.length === 0) {
+  const companyIds = requestedDeadlineCompanyIds(parsed, scope);
+  if (companyIds?.length === 0 || parsed.types.length === 0) {
     return emptyDeadlineResult(parsed);
   }
 
@@ -335,10 +404,11 @@ export async function listDeadlines(
       orderBy,
       take: CALENDAR_QUERY_LIMIT,
     });
-    const truncated = rows.length > CALENDAR_RESULT_CAP;
+    const safeRows = rows.filter((row) => hasTenantIntegrity(asRecord(row), scope.tenantId));
+    const truncated = safeRows.length > CALENDAR_RESULT_CAP;
     const result: DeadlineCalendarResult = {
       mode: 'CALENDAR',
-      items: rows.slice(0, CALENDAR_RESULT_CAP).map((row) => toDeadlineDto(row, today)),
+      items: safeRows.slice(0, CALENDAR_RESULT_CAP).map((row) => toDeadlineDto(row, today)),
       truncated,
       ...(truncated ? { warning: `Calendar results are limited to ${CALENDAR_RESULT_CAP.toLocaleString()} occurrences` } : {}),
     };
@@ -357,7 +427,7 @@ export async function listDeadlines(
   ]);
   const result: DeadlineTableResult = {
     mode: 'TABLE',
-    items: rows.map((row) => toDeadlineDto(row, today)),
+    items: rows.filter((row) => hasTenantIntegrity(asRecord(row), scope.tenantId)).map((row) => toDeadlineDto(row, today)),
     total,
     page: parsed.page,
     limit: parsed.limit,
@@ -372,10 +442,11 @@ export async function getDeadlineOccurrence(
   db: DeadlineDb | typeof prisma = prisma,
 ): Promise<DeadlineOccurrenceDto> {
   const row = await toDb(db).deadlineOccurrence.findFirst({
-    where: { id, tenantId: actor.tenantId },
+    where: occurrenceIntegrityWhere(id, actor.tenantId, actor.companyIds),
     include: includeForDeadline(),
   });
   if (!row) throw new NotFoundError('Deadline occurrence not found');
+  if (!hasTenantIntegrity(asRecord(row), actor.tenantId)) throw new NotFoundError('Deadline occurrence not found');
   return toDeadlineDto(row);
 }
 
@@ -455,10 +526,7 @@ function buildMutationData(
     data.dateOverriddenById = actor.userId;
     data.dateOverriddenAt = now;
   }
-  // The current schema intentionally has no free-text notes column. Notes are
-  // retained in the audit metadata below; a timestamp touch keeps a notes-only
-  // PATCH optimistic and visible to concurrent clients.
-  if (input.notes !== undefined && Object.keys(data).length === 0) data.updatedAt = now;
+  if (input.notes !== undefined) data.notes = input.notes;
   if (data.updatedAt === undefined) data.updatedAt = now;
 
   const next = { ...current, ...data } as DeadlineDbRecord;
@@ -471,11 +539,12 @@ async function findMutationRecord(
   db: DeadlineDb | typeof prisma,
 ): Promise<DeadlineRecord> {
   const row = await toDb(db).deadlineOccurrence.findFirst({
-    where: { id, tenantId: actor.tenantId },
+    where: occurrenceIntegrityWhere(id, actor.tenantId, actor.companyIds),
     include: includeForDeadline(),
   });
   if (!row) throw new NotFoundError('Deadline occurrence not found');
   const record = asRecord(row);
+  if (!hasTenantIntegrity(record, actor.tenantId)) throw new NotFoundError('Deadline occurrence not found');
   if (record.status === 'CANCELLED') {
     throw new DeadlineApiError(ErrorCodes.OCCURRENCE_IMMUTABLE, 'Cancelled deadline occurrences are immutable', 409);
   }
@@ -512,17 +581,12 @@ async function updateWithAudit(
       entityName: current.milestoneKey,
       reason: input.reason,
       summary: 'Updated service deadline occurrence',
-      changes: {
-        status: { old: current.status, new: next.status },
-        calculatedDueDate: { old: asDateOnly(current.calculatedDueDate), new: asDateOnly(next.calculatedDueDate) },
-        operativeDueDate: { old: asDateOnly(current.operativeDueDate), new: asDateOnly(next.operativeDueDate) },
-        dateOverridden: { old: current.dateOverridden, new: next.dateOverridden },
-      },
+      changes: deadlineAuditChanges(current, next),
       metadata: {
         reason: input.reason ?? null,
         notes: 'notes' in input ? input.notes ?? null : null,
-        before: { status: current.status, operativeDueDate: asDateOnly(current.operativeDueDate) },
-        after: { status: next.status, operativeDueDate: asDateOnly(next.operativeDueDate) },
+        before: deadlineAuditState(current),
+        after: deadlineAuditState(next),
       },
     }, tx as unknown as Prisma.TransactionClient);
   };
@@ -532,6 +596,34 @@ async function updateWithAudit(
   } else {
     await execute(database);
   }
+}
+
+function deadlineAuditState(record: DeadlineRecord): Record<string, unknown> {
+  return {
+    status: record.status,
+    calculatedDueDate: asDateOnly(record.calculatedDueDate),
+    operativeDueDate: asDateOnly(record.operativeDueDate),
+    dateOverridden: record.dateOverridden,
+    dateOverride: asNullableDateOnly(record.dateOverride),
+    dateOverrideReason: record.dateOverrideReason,
+    dateOverriddenById: record.dateOverriddenById,
+    dateOverriddenAt: asInstant(record.dateOverriddenAt),
+    completedAt: asInstant(record.completedAt),
+    completedById: record.completedById,
+    waivedAt: asInstant(record.waivedAt),
+    waivedById: record.waivedById,
+    waiverReason: record.waiverReason,
+    cancelledAt: asInstant(record.cancelledAt),
+    cancelledById: record.cancelledById,
+    cancellationReason: record.cancellationReason,
+    notes: record.notes ?? null,
+  };
+}
+
+function deadlineAuditChanges(current: DeadlineRecord, next: DeadlineRecord): Record<string, { old: unknown; new: unknown }> {
+  const before = deadlineAuditState(current);
+  const after = deadlineAuditState(next);
+  return Object.fromEntries(Object.keys(before).map((key) => [key, { old: before[key], new: after[key] }])) as Record<string, { old: unknown; new: unknown }>;
 }
 
 export async function updateDeadlineOccurrence(

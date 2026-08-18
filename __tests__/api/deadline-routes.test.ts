@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { NotFoundError } from '@/lib/errors';
 
 const mocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
@@ -131,5 +132,77 @@ describe('deadline routes', () => {
 
     expect(response.status).toBe(400);
     expect(mocks.getDeadlineOccurrence).not.toHaveBeenCalled();
+  });
+
+  it('returns the same 404 for an inaccessible existing GET and a missing GET', async () => {
+    mocks.getDeadlineOccurrence.mockResolvedValueOnce({ ...deadline, companyId: '44444444-4444-4444-8444-444444444444' });
+    mocks.requirePermission.mockRejectedValueOnce(new Error('Permission denied for company'));
+    const inaccessible = await detailGET(new NextRequest(`http://localhost/api/deadlines/${deadlineId}`), {
+      params: Promise.resolve({ id: deadlineId }),
+    });
+    mocks.getDeadlineOccurrence.mockRejectedValueOnce(new NotFoundError('Deadline occurrence not found'));
+    const missing = await detailGET(new NextRequest(`http://localhost/api/deadlines/${deadlineId}`), {
+      params: Promise.resolve({ id: deadlineId }),
+    });
+
+    expect(inaccessible.status).toBe(404);
+    expect(missing.status).toBe(404);
+    expect(await inaccessible.json()).toEqual(await missing.json());
+  });
+
+  it('returns the same 404 for an inaccessible existing PATCH and a missing PATCH', async () => {
+    mocks.getDeadlineOccurrence.mockResolvedValueOnce({ ...deadline, companyId: '44444444-4444-4444-8444-444444444444' });
+    mocks.requirePermission.mockRejectedValueOnce(new Error('Permission denied for company'));
+    const inaccessible = await detailPATCH(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}`, { method: 'PATCH', body: JSON.stringify({ expectedUpdatedAt: deadline.updatedAt, status: 'COMPLETED', reason: 'Filed' }) }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+    mocks.getDeadlineOccurrence.mockRejectedValueOnce(new NotFoundError('Deadline occurrence not found'));
+    const missing = await detailPATCH(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}`, { method: 'PATCH', body: JSON.stringify({ expectedUpdatedAt: deadline.updatedAt, status: 'COMPLETED', reason: 'Filed' }) }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+
+    expect(inaccessible.status).toBe(404);
+    expect(missing.status).toBe(404);
+    expect(await inaccessible.json()).toEqual(await missing.json());
+  });
+
+  it('returns the same 404 for an inaccessible existing reset and a missing reset', async () => {
+    mocks.getDeadlineOccurrence.mockResolvedValueOnce({ ...deadline, companyId: '44444444-4444-4444-8444-444444444444' });
+    mocks.requirePermission.mockRejectedValueOnce(new Error('Permission denied for company'));
+    const inaccessible = await resetPOST(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}/reset-date-override`, { method: 'POST', body: JSON.stringify({ expectedUpdatedAt: deadline.updatedAt, reason: 'Reset' }) }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+    mocks.getDeadlineOccurrence.mockRejectedValueOnce(new NotFoundError('Deadline occurrence not found'));
+    const missing = await resetPOST(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}/reset-date-override`, { method: 'POST', body: JSON.stringify({ expectedUpdatedAt: deadline.updatedAt, reason: 'Reset' }) }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+
+    expect(inaccessible.status).toBe(404);
+    expect(missing.status).toBe(404);
+    expect(await inaccessible.json()).toEqual(await missing.json());
+  });
+
+  it('returns a structured 400 for malformed JSON mutations', async () => {
+    const response = await detailPATCH(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}`, { method: 'PATCH', body: '{' }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'VALIDATION_ERROR' });
+  });
+
+  it('returns a structured 400 for malformed reset JSON', async () => {
+    const response = await resetPOST(
+      new NextRequest(`http://localhost/api/deadlines/${deadlineId}/reset-date-override`, { method: 'POST', body: '{' }),
+      { params: Promise.resolve({ id: deadlineId }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 });

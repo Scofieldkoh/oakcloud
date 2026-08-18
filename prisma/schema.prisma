@@ -1673,6 +1673,7 @@ model DeadlineOccurrence {
   cancelledAt        DateTime?                @map("cancelled_at")
   cancelledById      String?                  @map("cancelled_by_id")
   cancellationReason String?                  @map("cancellation_reason")
+  notes              String?
   origin             ServiceCycleOrigin       @default(RULE)
   createdAt          DateTime                 @default(now()) @map("created_at")
   updatedAt          DateTime                 @updatedAt @map("updated_at")

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
-import { ApiError, ErrorCodes } from '@/lib/errors';
+import { ApiError, ErrorCodes, NotFoundError } from '@/lib/errors';
 import { requirePermission } from '@/lib/rbac';
 import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
 import { resetDeadlineDateOverrideSchema } from '@/lib/validations/deadline';
@@ -24,12 +24,34 @@ function safeErrorResponse(error: unknown): NextResponse {
       { issues: error.issues },
     ));
   }
+  if (error instanceof SyntaxError) {
+    return createErrorResponse(new ApiError(ErrorCodes.VALIDATION_ERROR, 'Invalid JSON request', 400));
+  }
   if (error instanceof Error && (
     error.message === 'Unauthorized'
     || error.message === 'Forbidden'
     || error.message.startsWith('Permission denied')
   )) return createErrorResponse(error);
   return createErrorResponse(new ApiError(ErrorCodes.INTERNAL_ERROR, 'An unexpected error occurred', 500));
+}
+
+async function requireDeadlineCompanyUpdate(
+  session: Awaited<ReturnType<typeof requireAuth>>,
+  companyId: string,
+): Promise<void> {
+  try {
+    await requirePermission(session, 'company', 'update', companyId);
+  } catch (error) {
+    if (error instanceof ApiError && error.code === ErrorCodes.PERMISSION_DENIED) {
+      throw new NotFoundError('Deadline occurrence not found');
+    }
+    if (error instanceof Error && (
+      error.message === 'Forbidden' || error.message.startsWith('Permission denied')
+    )) {
+      throw new NotFoundError('Deadline occurrence not found');
+    }
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest, { params }: Context): Promise<NextResponse> {
@@ -41,7 +63,7 @@ export async function POST(request: NextRequest, { params }: Context): Promise<N
     const id = deadlineIdSchema.parse(rawId);
     const actor = { tenantId, userId: session.id };
     const deadline = await getDeadlineOccurrence(id, actor);
-    await requirePermission(session, 'company', 'update', deadline.companyId);
+    await requireDeadlineCompanyUpdate(session, deadline.companyId);
     const input = resetDeadlineDateOverrideSchema.parse(await request.json());
     return NextResponse.json(await resetDeadlineDateOverride(id, input, actor));
   } catch (error) {

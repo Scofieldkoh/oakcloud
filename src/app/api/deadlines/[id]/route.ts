@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
-import { ApiError, ErrorCodes } from '@/lib/errors';
+import { ApiError, ErrorCodes, NotFoundError } from '@/lib/errors';
 import { requirePermission } from '@/lib/rbac';
 import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
 import {
@@ -26,12 +26,35 @@ function safeErrorResponse(error: unknown): NextResponse {
       { issues: error.issues },
     ));
   }
+  if (error instanceof SyntaxError) {
+    return createErrorResponse(new ApiError(ErrorCodes.VALIDATION_ERROR, 'Invalid JSON request', 400));
+  }
   if (error instanceof Error && (
     error.message === 'Unauthorized'
     || error.message === 'Forbidden'
     || error.message.startsWith('Permission denied')
   )) return createErrorResponse(error);
   return createErrorResponse(new ApiError(ErrorCodes.INTERNAL_ERROR, 'An unexpected error occurred', 500));
+}
+
+async function requireDeadlineCompanyPermission(
+  session: Awaited<ReturnType<typeof requireAuth>>,
+  action: 'read' | 'update',
+  companyId: string,
+): Promise<void> {
+  try {
+    await requirePermission(session, 'company', action, companyId);
+  } catch (error) {
+    if (error instanceof ApiError && error.code === ErrorCodes.PERMISSION_DENIED) {
+      throw new NotFoundError('Deadline occurrence not found');
+    }
+    if (error instanceof Error && (
+      error.message === 'Forbidden' || error.message.startsWith('Permission denied')
+    )) {
+      throw new NotFoundError('Deadline occurrence not found');
+    }
+    throw error;
+  }
 }
 
 function actorFor(session: Awaited<ReturnType<typeof requireAuth>>) {
@@ -51,7 +74,7 @@ export async function GET(_request: NextRequest, { params }: Context): Promise<N
     const { id: rawId } = await params;
     const id = deadlineIdSchema.parse(rawId);
     const { deadline } = await loadForSession(id, session);
-    await requirePermission(session, 'company', 'read', deadline.companyId);
+    await requireDeadlineCompanyPermission(session, 'read', deadline.companyId);
     return NextResponse.json(deadline);
   } catch (error) {
     return safeErrorResponse(error);
@@ -64,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: Context): Promise<
     const { id: rawId } = await params;
     const id = deadlineIdSchema.parse(rawId);
     const { actor, deadline } = await loadForSession(id, session);
-    await requirePermission(session, 'company', 'update', deadline.companyId);
+    await requireDeadlineCompanyPermission(session, 'update', deadline.companyId);
     const input = updateDeadlineOccurrenceSchema.parse(await request.json());
     return NextResponse.json(await updateDeadlineOccurrence(id, input, actor));
   } catch (error) {

@@ -50,6 +50,7 @@ export type DeadlineOccurrenceMinAggregateOutputType = {
   cancelledAt: Date | null
   cancelledById: string | null
   cancellationReason: string | null
+  notes: string | null
   origin: $Enums.ServiceCycleOrigin | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -81,6 +82,7 @@ export type DeadlineOccurrenceMaxAggregateOutputType = {
   cancelledAt: Date | null
   cancelledById: string | null
   cancellationReason: string | null
+  notes: string | null
   origin: $Enums.ServiceCycleOrigin | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -112,6 +114,7 @@ export type DeadlineOccurrenceCountAggregateOutputType = {
   cancelledAt: number
   cancelledById: number
   cancellationReason: number
+  notes: number
   origin: number
   createdAt: number
   updatedAt: number
@@ -145,6 +148,7 @@ export type DeadlineOccurrenceMinAggregateInputType = {
   cancelledAt?: true
   cancelledById?: true
   cancellationReason?: true
+  notes?: true
   origin?: true
   createdAt?: true
   updatedAt?: true
@@ -176,6 +180,7 @@ export type DeadlineOccurrenceMaxAggregateInputType = {
   cancelledAt?: true
   cancelledById?: true
   cancellationReason?: true
+  notes?: true
   origin?: true
   createdAt?: true
   updatedAt?: true
@@ -207,6 +212,7 @@ export type DeadlineOccurrenceCountAggregateInputType = {
   cancelledAt?: true
   cancelledById?: true
   cancellationReason?: true
+  notes?: true
   origin?: true
   createdAt?: true
   updatedAt?: true
@@ -311,6 +317,7 @@ export type DeadlineOccurrenceGroupByOutputType = {
   cancelledAt: Date | null
   cancelledById: string | null
   cancellationReason: string | null
+  notes: string | null
   origin: $Enums.ServiceCycleOrigin
   createdAt: Date
   updatedAt: Date
@@ -363,6 +370,7 @@ export type DeadlineOccurrenceWhereInput = {
   cancelledAt?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  notes?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
   origin?: Prisma.EnumServiceCycleOriginFilter<"DeadlineOccurrence"> | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
@@ -403,6 +411,7 @@ export type DeadlineOccurrenceOrderByWithRelationInput = {
   cancelledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   cancelledById?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  notes?: Prisma.SortOrderInput | Prisma.SortOrder
   origin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -447,6 +456,7 @@ export type DeadlineOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   cancelledAt?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  notes?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
   origin?: Prisma.EnumServiceCycleOriginFilter<"DeadlineOccurrence"> | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
@@ -487,6 +497,7 @@ export type DeadlineOccurrenceOrderByWithAggregationInput = {
   cancelledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   cancelledById?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  notes?: Prisma.SortOrderInput | Prisma.SortOrder
   origin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -524,6 +535,7 @@ export type DeadlineOccurrenceScalarWhereWithAggregatesInput = {
   cancelledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"DeadlineOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  notes?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
   origin?: Prisma.EnumServiceCycleOriginWithAggregatesFilter<"DeadlineOccurrence"> | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DeadlineOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"DeadlineOccurrence"> | Date | string
@@ -546,6 +558,7 @@ export type DeadlineOccurrenceCreateInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -586,6 +599,7 @@ export type DeadlineOccurrenceUncheckedCreateInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -608,6 +622,7 @@ export type DeadlineOccurrenceUpdateInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -648,6 +663,7 @@ export type DeadlineOccurrenceUncheckedUpdateInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -679,6 +695,7 @@ export type DeadlineOccurrenceCreateManyInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -701,6 +718,7 @@ export type DeadlineOccurrenceUpdateManyMutationInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -732,6 +750,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -780,6 +799,7 @@ export type DeadlineOccurrenceCountOrderByAggregateInput = {
   cancelledAt?: Prisma.SortOrder
   cancelledById?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
   origin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -811,6 +831,7 @@ export type DeadlineOccurrenceMaxOrderByAggregateInput = {
   cancelledAt?: Prisma.SortOrder
   cancelledById?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
   origin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -842,6 +863,7 @@ export type DeadlineOccurrenceMinOrderByAggregateInput = {
   cancelledAt?: Prisma.SortOrder
   cancelledById?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
   origin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -1246,6 +1268,7 @@ export type DeadlineOccurrenceCreateWithoutTenantInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1284,6 +1307,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutTenantInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1344,6 +1368,7 @@ export type DeadlineOccurrenceScalarWhereInput = {
   cancelledAt?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  notes?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
   origin?: Prisma.EnumServiceCycleOriginFilter<"DeadlineOccurrence"> | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
@@ -1366,6 +1391,7 @@ export type DeadlineOccurrenceCreateWithoutDateOverriddenByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1404,6 +1430,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutDateOverriddenByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1436,6 +1463,7 @@ export type DeadlineOccurrenceCreateWithoutCompletedByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1474,6 +1502,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCompletedByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1506,6 +1535,7 @@ export type DeadlineOccurrenceCreateWithoutWaivedByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1544,6 +1574,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutWaivedByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1576,6 +1607,7 @@ export type DeadlineOccurrenceCreateWithoutCancelledByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1614,6 +1646,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCancelledByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1710,6 +1743,7 @@ export type DeadlineOccurrenceCreateWithoutCompanyInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1748,6 +1782,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCompanyInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1796,6 +1831,7 @@ export type DeadlineOccurrenceCreateWithoutClientServiceInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1834,6 +1870,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1882,6 +1919,7 @@ export type DeadlineOccurrenceCreateWithoutRuleVersionInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1920,6 +1958,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutRuleVersionInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1968,6 +2007,7 @@ export type DeadlineOccurrenceCreateWithoutCycleInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2006,6 +2046,7 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCycleInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2062,6 +2103,7 @@ export type DeadlineOccurrenceCreateManyTenantInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2084,6 +2126,7 @@ export type DeadlineOccurrenceUpdateWithoutTenantInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2122,6 +2165,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutTenantInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2152,6 +2196,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutTenantInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2182,6 +2227,7 @@ export type DeadlineOccurrenceCreateManyDateOverriddenByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2212,6 +2258,7 @@ export type DeadlineOccurrenceCreateManyCompletedByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2242,6 +2289,7 @@ export type DeadlineOccurrenceCreateManyWaivedByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2272,6 +2320,7 @@ export type DeadlineOccurrenceCreateManyCancelledByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2294,6 +2343,7 @@ export type DeadlineOccurrenceUpdateWithoutDateOverriddenByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2332,6 +2382,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutDateOverriddenByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2362,6 +2413,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByInput = 
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2384,6 +2436,7 @@ export type DeadlineOccurrenceUpdateWithoutCompletedByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2422,6 +2475,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCompletedByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2452,6 +2506,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2474,6 +2529,7 @@ export type DeadlineOccurrenceUpdateWithoutWaivedByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2512,6 +2568,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutWaivedByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2542,6 +2599,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2564,6 +2622,7 @@ export type DeadlineOccurrenceUpdateWithoutCancelledByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2602,6 +2661,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCancelledByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2632,6 +2692,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2662,6 +2723,7 @@ export type DeadlineOccurrenceCreateManyCompanyInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2684,6 +2746,7 @@ export type DeadlineOccurrenceUpdateWithoutCompanyInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2722,6 +2785,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCompanyInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2752,6 +2816,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2782,6 +2847,7 @@ export type DeadlineOccurrenceCreateManyClientServiceInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2804,6 +2870,7 @@ export type DeadlineOccurrenceUpdateWithoutClientServiceInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2842,6 +2909,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2872,6 +2940,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2902,6 +2971,7 @@ export type DeadlineOccurrenceCreateManyRuleVersionInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2924,6 +2994,7 @@ export type DeadlineOccurrenceUpdateWithoutRuleVersionInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2962,6 +3033,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutRuleVersionInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2992,6 +3064,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutRuleVersionInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3022,6 +3095,7 @@ export type DeadlineOccurrenceCreateManyCycleInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  notes?: string | null
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -3044,6 +3118,7 @@ export type DeadlineOccurrenceUpdateWithoutCycleInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3082,6 +3157,7 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCycleInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3112,6 +3188,7 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCycleInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3145,6 +3222,7 @@ export type DeadlineOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.In
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  notes?: boolean
   origin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -3185,6 +3263,7 @@ export type DeadlineOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  notes?: boolean
   origin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -3225,6 +3304,7 @@ export type DeadlineOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  notes?: boolean
   origin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -3265,12 +3345,13 @@ export type DeadlineOccurrenceSelectScalar = {
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  notes?: boolean
   origin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DeadlineOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "cycleId" | "ruleVersionId" | "milestoneKey" | "scheduleEntryKey" | "deadlineType" | "calculatedDueDate" | "operativeDueDate" | "dateOverridden" | "dateOverride" | "dateOverrideReason" | "dateOverriddenById" | "dateOverriddenAt" | "status" | "completedAt" | "completedById" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "origin" | "createdAt" | "updatedAt", ExtArgs["result"]["deadlineOccurrence"]>
+export type DeadlineOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "cycleId" | "ruleVersionId" | "milestoneKey" | "scheduleEntryKey" | "deadlineType" | "calculatedDueDate" | "operativeDueDate" | "dateOverridden" | "dateOverride" | "dateOverrideReason" | "dateOverriddenById" | "dateOverriddenAt" | "status" | "completedAt" | "completedById" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "notes" | "origin" | "createdAt" | "updatedAt", ExtArgs["result"]["deadlineOccurrence"]>
 export type DeadlineOccurrenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -3344,6 +3425,7 @@ export type $DeadlineOccurrencePayload<ExtArgs extends runtime.Types.Extensions.
     cancelledAt: Date | null
     cancelledById: string | null
     cancellationReason: string | null
+    notes: string | null
     origin: $Enums.ServiceCycleOrigin
     createdAt: Date
     updatedAt: Date
@@ -3804,6 +3886,7 @@ export interface DeadlineOccurrenceFieldRefs {
   readonly cancelledAt: Prisma.FieldRef<"DeadlineOccurrence", 'DateTime'>
   readonly cancelledById: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
   readonly cancellationReason: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly notes: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
   readonly origin: Prisma.FieldRef<"DeadlineOccurrence", 'ServiceCycleOrigin'>
   readonly createdAt: Prisma.FieldRef<"DeadlineOccurrence", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"DeadlineOccurrence", 'DateTime'>
