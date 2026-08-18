@@ -85,6 +85,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputId = useId();
+  const labelId = `${inputId}-label`;
   const listboxId = `${inputId}-listbox`;
   const optionId = (index: number) => `${listboxId}-option-${index}`;
 
@@ -194,6 +195,13 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     onSearchChange('');
   }, [onChange, onSearchChange]);
 
+  const handleSelectedKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.preventDefault();
+      handleClear();
+    }
+  }, [handleClear]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       switch (e.key) {
@@ -269,7 +277,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   return (
     <div className={cn('relative', className)}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-text-primary mb-1.5">
+        <label id={labelId} htmlFor={inputId} className="block text-sm font-medium text-text-primary mb-1.5">
           {label}
         </label>
       )}
@@ -277,10 +285,22 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       {/* Selected Item Display or Search Input */}
       <div
         ref={containerRef}
+        id={selectedItem ? inputId : undefined}
+        role={selectedItem ? 'combobox' : undefined}
+        aria-labelledby={selectedItem && label ? labelId : undefined}
+        aria-label={selectedItem && !label ? selectedItem.label : undefined}
+        aria-expanded={selectedItem ? false : undefined}
+        aria-controls={selectedItem ? listboxId : undefined}
+        aria-haspopup={selectedItem ? 'listbox' : undefined}
+        aria-readonly={selectedItem ? true : undefined}
+        aria-valuetext={selectedItem ? selectedItem.label : undefined}
+        tabIndex={selectedItem ? 0 : undefined}
+        onKeyDown={selectedItem ? handleSelectedKeyDown : undefined}
         className={cn(
           'w-full flex min-h-11 items-center gap-2 rounded-lg border',
           'bg-background-secondary/30 border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
+          selectedItem && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
           'transition-colors',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary'

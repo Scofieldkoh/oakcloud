@@ -75,6 +75,10 @@ describe('AsyncSearchSelect', () => {
 
       fireEvent.click(option);
       expect(onChange).toHaveBeenCalledWith('company-1', options[0]);
+      const selectedCombobox = screen.getByRole('combobox', { name: 'Company' });
+      expect(selectedCombobox).toHaveAttribute('id', input.id);
+      expect(selectedCombobox).toHaveAttribute('aria-expanded', 'false');
+      expect(selectedCombobox).toHaveTextContent('Acme Holdings');
       const clear = screen.getByRole('button', { name: 'Clear Company' });
       expect(clear).toHaveClass('min-h-11', 'min-w-11');
       fireEvent.click(clear);

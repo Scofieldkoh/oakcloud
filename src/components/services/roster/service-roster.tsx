@@ -407,7 +407,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {columnOrder.map((column, index) => (
               <div key={column} className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary px-2">
-                <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-text-secondary">
+                <label className="flex min-h-11 min-w-0 flex-1 self-stretch items-center gap-2 text-sm text-text-secondary">
                   <input
                     type="checkbox"
                     checked={columnVisibility[column]}
