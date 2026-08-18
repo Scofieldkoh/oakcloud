@@ -42,7 +42,20 @@ export function isHttpRequestError(error: unknown, status?: number): error is Ht
 }
 
 function unique(values: readonly string[] | undefined): string[] {
-  return [...new Set((values ?? []).map((value) => value.trim()).filter(Boolean))];
+  return [...new Set((values ?? []).map((value) => value.trim()).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right));
+}
+
+const statusOrder: Record<ServiceRosterSearch['statuses'][number], number> = {
+  ACTIVE: 0,
+  PAUSED: 1,
+  ENDED: 2,
+};
+
+function uniqueStatuses(
+  values: readonly ServiceRosterSearch['statuses'][number][] | undefined,
+): ServiceRosterSearch['statuses'] {
+  return [...new Set(values ?? [])].sort((left, right) => statusOrder[left] - statusOrder[right]);
 }
 
 export function normalizeServiceRosterSearch(
@@ -58,7 +71,7 @@ export function normalizeServiceRosterSearch(
     companyId: input.companyId,
     familyIds: unique(input.familyIds),
     variantId: input.variantId,
-    statuses: input.statuses === undefined ? ['ACTIVE'] : [...new Set(input.statuses)],
+    statuses: input.statuses === undefined ? ['ACTIVE'] : uniqueStatuses(input.statuses),
     archived: input.archived ?? false,
     applicability: input.applicability,
     sortBy: input.sortBy ?? 'company',
@@ -88,7 +101,10 @@ export function serviceRosterSearchParams(search: ServiceRosterSearchInput = {})
   if (normalized.query) params.set('query', normalized.query);
   if (normalized.sortBy) params.set('sortBy', normalized.sortBy);
   if (normalized.sortOrder) params.set('sortOrder', normalized.sortOrder);
-  if (normalized.statuses.length > 0) params.set('statuses', normalized.statuses.join(','));
+  // An explicit empty value is distinct from an omitted parameter: the route
+  // parser preserves `statuses=` as [], which the service intentionally
+  // short-circuits to an empty result.
+  params.set('statuses', normalized.statuses.join(','));
   if (normalized.variantId) params.set('variantId', normalized.variantId);
   params.sort();
   return params.toString();

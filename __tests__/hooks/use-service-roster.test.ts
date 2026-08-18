@@ -6,6 +6,7 @@ import {
   HttpRequestError,
   normalizeServiceRosterSearch,
   serviceRosterKeys,
+  serviceRosterSearchParams,
   useServiceRoster,
 } from '@/hooks/use-service-roster';
 
@@ -37,13 +38,28 @@ describe('useServiceRoster', () => {
       statuses: ['PAUSED', 'ACTIVE', 'PAUSED'],
       query: '  annual  ',
     })).toEqual(expect.objectContaining({
-      familyIds: ['b', 'a'],
-      statuses: ['PAUSED', 'ACTIVE'],
+      familyIds: ['a', 'b'],
+      statuses: ['ACTIVE', 'PAUSED'],
       query: 'annual',
       page: 1,
       limit: 20,
       archived: false,
     }));
+  });
+
+  it('uses the same key and URL for reordered family and status sets', () => {
+    const first = { familyIds: ['b', 'a', 'b'], statuses: ['PAUSED', 'ACTIVE'] as const };
+    const second = { familyIds: ['a', 'b'], statuses: ['ACTIVE', 'PAUSED'] as const };
+
+    expect(serviceRosterKeys.list(first)).toEqual(serviceRosterKeys.list(second));
+    expect(serviceRosterSearchParams(first)).toBe(serviceRosterSearchParams(second));
+    expect(serviceRosterSearchParams(first)).toContain('familyIds=a%2Cb');
+    expect(serviceRosterSearchParams(first)).toContain('statuses=ACTIVE%2CPAUSED');
+  });
+
+  it('serializes an empty status set explicitly so the server preserves an empty filter', () => {
+    expect(serviceRosterSearchParams({ statuses: [] })).toContain('statuses=');
+    expect(serviceRosterSearchParams({ statuses: [] })).not.toContain('statuses=ACTIVE');
   });
 
   it('uses exactly the normalized search key and serializes arrays as comma values', async () => {
@@ -55,7 +71,7 @@ describe('useServiceRoster', () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(fetch).toHaveBeenCalledWith(
-      '/api/client-services?archived=false&familyIds=b%2Ca&limit=20&page=1&query=annual&sortBy=company&sortOrder=asc&statuses=PAUSED%2CACTIVE',
+      '/api/client-services?archived=false&familyIds=a%2Cb&limit=20&page=1&query=annual&sortBy=company&sortOrder=asc&statuses=ACTIVE%2CPAUSED',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(queryClient.getQueryCache().findAll({ queryKey: serviceRosterKeys.list(normalizeServiceRosterSearch(input)) })).toHaveLength(1);

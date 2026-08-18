@@ -112,6 +112,7 @@ export interface ServiceRosterResult {
 }
 
 export interface ServiceRosterDb {
+  $queryRaw?: <T>(query: unknown) => Promise<T>;
   clientService: {
     findMany: (args: unknown) => Promise<unknown[]>;
     count: (args: unknown) => Promise<number>;

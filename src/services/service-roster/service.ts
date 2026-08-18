@@ -193,16 +193,121 @@ function orderBy(input: ServiceRosterSearch): Prisma.ClientServiceOrderByWithRel
     case 'status':
       return [{ status: direction }, { serviceName: 'asc' }, { id: 'asc' }];
     case 'nextDeadline':
-      // Prisma cannot order a relation by its filtered minimum date through
-      // the generated client. Keep this path deterministic; the relation is
-      // still selected and ordered by operativeDueDate for the DTO.
-      return [{ updatedAt: direction }, { id: 'asc' }];
+      // The page-ID query below owns this ordering. Hydration only needs a
+      // deterministic order because the IDs are reassembled in SQL order.
+      return [{ id: 'asc' }];
     case 'startDate':
       return [{ startDate: direction }, { companyId: 'asc' }, { id: 'asc' }];
     case 'company':
     default:
       return [{ company: { name: direction } }, { companyId: 'asc' }, { id: 'asc' }];
   }
+}
+
+function nextDeadlinePageQuery(
+  input: ServiceRosterSearch,
+  tenantId: string,
+  companyIds: string[] | undefined,
+): Prisma.Sql {
+  const companyScope = companyIds
+    ? Prisma.sql`AND cs."company_id" IN (${Prisma.join(companyIds)})`
+    : Prisma.empty;
+  const deadlineCompanyScope = companyIds
+    ? Prisma.sql`AND d."company_id" IN (${Prisma.join(companyIds)})`
+    : Prisma.empty;
+  const archivedFilter = input.archived
+    ? Prisma.sql`AND cs."deleted_at" IS NOT NULL`
+    : Prisma.sql`AND cs."deleted_at" IS NULL`;
+  const statusFilter = input.statuses.length > 0
+    ? Prisma.sql`AND cs."status" IN (${Prisma.join(input.statuses)})`
+    : Prisma.empty;
+  const familyFilter = input.familyIds.length > 0
+    ? Prisma.sql`AND sv."family_id" IN (${Prisma.join(input.familyIds)})`
+    : Prisma.empty;
+  const variantFilter = input.variantId
+    ? Prisma.sql`AND sv."id" = ${input.variantId}`
+    : Prisma.empty;
+  const searchFilter = input.query
+    ? Prisma.sql`AND (
+        cs."service_name" ILIKE '%' || ${input.query} || '%'
+        OR cs."family_name" ILIKE '%' || ${input.query} || '%'
+        OR c."name" ILIKE '%' || ${input.query} || '%'
+        OR c."display_alias" ILIKE '%' || ${input.query} || '%'
+        OR c."uen" ILIKE '%' || ${input.query} || '%'
+        OR sv."name" ILIKE '%' || ${input.query} || '%'
+        OR sv."code" ILIKE '%' || ${input.query} || '%'
+        OR sf."name" ILIKE '%' || ${input.query} || '%'
+      )`
+    : Prisma.empty;
+  const applicabilityFilter = input.applicability
+    ? Prisma.sql`AND EXISTS (
+        SELECT 1
+        FROM "client_service_deadline_rules" AS dr
+        WHERE dr."client_service_id" = cs."id"
+          AND dr."tenant_id" = ${tenantId}
+          AND dr."enabled" = TRUE
+          AND dr."applicability_state" = ${input.applicability}
+      )`
+    : Prisma.empty;
+  const direction = input.sortOrder === 'desc'
+    ? Prisma.sql`DESC`
+    : Prisma.sql`ASC`;
+  const skip = (input.page - 1) * input.limit;
+
+  // Prisma's generated relation ordering cannot express MIN of a filtered
+  // relation. This parameterized page-ID query keeps every tenant/company
+  // predicate in SQL, orders by the minimum OPEN operative date, puts nulls
+  // last in either direction, and uses the client-service ID as a tie-breaker.
+  return Prisma.sql`
+    SELECT cs."id"
+    FROM "client_services" AS cs
+    INNER JOIN "companies" AS c
+      ON c."id" = cs."company_id"
+      AND c."tenant_id" = ${tenantId}
+      AND c."deleted_at" IS NULL
+    INNER JOIN "service_variants" AS sv
+      ON sv."id" = cs."service_variant_id"
+      AND sv."tenant_id" = ${tenantId}
+    INNER JOIN "service_families" AS sf
+      ON sf."id" = sv."family_id"
+      AND sf."tenant_id" = ${tenantId}
+    LEFT JOIN "deadline_occurrences" AS d
+      ON d."client_service_id" = cs."id"
+      AND d."tenant_id" = ${tenantId}
+      AND d."company_id" = cs."company_id"
+      AND d."status" = 'OPEN'
+      ${deadlineCompanyScope}
+    WHERE cs."tenant_id" = ${tenantId}
+      ${companyScope}
+      ${archivedFilter}
+      ${statusFilter}
+      ${familyFilter}
+      ${variantFilter}
+      ${searchFilter}
+      ${applicabilityFilter}
+    GROUP BY cs."id"
+    ORDER BY
+      CASE WHEN MIN(d."operative_due_date") IS NULL THEN 1 ELSE 0 END ASC,
+      MIN(d."operative_due_date") ${direction},
+      cs."id" ASC
+    OFFSET ${skip}
+    LIMIT ${input.limit}
+  `;
+}
+
+async function nextDeadlinePageIds(
+  db: ServiceRosterDb,
+  input: ServiceRosterSearch,
+  tenantId: string,
+  companyIds: string[] | undefined,
+): Promise<string[]> {
+  if (typeof db.$queryRaw !== 'function') {
+    throw new Error('Next-deadline roster ordering is unavailable');
+  }
+  const rows = await db.$queryRaw<Array<{ id: string }>>(
+    nextDeadlinePageQuery(input, tenantId, companyIds),
+  );
+  return rows.map((row) => row.id);
 }
 
 function includeForRoster(
@@ -319,9 +424,13 @@ function toServiceRosterItem(value: unknown): ServiceRosterItem {
   const companyName = company.name ?? '';
   const displayAlias = company.displayAlias ?? null;
   const familyId = family.id ?? variant.id ?? record.serviceVariantId;
-  const familyName = family.name ?? record.familyName;
-  const cadence = variant.serviceCadence ?? record.serviceCadence;
-  const customCadenceLabel = variant.customCadenceLabel ?? record.customCadenceLabel;
+  // ClientService stores the operational snapshot captured at activation.
+  // Live catalog relations remain available under `family` and `variant`, but
+  // must not rewrite the service that the client actually purchased.
+  const familyName = record.familyName;
+  const liveFamilyName = family.name ?? record.familyName;
+  const cadence = record.serviceCadence;
+  const customCadenceLabel = record.customCadenceLabel;
   const applicability = aggregateApplicability(record);
   const warningReasons = [...new Set(
     (record.deadlineRules ?? [])
@@ -368,7 +477,7 @@ function toServiceRosterItem(value: unknown): ServiceRosterItem {
     },
     family: {
       id: familyId,
-      name: familyName,
+      name: liveFamilyName,
       displayColor: family.displayColor ?? DEFAULT_FAMILY_COLOR,
     },
     familyName,
@@ -411,6 +520,50 @@ export async function listServiceRoster(
   }
 
   const where = queryWhere(inputResult, scope.tenantId, companyIds);
+  if (inputResult.sortBy === 'nextDeadline') {
+    const [pageIds, total] = await Promise.all([
+      nextDeadlinePageIds(db, inputResult, scope.tenantId, companyIds),
+      db.clientService.count({ where }),
+    ]);
+
+    if (pageIds.length === 0) {
+      return {
+        items: [],
+        total,
+        page: inputResult.page,
+        limit: inputResult.limit,
+        totalPages: total === 0 ? 0 : Math.ceil(total / inputResult.limit),
+      };
+    }
+
+    // Hydration remains access-scoped through the original predicate. The
+    // page-ID order is restored after Prisma returns its deterministic ID
+    // order; this is ordering, not a permission post-filter.
+    const records = await db.clientService.findMany({
+      where: { ...where, id: { in: pageIds } },
+      include: includeForRoster(scope.tenantId, companyIds),
+      orderBy: [{ id: 'asc' }],
+      take: pageIds.length,
+    });
+    const recordsById = new Map(
+      records.map((record) => {
+        const typed = asRosterRecord(record);
+        return [typed.id, record] as const;
+      }),
+    );
+
+    return {
+      items: pageIds
+        .map((id) => recordsById.get(id))
+        .filter((record): record is unknown => Boolean(record))
+        .map(toServiceRosterItem),
+      total,
+      page: inputResult.page,
+      limit: inputResult.limit,
+      totalPages: total === 0 ? 0 : Math.ceil(total / inputResult.limit),
+    };
+  }
+
   const [records, total] = await Promise.all([
     db.clientService.findMany({
       where,

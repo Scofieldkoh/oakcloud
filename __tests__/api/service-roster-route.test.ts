@@ -74,6 +74,16 @@ describe('GET /api/client-services', () => {
     expect(mocks.listServiceRoster).not.toHaveBeenCalled();
   });
 
+  it('preserves an explicitly empty status filter end to end', async () => {
+    const response = await GET(new NextRequest('http://localhost/api/client-services?statuses='));
+
+    expect(response.status).toBe(200);
+    expect(mocks.listServiceRoster).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: [] }),
+      { tenantId, companyIds: [companyId] },
+    );
+  });
+
   it.each([
     'unknown=value',
     'page=1&page=2',
@@ -97,5 +107,16 @@ describe('GET /api/client-services', () => {
     expect(response.status).toBe(403);
     expect(body).toEqual({ error: 'Forbidden' });
     expect(mocks.listServiceRoster).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes unexpected roster failures', async () => {
+    mocks.listServiceRoster.mockRejectedValue(new Error('database password leaked'));
+
+    const response = await GET(new NextRequest('http://localhost/api/client-services'));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toMatchObject({ error: 'An unexpected error occurred', code: 'INTERNAL_ERROR' });
+    expect(JSON.stringify(body)).not.toContain('database password leaked');
   });
 });

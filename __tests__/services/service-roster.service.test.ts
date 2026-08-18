@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   count: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -11,6 +12,7 @@ vi.mock('@/lib/prisma', () => ({
       findMany: mocks.findMany,
       count: mocks.count,
     },
+    $queryRaw: mocks.queryRaw,
   },
 }));
 
@@ -43,6 +45,15 @@ const scope: ServiceRosterScope = {
   tenantId,
   companyIds: [companyId],
 };
+
+function rawQueryText(query: unknown): string {
+  if (query && typeof query === 'object') {
+    const candidate = query as { sql?: unknown; strings?: readonly unknown[] };
+    if (typeof candidate.sql === 'string') return candidate.sql;
+    if (candidate.strings) return candidate.strings.map(String).join(' ');
+  }
+  return String(query);
+}
 
 function rosterRecord(overrides: Record<string, unknown> = {}) {
   return {
@@ -120,6 +131,7 @@ describe('service roster service', () => {
     vi.clearAllMocks();
     mocks.findMany.mockResolvedValue([rosterRecord()]);
     mocks.count.mockResolvedValue(1);
+    mocks.queryRaw.mockResolvedValue([{ id: 'service-1' }]);
   });
 
   it('places tenant and accessible company IDs in the client-service predicate', async () => {
@@ -157,6 +169,58 @@ describe('service roster service', () => {
     expect(call.include.deadlineOccurrences.take).toBe(1);
   });
 
+  it.each([
+    ['asc', 'ASC'],
+    ['desc', 'DESC'],
+  ] as const)('orders next-deadline pages by the scoped minimum with nulls last (%s)', async (sortOrder, direction) => {
+    mocks.queryRaw.mockResolvedValue([{ id: 'service-1' }]);
+
+    const result = await listServiceRoster({
+      ...search,
+      sortBy: 'nextDeadline',
+      sortOrder,
+      page: 2,
+      limit: 1,
+    }, scope);
+
+    expect(result.items).toHaveLength(1);
+    expect(mocks.queryRaw).toHaveBeenCalledTimes(1);
+    const sql = rawQueryText(mocks.queryRaw.mock.calls[0]![0]);
+    expect(sql).toMatch(/MIN[\s\S]*operative_due_date/);
+    expect(sql).toMatch(/deadline_occurrences/);
+    expect(sql).toMatch(new RegExp(`ORDER BY[\\s\\S]*CASE[\\s\\S]*MIN[\\s\\S]*IS NULL[\\s\\S]*ASC[\\s\\S]*MIN[\\s\\S]*operative_due_date[\\s\\S]*${direction}[\\s\\S]*cs[\\s\\S]*id[\\s\\S]*ASC`));
+    expect(sql).toMatch(/OFFSET[\s\S]*LIMIT/);
+    expect(sql).toMatch(/tenant_id/);
+    expect(sql).toMatch(/company_id/);
+  });
+
+  it('hydrates raw next-deadline page IDs in SQL order without widening access scope', async () => {
+    mocks.queryRaw.mockResolvedValue([{ id: 'service-2' }, { id: 'service-1' }]);
+    mocks.findMany.mockResolvedValue([
+      rosterRecord({ id: 'service-1' }),
+      rosterRecord({ id: 'service-2' }),
+    ]);
+
+    const result = await listServiceRoster({
+      ...search,
+      sortBy: 'nextDeadline',
+      page: 2,
+      limit: 2,
+    }, scope);
+
+    expect(result.items.map((item) => item.id)).toEqual(['service-2', 'service-1']);
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        tenantId,
+        companyId: { in: [companyId] },
+        id: { in: ['service-2', 'service-1'] },
+      }),
+    }));
+    expect(mocks.count).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ tenantId, companyId: { in: [companyId] } }),
+    }));
+  });
+
   it('returns alias fallback, family color, snapshots, next deadline, and warning state', async () => {
     const result = await listServiceRoster(search, { tenantId, allCompaniesAccess: true });
 
@@ -190,6 +254,92 @@ describe('service roster service', () => {
       ruleWarning: { state: 'MISSING_INPUT', hasWarning: true, reasons: ['Missing FYE'] },
       nextDeadline: null,
     });
+  });
+
+  it('keeps stored operational snapshots when live catalog values differ', async () => {
+    const base = rosterRecord();
+    mocks.findMany.mockResolvedValue([rosterRecord({
+      familyName: 'Stored Corporate Services',
+      serviceName: 'Stored Annual Return Filing',
+      serviceCadence: 'MONTHLY',
+      customCadenceLabel: 'Stored monthly cadence',
+      serviceVariant: {
+        ...base.serviceVariant,
+        name: 'Current Annual Return Filing',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: 'Current annual cadence',
+        family: {
+          ...base.serviceVariant.family,
+          name: 'Current Corporate Services',
+        },
+      },
+    })]);
+
+    const result = await listServiceRoster(search, scope);
+
+    expect(result.items[0]).toMatchObject({
+      family: { name: 'Current Corporate Services' },
+      familyName: 'Stored Corporate Services',
+      variant: { name: 'Current Annual Return Filing', serviceCadence: 'ANNUALLY' },
+      service: {
+        name: 'Stored Annual Return Filing',
+        cadence: 'MONTHLY',
+        serviceCadence: 'MONTHLY',
+        customCadenceLabel: 'Stored monthly cadence',
+      },
+      serviceName: 'Stored Annual Return Filing',
+      cadence: 'MONTHLY',
+      serviceCadence: 'MONTHLY',
+      customCadenceLabel: 'Stored monthly cadence',
+    });
+  });
+
+  it('puts archived, search, status, company, family, variant, and applicability filters in the predicate', async () => {
+    await listServiceRoster({
+      ...search,
+      query: 'annual',
+      companyId,
+      familyIds: [familyId],
+      variantId,
+      statuses: ['PAUSED'],
+      archived: true,
+      applicability: 'MISSING_INPUT',
+    }, { tenantId, allCompaniesAccess: true });
+
+    const call = mocks.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(call.where).toEqual(expect.objectContaining({
+      tenantId,
+      companyId: { in: [companyId] },
+      deletedAt: { not: null },
+      status: { in: ['PAUSED'] },
+      company: expect.objectContaining({ id: { in: [companyId] } }),
+      serviceVariant: expect.objectContaining({ id: variantId, familyId: { in: [familyId] } }),
+      deadlineRules: { some: expect.objectContaining({ tenantId, applicabilityState: 'MISSING_INPUT' }) },
+      AND: expect.any(Array),
+    }));
+  });
+
+  it.each([
+    ['company', { company: { name: 'asc' } }],
+    ['family', { familyName: 'asc' }],
+    ['service', { serviceName: 'asc' }],
+    ['status', { status: 'asc' }],
+    ['startDate', { startDate: 'asc' }],
+  ] as const)('uses a deterministic SQL order for the %s branch', async (sortBy, firstOrder) => {
+    await listServiceRoster({ ...search, sortBy }, scope);
+
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      orderBy: expect.arrayContaining([firstOrder, { id: 'asc' }]),
+    }));
+  });
+
+  it('short-circuits an explicitly empty status set', async () => {
+    const result = await listServiceRoster({ ...search, statuses: [] }, scope);
+
+    expect(result).toEqual({ items: [], total: 0, page: 1, limit: 20, totalPages: 0 });
+    expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.count).not.toHaveBeenCalled();
+    expect(mocks.queryRaw).not.toHaveBeenCalled();
   });
 
   it('returns an empty page without querying when access scope is empty', async () => {
