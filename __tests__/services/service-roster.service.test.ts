@@ -17,6 +17,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import {
+  listServiceRosterFamilies,
   listServiceRoster,
   type ServiceRosterScope,
 } from '@/services/service-roster';
@@ -319,6 +320,26 @@ describe('service roster service', () => {
     }));
   });
 
+  it('applies distinct inline company, family, and service queries in the server predicate', async () => {
+    await listServiceRoster({
+      ...search,
+      companyQuery: 'Oaktree',
+      familyQuery: 'Accounting',
+      serviceQuery: 'Annual',
+    }, scope);
+
+    const call = mocks.findMany.mock.calls[0]![0] as { where: { AND?: unknown[] } };
+    expect(call.where.AND).toEqual(expect.arrayContaining([
+      expect.objectContaining({ company: expect.objectContaining({ OR: expect.any(Array) }) }),
+      expect.objectContaining({ OR: expect.arrayContaining([
+        expect.objectContaining({ familyName: expect.any(Object) }),
+      ]) }),
+      expect.objectContaining({ OR: expect.arrayContaining([
+        expect.objectContaining({ serviceName: expect.any(Object) }),
+      ]) }),
+    ]));
+  });
+
   it.each([
     ['company', { company: { name: 'asc' } }],
     ['family', { familyName: 'asc' }],
@@ -348,5 +369,30 @@ describe('service roster service', () => {
     expect(result).toEqual({ items: [], total: 0, page: 3, limit: 10, totalPages: 0 });
     expect(mocks.findMany).not.toHaveBeenCalled();
     expect(mocks.count).not.toHaveBeenCalled();
+  });
+
+  it('returns complete deduplicated family facets from the access-scoped operational set', async () => {
+    mocks.findMany.mockResolvedValue([
+      { serviceVariant: { family: { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' } } },
+      { serviceVariant: { family: { id: '55555555-5555-4555-8555-555555555555', name: 'Advisory', displayColor: '#B85C38' } } },
+      { serviceVariant: { family: { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' } } },
+    ]);
+
+    await expect(listServiceRosterFamilies(scope)).resolves.toEqual([
+      { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' },
+      { id: '55555555-5555-4555-8555-555555555555', name: 'Advisory', displayColor: '#B85C38' },
+    ]);
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        tenantId,
+        companyId: { in: [companyId] },
+        company: expect.objectContaining({ id: { in: [companyId] } }),
+        serviceVariant: expect.objectContaining({
+          tenantId,
+          family: { tenantId },
+        }),
+      }),
+      select: expect.any(Object),
+    }));
   });
 });

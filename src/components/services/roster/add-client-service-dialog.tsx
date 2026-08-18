@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ClientServiceCreator } from '@/components/companies/company-detail/client-service-creator';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
+import { AsyncSearchSelect } from '@/components/ui/async-search-select';
+import { useCompanyOptionsPage } from '@/hooks/use-all-company-options';
 import type { ClientServiceDto } from '@/services/client-service';
 
 interface AddClientServiceDialogProps {
@@ -16,20 +16,29 @@ interface AddClientServiceDialogProps {
 
 /** Select an accessible company before mounting the shared company-scoped creator. */
 export function AddClientServiceDialog({ isOpen, onClose, onCreated }: AddClientServiceDialogProps) {
-  const companyOptions = useAllCompanyOptions(undefined, { enabled: isOpen });
+  const [companySearch, setCompanySearch] = useState('');
+  const [companyPage, setCompanyPage] = useState(0);
+  const companyOptions = useCompanyOptionsPage(undefined, {
+    enabled: isOpen,
+    query: companySearch,
+    page: companyPage,
+    limit: 20,
+  });
   const [companyId, setCompanyId] = useState('');
   const [creatorOpen, setCreatorOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
+      setCompanySearch('');
+      setCompanyPage(0);
       setCompanyId('');
       setCreatorOpen(false);
     }
   }, [isOpen]);
 
   const options = useMemo(
-    () => (companyOptions.data ?? []).map((company) => ({
-      value: company.id,
+    () => (companyOptions.data?.options ?? []).map((company) => ({
+      id: company.id,
       label: company.name,
       description: company.uen ?? undefined,
     })),
@@ -57,18 +66,27 @@ export function AddClientServiceDialog({ isOpen, onClose, onCreated }: AddClient
         size="md"
       >
         <ModalBody className="space-y-4">
-          <SearchableSelect
-            label="Company"
-            options={options}
-            value={companyId}
-            onChange={setCompanyId}
-            placeholder={companyOptions.isLoading ? 'Loading companies…' : 'Select a company'}
-            loading={companyOptions.isLoading}
-            error={companyOptions.error ? 'Unable to load accessible companies.' : undefined}
-            popoverMinWidth={320}
-          />
-          {!companyOptions.isLoading && options.length === 0 && !companyOptions.error ? (
-            <p className="text-sm text-text-secondary">No accessible companies are available.</p>
+            <AsyncSearchSelect
+              label="Company"
+              options={options}
+              value={companyId}
+              onChange={(value) => setCompanyId(value)}
+              placeholder="Search accessible companies"
+              isLoading={companyOptions.isLoading}
+              searchQuery={companySearch}
+              onSearchChange={(value) => { setCompanySearch(value); setCompanyPage(0); }}
+              emptySearchText="Type to search companies"
+              noResultsText="No accessible companies match"
+              pagination={{
+                page: companyOptions.data?.page ?? companyPage,
+                hasPreviousPage: companyPage > 0,
+                hasNextPage: companyOptions.data?.hasMore === true,
+                onPreviousPage: () => setCompanyPage((page) => Math.max(0, page - 1)),
+                onNextPage: () => setCompanyPage((page) => page + 1),
+              }}
+            />
+          {!companyOptions.isLoading && options.length === 0 && !companyOptions.error && companySearch.length === 0 ? (
+            <p className="text-sm text-text-secondary">Type to search accessible companies.</p>
           ) : null}
         </ModalBody>
         <ModalFooter>

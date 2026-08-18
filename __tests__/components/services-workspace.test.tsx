@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   useServicesWorkspaceSettings: vi.fn(),
   useServiceRoster: vi.fn(),
   useServiceCatalog: vi.fn(),
+  useServiceRosterFamilies: vi.fn(),
 }));
 
 vi.mock('@/hooks/use-services-workspace-settings', () => ({
   useServicesWorkspaceSettings: mocks.useServicesWorkspaceSettings,
 }));
 vi.mock('@/hooks/use-service-roster', () => ({ useServiceRoster: mocks.useServiceRoster }));
+vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: mocks.useServiceRosterFamilies }));
 vi.mock('@/hooks/use-service-catalog', () => ({ useServiceCatalog: mocks.useServiceCatalog }));
 vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreference: () => ({ data: { value: null }, isLoading: false }),
@@ -18,6 +20,7 @@ vi.mock('@/hooks/use-user-preferences', () => ({
 }));
 vi.mock('@/hooks/use-all-company-options', () => ({
   useAllCompanyOptions: () => ({ data: [], isLoading: false, error: null }),
+  useCompanyOptionsPage: () => ({ data: { options: [], hasMore: false, page: 0 }, isLoading: false, error: null }),
 }));
 vi.mock('@/components/companies/company-detail/client-service-creator', () => ({ ClientServiceCreator: () => null }));
 vi.mock('@/components/companies/company-detail/client-service-editor', () => ({ ClientServiceEditor: () => null }));
@@ -45,6 +48,7 @@ describe('ServicesWorkspace', () => {
       error: null,
     });
     mocks.useServiceRoster.mockReturnValue({ data: { items: [], total: 0, page: 1, limit: 20, totalPages: 0 }, isLoading: false, isFetching: false, error: null });
+    mocks.useServiceRosterFamilies.mockReturnValue({ data: [], isLoading: false, error: null });
     mocks.useServiceCatalog.mockReturnValue({ data: { families: [], total: 0 }, isLoading: false });
 
     render(<ServicesWorkspace />);

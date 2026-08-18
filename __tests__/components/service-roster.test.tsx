@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ServiceRosterItem } from '@/services/service-roster';
 
@@ -7,6 +7,18 @@ const hooks = vi.hoisted(() => ({
   useUserPreference: vi.fn(),
   useUpsertUserPreference: vi.fn(),
   useServiceCatalog: vi.fn(),
+  useServiceRosterFamilies: vi.fn(),
+}));
+
+const navigation = vi.hoisted(() => ({
+  searchParams: new URLSearchParams(),
+  replace: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/services',
+  useRouter: () => ({ replace: navigation.replace }),
+  useSearchParams: () => navigation.searchParams,
 }));
 
 vi.mock('@/hooks/use-service-roster', () => ({ useServiceRoster: hooks.useServiceRoster }));
@@ -15,8 +27,10 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: hooks.useUpsertUserPreference,
 }));
 vi.mock('@/hooks/use-service-catalog', () => ({ useServiceCatalog: hooks.useServiceCatalog }));
+vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: hooks.useServiceRosterFamilies }));
 vi.mock('@/hooks/use-all-company-options', () => ({
   useAllCompanyOptions: () => ({ data: [], isLoading: false, error: null }),
+  useCompanyOptionsPage: () => ({ data: { options: [], hasMore: false, page: 0 }, isLoading: false, error: null }),
 }));
 vi.mock('@/components/companies/company-detail/client-service-creator', () => ({
   ClientServiceCreator: () => null,
@@ -120,7 +134,15 @@ const rosterItem: ServiceRosterItem = {
   updatedAt: '2026-08-18T00:00:00.000Z',
 };
 
+const advisoryFamily = {
+  id: '66666666-6666-4666-8666-666666666666',
+  name: 'Advisory',
+  displayColor: '#B85C38',
+};
+
 function setup() {
+  navigation.searchParams = new URLSearchParams();
+  navigation.replace.mockReset();
   hooks.useServiceRoster.mockReturnValue({
     data: { items: [rosterItem], total: 1, page: 1, limit: 20, totalPages: 1 },
     isLoading: false,
@@ -130,6 +152,7 @@ function setup() {
   hooks.useUserPreference.mockReturnValue({ data: { value: null }, isLoading: false });
   hooks.useUpsertUserPreference.mockReturnValue({ mutate: vi.fn(), isPending: false });
   hooks.useServiceCatalog.mockReturnValue({ data: { families: [{ ...family, variants: [] }], total: 1 }, isLoading: false });
+  hooks.useServiceRosterFamilies.mockReturnValue({ data: [family, advisoryFamily], isLoading: false, error: null });
 }
 
 describe('ServiceRoster', () => {
@@ -166,5 +189,109 @@ describe('ServiceRoster', () => {
     expect(hooks.useServiceRoster).toHaveBeenLastCalledWith(
       expect.objectContaining({ familyIds: [family.id] }),
     );
+  });
+
+  it('keeps complete family options when the current roster page is filtered', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    expect(screen.getByRole('button', { name: 'Advisory' })).toBeVisible();
+  });
+
+  it('routes inline filters to the canonical server query and resets the page', () => {
+    setup();
+    navigation.searchParams = new URLSearchParams('page=3');
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter company' }), { target: { value: 'Oaktree' } });
+
+    expect(hooks.useServiceRoster).toHaveBeenLastCalledWith(expect.objectContaining({
+      companyQuery: 'Oaktree',
+      page: 1,
+    }));
+    expect(navigation.replace).toHaveBeenCalledWith('/services?page=1&companyQuery=Oaktree', { scroll: false });
+  });
+
+  it('synchronizes roster requests when browser navigation changes the URL', () => {
+    setup();
+    const view = render(<ServiceRoster workspaceId="workspace-1" />);
+    navigation.searchParams = new URLSearchParams('page=2&statuses=PAUSED&familyQuery=Advisory');
+    view.rerender(<ServiceRoster workspaceId="workspace-1" />);
+
+    expect(hooks.useServiceRoster).toHaveBeenLastCalledWith(expect.objectContaining({
+      page: 2,
+      statuses: ['PAUSED'],
+      familyQuery: 'Advisory',
+    }));
+  });
+
+  it('restores and exposes the complete table preference controls', () => {
+    setup();
+    hooks.useUserPreference.mockReturnValue({
+      data: {
+        value: {
+          version: 1,
+          columnWidths: { company: 340 },
+          columnOrder: ['service', 'company'],
+          columnVisibility: { family: false },
+          sortBy: 'service',
+          sortOrder: 'desc',
+          pageSize: 50,
+        },
+      },
+      isLoading: false,
+    });
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    expect(screen.getByRole('combobox', { name: 'Per page:' })).toHaveValue('50');
+    fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
+    expect(screen.getByRole('checkbox', { name: 'Show Family column' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Move Service column down' })).toBeVisible();
+  });
+
+  it('writes resized widths after pointer release instead of every pointer move', async () => {
+    setup();
+    const mutate = vi.fn();
+    hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const resize = screen.getByRole('button', { name: 'Resize Company column' });
+    fireEvent.pointerDown(resize, { clientX: 100 });
+    fireEvent.pointerMove(window, { clientX: 180 });
+    expect(mutate).not.toHaveBeenCalled();
+    fireEvent.pointerUp(window, { clientX: 180 });
+
+    await waitFor(() => expect(mutate).toHaveBeenCalledWith(expect.objectContaining({
+      key: 'services.roster.table.v1',
+      value: expect.objectContaining({ version: 1, columnWidths: expect.objectContaining({ company: 310 }) }),
+    })));
+  });
+
+  it('persists visibility, order, sorting, and page-size changes in the versioned preference', () => {
+    setup();
+    const mutate = vi.fn();
+    hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show Family column' }));
+    expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
+      value: expect.objectContaining({ version: 1, columnVisibility: expect.objectContaining({ family: false }) }),
+    }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move Company column down' }));
+    expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
+      value: expect.objectContaining({ columnOrder: expect.arrayContaining(['family', 'company']) }),
+    }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sort by Service' }));
+    expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
+      value: expect.objectContaining({ sortBy: 'service', sortOrder: 'asc' }),
+    }));
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Per page:' }), { target: { value: '50' } });
+    expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
+      value: expect.objectContaining({ pageSize: 50 }),
+    }));
   });
 });

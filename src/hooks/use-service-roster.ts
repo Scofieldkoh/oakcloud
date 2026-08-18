@@ -68,6 +68,9 @@ export function normalizeServiceRosterSearch(
     : 20;
   return {
     query: query || undefined,
+    companyQuery: input.companyQuery?.trim() || undefined,
+    familyQuery: input.familyQuery?.trim() || undefined,
+    serviceQuery: input.serviceQuery?.trim() || undefined,
     companyId: input.companyId,
     familyIds: unique(input.familyIds),
     variantId: input.variantId,
@@ -95,12 +98,15 @@ export function serviceRosterSearchParams(search: ServiceRosterSearchInput = {})
   params.set('archived', String(normalized.archived));
   if (normalized.applicability) params.set('applicability', normalized.applicability);
   if (normalized.companyId) params.set('companyId', normalized.companyId);
+  if (normalized.companyQuery) params.set('companyQuery', normalized.companyQuery);
+  if (normalized.familyQuery) params.set('familyQuery', normalized.familyQuery);
   if (normalized.familyIds.length > 0) params.set('familyIds', normalized.familyIds.join(','));
   if (normalized.limit !== undefined) params.set('limit', String(normalized.limit));
   if (normalized.page !== undefined) params.set('page', String(normalized.page));
   if (normalized.query) params.set('query', normalized.query);
   if (normalized.sortBy) params.set('sortBy', normalized.sortBy);
   if (normalized.sortOrder) params.set('sortOrder', normalized.sortOrder);
+  if (normalized.serviceQuery) params.set('serviceQuery', normalized.serviceQuery);
   // An explicit empty value is distinct from an omitted parameter: the route
   // parser preserves `statuses=` as [], which the service intentionally
   // short-circuits to an empty result.

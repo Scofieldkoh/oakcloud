@@ -111,6 +111,12 @@ export interface ServiceRosterResult {
   totalPages: number;
 }
 
+export interface ServiceRosterFamily {
+  id: string;
+  name: string;
+  displayColor: string;
+}
+
 export interface ServiceRosterDb {
   $queryRaw?: <T>(query: unknown) => Promise<T>;
   clientService: {

@@ -47,6 +47,23 @@ describe('useServiceRoster', () => {
     }));
   });
 
+  it('normalizes and serializes canonical inline server filters', () => {
+    const input = {
+      companyQuery: '  Oaktree  ',
+      familyQuery: '  Accounting  ',
+      serviceQuery: '  Annual Return  ',
+    };
+
+    expect(normalizeServiceRosterSearch(input)).toEqual(expect.objectContaining({
+      companyQuery: 'Oaktree',
+      familyQuery: 'Accounting',
+      serviceQuery: 'Annual Return',
+    }));
+    expect(serviceRosterSearchParams(input)).toContain('companyQuery=Oaktree');
+    expect(serviceRosterSearchParams(input)).toContain('familyQuery=Accounting');
+    expect(serviceRosterSearchParams(input)).toContain('serviceQuery=Annual+Return');
+  });
+
   it('uses the same key and URL for reordered family and status sets', () => {
     const first = { familyIds: ['b', 'a', 'b'], statuses: ['PAUSED', 'ACTIVE'] as const };
     const second = { familyIds: ['a', 'b'], statuses: ['ACTIVE', 'PAUSED'] as const };

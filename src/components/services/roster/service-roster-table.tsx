@@ -42,11 +42,14 @@ interface ServiceRosterTableProps {
   inlineFilters: ServiceRosterInlineFilters;
   onInlineFilterChange: (filters: Partial<ServiceRosterInlineFilters>) => void;
   columnWidths: ServiceRosterColumnWidths;
+  columnOrder: ServiceRosterColumnId[];
+  columnVisibility: Record<ServiceRosterColumnId, boolean>;
   onColumnWidthChange: (columnId: ServiceRosterColumnId, width: number) => void;
+  onColumnResizeEnd: (columnId: ServiceRosterColumnId, width: number) => void;
   onEdit: (item: ServiceRosterItem) => void;
 }
 
-const columnLabels: Record<ServiceRosterColumnId, string> = {
+export const columnLabels: Record<ServiceRosterColumnId, string> = {
   company: 'Company',
   family: 'Family',
   service: 'Service',
@@ -58,7 +61,7 @@ const columnLabels: Record<ServiceRosterColumnId, string> = {
   actions: 'Actions',
 };
 
-const defaultWidths: Record<ServiceRosterColumnId, number> = {
+export const defaultWidths: Record<ServiceRosterColumnId, number> = {
   company: 230,
   family: 150,
   service: 190,
@@ -104,11 +107,11 @@ function FamilyBadge({ item }: { item: ServiceRosterItem }) {
   return (
     <span
       className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full border px-2 py-1 text-xs"
-      style={{ borderColor: item.family.displayColor, color: item.family.displayColor }}
+      style={{ borderColor: item.family.displayColor }}
       title={item.family.name}
     >
       <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: item.family.displayColor }} />
-      <span className="truncate">{item.family.name}</span>
+      <span className="truncate text-text-primary">{item.family.name}</span>
     </span>
   );
 }
@@ -198,7 +201,7 @@ function SortableHeader({
   );
 }
 
-function InlineFilterRow({ filters, onChange }: { filters: ServiceRosterInlineFilters; onChange: (filters: Partial<ServiceRosterInlineFilters>) => void }) {
+function InlineFilterRow({ columns, filters, onChange }: { columns: ServiceRosterColumnId[]; filters: ServiceRosterInlineFilters; onChange: (filters: Partial<ServiceRosterInlineFilters>) => void }) {
   const filter = (label: string, value: string | undefined, key: keyof ServiceRosterInlineFilters) => (
     <input
       type="search"
@@ -212,31 +215,36 @@ function InlineFilterRow({ filters, onChange }: { filters: ServiceRosterInlineFi
 
   return (
     <tr className="border-b border-border-primary bg-background-secondary/60">
-      <th className="px-4 py-2" scope="row">{filter('company', filters.company, 'company')}</th>
-      <th className="px-4 py-2" scope="row">{filter('family', filters.family, 'family')}</th>
-      <th className="px-4 py-2" scope="row">{filter('service', filters.service, 'service')}</th>
-      <th className="px-4 py-2" scope="row"><span className="sr-only">Status filters are above</span></th>
-      <th className="px-4 py-2" scope="row"><span className="sr-only">Cadence filter</span></th>
-      <th className="px-4 py-2" scope="row"><span className="sr-only">Next deadline filter</span></th>
-      <th className="px-4 py-2" scope="row"><span className="sr-only">Start/end filter</span></th>
-      <th className="px-4 py-2" scope="row"><span className="sr-only">Warnings filter</span></th>
-      <th className="px-4 py-2" scope="row"><span className="sr-only">Actions</span></th>
+      {columns.map((column) => (
+        <th key={column} className="px-4 py-2" scope="row">
+          {column === 'company' ? filter('company', filters.company, 'company') : null}
+          {column === 'family' ? filter('family', filters.family, 'family') : null}
+          {column === 'service' ? filter('service', filters.service, 'service') : null}
+          {column !== 'company' && column !== 'family' && column !== 'service' ? <span className="sr-only">{columnLabels[column]} filter</span> : null}
+        </th>
+      ))}
     </tr>
   );
 }
 
-function DesktopRow({ item, index, canEdit, onEdit }: { item: ServiceRosterItem; index: number; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
+function DesktopCell({ item, column, canEdit, onEdit }: { item: ServiceRosterItem; column: ServiceRosterColumnId; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
+  switch (column) {
+    case 'company': return <td className="max-w-0 px-4 py-3 align-top"><CompanyCell item={item} /></td>;
+    case 'family': return <td className="px-4 py-3 align-top"><FamilyBadge item={item} /></td>;
+    case 'service': return <td className="max-w-0 px-4 py-3 align-top"><span className="block truncate text-sm text-text-primary" title={item.serviceName}>{item.serviceName}</span></td>;
+    case 'status': return <td className="px-4 py-3 align-top"><span className={cn('badge', statusClass(item.status))}>{statusLabel(item.status)}</span></td>;
+    case 'cadence': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatCadence(item)}</td>;
+    case 'nextDeadline': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatDate(item.nextDeadline?.operativeDueDate ?? null)}</td>;
+    case 'startEnd': return <td className="px-4 py-3 align-top text-sm text-text-secondary"><span className="whitespace-nowrap">{formatDate(item.startDate)}</span><span className="mx-1 text-text-muted">–</span><span className="whitespace-nowrap">{formatDate(item.endDate)}</span></td>;
+    case 'warnings': return <td className="px-4 py-3 align-top"><WarningCell item={item} /></td>;
+    case 'actions': return <td className="px-4 py-3 align-top"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} /></td>;
+  }
+}
+
+function DesktopRow({ item, index, columns, canEdit, onEdit }: { item: ServiceRosterItem; index: number; columns: ServiceRosterColumnId[]; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void }) {
   return (
     <tr className={cn('border-b border-border-primary transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')}>
-      <td className="max-w-0 px-4 py-3 align-top"><CompanyCell item={item} /></td>
-      <td className="px-4 py-3 align-top"><FamilyBadge item={item} /></td>
-      <td className="max-w-0 px-4 py-3 align-top"><span className="block truncate text-sm text-text-primary" title={item.serviceName}>{item.serviceName}</span></td>
-      <td className="px-4 py-3 align-top"><span className={cn('badge', statusClass(item.status))}>{statusLabel(item.status)}</span></td>
-      <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatCadence(item)}</td>
-      <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatDate(item.nextDeadline?.operativeDueDate ?? null)}</td>
-      <td className="px-4 py-3 align-top text-sm text-text-secondary"><span className="whitespace-nowrap">{formatDate(item.startDate)}</span><span className="mx-1 text-text-muted">–</span><span className="whitespace-nowrap">{formatDate(item.endDate)}</span></td>
-      <td className="px-4 py-3 align-top"><WarningCell item={item} /></td>
-      <td className="px-4 py-3 align-top"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} /></td>
+      {columns.map((column) => <DesktopCell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} />)}
     </tr>
   );
 }
@@ -271,19 +279,26 @@ export function ServiceRosterTable({
   inlineFilters,
   onInlineFilterChange,
   columnWidths,
+  columnOrder,
+  columnVisibility,
   onColumnWidthChange,
+  onColumnResizeEnd,
   onEdit,
 }: ServiceRosterTableProps) {
+  const visibleColumns = columnOrder.filter((column) => columnVisibility[column]);
   const startResize = (columnId: ServiceRosterColumnId, event: React.PointerEvent<HTMLButtonElement>) => {
     if (columnId === 'actions') return;
     event.preventDefault();
     const startX = event.clientX;
     const initial = columnWidths[columnId] ?? defaultWidths[columnId];
+    let latestWidth = initial;
     const pointerMove = (moveEvent: PointerEvent) => {
-      onColumnWidthChange(columnId, Math.max(96, initial + moveEvent.clientX - startX));
+      latestWidth = Math.max(96, initial + moveEvent.clientX - startX);
+      onColumnWidthChange(columnId, latestWidth);
     };
     const pointerUp = () => {
       window.removeEventListener('pointermove', pointerMove);
+      onColumnResizeEnd(columnId, latestWidth);
       window.removeEventListener('pointerup', pointerUp);
     };
     window.addEventListener('pointermove', pointerMove);
@@ -298,18 +313,18 @@ export function ServiceRosterTable({
       <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
         <table className="min-w-[1280px] w-full table-fixed border-collapse" aria-label="Services roster table">
           <colgroup>
-            {SERVICE_ROSTER_COLUMNS.map((columnId) => <col key={columnId} style={{ width: `${columnWidths[columnId] ?? defaultWidths[columnId]}px` }} />)}
+            {visibleColumns.map((columnId) => <col key={columnId} style={{ width: `${columnWidths[columnId] ?? defaultWidths[columnId]}px` }} />)}
           </colgroup>
           <thead>
             <tr className="border-b border-border-primary bg-background-tertiary/70">
-              {SERVICE_ROSTER_COLUMNS.map((columnId) => (
+              {visibleColumns.map((columnId) => (
                 <SortableHeader key={columnId} columnId={columnId} onSort={onSort} sortBy={sortBy} sortOrder={sortOrder} onResize={startResize} />
               ))}
             </tr>
-            <InlineFilterRow filters={inlineFilters} onChange={onInlineFilterChange} />
+            <InlineFilterRow columns={visibleColumns} filters={inlineFilters} onChange={onInlineFilterChange} />
           </thead>
           <tbody>
-            {items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} canEdit={canEdit} onEdit={onEdit} />)}
+            {items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} columns={visibleColumns} canEdit={canEdit} onEdit={onEdit} />)}
           </tbody>
         </table>
       </div>

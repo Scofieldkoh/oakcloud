@@ -42,14 +42,20 @@ describe('GET /api/client-services', () => {
   });
 
   it('authenticates, checks company read, enables the workspace, and passes the derived scope', async () => {
-    const response = await GET(new NextRequest('http://localhost/api/client-services?statuses=ACTIVE,PAUSED&familyIds=33333333-3333-4333-8333-333333333333,33333333-3333-4333-8333-333333333333'));
+    const response = await GET(new NextRequest('http://localhost/api/client-services?statuses=ACTIVE,PAUSED&familyIds=33333333-3333-4333-8333-333333333333,33333333-3333-4333-8333-333333333333&companyQuery=Oaktree&familyQuery=Accounting&serviceQuery=Annual'));
 
     expect(response.status).toBe(200);
     expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'read');
     expect(mocks.requireServicesWorkspaceEnabled).toHaveBeenCalledWith(tenantId);
     expect(mocks.getCompanyReadScope).toHaveBeenCalledWith(session);
     expect(mocks.listServiceRoster).toHaveBeenCalledWith(
-      expect.objectContaining({ statuses: ['ACTIVE', 'PAUSED'], familyIds: ['33333333-3333-4333-8333-333333333333'] }),
+      expect.objectContaining({
+        statuses: ['ACTIVE', 'PAUSED'],
+        familyIds: ['33333333-3333-4333-8333-333333333333'],
+        companyQuery: 'Oaktree',
+        familyQuery: 'Accounting',
+        serviceQuery: 'Annual',
+      }),
       { tenantId, companyIds: [companyId] },
     );
   });

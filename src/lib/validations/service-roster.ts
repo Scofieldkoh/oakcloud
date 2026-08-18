@@ -26,6 +26,9 @@ export const serviceRosterSortOrderSchema = z.enum(['asc', 'desc']);
  */
 export const serviceRosterSearchSchema = z.object({
   query: z.string().trim().max(200).optional(),
+  companyQuery: z.string().trim().max(200).optional(),
+  familyQuery: z.string().trim().max(200).optional(),
+  serviceQuery: z.string().trim().max(200).optional(),
   companyId: uuidSchema.optional(),
   familyIds: z.array(uuidSchema).max(50).default([]),
   variantId: uuidSchema.optional(),
@@ -43,6 +46,9 @@ export type SearchServiceRosterInput = ServiceRosterSearch;
 
 const allowedQueryKeys = new Set([
   'query',
+  'companyQuery',
+  'familyQuery',
+  'serviceQuery',
   'companyId',
   'familyIds',
   'variantId',

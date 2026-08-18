@@ -130,6 +130,52 @@ function queryWhere(
     family: { tenantId },
   };
 
+  const andFilters: Prisma.ClientServiceWhereInput[] = [];
+
+  if (input.companyQuery) {
+    andFilters.push({
+      company: {
+        ...companyRelation,
+        OR: [
+          { name: { contains: input.companyQuery, mode: 'insensitive' } },
+          { displayAlias: { contains: input.companyQuery, mode: 'insensitive' } },
+          { uen: { contains: input.companyQuery, mode: 'insensitive' } },
+        ],
+      },
+    });
+  }
+
+  if (input.familyQuery) {
+    andFilters.push({
+      OR: [
+        { familyName: { contains: input.familyQuery, mode: 'insensitive' } },
+        {
+          serviceVariant: {
+            ...variantRelation,
+            family: { tenantId, name: { contains: input.familyQuery, mode: 'insensitive' } },
+          },
+        },
+      ],
+    });
+  }
+
+  if (input.serviceQuery) {
+    andFilters.push({
+      OR: [
+        { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } },
+        {
+          serviceVariant: {
+            ...variantRelation,
+            OR: [
+              { name: { contains: input.serviceQuery, mode: 'insensitive' } },
+              { code: { contains: input.serviceQuery, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ],
+    });
+  }
+
   const where: Prisma.ClientServiceWhereInput = {
     tenantId,
     ...(companyIds ? { companyId: { in: companyIds } } : {}),
@@ -149,7 +195,7 @@ function queryWhere(
   };
 
   if (input.query) {
-    where.AND = [{
+    andFilters.push({
       OR: [
         { serviceName: { contains: input.query, mode: 'insensitive' } },
         { familyName: { contains: input.query, mode: 'insensitive' } },
@@ -178,8 +224,9 @@ function queryWhere(
           },
         },
       ],
-    }];
+    });
   }
+  if (andFilters.length > 0) where.AND = andFilters;
   return where;
 }
 
@@ -239,6 +286,26 @@ function nextDeadlinePageQuery(
         OR sf."name" ILIKE '%' || ${input.query} || '%'
       )`
     : Prisma.empty;
+  const companyQueryFilter = input.companyQuery
+    ? Prisma.sql`AND (
+        c."name" ILIKE '%' || ${input.companyQuery} || '%'
+        OR c."display_alias" ILIKE '%' || ${input.companyQuery} || '%'
+        OR c."uen" ILIKE '%' || ${input.companyQuery} || '%'
+      )`
+    : Prisma.empty;
+  const familyQueryFilter = input.familyQuery
+    ? Prisma.sql`AND (
+        cs."family_name" ILIKE '%' || ${input.familyQuery} || '%'
+        OR sf."name" ILIKE '%' || ${input.familyQuery} || '%'
+      )`
+    : Prisma.empty;
+  const serviceQueryFilter = input.serviceQuery
+    ? Prisma.sql`AND (
+        cs."service_name" ILIKE '%' || ${input.serviceQuery} || '%'
+        OR sv."name" ILIKE '%' || ${input.serviceQuery} || '%'
+        OR sv."code" ILIKE '%' || ${input.serviceQuery} || '%'
+      )`
+    : Prisma.empty;
   const applicabilityFilter = input.applicability
     ? Prisma.sql`AND EXISTS (
         SELECT 1
@@ -284,6 +351,9 @@ function nextDeadlinePageQuery(
       ${familyFilter}
       ${variantFilter}
       ${searchFilter}
+      ${companyQueryFilter}
+      ${familyQueryFilter}
+      ${serviceQueryFilter}
       ${applicabilityFilter}
     GROUP BY cs."id"
     ORDER BY
@@ -582,6 +652,51 @@ export async function listServiceRoster(
     limit: inputResult.limit,
     totalPages: total === 0 ? 0 : Math.ceil(total / inputResult.limit),
   };
+}
+
+export async function listServiceRosterFamilies(
+  scopeLike: ScopeLike,
+  db: ServiceRosterDb = prisma as unknown as ServiceRosterDb,
+): Promise<Array<{ id: string; name: string; displayColor: string }>> {
+  const scope = normalizeScope(scopeLike);
+  if (scope.companyIds?.length === 0) return [];
+
+  const records = await db.clientService.findMany({
+    where: {
+      tenantId: scope.tenantId,
+      deletedAt: null,
+      ...(scope.companyIds ? { companyId: { in: scope.companyIds } } : {}),
+      company: {
+        tenantId: scope.tenantId,
+        deletedAt: null,
+        ...(scope.companyIds ? { id: { in: scope.companyIds } } : {}),
+      },
+      serviceVariant: {
+        tenantId: scope.tenantId,
+        family: { tenantId: scope.tenantId },
+      },
+    },
+    select: {
+      serviceVariant: {
+        select: {
+          family: { select: { id: true, name: true, displayColor: true } },
+        },
+      },
+    },
+  });
+
+  const families = new Map<string, { id: string; name: string; displayColor: string }>();
+  for (const value of records) {
+    const family = (value as { serviceVariant?: { family?: { id?: string; name?: string; displayColor?: string | null } | null } | null }).serviceVariant?.family;
+    if (!family?.id || !family.name) continue;
+    families.set(family.id, {
+      id: family.id,
+      name: family.name,
+      displayColor: family.displayColor ?? DEFAULT_FAMILY_COLOR,
+    });
+  }
+
+  return [...families.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 export {
