@@ -294,6 +294,8 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
       }, tx)),
     ]);
     expect(attempts).toHaveLength(2);
+    expect(attempts.map((attempt) => attempt.counts.created).sort()).toEqual([0, 1]);
+    expect(attempts.reduce((created, attempt) => created + attempt.counts.created, 0)).toBe(1);
 
     const occurrences = await prisma.deadlineOccurrence.findMany({ where: { tenantId, clientServiceId } });
     expect(occurrences).toHaveLength(1);

@@ -23,6 +23,7 @@ export async function runServiceScheduleReconciliationTask(): Promise<{
   claimed: number;
   completed: number;
   failed: number;
+  leaseLost: number;
   rollingHorizonQueued?: number;
 }> {
   const rollingHorizonQueued = isSingaporeMidnight(new Date())
@@ -37,6 +38,7 @@ export async function runServiceScheduleReconciliationTask(): Promise<{
     claimed: result.claimed,
     completed: result.completed,
     failed: result.failed,
+    leaseLost: result.leaseLost ?? 0,
     ...(rollingHorizonQueued === undefined ? {} : { rollingHorizonQueued }),
   };
 }

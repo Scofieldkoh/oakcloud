@@ -105,10 +105,36 @@ describe('schedule reconciliation worker', () => {
 
     const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
 
-    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1 });
+    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1, leaseLost: 0 });
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'PENDING', nextAttemptAt: new Date('2026-08-18T00:05:00.000Z') }),
     }));
+  });
+
+  it('does not count a permanent completion when the lease was handed off', async () => {
+    const error = new Error('required evaluator input is missing');
+    (error as { code?: string }).code = 'MISSING_RULE_INPUT';
+    mocks.reconcile.mockRejectedValueOnce(error);
+    mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mockImplementation(async (args?: unknown) => {
+      const status = (args as { data?: { status?: string }} | undefined)?.data?.status;
+      return { count: status === 'COMPLETED' ? 0 : 1 };
+    });
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 0, leaseLost: 1 });
+  });
+
+  it('does not count a transient failure when the lease was handed off', async () => {
+    mocks.reconcile.mockRejectedValueOnce(new Error('temporary dependency failure'));
+    mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mockImplementation(async (args?: unknown) => {
+      const status = (args as { data?: { status?: string }} | undefined)?.data?.status;
+      return { count: status === 'PENDING' || status === 'FAILED' ? 0 : 1 };
+    });
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 0, leaseLost: 1 });
   });
 
   it('enqueues one tenant rolling-horizon request per active workspace', async () => {

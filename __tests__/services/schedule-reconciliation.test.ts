@@ -467,6 +467,45 @@ describe('reconcileClientServiceDeadlines', () => {
     }));
   });
 
+  it('reports no creation when stable-identity insert loses a concurrent conflict', async () => {
+    const dbMock = reconciliationDb();
+    const existingOccurrence = {
+      id: 'occ-existing',
+      tenantId: 'tenant-1',
+      cycleId: 'cycle-1',
+      milestoneKey: 'agm-due',
+      scheduleEntryKey: '',
+      deadlineType: 'STATUTORY',
+      calculatedDueDate: new Date('2026-09-30T00:00:00.000Z'),
+      operativeDueDate: new Date('2026-09-30T00:00:00.000Z'),
+      dateOverridden: false,
+      status: 'OPEN',
+      origin: 'RULE',
+      ruleVersionId: 'version-1',
+    };
+    const createMany = vi.fn().mockResolvedValue({ count: 0 });
+    Object.assign(dbMock.deadlineOccurrence, {
+      createMany,
+      findUnique: vi.fn().mockResolvedValue(existingOccurrence),
+    });
+    Reflect.deleteProperty(dbMock.deadlineOccurrence, 'upsert');
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1',
+      clientServiceId: 'cs-1',
+      today: '2026-08-18',
+      horizonEnd: '2027-08-18',
+      writeMode: 'APPLY',
+      reconciliationRequestId: 'req-concurrent-loser',
+    }, dbMock as never);
+
+    expect(result.counts.created).toBe(0);
+    expect(result.counts.noChange).toBe(1);
+    expect(createMany).toHaveBeenCalledWith(expect.objectContaining({
+      skipDuplicates: true,
+    }));
+  });
+
   it('uses the stored FYE source when materializing a no-cycle annual plan', async () => {
     const dbMock = reconciliationDb([], reconciliationRule({
       currentVersion: {

@@ -45,6 +45,12 @@ export type ProcessBatchResult = {
   claimed: number;
   completed: number;
   failed: number;
+  leaseLost: number;
+  summaries: DeadlineReconciliationResult[];
+};
+
+type ProcessRequestResult = {
+  outcome: 'COMPLETED' | 'FAILED' | 'LEASE_LOST';
   summaries: DeadlineReconciliationResult[];
 };
 
@@ -213,7 +219,7 @@ async function processSingleRequest(
   now: Date,
   leaseMs: number,
   leaseClock: () => Date,
-): Promise<{ success: boolean; summaries: DeadlineReconciliationResult[] }> {
+): Promise<ProcessRequestResult> {
   try {
     const assertLease = () => renewLease(req, leaseMs, leaseClock);
     await assertLease();
@@ -235,7 +241,14 @@ async function processSingleRequest(
           } as never,
         },
       });
-      return { success: completed.count === 1, summaries: [] };
+      if (completed.count !== 1) {
+        log.warn('Reconciliation request completion lost lease ownership', {
+          requestId: req.id,
+          tenantId: req.tenantId,
+        });
+        return { outcome: 'LEASE_LOST', summaries: [] };
+      }
+      return { outcome: 'COMPLETED', summaries: [] };
     }
     const writeMode = flags.deadlineWritesEnabled ? 'APPLY' : 'OBSERVE';
     const operation = req.triggerType === 'RULE_ARCHIVED' ? 'ARCHIVE' as const : 'PUBLISH' as const;
@@ -315,7 +328,14 @@ async function processSingleRequest(
       },
     });
 
-    return { success: completed.count === 1, summaries: completed.count === 1 ? summaries : [] };
+    if (completed.count !== 1) {
+      log.warn('Reconciliation request completion lost lease ownership', {
+        requestId: req.id,
+        tenantId: req.tenantId,
+      });
+      return { outcome: 'LEASE_LOST', summaries: [] };
+    }
+    return { outcome: 'COMPLETED', summaries };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorCode = (error as { code?: string })?.code ?? 'RECONCILIATION_FAILED';
@@ -326,7 +346,7 @@ async function processSingleRequest(
       error,
     });
 
-    if (errorCode === 'LEASE_LOST') return { success: false, summaries: [] };
+    if (errorCode === 'LEASE_LOST') return { outcome: 'LEASE_LOST', summaries: [] };
 
     const isPermanent = PERMANENT_ERROR_CODES.has(errorCode);
     const backoffIndex = Math.min(req.attemptCount - 1, BACKOFF_MINUTES.length - 1);
@@ -334,7 +354,7 @@ async function processSingleRequest(
     const nextAttemptAt = new Date(now.getTime() + backoffMinutes * 60_000);
 
     if (isPermanent) {
-      await prisma.serviceScheduleReconciliationRequest.updateMany({
+      const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
         where: {
           id: req.id,
           tenantId: req.tenantId,
@@ -355,12 +375,19 @@ async function processSingleRequest(
           nextAttemptAt: now,
         },
       });
-      return { success: true, summaries: [] };
+      if (completed.count !== 1) {
+        log.warn('Permanent reconciliation outcome lost lease ownership', {
+          requestId: req.id,
+          tenantId: req.tenantId,
+        });
+        return { outcome: 'LEASE_LOST', summaries: [] };
+      }
+      return { outcome: 'COMPLETED', summaries: [] };
     }
 
     const retryExhausted = req.attemptCount > MAX_ATTEMPTS;
 
-    await prisma.serviceScheduleReconciliationRequest.updateMany({
+    const retried = await prisma.serviceScheduleReconciliationRequest.updateMany({
       where: {
         id: req.id,
         tenantId: req.tenantId,
@@ -378,7 +405,14 @@ async function processSingleRequest(
       },
     });
 
-    return { success: false, summaries: [] };
+    if (retried.count !== 1) {
+      log.warn('Transient reconciliation outcome lost lease ownership', {
+        requestId: req.id,
+        tenantId: req.tenantId,
+      });
+      return { outcome: 'LEASE_LOST', summaries: [] };
+    }
+    return { outcome: 'FAILED', summaries: [] };
   }
 }
 
@@ -394,6 +428,7 @@ export async function processScheduleReconciliationBatch(
   const claims = await claimRequests(limit, now, leaseMs);
   let completed = 0;
   let failed = 0;
+  let leaseLost = 0;
   const allSummaries: DeadlineReconciliationResult[] = [];
 
   for (let offset = 0; offset < claims.length; offset += concurrency) {
@@ -403,11 +438,13 @@ export async function processScheduleReconciliationBatch(
     );
 
     for (const res of results) {
-      if (res.success) {
+      if (res.outcome === 'COMPLETED') {
         completed += 1;
         allSummaries.push(...res.summaries);
-      } else {
+      } else if (res.outcome === 'FAILED') {
         failed += 1;
+      } else {
+        leaseLost += 1;
       }
     }
   }
@@ -416,6 +453,7 @@ export async function processScheduleReconciliationBatch(
     claimed: claims.length,
     completed,
     failed,
+    leaseLost,
     summaries: allSummaries,
   };
 }

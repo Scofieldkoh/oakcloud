@@ -72,27 +72,66 @@ async function updateOccurrence(
   }
 }
 
-async function upsertOccurrence(
+type PersistedOccurrence = {
+  occurrence: { id: string; [key: string]: unknown };
+  inserted: boolean;
+};
+
+async function persistOccurrence(
   db: Prisma.TransactionClient | typeof prisma,
   tenantId: string,
   cycleId: string,
   data: Record<string, unknown>,
-): Promise<{ id: string; [key: string]: unknown }> {
+): Promise<PersistedOccurrence> {
+  const identity = {
+    tenantId,
+    cycleId,
+    milestoneKey: String(data.milestoneKey),
+    scheduleEntryKey: String(data.scheduleEntryKey ?? ''),
+  };
+
+  // createMany(skipDuplicates) is an INSERT ... ON CONFLICT DO NOTHING on
+  // PostgreSQL. Its count tells us whether this transaction won the stable
+  // identity race; the follow-up read supplies the row for subsequent diffing.
+  if (
+    typeof db.deadlineOccurrence.createMany === 'function'
+    && typeof db.deadlineOccurrence.findUnique === 'function'
+  ) {
+    const created = await db.deadlineOccurrence.createMany({
+      data: data as never,
+      skipDuplicates: true,
+    });
+    const occurrence = await db.deadlineOccurrence.findUnique({
+      where: { tenantId_cycleId_milestoneKey_scheduleEntryKey: identity },
+    });
+    if (!occurrence) {
+      throw new Error('Stable deadline occurrence insert was not readable after persistence');
+    }
+    return {
+      occurrence: occurrence as { id: string; [key: string]: unknown },
+      inserted: created.count === 1,
+    };
+  }
+
   if (typeof db.deadlineOccurrence.upsert === 'function') {
-    return db.deadlineOccurrence.upsert({
+    const occurrence = await db.deadlineOccurrence.upsert({
       where: {
-        tenantId_cycleId_milestoneKey_scheduleEntryKey: {
-          tenantId,
-          cycleId,
-          milestoneKey: String(data.milestoneKey),
-          scheduleEntryKey: String(data.scheduleEntryKey ?? ''),
-        },
+        tenantId_cycleId_milestoneKey_scheduleEntryKey: identity,
       },
       create: data as never,
       update: {},
-    }) as Promise<{ id: string; [key: string]: unknown }>;
+    });
+    return {
+      occurrence: occurrence as { id: string; [key: string]: unknown },
+      inserted: true,
+    };
   }
-  return db.deadlineOccurrence.create({ data: data as never }) as Promise<{ id: string; [key: string]: unknown }>;
+
+  const occurrence = await db.deadlineOccurrence.create({ data: data as never });
+  return {
+    occurrence: occurrence as { id: string; [key: string]: unknown },
+    inserted: true,
+  };
 }
 
 async function updateClientRule(
@@ -673,10 +712,9 @@ export async function reconcileClientServiceDeadlines(
 
         switch (decision.action) {
           case 'CREATE': {
-            counts.created += 1;
             if (writeMode === 'APPLY' && cycle) {
               await input.assertLease?.();
-              const createdOcc = await upsertOccurrence(db, tenantId, cycle.id, {
+              const persisted = await persistOccurrence(db, tenantId, cycle.id, {
                   tenantId,
                   companyId: clientService.companyId,
                   clientServiceId,
@@ -691,9 +729,12 @@ export async function reconcileClientServiceDeadlines(
                   status: 'OPEN',
                   origin: 'RULE',
               });
+              if (persisted.inserted) counts.created += 1;
+              else counts.noChange += 1;
+              const createdOcc = persisted.occurrence;
               occMap.set(occKey, createdOcc as typeof existingOccurrences[number]);
               processedOccurrenceIds.add(createdOcc.id);
-            }
+            } else counts.created += 1;
             break;
           }
           case 'RECALCULATE': {
