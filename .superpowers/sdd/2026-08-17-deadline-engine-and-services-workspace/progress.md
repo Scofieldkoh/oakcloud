@@ -70,6 +70,6 @@
 | 10 | PASS / final-review-complete | `58bb422`, `634106e`, `864868b`, `b0a1d98` | Final review 0 Critical / 0 Important / 0 Minor; selected combobox focus/composition and disabled-state semantics closed with keyboard RED/GREEN tests, visibility hit area retained; narrow final suite 4 files/18 tests, TS/lint/diff green; evidence in `task-10-report.md` |
 | 11 | PASS | `2172eb1`, `c60f343` | Rereview PASS: 0 Critical / 0 Important / 1 coverage Minor, closed with RuleVersion/mutation/reset tenant-integrity and detail AbortSignal regressions; focused suite 49 tests; compatibility suite 40 tests; TS/lint/diff green; evidence in `task-11-report.md` |
 | 12 | PASS / final-review-complete | `a1b12e3`, `e1f96d89`, `e855e2dc` | Final review PASS: 0 Critical / 0 Important / 0 Minor; focused 29 tests, Chromium 2 tests, exact 12-file compatibility 110 tests, TS/scoped zero-warning lint and diff evidence in task-12-report.md |
-| 13 | pending rereview | — | Review remediation implemented; focused Task13/cross-surface and compatibility evidence is green; known unrelated client-service-schema exact-format assertion remains isolated |
+| 13 | pending final rereview | — | Dedicated tenant-safe manual-cycle options selector, typed parameter preservation, and exact compatibility evidence are implemented; focused/cross-surface and compatibility gates are green; known unrelated client-service-schema exact-format assertion remains isolated |
 | 14 | pending | — | — |
 | 15 | pending | — | — |

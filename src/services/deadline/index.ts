@@ -20,6 +20,8 @@ export {
   previewManualDeadlineCycle,
 } from './manual-cycle';
 
+export { getManualDeadlineCycleOptions } from './manual-cycle-options';
+
 export type {
   DeadlineActor,
   DeadlineCalendarResult,
@@ -44,3 +46,10 @@ export type {
   ManualDeadlineCycleResult,
   ManualDeadlineMilestone,
 } from './manual-cycle';
+
+export type {
+  ManualDeadlineCycleOptions,
+  ManualDeadlineCycleParameterDefinition,
+  ManualDeadlineCycleParameterType,
+  ManualDeadlineCycleRuleOption,
+} from './manual-cycle-options';

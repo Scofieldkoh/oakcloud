@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   requireServicesWorkspaceEnabled: vi.fn(),
   requireDeadlineWritesEnabled: vi.fn(),
   getClientService: vi.fn(),
+  getManualDeadlineCycleOptions: vi.fn(),
   previewManualDeadlineCycle: vi.fn(),
   createManualDeadlineCycle: vi.fn(),
 }));
@@ -18,10 +19,13 @@ vi.mock('@/services/client-service', () => ({ getClientService: mocks.getClientS
 vi.mock('@/services/deadline', () => ({
   previewManualDeadlineCycle: mocks.previewManualDeadlineCycle,
   createManualDeadlineCycle: mocks.createManualDeadlineCycle,
+  getManualDeadlineCycleOptions: mocks.getManualDeadlineCycleOptions,
 }));
 
 import { POST as previewPOST } from '@/app/api/client-services/[id]/deadline-cycles/preview/route';
 import { POST as applyPOST } from '@/app/api/client-services/[id]/deadline-cycles/route';
+import { GET as optionsGET } from '@/app/api/client-services/[id]/deadline-cycles/options/route';
+import { NotFoundError } from '@/lib/errors';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const companyId = '22222222-2222-4222-8222-222222222222';
@@ -46,6 +50,7 @@ describe('manual deadline cycle routes', () => {
     mocks.getClientService.mockResolvedValue({ id: serviceId, companyId });
     mocks.previewManualDeadlineCycle.mockResolvedValue({ milestones: [], previewFingerprint: 'a'.repeat(64) });
     mocks.createManualDeadlineCycle.mockResolvedValue({ cycleId: 'cycle-1', occurrenceIds: [] });
+    mocks.getManualDeadlineCycleOptions.mockResolvedValue({ clientServiceId: serviceId, companyId, rules: [] });
   });
 
   it('tenant-validates the service, checks company:update, and previews without applying', async () => {
@@ -73,5 +78,27 @@ describe('manual deadline cycle routes', () => {
     const response = await previewPOST(new NextRequest('http://localhost/api/client-services/not-a-uuid/deadline-cycles/preview', { method: 'POST', body: JSON.stringify(body) }), { params: Promise.resolve({ id: 'not-a-uuid' }) });
     expect(response.status).toBe(400);
     expect(mocks.previewManualDeadlineCycle).not.toHaveBeenCalled();
+  });
+
+  it('loads selector options through the scoped update-authorized route', async () => {
+    const response = await optionsGET(new NextRequest(`http://localhost/api/client-services/${serviceId}/deadline-cycles/options`), { params: Promise.resolve({ id: serviceId }) });
+
+    expect(response.status).toBe(200);
+    expect(mocks.requireServicesWorkspaceEnabled).toHaveBeenCalledWith(tenantId);
+    expect(mocks.getManualDeadlineCycleOptions).toHaveBeenCalledWith(serviceId, expect.objectContaining({ tenantId, accessibleCompanyIds: [companyId], userId: session.id }));
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', companyId);
+  });
+
+  it('keeps inaccessible and missing option requests on the same safe 404 path', async () => {
+    mocks.getManualDeadlineCycleOptions.mockRejectedValue(new NotFoundError('Client service not found'));
+
+    const first = await optionsGET(new NextRequest(`http://localhost/api/client-services/${serviceId}/deadline-cycles/options`), { params: Promise.resolve({ id: serviceId }) });
+    const secondId = '88888888-8888-4888-8888-888888888888';
+    const second = await optionsGET(new NextRequest(`http://localhost/api/client-services/${secondId}/deadline-cycles/options`), { params: Promise.resolve({ id: secondId }) });
+
+    expect(first.status).toBe(404);
+    expect(second.status).toBe(404);
+    expect(await first.json()).toEqual(await second.json());
+    expect(mocks.requirePermission).not.toHaveBeenCalled();
   });
 });

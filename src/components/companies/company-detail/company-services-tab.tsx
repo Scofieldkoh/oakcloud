@@ -110,6 +110,6 @@ export function CompanyServicesTab({ companyId, canEdit }: { companyId: string; 
     </CompanyAccentSection>
     {editing ? <ClientServiceEditor key={editing.id} service={editing} isOpen onClose={() => setEditing(null)} /> : null}
     {creating ? <ClientServiceCreator companyId={companyId} isOpen onClose={() => setCreating(false)} onCreated={(service) => { setCreating(false); setCreatedService(service); }} /> : null}
-    {canTrigger && triggering ? <ManualCycleDialog clientServiceId={triggering.id} service={triggering} isOpen canApply={canTrigger} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); void refetch?.(); }} /> : null}
+    {canTrigger && triggering ? <ManualCycleDialog clientServiceId={triggering.id} isOpen canApply={canTrigger} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); void refetch?.(); }} /> : null}
   </div>;
 }

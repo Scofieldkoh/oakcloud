@@ -141,17 +141,7 @@ function ServiceEditorLauncher({ item, onClose }: { item: ServiceRosterItem; onC
 }
 
 function ManualCycleLauncher({ item, canApply, onClose, onApplied }: { item: ServiceRosterItem; canApply: boolean; onClose: () => void; onApplied: () => void }) {
-  const service = useClientService(item.id);
-  if (service.isLoading) return <p role="status" className="sr-only">Loading deadline rule configuration…</p>;
-  if (service.error || !service.data) {
-    return <Alert variant="error" title="Historical cycle unavailable">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span>{service.error instanceof Error ? service.error.message : 'Unable to load the client service deadline rules.'}</span>
-        <Button size="xs" variant="secondary" className="min-h-11" onClick={onClose}>Close</Button>
-      </div>
-    </Alert>;
-  }
-  return <ManualCycleDialog clientServiceId={item.id} service={service.data} isOpen canApply={canApply} onClose={onClose} onApplied={onApplied} />;
+  return <ManualCycleDialog clientServiceId={item.id} isOpen canApply={canApply} onClose={onClose} onApplied={onApplied} />;
 }
 
 function activeFilterLabel(

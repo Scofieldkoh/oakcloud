@@ -13,13 +13,21 @@ const preview = {
   ],
   previewFingerprint: 'a'.repeat(64),
 };
-const configuredService = {
-  deadlineRules: [{
+const configuredOptions = {
+  clientServiceId: '22222222-2222-4222-8222-222222222222',
+  companyId: '33333333-3333-4333-8333-333333333333',
+  rules: [{
     id: 'rule-row-1',
     ruleId: 'rule-1',
     enabled: true,
-    parameterValues: { monthsAfterFye: 2 },
-    parameterProvenance: {},
+    parameterValues: {
+      monthsAfterFye: 2,
+      stringNumber: '2',
+      stringBoolean: 'true',
+      stringNull: 'null',
+      stringJson: '{"nested":true}',
+      typedBoolean: true,
+    },
     scheduleEntries: [
       { key: 'first-entry', label: 'First entry', expression: { kind: 'DAY_OF_MONTH', day: 1 }, businessDayAdjustment: 'NONE' },
       { key: 'second-entry', label: 'Second entry', expression: { kind: 'DAY_OF_MONTH', day: 2 }, businessDayAdjustment: 'NONE' },
@@ -28,7 +36,22 @@ const configuredService = {
     ],
     rule: {
       id: 'rule-1', code: 'ANNUAL_RETURN', name: 'Annual return', isActive: true, archivedAt: null, currentVersionId: preview.ruleVersionId,
-      currentVersion: { id: preview.ruleVersionId, version: 3, configHash: 'b'.repeat(64), recurrence: {}, applicability: {}, parameters: [] },
+      currentVersion: {
+        id: preview.ruleVersionId,
+        version: 3,
+        state: 'PUBLISHED',
+        configHash: 'b'.repeat(64),
+        recurrence: {},
+        applicability: {},
+        parameters: [
+          { key: 'monthsAfterFye', label: 'Months after FYE', type: 'INTEGER', required: true, defaultValue: 2, validation: null, helpText: null, displayOrder: 1 },
+          { key: 'stringNumber', label: 'String number', type: 'STRING', required: false, defaultValue: null, validation: null, helpText: null, displayOrder: 2 },
+          { key: 'stringBoolean', label: 'String boolean', type: 'STRING', required: false, defaultValue: null, validation: null, helpText: null, displayOrder: 3 },
+          { key: 'stringNull', label: 'String null', type: 'STRING', required: false, defaultValue: null, validation: null, helpText: null, displayOrder: 4 },
+          { key: 'stringJson', label: 'String JSON', type: 'STRING', required: false, defaultValue: null, validation: null, helpText: null, displayOrder: 5 },
+          { key: 'typedBoolean', label: 'Typed boolean', type: 'BOOLEAN', required: false, defaultValue: true, validation: null, helpText: null, displayOrder: 6 },
+        ],
+      },
     },
   }],
 } as never;
@@ -42,7 +65,7 @@ describe('ManualCycleDialog', () => {
   });
 
   it('keeps Apply disabled until a current preview exists and invalidates it on edits', async () => {
-    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" service={configuredService} onClose={vi.fn()} />);
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" options={configuredOptions} onClose={vi.fn()} />);
 
     const apply = screen.getByRole('button', { name: 'Apply cycle' });
     expect(apply).toBeDisabled();
@@ -56,13 +79,14 @@ describe('ManualCycleDialog', () => {
 
     await waitFor(() => expect(screen.getByText('Client records')).toBeVisible());
     expect(apply).toBeEnabled();
+    expect(screen.getByText(/Only rule, period, parameter, schedule, and source changes require a new preview\./)).toBeVisible();
 
     fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2023' } });
     expect(apply).toBeDisabled();
   });
 
   it('keeps the current preview while editing selections, completion, dates, and notes', async () => {
-    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" service={configuredService} onClose={vi.fn()} />);
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" options={configuredOptions} onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByLabelText('Rule')).toHaveValue(preview.ruleVersionId));
     fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2024' } });
     fireEvent.change(screen.getByLabelText('Period start'), { target: { value: '2024-01-01' } });
@@ -94,12 +118,33 @@ describe('ManualCycleDialog', () => {
       code: 'IMPACT_CHANGED',
       details: { preview: { ruleVersionId: preview.ruleVersionId } },
     }), { status: 409, headers: { 'content-type': 'application/json' } })));
-    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" service={configuredService} onClose={vi.fn()} />);
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" options={configuredOptions} onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByLabelText('Rule')).toHaveValue(preview.ruleVersionId));
     fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2024' } });
     fireEvent.change(screen.getByLabelText('Period start'), { target: { value: '2024-01-01' } });
     fireEvent.change(screen.getByLabelText('Period end'), { target: { value: '2024-12-31' } });
     fireEvent.click(screen.getByRole('button', { name: 'Preview cycle' }));
     expect(await screen.findByText('The published rule changed. Preview again before applying.')).toBeVisible();
+  });
+
+  it('preserves configured string values while parsing typed parameter definitions', async () => {
+    render(<ManualCycleDialog isOpen clientServiceId="22222222-2222-4222-8222-222222222222" options={configuredOptions} onClose={vi.fn()} />);
+    await waitFor(() => expect(screen.getByLabelText('Rule')).toHaveValue(preview.ruleVersionId));
+    fireEvent.change(screen.getByLabelText('Period key'), { target: { value: '2024' } });
+    fireEvent.change(screen.getByLabelText('Period start'), { target: { value: '2024-01-01' } });
+    fireEvent.change(screen.getByLabelText('Period end'), { target: { value: '2024-12-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview cycle' }));
+
+    await waitFor(() => expect(screen.getByText('Client records')).toBeVisible());
+    const previewRequest = vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit;
+    const previewBody = JSON.parse(String(previewRequest.body)) as { parameterOverrides: Record<string, unknown> };
+    expect(previewBody.parameterOverrides).toEqual(expect.objectContaining({
+      monthsAfterFye: 2,
+      stringNumber: '2',
+      stringBoolean: 'true',
+      stringNull: 'null',
+      stringJson: '{"nested":true}',
+      typedBoolean: true,
+    }));
   });
 });

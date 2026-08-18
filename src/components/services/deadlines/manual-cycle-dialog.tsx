@@ -6,16 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
-import type { ClientServiceDto } from '@/services/client-service';
-import type { ManualDeadlineCyclePreview } from '@/services/deadline/manual-cycle';
+import type {
+  ManualDeadlineCycleOptions,
+  ManualDeadlineCycleParameterType,
+  ManualDeadlineCyclePreview,
+  ManualDeadlineCycleRuleOption,
+} from '@/services/deadline';
 
-type ParameterRow = { key: string; value: string };
+type ParameterRow = { key: string; value: string; type?: ManualDeadlineCycleParameterType | 'OBJECT' | 'JSON' };
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export interface ManualCycleDialogProps {
   isOpen: boolean;
   clientServiceId: string;
-  service?: Pick<ClientServiceDto, 'deadlineRules'>;
+  options?: ManualDeadlineCycleOptions;
   onClose: () => void;
   onApplied?: () => void;
   canApply?: boolean;
@@ -32,21 +36,26 @@ function parseJsonObject(value: string, label: string): Record<string, JsonValue
   return parsed as Record<string, JsonValue>;
 }
 
-function parametersFromRows(rows: ParameterRow[]): Record<string, JsonValue> {
+function parameterValueFromText(value: string, type?: ParameterRow['type']): JsonValue {
+  if (!value.trim()) return '';
+  // Configured text values must remain text even when they happen to be valid
+  // JSON scalar/object syntax. Typed rule parameters retain their declared
+  // scalar/object representation for the evaluator.
+  if (type === 'STRING' || type === 'DATE' || type === 'ENUM') return value;
+  try {
+    return JSON.parse(value) as JsonValue;
+  } catch {
+    return value;
+  }
+}
+
+function parametersFromRows(rows: ParameterRow[], rule?: ManualDeadlineCycleRuleOption): Record<string, JsonValue> {
+  const definitions = new Map(rule?.rule.currentVersion.parameters.map((parameter) => [parameter.key, parameter.type]));
   const result: Record<string, JsonValue> = {};
   for (const row of rows) {
     const key = row.key.trim();
     if (!key) continue;
-    const value = row.value.trim();
-    if (!value) {
-      result[key] = '';
-      continue;
-    }
-    try {
-      result[key] = JSON.parse(value) as JsonValue;
-    } catch {
-      result[key] = value;
-    }
+    result[key] = parameterValueFromText(row.value, definitions.get(key));
   }
   return result;
 }
@@ -64,7 +73,7 @@ function responseError(response: Response, fallback: string): Promise<Error> {
 export function ManualCycleDialog({
   isOpen,
   clientServiceId,
-  service,
+  options,
   onClose,
   onApplied,
   canApply = true,
@@ -83,27 +92,74 @@ export function ManualCycleDialog({
   const [statusByIdentity, setStatusByIdentity] = useState<Record<string, 'OPEN' | 'COMPLETED'>>({});
   const [completionDateByIdentity, setCompletionDateByIdentity] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [loadedOptions, setLoadedOptions] = useState<ManualDeadlineCycleOptions | null>(null);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'preview' | 'apply' | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (options) {
+      setLoadedOptions(options);
+      setOptionsLoading(false);
+      setOptionsError(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadedOptions(null);
+    setOptionsLoading(true);
+    setOptionsError(null);
+    fetch(`/api/client-services/${clientServiceId}/deadline-cycles/options`)
+      .then(async (response) => {
+        if (!response.ok) throw await responseError(response, 'Unable to load deadline cycle options.');
+        return response.json() as Promise<ManualDeadlineCycleOptions>;
+      })
+      .then((result) => {
+        if (cancelled) return;
+        setLoadedOptions(result);
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        setOptionsError(cause instanceof Error ? cause.message : 'Unable to load deadline cycle options.');
+      })
+      .finally(() => {
+        if (!cancelled) setOptionsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [clientServiceId, isOpen, options]);
+
+  const effectiveOptions = options ?? loadedOptions;
   const availableRules = useMemo(
-    () => (service?.deadlineRules ?? []).filter((rule) => rule.enabled
+    () => (effectiveOptions?.rules ?? []).filter((rule) => rule.enabled
       && rule.rule?.isActive
       && !rule.rule.archivedAt
       && Boolean(rule.rule.currentVersion?.id)
-      && rule.rule.currentVersionId === rule.rule.currentVersion?.id),
-    [service?.deadlineRules],
+      && rule.rule.currentVersionId === rule.rule.currentVersion?.id
+      && rule.rule.currentVersion?.state === 'PUBLISHED'),
+    [effectiveOptions],
   );
   const selectedRule = availableRules.find((rule) => rule.rule?.currentVersion?.id === ruleVersionId) ?? availableRules[0];
 
   const resetFromRule = (rule: typeof availableRules[number] | undefined) => {
     const versionId = rule?.rule?.currentVersion?.id ?? '';
     setRuleVersionId(versionId);
-    setParameterRows(rule ? Object.entries(rule.parameterValues).map(([key, value]) => ({ key, value: typeof value === 'string' ? value : JSON.stringify(value) ?? '' })) : [...INITIAL_PARAMETERS]);
+    const definitions = new Map(rule?.rule.currentVersion.parameters.map((parameter) => [parameter.key, parameter.type]));
+    setParameterRows(rule ? Object.entries(rule.parameterValues).map(([key, value]) => ({
+      key,
+      value: typeof value === 'string' ? value : JSON.stringify(value) ?? '',
+      type: definitions.get(key),
+    })) : [...INITIAL_PARAMETERS]);
     setScheduleEntries(rule ? [...rule.scheduleEntries] : []);
   };
 
   useEffect(() => {
     if (!isOpen) return;
+    if (!effectiveOptions) {
+      setRuleVersionId('');
+      setParameterRows([...INITIAL_PARAMETERS]);
+      setScheduleEntries([]);
+    }
+    if (!effectiveOptions) return;
     resetFromRule(availableRules[0]);
     setPeriodKey('');
     setPeriodStart('');
@@ -112,10 +168,9 @@ export function ManualCycleDialog({
     setNotes('');
     setPreview(null);
     setError(null);
-  // The dialog receives a stable client-service detail object from its launcher.
-  // Reset only when that detail or the open state changes, not on input edits.
+  // Reset when the trusted options DTO or open state changes, not on input edits.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientServiceId, isOpen, service]);
+  }, [clientServiceId, isOpen, effectiveOptions, availableRules]);
 
   const identity = (milestone: { milestoneKey: string; scheduleEntryKey: string }) => `${milestone.milestoneKey}::${milestone.scheduleEntryKey}`;
   const hasRequiredInputs = Boolean(selectedRule?.rule?.currentVersion?.id && periodKey.trim() && periodStart && periodEnd);
@@ -124,7 +179,7 @@ export function ManualCycleDialog({
     periodKey: periodKey.trim(),
     periodStart,
     periodEnd,
-    parameterOverrides: parametersFromRows(parameterRows),
+    parameterOverrides: parametersFromRows(parameterRows, selectedRule),
     scheduleEntries,
     sourceValues: (() => {
       try {
@@ -133,7 +188,7 @@ export function ManualCycleDialog({
         return {};
       }
     })(),
-  }), [parameterRows, periodEnd, periodKey, periodStart, ruleVersionId, scheduleEntries, sourceValuesText]);
+  }), [parameterRows, periodEnd, periodKey, periodStart, ruleVersionId, scheduleEntries, selectedRule, sourceValuesText]);
 
   const invalidatePreview = () => {
     setPreview(null);
@@ -266,14 +321,15 @@ export function ManualCycleDialog({
               <input id="manual-cycle-period-end" type="date" className="input input-sm min-h-11 w-full" value={periodEnd} onChange={(event) => { invalidatePreview(); setPeriodEnd(event.target.value); }} />
             </div>
           </div>
-          {!service ? <Alert variant="warning" compact>Client service configuration is still loading. Close and retry when the service details are available.</Alert> : null}
-          {service && availableRules.length === 0 ? <Alert variant="warning" compact>No enabled published deadline rules are associated with this client service.</Alert> : null}
+          {optionsLoading ? <Alert variant="warning" compact>Loading client service deadline rules…</Alert> : null}
+          {optionsError ? <Alert variant="error" compact>{optionsError}</Alert> : null}
+          {effectiveOptions && availableRules.length === 0 ? <Alert variant="warning" compact>No enabled published deadline rules are associated with this client service.</Alert> : null}
         </section>
 
         <section className="space-y-3" aria-labelledby="manual-cycle-inputs-heading">
           <div>
             <h3 id="manual-cycle-inputs-heading" className="text-sm font-semibold text-text-primary">Parameter overrides</h3>
-            <p className="mt-1 text-xs text-text-secondary">Values are parsed as JSON when possible; plain text is retained as a string.</p>
+            <p className="mt-1 text-xs text-text-secondary">Configured text, date, and enumeration values remain text; typed values use their published parameter definitions.</p>
           </div>
           <div className="space-y-2">
             {parameterRows.map((row, index) => (
@@ -306,7 +362,7 @@ export function ManualCycleDialog({
           <section className="space-y-3" aria-labelledby="manual-cycle-milestones-heading">
             <div>
               <h3 id="manual-cycle-milestones-heading" className="text-sm font-semibold text-text-primary">Milestones</h3>
-              <p className="mt-1 text-xs text-text-secondary">Select exactly one choice for each evaluated milestone. Edits require a new preview.</p>
+              <p className="mt-1 text-xs text-text-secondary">Select exactly one choice for each evaluated milestone. Only rule, period, parameter, schedule, and source changes require a new preview.</p>
             </div>
             <div className="space-y-2">
               {preview.milestones.map((milestone) => {

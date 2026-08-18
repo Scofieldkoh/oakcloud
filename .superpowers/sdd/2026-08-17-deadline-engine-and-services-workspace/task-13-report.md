@@ -1,6 +1,6 @@
 # Task 13 report — manual historical-cycle preview and apply
 
-Status: implementation-complete / pending rereview
+Status: implementation-complete / pending final rereview
 
 ## Scope delivered
 
@@ -19,8 +19,12 @@ Status: implementation-complete / pending rereview
   completion metadata, persists notes, audits included/excluded/completed
   choices atomically, and handles duplicate/race idempotency. No billing
   occurrence or schedule reconciliation side effect is called.
-- Added tenant-safe `POST` preview/apply routes with the Services workspace
-  gate and `company:update` authorization.
+- Added tenant-safe `GET` options and `POST` preview/apply routes with the
+  Services workspace gate and `company:update` authorization. The options
+  route uses an accessible-company SQL predicate and only serializes enabled
+  associations whose rule, current published version, parameter definitions,
+  milestone relations, and schedule/config data pass tenant and identity
+  checks; inaccessible and missing service IDs share the same safe 404 path.
 - Added an accessible responsive manual-cycle dialog with 44px controls,
   period/rule inputs, repeatable parameter and schedule editors, source values,
   preview state, selectable milestone rows, explanations, status/date/
@@ -28,6 +32,10 @@ Status: implementation-complete / pending rereview
   remains unchanged.
 - Added gated trigger actions to the cross-company roster and company detail
   service list while preserving the existing status/family filter placement.
+  The dialog now consumes the dedicated options DTO rather than the generic
+  client-service detail projection, initializes all configured parameters and
+  repeatable schedule entries, preserves configured string parameter types,
+  and reports loading/no-rule/structured-error states.
 
 ## TDD evidence
 
@@ -38,31 +46,40 @@ npm.cmd run test:run -- __tests__/services/manual-deadline-cycle.test.ts __tests
 FAIL — all three suites failed to resolve the new service/route/dialog modules
 ```
 
+The final correction RED run also covered the new trust boundary before its
+implementation existed:
+
+```text
+npm.cmd run test:run -- __tests__/services/manual-deadline-cycle-options.test.ts __tests__/api/manual-deadline-cycle-routes.test.ts __tests__/components/manual-cycle-dialog.test.tsx
+FAIL — options service/route imports were unresolved and the dialog had no options source
+```
+
 Focused Task 13 GREEN evidence:
 
 ```text
-npm.cmd run test:run -- __tests__/services/manual-deadline-cycle.test.ts __tests__/api/manual-deadline-cycle-routes.test.ts __tests__/components/manual-cycle-dialog.test.tsx
-3 files passed; 8 tests passed
-
-npm.cmd run test:run -- __tests__/services/manual-deadline-cycle.test.ts __tests__/api/manual-deadline-cycle-routes.test.ts __tests__/components/manual-cycle-dialog.test.tsx __tests__/components/company-services-tab.test.tsx __tests__/components/service-roster.test.tsx
-5 files passed; 43 tests passed
+npm.cmd run test:run -- __tests__/services/manual-deadline-cycle.test.ts __tests__/services/manual-deadline-cycle-options.test.ts __tests__/api/manual-deadline-cycle-routes.test.ts __tests__/components/manual-cycle-dialog.test.tsx __tests__/components/company-services-tab.test.tsx __tests__/components/service-roster.test.tsx
+6 files passed; 58 tests passed
 ```
 
 The Task 13 service tests cover no-write preview, no-billing apply, adjusted
 dates/completion, stale fingerprints, and idempotent existing generations.
 
-## Independent review remediation — pending rereview
+## Independent review remediation — pending final rereview
 
 - Selection, operative-date, lifecycle, completion-date, and notes edits now
   remain apply-only metadata against the current preview fingerprint. Rule,
   period, parameter, schedule, and source inputs still invalidate the preview.
 - Apply enforces the tenant deadline-write rollout flag in the service and
   route, while roster and Company detail triggers require edit permission,
-  workspace-enabled settings, and deadline writes enabled. Loading and
-  unavailable service-detail states fail closed in the roster launcher.
+  workspace-enabled settings, and deadline writes enabled. Loading, error,
+  and no-applicable-rule options states fail closed in the dialog.
 - The dialog selects only enabled active client rules with a consistent current
   published-version relationship and initializes every configured parameter and
-  repeatable schedule entry from the client-service detail projection.
+  repeatable schedule entry from the dedicated tenant-safe options projection.
+  Parameter serialization follows the selected version definitions, so
+  configured STRING/DATE/ENUM values such as `"2"`, `"true"`, `"null"`, and
+  JSON-looking text remain strings while typed numeric/boolean/object values
+  retain their typed form.
 - Unique-key losers escape the aborted transaction and resolve the committed
   winner in a fresh serializable transaction. Selection generation identity is
   sorted by milestone and schedule-entry identity before hashing.
@@ -72,31 +89,32 @@ dates/completion, stale fingerprints, and idempotent existing generations.
 - Structured `{ error, code, details }` API responses now surface their safe
   `error` message in the dialog.
 
-Review RED/GREEN additions cover the direct post-preview exclusion/date/status/
+Review RED/GREEN additions cover the scoped options service/route, missing vs
+inaccessible parity, cross-tenant/wrong-rule/wrong-version/draft omission,
+typed parameter serialization, direct post-preview exclusion/date/status/
 completion/notes flow, rollout disabled and settings-loading gates, four-entry
 rule configuration, fresh-transaction P2002 behavior, reordered multi-entry
 idempotency, cross-tenant milestone rejection, and structured error display.
 
 ## Compatibility evidence
 
-- Pure evaluator plus Task 11 deadline service/routes/hooks: 4 files passed,
-  81 tests passed.
-- Relevant Task 8 client-service service/manual-create/catalog/validation/
-  impact/hook subset: 6 files passed, 70 tests passed.
-- Rereview rerun of that six-file Task 8 selection: 81 tests passed. The
-  accepted 70/70 evidence above remains the ledger baseline; this checkout's
-  current upstream tests include the additional compatibility cases.
-- Task 12 deadline workspace/calendar and roster compatibility: 7 files
-  passed, 66 tests passed.
-- Expanded Task 13/evaluator/Task 11/Task 12 selection: 13 files passed,
-  196 tests passed. Exact accepted 12-file compatibility selection: 112 tests
-  passed (the added settings-loading regression is included).
-- Company-services component compatibility: 1 file passed, 24 tests passed.
+The exact reproducible compatibility commands and current counts are:
 
-One separate compatibility command also included the existing
-`__tests__/services/client-service-schema.test.ts`. Its exact-format assertion
-for a Prisma schema line failed against the current schema text; the six-file
-Task 8 subset above is green. This unrelated assertion was not modified.
+```text
+npm.cmd run test:run -- __tests__/services/deadline-rule-evaluator.test.ts __tests__/services/deadline.service.test.ts __tests__/api/deadline-routes.test.ts __tests__/hooks/use-deadlines.test.ts
+4 files passed; 81 tests passed
+
+npm.cmd run test:run -- __tests__/services/client-service.service.test.ts __tests__/services/client-service-manual-create.test.ts __tests__/services/client-service-catalog-options.test.ts __tests__/lib/client-service-validation.test.ts __tests__/hooks/use-client-services.test.ts __tests__/components/schedule-entry-editor.test.tsx
+6 files passed; 70 tests passed
+
+npm.cmd run test:run -- __tests__/services/deadline.service.test.ts __tests__/api/deadline-routes.test.ts __tests__/hooks/use-deadlines.test.ts __tests__/lib/deadline.validation.test.ts __tests__/components/service-roster.test.tsx __tests__/components/service-roster-preferences.test.ts __tests__/components/async-search-select.test.tsx __tests__/services/service-roster.service.test.ts __tests__/api/service-roster-families-route.test.ts __tests__/api/service-roster-route.test.ts __tests__/hooks/use-service-roster.test.ts __tests__/api/services-settings-route.test.ts
+12 files passed; 112 tests passed
+```
+
+The known unrelated
+`__tests__/services/client-service-schema.test.ts` exact-format assertion is
+isolated separately: 1 pre-existing assertion fails and 4/5 assertions pass;
+the test and Prisma schema remain untouched.
 
 ## Verification and boundaries
 
@@ -104,16 +122,17 @@ Task 8 subset above is green. This unrelated assertion was not modified.
 - Scoped ESLint with `--max-warnings 0` over changed Task 13 source/routes/
   components/tests — pass with zero warnings/errors.
 - `git diff --check` — pass.
-- Known unrelated `__tests__/services/client-service-schema.test.ts`: 1
-  pre-existing exact-format assertion failed; 4/5 assertions passed and the
-  test/schema were not modified.
 - No repository-wide baseline, full build/lint, Prisma generation/migration,
   live database, or broader Plan 2 gate was run. Task 14 was not started.
 
 ## Changed files
 
 - `src/services/deadline/manual-cycle.ts`
+- `src/services/deadline/manual-cycle-options.ts`
 - `src/services/deadline/index.ts`
+- `src/services/schedule-reconciliation/settings.ts`
+- `src/services/schedule-reconciliation/index.ts`
+- `src/app/api/client-services/[id]/deadline-cycles/options/route.ts`
 - `src/app/api/client-services/[id]/deadline-cycles/preview/route.ts`
 - `src/app/api/client-services/[id]/deadline-cycles/route.ts`
 - `src/components/services/deadlines/manual-cycle-dialog.tsx`
@@ -121,5 +140,8 @@ Task 8 subset above is green. This unrelated assertion was not modified.
 - `src/components/services/roster/service-roster.tsx`
 - `src/components/companies/company-detail/company-services-tab.tsx`
 - `__tests__/services/manual-deadline-cycle.test.ts`
+- `__tests__/services/manual-deadline-cycle-options.test.ts`
 - `__tests__/api/manual-deadline-cycle-routes.test.ts`
 - `__tests__/components/manual-cycle-dialog.test.tsx`
+- `__tests__/components/service-roster.test.tsx`
+- `__tests__/components/company-services-tab.test.tsx`
