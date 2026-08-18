@@ -19,10 +19,10 @@ import {
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import type {
   BusinessCalendarSnapshot,
-  CompanyRuleSource,
   DateOnly,
   EvaluatedDeadline,
 } from '@/services/service-schedule';
+import { normalizeCompanyRuleSource } from '@/services/service-schedule';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 import {
   planRollingPeriods,
@@ -45,18 +45,24 @@ const identityFieldsSchema = z.object({
 // apply paths intentionally accept any non-empty fingerprint so an old or
 // malformed client value still reaches the fresh-impact comparison and is
 // reported as IMPACT_CHANGED rather than hiding the useful 409 summary.
-const serviceApplyIdentitySchema = identityFieldsSchema.extend({
+const servicePublishIdentitySchema = identityFieldsSchema.extend({
+  operation: z.literal('PUBLISH'),
   previewFingerprint: z.string().trim().min(1),
 }).strict();
-const serviceArchiveInputSchema = serviceApplyIdentitySchema.extend({
+const serviceArchiveInputSchema = identityFieldsSchema.extend({
+  operation: z.literal('ARCHIVE'),
+  previewFingerprint: z.string().trim().min(1),
   reason: z.string().trim().min(1).max(1000),
 }).strict();
 
 export const deadlineRuleImpactPreviewSchema = identityFieldsSchema;
 export const deadlineRulePublishSchema = identityFieldsSchema.extend({
+  operation: z.literal('PUBLISH'),
   previewFingerprint: z.string().regex(HASH_PATTERN),
 }).strict();
-export const deadlineRuleArchiveSchema = deadlineRulePublishSchema.extend({
+export const deadlineRuleArchiveSchema = identityFieldsSchema.extend({
+  operation: z.literal('ARCHIVE'),
+  previewFingerprint: z.string().regex(HASH_PATTERN),
   reason: z.string().trim().min(1).max(1000),
 }).strict();
 
@@ -266,45 +272,6 @@ function safeDateOnly(value: unknown): DateOnly | null {
   return null;
 }
 
-function normalizeCompanySource(value: unknown): CompanyRuleSource {
-  const source = asRecord(value);
-  const result: Record<string, unknown> = {};
-  const dateFields = new Set([
-    'financialYearEnd',
-    'nextAgmDueDate',
-    'nextArDueDate',
-    'accountsDueDate',
-    'incorporationDate',
-    'registrationDate',
-  ]);
-  const supported = new Set([
-    'isGstRegistered',
-    'isRegisteredCharity',
-    'isIPC',
-    'hasCharges',
-    'currentOfficerCount',
-    'currentShareholderCount',
-    'annualReceiptsOrExpenditure',
-    ...dateFields,
-    'entityType',
-    'status',
-    'primarySsicCode',
-    'secondarySsicCode',
-    'uen',
-    'name',
-  ]);
-  for (const [key, raw] of Object.entries(source)) {
-    if (!supported.has(key) || raw === null || raw === undefined) continue;
-    if (dateFields.has(key)) {
-      const date = safeDateOnly(raw);
-      if (date) result[key] = date;
-    } else if (typeof raw === 'boolean' || typeof raw === 'number' || typeof raw === 'string') {
-      result[key] = raw;
-    }
-  }
-  return result as CompanyRuleSource;
-}
-
 function defaultCalendar(id = 'default'): BusinessCalendarSnapshot {
   return {
     id,
@@ -386,6 +353,7 @@ async function evaluatorInputFor(
   cycle: RawCycle,
   context: RawContext,
   calendar: BusinessCalendarSnapshot,
+  today: DateOnly,
 ): Promise<DeadlineRuleEvaluationInput | null> {
   if (!context.clientService || context.clientService.tenantId !== rule.tenantId) return null;
   const periodStart = safeDateOnly(cycle.periodStart);
@@ -399,7 +367,7 @@ async function evaluatorInputFor(
     parameters: asRecord(context.parameterValues),
     scheduleEntries: Array.isArray(context.scheduleEntries) ? context.scheduleEntries as DeadlineRuleEvaluationInput['scheduleEntries'] : [],
     milestones: milestoneInput(version),
-    company: normalizeCompanySource(context.clientService.company),
+    company: normalizeCompanyRuleSource(context.clientService.company, today),
     period: { key: cycle.periodKey, start: periodStart, end: periodEnd },
     calendar,
   };
@@ -629,7 +597,7 @@ async function computeImpact(
       fullIdentityStates.push({ identity, action: 'WARN', oldDate: null, newDate: null, reason });
       continue;
     }
-    const input = await evaluatorInputFor(scope.rule, scope.draft, cycle, context, calendar);
+    const input = await evaluatorInputFor(scope.rule, scope.draft, cycle, context, calendar, today);
     if (!input) {
       const reason = 'Rule evaluator input cannot be built';
       impactCounts.warnings += 1;
@@ -907,7 +875,7 @@ function parseImpactInput(rawInput: DeadlineRuleImpactInput): DeadlineRuleImpact
 }
 
 function parseApplyIdentity(rawInput: DeadlineRulePublishInput): DeadlineRuleApplyIdentity {
-  return serviceApplyIdentitySchema.parse(rawInput);
+  return servicePublishIdentitySchema.parse(rawInput);
 }
 
 function parseArchiveInput(rawInput: DeadlineRuleArchiveInput): DeadlineRuleArchiveInput {
@@ -1029,8 +997,26 @@ export async function archiveDeadlineRule(
     if (!identityMatches(impact, input) || input.previewFingerprint !== impact.previewFingerprint) {
       throw staleImpact(impact);
     }
+    const versionDelegate = delegate(tx, 'deadlineRuleVersion');
     const ruleDelegate = delegate(tx, 'deadlineRule');
-    if (!ruleDelegate?.updateMany) throw new ValidationError('Deadline rule CAS persistence is unavailable');
+    if (!versionDelegate?.updateMany || !ruleDelegate?.updateMany) throw new ValidationError('Deadline rule CAS persistence is unavailable');
+    const draftChanged = await versionDelegate.updateMany({
+      where: {
+        id: scope.draft.id,
+        tenantId: actor.tenantId,
+        ruleId,
+        state: 'DRAFT',
+        version: 0,
+        draftRevision: input.expectedDraftRevision,
+        configHash: input.draftConfigHash,
+      },
+      // This no-op identity write locks the exact draft row and makes a
+      // concurrent edit/archive race a typed stale-impact failure.
+      data: { configHash: scope.draft.configHash },
+    });
+    if (!isRecord(draftChanged) || draftChanged.count !== 1) {
+      throw staleImpact(await bestFreshImpact(tx, ruleId, actor.tenantId, input.operation, options, impact));
+    }
     const archivedAt = new Date();
     const ruleChanged = await ruleDelegate.updateMany({
       where: {

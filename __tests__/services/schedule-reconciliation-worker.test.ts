@@ -107,4 +107,21 @@ describe('schedule reconciliation worker', () => {
       tenantId: 'tenant-1', scopeType: 'TENANT', scopeId: 'tenant-1', triggerType: 'ROLLING_HORIZON',
     }));
   });
+
+  it('carries RULE_ARCHIVED operation and rule identity into reconciliation', async () => {
+    mocks.prisma.$queryRaw.mockResolvedValue([{
+      ...request,
+      scopeType: 'RULE',
+      scopeId: 'rule-1',
+      triggerType: 'RULE_ARCHIVED',
+    }]);
+    mocks.prisma.clientService.findMany.mockResolvedValue([{ id: 'service-1' }]);
+
+    await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(mocks.reconcile).toHaveBeenCalledWith(expect.objectContaining({
+      ruleId: 'rule-1',
+      operation: 'ARCHIVE',
+    }), expect.anything());
+  });
 });

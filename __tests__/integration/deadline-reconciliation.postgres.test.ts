@@ -11,6 +11,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
   let variantId: string;
   let ruleId: string;
   let versionId: string;
+  let draftVersionId: string;
   let clientServiceId: string;
   let userId: string;
   let sowPartialId: string;
@@ -23,6 +24,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
     variantId = randomUUID();
     ruleId = randomUUID();
     versionId = randomUUID();
+    draftVersionId = randomUUID();
     clientServiceId = randomUUID();
     userId = randomUUID();
     sowPartialId = randomUUID();
@@ -144,6 +146,38 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
       },
     });
 
+    await prisma.deadlineRuleVersion.create({
+      data: {
+        id: draftVersionId,
+        tenantId,
+        ruleId,
+        version: 0,
+        state: 'DRAFT',
+        schemaVersion: 1,
+        configHash: 'b'.repeat(64),
+        draftRevision: 2,
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+        milestoneTemplates: {
+          create: {
+            tenantId,
+            milestoneKey: 'agm-due',
+            name: 'AGM Due',
+            type: 'STATUTORY',
+            generationMode: 'ONCE_PER_CYCLE',
+            dateExpression: {
+              kind: 'RELATIVE_TO_SOURCE',
+              source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+              offset: 6,
+              unit: 'CALENDAR_DAY',
+            },
+            businessDayAdjustment: 'NONE',
+            displayOrder: 1,
+          },
+        },
+      },
+    });
+
     // Create client service with attached rule
     await prisma.clientService.create({
       data: {
@@ -188,6 +222,15 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
   it('claims, materializes occurrences, and completes reconciliation request', async () => {
     const { enqueueScheduleReconciliation, processScheduleReconciliationBatch } =
       await import('@/services/schedule-reconciliation');
+    const { previewDeadlineRuleImpact } = await import('@/services/deadline-rule');
+
+    const preview = await previewDeadlineRuleImpact(ruleId, {
+      operation: 'PUBLISH',
+      expectedCurrentVersion: 1,
+      expectedDraftRevision: 2,
+      draftConfigHash: 'b'.repeat(64),
+    }, { tenantId, userId }, { now: () => '2026-08-18' });
+    expect(preview.counts.created).toBeGreaterThan(0);
 
     await enqueueScheduleReconciliation(prisma, {
       tenantId,
@@ -210,6 +253,15 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
       status: 'OPEN',
       origin: 'RULE',
     });
+    const previewDates = preview.samples
+      .filter((sample) => sample.action === 'CREATE')
+      .map((sample) => sample.newDate)
+      .filter((date) => date !== null)
+      .sort();
+    const reconciledDates = occurrences
+      .map((occurrence) => occurrence.calculatedDueDate.toISOString().slice(0, 10))
+      .sort();
+    expect(reconciledDates).toEqual(previewDates);
 
     const requests = await prisma.serviceScheduleReconciliationRequest.findMany({
       where: { tenantId, scopeId: clientServiceId },

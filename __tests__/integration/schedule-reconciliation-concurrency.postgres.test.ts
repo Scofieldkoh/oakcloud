@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { scheduleReconciliationDedupeKey } from '@/services/schedule-reconciliation';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describePostgres = testDatabaseUrl ? describe : describe.skip;
@@ -44,6 +45,13 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
 
   it('does not revoke a processing lease and leaves durable follow-up work', async () => {
     const scopeId = randomUUID();
+    const notBefore = new Date('2026-08-18T01:02:59.000Z');
+    const dedupeInput = {
+      tenantId,
+      scopeType: 'RULE' as const,
+      scopeId,
+      triggerType: 'RULE_PUBLISHED',
+    };
     const canonical = await prisma.serviceScheduleReconciliationRequest.create({
       data: {
         tenantId,
@@ -51,7 +59,7 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
         scopeId,
         triggerType: 'RULE_PUBLISHED',
         correlationId: 'processing-source',
-        dedupeKey: randomUUID(),
+        dedupeKey: scheduleReconciliationDedupeKey(dedupeInput, notBefore),
         status: 'PROCESSING',
         leaseOwner: 'worker-1',
         leaseExpiresAt: new Date('2026-08-18T02:00:00.000Z'),
@@ -66,7 +74,7 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
       triggerType: 'RULE_PUBLISHED',
       correlationId: 'processing-follow-up',
       requestedById: null,
-      notBefore: new Date('2026-08-18T01:02:59.000Z'),
+      notBefore,
     });
     const rows = await prisma.serviceScheduleReconciliationRequest.findMany({ where: { tenantId, scopeId } });
     expect(rows.find((row) => row.id === canonical.id)).toMatchObject({ status: 'PROCESSING', leaseOwner: 'worker-1' });

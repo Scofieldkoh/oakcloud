@@ -239,6 +239,20 @@ describe('deadline rule impact and publication', () => {
     expect(evaluatorMock.evaluateDeadlineRule).toHaveBeenCalled();
   });
 
+  it('uses the shared stored-FYE source for no-cycle preview decisions', async () => {
+    arrangeImpactFixture();
+    Object.assign(context.clientService, {
+      company: { financialYearEndDay: 31, financialYearEndMonth: 12 },
+    });
+    prismaMock.serviceCycle.findMany.mockResolvedValue([]);
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([]);
+
+    await previewDeadlineRuleImpact(ruleId, publishIdentity, actor, { now: () => '2026-08-18' });
+
+    expect(evaluatorMock.evaluateDeadlineRule.mock.calls[0]?.[0].company)
+      .toEqual(expect.objectContaining({ financialYearEnd: '2026-12-31' }));
+  });
+
   it('hashes the full impact identity state even when samples are truncated', async () => {
     arrangeImpactFixture();
     const allOccurrences = Array.from({ length: 105 }, (_, index) => occurrence(
@@ -394,6 +408,29 @@ describe('deadline rule impact and publication', () => {
     }));
     expect(prismaMock.deadlineRuleVersion.update).not.toHaveBeenCalled();
     expect(auditMock.createAuditLog).toHaveBeenCalled();
+  });
+
+  it('archives only when the exact previewed draft identity is still mutable', async () => {
+    arrangeImpactFixture();
+    const impact = await previewDeadlineRuleImpact(ruleId, archiveIdentity, actor);
+
+    await archiveDeadlineRule(ruleId, {
+      ...archiveIdentity,
+      previewFingerprint: impact.previewFingerprint,
+      reason: 'Retired',
+    }, actor);
+
+    expect(prismaMock.deadlineRuleVersion.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id: draftId,
+        tenantId: actor.tenantId,
+        ruleId,
+        state: 'DRAFT',
+        version: 0,
+        draftRevision: 4,
+        configHash: 'b'.repeat(64),
+      }),
+    }));
   });
 
   it('previews archive cancellation for eligible rows and preserves immutable categories', async () => {

@@ -1,11 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   classifyDeadlineChange,
   getServiceWorkspaceFlags,
-  getServiceWorkspaceFlagsForTenant,
-  requireServicesWorkspaceEnabled,
   reconcileClientServiceDeadlines,
-  processScheduleReconciliationBatch,
 } from '@/services/schedule-reconciliation';
 import type {
   StoredDeadline,
@@ -463,6 +460,39 @@ describe('reconcileClientServiceDeadlines', () => {
     }));
   });
 
+  it('uses the stored FYE source when materializing a no-cycle annual plan', async () => {
+    const dbMock = reconciliationDb([], reconciliationRule({
+      currentVersion: {
+        id: 'version-1',
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+        configHash: 'config-1',
+        parameterDefinitions: [],
+        milestoneTemplates: [{
+          milestoneKey: 'fye',
+          name: 'Financial year end',
+          description: null,
+          type: 'STATUTORY',
+          generationMode: 'ONCE_PER_CYCLE',
+          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' } },
+          businessDayAdjustment: 'NONE',
+          displayOrder: 0,
+          isActive: true,
+        }],
+      },
+    }));
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1', today: '2026-08-18', horizonEnd: '2027-08-18',
+      writeMode: 'APPLY', reconciliationRequestId: 'req-fye',
+    }, dbMock as never);
+
+    expect(result.counts.created).toBeGreaterThan(0);
+    expect(dbMock.deadlineOccurrence.create.mock.calls
+      .map((call) => call[0].data.calculatedDueDate.toISOString()))
+      .toContain('2026-12-31T00:00:00.000Z');
+  });
+
   it('updates only calculated date and explanation snapshot for overridden occurrences', async () => {
     const existingOccurrence = {
       id: 'occ-overridden', cycleId: 'cycle-1', milestoneKey: 'agm-due', scheduleEntryKey: '',
@@ -517,6 +547,50 @@ describe('reconcileClientServiceDeadlines', () => {
     expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'occ-removed' },
       data: expect.objectContaining({ status: 'CANCELLED', cancellationReason: expect.any(String) }),
+    }));
+  });
+
+  it('applies archive mode by cancelling only eligible target-rule occurrences', async () => {
+    const dbMock = reconciliationDb([
+      {
+        id: 'cycle-archive', tenantId: 'tenant-1', clientServiceId: 'cs-1', ruleId: 'rule-1',
+        periodKey: '2026', generationKey: 'rolling-v1', origin: 'RULE', occurrences: [
+          {
+            id: 'occ-archive-open', cycleId: 'cycle-archive', milestoneKey: 'open', scheduleEntryKey: '',
+            deadlineType: 'STATUTORY', calculatedDueDate: new Date('2026-09-01T00:00:00.000Z'),
+            operativeDueDate: new Date('2026-09-01T00:00:00.000Z'), dateOverridden: false, status: 'OPEN', origin: 'RULE', ruleVersionId: 'version-1',
+          },
+          {
+            id: 'occ-archive-manual', cycleId: 'cycle-archive', milestoneKey: 'manual', scheduleEntryKey: '',
+            deadlineType: 'STATUTORY', calculatedDueDate: new Date('2026-09-02T00:00:00.000Z'),
+            operativeDueDate: new Date('2026-09-02T00:00:00.000Z'), dateOverridden: false, status: 'OPEN', origin: 'MANUAL_TRIGGER', ruleVersionId: 'version-1',
+          },
+          {
+            id: 'occ-archive-completed', cycleId: 'cycle-archive', milestoneKey: 'completed', scheduleEntryKey: '',
+            deadlineType: 'STATUTORY', calculatedDueDate: new Date('2026-09-03T00:00:00.000Z'),
+            operativeDueDate: new Date('2026-09-03T00:00:00.000Z'), dateOverridden: false, status: 'COMPLETED', origin: 'RULE', ruleVersionId: 'version-1',
+          },
+          {
+            id: 'occ-archive-history', cycleId: 'cycle-archive', milestoneKey: 'history', scheduleEntryKey: '',
+            deadlineType: 'STATUTORY', calculatedDueDate: new Date('2026-07-03T00:00:00.000Z'),
+            operativeDueDate: new Date('2026-07-03T00:00:00.000Z'), dateOverridden: false, status: 'OPEN', origin: 'RULE', ruleVersionId: 'version-1',
+          },
+        ],
+      },
+    ], reconciliationRule({ isActive: false, archivedAt: new Date('2026-08-18T00:00:00.000Z') }));
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1', ruleId: 'rule-1', operation: 'ARCHIVE',
+      today: '2026-08-18', horizonEnd: '2027-08-18', writeMode: 'APPLY', reconciliationRequestId: 'req-archive',
+    }, dbMock as never);
+
+    expect(result.counts).toMatchObject({ cancelled: 1, preserved: 3, created: 0, recalculated: 0 });
+    expect(dbMock.serviceCycle.upsert).not.toHaveBeenCalled();
+    expect(dbMock.deadlineOccurrence.create).not.toHaveBeenCalled();
+    expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledTimes(1);
+    expect(dbMock.deadlineOccurrence.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'occ-archive-open' },
+      data: expect.objectContaining({ status: 'CANCELLED' }),
     }));
   });
 });

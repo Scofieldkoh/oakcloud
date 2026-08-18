@@ -204,6 +204,7 @@ async function processSingleRequest(
       return { success: true, summaries: [] };
     }
     const writeMode = flags.deadlineWritesEnabled ? 'APPLY' : 'OBSERVE';
+    const operation = req.triggerType === 'RULE_ARCHIVED' ? 'ARCHIVE' as const : 'PUBLISH' as const;
     const today = currentDateInSingapore(now);
     const horizonEnd = addMonthsClamped(today, 12);
 
@@ -233,6 +234,8 @@ async function processSingleRequest(
       const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({
         tenantId: req.tenantId,
         clientServiceId,
+        ruleId: req.scopeType === 'RULE' ? req.scopeId : undefined,
+        operation,
         today,
         horizonEnd,
         writeMode,

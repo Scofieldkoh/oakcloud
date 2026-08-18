@@ -3,9 +3,9 @@ import { evaluateDeadlineRule, type DeadlineRuleEvaluationInput } from '@/servic
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import type {
   BusinessCalendarSnapshot,
-  CompanyRuleSource,
   DateOnly,
 } from '@/services/service-schedule';
+import { normalizeCompanyRuleSource } from '@/services/service-schedule';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
 import { planRollingPeriods, ROLLING_PLAN_VERSION } from './planner';
@@ -35,66 +35,6 @@ function safeDateOnly(value: unknown): DateOnly | null {
     return value.toISOString().slice(0, 10) as DateOnly;
   }
   return null;
-}
-
-function normalizeCompanySource(value: unknown, today?: DateOnly): CompanyRuleSource {
-  const source = asRecord(value);
-  const result: Record<string, unknown> = {};
-  const dateFields = new Set([
-    'financialYearEnd',
-    'nextAgmDueDate',
-    'nextArDueDate',
-    'accountsDueDate',
-    'incorporationDate',
-    'registrationDate',
-  ]);
-  const supported = new Set([
-    'isGstRegistered',
-    'isRegisteredCharity',
-    'isIPC',
-    'hasCharges',
-    'currentOfficerCount',
-    'currentShareholderCount',
-    'annualReceiptsOrExpenditure',
-    ...dateFields,
-    'entityType',
-    'status',
-    'primarySsicCode',
-    'secondarySsicCode',
-    'uen',
-    'name',
-  ]);
-  for (const [key, raw] of Object.entries(source)) {
-    if (!supported.has(key) || raw === null || raw === undefined) continue;
-    if (dateFields.has(key)) {
-      const date = safeDateOnly(raw);
-      if (date) result[key] = date;
-    } else if (typeof raw === 'boolean' || typeof raw === 'number' || typeof raw === 'string') {
-      result[key] = raw;
-    }
-  }
-
-  // Company stores the FYE as a day/month pair. The evaluator consumes a
-  // date-only source, so materialise the current occurrence year's date when
-  // no explicit snapshot date is available.
-  if (!result.financialYearEnd && today) {
-    const day = source.financialYearEndDay;
-    const month = source.financialYearEndMonth;
-    if (
-      typeof day === 'number' && Number.isInteger(day) && day >= 1 && day <= 31
-      && typeof month === 'number' && Number.isInteger(month) && month >= 1 && month <= 12
-    ) {
-      const candidate = `${today.slice(0, 4)}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` as DateOnly;
-      try {
-        parseDateOnly(candidate);
-        result.financialYearEnd = candidate;
-      } catch {
-        // Invalid legacy day/month data remains absent and is reported by the
-        // evaluator as a typed missing input instead of being fabricated.
-      }
-    }
-  }
-  return result as CompanyRuleSource;
 }
 
 function cycleSourceSnapshot(evaluation: {
@@ -262,6 +202,7 @@ export async function reconcileClientServiceDeadlines(
   db: Prisma.TransactionClient | typeof prisma = prisma,
 ): Promise<DeadlineReconciliationResult> {
   const { tenantId, clientServiceId, today, horizonEnd, writeMode, reconciliationRequestId } = input;
+  const operation = input.operation ?? 'PUBLISH';
   parseDateOnly(today);
   parseDateOnly(horizonEnd);
 
@@ -399,7 +340,7 @@ export async function reconcileClientServiceDeadlines(
       }
     : defaultCalendar();
 
-  const companySource = normalizeCompanySource(clientService.company, today);
+  const companySource = normalizeCompanyRuleSource(clientService.company, today);
 
   // Group existing occurrences by cycleId
   const occurrencesByCycleId = new Map<string, typeof existingCycles[number]['occurrences']>();
@@ -416,6 +357,39 @@ export async function reconcileClientServiceDeadlines(
 
   for (const clientRule of clientService.deadlineRules) {
     const rule = clientRule.rule;
+    if (input.ruleId && rule.id !== input.ruleId) continue;
+
+    const archiveMode = (!input.ruleId || rule.id === input.ruleId)
+      && (operation === 'ARCHIVE' || rule.isActive === false || (rule.archivedAt !== null && rule.archivedAt !== undefined));
+    if (archiveMode) {
+      for (const cycle of existingCycles.filter((candidate) => candidate.ruleId === rule.id)) {
+        for (const occ of cycle.occurrences) {
+          processedOccurrenceIds.add(occ.id);
+          const stored = toStoredDeadline(occ);
+          const eligible = stored.status === 'OPEN'
+            && stored.origin === 'RULE'
+            && !stored.dateOverridden
+            && compareDateOnly(stored.operativeDueDate, today) >= 0;
+          if (eligible) {
+            counts.cancelled += 1;
+            if (writeMode === 'APPLY') {
+              await updateOccurrence(db, tenantId, clientServiceId, occ.id, {
+                status: 'CANCELLED',
+                cancelledAt: new Date(),
+                cancelledById: null,
+                cancellationReason: 'Rule archive cancels eligible future occurrences',
+              });
+            }
+          } else {
+            counts.preserved += 1;
+            const reason = classifyExistingPreserveReason(stored, today);
+            preservedByReason[reason] += 1;
+          }
+        }
+      }
+      continue;
+    }
+    if (rule.isActive === false || (rule.archivedAt !== null && rule.archivedAt !== undefined)) continue;
     if (!clientRule.enabled) {
       if (writeMode === 'APPLY') {
         await updateClientRule(db, tenantId, clientServiceId, clientRule.id, {
@@ -692,6 +666,7 @@ export async function reconcileClientServiceDeadlines(
 
   // Check any remaining unprocessed occurrences for this client service
   for (const cycle of existingCycles) {
+    if (operation === 'ARCHIVE' && input.ruleId && cycle.ruleId !== input.ruleId) continue;
     for (const occ of cycle.occurrences) {
       if (!processedOccurrenceIds.has(occ.id)) {
         processedOccurrenceIds.add(occ.id);

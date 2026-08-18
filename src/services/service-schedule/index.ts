@@ -4,4 +4,5 @@ export * from './business-days';
 export * from './hash';
 export * from './applicability';
 export * from './evaluator';
+export * from './company-source';
 export * from '../../lib/validations/service-schedule';

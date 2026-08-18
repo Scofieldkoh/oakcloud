@@ -60,6 +60,8 @@ export type DeadlineReconciliationCounts = {
   noChange: number;
 };
 
+export type DeadlineReconciliationOperation = 'PUBLISH' | 'ARCHIVE';
+
 export type DeadlineReconciliationResult = {
   tenantId: string;
   clientServiceId: string;
@@ -73,6 +75,8 @@ export type DeadlineReconciliationResult = {
 export type ReconcileClientServiceDeadlinesInput = {
   tenantId: string;
   clientServiceId: string;
+  ruleId?: string;
+  operation?: DeadlineReconciliationOperation;
   today: DateOnly;
   horizonEnd: DateOnly;
   writeMode: 'OBSERVE' | 'APPLY';
