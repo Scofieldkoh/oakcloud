@@ -1,0 +1,247 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { addMonths, format, startOfMonth } from 'date-fns';
+import { DayPicker, type DayProps } from 'react-day-picker';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDeadlines, type DeadlineSearchInput } from '@/hooks/use-deadlines';
+import { useIsLargeDesktop } from '@/hooks/use-media-query';
+import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-preferences';
+import { addCalendarDays, addMonthsClamped, currentDateInSingapore, type DateOnly } from '@/services/service-schedule';
+import type { DeadlineOccurrenceDto } from '@/services/deadline';
+import { parseDeadlineViewPreference, type DeadlineViewPreference } from '@/lib/validations/services-preferences';
+import { cn } from '@/lib/utils';
+import { DeadlineEvent } from './deadline-event';
+
+const VIEW_PREFERENCE_KEY = 'services.deadlines.view.v1';
+const EVENTS_PER_DAY = 2;
+
+interface DeadlineCalendarProps {
+  items?: DeadlineOccurrenceDto[];
+  focusMonth?: Date;
+  monthCount?: 1 | 2 | 3 | null;
+  search?: DeadlineSearchInput;
+  preferenceValue?: DeadlineViewPreference;
+  onMonthChange?: (month: Date) => void;
+  onMonthCountChange?: (monthCount: 1 | 2 | 3) => void;
+  onComplete?: (occurrence: DeadlineOccurrenceDto) => void;
+  onWaive?: (occurrence: DeadlineOccurrenceDto) => void;
+}
+
+function dateOnlyFromDate(value: Date): DateOnly {
+  return `${String(value.getFullYear()).padStart(4, '0')}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}` as DateOnly;
+}
+
+function dateFromDateOnly(value: DateOnly): Date {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+
+function monthRange(month: Date, count: number): { from: DateOnly; to: DateOnly } {
+  const from = dateOnlyFromDate(startOfMonth(month));
+  const next = addMonthsClamped(from, count);
+  return { from, to: addCalendarDays(next, -1) };
+}
+
+function occurrenceDate(occurrence: DeadlineOccurrenceDto): DateOnly {
+  return occurrence.operativeDueDate.slice(0, 10) as DateOnly;
+}
+
+function eventsForDate(items: DeadlineOccurrenceDto[], date: Date): DeadlineOccurrenceDto[] {
+  const key = dateOnlyFromDate(date);
+  return items.filter((item) => occurrenceDate(item) === key);
+}
+
+interface CalendarDayProps extends DayProps {
+  events: Map<string, DeadlineOccurrenceDto[]>;
+  onMore?: (date: Date) => void;
+}
+
+function CalendarDay({ day, modifiers: _modifiers, children, events, onMore, ...props }: CalendarDayProps) {
+  const eventItems = events.get(day.isoDate) ?? [];
+  const visible = eventItems.slice(0, EVENTS_PER_DAY);
+  const remaining = eventItems.length - visible.length;
+  return (
+    <td {...props} className={cn('min-h-[6.5rem] border-t border-border-primary p-1 align-top', props.className)} data-calendar-day={day.isoDate}>
+      {children}
+      {eventItems.length > 0 ? (
+        <div className="mt-1 space-y-1">
+          {visible.map((occurrence) => <DeadlineEvent key={occurrence.id} occurrence={occurrence} compact />)}
+          {remaining > 0 ? (
+            <button
+              type="button"
+              className="flex min-h-11 w-full items-center rounded-md px-2 text-xs font-medium text-oak-light hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
+              aria-label={`Show ${remaining} more deadlines on ${format(day.date, 'd MMMM yyyy')}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMore?.(day.date);
+              }}
+            >
+              +{remaining} more
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </td>
+  );
+}
+
+export function DeadlineCalendar({
+  items: providedItems,
+  focusMonth: providedFocusMonth,
+  monthCount: providedMonthCount,
+  search,
+  preferenceValue,
+  onMonthChange,
+  onMonthCountChange,
+  onComplete,
+  onWaive,
+}: DeadlineCalendarProps) {
+  const isLargeDesktop = useIsLargeDesktop();
+  const preference = useUserPreference<DeadlineViewPreference>(VIEW_PREFERENCE_KEY);
+  const savePreference = useUpsertUserPreference<DeadlineViewPreference>();
+  const parsedPreference = preferenceValue ?? parseDeadlineViewPreference(preference.data?.value);
+  const defaultMonth = dateFromDateOnly(currentDateInSingapore());
+  const [month, setMonth] = useState<Date>(providedFocusMonth ?? startOfMonth(defaultMonth));
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(providedFocusMonth ?? startOfMonth(defaultMonth));
+  const [localMonthCount, setLocalMonthCount] = useState<1 | 2 | 3 | null>(providedMonthCount ?? parsedPreference.monthCount);
+
+  useEffect(() => {
+    if (providedFocusMonth) setMonth(startOfMonth(providedFocusMonth));
+  }, [providedFocusMonth]);
+  useEffect(() => {
+    if (providedMonthCount !== undefined) setLocalMonthCount(providedMonthCount);
+  }, [providedMonthCount]);
+
+  const visibleMonthCount = localMonthCount ?? (isLargeDesktop ? 2 : 1);
+  const range = useMemo(
+    () => search?.from && search?.to
+      ? { from: search.from as DateOnly, to: search.to as DateOnly }
+      : monthRange(month, visibleMonthCount),
+    [month, search?.from, search?.to, visibleMonthCount],
+  );
+  const query = useDeadlines({
+    ...search,
+    ...range,
+    mode: 'CALENDAR',
+  });
+  const items = useMemo(
+    () => providedItems ?? (query.data?.mode === 'CALENDAR' ? query.data.items : []),
+    [providedItems, query.data],
+  );
+  const groupedItems = useMemo(() => {
+    const groups = new Map<string, DeadlineOccurrenceDto[]>();
+    for (const item of items) {
+      const key = occurrenceDate(item);
+      const existing = groups.get(key) ?? [];
+      existing.push(item);
+      groups.set(key, existing);
+    }
+    return groups;
+  }, [items]);
+  const [selectedAgendaDate, setSelectedAgendaDate] = useState<Date | undefined>(selectedDate);
+  const agendaItems = selectedAgendaDate ? eventsForDate(items, selectedAgendaDate) : [];
+
+  const changeMonthCount = (value: string) => {
+    const parsed = Number(value);
+    if (parsed !== 1 && parsed !== 2 && parsed !== 3) return;
+    const next = parsed as 1 | 2 | 3;
+    setLocalMonthCount(next);
+    onMonthCountChange?.(next);
+    savePreference.mutate({
+      key: VIEW_PREFERENCE_KEY,
+      value: { ...parsedPreference, version: 1, monthCount: next },
+    });
+  };
+
+  const navigateMonth = (nextMonth: Date) => {
+    const normalized = startOfMonth(nextMonth);
+    setMonth(normalized);
+    onMonthChange?.(normalized);
+  };
+
+  const handleSelect = (value: Date | undefined) => {
+    setSelectedDate(value);
+    setSelectedAgendaDate(value);
+  };
+
+  const dayComponent = useMemo(() => {
+    const Component = (props: DayProps) => (
+      <CalendarDay
+        {...props}
+        events={groupedItems}
+        onMore={(date) => {
+          setSelectedDate(date);
+          setSelectedAgendaDate(date);
+        }}
+      />
+    );
+    return Component;
+  }, [groupedItems]);
+
+  return (
+    <section aria-label="Deadline calendar" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => navigateMonth(new Date())} className="min-h-11 rounded-lg border border-border-primary px-3 text-xs font-medium text-text-primary hover:bg-background-tertiary">Today</button>
+          <button type="button" aria-label="Previous month" onClick={() => navigateMonth(addMonths(month, -visibleMonthCount))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-primary text-text-primary hover:bg-background-tertiary"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
+          <button type="button" aria-label="Next month" onClick={() => navigateMonth(addMonths(month, visibleMonthCount))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-primary text-text-primary hover:bg-background-tertiary"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
+        </div>
+        <label className="flex min-h-11 items-center gap-2 text-xs text-text-secondary">
+          <span>Visible months</span>
+          <select aria-label="Visible months" value={visibleMonthCount} onChange={(event) => changeMonthCount(event.target.value)} className="h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary">
+            <option value="1">1 month</option>
+            <option value="2">2 months</option>
+            <option value="3">3 months</option>
+          </select>
+        </label>
+      </div>
+
+      {query.error && !providedItems ? <p role="alert" className="rounded-xl border border-status-error/30 bg-status-error/5 p-3 text-sm text-status-error">Unable to load deadlines.</p> : null}
+      {query.isLoading && !providedItems ? <p role="status" className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">Loading calendar…</p> : null}
+      <div className={cn('rounded-xl border border-border-primary bg-background-secondary p-2 sm:p-3', query.isFetching && 'opacity-70')}>
+        <DayPicker
+          month={month}
+          onMonthChange={navigateMonth}
+          mode="single"
+          selected={selectedDate}
+          onSelect={handleSelect}
+          numberOfMonths={visibleMonthCount}
+          weekStartsOn={1}
+          showOutsideDays
+          fixedWeeks
+          timeZone="Asia/Singapore"
+          noonSafe
+          aria-label="Deadline calendar"
+          labels={{ labelGrid: (value) => `Calendar ${format(value, 'MMMM yyyy')}` }}
+          classNames={{
+            root: 'w-full',
+            months: 'flex flex-wrap gap-3',
+            month: 'min-w-0 flex-1 rounded-lg border border-border-primary bg-background-primary p-2',
+            month_caption: 'flex items-center justify-center py-2 text-sm font-semibold text-text-primary',
+            month_grid: 'w-full border-collapse',
+            weekdays: 'grid grid-cols-7',
+            weekday: 'py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-text-muted',
+            weeks: 'w-full',
+            week: 'grid grid-cols-7',
+            day: 'align-top',
+            day_button: 'flex min-h-9 w-full items-start justify-center rounded-md px-1 py-1 text-xs text-text-primary hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+            outside: 'text-text-muted/60',
+            today: 'font-bold text-oak-light',
+            selected: 'bg-oak-primary/10',
+            nav: 'hidden',
+          }}
+          components={{ Day: dayComponent }}
+        />
+      </div>
+
+      <section aria-label="Selected day agenda" className="rounded-xl border border-border-primary bg-background-secondary p-3 sm:p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-text-primary">{selectedAgendaDate ? format(selectedAgendaDate, 'EEEE, d MMMM yyyy') : 'Select a day'}</h3>
+          <span className="text-xs text-text-secondary">{agendaItems.length} deadline{agendaItems.length === 1 ? '' : 's'}</span>
+        </div>
+        {agendaItems.length > 0 ? <div className="space-y-2">{agendaItems.map((occurrence) => <DeadlineEvent key={occurrence.id} occurrence={occurrence} onComplete={onComplete} onWaive={onWaive} />)}</div> : <p className="text-sm text-text-secondary">No deadlines selected for this day.</p>}
+      </section>
+    </section>
+  );
+}

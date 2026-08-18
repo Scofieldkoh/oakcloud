@@ -3,6 +3,7 @@
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { ServiceRoster } from '@/components/services/roster/service-roster';
+import { DeadlineWorkspace } from '@/components/services/deadlines/deadline-workspace';
 
 type ServicesWorkspaceTab = 'services' | 'deadlines' | 'billing';
 
@@ -67,9 +68,11 @@ export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = tru
 
       {tab === 'services' ? (
         <ServiceRoster workspaceId={workspaceId} canEdit={canEdit} canCreate={canCreate} />
+      ) : tab === 'deadlines' ? (
+        <DeadlineWorkspace workspaceId={workspaceId} canEdit={canEdit} />
       ) : (
         <section role="status" className="rounded-xl border border-dashed border-border-primary bg-background-secondary p-6 text-sm text-text-secondary">
-          {tab === 'deadlines' ? 'Deadline tracking is coming soon.' : 'Billing tracking is coming soon.'}
+          Billing tracking is coming soon.
         </section>
       )}
     </main>
