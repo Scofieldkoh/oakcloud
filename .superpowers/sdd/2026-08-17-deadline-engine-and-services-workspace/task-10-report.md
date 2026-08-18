@@ -1,22 +1,24 @@
 # Task 10 report — Services roster review remediation
 
-Status: remediation-complete / awaiting rereview
+Status: rereview-correction-complete / awaiting rereview
 
-Implementation commit: `c653b3c`
+Implementation commit: `58bb422`
 
 ## Scope delivered
 
 - Routed Company, Family, and Service inline filters through canonical URL state and the accepted Task 9 roster search contract as `companyQuery`, `familyQuery`, and `serviceQuery`. Prisma predicates, next-deadline SQL, totals, pagination, React Query keys, and transport parsing remain tenant/access scoped.
-- Added a company-read, workspace-gated operational family-facet endpoint at `/api/client-services/families` and a stable abort-aware hook. Facets are deduplicated from all non-archived accessible client services and do not depend on the current roster page or administrator-only catalog access.
+- Added a company-read, workspace-gated operational family-facet endpoint at `/api/client-services/families` and a stable abort-aware hook. A grouped SQL query covers both active and archived accessible client services, applies tenant/company predicates in the database, and does not depend on the current roster page or administrator-only catalog access. Facet failures no longer fall back to page-local families; the roster shows a retryable error state.
 - Replaced the first-page-only Add flow with the existing server-scoped `/api/companies/options` search/page contract through `useCompanyOptionsPage` and `AsyncSearchSelect`; typed search, zero-based paging, `hasMore`, and accessible-company predicates remain server-owned.
-- Made `services.roster.table.v1` a defensively parsed versioned preference containing widths, order, visibility, sort, and page size. Added accessible column visibility/order controls and resize-end/debounced width persistence while URL state remains authoritative for shareable filters, sorting, and pagination.
+- Made `services.roster.table.v1` a defensively parsed versioned preference containing widths, order, visibility, sort, and page size. Added accessible column visibility/order controls and resize-end/debounced width persistence. Pending resize patches merge from the current preference, cancel before immediate writes, and clean up on unmount; URL state remains authoritative for shareable filters, sorting, and pagination.
 - Changed roster state to derive from `useSearchParams`, with optimistic URL updates for responsive controls and synchronization when browser Back/Forward changes the address bar. Family badges retain semantic foreground text and use configured colours only for border/dot accents.
+- Upgraded the shared `AsyncSearchSelect` used by Add Service to expose a labelled WAI-ARIA combobox/listbox, active descendant, selected options, named clear action, and mobile-sized trigger/paging/option targets. Roster column controls are also at least 44px, and roster page sizes are restricted to the API-supported 10/20/50/100 values.
+- Preserved typed `ApiError` responses from the family-facet route, including the disabled-workspace 404.
 
 ## TDD and verification evidence
 
-- RED: canonical inline contract tests failed because the Task 9 schema rejected the three fields and the hook dropped them; the family facet route/hook tests failed with missing modules; the remote company hook test failed because only the first-page hook existed; the preference parser/control test failed because the complete contract and controls were absent; roster tests failed for page-only family options, local inline filtering, and stale navigation state.
-- GREEN: Task10 correction suite — 12 files / 60 tests passed.
-- Accepted Task9/shared regression suite — 12 files / 112 tests passed.
+- RED: rereview boundary tests failed for archived-only family facets/page-local error fallback, delayed resize preference snapshots, real combobox/listbox semantics and touch targets, 200-page-size parsing, undersized column controls, and typed family-route 404 handling.
+- GREEN: rereview correction suite — 13 files / 66 tests passed.
+- Accepted Task9/shared regression suite — 12 files / 113 tests passed.
 - Chromium Services Admin + Company Services suite — 2 files / 4 tests passed.
 - `npm.cmd exec -- tsc --noEmit --pretty false` — pass.
 - Scoped ESLint over touched Task10 source/tests with `--max-warnings 0` — pass with zero warnings/errors.
@@ -25,14 +27,15 @@ Implementation commit: `c653b3c`
 ## Boundary coverage
 
 - Canonical inline filters are serialized, normalized, server-predicated, page-resetting, and included in truthful totals; next-deadline SQL includes the same fields.
-- Family options are complete and deduplicated across accessible operational records even when the visible roster page contains only another family; empty access scopes return no facet query.
+- Family options are complete and grouped across active and archived accessible operational records even when the visible roster page contains only another family; empty access scopes return no facet query and settled failures offer retry without page-local fallback.
 - Company search includes typed query, page, limit, `hasMore`, and Next/Previous behavior; the Add dialog mounts the shared creator only after a selected accessible company.
-- Preference restore defensively handles unknown columns/invalid widths/version, preserves default columns/actions, and covers order, visibility, sorting, page size, and resize-end persistence.
+- Preference restore defensively handles unknown columns/invalid widths/version, preserves default columns/actions, restricts page sizes to the roster/API contract, and covers order, visibility, sorting, page size, resize-end persistence, and the cross-action pending-resize race.
+- The real Add Service selector exposes label association, combobox/listbox ownership and active descendant, option selection, named clear action, and 44px mobile controls; the family route preserves typed errors.
 - Browser navigation updates request state from URL changes; family text remains semantic and colour-independent.
 
 ## Assumptions and residual risks
 
-- Family facets intentionally describe non-archived operational client services, including ended services, rather than the administrator-only catalog. Families with no operational client-service record are not offered as roster filters.
+- Family facets describe families represented by either active or archived operational client services in the accessible workspace rather than the administrator-only catalog. Families with no operational client-service record are not offered as roster filters.
 - Company option paging uses the existing zero-based `/api/companies/options` contract with its server-side company-read predicate; no client tenant parameter is trusted for scope.
 - Repository-wide baseline/full build/full lint, Prisma generation/migrations, live database tests, and plan-level performance tests remain deferred to the plan-level gate.
 - This correction is awaiting the independent Task10 rereview; no Task11 work was started.
