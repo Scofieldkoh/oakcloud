@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { ApiError } from '@/lib/errors';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { getCompanyReadScope } from '@/lib/api/company-query';
 import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
@@ -25,6 +26,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       }),
     });
   } catch (error) {
+    if (error instanceof ApiError) return createErrorResponse(error);
     if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden' || error.message.startsWith('Permission denied'))) {
       return createErrorResponse(error);
     }

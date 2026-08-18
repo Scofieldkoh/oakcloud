@@ -27,6 +27,7 @@ import { ClientServiceEditor } from '@/components/companies/company-detail/clien
 const TABLE_PREFERENCE_KEY = 'services.roster.table.v1';
 const STATUS_VALUES = ['ACTIVE', 'PAUSED', 'ENDED'] as const;
 type ServiceStatus = (typeof STATUS_VALUES)[number];
+const SERVICE_ROSTER_PAGE_SIZES = [10, 20, 50, 100] as const;
 
 export interface ServiceRosterPreference {
   version: 1;
@@ -82,7 +83,7 @@ export function parseServiceRosterPreference(value: unknown): ServiceRosterPrefe
     }
   }
   columnVisibility.actions = true;
-  const pageSize = [10, 20, 50, 100, 200].includes(value.pageSize as number)
+  const pageSize = SERVICE_ROSTER_PAGE_SIZES.includes(value.pageSize as (typeof SERVICE_ROSTER_PAGE_SIZES)[number])
     ? value.pageSize as number
     : defaultServiceRosterPreference.pageSize;
   const sortBy = typeof value.sortBy === 'string' && SORT_VALUES.includes(value.sortBy as ServiceRosterSortBy)
@@ -137,20 +138,6 @@ function ServiceEditorLauncher({ item, onClose }: { item: ServiceRosterItem; onC
   return <ClientServiceEditor service={service.data} isOpen onClose={onClose} />;
 }
 
-function familyFiltersFromItems(items: ServiceRosterItem[]): ServiceFamilyFilter[] {
-  const byId = new Map<string, ServiceFamilyFilter>();
-  for (const item of items) {
-    if (!byId.has(item.family.id)) {
-      byId.set(item.family.id, {
-        id: item.family.id,
-        name: item.family.name,
-        displayColor: item.family.displayColor,
-      });
-    }
-  }
-  return [...byId.values()].sort((left, right) => left.name.localeCompare(right.name));
-}
-
 function activeFilterLabel(
   query: string,
   filters: ServiceRosterInlineFilters,
@@ -184,6 +171,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
   );
   const preferenceReady = useRef(false);
   const resizeSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPreferencePatch = useRef<Partial<ServiceRosterPreference>>({});
   const [columnWidths, setColumnWidths] = useState<ServiceRosterColumnWidths>({});
   const [columnOrder, setColumnOrder] = useState<ServiceRosterColumnId[]>(defaultServiceRosterPreference.columnOrder);
   const [columnVisibility, setColumnVisibility] = useState<Record<ServiceRosterColumnId, boolean>>(defaultServiceRosterPreference.columnVisibility);
@@ -258,8 +246,8 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
 
   const items = useMemo(() => roster.data?.items ?? [], [roster.data?.items]);
   const families = useMemo(
-    () => providedFamilies ?? familyFacets.data ?? familyFiltersFromItems(items),
-    [familyFacets.data, items, providedFamilies],
+    () => providedFamilies ?? familyFacets.data ?? [],
+    [familyFacets.data, providedFamilies],
   );
 
   const replaceUrl = useCallback((next: Partial<Record<string, string | undefined>>) => {
@@ -282,7 +270,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
     if (Object.keys(next).length > 0) replaceUrl(next);
   }, [canonicalSearchKey, parsedPreference, preference.data?.value, replaceUrl]);
 
-  const buildPreference = useCallback((overrides: Partial<ServiceRosterPreference> = {}): ServiceRosterPreference => ({
+  const currentPreference = useMemo((): ServiceRosterPreference => ({
     version: 1,
     columnWidths,
     columnOrder,
@@ -290,22 +278,45 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
     sortBy,
     sortOrder,
     pageSize: limit,
-    ...overrides,
   }), [columnOrder, columnVisibility, columnWidths, limit, sortBy, sortOrder]);
+  const currentPreferenceRef = useRef<ServiceRosterPreference>(currentPreference);
+  currentPreferenceRef.current = currentPreference;
 
   const persistPreference = useCallback((overrides: Partial<ServiceRosterPreference> = {}, debounce = false) => {
     if (!preferenceReady.current) return;
-    const value = buildPreference(overrides);
     if (debounce) {
+      pendingPreferencePatch.current = { ...pendingPreferencePatch.current, ...overrides };
       if (resizeSaveTimer.current) clearTimeout(resizeSaveTimer.current);
       resizeSaveTimer.current = setTimeout(() => {
+        const value = {
+          ...currentPreferenceRef.current,
+          ...pendingPreferencePatch.current,
+        };
+        pendingPreferencePatch.current = {};
         savePreference.mutate({ key: TABLE_PREFERENCE_KEY, value });
         resizeSaveTimer.current = null;
       }, 250);
       return;
     }
+    if (resizeSaveTimer.current) {
+      clearTimeout(resizeSaveTimer.current);
+      resizeSaveTimer.current = null;
+    }
+    const value = {
+      ...currentPreferenceRef.current,
+      ...pendingPreferencePatch.current,
+      ...overrides,
+    };
+    pendingPreferencePatch.current = {};
+    currentPreferenceRef.current = value;
     savePreference.mutate({ key: TABLE_PREFERENCE_KEY, value });
-  }, [buildPreference, savePreference]);
+  }, [savePreference]);
+
+  useEffect(() => () => {
+    if (resizeSaveTimer.current) clearTimeout(resizeSaveTimer.current);
+    resizeSaveTimer.current = null;
+    pendingPreferencePatch.current = {};
+  }, []);
 
   const toggleStatus = (status: ServiceStatus) => {
     const nextStatuses = statuses.includes(status) ? statuses.filter((value) => value !== status) : [...statuses, status];
@@ -379,7 +390,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
             type="button"
             aria-expanded={columnsOpen}
             onClick={() => setColumnsOpen((open) => !open)}
-            className="min-h-10 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary"
+            className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary"
           >
             Customize columns
           </button>
@@ -406,8 +417,8 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
                   />
                   <span className="truncate">{columnLabels[column]}</span>
                 </label>
-                <button type="button" aria-label={`Move ${columnLabels[column]} column up`} disabled={index === 0} onClick={() => moveColumn(column, -1)} className="min-h-9 min-w-9 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↑</button>
-                <button type="button" aria-label={`Move ${columnLabels[column]} column down`} disabled={index === columnOrder.length - 1} onClick={() => moveColumn(column, 1)} className="min-h-9 min-w-9 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↓</button>
+                <button type="button" aria-label={`Move ${columnLabels[column]} column up`} disabled={index === 0} onClick={() => moveColumn(column, -1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↑</button>
+                <button type="button" aria-label={`Move ${columnLabels[column]} column down`} disabled={index === columnOrder.length - 1} onClick={() => moveColumn(column, 1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↓</button>
               </div>
             ))}
           </div>
@@ -438,6 +449,21 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
             Archived
           </button>
         </div>
+        {!providedFamilies && familyFacets.error ? (
+          <Alert variant="error" title="Family filters unavailable" compact>
+            <div className="flex flex-wrap items-center gap-2">
+              <span>{familyFacets.error instanceof Error ? familyFacets.error.message : 'Unable to load family filters.'}</span>
+              <button
+                type="button"
+                aria-label="Retry family filters"
+                onClick={() => familyFacets.refetch()}
+                className="min-h-11 rounded-md border border-current px-3 text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10"
+              >
+                Retry
+              </button>
+            </div>
+          </Alert>
+        ) : null}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="relative flex min-h-11 min-w-0 flex-1 items-center rounded-lg border border-border-primary bg-background-secondary/50 focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/20">
             <Search className="ml-3 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
@@ -482,10 +508,14 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
         totalPages={totalPages}
         total={total}
         limit={limit}
+        pageSizeOptions={SERVICE_ROSTER_PAGE_SIZES}
         onPageChange={(nextPage) => replaceUrl({ page: String(nextPage) })}
         onLimitChange={(nextLimit) => {
-          replaceUrl({ limit: String(nextLimit), page: '1' });
-          persistPreference({ pageSize: nextLimit });
+          const safeLimit = SERVICE_ROSTER_PAGE_SIZES.includes(nextLimit as (typeof SERVICE_ROSTER_PAGE_SIZES)[number])
+            ? nextLimit
+            : defaultServiceRosterPreference.pageSize;
+          replaceUrl({ limit: String(safeLimit), page: '1' });
+          persistPreference({ pageSize: safeLimit });
         }}
       />
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, useId, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Loader2, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -84,6 +84,9 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
+  const optionId = (index: number) => `${listboxId}-option-${index}`;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -266,7 +269,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   return (
     <div className={cn('relative', className)}>
       {label && (
-        <label className="block text-sm font-medium text-text-primary mb-1.5">
+        <label htmlFor={inputId} className="block text-sm font-medium text-text-primary mb-1.5">
           {label}
         </label>
       )}
@@ -275,7 +278,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       <div
         ref={containerRef}
         className={cn(
-          'w-full flex items-center gap-2 rounded-lg border h-9',
+          'w-full flex min-h-11 items-center gap-2 rounded-lg border',
           'bg-background-secondary/30 border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
           'transition-colors',
@@ -294,6 +297,14 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             )}
             <input
               ref={inputRef}
+              id={inputId}
+              role="combobox"
+              aria-label={label ? undefined : placeholder}
+              aria-expanded={isOpen}
+              aria-controls={listboxId}
+              aria-haspopup="listbox"
+              aria-autocomplete="list"
+              aria-activedescendant={isOpen && options[highlightedIndex] ? optionId(highlightedIndex) : undefined}
               type="text"
               value={searchQuery}
               onChange={(e) => {
@@ -318,7 +329,8 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           <button
             type="button"
             onClick={handleClear}
-            className="p-1 hover:bg-background-tertiary rounded transition-colors mr-2"
+            aria-label={label ? `Clear ${label}` : 'Clear selection'}
+            className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded p-1 transition-colors hover:bg-background-tertiary"
           >
             <X className="w-3.5 h-3.5 text-text-muted" />
           </button>
@@ -342,7 +354,13 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             }}
           >
             {/* Results List */}
-            <div ref={listRef} className="max-h-64 overflow-y-auto py-1">
+            <div
+              ref={listRef}
+              id={listboxId}
+              role="listbox"
+              aria-label={label ? `${label} options` : 'Options'}
+              className="max-h-64 overflow-y-auto py-1"
+            >
               {isLoading ? (
                 <div className="px-3 py-6 text-center">
                   <Loader2 className="w-5 h-5 animate-spin mx-auto text-text-muted" />
@@ -356,8 +374,13 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
                 options.map((item, index) => (
                   <div
                     key={item.id}
+                    id={optionId(index)}
+                    role="option"
+                    aria-selected={item.id === value}
+                    tabIndex={-1}
                     data-index={index}
                     onClick={() => handleSelect(item)}
+                    className="min-h-11"
                   >
                     {renderOption
                       ? renderOption(item, index === highlightedIndex, item.id === value)
@@ -374,7 +397,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
                   type="button"
                   onClick={pagination.onPreviousPage}
                   disabled={!pagination.hasPreviousPage || isLoading}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
                   Previous
@@ -386,7 +409,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
                   type="button"
                   onClick={pagination.onNextPage}
                   disabled={!pagination.hasNextPage || isLoading}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
                 >
                   Next
                   <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />

@@ -23,6 +23,8 @@ export interface PaginationProps {
   showJumpToPage?: boolean;
   /** Additional class name */
   className?: string;
+  /** Optional page-size options for routes with a lower API limit. */
+  pageSizeOptions?: readonly number[];
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
@@ -62,6 +64,7 @@ export function Pagination({
   showPageSize = true,
   showJumpToPage = true,
   className,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
 }: PaginationProps) {
   const pageSizeId = useId();
   const jumpInputId = useId();
@@ -157,7 +160,7 @@ export function Pagination({
               onChange={(event) => onLimitChange(Number(event.target.value))}
               className="h-9 rounded-xl border border-border-primary bg-background-primary px-3 text-sm text-text-primary transition-colors hover:border-oak-primary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
             >
-              {PAGE_SIZE_OPTIONS.map((size) => (
+              {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
                   {size}
                 </option>

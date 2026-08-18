@@ -372,27 +372,33 @@ describe('service roster service', () => {
   });
 
   it('returns complete deduplicated family facets from the access-scoped operational set', async () => {
-    mocks.findMany.mockResolvedValue([
-      { serviceVariant: { family: { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' } } },
-      { serviceVariant: { family: { id: '55555555-5555-4555-8555-555555555555', name: 'Advisory', displayColor: '#B85C38' } } },
-      { serviceVariant: { family: { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' } } },
+    mocks.queryRaw.mockResolvedValue([
+      { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' },
+      { id: '55555555-5555-4555-8555-555555555555', name: 'Advisory', displayColor: '#B85C38' },
     ]);
 
     await expect(listServiceRosterFamilies(scope)).resolves.toEqual([
       { id: familyId, name: 'Accounting', displayColor: '#3F6DA8' },
       { id: '55555555-5555-4555-8555-555555555555', name: 'Advisory', displayColor: '#B85C38' },
     ]);
-    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({
-        tenantId,
-        companyId: { in: [companyId] },
-        company: expect.objectContaining({ id: { in: [companyId] } }),
-        serviceVariant: expect.objectContaining({
-          tenantId,
-          family: { tenantId },
-        }),
-      }),
-      select: expect.any(Object),
-    }));
+    expect(mocks.queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it('includes archived-only families through a grouped tenant and access scoped query', async () => {
+    mocks.queryRaw.mockResolvedValue([
+      { id: familyId, name: 'Corporate Services', displayColor: '#2F6F5E' },
+      { id: '55555555-5555-4555-8555-555555555555', name: 'Archived Advisory', displayColor: '#B85C38' },
+    ]);
+
+    await expect(listServiceRosterFamilies(scope)).resolves.toEqual([
+      { id: familyId, name: 'Corporate Services', displayColor: '#2F6F5E' },
+      { id: '55555555-5555-4555-8555-555555555555', name: 'Archived Advisory', displayColor: '#B85C38' },
+    ]);
+
+    expect(mocks.queryRaw).toHaveBeenCalledTimes(1);
+    const query = rawQueryText(mocks.queryRaw.mock.calls[0]?.[0]);
+    expect(query).toContain('GROUP BY sf."id", sf."name", sf."display_color"');
+    expect(query).not.toContain('cs."deleted_at" IS NULL');
+    expect(query).toContain('c."deleted_at" IS NULL');
   });
 });

@@ -8,6 +8,7 @@ import type {
   ServiceRosterDeadline,
   ServiceRosterItem,
   ServiceRosterResult,
+  ServiceRosterFamily,
   ServiceRosterScope,
   ServiceRosterWarningSummary,
 } from './types';
@@ -657,46 +658,47 @@ export async function listServiceRoster(
 export async function listServiceRosterFamilies(
   scopeLike: ScopeLike,
   db: ServiceRosterDb = prisma as unknown as ServiceRosterDb,
-): Promise<Array<{ id: string; name: string; displayColor: string }>> {
+): Promise<ServiceRosterFamily[]> {
   const scope = normalizeScope(scopeLike);
   if (scope.companyIds?.length === 0) return [];
 
-  const records = await db.clientService.findMany({
-    where: {
-      tenantId: scope.tenantId,
-      deletedAt: null,
-      ...(scope.companyIds ? { companyId: { in: scope.companyIds } } : {}),
-      company: {
-        tenantId: scope.tenantId,
-        deletedAt: null,
-        ...(scope.companyIds ? { id: { in: scope.companyIds } } : {}),
-      },
-      serviceVariant: {
-        tenantId: scope.tenantId,
-        family: { tenantId: scope.tenantId },
-      },
-    },
-    select: {
-      serviceVariant: {
-        select: {
-          family: { select: { id: true, name: true, displayColor: true } },
-        },
-      },
-    },
-  });
+  if (typeof db.$queryRaw !== 'function') {
+    throw new Error('Service roster family facets are unavailable');
+  }
 
-  const families = new Map<string, { id: string; name: string; displayColor: string }>();
-  for (const value of records) {
-    const family = (value as { serviceVariant?: { family?: { id?: string; name?: string; displayColor?: string | null } | null } | null }).serviceVariant?.family;
-    if (!family?.id || !family.name) continue;
-    families.set(family.id, {
+  const companyScope = scope.companyIds
+    ? Prisma.sql`AND cs."company_id" IN (${Prisma.join(scope.companyIds)})`
+    : Prisma.empty;
+  const rows = await db.$queryRaw<Array<{
+    id: string;
+    name: string;
+    displayColor: string | null;
+  }>>(Prisma.sql`
+    SELECT sf."id", sf."name", sf."display_color" AS "displayColor"
+    FROM "client_services" AS cs
+    INNER JOIN "companies" AS c
+      ON c."id" = cs."company_id"
+      AND c."tenant_id" = ${scope.tenantId}
+      AND c."deleted_at" IS NULL
+    INNER JOIN "service_variants" AS sv
+      ON sv."id" = cs."service_variant_id"
+      AND sv."tenant_id" = ${scope.tenantId}
+    INNER JOIN "service_families" AS sf
+      ON sf."id" = sv."family_id"
+      AND sf."tenant_id" = ${scope.tenantId}
+    WHERE cs."tenant_id" = ${scope.tenantId}
+      ${companyScope}
+    GROUP BY sf."id", sf."name", sf."display_color"
+    ORDER BY LOWER(sf."name") ASC, sf."id" ASC
+  `);
+
+  return rows
+    .filter((family) => Boolean(family.id && family.name))
+    .map((family) => ({
       id: family.id,
       name: family.name,
       displayColor: family.displayColor ?? DEFAULT_FAMILY_COLOR,
-    });
-  }
-
-  return [...families.values()].sort((left, right) => left.name.localeCompare(right.name));
+    }));
 }
 
 export {

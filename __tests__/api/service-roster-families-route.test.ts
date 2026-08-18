@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { NotFoundError } from '@/lib/errors';
 
 const mocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
@@ -63,5 +64,17 @@ describe('GET /api/client-services/families', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ families: [] });
     expect(mocks.listServiceRosterFamilies).not.toHaveBeenCalled();
+  });
+
+  it('preserves the typed disabled-workspace 404 response', async () => {
+    mocks.requireServicesWorkspaceEnabled.mockRejectedValue(new NotFoundError('Services workspace is not enabled'));
+
+    const response = await GET(new NextRequest('http://localhost/api/client-services/families'));
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      error: 'Services workspace is not enabled',
+      code: 'NOT_FOUND',
+    });
   });
 });

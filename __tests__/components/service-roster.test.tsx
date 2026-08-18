@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ServiceRosterItem } from '@/services/service-roster';
 
@@ -198,6 +198,18 @@ describe('ServiceRoster', () => {
     expect(screen.getByRole('button', { name: 'Advisory' })).toBeVisible();
   });
 
+  it('does not fall back to page-local families when facets fail and offers retry', () => {
+    setup();
+    const refetch = vi.fn();
+    hooks.useServiceRosterFamilies.mockReturnValue({ data: undefined, isLoading: false, error: new Error('facet unavailable'), refetch });
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    expect(screen.queryByRole('button', { name: 'Accounting' })).not.toBeInTheDocument();
+    expect(screen.getByRole('alert', { name: 'Family filters unavailable' })).toHaveTextContent('facet unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry family filters' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('routes inline filters to the canonical server query and resets the page', () => {
     setup();
     navigation.searchParams = new URLSearchParams('page=3');
@@ -244,9 +256,12 @@ describe('ServiceRoster', () => {
     render(<ServiceRoster workspaceId="workspace-1" />);
 
     expect(screen.getByRole('combobox', { name: 'Per page:' })).toHaveValue('50');
+    expect(screen.queryByRole('option', { name: '200' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
+    expect(screen.getByRole('button', { name: 'Customize columns' })).toHaveClass('min-h-11');
     expect(screen.getByRole('checkbox', { name: 'Show Family column' })).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Move Service column down' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Move Service column down' })).toHaveClass('min-h-11', 'min-w-11');
   });
 
   it('writes resized widths after pointer release instead of every pointer move', async () => {
@@ -265,6 +280,43 @@ describe('ServiceRoster', () => {
       key: 'services.roster.table.v1',
       value: expect.objectContaining({ version: 1, columnWidths: expect.objectContaining({ company: 310 }) }),
     })));
+  });
+
+  it('merges newer table actions into a pending resize save', () => {
+    vi.useFakeTimers();
+    try {
+      setup();
+      const mutate = vi.fn();
+      hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
+      render(<ServiceRoster workspaceId="workspace-1" />);
+
+      const resize = screen.getByRole('button', { name: 'Resize Company column' });
+      fireEvent.pointerDown(resize, { clientX: 100 });
+      fireEvent.pointerMove(window, { clientX: 180 });
+      fireEvent.pointerUp(window, { clientX: 180 });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Show Family column' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Move Company column down' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Sort by Service' }));
+      fireEvent.change(screen.getByRole('combobox', { name: 'Per page:' }), { target: { value: '50' } });
+
+      act(() => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
+        value: expect.objectContaining({
+          columnWidths: expect.objectContaining({ company: 310 }),
+          columnVisibility: expect.objectContaining({ family: false }),
+          columnOrder: expect.arrayContaining(['family', 'company']),
+          sortBy: 'service',
+          pageSize: 50,
+        }),
+      }));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('persists visibility, order, sorting, and page-size changes in the versioned preference', () => {

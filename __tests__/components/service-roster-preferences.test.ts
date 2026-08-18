@@ -33,4 +33,9 @@ describe('service roster table preferences', () => {
     expect(parseServiceRosterPreference({ version: 99, columnOrder: ['unknown'], pageSize: -1 }))
       .toEqual(defaultServiceRosterPreference);
   });
+
+  it('rejects preference page sizes outside the roster API contract', () => {
+    expect(parseServiceRosterPreference({ version: 1, pageSize: 200 }).pageSize).toBe(20);
+    expect(parseServiceRosterPreference({ version: 1, pageSize: 100 }).pageSize).toBe(100);
+  });
 });
