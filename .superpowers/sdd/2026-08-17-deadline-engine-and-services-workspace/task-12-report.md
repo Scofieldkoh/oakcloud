@@ -1,6 +1,6 @@
 # Task 12 report — deadline table/calendar views and preferences
 
-Status: implementation-complete / pending final rereview
+Status: PASS / final-review-complete
 
 ## Scope delivered
 
@@ -54,7 +54,7 @@ because the deadline workspace/calendar imports were absent:
 - `npx.cmd tsc --noEmit --pretty false`: PASS.
 - Scoped ESLint over Task 12 source/tests: PASS, 0 warnings.
 
-### Independent review remediation — pending rereview
+### Independent review remediation — closed
 
 - Canonical Singapore focus-month ranges now drive both URL-backed views;
   responsive desktop month defaults, persisted one/two/three-month overrides,
@@ -73,7 +73,7 @@ because the deadline workspace/calendar imports were absent:
   calendar truncation, and compact agenda states are distinct; event cues
   include family/type/timing/lifecycle text and full source identity.
 
-### Rereview remediation evidence — pending rereview
+### Rereview remediation evidence — closed
 
 - The calendar now has one controlled Singapore focus-month/count source;
   URL ranges are canonical full rendered-month spans across navigation,
@@ -88,12 +88,12 @@ because the deadline workspace/calendar imports were absent:
   company/due-range deviations are actionable, pagination disables terminal
   Next controls, and table sorting/resizing exposes ARIA and keyboard cues.
 
-The final rereview remains pending. The focused remediation suite (29 tests),
-Chromium browser fixture (2 tests), exact compatibility selection (110 tests),
-TypeScript check, scoped ESLint (`--max-warnings 0`, zero warnings), and diff
-check are the bounded evidence for this handoff.
+The final review confirmed these corrections with the focused remediation suite
+(29 tests), Chromium browser fixture (2 tests), exact compatibility selection
+(110 tests), TypeScript check, scoped ESLint (`--max-warnings 0`, zero
+warnings), and diff check.
 
-### Second rereview remediation — pending final rereview
+### Second rereview remediation — closed
 
 - Shared event details/actions now live in `DeadlineEventPanel`, which has no
   trigger or dialog semantics. Calendar events wrap it in one non-modal
@@ -112,7 +112,16 @@ The second-rereview corrections were covered by the exact focused selection
 badge clearing, pointer cancellation, keyboard upper-bound, and unmount cleanup
 assertions. The exact 12-file compatibility selection (110 tests), Chromium
 fixture (2 tests), TypeScript check, and scoped zero-warning ESLint all pass.
-Final rereview remains pending.
+
+### Final review and commit evidence
+
+- Final review verdict: **PASS — 0 Critical / 0 Important / 0 Minor**.
+- Task12 commits: `a1b12e323e936cc529c951c1693fa18f7fbd08be` (implementation),
+  `e1f96d897cd2a7ab9e57fc2d58817dc84ff03cb4` (rereview remediation), and
+  `e855e2dc292a7de5f0afc03d6227e62f2c6a7324` (second-rereview remediation).
+- Final bounded evidence: focused 6-file/29-test suite, exact 12-file/110-test
+  compatibility suite, Chromium 2-test fixture, TypeScript PASS, scoped
+  zero-warning ESLint PASS, and clean diff verification.
 
 No repository-wide suite, baseline/full build, full lint, live database, or
 migration gate was run; those remain deferred to the integrated Plan 2 gate.
@@ -126,6 +135,6 @@ migration gate was run; those remain deferred to the integrated Plan 2 gate.
   controls reachable and expose `+N more` as a real button. Family colours are
   accents only; labels, badges, and lifecycle text remain visible in both
   semantic themes.
-- Independent rereview should confirm exact approved mockup spacing and final
-  action semantics. Prisma/live PostgreSQL and full performance acceptance
-  remain intentionally deferred.
+- Final review confirmed the approved mockup spacing and action semantics.
+  Prisma/live PostgreSQL and full performance acceptance remain intentionally
+  deferred to the integrated Plan 2 gate.
