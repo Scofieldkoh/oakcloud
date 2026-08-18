@@ -35,6 +35,7 @@ import {
   Database,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
+import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { useUIStore } from '@/stores/ui-store';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -64,6 +65,7 @@ const primaryNavigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Tasks', href: '/tasks', icon: ListTodo },
+  { name: 'Services', href: '/services?tab=services', icon: BriefcaseBusiness },
 ];
 
 const secondaryNavigation: NavItem[] = [
@@ -335,6 +337,7 @@ function NavGroupItems({
 function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: user } = useSession();
+  const servicesSettings = useServicesWorkspaceSettings();
 
   // Collapse state - all groups collapsed by default
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
@@ -362,7 +365,14 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
     [user]
   );
 
-  const visiblePrimaryNavigation = primaryNavigation.filter(canSeeItem);
+  const visiblePrimaryNavigation = primaryNavigation.filter((item) => {
+    if (item.name === 'Services') {
+      // Hide the destination until the session-scoped feature flag is known to
+      // be enabled. This avoids advertising a workspace-disabled surface.
+      return servicesSettings.data?.workspaceEnabled === true;
+    }
+    return canSeeItem(item);
+  });
   const visibleSecondaryNavigation = secondaryNavigation.filter(canSeeItem);
 
   // Filter ungrouped items based on permissions
@@ -398,7 +408,8 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   return (
     <nav aria-label="Main menu" className="p-2.5 space-y-1">
       {visiblePrimaryNavigation.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const routePath = item.href.split('?')[0] ?? item.href;
+        const isActive = pathname === routePath || pathname.startsWith(`${routePath}/`);
         return (
           <NavLink
             key={item.name}

@@ -11,6 +11,10 @@ const authState = vi.hoisted(() => ({
   },
 }));
 
+const servicesSettings = vi.hoisted(() => ({
+  data: { workspaceEnabled: false, deadlineWritesEnabled: false },
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/tasks',
   useRouter: () => ({ push: vi.fn() }),
@@ -29,6 +33,10 @@ vi.mock('next/image', () => ({
 vi.mock('@/hooks/use-auth', () => ({
   useSession: () => authState,
   useLogout: () => ({ mutate: vi.fn() }),
+}));
+
+vi.mock('@/hooks/use-services-workspace-settings', () => ({
+  useServicesWorkspaceSettings: () => servicesSettings,
 }));
 
 vi.mock('@/components/ui/company-selector', () => ({
@@ -51,6 +59,7 @@ describe('Sidebar task workspace destinations', () => {
   beforeEach(() => {
     authState.data.isSuperAdmin = false;
     authState.data.isWorkspaceAdmin = false;
+    servicesSettings.data.workspaceEnabled = false;
     window.matchMedia = vi.fn().mockImplementation(() => ({
       matches: true,
       addEventListener: vi.fn(),
@@ -80,5 +89,13 @@ describe('Sidebar task workspace destinations', () => {
     const servicesLink = screen.getByRole('link', { name: 'Services' });
     expect(screen.getByRole('navigation', { name: 'Main menu' })).toContainElement(servicesLink);
     expect(servicesLink).toHaveAttribute('href', '/admin/services');
+  });
+
+  it('exposes the operational Services destination only when the workspace enables it', () => {
+    servicesSettings.data.workspaceEnabled = true;
+
+    render(<Sidebar />);
+
+    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/services?tab=services');
   });
 });
