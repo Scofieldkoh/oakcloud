@@ -111,9 +111,21 @@ const updateClientServiceInputSchema = z.object({
 
 export const updateClientServiceSchema = updateClientServiceInputSchema;
 
+export const clientServiceDeadlineScheduleSnapshotSchema = z.object({
+  status: z.enum(['ACTIVE', 'PAUSED', 'ENDED']),
+  serviceCadence: serviceCadenceSchema,
+  customCadenceLabel: z.string().trim().min(1).max(100).nullable(),
+  startDate: z.string().date(),
+  endDate: z.string().date().nullable(),
+  fieldValues: z.record(z.string(), z.string().max(10_000)),
+}).strict().superRefine((value, ctx) => {
+  validateCadenceAndDates(value, ctx);
+});
+
 export const clientServiceDeadlineImpactSchema = z.object({
   expectedUpdatedAt: z.string().datetime(),
   deadlineRules: clientServiceDeadlineRulesSchema,
+  scheduleSnapshot: clientServiceDeadlineScheduleSnapshotSchema,
 }).strict();
 
 const manualFeeLineSchema = z.object({
@@ -175,5 +187,6 @@ export const searchClientServicesSchema = z.object({
 export type UpdateClientServiceInput = z.output<typeof updateClientServiceSchema>;
 export type UpdateClientServiceRequest = z.input<typeof updateClientServiceSchema>;
 export type ClientServiceDeadlineImpactInput = z.infer<typeof clientServiceDeadlineImpactSchema>;
+export type ClientServiceDeadlineScheduleSnapshot = z.infer<typeof clientServiceDeadlineScheduleSnapshotSchema>;
 export type SearchClientServicesInput = z.infer<typeof searchClientServicesSchema>;
 export type MarkServiceAgreementEffectiveInput = z.infer<typeof markServiceAgreementEffectiveSchema>;

@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ErrorCodes } from '@/lib/errors';
 
 const prismaMock = vi.hoisted(() => ({
   clientService: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  company: { findFirst: vi.fn() },
   clientServiceFeeLine: { deleteMany: vi.fn(), createMany: vi.fn() },
   clientServiceDeadlineRule: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
   serviceVariantDeadlineRule: { findMany: vi.fn() },
+  serviceCycle: { findMany: vi.fn() },
+  businessCalendar: { findFirst: vi.fn() },
   deadlineRule: { findMany: vi.fn() },
   serviceAgreement: { findMany: vi.fn() },
   serviceAgreementFeeLine: { update: vi.fn() },
@@ -15,7 +19,7 @@ const auditMock = vi.hoisted(() => ({ createAuditLog: vi.fn(), computeChanges: v
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/audit', () => auditMock);
 
-import { archiveClientService, getClientService, listCompanyServices, updateClientService } from '@/services/client-service';
+import { archiveClientService, getClientService, listCompanyServices, previewClientServiceDeadlineConfiguration, updateClientService, validateClientServiceDeadlineRules } from '@/services/client-service';
 
 const actor = { tenantId: 'tenant-1', userId: 'user-1' };
 const record = {
@@ -62,9 +66,7 @@ describe('client service service', () => {
 
   it('persists client deadline configuration and enqueues from the same transaction', async () => {
     const ruleId = '22222222-2222-4222-8222-222222222222';
-    prismaMock.clientService.findFirst
-      .mockResolvedValueOnce({ ...record, deadlineRules: [] })
-      .mockResolvedValueOnce({ ...record, deadlineRules: [] });
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
     prismaMock.clientServiceDeadlineRule.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.clientServiceDeadlineRule.createMany.mockResolvedValue({ count: 1 });
     prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([{
@@ -85,8 +87,33 @@ describe('client service service', () => {
       },
     }]);
 
+    const impact = await previewClientServiceDeadlineConfiguration(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      deadlineRules: [{
+        ruleId,
+        enabled: true,
+        parameterValues: { monthsAfterFye: 12 },
+        parameterProvenance: { monthsAfterFye: 'CLIENT_OVERRIDE' },
+        scheduleEntries: [{
+          key: 'salary-payout',
+          label: 'Salary payout',
+          expression: { kind: 'DAY_OF_MONTH', day: 15 },
+          businessDayAdjustment: 'NONE',
+        }],
+      }],
+      scheduleSnapshot: {
+        status: record.status as 'ACTIVE',
+        serviceCadence: record.serviceCadence as 'ANNUALLY',
+        customCadenceLabel: record.customCadenceLabel,
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, actor);
+
     await updateClientService(record.id, {
       expectedUpdatedAt: record.updatedAt.toISOString(),
+      impactFingerprint: impact.previewFingerprint,
       deadlineRules: [{
         ruleId,
         enabled: true,
@@ -169,6 +196,177 @@ describe('client service service', () => {
   it('rejects a service from another tenant', async () => {
     prismaMock.clientService.findFirst.mockResolvedValue(null);
     await expect(getClientService(record.id, actor)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('aligns validated associations to input rule IDs even when SQL returns them reversed', async () => {
+    const ruleA = '22222222-2222-4222-8222-222222222222';
+    const ruleB = '33333333-3333-4333-8333-333333333333';
+    const association = (ruleId: string) => ({
+      ruleId,
+      enabledByDefault: true,
+      parameterDefaults: {},
+      scheduleDefaults: [],
+      rule: {
+        id: ruleId,
+        isActive: true,
+        archivedAt: null,
+        currentVersionId: `version-${ruleId}`,
+        currentVersion: {
+          id: `version-${ruleId}`,
+          state: 'PUBLISHED',
+          recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+          applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+          parameterDefinitions: [],
+          milestoneTemplates: [],
+        },
+      },
+    });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([association(ruleB), association(ruleA)]);
+    const result = await validateClientServiceDeadlineRules(prismaMock as never, {
+      tenantId: actor.tenantId,
+      serviceVariantId: record.serviceVariantId,
+      companyId: record.companyId,
+    }, [
+      { ruleId: ruleA, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+      { ruleId: ruleB, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+    ]);
+    expect(result.associations.map((item) => item.ruleId)).toEqual([ruleA, ruleB]);
+  });
+
+  it('rejects schedule-affecting updates without a fail-closed impact fingerprint', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    (auditMock.computeChanges as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue({ status: { old: 'ACTIVE', new: 'PAUSED' } });
+    await expect(updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      status: 'PAUSED',
+    }, actor)).rejects.toMatchObject({ statusCode: 400 });
+    expect(prismaMock.clientService.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('preserves eligible existing occurrences when preview input is missing', async () => {
+    const ruleId = '44444444-4444-4444-8444-444444444444';
+    const versionId = '55555555-5555-4555-8555-555555555555';
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([{
+      ruleId,
+      rule: {
+        id: ruleId,
+        isActive: true,
+        archivedAt: null,
+        currentVersionId: versionId,
+        currentVersion: {
+          id: versionId,
+          state: 'PUBLISHED',
+          recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+          applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+          parameterDefinitions: [{ key: 'requiredDays', type: 'INTEGER', isRequired: true, validation: null }],
+          milestoneTemplates: [],
+        },
+      },
+    }]);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([{
+      id: 'cycle-1',
+      ruleId,
+      periodKey: '2026',
+      occurrences: [{
+        id: 'occurrence-1',
+        cycleId: 'cycle-1',
+        milestoneKey: 'filing',
+        scheduleEntryKey: 'filing',
+        deadlineType: 'CLIENT',
+        calculatedDueDate: new Date('2026-12-15'),
+        operativeDueDate: new Date('2026-12-15'),
+        dateOverridden: false,
+        status: 'OPEN',
+        origin: 'RULE',
+        ruleVersionId: versionId,
+      }],
+    }]);
+    const impact = await previewClientServiceDeadlineConfiguration(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      deadlineRules: [{ ruleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] }],
+      scheduleSnapshot: {
+        status: record.status as 'ACTIVE',
+        serviceCadence: record.serviceCadence as 'ANNUALLY',
+        customCadenceLabel: record.customCadenceLabel,
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, actor);
+    expect(impact.counts.cancelled).toBe(0);
+    expect(impact.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ state: 'MISSING_INPUT' })]));
+    expect(prismaMock.clientServiceDeadlineRule.deleteMany).not.toHaveBeenCalled();
+    expect(prismaMock.clientServiceDeadlineRule.createMany).not.toHaveBeenCalled();
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
+  it('returns a full observe fingerprint capped only in samples', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    const makeOccurrence = (index: number, dueDate = '2026-12-15') => ({
+      id: `occ-${index}`,
+      cycleId: 'cycle-1',
+      milestoneKey: `milestone-${index}`,
+      scheduleEntryKey: 'entry',
+      deadlineType: 'CLIENT',
+      calculatedDueDate: new Date(`${dueDate}T00:00:00.000Z`),
+      operativeDueDate: new Date(`${dueDate}T00:00:00.000Z`),
+      dateOverridden: false,
+      status: 'OPEN',
+      origin: 'RULE',
+      ruleVersionId: 'version-1',
+    });
+    prismaMock.serviceCycle.findMany.mockResolvedValue([{
+      id: 'cycle-1',
+      ruleId: 'rule-1',
+      periodKey: '2026',
+      occurrences: Array.from({ length: 101 }, (_, index) => makeOccurrence(index)),
+    }]);
+    const input = {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      deadlineRules: [],
+      scheduleSnapshot: {
+        status: 'ACTIVE' as const,
+        serviceCadence: 'ANNUALLY' as const,
+        customCadenceLabel: null,
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+      },
+    };
+    const first = await previewClientServiceDeadlineConfiguration(record.id, input, actor);
+    prismaMock.serviceCycle.findMany.mockResolvedValue([{
+      id: 'cycle-1',
+      ruleId: 'rule-1',
+      periodKey: '2026',
+      occurrences: Array.from({ length: 101 }, (_, index) => makeOccurrence(index, index === 100 ? '2026-12-16' : '2026-12-15')),
+    }]);
+    const second = await previewClientServiceDeadlineConfiguration(record.id, input, actor);
+    expect(first.samples).toHaveLength(100);
+    expect(second.samples).toHaveLength(100);
+    expect(second.previewFingerprint).not.toBe(first.previewFingerprint);
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a stale impact fingerprint before the transactional service update', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    (auditMock.computeChanges as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue({ status: { old: 'ACTIVE', new: 'PAUSED' } });
+    await expect(updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      status: 'PAUSED',
+      impactFingerprint: '0'.repeat(64),
+    }, actor)).rejects.toMatchObject({ code: ErrorCodes.IMPACT_CHANGED, statusCode: 409 });
+    expect(prismaMock.clientService.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('adds accessible company IDs to the SQL service predicate before mapping', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue(record);
+    await getClientService(record.id, { ...actor, accessibleCompanyIds: ['company-allowed'] });
+    expect(prismaMock.clientService.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        company: expect.objectContaining({ id: { in: ['company-allowed'] }, tenantId: actor.tenantId }),
+      }),
+    }));
   });
 
   it('maps agreement services with the generated document link', async () => {

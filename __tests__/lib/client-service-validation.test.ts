@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clientServiceDeadlineImpactSchema,
   createManualClientServiceSchema,
   markServiceAgreementEffectiveSchema,
   searchClientServicesSchema,
@@ -89,6 +90,30 @@ describe('client service validation', () => {
       startDate: '2026-08-01',
       endDate: '2026-07-31',
     }).success).toBe(false);
+  });
+
+  it('requires the complete schedule-affecting snapshot for impact previews', () => {
+    const rules = [{
+      ruleId,
+      enabled: true,
+      parameterValues: {},
+      parameterProvenance: {},
+      scheduleEntries: [],
+    }];
+    const expectedUpdatedAt = '2026-07-30T00:00:00.000Z';
+    expect(clientServiceDeadlineImpactSchema.safeParse({ expectedUpdatedAt, deadlineRules: rules }).success).toBe(false);
+    expect(clientServiceDeadlineImpactSchema.safeParse({
+      expectedUpdatedAt,
+      deadlineRules: rules,
+      scheduleSnapshot: {
+        status: 'ACTIVE',
+        serviceCadence: 'MONTHLY',
+        customCadenceLabel: null,
+        startDate: '2026-08-01',
+        endDate: null,
+        fieldValues: { filingMonth: 'July' },
+      },
+    }).success).toBe(true);
   });
 
   it('requires an audit-quality reason for manual activation', () => {

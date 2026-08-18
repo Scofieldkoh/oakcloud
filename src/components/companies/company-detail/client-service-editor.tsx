@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -44,10 +44,15 @@ export function ClientServiceEditor({
   const [hasConflict, setHasConflict] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveError, setArchiveError] = useState('');
+  const [previewPending, setPreviewPending] = useState(false);
+  const saveLockRef = useRef(false);
+  const saveAttemptRef = useRef(0);
+  const previewAbortRef = useRef<AbortController | null>(null);
   const errorId = useId();
   const update = useUpdateClientService();
   const archive = useArchiveClientService();
   const latestService = useClientService(service.id);
+  const busy = previewPending || update.isPending;
 
   const agreementBacked = service.source === 'AGREEMENT';
   const editDescription = agreementBacked
@@ -76,6 +81,7 @@ export function ClientServiceEditor({
   };
 
   const save = async () => {
+    if (saveLockRef.current || busy) return;
     const validationError = validate();
     if (validationError) {
       setFormError(validationError);
@@ -86,16 +92,47 @@ export function ClientServiceEditor({
       return;
     }
     setFormError('');
+    saveLockRef.current = true;
+    const attempt = saveAttemptRef.current + 1;
+    saveAttemptRef.current = attempt;
+    previewAbortRef.current?.abort();
+    const abortController = new AbortController();
+    previewAbortRef.current = abortController;
+    setPreviewPending(true);
+    // Capture one immutable payload before starting any asynchronous work.
+    const submitValues = JSON.parse(JSON.stringify(values)) as OperationalServiceValues;
+    const submitServiceName = serviceName;
+    const submitFamilyName = familyName;
     try {
-      const nextDeadlineRules = deadlineRuleInputs(values);
+      const nextDeadlineRules = deadlineRuleInputs(submitValues);
       const deadlineRulesChanged = JSON.stringify(nextDeadlineRules) !== JSON.stringify(initialDeadlineRules);
+      const scheduleSnapshot = {
+        status: submitValues.status,
+        serviceCadence: submitValues.serviceCadence,
+        customCadenceLabel: submitValues.serviceCadence === 'CUSTOM' ? submitValues.customCadenceLabel : null,
+        startDate: submitValues.startDate,
+        endDate: submitValues.endDate || null,
+        fieldValues: operationalFieldValues(submitValues),
+      };
+      const initialScheduleSnapshot = {
+        status: initialValues.status,
+        serviceCadence: initialValues.serviceCadence,
+        customCadenceLabel: initialValues.serviceCadence === 'CUSTOM' ? initialValues.customCadenceLabel : null,
+        startDate: initialValues.startDate,
+        endDate: initialValues.endDate || null,
+        fieldValues: operationalFieldValues(initialValues),
+      };
+      const scheduleFieldsChanged = JSON.stringify(scheduleSnapshot) !== JSON.stringify(initialScheduleSnapshot);
+      const impactRequired = deadlineRulesChanged || scheduleFieldsChanged;
       let impactFingerprint: string | undefined;
-      if (deadlineRulesChanged) {
+      if (impactRequired) {
         const response = await fetch(`/api/client-services/${service.id}/deadline-configuration/impact`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expectedUpdatedAt: updatedAt, deadlineRules: nextDeadlineRules }),
+          body: JSON.stringify({ expectedUpdatedAt: updatedAt, deadlineRules: nextDeadlineRules, scheduleSnapshot }),
+          signal: abortController.signal,
         });
+        if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw Object.assign(new Error(typeof payload?.message === 'string' ? payload.message : 'Unable to preview deadline changes.'), {
@@ -104,33 +141,45 @@ export function ClientServiceEditor({
             body: payload,
           });
         }
-        impactFingerprint = typeof payload?.previewFingerprint === 'string' ? payload.previewFingerprint : undefined;
+        if (typeof payload?.previewFingerprint !== 'string' || !payload.previewFingerprint) {
+          throw new Error('Unable to verify the deadline impact preview. Please try again.');
+        }
+        impactFingerprint = payload.previewFingerprint;
       }
+      if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
       await update.mutateAsync({
         id: service.id,
         companyId: service.companyId,
         data: {
           expectedUpdatedAt: updatedAt,
-          serviceName,
-          familyName,
-          status: values.status,
-          serviceCadence: values.serviceCadence,
-          customCadenceLabel: values.serviceCadence === 'CUSTOM' ? values.customCadenceLabel : null,
-          startDate: values.startDate,
-          endDate: values.endDate || null,
-          fieldValues: operationalFieldValues(values),
-          feeLines: updateFeeLines(values),
-          ...(deadlineRulesChanged ? { deadlineRules: nextDeadlineRules, impactFingerprint } : {}),
+          serviceName: submitServiceName,
+          familyName: submitFamilyName,
+          status: submitValues.status,
+          serviceCadence: submitValues.serviceCadence,
+          customCadenceLabel: submitValues.serviceCadence === 'CUSTOM' ? submitValues.customCadenceLabel : null,
+          startDate: submitValues.startDate,
+          endDate: submitValues.endDate || null,
+          fieldValues: operationalFieldValues(submitValues),
+          feeLines: updateFeeLines(submitValues),
+          ...(deadlineRulesChanged ? { deadlineRules: nextDeadlineRules, impactFingerprint } : impactRequired ? { impactFingerprint } : {}),
         },
       });
+      if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
       onClose();
     } catch (error) {
+      if (abortController.signal.aborted || attempt !== saveAttemptRef.current) return;
       if (isHttpRequestError(error, 409) || (typeof error === 'object' && error !== null && 'status' in error && (error as { status?: unknown }).status === 409)) {
         setHasConflict(true);
         setFormError('This service was updated by someone else. Reload the latest service before saving again.');
         return;
       }
       setFormError(error instanceof Error ? error.message : 'Unable to save service changes.');
+    } finally {
+      if (attempt === saveAttemptRef.current) {
+        setPreviewPending(false);
+        saveLockRef.current = false;
+        previewAbortRef.current = null;
+      }
     }
   };
 
@@ -159,31 +208,31 @@ export function ClientServiceEditor({
   };
 
   return <>
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit service" description={editDescription} size="2xl">
+    <Modal isOpen={isOpen} onClose={() => { if (!busy) onClose(); }} closeOnOverlayClick={!busy} closeOnEscape={!busy} showCloseButton={!busy} title="Edit service" description={editDescription} size="2xl">
       <ModalBody className="max-h-[70vh] space-y-4 overflow-y-auto" aria-describedby={formError ? errorId : undefined}>
         {formError ? (
           <div id={errorId}>
             <Alert variant="error">
               <div className="flex flex-col gap-2">
                 <p>{formError}</p>
-                {hasConflict ? <Button size="sm" variant="secondary" isLoading={latestService.isFetching} onClick={reloadLatest}>Reload latest service</Button> : null}
+                {hasConflict ? <Button size="sm" variant="secondary" disabled={busy} isLoading={latestService.isFetching} onClick={reloadLatest}>Reload latest service</Button> : null}
               </div>
             </Alert>
           </div>
         ) : null}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput id="client-service-name" label="Service name" value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
-          <FormInput id="client-service-family" label="Service family" value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
+          <FormInput id="client-service-name" label="Service name" disabled={busy} value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
+          <FormInput id="client-service-family" label="Service family" disabled={busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
         </div>
-        <OperationalServiceForm values={values} onChange={setValues} errors={fieldErrors} />
+        <OperationalServiceForm values={values} onChange={setValues} errors={fieldErrors} disabled={busy} />
         <div className="rounded-lg border border-status-error/30 bg-status-error/5 p-3">
           <p className="text-sm text-text-secondary">{archiveDescription}</p>
-          <Button className="mt-2" variant="danger" size="sm" onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
+          <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button isLoading={update.isPending} disabled={hasConflict} onClick={save}>Save changes</Button>
+        <Button variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button>
+        <Button isLoading={busy} disabled={hasConflict || busy} onClick={save}>Save changes</Button>
       </ModalFooter>
     </Modal>
     <ConfirmDialog isOpen={archiveOpen} onClose={() => { setArchiveError(''); setArchiveOpen(false); }} onConfirm={archiveService} title="Archive service?" description="This service will no longer appear in the company Services list." confirmLabel="Archive service" requireReason reasonLabel="Archive reason" reasonPlaceholder="Explain why this service is being archived" reasonMinLength={10} isLoading={archive.isPending}>

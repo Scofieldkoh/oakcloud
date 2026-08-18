@@ -27,9 +27,19 @@ function expressionFor(kind: ExpressionKind, current?: Record<string, unknown>):
   return {
     kind: 'RELATIVE_TO_SOURCE',
     source: current && typeof current.source === 'object' ? current.source as never : sourceFor('CYCLE_START') as never,
-    offset: typeof current?.offset === 'number' ? current.offset : 0,
+    offset: current?.offset && typeof current.offset === 'object'
+      ? current.offset as never
+      : typeof current?.offset === 'number' ? current.offset : 0,
     unit: current?.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY',
   } as ScheduleEntryInput['expression'];
+}
+
+function isIntegerParameter(value: unknown): value is { kind: 'INTEGER_PARAMETER'; key: string } {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
+    && (value as Record<string, unknown>).kind === 'INTEGER_PARAMETER'
+    && typeof (value as Record<string, unknown>).key === 'string';
 }
 
 function labelForKind(kind: string): string {
@@ -101,13 +111,13 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false }: Sched
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor={`${prefix}-label`} className="label">Entry label</label>
-                  <input id={`${prefix}-label`} className="input input-sm" disabled={disabled} value={entry.label} onChange={(event) => update({ label: event.target.value })} />
+                  <input id={`${prefix}-label`} className="input input-sm min-h-[44px]" disabled={disabled} value={entry.label} onChange={(event) => update({ label: event.target.value })} />
                 </div>
                 <div>
                   <label htmlFor={`${prefix}-kind`} className="label">Expression</label>
                   <select
                     id={`${prefix}-kind`}
-                    className="input input-sm w-full"
+                    className="input input-sm min-h-[44px] w-full"
                     disabled={disabled}
                     value={expressionKind}
                     onChange={(event) => update({ expression: expressionFor(event.target.value as ExpressionKind, expression) })}
@@ -118,13 +128,13 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false }: Sched
                 {expressionKind === 'DAY_OF_MONTH' ? (
                   <div>
                     <label htmlFor={`${prefix}-day`} className="label">Day of month</label>
-                    <input id={`${prefix}-day`} className="input input-sm" type="number" min={1} max={31} disabled={disabled} value={typeof expression.day === 'number' ? expression.day : 1} onChange={(event) => update(updateExpression(entry, { day: Number(event.target.value) }))} />
+                    <input id={`${prefix}-day`} className="input input-sm min-h-[44px]" type="number" min={1} max={31} disabled={disabled} value={typeof expression.day === 'number' ? expression.day : 1} onChange={(event) => update(updateExpression(entry, { day: Number(event.target.value) }))} />
                   </div>
                 ) : null}
                 {expressionKind === 'BUSINESS_DAY_FROM_START' || expressionKind === 'BUSINESS_DAY_FROM_END' ? (
                   <div>
                     <label htmlFor={`${prefix}-ordinal`} className="label">Business-day ordinal</label>
-                    <input id={`${prefix}-ordinal`} className="input input-sm" type="number" min={1} max={31} disabled={disabled} value={typeof expression.ordinal === 'number' ? expression.ordinal : 1} onChange={(event) => update(updateExpression(entry, { ordinal: Number(event.target.value) }))} />
+                    <input id={`${prefix}-ordinal`} className="input input-sm min-h-[44px]" type="number" min={1} max={31} disabled={disabled} value={typeof expression.ordinal === 'number' ? expression.ordinal : 1} onChange={(event) => update(updateExpression(entry, { ordinal: Number(event.target.value) }))} />
                   </div>
                 ) : null}
                 {expressionKind === 'RELATIVE_TO_SOURCE' ? (
@@ -133,7 +143,7 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false }: Sched
                       <label htmlFor={`${prefix}-source-kind`} className="label">Relative source</label>
                       <select
                         id={`${prefix}-source-kind`}
-                        className="input input-sm w-full"
+                        className="input input-sm min-h-[44px] w-full"
                         disabled={disabled}
                         value={typeof expression.source === 'object' && expression.source && 'kind' in expression.source ? String((expression.source as Record<string, unknown>).kind) : 'CYCLE_START'}
                         onChange={(event) => update(updateExpression(entry, { source: sourceFor(event.target.value) }))}
@@ -141,15 +151,29 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false }: Sched
                         {['CYCLE_START', 'CYCLE_END', 'CURRENT_SCHEDULE_ENTRY', 'COMPANY_FIELD', 'PARAMETER', 'SCHEDULE_ENTRY', 'MILESTONE'].map((kind) => <option key={kind} value={kind}>{labelForKind(kind)}</option>)}
                       </select>
                     </div>
-                    {source.kind === 'COMPANY_FIELD' ? <div><label htmlFor={`${prefix}-source-field`} className="label">Company date field</label><select id={`${prefix}-source-field`} className="input input-sm w-full" disabled={disabled} value={typeof source.field === 'string' ? source.field : 'financialYearEnd'} onChange={(event) => update(updateExpression(entry, { source: { ...source, field: event.target.value } }))}><option value="financialYearEnd">Financial year end</option><option value="nextAgmDueDate">Next AGM due date</option><option value="nextArDueDate">Next annual return due date</option><option value="accountsDueDate">Accounts due date</option><option value="incorporationDate">Incorporation date</option></select></div> : null}
-                    {source.kind === 'PARAMETER' || source.kind === 'SCHEDULE_ENTRY' || source.kind === 'MILESTONE' ? <div><label htmlFor={`${prefix}-source-key`} className="label">Source key</label><input id={`${prefix}-source-key`} className="input input-sm" disabled={disabled} value={typeof source.key === 'string' ? source.key : ''} onChange={(event) => update(updateExpression(entry, { source: { ...source, key: event.target.value } }))} /></div> : null}
+                    {source.kind === 'COMPANY_FIELD' ? <div><label htmlFor={`${prefix}-source-field`} className="label">Company date field</label><select id={`${prefix}-source-field`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={typeof source.field === 'string' ? source.field : 'financialYearEnd'} onChange={(event) => update(updateExpression(entry, { source: { ...source, field: event.target.value } }))}><option value="financialYearEnd">Financial year end</option><option value="nextAgmDueDate">Next AGM due date</option><option value="nextArDueDate">Next annual return due date</option><option value="accountsDueDate">Accounts due date</option><option value="incorporationDate">Incorporation date</option></select></div> : null}
+                    {source.kind === 'PARAMETER' || source.kind === 'SCHEDULE_ENTRY' || source.kind === 'MILESTONE' ? <div><label htmlFor={`${prefix}-source-key`} className="label">Source key</label><input id={`${prefix}-source-key`} className="input input-sm min-h-[44px]" disabled={disabled} value={typeof source.key === 'string' ? source.key : ''} onChange={(event) => update(updateExpression(entry, { source: { ...source, key: event.target.value } }))} /></div> : null}
                     <div>
-                      <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
-                      <input id={`${prefix}-offset`} className="input input-sm" type="number" min={-3660} max={3660} disabled={disabled} value={typeof expression.offset === 'number' ? expression.offset : 0} onChange={(event) => update(updateExpression(entry, { offset: Number(event.target.value) }))} />
+                      <label htmlFor={`${prefix}-offset-kind`} className="label">Offset operand</label>
+                      <select id={`${prefix}-offset-kind`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={isIntegerParameter(expression.offset) ? 'INTEGER_PARAMETER' : 'LITERAL'} onChange={(event) => update(updateExpression(entry, { offset: event.target.value === 'INTEGER_PARAMETER' ? { kind: 'INTEGER_PARAMETER', key: isIntegerParameter(expression.offset) ? expression.offset.key : 'integerParameter' } : 0 }))}>
+                        <option value="LITERAL">Integer literal</option>
+                        <option value="INTEGER_PARAMETER">Integer parameter</option>
+                      </select>
                     </div>
+                    {isIntegerParameter(expression.offset) ? (
+                      <div>
+                        <label htmlFor={`${prefix}-offset-parameter-key`} className="label">Offset parameter key</label>
+                        <input id={`${prefix}-offset-parameter-key`} className="input input-sm min-h-[44px]" disabled={disabled} value={expression.offset.key} onChange={(event) => update(updateExpression(entry, { offset: { kind: 'INTEGER_PARAMETER', key: event.target.value } }))} />
+                      </div>
+                    ) : (
+                      <div>
+                        <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
+                        <input id={`${prefix}-offset`} className="input input-sm min-h-[44px]" type="number" min={-3660} max={3660} disabled={disabled} value={typeof expression.offset === 'number' ? expression.offset : 0} onChange={(event) => update(updateExpression(entry, { offset: Number(event.target.value) }))} />
+                      </div>
+                    )}
                     <div>
                       <label htmlFor={`${prefix}-unit`} className="label">Offset unit</label>
-                      <select id={`${prefix}-unit`} className="input input-sm w-full" disabled={disabled} value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'} onChange={(event) => update(updateExpression(entry, { unit: event.target.value }))}>
+                      <select id={`${prefix}-unit`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'} onChange={(event) => update(updateExpression(entry, { unit: event.target.value }))}>
                         <option value="CALENDAR_DAY">Calendar day</option>
                         <option value="BUSINESS_DAY">Business day</option>
                       </select>
@@ -158,7 +182,7 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false }: Sched
                 ) : null}
                 <div>
                   <label htmlFor={`${prefix}-adjustment`} className="label">Business-day adjustment</label>
-                  <select id={`${prefix}-adjustment`} className="input input-sm w-full" disabled={disabled} value={entry.businessDayAdjustment} onChange={(event) => update({ businessDayAdjustment: event.target.value as ScheduleEntryInput['businessDayAdjustment'] })}>
+                  <select id={`${prefix}-adjustment`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={entry.businessDayAdjustment} onChange={(event) => update({ businessDayAdjustment: event.target.value as ScheduleEntryInput['businessDayAdjustment'] })}>
                     <option value="NONE">No adjustment</option>
                     <option value="PREVIOUS">Previous business day</option>
                     <option value="NEXT">Next business day</option>

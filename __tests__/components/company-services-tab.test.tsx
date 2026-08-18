@@ -238,6 +238,44 @@ describe('CompanyServicesTab', () => {
     expect(screen.getByRole('dialog')).toBeVisible();
   });
 
+  it('locks the editor before preview and ignores a double-click save', async () => {
+    let resolvePreview: ((response: Response) => void) | undefined;
+    const preview = new Promise<Response>((resolve) => { resolvePreview = resolve; });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockReturnValue(preview);
+    const mutateAsync = vi.fn().mockResolvedValue(service);
+    hooksMock.useUpdateClientService.mockReturnValue({ mutateAsync, isPending: false });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit service' }));
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'PAUSED' } });
+    const save = screen.getByRole('button', { name: 'Save changes' });
+    fireEvent.click(save);
+    fireEvent.click(save);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(save).toBeDisabled();
+    expect(screen.getByLabelText('Status')).toBeDisabled();
+
+    resolvePreview?.(new Response(JSON.stringify({ previewFingerprint: 'f'.repeat(64) }), { status: 200 }));
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+  });
+
+  it('submits the immutable snapshot captured before preview', async () => {
+    let resolvePreview: ((response: Response) => void) | undefined;
+    const preview = new Promise<Response>((resolve) => { resolvePreview = resolve; });
+    vi.spyOn(globalThis, 'fetch').mockReturnValue(preview);
+    const mutateAsync = vi.fn().mockResolvedValue(service);
+    hooksMock.useUpdateClientService.mockReturnValue({ mutateAsync, isPending: false });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit service' }));
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'PAUSED' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'ENDED' } });
+
+    resolvePreview?.(new Response(JSON.stringify({ previewFingerprint: 'f'.repeat(64) }), { status: 200 }));
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    expect(mutateAsync.mock.calls[0]?.[0].data).toEqual(expect.objectContaining({ status: 'PAUSED', impactFingerprint: 'f'.repeat(64) }));
+  });
+
   it('requires an explicit reload before retrying a stale edit with the current version', async () => {
     const refreshed = {
       ...service,

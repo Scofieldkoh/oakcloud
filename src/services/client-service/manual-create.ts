@@ -3,13 +3,13 @@ import { NotFoundError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { isSerializationConflict, runSerializableTransaction } from '@/lib/prisma-transaction';
 import type { TenantAwareParams } from '@/lib/types';
-import type { CreateManualClientServiceInput } from '@/lib/validations/client-service';
+import type { ClientServiceDeadlineRuleInput, CreateManualClientServiceInput } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
 import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './errors';
 import { summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
+import { canonicalDeadlineRuleAudit, persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
 
 const parseDateOnly = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
@@ -123,8 +123,9 @@ export async function createManualClientService(
 
       const feeSummary = summarizeClientServiceFees(input.feeLines);
 
+      let deadlineRuleValidation;
       if (input.deadlineRules !== undefined) {
-        const validation = await validateClientServiceDeadlineRules(
+        deadlineRuleValidation = await validateClientServiceDeadlineRules(
           tx,
           { tenantId: params.tenantId, serviceVariantId: variant.id, companyId },
           input.deadlineRules,
@@ -134,7 +135,7 @@ export async function createManualClientService(
           tenantId: params.tenantId,
           clientServiceId: service.id,
           userId: params.userId,
-        }, validation);
+        }, deadlineRuleValidation);
       }
 
       const variantRules = input.deadlineRules === undefined && tx.serviceVariantDeadlineRule?.findMany
@@ -151,37 +152,68 @@ export async function createManualClientService(
                 currentVersionId: { not: null },
               },
             },
-            select: { ruleId: true, enabledByDefault: true, parameterDefaults: true, scheduleDefaults: true },
+            select: {
+              ruleId: true,
+              enabledByDefault: true,
+              parameterDefaults: true,
+              scheduleDefaults: true,
+              rule: {
+                select: {
+                  id: true,
+                  isActive: true,
+                  archivedAt: true,
+                  currentVersionId: true,
+                  currentVersion: {
+                    select: {
+                      id: true,
+                      state: true,
+                      configHash: true,
+                      recurrence: true,
+                      applicability: true,
+                      parameterDefinitions: true,
+                      milestoneTemplates: true,
+                    },
+                  },
+                },
+              },
+            },
           })
         : [];
 
       const enabledVariantRules = variantRules.filter((variantRule) => variantRule.enabledByDefault !== false);
-      if (enabledVariantRules.length > 0 && tx.clientServiceDeadlineRule?.createMany) {
-        await tx.clientServiceDeadlineRule.createMany({
-          data: enabledVariantRules.map((vr) => {
-            const parameterValues = (vr.parameterDefaults && typeof vr.parameterDefaults === 'object' && !Array.isArray(vr.parameterDefaults))
-              ? vr.parameterDefaults as Record<string, unknown>
-              : {};
-            return {
-            tenantId: params.tenantId,
-            clientServiceId: service.id,
+      if (input.deadlineRules === undefined && enabledVariantRules.length > 0) {
+        const defaultInputs = enabledVariantRules.map((vr) => {
+          const parameterValues = (vr.parameterDefaults && typeof vr.parameterDefaults === 'object' && !Array.isArray(vr.parameterDefaults))
+            ? vr.parameterDefaults as Record<string, unknown>
+            : {};
+          return {
             ruleId: vr.ruleId,
             enabled: true,
-            parameterValues: parameterValues as Prisma.InputJsonValue,
-            parameterProvenance: Object.fromEntries(Object.keys(parameterValues).map((key) => [key, 'CATALOG_DEFAULT'])) as Prisma.InputJsonValue,
-            scheduleEntries: (Array.isArray(vr.scheduleDefaults) ? vr.scheduleDefaults : []) as Prisma.InputJsonValue,
-            applicabilityState: 'MISSING_INPUT',
-            };
-          }),
+            parameterValues,
+            parameterProvenance: Object.fromEntries(Object.keys(parameterValues).map((key) => [key, 'CATALOG_DEFAULT' as const])),
+            scheduleEntries: (Array.isArray(vr.scheduleDefaults) ? vr.scheduleDefaults : []),
+          };
         });
+        deadlineRuleValidation = await validateClientServiceDeadlineRules(
+          tx,
+          { tenantId: params.tenantId, serviceVariantId: variant.id, companyId },
+          defaultInputs as ClientServiceDeadlineRuleInput[],
+          company,
+        );
+        await persistClientServiceDeadlineRules(tx, {
+          tenantId: params.tenantId,
+          clientServiceId: service.id,
+          userId: params.userId,
+        }, deadlineRuleValidation);
       }
 
+      const reconciliationCorrelationId = `manual-service-${service.id}-${Date.now()}`;
       await enqueueScheduleReconciliation(tx, {
         tenantId: params.tenantId,
         scopeType: 'CLIENT_SERVICE',
         scopeId: service.id,
         triggerType: 'CLIENT_SERVICE_CREATED',
-        correlationId: `manual-service-${service.id}-${Date.now()}`,
+        correlationId: reconciliationCorrelationId,
         requestedById: params.userId ?? null,
       });
 
@@ -198,7 +230,8 @@ export async function createManualClientService(
           source: { old: null, new: 'MANUAL' },
           serviceVariantId: { old: null, new: variant.id },
           feeLines: { old: { count: 0, totals: {} }, new: feeSummary },
-          ...(input.deadlineRules !== undefined ? { deadlineRules: { old: { count: 0 }, new: { count: input.deadlineRules.length } } } : {}),
+          deadlineRules: { old: canonicalDeadlineRuleAudit(undefined), new: canonicalDeadlineRuleAudit(deadlineRuleValidation) },
+          reconciliationCorrelationId: { old: null, new: reconciliationCorrelationId },
           duplicateConfirmed: { old: false, new: input.confirmDuplicate },
         },
         summary: `Added manual operational service with ${feeSummary.count} fee line(s)`,

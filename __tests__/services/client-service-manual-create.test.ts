@@ -6,7 +6,7 @@ const prismaMock = vi.hoisted(() => ({
   clientService: { create: vi.fn(), findFirst: vi.fn(), count: vi.fn(), findMany: vi.fn() },
   clientServiceFeeLine: { createMany: vi.fn() },
   serviceVariantDeadlineRule: { findMany: vi.fn() },
-  clientServiceDeadlineRule: { createMany: vi.fn() },
+  clientServiceDeadlineRule: { deleteMany: vi.fn(), createMany: vi.fn() },
   serviceScheduleReconciliationRequest: { findUnique: vi.fn(), upsert: vi.fn() },
   $transaction: vi.fn(),
 }));
@@ -121,12 +121,27 @@ describe('manual client service creation', () => {
   it('attaches only enabled catalog default rules with defaults and provenance', async () => {
     prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([
       {
-        ruleId: 'rule-default',
+        ruleId: '22222222-2222-4222-8222-222222222222',
         enabledByDefault: true,
         parameterDefaults: { filingMonth: 'June' },
-        scheduleDefaults: [{ key: 'filing', label: 'Filing', expression: { kind: 'DAY_OF_MONTH', day: 15 } }],
+        scheduleDefaults: [{ key: 'filing', label: 'Filing', expression: { kind: 'DAY_OF_MONTH', day: 15 }, businessDayAdjustment: 'NONE' }],
+        rule: {
+          id: '22222222-2222-4222-8222-222222222222',
+          isActive: true,
+          archivedAt: null,
+          currentVersionId: '33333333-3333-4333-8333-333333333333',
+          currentVersion: {
+            id: '33333333-3333-4333-8333-333333333333',
+            state: 'PUBLISHED',
+            configHash: 'a'.repeat(64),
+            recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+            applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+            parameterDefinitions: [{ key: 'filingMonth', type: 'STRING', isRequired: false, validation: null }],
+            milestoneTemplates: [],
+          },
+        },
       },
-      { ruleId: 'rule-opt-in', enabledByDefault: false, parameterDefaults: { filingMonth: 'July' }, scheduleDefaults: [] },
+      { ruleId: '33333333-3333-4333-8333-333333333333', enabledByDefault: false, parameterDefaults: { filingMonth: 'July' }, scheduleDefaults: [] },
     ]);
 
     await createManualClientService('company-1', input, params);
@@ -136,13 +151,49 @@ describe('manual client service creation', () => {
       select: expect.objectContaining({ parameterDefaults: true, scheduleDefaults: true }),
     }));
     expect(prismaMock.clientServiceDeadlineRule.createMany).toHaveBeenCalledWith(expect.objectContaining({
-      data: [{
-        tenantId: 'tenant-1', clientServiceId: 'service-1', ruleId: 'rule-default', enabled: true,
+      data: [expect.objectContaining({
+        tenantId: 'tenant-1', clientServiceId: 'service-1', ruleId: '22222222-2222-4222-8222-222222222222', enabled: true,
         parameterValues: { filingMonth: 'June' }, parameterProvenance: { filingMonth: 'CATALOG_DEFAULT' },
-        scheduleEntries: [{ key: 'filing', label: 'Filing', expression: { kind: 'DAY_OF_MONTH', day: 15 } }],
-        applicabilityState: 'MISSING_INPUT',
-      }],
+        scheduleEntries: [{ key: 'filing', label: 'Filing', expression: { kind: 'DAY_OF_MONTH', day: 15 }, businessDayAdjustment: 'NONE' }],
+        applicabilityState: 'APPLICABLE',
+      })],
     }));
+  });
+
+  it('validates and persists omitted catalog defaults through the shared state path', async () => {
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([{
+      ruleId: '22222222-2222-4222-8222-222222222222',
+      enabledByDefault: true,
+      parameterDefaults: { filingMonth: 'June' },
+      scheduleDefaults: [],
+      rule: {
+        id: '22222222-2222-4222-8222-222222222222',
+        isActive: true,
+        archivedAt: null,
+        currentVersionId: '33333333-3333-4333-8333-333333333333',
+        currentVersion: {
+          id: '33333333-3333-4333-8333-333333333333',
+          state: 'PUBLISHED',
+          recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+          applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+          parameterDefinitions: [{ key: 'filingMonth', type: 'STRING', isRequired: false, validation: null }],
+          milestoneTemplates: [],
+        },
+      },
+    }]);
+
+    await createManualClientService('company-1', input, params);
+
+    expect(prismaMock.clientServiceDeadlineRule.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: [expect.objectContaining({
+        lastEvaluatedVersionId: '33333333-3333-4333-8333-333333333333',
+        applicabilityState: 'APPLICABLE',
+        configHash: expect.any(String),
+      })],
+    }));
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      changes: expect.objectContaining({ deadlineRules: expect.objectContaining({ new: expect.objectContaining({ rules: expect.any(Array) }) }) }),
+    }), prismaMock);
   });
 
   it('normalizes fee display order from request array position', async () => {

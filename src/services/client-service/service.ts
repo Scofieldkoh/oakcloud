@@ -2,7 +2,7 @@ import { computeChanges, createAuditLog } from '@/lib/audit';
 import { ConflictError, DeadlineApiError, ErrorCodes, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
-import { clientServiceDeadlineImpactSchema, clientServiceDeadlineRulesSchema, type ClientServiceDeadlineRuleInput, type SearchClientServicesInput, type UpdateClientServiceInput } from '@/lib/validations/client-service';
+import { clientServiceDeadlineImpactSchema, clientServiceDeadlineRulesSchema, type ClientServiceDeadlineRuleInput, type ClientServiceDeadlineScheduleSnapshot, type SearchClientServicesInput, type UpdateClientServiceInput } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
 import { clientServiceInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
@@ -67,6 +67,7 @@ type DeadlineRuleAssociationRecord = {
     currentVersionId?: string | null;
     currentVersion?: {
       id: string;
+      state?: 'PUBLISHED' | 'DRAFT';
       version?: number;
       configHash?: string;
       recurrence?: unknown;
@@ -86,6 +87,13 @@ type ClientRuleConfigValidation = {
     versionId: string | null;
   }>;
   associations: DeadlineRuleAssociationRecord[];
+};
+
+export type ClientServiceAccessParams = TenantAwareParams & {
+  /** Company IDs resolved from the caller's role scope. An empty list denies all companies. */
+  accessibleCompanyIds?: string[];
+  /** Workspace-wide access is represented separately so the SQL predicate remains explicit. */
+  allCompaniesAccess?: boolean;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -193,7 +201,7 @@ export async function validateClientServiceDeadlineRules(
   });
   const associations = (Array.isArray(rawAssociations) ? rawAssociations : []) as DeadlineRuleAssociationRecord[];
   const byRuleId = new Map(associations.map((association) => [association.ruleId, association]));
-  if (byRuleId.size !== rules.length) {
+  if (rules.some((rule) => !byRuleId.has(rule.ruleId))) {
     throw new NotFoundError('One or more deadline rules are not associated with this service variant');
   }
 
@@ -203,7 +211,7 @@ export async function validateClientServiceDeadlineRules(
     const association = byRuleId.get(input.ruleId);
     const rule = association?.rule;
     const version = rule?.currentVersion;
-    if (!association || !rule || rule.isActive === false || rule.archivedAt || !version || !rule.currentVersionId) {
+    if (!association || !rule || rule.isActive === false || rule.archivedAt || !version || !rule.currentVersionId || (version.state && version.state !== 'PUBLISHED')) {
       throw new ValidationError(`Deadline rule ${input.ruleId} must have a usable published version`);
     }
     const values = input.parameterValues as Record<string, unknown>;
@@ -239,7 +247,10 @@ export async function validateClientServiceDeadlineRules(
       versionId: version.id,
     });
   }
-  return { normalized, states, associations };
+  // Prisma does not guarantee relation-array ordering. Keep every downstream
+  // consumer aligned to the caller's canonical rule order.
+  const orderedAssociations = rules.map((input) => byRuleId.get(input.ruleId)!).filter(Boolean);
+  return { normalized, states, associations: orderedAssociations };
 }
 
 function ruleConfigurationInput(value: ClientServiceDeadlineRuleRecord | undefined): ClientServiceDeadlineRuleInput | null {
@@ -252,6 +263,28 @@ function ruleConfigurationInput(value: ClientServiceDeadlineRuleRecord | undefin
     scheduleEntries: Array.isArray(value.scheduleEntries) ? value.scheduleEntries : [],
   }]);
   return parsed.success ? parsed.data[0] ?? null : null;
+}
+
+export function canonicalDeadlineRuleAudit(validation: ClientRuleConfigValidation | undefined) {
+  return {
+    rules: (validation?.normalized ?? []).slice(0, 100).map((rule, index) => {
+      const association = validation?.associations[index];
+      const version = association?.rule?.currentVersion;
+      const state = validation?.states[index];
+      return {
+        ruleId: rule.ruleId,
+        enabled: rule.enabled,
+        parameterValues: rule.parameterValues,
+        parameterProvenance: rule.parameterProvenance,
+        scheduleEntries: rule.scheduleEntries,
+        publishedVersionId: state?.versionId ?? version?.id ?? null,
+        publishedConfigHash: version?.configHash ?? null,
+        configHash: state?.configHash ?? null,
+        applicabilityState: state?.applicabilityState ?? null,
+        applicabilityReason: state?.applicabilityReason ?? null,
+      };
+    }),
+  };
 }
 
 export async function persistClientServiceDeadlineRules(
@@ -321,8 +354,21 @@ async function loadCompanyRuleSource(
   return isRecord(company) ? company : {};
 }
 
-async function requireService(id: string, tenantId: string, db: Prisma.TransactionClient | typeof prisma = prisma) {
-  const service = await db.clientService.findFirst({ where: { id, tenantId, deletedAt: null }, include: clientServiceInclude });
+async function requireService(id: string, params: ClientServiceAccessParams, db: Prisma.TransactionClient | typeof prisma = prisma) {
+  const companyScope = params.allCompaniesAccess
+    ? { tenantId: params.tenantId, deletedAt: null }
+    : params.accessibleCompanyIds !== undefined
+      ? { tenantId: params.tenantId, deletedAt: null, id: { in: params.accessibleCompanyIds } }
+      : undefined;
+  const service = await db.clientService.findFirst({
+    where: {
+      id,
+      tenantId: params.tenantId,
+      deletedAt: null,
+      ...(companyScope ? { company: companyScope } : {}),
+    },
+    include: clientServiceInclude,
+  });
   if (!service) throw new NotFoundError('Client service not found');
   return service;
 }
@@ -332,6 +378,7 @@ export type ClientServiceDeadlineImpactAction = 'CREATE' | 'RECALCULATE' | 'CANC
 export type ClientServiceDeadlineImpact = {
   clientServiceId: string;
   expectedUpdatedAt: string;
+  scheduleSnapshot: ClientServiceDeadlineScheduleSnapshot;
   proposedConfigHash: string;
   previewFingerprint: string;
   counts: {
@@ -457,12 +504,12 @@ function previewStoredDeadline(occurrence: PreviewOccurrence): StoredDeadline | 
  */
 export async function previewClientServiceDeadlineConfiguration(
   id: string,
-  rawInput: { expectedUpdatedAt: string; deadlineRules: ClientServiceDeadlineRuleInput[] },
-  params: TenantAwareParams,
+  rawInput: { expectedUpdatedAt: string; deadlineRules: ClientServiceDeadlineRuleInput[]; scheduleSnapshot: ClientServiceDeadlineScheduleSnapshot },
+  params: ClientServiceAccessParams,
   db: Prisma.TransactionClient | typeof prisma = prisma,
 ): Promise<ClientServiceDeadlineImpact> {
   const input = clientServiceDeadlineImpactSchema.parse(rawInput);
-  const service = await requireService(id, params.tenantId, db);
+  const service = await requireService(id, params, db);
   if (service.updatedAt.toISOString() !== input.expectedUpdatedAt) {
     throw new ConflictError('This service was updated by someone else. Reload it and try again.');
   }
@@ -499,8 +546,13 @@ export async function previewClientServiceDeadlineConfiguration(
   const calendar = previewCalendar(calendarRecord);
   const cyclesByKey = new Map(cycles.map((cycle) => [`${cycle.ruleId}|${cycle.periodKey}`, cycle]));
   const processedOccurrenceIds = new Set<string>();
+  const skipCleanupRuleIds = new Set<string>();
+  const skipCleanupCycleIds = new Set<string>();
+  const serviceInactive = input.scheduleSnapshot.status === 'ENDED'
+    || (input.scheduleSnapshot.endDate !== null && input.scheduleSnapshot.endDate < today);
 
   for (const [index, configuration] of validation.normalized.entries()) {
+    if (serviceInactive) continue;
     const association = validation.associations[index];
     const version = association?.rule?.currentVersion;
     const state = validation.states[index];
@@ -514,6 +566,7 @@ export async function previewClientServiceDeadlineConfiguration(
       counts[state.applicabilityState === 'MISSING_INPUT' ? 'missingInput' : 'inapplicable'] += 1;
       counts.warnings += 1;
       warnings.push({ ruleId: configuration.ruleId, state: state.applicabilityState, reason: state.applicabilityReason });
+      if (state.applicabilityState === 'MISSING_INPUT') skipCleanupRuleIds.add(configuration.ruleId);
       continue;
     }
 
@@ -523,6 +576,7 @@ export async function previewClientServiceDeadlineConfiguration(
     } catch (error) {
       counts.warnings += 1;
       warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: error instanceof Error ? error.message : 'Unable to plan rule periods' });
+      skipCleanupRuleIds.add(configuration.ruleId);
       continue;
     }
     for (const period of periods) {
@@ -546,12 +600,14 @@ export async function previewClientServiceDeadlineConfiguration(
         counts.missingInput += 1;
         counts.warnings += 1;
         warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: error instanceof Error ? error.message : 'Rule evaluation requires input' });
+        if (cycle) skipCleanupCycleIds.add(cycle.id);
         continue;
       }
       if (evaluation.applicability.state !== 'APPLICABLE') {
         counts[evaluation.applicability.state === 'MISSING_INPUT' ? 'missingInput' : 'inapplicable'] += 1;
         counts.warnings += evaluation.applicability.state === 'MISSING_INPUT' ? 1 : 0;
         warnings.push({ ruleId: configuration.ruleId, state: evaluation.applicability.state, reason: evaluation.applicability.reason });
+        if (evaluation.applicability.state === 'MISSING_INPUT' && cycle) skipCleanupCycleIds.add(cycle.id);
         continue;
       }
       const existingOccurrences = cycle?.occurrences ?? [];
@@ -592,6 +648,7 @@ export async function previewClientServiceDeadlineConfiguration(
   }
 
   for (const cycle of cycles) {
+    if (skipCleanupRuleIds.has(cycle.ruleId) || skipCleanupCycleIds.has(cycle.id)) continue;
     for (const occurrence of cycle.occurrences ?? []) {
       if (processedOccurrenceIds.has(occurrence.id)) continue;
       const stored = previewStoredDeadline(occurrence);
@@ -626,6 +683,7 @@ export async function previewClientServiceDeadlineConfiguration(
     tenantId: params.tenantId,
     clientServiceId: id,
     expectedUpdatedAt: input.expectedUpdatedAt,
+    scheduleSnapshot: input.scheduleSnapshot,
     proposedConfigHash,
     rollingPlan: { version: ROLLING_PLAN_VERSION, today, horizonEnd },
     counts,
@@ -635,6 +693,7 @@ export async function previewClientServiceDeadlineConfiguration(
   return {
     clientServiceId: id,
     expectedUpdatedAt: input.expectedUpdatedAt,
+    scheduleSnapshot: input.scheduleSnapshot,
     proposedConfigHash,
     previewFingerprint,
     counts,
@@ -670,13 +729,13 @@ export async function listCompanyServices(
   return { services: services.map(toClientServiceDto), total, activations: agreements.map((agreement) => ({ agreementId: agreement.id, title: agreement.generatedDocument.title, activationStatus: agreement.activationStatus, activationLastError: agreement.activationLastError, canRetry: false })) };
 }
 
-export async function getClientService(id: string, params: TenantAwareParams): Promise<ClientServiceDto> {
-  return toClientServiceDto(await requireService(id, params.tenantId));
+export async function getClientService(id: string, params: ClientServiceAccessParams): Promise<ClientServiceDto> {
+  return toClientServiceDto(await requireService(id, params));
 }
 
-export async function updateClientService(id: string, input: UpdateClientServiceInput, params: TenantAwareParams): Promise<ClientServiceDto> {
+export async function updateClientService(id: string, input: UpdateClientServiceInput, params: ClientServiceAccessParams): Promise<ClientServiceDto> {
   const updated: ClientServiceRecord = await prisma.$transaction(async (tx): Promise<ClientServiceRecord> => {
-    const current = await requireService(id, params.tenantId, tx);
+    const current = await requireService(id, params, tx);
     if (current.updatedAt.toISOString() !== input.expectedUpdatedAt) {
       throw new ConflictError('This service was updated by someone else. Reload it and try again.');
     }
@@ -709,20 +768,43 @@ export async function updateClientService(id: string, input: UpdateClientService
       ['familyName', 'serviceName', 'status', 'serviceCadence', 'customCadenceLabel', 'startDate', 'endDate'],
     ) ?? {};
     const fieldValuesChanged = input.fieldValues !== undefined && !sameJson(current.fieldValues, input.fieldValues);
+    const scheduleScalarChanged = [
+      'status',
+      'serviceCadence',
+      'customCadenceLabel',
+      'startDate',
+      'endDate',
+    ].some((field) => Object.prototype.hasOwnProperty.call(scalarChanges, field));
+    const scheduleFieldsChanged = scheduleScalarChanged || fieldValuesChanged;
     let deadlineRuleValidation: ClientRuleConfigValidation | undefined;
+    let currentDeadlineRuleValidation: ClientRuleConfigValidation | undefined;
+    const currentRules = ((current as ClientServiceRecord & { deadlineRules?: ClientServiceDeadlineRuleRecord[] }).deadlineRules ?? [])
+      .map(ruleConfigurationInput)
+      .filter((rule): rule is ClientServiceDeadlineRuleInput => rule !== null);
     let deadlineRulesChanged = false;
-    if (input.deadlineRules !== undefined) {
+    if (input.deadlineRules !== undefined || scheduleFieldsChanged) {
       const company = await loadCompanyRuleSource(tx, params.tenantId, current.companyId);
-      deadlineRuleValidation = await validateClientServiceDeadlineRules(
-        tx,
-        { tenantId: params.tenantId, serviceVariantId: current.serviceVariantId, companyId: current.companyId },
-        input.deadlineRules,
-        company,
-      );
-      const currentRules = ((current as ClientServiceRecord & { deadlineRules?: ClientServiceDeadlineRuleRecord[] }).deadlineRules ?? [])
-        .map(ruleConfigurationInput)
-        .filter((rule): rule is ClientServiceDeadlineRuleInput => rule !== null);
-      deadlineRulesChanged = !sameJson(currentRules, deadlineRuleValidation.normalized);
+      if (currentRules.length > 0) {
+        currentDeadlineRuleValidation = await validateClientServiceDeadlineRules(
+          tx,
+          { tenantId: params.tenantId, serviceVariantId: current.serviceVariantId, companyId: current.companyId },
+          currentRules,
+          company,
+        );
+      } else {
+        currentDeadlineRuleValidation = { normalized: [], states: [], associations: [] };
+      }
+      if (input.deadlineRules !== undefined) {
+        deadlineRuleValidation = await validateClientServiceDeadlineRules(
+          tx,
+          { tenantId: params.tenantId, serviceVariantId: current.serviceVariantId, companyId: current.companyId },
+          input.deadlineRules,
+          company,
+        );
+        deadlineRulesChanged = !sameJson(currentRules, deadlineRuleValidation.normalized);
+      } else {
+        deadlineRuleValidation = currentDeadlineRuleValidation;
+      }
     }
     const feeSummaryBefore = summarizeClientServiceFees(current.feeLines);
     const feeSummaryAfter = input.feeLines ? summarizeClientServiceFees(input.feeLines) : feeSummaryBefore;
@@ -732,10 +814,24 @@ export async function updateClientService(id: string, input: UpdateClientService
     );
     if (Object.keys(scalarChanges).length === 0 && !fieldValuesChanged && !feesChanged && !deadlineRulesChanged) return current;
 
-    if (deadlineRulesChanged && input.impactFingerprint) {
+    const scheduleConfigurationChanged = scheduleFieldsChanged || deadlineRulesChanged;
+    const proposedScheduleSnapshot: ClientServiceDeadlineScheduleSnapshot = {
+      status: input.status ?? current.status,
+      serviceCadence: input.serviceCadence ?? current.serviceCadence,
+      customCadenceLabel,
+      startDate: dateOnly(startDate)!,
+      endDate: dateOnly(endDate ?? null),
+      fieldValues: (input.fieldValues ?? current.fieldValues ?? {}) as Record<string, string>,
+    };
+
+    if (scheduleConfigurationChanged) {
+      if (!input.impactFingerprint) {
+        throw new ValidationError('Schedule-affecting changes require an impact preview fingerprint');
+      }
       const impact = await previewClientServiceDeadlineConfiguration(id, {
         expectedUpdatedAt: input.expectedUpdatedAt,
-        deadlineRules: deadlineRuleValidation?.normalized ?? [],
+        deadlineRules: deadlineRuleValidation?.normalized ?? currentDeadlineRuleValidation?.normalized ?? [],
+        scheduleSnapshot: proposedScheduleSnapshot,
       }, params, tx);
       if (input.impactFingerprint !== impact.previewFingerprint) {
         throw new DeadlineApiError(
@@ -788,25 +884,22 @@ export async function updateClientService(id: string, input: UpdateClientService
       }, deadlineRuleValidation);
     }
 
-    const result = await requireService(id, params.tenantId, tx);
+    const result = await requireService(id, params, tx);
+    const reconciliationCorrelationId = scheduleConfigurationChanged
+      ? `client-service-update-${id}-${Date.now()}`
+      : null;
     const changes = {
       ...scalarChanges,
       ...(fieldValuesChanged ? { fieldValues: { old: '[redacted]', new: '[redacted]' } } : {}),
       ...(feesChanged ? { feeLines: { old: feeSummaryBefore, new: feeSummaryAfter } } : {}),
-      ...(deadlineRulesChanged ? {
+      ...(scheduleConfigurationChanged ? {
         deadlineRules: {
-          old: hashConfiguration((current as ClientServiceRecord & { deadlineRules?: unknown }).deadlineRules ?? []),
-          new: hashConfiguration(deadlineRuleValidation?.normalized ?? []),
+          old: canonicalDeadlineRuleAudit(currentDeadlineRuleValidation),
+          new: canonicalDeadlineRuleAudit(deadlineRuleValidation ?? currentDeadlineRuleValidation),
         },
       } : {}),
+      ...(reconciliationCorrelationId ? { reconciliationCorrelationId: { old: null, new: reconciliationCorrelationId } } : {}),
     };
-    const scheduleConfigurationChanged = [
-      'status',
-      'serviceCadence',
-      'customCadenceLabel',
-      'startDate',
-      'endDate',
-    ].some((field) => Object.prototype.hasOwnProperty.call(scalarChanges, field)) || fieldValuesChanged || deadlineRulesChanged;
     await createAuditLog({
       tenantId: params.tenantId,
       userId: params.userId,
@@ -818,13 +911,13 @@ export async function updateClientService(id: string, input: UpdateClientService
       changes,
       summary: `Updated operational service${feesChanged ? ` and ${input.feeLines?.length ?? 0} fee line(s)` : ''}`,
     }, tx);
-    if (scheduleConfigurationChanged) {
+    if (reconciliationCorrelationId) {
       await enqueueScheduleReconciliation(tx, {
         tenantId: params.tenantId,
         scopeType: 'CLIENT_SERVICE',
         scopeId: id,
         triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED',
-        correlationId: `client-service-update-${id}-${Date.now()}`,
+        correlationId: reconciliationCorrelationId,
         requestedById: params.userId,
       });
     }
@@ -833,9 +926,9 @@ export async function updateClientService(id: string, input: UpdateClientService
   return toClientServiceDto(updated);
 }
 
-export async function archiveClientService(id: string, reason: string, params: TenantAwareParams): Promise<{ id: string; archived: true }> {
+export async function archiveClientService(id: string, reason: string, params: ClientServiceAccessParams): Promise<{ id: string; archived: true }> {
   await prisma.$transaction(async (tx) => {
-    const current = await requireService(id, params.tenantId, tx);
+    const current = await requireService(id, params, tx);
     const archived = await tx.clientService.updateMany({
       where: { id, tenantId: params.tenantId, deletedAt: null },
       data: { deletedAt: new Date(), deletedReason: reason },
