@@ -320,8 +320,9 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             aria-controls={listboxId}
             aria-haspopup="listbox"
             aria-readonly="true"
-            tabIndex={0}
-            onKeyDown={handleSelectedKeyDown}
+            aria-disabled={disabled || undefined}
+            tabIndex={disabled ? -1 : 0}
+            onKeyDown={disabled ? undefined : handleSelectedKeyDown}
             className="flex min-h-11 min-w-0 flex-1 items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
           >
             {renderSelected ? renderSelected(selectedItem) : defaultRenderSelected(selectedItem)}

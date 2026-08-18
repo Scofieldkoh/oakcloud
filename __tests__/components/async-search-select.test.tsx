@@ -183,4 +183,31 @@ describe('AsyncSearchSelect', () => {
       getBoundingClientRect.mockRestore();
     }
   });
+
+  it('makes a selected disabled value non-tabbable and unavailable to keyboard changes', async () => {
+    const onChange = vi.fn();
+
+    render(
+      <AsyncSearchSelect
+        label="Company"
+        value="company-1"
+        options={options}
+        isLoading={false}
+        searchQuery=""
+        onSearchChange={vi.fn()}
+        onChange={onChange}
+        disabled
+      />,
+    );
+
+    const selectedCombobox = await waitFor(() => screen.getByRole('combobox', { name: 'Company' }));
+    expect(selectedCombobox).toHaveAttribute('aria-disabled', 'true');
+    expect(selectedCombobox).toHaveAttribute('tabindex', '-1');
+    expect(screen.queryByRole('button', { name: 'Clear Company' })).not.toBeInTheDocument();
+
+    act(() => selectedCombobox.focus());
+    fireEvent.keyDown(selectedCombobox, { key: 'Backspace' });
+    fireEvent.keyDown(selectedCombobox, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
