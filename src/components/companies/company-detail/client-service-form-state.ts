@@ -1,5 +1,7 @@
 import type { BillingFrequency, ClientServiceStatus, ServiceCadence } from '@/generated/prisma';
-import type { ClientServiceDto, ManualClientServiceCatalogField, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
+import type { ClientServiceDeadlineRuleDto, ClientServiceDto, ManualClientServiceCatalogDeadlineRule, ManualClientServiceCatalogField, ManualClientServiceCatalogParameterDefinition, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
+import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
+import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 
 export interface OperationalFieldRow {
   uiId: string;
@@ -22,6 +24,21 @@ export interface OperationalFeeRow {
   catalogDerived: boolean;
 }
 
+export interface OperationalDeadlineRuleRow {
+  uiId: string;
+  ruleId: string;
+  code: string;
+  name: string;
+  enabled: boolean;
+  parameterValues: Record<string, unknown>;
+  parameterProvenance: Record<string, 'COMPANY' | 'CATALOG_DEFAULT' | 'CLIENT_OVERRIDE'>;
+  scheduleEntries: ScheduleEntryInput[];
+  parameters: ManualClientServiceCatalogParameterDefinition[];
+  applicabilityState?: 'APPLICABLE' | 'NOT_APPLICABLE' | 'MISSING_INPUT';
+  applicabilityReason?: string | null;
+  catalogDerived: boolean;
+}
+
 export interface OperationalServiceValues {
   status: ClientServiceStatus;
   serviceCadence: ServiceCadence;
@@ -30,6 +47,7 @@ export interface OperationalServiceValues {
   endDate: string;
   fields: OperationalFieldRow[];
   fees: OperationalFeeRow[];
+  deadlineRules: OperationalDeadlineRuleRow[];
 }
 
 export type OperationalFieldErrors = Record<string, string | undefined>;
@@ -52,6 +70,12 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
     if (fee.billingFrequency === 'CUSTOM' && !fee.customFrequencyLabel.trim()) {
       errors[`${prefix}-custom-frequency`] = `Fee ${index + 1} custom frequency is required.`;
     }
+  }
+  const seenRules = new Set<string>();
+  for (const rule of values.deadlineRules) {
+    if (seenRules.has(rule.ruleId)) errors.deadlineRules = 'Each deadline rule can only be configured once.';
+    seenRules.add(rule.ruleId);
+    if (rule.scheduleEntries.length > 31) errors[`deadline-rule-${rule.uiId}-schedule`] = 'A schedule can contain at most 31 entries.';
   }
   return errors;
 }
@@ -89,6 +113,13 @@ export function operationalErrorsFromServer(
     if (fieldMatch) {
       const field = values.fields.find((row) => row.key === fieldMatch[1]);
       translated[field ? `field-${field.uiId}-value` : 'fieldValues'] = message;
+      continue;
+    }
+
+    const ruleMatch = /^deadlineRules\.(\d+)(?:\.(.*))?$/.exec(path);
+    if (ruleMatch) {
+      const rule = values.deadlineRules[Number(ruleMatch[1])];
+      translated[rule ? `deadline-rule-${rule.uiId}-${ruleMatch[2] ?? 'configuration'}` : 'deadlineRules'] = message;
       continue;
     }
 
@@ -135,6 +166,55 @@ export function updateFeeLines(values: OperationalServiceValues) {
   });
 }
 
+export function deadlineRuleInputs(values: OperationalServiceValues): ClientServiceDeadlineRuleInput[] {
+  return values.deadlineRules.map((rule) => ({
+    ruleId: rule.ruleId,
+    enabled: rule.enabled,
+    parameterValues: rule.parameterValues as ClientServiceDeadlineRuleInput['parameterValues'],
+    parameterProvenance: rule.parameterProvenance,
+    scheduleEntries: rule.scheduleEntries,
+  }));
+}
+
+function catalogDeadlineRuleRow(rule: ManualClientServiceCatalogDeadlineRule): OperationalDeadlineRuleRow {
+  const parameterValues = { ...rule.parameterDefaults };
+  for (const parameter of rule.parameters) {
+    if (!(parameter.key in parameterValues) && parameter.defaultValue !== null && parameter.defaultValue !== undefined) parameterValues[parameter.key] = parameter.defaultValue;
+  }
+  return {
+    uiId: crypto.randomUUID(),
+    ruleId: rule.ruleId,
+    code: rule.code,
+    name: rule.name,
+    enabled: rule.enabledByDefault,
+    parameterValues,
+    parameterProvenance: Object.fromEntries(Object.keys(parameterValues).map((key) => [key, 'CATALOG_DEFAULT'])) as OperationalDeadlineRuleRow['parameterProvenance'],
+    scheduleEntries: rule.scheduleDefaults.map((entry) => ({ ...entry })),
+    parameters: rule.parameters,
+    applicabilityState: 'MISSING_INPUT',
+    applicabilityReason: null,
+    catalogDerived: true,
+  };
+}
+
+function serviceDeadlineRuleRow(rule: ClientServiceDeadlineRuleDto): OperationalDeadlineRuleRow {
+  const currentVersion = rule.rule?.currentVersion;
+  return {
+    uiId: crypto.randomUUID(),
+    ruleId: rule.ruleId,
+    code: rule.rule?.code ?? rule.ruleId,
+    name: rule.rule?.name ?? rule.ruleId,
+    enabled: rule.enabled,
+    parameterValues: { ...rule.parameterValues },
+    parameterProvenance: { ...rule.parameterProvenance },
+    scheduleEntries: rule.scheduleEntries.map((entry) => ({ ...entry })),
+    parameters: currentVersion?.parameters ?? [],
+    applicabilityState: rule.applicabilityState,
+    applicabilityReason: rule.applicabilityReason,
+    catalogDerived: false,
+  };
+}
+
 export function valuesFromClientService(service: ClientServiceDto): OperationalServiceValues {
   return {
     status: service.status,
@@ -161,6 +241,7 @@ export function valuesFromClientService(service: ClientServiceDto): OperationalS
       billingStartDate: fee.billingStartDate ?? '',
       catalogDerived: false,
     })),
+    deadlineRules: (service.deadlineRules ?? []).map(serviceDeadlineRuleRow),
   };
 }
 
@@ -173,6 +254,7 @@ export function emptyManualOperationalValues(): OperationalServiceValues {
     endDate: '',
     fields: [],
     fees: [],
+    deadlineRules: [],
   };
 }
 
@@ -212,6 +294,7 @@ export function catalogReplacementForVariant(variant: ManualClientServiceCatalog
         billingStartDate: '',
         catalogDerived: true,
       }],
+    deadlineRules: (variant.deadlineRules ?? []).map(catalogDeadlineRuleRow),
   };
 }
 
@@ -228,6 +311,7 @@ function operationalSignature(values: OperationalServiceValues): string {
       customFrequencyLabel,
       billingStartDate,
     })),
+    deadlineRules: values.deadlineRules.map(({ ruleId, enabled, parameterValues, parameterProvenance, scheduleEntries }) => ({ ruleId, enabled, parameterValues, parameterProvenance, scheduleEntries })),
   });
 }
 
@@ -245,6 +329,7 @@ export function createManualPayload(variantId: string, values: OperationalServic
     endDate: values.endDate || null,
     fieldValues: operationalFieldValues(values),
     feeLines: manualCreateFeeLines(values),
+    deadlineRules: deadlineRuleInputs(values),
     confirmDuplicate,
   };
 }
@@ -265,6 +350,14 @@ function manualDirtySignature(values: OperationalServiceValues): string {
       customFrequencyLabel: fee.customFrequencyLabel,
       billingStartDate: fee.billingStartDate,
       catalogDerived: fee.catalogDerived,
+    })),
+    deadlineRules: values.deadlineRules.map((rule) => ({
+      ruleId: rule.ruleId,
+      enabled: rule.enabled,
+      parameterValues: rule.parameterValues,
+      parameterProvenance: rule.parameterProvenance,
+      scheduleEntries: rule.scheduleEntries,
+      catalogDerived: rule.catalogDerived,
     })),
   });
 }

@@ -65,7 +65,7 @@ describe('manual client service catalog options', () => {
       variants: [{
         id: 'variant-1',
         name: 'Corporate Secretarial',
-        family: { id: 'family-1', name: 'Corporate Services' },
+        family: { id: 'family-1', name: 'Corporate Services', displayColor: '#2F6F5E' },
         serviceCadence: 'ANNUALLY',
         customCadenceLabel: null,
         fields: [
@@ -80,6 +80,7 @@ describe('manual client service catalog options', () => {
           customFrequencyLabel: null,
           displayOrder: 0,
         }],
+        deadlineRules: [],
       }],
     });
     expect(JSON.stringify(result)).not.toContain('partialContent');

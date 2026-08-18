@@ -9,6 +9,7 @@ import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './
 import { summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import { persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
 
 const parseDateOnly = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
@@ -21,7 +22,29 @@ export async function createManualClientService(
     return await runSerializableTransaction(prisma, async (tx) => {
       const company = await tx.company.findFirst({
         where: { id: companyId, tenantId: params.tenantId, deletedAt: null },
-        select: { id: true },
+        select: {
+          id: true,
+          entityType: true,
+          status: true,
+          primarySsicCode: true,
+          secondarySsicCode: true,
+          uen: true,
+          name: true,
+          financialYearEndDay: true,
+          financialYearEndMonth: true,
+          incorporationDate: true,
+          registrationDate: true,
+          nextAgmDueDate: true,
+          nextArDueDate: true,
+          accountsDueDate: true,
+          hasCharges: true,
+          currentOfficerCount: true,
+          currentShareholderCount: true,
+          annualReceiptsOrExpenditure: true,
+          isGstRegistered: true,
+          isRegisteredCharity: true,
+          isIPC: true,
+        },
       });
       if (!company) throw new NotFoundError('Company not found');
 
@@ -100,7 +123,21 @@ export async function createManualClientService(
 
       const feeSummary = summarizeClientServiceFees(input.feeLines);
 
-      const variantRules = tx.serviceVariantDeadlineRule?.findMany
+      if (input.deadlineRules !== undefined) {
+        const validation = await validateClientServiceDeadlineRules(
+          tx,
+          { tenantId: params.tenantId, serviceVariantId: variant.id, companyId },
+          input.deadlineRules,
+          company,
+        );
+        await persistClientServiceDeadlineRules(tx, {
+          tenantId: params.tenantId,
+          clientServiceId: service.id,
+          userId: params.userId,
+        }, validation);
+      }
+
+      const variantRules = input.deadlineRules === undefined && tx.serviceVariantDeadlineRule?.findMany
         ? await tx.serviceVariantDeadlineRule.findMany({
             where: {
               serviceVariantId: variant.id,
@@ -161,6 +198,7 @@ export async function createManualClientService(
           source: { old: null, new: 'MANUAL' },
           serviceVariantId: { old: null, new: variant.id },
           feeLines: { old: { count: 0, totals: {} }, new: feeSummary },
+          ...(input.deadlineRules !== undefined ? { deadlineRules: { old: { count: 0 }, new: { count: input.deadlineRules.length } } } : {}),
           duplicateConfirmed: { old: false, new: input.confirmDuplicate },
         },
         summary: `Added manual operational service with ${feeSummary.count} fee line(s)`,

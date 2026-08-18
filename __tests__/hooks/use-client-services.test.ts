@@ -59,7 +59,7 @@ describe('client service hook error boundary', () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.mutateAsync({ id: 'service-1', companyId: 'company-1', data: { updatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' } });
+        await result.current.mutateAsync({ id: 'service-1', companyId: 'company-1', data: { expectedUpdatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' } });
       } catch (error) {
         caught = error;
       }
@@ -86,7 +86,7 @@ describe('client service hook error boundary', () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.mutateAsync({ id: 'service-1', companyId: 'company-1', data: { updatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' } });
+        await result.current.mutateAsync({ id: 'service-1', companyId: 'company-1', data: { expectedUpdatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' } });
       } catch (error) {
         caught = error;
       }

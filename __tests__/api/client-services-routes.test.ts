@@ -59,7 +59,7 @@ describe('client services routes', () => {
     const request = new NextRequest('http://localhost/api/client-services/service-1', { method: 'PATCH', body: JSON.stringify({ updatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' }), headers: { 'content-type': 'application/json' } });
     const response = await updateService(request, { params: Promise.resolve({ id: 'service-1' }) });
     expect(response.status).toBe(200);
-    expect(serviceMock.updateClientService).toHaveBeenCalledWith('service-1', { updatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' }, { tenantId: 'tenant-1', userId: 'user-1' });
+    expect(serviceMock.updateClientService).toHaveBeenCalledWith('service-1', { expectedUpdatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' }, { tenantId: 'tenant-1', userId: 'user-1' });
   });
 
   it('returns service detail and maps stale edits to HTTP 409', async () => {

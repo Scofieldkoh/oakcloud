@@ -1,4 +1,6 @@
 import type { BillingFrequency, ClientServiceSource, ClientServiceStatus, ServiceAgreementActivationStatus, ServiceAgreementStatus, ServiceCadence } from '@/generated/prisma';
+import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
+import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 
 export interface AgreementSummary {
   title: string;
@@ -42,11 +44,35 @@ export interface ManualClientServiceCatalogFeeTemplate {
 export interface ManualClientServiceCatalogVariantOption {
   id: string;
   name: string;
-  family: { id: string; name: string };
+  family: { id: string; name: string; displayColor: string };
   serviceCadence: ServiceCadence;
   customCadenceLabel: string | null;
   fields: ManualClientServiceCatalogField[];
   feeTemplates: ManualClientServiceCatalogFeeTemplate[];
+  deadlineRules: ManualClientServiceCatalogDeadlineRule[];
+}
+
+export interface ManualClientServiceCatalogParameterDefinition {
+  key: string;
+  label: string;
+  description: string | null;
+  type: 'DATE' | 'INTEGER' | 'DECIMAL' | 'STRING' | 'BOOLEAN' | 'ENUM';
+  required: boolean;
+  defaultValue: unknown;
+  validation: unknown;
+  helpText: string | null;
+  displayOrder: number;
+}
+
+export interface ManualClientServiceCatalogDeadlineRule {
+  ruleId: string;
+  code: string;
+  name: string;
+  enabledByDefault: boolean;
+  parameterDefaults: Record<string, unknown>;
+  scheduleDefaults: ScheduleEntryInput[];
+  parameters: ManualClientServiceCatalogParameterDefinition[];
+  currentVersionId: string;
 }
 
 export interface ManualClientServiceCatalogOptionsResponse {
@@ -62,6 +88,32 @@ export interface ClientServiceFeeLineDto {
   customFrequencyLabel: string | null;
   billingStartDate: string | null;
   displayOrder: number;
+}
+
+export interface ClientServiceDeadlineRuleDto extends Omit<ClientServiceDeadlineRuleInput, 'parameterValues'> {
+  id: string;
+  parameterValues: Record<string, unknown>;
+  lastEvaluatedVersionId: string | null;
+  applicabilityState: 'APPLICABLE' | 'NOT_APPLICABLE' | 'MISSING_INPUT';
+  applicabilityReason: string | null;
+  configHash: string | null;
+  updatedAt: string;
+  rule: {
+    id: string;
+    code: string;
+    name: string;
+    isActive: boolean;
+    archivedAt: string | null;
+    currentVersionId: string | null;
+    currentVersion: {
+      id: string;
+      version: number;
+      configHash: string;
+      recurrence: unknown;
+      applicability: unknown;
+      parameters: ManualClientServiceCatalogParameterDefinition[];
+    } | null;
+  } | null;
 }
 
 export interface ClientServiceDto {
@@ -80,6 +132,7 @@ export interface ClientServiceDto {
   endDate: string | null;
   fieldValues: Record<string, string>;
   feeLines: ClientServiceFeeLineDto[];
+  deadlineRules: ClientServiceDeadlineRuleDto[];
   agreement: AgreementSummary | null;
   createdAt: string;
   updatedAt: string;

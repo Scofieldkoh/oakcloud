@@ -3,6 +3,7 @@
 import type { ReactNode, SelectHTMLAttributes } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import type { OperationalServiceValues } from './client-service-form-state';
 
 const uuid = () => crypto.randomUUID();
@@ -94,6 +95,39 @@ function OperationalFieldValue({
   );
 }
 
+function DeadlineParameterValue({
+  rule,
+  parameter,
+  disabled,
+  onChange,
+}: {
+  rule: OperationalServiceValues['deadlineRules'][number];
+  parameter: OperationalServiceValues['deadlineRules'][number]['parameters'][number];
+  disabled: boolean;
+  onChange: (value: unknown) => void;
+}) {
+  const id = `deadline-${rule.uiId}-${parameter.key}`;
+  const value = rule.parameterValues[parameter.key];
+  const options = parameter.validation && typeof parameter.validation === 'object' && !Array.isArray(parameter.validation) && 'options' in parameter.validation && Array.isArray(parameter.validation.options)
+    ? parameter.validation.options.filter((option): option is string => typeof option === 'string')
+    : [];
+  if (parameter.type === 'BOOLEAN') {
+    return <div><label htmlFor={id} className="label">{parameter.label}</label><select id={id} className="input input-sm w-full" disabled={disabled} value={typeof value === 'boolean' ? String(value) : ''} onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value === 'true')}><option value="">Not set</option><option value="true">Yes</option><option value="false">No</option></select></div>;
+  }
+  if (parameter.type === 'ENUM') {
+    return <div><label htmlFor={id} className="label">{parameter.label}</label><select id={id} className="input input-sm w-full" disabled={disabled} value={typeof value === 'string' ? value : ''} onChange={(event) => onChange(event.target.value || undefined)}><option value="">Select {parameter.label.toLowerCase()}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>;
+  }
+  const isNumber = parameter.type === 'INTEGER' || parameter.type === 'DECIMAL';
+  const inputValue = value === undefined || value === null ? '' : String(value);
+  return <div><label htmlFor={id} className="label">{parameter.label}</label><input id={id} className="input input-sm" type={parameter.type === 'DATE' ? 'date' : 'text'} inputMode={isNumber ? 'decimal' : undefined} disabled={disabled} value={inputValue} onChange={(event) => {
+    const next = event.target.value;
+    if (!next) onChange(undefined);
+    else if (parameter.type === 'INTEGER') onChange(Number.parseInt(next, 10));
+    else if (parameter.type === 'DECIMAL') onChange(Number.parseFloat(next));
+    else onChange(next);
+  }} />{parameter.helpText ? <p className="mt-1 text-xs text-text-secondary">{parameter.helpText}</p> : null}</div>;
+}
+
 export interface OperationalServiceFormProps {
   values: OperationalServiceValues;
   onChange: (next: OperationalServiceValues) => void;
@@ -128,6 +162,7 @@ export function OperationalServiceForm({
       </div>
       {errors.fieldValues ? <p role="alert" className="text-xs text-status-error">{errors.fieldValues}</p> : null}
       {errors.feeLines ? <p role="alert" className="text-xs text-status-error">{errors.feeLines}</p> : null}
+      {errors.deadlineRules ? <p role="alert" className="text-xs text-status-error">{errors.deadlineRules}</p> : null}
       <section className="space-y-3 border-t border-border-primary pt-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-text-primary">Service fields</h3>
@@ -143,6 +178,29 @@ export function OperationalServiceForm({
             <Button size="xs" variant="ghost" disabled={disabled || sectionsDisabled} onClick={() => updateValue('fields', values.fields.filter((item) => item.uiId !== field.uiId))}>Remove</Button>
           </div>
         ))}
+      </section>
+      <section className="space-y-3 border-t border-border-primary pt-4">
+        <div>
+          <h3 className="text-sm font-medium text-text-primary">Deadline rules</h3>
+          <p className="text-xs text-text-secondary">Configure the rules associated with this service. Changes are reconciled after save.</p>
+        </div>
+        {values.deadlineRules.length === 0 ? <p className="text-sm text-text-secondary">No deadline rules are associated with this service variant.</p> : null}
+        {values.deadlineRules.map((rule) => {
+          const updateRule = (changes: Partial<typeof rule>) => updateValue('deadlineRules', values.deadlineRules.map((item) => item.uiId === rule.uiId ? { ...item, ...changes } : item));
+          const updateParameters = (key: string, value: unknown) => updateRule({ parameterValues: value === undefined ? Object.fromEntries(Object.entries(rule.parameterValues).filter(([existingKey]) => existingKey !== key)) : { ...rule.parameterValues, [key]: value }, parameterProvenance: value === undefined ? Object.fromEntries(Object.entries(rule.parameterProvenance).filter(([existingKey]) => existingKey !== key)) as typeof rule.parameterProvenance : { ...rule.parameterProvenance, [key]: rule.parameterProvenance[key] ?? 'CLIENT_OVERRIDE' } });
+          return (
+            <article key={rule.uiId} className="space-y-3 rounded-lg border border-border-primary bg-background-primary p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div><h4 className="text-sm font-medium text-text-primary">{rule.name}</h4><p className="text-xs text-text-secondary">{rule.code}</p></div>
+                <label className="flex min-h-[44px] items-center gap-2 text-sm"><input type="checkbox" disabled={disabled || sectionsDisabled} checked={rule.enabled} onChange={(event) => updateRule({ enabled: event.target.checked })} /> Enabled</label>
+              </div>
+              {rule.applicabilityState && rule.applicabilityState !== 'APPLICABLE' ? <p role="status" className="text-xs text-status-warning">{rule.applicabilityReason ?? (rule.applicabilityState === 'MISSING_INPUT' ? 'Required inputs are missing.' : 'This rule does not apply to the company.')}</p> : null}
+              {rule.parameters.length > 0 ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><h5 className="sr-only">Parameters</h5>{rule.parameters.map((parameter) => <div key={parameter.key} className="space-y-1"><DeadlineParameterValue rule={rule} parameter={parameter} disabled={disabled || sectionsDisabled} onChange={(value) => updateParameters(parameter.key, value)} /><label htmlFor={`deadline-${rule.uiId}-${parameter.key}-source`} className="sr-only">{parameter.label} provenance</label><select id={`deadline-${rule.uiId}-${parameter.key}-source`} className="input input-sm w-full" disabled={disabled || sectionsDisabled || !(parameter.key in rule.parameterValues)} value={rule.parameterProvenance[parameter.key] ?? 'CLIENT_OVERRIDE'} onChange={(event) => updateRule({ parameterProvenance: { ...rule.parameterProvenance, [parameter.key]: event.target.value as typeof rule.parameterProvenance[typeof parameter.key] } })}><option value="CLIENT_OVERRIDE">Client override</option><option value="CATALOG_DEFAULT">Catalog default</option><option value="COMPANY">Company source</option></select></div>)}</div> : null}
+              <ScheduleEntryEditor value={rule.scheduleEntries} disabled={disabled || sectionsDisabled} onChange={(scheduleEntries) => updateRule({ scheduleEntries })} />
+              {errors[`deadline-rule-${rule.uiId}-schedule`] ? <p role="alert" className="text-xs text-status-error">{errors[`deadline-rule-${rule.uiId}-schedule`]}</p> : null}
+            </article>
+          );
+        })}
       </section>
       <section className="space-y-3 border-t border-border-primary pt-4">
         <div className="flex items-center justify-between">

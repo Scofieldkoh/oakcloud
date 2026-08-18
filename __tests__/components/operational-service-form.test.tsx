@@ -28,6 +28,7 @@ function baseValues(): OperationalServiceValues {
       billingStartDate: '',
       catalogDerived: true,
     }],
+    deadlineRules: [],
   };
 }
 

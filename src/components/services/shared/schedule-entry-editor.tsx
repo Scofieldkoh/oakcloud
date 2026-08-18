@@ -1,0 +1,179 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
+
+const EXPRESSION_KINDS = ['DAY_OF_MONTH', 'BUSINESS_DAY_FROM_START', 'BUSINESS_DAY_FROM_END', 'RELATIVE_TO_SOURCE'] as const;
+type ExpressionKind = typeof EXPRESSION_KINDS[number];
+
+function sourceFor(kind: string): Record<string, unknown> {
+  switch (kind) {
+    case 'CYCLE_END': return { kind: 'CYCLE_END' };
+    case 'CURRENT_SCHEDULE_ENTRY': return { kind: 'CURRENT_SCHEDULE_ENTRY' };
+    case 'COMPANY_FIELD': return { kind: 'COMPANY_FIELD', field: 'financialYearEnd' };
+    case 'PARAMETER': return { kind: 'PARAMETER', key: 'parameter' };
+    case 'MILESTONE': return { kind: 'MILESTONE', key: 'milestone' };
+    case 'SCHEDULE_ENTRY': return { kind: 'SCHEDULE_ENTRY', key: 'entry' };
+    case 'CYCLE_START':
+    default: return { kind: 'CYCLE_START' };
+  }
+}
+
+function expressionFor(kind: ExpressionKind, current?: Record<string, unknown>): ScheduleEntryInput['expression'] {
+  if (kind === 'DAY_OF_MONTH') return { kind, day: typeof current?.day === 'number' ? current.day : 1 };
+  if (kind === 'BUSINESS_DAY_FROM_START' || kind === 'BUSINESS_DAY_FROM_END') {
+    return { kind, ordinal: typeof current?.ordinal === 'number' ? current.ordinal : 1 };
+  }
+  return {
+    kind: 'RELATIVE_TO_SOURCE',
+    source: current && typeof current.source === 'object' ? current.source as never : sourceFor('CYCLE_START') as never,
+    offset: typeof current?.offset === 'number' ? current.offset : 0,
+    unit: current?.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY',
+  } as ScheduleEntryInput['expression'];
+}
+
+function labelForKind(kind: string): string {
+  return kind.replaceAll('_', ' ').toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+}
+
+function updateExpression(entry: ScheduleEntryInput, changes: Record<string, unknown>): ScheduleEntryInput {
+  return { ...entry, expression: { ...entry.expression, ...changes } as ScheduleEntryInput['expression'] };
+}
+
+export interface ScheduleEntryEditorProps {
+  value: ScheduleEntryInput[];
+  onChange: (value: ScheduleEntryInput[]) => void;
+  disabled?: boolean;
+}
+
+export function ScheduleEntryEditor({ value, onChange, disabled = false }: ScheduleEntryEditorProps) {
+  const addEntry = () => {
+    if (value.length >= 31) return;
+    const key = `entry-${crypto.randomUUID().slice(0, 8)}`;
+    onChange([...value, {
+      key,
+      label: 'New schedule entry',
+      expression: { kind: 'DAY_OF_MONTH', day: 1 },
+      businessDayAdjustment: 'NONE',
+    }]);
+  };
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= value.length) return;
+    const next = [...value];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-medium text-text-primary">Schedule entries</h4>
+          <p className="text-xs text-text-secondary">Entries keep their keys when reordered.</p>
+        </div>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="min-h-[44px]"
+          disabled={disabled || value.length >= 31}
+          aria-label="Add schedule entry"
+          onClick={addEntry}
+        >
+          Add schedule entry
+        </Button>
+      </div>
+      <p role="status" aria-live="polite" className="text-xs text-text-secondary">
+        {value.length} of 31 schedule entries configured{value.length >= 31 ? ' · Maximum reached' : ''}
+      </p>
+      <div className="space-y-3">
+        {value.map((entry, index) => {
+          const expression = entry.expression as Record<string, unknown>;
+          const expressionKind = typeof expression.kind === 'string' && EXPRESSION_KINDS.includes(expression.kind as ExpressionKind)
+            ? expression.kind as ExpressionKind
+            : 'DAY_OF_MONTH';
+          const source = expression.source && typeof expression.source === 'object' ? expression.source as Record<string, unknown> : {};
+          const prefix = `schedule-${entry.key}`;
+          const update = (changes: Partial<ScheduleEntryInput>) => onChange(value.map((item) => item.key === entry.key ? { ...item, ...changes } : item));
+          return (
+            <div key={entry.key} className="space-y-3 rounded-lg border border-border-primary bg-background-primary p-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor={`${prefix}-label`} className="label">Entry label</label>
+                  <input id={`${prefix}-label`} className="input input-sm" disabled={disabled} value={entry.label} onChange={(event) => update({ label: event.target.value })} />
+                </div>
+                <div>
+                  <label htmlFor={`${prefix}-kind`} className="label">Expression</label>
+                  <select
+                    id={`${prefix}-kind`}
+                    className="input input-sm w-full"
+                    disabled={disabled}
+                    value={expressionKind}
+                    onChange={(event) => update({ expression: expressionFor(event.target.value as ExpressionKind, expression) })}
+                  >
+                    {EXPRESSION_KINDS.map((kind) => <option key={kind} value={kind}>{labelForKind(kind)}</option>)}
+                  </select>
+                </div>
+                {expressionKind === 'DAY_OF_MONTH' ? (
+                  <div>
+                    <label htmlFor={`${prefix}-day`} className="label">Day of month</label>
+                    <input id={`${prefix}-day`} className="input input-sm" type="number" min={1} max={31} disabled={disabled} value={typeof expression.day === 'number' ? expression.day : 1} onChange={(event) => update(updateExpression(entry, { day: Number(event.target.value) }))} />
+                  </div>
+                ) : null}
+                {expressionKind === 'BUSINESS_DAY_FROM_START' || expressionKind === 'BUSINESS_DAY_FROM_END' ? (
+                  <div>
+                    <label htmlFor={`${prefix}-ordinal`} className="label">Business-day ordinal</label>
+                    <input id={`${prefix}-ordinal`} className="input input-sm" type="number" min={1} max={31} disabled={disabled} value={typeof expression.ordinal === 'number' ? expression.ordinal : 1} onChange={(event) => update(updateExpression(entry, { ordinal: Number(event.target.value) }))} />
+                  </div>
+                ) : null}
+                {expressionKind === 'RELATIVE_TO_SOURCE' ? (
+                  <>
+                    <div>
+                      <label htmlFor={`${prefix}-source-kind`} className="label">Relative source</label>
+                      <select
+                        id={`${prefix}-source-kind`}
+                        className="input input-sm w-full"
+                        disabled={disabled}
+                        value={typeof expression.source === 'object' && expression.source && 'kind' in expression.source ? String((expression.source as Record<string, unknown>).kind) : 'CYCLE_START'}
+                        onChange={(event) => update(updateExpression(entry, { source: sourceFor(event.target.value) }))}
+                      >
+                        {['CYCLE_START', 'CYCLE_END', 'CURRENT_SCHEDULE_ENTRY', 'COMPANY_FIELD', 'PARAMETER', 'SCHEDULE_ENTRY', 'MILESTONE'].map((kind) => <option key={kind} value={kind}>{labelForKind(kind)}</option>)}
+                      </select>
+                    </div>
+                    {source.kind === 'COMPANY_FIELD' ? <div><label htmlFor={`${prefix}-source-field`} className="label">Company date field</label><select id={`${prefix}-source-field`} className="input input-sm w-full" disabled={disabled} value={typeof source.field === 'string' ? source.field : 'financialYearEnd'} onChange={(event) => update(updateExpression(entry, { source: { ...source, field: event.target.value } }))}><option value="financialYearEnd">Financial year end</option><option value="nextAgmDueDate">Next AGM due date</option><option value="nextArDueDate">Next annual return due date</option><option value="accountsDueDate">Accounts due date</option><option value="incorporationDate">Incorporation date</option></select></div> : null}
+                    {source.kind === 'PARAMETER' || source.kind === 'SCHEDULE_ENTRY' || source.kind === 'MILESTONE' ? <div><label htmlFor={`${prefix}-source-key`} className="label">Source key</label><input id={`${prefix}-source-key`} className="input input-sm" disabled={disabled} value={typeof source.key === 'string' ? source.key : ''} onChange={(event) => update(updateExpression(entry, { source: { ...source, key: event.target.value } }))} /></div> : null}
+                    <div>
+                      <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
+                      <input id={`${prefix}-offset`} className="input input-sm" type="number" min={-3660} max={3660} disabled={disabled} value={typeof expression.offset === 'number' ? expression.offset : 0} onChange={(event) => update(updateExpression(entry, { offset: Number(event.target.value) }))} />
+                    </div>
+                    <div>
+                      <label htmlFor={`${prefix}-unit`} className="label">Offset unit</label>
+                      <select id={`${prefix}-unit`} className="input input-sm w-full" disabled={disabled} value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'} onChange={(event) => update(updateExpression(entry, { unit: event.target.value }))}>
+                        <option value="CALENDAR_DAY">Calendar day</option>
+                        <option value="BUSINESS_DAY">Business day</option>
+                      </select>
+                    </div>
+                  </>
+                ) : null}
+                <div>
+                  <label htmlFor={`${prefix}-adjustment`} className="label">Business-day adjustment</label>
+                  <select id={`${prefix}-adjustment`} className="input input-sm w-full" disabled={disabled} value={entry.businessDayAdjustment} onChange={(event) => update({ businessDayAdjustment: event.target.value as ScheduleEntryInput['businessDayAdjustment'] })}>
+                    <option value="NONE">No adjustment</option>
+                    <option value="PREVIOUS">Previous business day</option>
+                    <option value="NEXT">Next business day</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="xs" variant="ghost" className="min-h-[44px]" disabled={disabled || index === 0} aria-label={`Move ${entry.label} up`} onClick={() => move(index, -1)}>Move up</Button>
+                <Button size="xs" variant="ghost" className="min-h-[44px]" disabled={disabled || index === value.length - 1} aria-label={`Move ${entry.label} down`} onClick={() => move(index, 1)}>Move down</Button>
+                <Button size="xs" variant="ghost" className="min-h-[44px]" disabled={disabled} aria-label={`Remove ${entry.label}`} onClick={() => onChange(value.filter((item) => item.key !== entry.key))}>Remove</Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

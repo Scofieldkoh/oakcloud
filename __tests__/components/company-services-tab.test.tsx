@@ -264,7 +264,7 @@ describe('CompanyServicesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(2));
     expect(mutateAsync).toHaveBeenLastCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ updatedAt: refreshed.updatedAt }),
+      data: expect.objectContaining({ expectedUpdatedAt: refreshed.updatedAt }),
     }));
   });
 

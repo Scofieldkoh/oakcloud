@@ -5,6 +5,7 @@ import type { PlaceholderDefinition } from '@/types/placeholders';
 import { composeServicePartialGraph } from '@/services/service-agreement/snapshot';
 import type {
   ManualClientServiceCatalogField,
+  ManualClientServiceCatalogDeadlineRule,
   ManualClientServiceCatalogOptionsResponse,
   ManualClientServiceCatalogVariantOption,
 } from './types';
@@ -45,7 +46,7 @@ export async function getManualClientServiceCatalogOptions(
         sowPartial: { tenantId: params.tenantId, deletedAt: null },
       },
       include: {
-        family: { select: { id: true, name: true, displayOrder: true } },
+        family: { select: { id: true, name: true, displayColor: true, displayOrder: true } },
         sowPartial: {
           select: {
             id: true,
@@ -59,6 +60,37 @@ export async function getManualClientServiceCatalogOptions(
         defaultFeeTemplates: {
           where: { tenantId: params.tenantId },
           orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+        },
+        deadlineRuleAssociations: {
+          where: {
+            tenantId: params.tenantId,
+            archivedAt: null,
+            rule: {
+              tenantId: params.tenantId,
+              isActive: true,
+              archivedAt: null,
+              currentVersionId: { not: null },
+            },
+          },
+          orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+          include: {
+            rule: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                currentVersionId: true,
+                currentVersion: {
+                  select: {
+                    id: true,
+                    parameterDefinitions: {
+                      orderBy: [{ displayOrder: 'asc' }, { key: 'asc' }],
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
       orderBy: [
@@ -83,10 +115,32 @@ export async function getManualClientServiceCatalogOptions(
 
   const options: ManualClientServiceCatalogVariantOption[] = variants.map((variant) => {
     const composed = composeServicePartialGraph(variant.sowPartial, partials);
+    const deadlineRules: ManualClientServiceCatalogDeadlineRule[] = (variant.deadlineRuleAssociations ?? [])
+      .filter((association) => association.rule?.currentVersion?.id && association.rule.currentVersionId)
+      .map((association) => ({
+        ruleId: association.ruleId,
+        code: association.rule?.code ?? association.ruleId,
+        name: association.rule?.name ?? association.ruleId,
+        enabledByDefault: association.enabledByDefault,
+        parameterDefaults: (association.parameterDefaults ?? {}) as Record<string, unknown>,
+        scheduleDefaults: (Array.isArray(association.scheduleDefaults) ? association.scheduleDefaults : []) as ManualClientServiceCatalogDeadlineRule['scheduleDefaults'],
+        currentVersionId: association.rule?.currentVersion?.id ?? association.rule?.currentVersionId ?? '',
+        parameters: (association.rule?.currentVersion?.parameterDefinitions ?? []).map((parameter) => ({
+          key: parameter.key,
+          label: parameter.label,
+          description: parameter.helpText ?? null,
+          type: parameter.type,
+          required: parameter.isRequired,
+          defaultValue: parameter.defaultValue,
+          validation: parameter.validation,
+          helpText: parameter.helpText,
+          displayOrder: parameter.displayOrder,
+        })),
+      }));
     return {
       id: variant.id,
       name: variant.name,
-      family: { id: variant.family.id, name: variant.family.name },
+      family: { id: variant.family.id, name: variant.family.name, displayColor: variant.family.displayColor ?? '#2F6F5E' },
       serviceCadence: variant.serviceCadence,
       customCadenceLabel: variant.customCadenceLabel,
       fields: composed.placeholders.map(toOperationalField).filter((field): field is ManualClientServiceCatalogField => field !== null),
@@ -98,6 +152,7 @@ export async function getManualClientServiceCatalogOptions(
         customFrequencyLabel: fee.customFrequencyLabel,
         displayOrder: fee.displayOrder,
       })),
+      deadlineRules,
     };
   });
 

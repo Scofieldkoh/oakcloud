@@ -15,6 +15,7 @@ import {
 } from '@/hooks/use-client-services';
 import { OperationalServiceForm } from './operational-service-form';
 import {
+  deadlineRuleInputs,
   operationalFieldValues,
   updateFeeLines,
   validateOperationalServiceValues,
@@ -32,9 +33,11 @@ export function ClientServiceEditor({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const initialValues = valuesFromClientService(service);
   const [serviceName, setServiceName] = useState(service.serviceName);
   const [familyName, setFamilyName] = useState(service.familyName);
-  const [values, setValues] = useState<OperationalServiceValues>(() => valuesFromClientService(service));
+  const [values, setValues] = useState<OperationalServiceValues>(initialValues);
+  const [initialDeadlineRules, setInitialDeadlineRules] = useState(() => deadlineRuleInputs(initialValues));
   const [updatedAt, setUpdatedAt] = useState(service.updatedAt);
   const [fieldErrors, setFieldErrors] = useState<OperationalFieldErrors>({});
   const [formError, setFormError] = useState('');
@@ -55,9 +58,11 @@ export function ClientServiceEditor({
     : 'Archiving removes this manually added service from the active company view.';
 
   const replaceForm = (next: ClientServiceDto) => {
+    const nextValues = valuesFromClientService(next);
     setServiceName(next.serviceName);
     setFamilyName(next.familyName);
-    setValues(valuesFromClientService(next));
+    setValues(nextValues);
+    setInitialDeadlineRules(deadlineRuleInputs(nextValues));
     setUpdatedAt(next.updatedAt);
     setFieldErrors({});
   };
@@ -82,11 +87,30 @@ export function ClientServiceEditor({
     }
     setFormError('');
     try {
+      const nextDeadlineRules = deadlineRuleInputs(values);
+      const deadlineRulesChanged = JSON.stringify(nextDeadlineRules) !== JSON.stringify(initialDeadlineRules);
+      let impactFingerprint: string | undefined;
+      if (deadlineRulesChanged) {
+        const response = await fetch(`/api/client-services/${service.id}/deadline-configuration/impact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expectedUpdatedAt: updatedAt, deadlineRules: nextDeadlineRules }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw Object.assign(new Error(typeof payload?.message === 'string' ? payload.message : 'Unable to preview deadline changes.'), {
+            status: response.status,
+            code: payload?.code,
+            body: payload,
+          });
+        }
+        impactFingerprint = typeof payload?.previewFingerprint === 'string' ? payload.previewFingerprint : undefined;
+      }
       await update.mutateAsync({
         id: service.id,
         companyId: service.companyId,
         data: {
-          updatedAt,
+          expectedUpdatedAt: updatedAt,
           serviceName,
           familyName,
           status: values.status,
@@ -96,11 +120,12 @@ export function ClientServiceEditor({
           endDate: values.endDate || null,
           fieldValues: operationalFieldValues(values),
           feeLines: updateFeeLines(values),
+          ...(deadlineRulesChanged ? { deadlineRules: nextDeadlineRules, impactFingerprint } : {}),
         },
       });
       onClose();
     } catch (error) {
-      if (isHttpRequestError(error, 409)) {
+      if (isHttpRequestError(error, 409) || (typeof error === 'object' && error !== null && 'status' in error && (error as { status?: unknown }).status === 409)) {
         setHasConflict(true);
         setFormError('This service was updated by someone else. Reload the latest service before saving again.');
         return;

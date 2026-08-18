@@ -77,10 +77,10 @@ describe('company Services browser workflow', () => {
       if (method === 'GET' && url.includes('/services/catalog-options')) return json(catalogOptions);
       if (method === 'GET') return json(fixture);
       if (method === 'PATCH') {
-        if ((body as { updatedAt?: string } | undefined)?.updatedAt === service.updatedAt) {
+        if ((body as { expectedUpdatedAt?: string } | undefined)?.expectedUpdatedAt === service.updatedAt) {
           return json({ error: 'This service was updated by someone else.' }, 409);
         }
-        if ((body as { updatedAt?: string } | undefined)?.updatedAt === refreshedService.updatedAt) {
+        if ((body as { expectedUpdatedAt?: string } | undefined)?.expectedUpdatedAt === refreshedService.updatedAt) {
           return json({ ...refreshedService, ...body, updatedAt: '2026-08-01T02:00:00.000Z' });
         }
         return json({ error: 'Unexpected concurrency token' }, 500);
@@ -132,8 +132,8 @@ describe('company Services browser workflow', () => {
     await waitUntil(() => !document.body.textContent?.includes('Edit service'));
     const patches = requests.filter((request) => request.method === 'PATCH');
     expect(patches).toHaveLength(2);
-    expect(patches[0]?.body).toMatchObject({ updatedAt: service.updatedAt });
-    expect(patches[1]?.body).toMatchObject({ updatedAt: refreshedService.updatedAt });
+    expect(patches[0]?.body).toMatchObject({ expectedUpdatedAt: service.updatedAt });
+    expect(patches[1]?.body).toMatchObject({ expectedUpdatedAt: refreshedService.updatedAt });
 
     const refreshedCard = [...host.querySelectorAll<HTMLElement>('article')].find((article) => article.textContent?.includes('Corporate Secretarial Services'));
     const editAgain = refreshedCard?.querySelector<HTMLButtonElement>('button[aria-label="Edit service"]');

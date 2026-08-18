@@ -7,12 +7,76 @@ import {
 } from '@/lib/validations/client-service';
 
 const variantId = '11111111-1111-4111-8111-111111111111';
+const ruleId = '22222222-2222-4222-8222-222222222222';
+
+const fourMonthlyEntries = [1, 8, 15, 22].map((day, index) => ({
+  key: `entry-${index + 1}`,
+  label: `Run ${index + 1}`,
+  expression: { kind: 'DAY_OF_MONTH' as const, day },
+  businessDayAdjustment: 'NONE' as const,
+}));
 
 describe('client service validation', () => {
   it('requires an optimistic timestamp and at least one mutation', () => {
     expect(updateClientServiceSchema.safeParse({ status: 'PAUSED' }).success).toBe(false);
     expect(updateClientServiceSchema.safeParse({ updatedAt: '2026-07-30T00:00:00.000Z' }).success).toBe(false);
-    expect(updateClientServiceSchema.safeParse({ updatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' }).success).toBe(true);
+    expect(updateClientServiceSchema.safeParse({ expectedUpdatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' }).success).toBe(true);
+    expect(updateClientServiceSchema.parse({ updatedAt: '2026-07-30T00:00:00.000Z', status: 'PAUSED' })).toMatchObject({
+      expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+    });
+    expect(updateClientServiceSchema.safeParse({
+      updatedAt: '2026-07-30T00:00:00.000Z',
+      expectedUpdatedAt: '2026-07-31T00:00:00.000Z',
+      status: 'PAUSED',
+    }).success).toBe(false);
+  });
+
+  it('accepts generic client deadline rules with stable repeatable schedule entries', () => {
+    const parsed = createManualClientServiceSchema.parse({
+      serviceVariantId: variantId,
+      serviceCadence: 'MONTHLY',
+      startDate: '2026-08-01',
+      feeLines: [{ description: 'Monthly service fee', amount: '100.00', currency: 'SGD', billingFrequency: 'MONTHLY' }],
+      deadlineRules: [{
+        ruleId,
+        enabled: true,
+        parameterValues: {},
+        parameterProvenance: {},
+        scheduleEntries: fourMonthlyEntries,
+      }],
+    });
+
+    expect(parsed.deadlineRules).toHaveLength(1);
+    expect(parsed.deadlineRules?.[0]?.scheduleEntries).toHaveLength(4);
+  });
+
+  it('rejects invalid client rule provenance and more than 100 rules', () => {
+    const base = {
+      serviceVariantId: variantId,
+      serviceCadence: 'MONTHLY' as const,
+      startDate: '2026-08-01',
+      feeLines: [{ description: 'Monthly service fee', amount: '100.00', currency: 'SGD', billingFrequency: 'MONTHLY' as const }],
+    };
+    expect(createManualClientServiceSchema.safeParse({
+      ...base,
+      deadlineRules: [{
+        ruleId,
+        enabled: true,
+        parameterValues: { monthsAfterFye: 12 },
+        parameterProvenance: { monthsAfterFye: 'UNKNOWN' },
+        scheduleEntries: [],
+      }],
+    }).success).toBe(false);
+    expect(createManualClientServiceSchema.safeParse({
+      ...base,
+      deadlineRules: Array.from({ length: 101 }, () => ({
+        ruleId,
+        enabled: true,
+        parameterValues: {},
+        parameterProvenance: {},
+        scheduleEntries: [],
+      })),
+    }).success).toBe(false);
   });
 
   it('requires custom cadence labels and valid merged date input', () => {

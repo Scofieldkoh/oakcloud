@@ -1,11 +1,23 @@
 import { z } from 'zod';
 import { billingFrequencySchema, serviceCadenceSchema } from '@/lib/validations/service-catalog';
+import { scheduleEntriesSchema } from '@/lib/validations/service-schedule';
 
 const dateOrderIssue = (ctx: z.RefinementCtx) => ctx.addIssue({
   code: z.ZodIssueCode.custom,
   path: ['endDate'],
   message: 'End date must be on or after start date',
 });
+
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() => z.union([
+  z.string(),
+  z.number().finite(),
+  z.boolean(),
+  z.null(),
+  z.array(jsonValueSchema),
+  z.record(jsonValueSchema),
+]));
+const jsonObjectSchema = z.record(jsonValueSchema);
 
 function validateCadenceAndDates(
   value: { serviceCadence?: string; customCadenceLabel?: string | null; startDate?: string; endDate?: string | null },
@@ -32,8 +44,44 @@ export const clientServiceFeeLineInputSchema = z.object({
   }
 });
 
-export const updateClientServiceSchema = z.object({
-  updatedAt: z.string().datetime(),
+const clientServiceDeadlineRuleInputSchema = z.object({
+  ruleId: z.string().uuid(),
+  enabled: z.boolean(),
+  parameterValues: jsonObjectSchema.default({}),
+  parameterProvenance: z.record(z.string(), z.enum(['COMPANY', 'CATALOG_DEFAULT', 'CLIENT_OVERRIDE'])).default({}),
+  scheduleEntries: scheduleEntriesSchema.default([]),
+}).strict();
+
+export const clientServiceDeadlineRulesSchema = z.array(clientServiceDeadlineRuleInputSchema)
+  .max(100, 'At most 100 deadline rules are allowed')
+  .superRefine((rules, ctx) => {
+    const seen = new Set<string>();
+    for (const [index, rule] of rules.entries()) {
+      if (seen.has(rule.ruleId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [index, 'ruleId'],
+          message: 'Deadline rules must be unique per client service',
+        });
+      }
+      seen.add(rule.ruleId);
+      for (const key of Object.keys(rule.parameterProvenance)) {
+        if (!Object.prototype.hasOwnProperty.call(rule.parameterValues, key)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [index, 'parameterProvenance', key],
+            message: 'Parameter provenance requires a matching parameter value',
+          });
+        }
+      }
+    }
+  });
+
+export type ClientServiceDeadlineRuleInput = z.infer<typeof clientServiceDeadlineRuleInputSchema>;
+
+const updateClientServiceInputSchema = z.object({
+  expectedUpdatedAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
   familyName: z.string().trim().min(1).max(200).optional(),
   serviceName: z.string().trim().min(1).max(200).optional(),
   status: z.enum(['ACTIVE', 'PAUSED', 'ENDED']).optional(),
@@ -43,12 +91,30 @@ export const updateClientServiceSchema = z.object({
   endDate: z.string().date().nullable().optional(),
   fieldValues: z.record(z.string(), z.string().max(10_000)).optional(),
   feeLines: z.array(clientServiceFeeLineInputSchema).min(1).max(100).optional(),
+  deadlineRules: clientServiceDeadlineRulesSchema.optional(),
+  impactFingerprint: z.string().trim().min(1).optional(),
 }).strict().superRefine((value, ctx) => {
+  if (!value.expectedUpdatedAt && !value.updatedAt) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['expectedUpdatedAt'], message: 'An expected update timestamp is required' });
+  }
+  if (value.expectedUpdatedAt && value.updatedAt && value.expectedUpdatedAt !== value.updatedAt) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['expectedUpdatedAt'], message: 'expectedUpdatedAt conflicts with updatedAt' });
+  }
   validateCadenceAndDates(value, ctx);
-  if (Object.keys(value).every((key) => key === 'updatedAt')) {
+  if (Object.keys(value).every((key) => ['updatedAt', 'expectedUpdatedAt', 'impactFingerprint'].includes(key))) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'At least one service field must be updated' });
   }
-});
+}).transform(({ updatedAt: legacyUpdatedAt, ...value }) => ({
+  ...value,
+  expectedUpdatedAt: value.expectedUpdatedAt ?? legacyUpdatedAt!,
+}));
+
+export const updateClientServiceSchema = updateClientServiceInputSchema;
+
+export const clientServiceDeadlineImpactSchema = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  deadlineRules: clientServiceDeadlineRulesSchema,
+}).strict();
 
 const manualFeeLineSchema = z.object({
   description: z.string().trim().min(1).max(500),
@@ -72,6 +138,7 @@ export const createManualClientServiceSchema = z.object({
   endDate: z.string().date().nullable().optional(),
   fieldValues: z.record(z.string(), z.string().max(10_000)).default({}),
   feeLines: z.array(manualFeeLineSchema).min(1).max(100),
+  deadlineRules: clientServiceDeadlineRulesSchema.optional(),
   confirmDuplicate: z.boolean().default(false),
 }).strict().superRefine((value, ctx) => {
   validateCadenceAndDates(value, ctx);
@@ -105,6 +172,8 @@ export const searchClientServicesSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-export type UpdateClientServiceInput = z.infer<typeof updateClientServiceSchema>;
+export type UpdateClientServiceInput = z.output<typeof updateClientServiceSchema>;
+export type UpdateClientServiceRequest = z.input<typeof updateClientServiceSchema>;
+export type ClientServiceDeadlineImpactInput = z.infer<typeof clientServiceDeadlineImpactSchema>;
 export type SearchClientServicesInput = z.infer<typeof searchClientServicesSchema>;
 export type MarkServiceAgreementEffectiveInput = z.infer<typeof markServiceAgreementEffectiveSchema>;
