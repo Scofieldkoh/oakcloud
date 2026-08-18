@@ -67,7 +67,7 @@
 | 7 | PASS | `3e6d035`, `c747dee`, `c0a1c05`, `41c12dd`, `c80e1c6` | Final review: 0 Critical / 0 Important / 0 Minor; 30 focused tests and 69 Task 6 compatibility tests; PostgreSQL gates remain deferred without `TEST_DATABASE_URL` |
 | 8 | PASS | `c2abca9`, `da3d31b`, `cd0cba4`, `27604d1` | Final review: 0 Critical / 0 Important / 0 Minor; 20 focused historical-audit tests plus full Task 8 correction/regression gates |
 | 9 | PASS | `9d2e3ea`, `90087f0` | Rereview: 0 Critical / 0 Important / 1 unrelated pre-existing Minor; 33 focused tests plus 166 compatibility tests |
-| 10 | PASS / final-review-complete | `58bb422`, `634106e`, `864868b` | Final review 0 Critical / 0 Important / 0 Minor; selected combobox focus/composition closed with keyboard RED/GREEN tests and visibility hit area retained; narrow final suite 4 files/17 tests, TS/lint/diff green; evidence in `task-10-report.md` |
+| 10 | PASS / final-review-complete | `58bb422`, `634106e`, `864868b`, `b0a1d98` | Final review 0 Critical / 0 Important / 0 Minor; selected combobox focus/composition and disabled-state semantics closed with keyboard RED/GREEN tests, visibility hit area retained; narrow final suite 4 files/18 tests, TS/lint/diff green; evidence in `task-10-report.md` |
 | 11 | pending | — | — |
 | 12 | pending | — | — |
 | 13 | pending | — | — |

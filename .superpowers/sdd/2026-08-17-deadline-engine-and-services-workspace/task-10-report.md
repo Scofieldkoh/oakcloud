@@ -2,7 +2,7 @@
 
 Status: final-review-complete / PASS
 
-Implementation commits: `58bb422`, `634106e`, `864868b`
+Implementation commits: `58bb422`, `634106e`, `864868b`, `b0a1d98`
 
 ## Scope delivered
 
@@ -21,7 +21,8 @@ Implementation commits: `58bb422`, `634106e`, `864868b`
 - GREEN: rereview correction suite — 13 files / 66 tests passed.
 - RED/GREEN: final-review accessibility tests failed for the selected combobox label target and visibility-label hit area, then passed after retaining the selected combobox state and stretching the labels.
 - RED/GREEN: final accessibility rereview tests failed for Enter-selection focus loss and nested clear composition, then passed with explicit focus transfer and sibling clear controls; unsupported `aria-valuetext` was removed.
-- GREEN: final-review narrow component suite — 4 files / 17 tests passed.
+- RED/GREEN: final keyboard review test failed because selected disabled values remained tabbable and lacked `aria-disabled`; it passed after the selected control became non-tabbable, keyboard-inert, and explicitly disabled.
+- GREEN: final-review narrow component suite — 4 files / 18 tests passed.
 - Accepted Task9/shared regression suite — 12 files / 113 tests passed.
 - Chromium Services Admin + Company Services suite — 2 files / 4 tests passed.
 - `npm.cmd exec -- tsc --noEmit --pretty false` — pass.
@@ -36,6 +37,7 @@ Implementation commits: `58bb422`, `634106e`, `864868b`
 - Preference restore defensively handles unknown columns/invalid widths/version, preserves default columns/actions, restricts page sizes to the roster/API contract, and covers order, visibility, sorting, page size, resize-end persistence, and the cross-action pending-resize race.
 - The real Add Service selector exposes label association, combobox/listbox ownership and active descendant, option selection, named clear action, and 44px mobile controls; the family route preserves typed errors.
 - Selected values retain the labelled combobox target and value text; Enter selection retains focus, Backspace/Delete and sibling clear return focus to the input, and keyboard reselection remains available. Each column-visibility label fills its 44px customization row.
+- Selected disabled values expose `aria-disabled`, use `tabIndex=-1`, omit the clear action, and ignore keyboard clearing while enabled Add Service focus, clear, and reselection behavior remains covered.
 - Browser navigation updates request state from URL changes; family text remains semantic and colour-independent.
 
 ## Assumptions and residual risks
