@@ -14,6 +14,7 @@ import {
   currentDateInSingapore,
   formatDateOnly,
   parseDateOnly,
+  addMonthsClamped,
 } from '@/services/service-schedule/date-only';
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import type {
@@ -23,12 +24,18 @@ import type {
   EvaluatedDeadline,
 } from '@/services/service-schedule';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import {
+  planRollingPeriods,
+  ROLLING_HORIZON_MONTHS,
+  ROLLING_PLAN_VERSION,
+} from '@/services/schedule-reconciliation/planner';
 import type { DeadlineRuleDto } from './types';
 
 const MAX_IMPACT_SAMPLES = 100;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 const identityFieldsSchema = z.object({
+  operation: z.enum(['PUBLISH', 'ARCHIVE']),
   expectedCurrentVersion: z.number().int().min(0).nullable(),
   expectedDraftRevision: z.number().int().min(1),
   draftConfigHash: z.string().regex(HASH_PATTERN),
@@ -58,6 +65,7 @@ export type DeadlineRulePublishInput = z.input<typeof deadlineRulePublishSchema>
 export type DeadlineRuleArchiveInput = z.input<typeof deadlineRuleArchiveSchema>;
 
 export type DeadlineRuleImpactAction = 'CREATE' | 'RECALCULATE' | 'CANCEL' | 'PRESERVE' | 'WARN';
+export type DeadlineRuleImpactOperation = 'PUBLISH' | 'ARCHIVE';
 
 export type DeadlineRuleImpactSample = {
   clientServiceId: string;
@@ -81,23 +89,36 @@ export type DeadlineRuleImpactCounts = {
 
 export type DeadlineRuleImpact = {
   ruleId: string;
+  operation: DeadlineRuleImpactOperation;
   currentPublishedVersion: number | null;
   draftRevision: number;
   draftConfigHash: string;
   previewFingerprint: string;
   counts: DeadlineRuleImpactCounts;
   samples: DeadlineRuleImpactSample[];
+  sourceState: {
+    currentVersionId: string | null;
+    draftId: string;
+    draftState: string;
+    isActive: boolean;
+    archivedAt: string | null;
+  };
 };
 
 export type DeadlineRuleImpactOptions = {
   /** Injectable Singapore civil date for deterministic tests and callers. */
   now?: () => DateOnly;
+  /** Internal apply-only fallback for a concurrently consumed draft. */
+  allowMissingDraft?: boolean;
+  /** Injectable horizon end for deterministic planner tests. */
+  horizonEnd?: DateOnly;
 };
 
 type QueryDelegate = {
   findFirst?: (args: unknown) => Promise<unknown>;
   findMany?: (args: unknown) => Promise<unknown>;
   update?: (args: unknown) => Promise<unknown>;
+  updateMany?: (args: unknown) => Promise<unknown>;
 };
 
 type RawVersion = {
@@ -146,6 +167,8 @@ type RawCycle = {
   origin?: string;
   businessCalendarId?: string | null;
   businessCalendarRevision?: number | null;
+  planned?: boolean;
+  generationKey?: string;
 };
 
 type RawOccurrence = {
@@ -202,6 +225,7 @@ function delegate(db: ImpactDb, name: string): QueryDelegate | null {
   if (typeof value.findFirst === 'function') result.findFirst = value.findFirst.bind(value) as QueryDelegate['findFirst'];
   if (typeof value.findMany === 'function') result.findMany = value.findMany.bind(value) as QueryDelegate['findMany'];
   if (typeof value.update === 'function') result.update = value.update.bind(value) as QueryDelegate['update'];
+  if (typeof value.updateMany === 'function') result.updateMany = value.updateMany.bind(value) as QueryDelegate['updateMany'];
   return result;
 }
 
@@ -330,13 +354,14 @@ async function loadCalendar(
   return snapshot;
 }
 
-function versionFromRule(rule: RawRule): { current: RawVersion | null; draft: RawVersion } {
+function versionFromRule(rule: RawRule, allowMissingDraft = false): { current: RawVersion | null; draft: RawVersion } {
   const versions = Array.isArray(rule.versions) ? rule.versions : [];
   const current = rule.currentVersion
     ?? versions.filter((version) => version.state === 'PUBLISHED').sort((left, right) => right.version - left.version)[0]
     ?? null;
   const draft = rule.draft
     ?? versions.find((version) => version.state === 'DRAFT');
+  if (!draft && allowMissingDraft && current) return { current, draft: current };
   if (!draft) throw new ValidationError('Deadline rule has no mutable draft');
   return { current, draft };
 }
@@ -380,7 +405,7 @@ async function evaluatorInputFor(
   };
 }
 
-async function loadRuleScope(db: ImpactDb, ruleId: string, tenantId: string): Promise<{
+async function loadRuleScope(db: ImpactDb, ruleId: string, tenantId: string, allowMissingDraft = false): Promise<{
   rule: RawRule;
   current: RawVersion | null;
   draft: RawVersion;
@@ -399,7 +424,7 @@ async function loadRuleScope(db: ImpactDb, ruleId: string, tenantId: string): Pr
     throw new NotFoundError('Deadline rule not found');
   }
   const rule = rawRule as unknown as RawRule;
-  const { current, draft } = versionFromRule(rule);
+  const { current, draft } = versionFromRule(rule, allowMissingDraft);
   const [contexts, cycles, occurrences] = await Promise.all([
     findMany(db, 'clientServiceDeadlineRule', {
       where: {
@@ -448,6 +473,12 @@ function decisionIdentity(
   deadlineOccurrenceId: string | null,
 ): string {
   return `${clientServiceId}|${cycleId}|${milestoneKey}|${scheduleEntryKey}|${deadlineOccurrenceId ?? ''}`;
+}
+
+function cycleIdentity(cycle: RawCycle): string {
+  return cycle.planned
+    ? `${cycle.clientServiceId}|${cycle.ruleId}|${cycle.periodKey}|${cycle.generationKey ?? ROLLING_PLAN_VERSION}`
+    : cycle.id;
 }
 
 function evaluatorMap(result: unknown): Map<string, EvaluatedDeadline> {
@@ -514,10 +545,12 @@ async function computeImpact(
   db: ImpactDb,
   ruleId: string,
   tenantId: string,
+  operation: DeadlineRuleImpactOperation,
   options?: DeadlineRuleImpactOptions,
 ): Promise<{ impact: DeadlineRuleImpact; scope: Awaited<ReturnType<typeof loadRuleScope>> }> {
-  const scope = await loadRuleScope(db, ruleId, tenantId);
+  const scope = await loadRuleScope(db, ruleId, tenantId, options?.allowMissingDraft === true);
   const today = validateDateClock(options);
+  const horizonEnd = options?.horizonEnd ?? addMonthsClamped(today, ROLLING_HORIZON_MONTHS);
   const calendarCache = new Map<string, BusinessCalendarSnapshot>();
   const contextByClientService = new Map<string, RawContext>();
   for (const context of scope.contexts) {
@@ -534,6 +567,47 @@ async function computeImpact(
     if (cycle && !cyclesById.has(occurrence.cycleId)) cyclesById.set(occurrence.cycleId, cycle);
   }
 
+  // Every enabled client-service/rule association participates in the
+  // rolling scope, including first publication where no ServiceCycle exists.
+  // Synthetic cycle IDs are deterministic and never written by preview; Task
+  // 7 uses the same planner and generation identity when materializing them.
+  const activeCalendar = await loadCalendar(db, tenantId, null, calendarCache);
+  const existingCycleKeys = new Set(
+    [...cyclesById.values()]
+      .filter((cycle) => cycle.origin === undefined || cycle.origin === 'RULE')
+      .map((cycle) => `${cycle.clientServiceId}|${cycle.periodKey}`),
+  );
+  for (const context of [...contextByClientService.values()].sort((left, right) => left.clientServiceId.localeCompare(right.clientServiceId))) {
+    const periods = planRollingPeriods(
+      scope.draft.recurrence as DeadlineRuleEvaluationInput['recurrence'],
+      today,
+      horizonEnd,
+    );
+    for (const period of periods) {
+      const key = `${context.clientServiceId}|${period.periodKey}`;
+      if (existingCycleKeys.has(key)) continue;
+      const plannedId = `planned-cycle:${hashConfiguration({ tenantId, ruleId, clientServiceId: context.clientServiceId, periodKey: period.periodKey, generation: ROLLING_PLAN_VERSION })}`;
+      const companyId = context.clientService?.companyId ?? '';
+      cyclesById.set(plannedId, {
+        id: plannedId,
+        tenantId,
+        clientServiceId: context.clientServiceId,
+        ruleId,
+        ruleVersionId: scope.draft.id,
+        companyId,
+        periodKey: period.periodKey,
+        periodStart: period.start,
+        periodEnd: period.end,
+        origin: 'RULE',
+        businessCalendarId: activeCalendar.id,
+        businessCalendarRevision: activeCalendar.revision,
+        planned: true,
+        generationKey: ROLLING_PLAN_VERSION,
+      });
+      existingCycleKeys.add(key);
+    }
+  }
+
   const decisions: ImpactDecision[] = [];
   const fullIdentityStates: Array<Record<string, unknown>> = [];
   const impactCounts = counts();
@@ -542,7 +616,7 @@ async function computeImpact(
 
   const ruleCycles = [...cyclesById.values()]
     .filter((cycle) => cycle.origin === undefined || cycle.origin === 'RULE')
-    .sort((left, right) => left.id.localeCompare(right.id));
+    .sort((left, right) => cycleIdentity(left).localeCompare(cycleIdentity(right)));
   for (const cycle of ruleCycles) {
     const context = contextByClientService.get(cycle.clientServiceId);
     const calendar = await loadCalendar(db, tenantId, cycle.businessCalendarId, calendarCache);
@@ -550,7 +624,7 @@ async function computeImpact(
       const reason = 'Rule evaluator context is missing';
       impactCounts.warnings += 1;
       evaluationStateByCycle.set(cycle.id, { status: 'WARNING', reason, hash: null, snapshot: null });
-      const identity = `cycle|${cycle.clientServiceId}|${cycle.id}|warning`;
+      const identity = `cycle|${cycle.clientServiceId}|${cycleIdentity(cycle)}|warning`;
       decisions.push({ identity, clientServiceId: cycle.clientServiceId, deadlineOccurrenceId: null, action: 'WARN', oldDate: null, newDate: null, reason });
       fullIdentityStates.push({ identity, action: 'WARN', oldDate: null, newDate: null, reason });
       continue;
@@ -560,7 +634,7 @@ async function computeImpact(
       const reason = 'Rule evaluator input cannot be built';
       impactCounts.warnings += 1;
       evaluationStateByCycle.set(cycle.id, { status: 'WARNING', reason, hash: null, snapshot: null });
-      const identity = `cycle|${cycle.clientServiceId}|${cycle.id}|warning`;
+      const identity = `cycle|${cycle.clientServiceId}|${cycleIdentity(cycle)}|warning`;
       decisions.push({ identity, clientServiceId: cycle.clientServiceId, deadlineOccurrenceId: null, action: 'WARN', oldDate: null, newDate: null, reason });
       fullIdentityStates.push({ identity, action: 'WARN', oldDate: null, newDate: null, reason });
       continue;
@@ -582,7 +656,7 @@ async function computeImpact(
       });
       evaluatedByCycle.set(cycle.id, evaluatorMap(evaluated));
       if (state !== 'OK') {
-        const identity = `cycle|${cycle.clientServiceId}|${cycle.id}|${state.toLowerCase()}`;
+        const identity = `cycle|${cycle.clientServiceId}|${cycleIdentity(cycle)}|${state.toLowerCase()}`;
         decisions.push({ identity, clientServiceId: cycle.clientServiceId, deadlineOccurrenceId: null, action: 'WARN', oldDate: null, newDate: null, reason: reason ?? state });
         fullIdentityStates.push({ identity, action: 'WARN', oldDate: null, newDate: null, reason: reason ?? state });
       }
@@ -593,7 +667,7 @@ async function computeImpact(
       if (status === 'MISSING_INPUT') impactCounts.missingInput += 1;
       else impactCounts.warnings += 1;
       evaluationStateByCycle.set(cycle.id, { status, reason, hash: null, snapshot: null });
-      const identity = `cycle|${cycle.clientServiceId}|${cycle.id}|${status.toLowerCase()}`;
+      const identity = `cycle|${cycle.clientServiceId}|${cycleIdentity(cycle)}|${status.toLowerCase()}`;
       decisions.push({ identity, clientServiceId: cycle.clientServiceId, deadlineOccurrenceId: null, action: 'WARN', oldDate: null, newDate: null, reason });
       fullIdentityStates.push({ identity, action: 'WARN', oldDate: null, newDate: null, reason });
     }
@@ -638,6 +712,11 @@ async function computeImpact(
       reason = 'Occurrence has a manual date override';
     } else if (oldDate < today) {
       reason = 'Occurrence date is historical';
+    } else if (operation === 'ARCHIVE') {
+      action = 'CANCEL';
+      newDate = null;
+      newCalculatedDate = null;
+      reason = 'Rule archive cancels eligible future occurrences';
     } else if (state?.status === 'WARNING' || state?.status === 'MISSING_INPUT' || state?.status === 'INAPPLICABLE') {
       action = 'WARN';
       newDate = oldDate;
@@ -684,6 +763,7 @@ async function computeImpact(
   }
 
   for (const cycle of ruleCycles) {
+    if (operation === 'ARCHIVE') continue;
     const evaluated = evaluatedByCycle.get(cycle.id);
     if (!evaluated) continue;
     const context = contextByClientService.get(cycle.clientServiceId);
@@ -697,12 +777,12 @@ async function computeImpact(
           && occurrence.milestoneKey === milestoneKey
           && (occurrence.scheduleEntryKey ?? '') === scheduleEntryKey;
       })) continue;
-      const identity = decisionIdentity(cycle.clientServiceId, cycle.id, milestoneKey ?? '', scheduleEntryKey, null);
       const newDate = safeDateOnly(next.calculatedDueDate);
-      if (!newDate) continue;
+      if (!newDate || newDate < today || newDate > horizonEnd) continue;
+      const stableIdentity = decisionIdentity(cycle.clientServiceId, cycleIdentity(cycle), milestoneKey ?? '', scheduleEntryKey, null);
       impactCounts.created += 1;
       const decision = {
-        identity,
+        identity: stableIdentity,
         clientServiceId: cycle.clientServiceId,
         deadlineOccurrenceId: null,
         action: 'CREATE' as const,
@@ -712,7 +792,7 @@ async function computeImpact(
       };
       decisions.push(decision);
       fullIdentityStates.push({
-        identity,
+        identity: stableIdentity,
         clientServiceId: cycle.clientServiceId,
         cycleId: cycle.id,
         milestoneKey,
@@ -733,7 +813,18 @@ async function computeImpact(
   const previewFingerprint = hashConfiguration({
     ruleId,
     tenantId,
+    operation,
+    rollingPlan: { version: ROLLING_PLAN_VERSION, today, horizonEnd },
     currentPublishedVersion: currentVersionNumber(scope.current),
+    currentVersionId: scope.rule.currentVersionId ?? scope.current?.id ?? null,
+    draftId: scope.draft.id,
+    draftState: scope.draft.state,
+    sourceState: {
+      isActive: scope.rule.isActive !== false,
+      archivedAt: scope.rule.archivedAt?.toISOString() ?? null,
+      archivedById: scope.rule.archivedById ?? null,
+      archiveReason: scope.rule.archiveReason ?? null,
+    },
     draftRevision: scope.draft.draftRevision,
     draftConfigHash: scope.draft.configHash,
     today,
@@ -755,12 +846,20 @@ async function computeImpact(
   return {
     impact: {
       ruleId,
+      operation,
       currentPublishedVersion: currentVersionNumber(scope.current),
       draftRevision: scope.draft.draftRevision,
       draftConfigHash: scope.draft.configHash,
       previewFingerprint,
       counts: impactCounts,
       samples,
+      sourceState: {
+        currentVersionId: scope.rule.currentVersionId ?? scope.current?.id ?? null,
+        draftId: scope.draft.id,
+        draftState: scope.draft.state,
+        isActive: scope.rule.isActive !== false,
+        archivedAt: scope.rule.archivedAt?.toISOString() ?? null,
+      },
     },
     scope,
   };
@@ -768,20 +867,39 @@ async function computeImpact(
 
 function identityMatches(
   impact: DeadlineRuleImpact,
-  input: Pick<DeadlineRuleImpactInput, 'expectedCurrentVersion' | 'expectedDraftRevision' | 'draftConfigHash'>,
+  input: Pick<DeadlineRuleImpactInput, 'operation' | 'expectedCurrentVersion' | 'expectedDraftRevision' | 'draftConfigHash'>,
 ): boolean {
-  return impact.currentPublishedVersion === input.expectedCurrentVersion
+  return impact.operation === input.operation
+    && impact.currentPublishedVersion === input.expectedCurrentVersion
     && impact.draftRevision === input.expectedDraftRevision
     && impact.draftConfigHash === input.draftConfigHash;
 }
 
-function staleImpact(impact: DeadlineRuleImpact): DeadlineApiError {
+function staleImpact(impact: DeadlineRuleImpact | null): DeadlineApiError {
   return new DeadlineApiError(
     ErrorCodes.IMPACT_CHANGED,
     'Deadline rule impact preview is stale',
     409,
-    { impact },
+    impact ? { impact } : undefined,
   );
+}
+
+async function bestFreshImpact(
+  db: ImpactDb,
+  ruleId: string,
+  tenantId: string,
+  operation: DeadlineRuleImpactOperation,
+  options: DeadlineRuleImpactOptions | undefined,
+  fallback: DeadlineRuleImpact,
+): Promise<DeadlineRuleImpact> {
+  try {
+    return (await computeImpact(db, ruleId, tenantId, operation, {
+      ...options,
+      allowMissingDraft: true,
+    })).impact;
+  } catch {
+    return fallback;
+  }
 }
 
 function parseImpactInput(rawInput: DeadlineRuleImpactInput): DeadlineRuleImpactInput {
@@ -804,7 +922,7 @@ export async function previewDeadlineRuleImpact(
 ): Promise<DeadlineRuleImpact> {
   if (typeof ruleId !== 'string' || ruleId.trim().length === 0) throw new ValidationError('ruleId must be a non-empty string');
   const input = parseImpactInput(rawInput);
-  const { impact } = await computeImpact(prisma, ruleId, actor.tenantId, options);
+  const { impact } = await computeImpact(prisma, ruleId, actor.tenantId, input.operation, options);
   if (!identityMatches(impact, input)) throw staleImpact(impact);
   return impact;
 }
@@ -817,15 +935,27 @@ export async function publishDeadlineRule(
 ): Promise<DeadlineRuleDto> {
   const input = parseApplyIdentity(rawInput);
   await runSerializableTransaction(prisma, async (tx) => {
-    const { impact, scope } = await computeImpact(tx, ruleId, actor.tenantId, options);
+    const { impact, scope } = await computeImpact(tx, ruleId, actor.tenantId, input.operation, {
+      ...options,
+      allowMissingDraft: true,
+    });
     if (!identityMatches(impact, input) || input.previewFingerprint !== impact.previewFingerprint) {
       throw staleImpact(impact);
     }
     const version = Math.max(0, ...(scope.rule.versions ?? []).map((row) => row.version)) + 1;
     const versionDelegate = delegate(tx, 'deadlineRuleVersion');
-    if (!versionDelegate?.update) throw new ValidationError('Deadline rule version persistence is unavailable');
-    await versionDelegate.update({
-      where: { id: scope.draft.id },
+    const ruleDelegate = delegate(tx, 'deadlineRule');
+    if (!versionDelegate?.updateMany || !ruleDelegate?.updateMany) throw new ValidationError('Deadline rule CAS persistence is unavailable');
+    const versionChanged = await versionDelegate.updateMany({
+      where: {
+        id: scope.draft.id,
+        tenantId: actor.tenantId,
+        ruleId,
+        state: 'DRAFT',
+        version: 0,
+        draftRevision: input.expectedDraftRevision,
+        configHash: input.draftConfigHash,
+      },
       data: {
         version,
         state: 'PUBLISHED',
@@ -833,12 +963,24 @@ export async function publishDeadlineRule(
         publishedById: actor.userId,
       },
     });
-    const ruleDelegate = delegate(tx, 'deadlineRule');
-    if (!ruleDelegate?.update) throw new ValidationError('Deadline rule persistence is unavailable');
-    await ruleDelegate.update({
-      where: { id: ruleId, tenantId: actor.tenantId },
-      data: { currentVersionId: scope.draft.id, updatedById: actor.userId, isActive: true, archivedAt: null },
+    if (!isRecord(versionChanged) || versionChanged.count !== 1) {
+      throw staleImpact(await bestFreshImpact(tx, ruleId, actor.tenantId, input.operation, options, impact));
+    }
+    const ruleChanged = await ruleDelegate.updateMany({
+      where: {
+        id: ruleId,
+        tenantId: actor.tenantId,
+        currentVersionId: scope.current?.id ?? null,
+        isActive: true,
+        archivedAt: null,
+        archivedById: null,
+        archiveReason: null,
+      },
+      data: { currentVersionId: scope.draft.id, updatedById: actor.userId },
     });
+    if (!isRecord(ruleChanged) || ruleChanged.count !== 1) {
+      throw staleImpact(await bestFreshImpact(tx, ruleId, actor.tenantId, input.operation, options, impact));
+    }
     await createAuditLog({
       tenantId: actor.tenantId,
       userId: actor.userId,
@@ -880,15 +1022,26 @@ export async function archiveDeadlineRule(
 ): Promise<DeadlineRuleDto> {
   const input = parseArchiveInput(rawInput);
   await runSerializableTransaction(prisma, async (tx) => {
-    const { impact, scope } = await computeImpact(tx, ruleId, actor.tenantId, options);
+    const { impact, scope } = await computeImpact(tx, ruleId, actor.tenantId, input.operation, {
+      ...options,
+      allowMissingDraft: true,
+    });
     if (!identityMatches(impact, input) || input.previewFingerprint !== impact.previewFingerprint) {
       throw staleImpact(impact);
     }
     const ruleDelegate = delegate(tx, 'deadlineRule');
-    if (!ruleDelegate?.update) throw new ValidationError('Deadline rule persistence is unavailable');
+    if (!ruleDelegate?.updateMany) throw new ValidationError('Deadline rule CAS persistence is unavailable');
     const archivedAt = new Date();
-    await ruleDelegate.update({
-      where: { id: ruleId, tenantId: actor.tenantId },
+    const ruleChanged = await ruleDelegate.updateMany({
+      where: {
+        id: ruleId,
+        tenantId: actor.tenantId,
+        currentVersionId: scope.current?.id ?? null,
+        isActive: true,
+        archivedAt: null,
+        archivedById: null,
+        archiveReason: null,
+      },
       data: {
         isActive: false,
         archivedAt,
@@ -897,6 +1050,9 @@ export async function archiveDeadlineRule(
         updatedById: actor.userId,
       },
     });
+    if (!isRecord(ruleChanged) || ruleChanged.count !== 1) {
+      throw staleImpact(await bestFreshImpact(tx, ruleId, actor.tenantId, input.operation, options, impact));
+    }
     await createAuditLog({
       tenantId: actor.tenantId,
       userId: actor.userId,

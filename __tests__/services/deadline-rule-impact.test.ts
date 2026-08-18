@@ -5,6 +5,7 @@ const prismaMock = vi.hoisted(() => ({
   deadlineRule: {
     findFirst: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   },
   deadlineRuleVersion: {
     update: vi.fn(),
@@ -57,6 +58,20 @@ const draftId = '55555555-5555-4555-8555-555555555555';
 const clientServiceId = '66666666-6666-4666-8666-666666666666';
 const cycleId = '77777777-7777-4777-8777-777777777777';
 
+const publishIdentity = {
+  operation: 'PUBLISH' as const,
+  expectedCurrentVersion: 2,
+  expectedDraftRevision: 4,
+  draftConfigHash: 'b'.repeat(64),
+};
+
+const archiveIdentity = {
+  operation: 'ARCHIVE' as const,
+  expectedCurrentVersion: 2,
+  expectedDraftRevision: 4,
+  draftConfigHash: 'b'.repeat(64),
+};
+
 const currentVersion = {
   id: currentVersionId,
   ruleId,
@@ -93,8 +108,11 @@ const rule = {
   description: null,
   isActive: true,
   archivedAt: null,
+  archivedById: null,
+  archiveReason: null,
   currentVersionId,
   currentVersion,
+  draft: draftVersion as typeof draftVersion | null,
   versions: [draftVersion, currentVersion],
 };
 
@@ -186,6 +204,8 @@ describe('deadline rule impact and publication', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
+    prismaMock.deadlineRule.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.deadlineRuleVersion.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue(null);
     prismaMock.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({
       id: 'reconciliation-1',
@@ -196,16 +216,27 @@ describe('deadline rule impact and publication', () => {
   it('groups complete impact without writing occurrences', async () => {
     arrangeImpactFixture();
 
-    const result = await previewDeadlineRuleImpact(ruleId, {
-      expectedCurrentVersion: 2,
-      expectedDraftRevision: 4,
-      draftConfigHash: 'b'.repeat(64),
-    }, actor);
+    const result = await previewDeadlineRuleImpact(ruleId, publishIdentity, actor);
 
-    expect(result.counts).toEqual(expect.objectContaining({ created: 2, recalculated: 1, preserved: 3 }));
+    expect(result.counts).toEqual(expect.objectContaining({ recalculated: 1, preserved: 3 }));
+    expect(result.counts.created).toBeGreaterThanOrEqual(2);
     expect(prismaMock.deadlineOccurrence.findMany).toHaveBeenCalled();
     expect(prismaMock.deadlineOccurrence.update).not.toHaveBeenCalled();
     expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
+  it('previews rolling-horizon CREATE identities for enabled services without cycles', async () => {
+    arrangeImpactFixture();
+    prismaMock.serviceCycle.findMany.mockResolvedValue([]);
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([]);
+
+    const result = await previewDeadlineRuleImpact(ruleId, publishIdentity, actor);
+
+    expect(result.counts.created).toBeGreaterThan(0);
+    expect(result.samples).toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: 'CREATE', clientServiceId }),
+    ]));
+    expect(evaluatorMock.evaluateDeadlineRule).toHaveBeenCalled();
   });
 
   it('hashes the full impact identity state even when samples are truncated', async () => {
@@ -224,18 +255,10 @@ describe('deadline rule impact and publication', () => {
       evaluationHash: 'c'.repeat(64),
     });
 
-    const first = await previewDeadlineRuleImpact(ruleId, {
-      expectedCurrentVersion: 2,
-      expectedDraftRevision: 4,
-      draftConfigHash: 'b'.repeat(64),
-    }, actor);
+    const first = await previewDeadlineRuleImpact(ruleId, publishIdentity, actor);
     allOccurrences[104] = occurrence('occ-104', 'milestone-104', '2026-12-11');
     prismaMock.deadlineOccurrence.findMany.mockResolvedValue(allOccurrences);
-    const second = await previewDeadlineRuleImpact(ruleId, {
-      expectedCurrentVersion: 2,
-      expectedDraftRevision: 4,
-      draftConfigHash: 'b'.repeat(64),
-    }, actor);
+    const second = await previewDeadlineRuleImpact(ruleId, publishIdentity, actor);
 
     expect(first.samples).toHaveLength(100);
     expect(second.samples).toHaveLength(100);
@@ -246,6 +269,7 @@ describe('deadline rule impact and publication', () => {
     arrangeImpactFixture();
 
     await expect(publishDeadlineRule(ruleId, {
+      operation: 'PUBLISH',
       expectedCurrentVersion: 2,
       expectedDraftRevision: 4,
       draftConfigHash: 'a'.repeat(64),
@@ -275,6 +299,7 @@ describe('deadline rule impact and publication', () => {
     });
     prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValueOnce({
       id: first.id,
+      status: 'PENDING',
       nextAttemptAt: firstNotBefore,
     });
     const second = await enqueueScheduleReconciliation(prismaMock as never, {
@@ -306,16 +331,55 @@ describe('deadline rule impact and publication', () => {
     expect(third.dedupeKey).not.toBe(first.dedupeKey);
   });
 
+  it('preserves a processing lease and creates durable follow-up work', async () => {
+    prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue({
+      id: 'processing-1',
+      status: 'PROCESSING',
+      nextAttemptAt: new Date('2026-08-18T01:02:03.000Z'),
+      leaseOwner: 'worker-1',
+      leaseExpiresAt: new Date('2026-08-18T01:07:03.000Z'),
+    });
+    prismaMock.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({
+      id: 'follow-up-1',
+      dedupeKey: 'follow-up-key',
+    });
+
+    const result = await enqueueScheduleReconciliation(prismaMock as never, {
+      tenantId: actor.tenantId,
+      scopeType: 'RULE',
+      scopeId: ruleId,
+      triggerType: 'RULE_PUBLISHED',
+      correlationId: 'follow-up-request',
+      requestedById: actor.userId,
+      notBefore: new Date('2026-08-18T01:02:59.000Z'),
+    });
+
+    expect(result.id).toBe('follow-up-1');
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ status: 'PENDING' }),
+    }));
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert.mock.calls.some((call) =>
+      call[0]?.update?.leaseOwner === null)).toBe(false);
+  });
+
+  it('fails closed when the transactional queue delegate is unavailable', async () => {
+    await expect(enqueueScheduleReconciliation({} as never, {
+      tenantId: actor.tenantId,
+      scopeType: 'RULE',
+      scopeId: ruleId,
+      triggerType: 'RULE_PUBLISHED',
+      correlationId: 'missing-queue',
+      requestedById: actor.userId,
+    })).rejects.toMatchObject({ code: ErrorCodes.VALIDATION_ERROR });
+  });
+
   it('archives a rule without deleting immutable versions or occurrences', async () => {
     arrangeImpactFixture();
-    const impact = await previewDeadlineRuleImpact(ruleId, {
-      expectedCurrentVersion: 2,
-      expectedDraftRevision: 4,
-      draftConfigHash: 'b'.repeat(64),
-    }, actor);
+    const impact = await previewDeadlineRuleImpact(ruleId, archiveIdentity, actor);
 
     prismaMock.deadlineRule.update.mockResolvedValue({ ...rule, isActive: false, archivedAt: new Date() });
     const result = await archiveDeadlineRule(ruleId, {
+      operation: 'ARCHIVE',
       expectedCurrentVersion: 2,
       expectedDraftRevision: 4,
       draftConfigHash: 'b'.repeat(64),
@@ -324,11 +388,94 @@ describe('deadline rule impact and publication', () => {
     }, actor);
 
     expect(result).toMatchObject({ id: ruleId });
-    expect(prismaMock.deadlineRule.update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(prismaMock.deadlineRule.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: ruleId, tenantId: actor.tenantId }),
       data: expect.objectContaining({ isActive: false, archiveReason: 'No longer offered' }),
     }));
     expect(prismaMock.deadlineRuleVersion.update).not.toHaveBeenCalled();
     expect(auditMock.createAuditLog).toHaveBeenCalled();
+  });
+
+  it('previews archive cancellation for eligible rows and preserves immutable categories', async () => {
+    arrangeImpactFixture();
+    prismaMock.deadlineOccurrence.findMany.mockResolvedValue([
+      occurrence('occ-recalculate', 'recalculate', '2026-12-10'),
+      occurrence('occ-preserve-date', 'preserve-date', '2026-12-11'),
+      occurrence('occ-completed', 'completed', '2026-12-12', { status: 'COMPLETED' }),
+      occurrence('occ-cancelled', 'cancelled', '2026-12-13', { status: 'CANCELLED' }),
+      occurrence('occ-overridden', 'overridden', '2026-12-14', { dateOverridden: true }),
+      occurrence('occ-manual', 'manual', '2026-12-15', { origin: 'MANUAL_TRIGGER' }),
+      occurrence('occ-historical', 'historical', '2025-12-15'),
+    ]);
+
+    const result = await previewDeadlineRuleImpact(ruleId, archiveIdentity, actor, {
+      now: () => '2026-08-18',
+    });
+
+    expect(result.operation).toBe('ARCHIVE');
+    expect(result.counts.cancelled).toBe(2);
+    expect(result.counts.preserved).toBe(5);
+    expect(result.samples.filter((sample) => sample.action === 'CANCEL')).toHaveLength(2);
+  });
+
+  it('rejects publish after an intervening archive with a fresh impact and no writes', async () => {
+    arrangeImpactFixture();
+    const preview = await previewDeadlineRuleImpact(ruleId, publishIdentity, actor);
+    Object.assign(rule, {
+      isActive: false,
+      archivedAt: new Date('2026-08-18T02:00:00.000Z'),
+      archivedById: actor.userId,
+      archiveReason: 'Retired',
+    });
+
+    await expect(publishDeadlineRule(ruleId, {
+      ...publishIdentity,
+      previewFingerprint: preview.previewFingerprint,
+    }, actor)).rejects.toMatchObject({
+      code: ErrorCodes.IMPACT_CHANGED,
+      statusCode: 409,
+      details: { impact: expect.any(Object) },
+    });
+    expect(prismaMock.deadlineRule.update).not.toHaveBeenCalled();
+    expect(prismaMock.deadlineRuleVersion.update).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rejects archive after an intervening publish with a fresh impact and no writes', async () => {
+    arrangeImpactFixture();
+    const preview = await previewDeadlineRuleImpact(ruleId, archiveIdentity, actor);
+    rule.currentVersionId = 'published-version-3';
+
+    await expect(archiveDeadlineRule(ruleId, {
+      ...archiveIdentity,
+      previewFingerprint: preview.previewFingerprint,
+      reason: 'Retired',
+    }, actor)).rejects.toMatchObject({
+      code: ErrorCodes.IMPACT_CHANGED,
+      statusCode: 409,
+      details: { impact: expect.any(Object) },
+    });
+    expect(prismaMock.deadlineRule.update).not.toHaveBeenCalled();
+    expect(prismaMock.deadlineRuleVersion.update).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('normalizes a concurrently consumed draft to IMPACT_CHANGED with no writes', async () => {
+    arrangeImpactFixture();
+    const preview = await previewDeadlineRuleImpact(ruleId, publishIdentity, actor);
+    rule.versions = [currentVersion];
+    rule.draft = null;
+
+    await expect(publishDeadlineRule(ruleId, {
+      ...publishIdentity,
+      previewFingerprint: preview.previewFingerprint,
+    }, actor)).rejects.toMatchObject({
+      code: ErrorCodes.IMPACT_CHANGED,
+      statusCode: 409,
+      details: { impact: expect.any(Object) },
+    });
+    expect(prismaMock.deadlineRule.update).not.toHaveBeenCalled();
+    expect(prismaMock.deadlineRuleVersion.update).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
   });
 });

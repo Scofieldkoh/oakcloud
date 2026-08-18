@@ -20,6 +20,7 @@ export type {
   DeadlineRuleImpactAction,
   DeadlineRuleImpactCounts,
   DeadlineRuleImpactInput,
+  DeadlineRuleImpactOperation,
   DeadlineRuleImpactOptions,
   DeadlineRuleImpactSample,
   DeadlineRulePublishInput,

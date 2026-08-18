@@ -25,6 +25,18 @@ export function parseRequestTenantId(body: JsonRecord): string | undefined {
   return uuidSchema.optional().parse(body.tenantId);
 }
 
+export function parseStrictTenantQuery(request: Request): string | undefined {
+  const entries = [...new URL(request.url).searchParams.entries()];
+  const allowed = new Set(['tenantId']);
+  const values = new Map<string, string>();
+  for (const [key, value] of entries) {
+    if (!allowed.has(key)) throw new ValidationError(`Unknown query parameter: ${key}`);
+    if (values.has(key)) throw new ValidationError(`Duplicate query parameter: ${key}`);
+    values.set(key, value);
+  }
+  return uuidSchema.optional().parse(values.get('tenantId'));
+}
+
 export function selectRequestTenantId(
   queryTenantId: string | undefined,
   bodyTenantId: string | undefined,

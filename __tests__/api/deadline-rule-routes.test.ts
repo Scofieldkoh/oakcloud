@@ -28,6 +28,7 @@ vi.mock('@/lib/api-helpers', () => ({ resolveWorkspaceId: mocks.resolveWorkspace
 vi.mock('@/services/deadline-rule', async () => {
   const { z } = await import('zod');
   const identity = z.object({
+    operation: z.enum(['PUBLISH', 'ARCHIVE']),
     expectedCurrentVersion: z.number().int().min(0).nullable(),
     expectedDraftRevision: z.number().int().min(1),
     draftConfigHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -41,8 +42,8 @@ vi.mock('@/services/deadline-rule', async () => {
     publishDeadlineRule: mocks.publishDeadlineRule,
     archiveDeadlineRule: mocks.archiveDeadlineRule,
     deadlineRuleImpactPreviewSchema: identity,
-    deadlineRulePublishSchema: identity.extend({ previewFingerprint: z.string().regex(/^[a-f0-9]{64}$/) }).strict(),
-    deadlineRuleArchiveSchema: identity.extend({ previewFingerprint: z.string().regex(/^[a-f0-9]{64}$/), reason: z.string().trim().min(1).max(1000) }).strict(),
+    deadlineRulePublishSchema: identity.extend({ operation: z.literal('PUBLISH'), previewFingerprint: z.string().regex(/^[a-f0-9]{64}$/) }).strict(),
+    deadlineRuleArchiveSchema: identity.extend({ operation: z.literal('ARCHIVE'), previewFingerprint: z.string().regex(/^[a-f0-9]{64}$/), reason: z.string().trim().min(1).max(1000) }).strict(),
   };
 });
 
@@ -127,6 +128,7 @@ describe('deadline rule routes', () => {
   it('previews, publishes, and archives through admin-only POST routes', async () => {
     const ruleId = '33333333-3333-4333-8333-333333333333';
     const identity = {
+      operation: 'PUBLISH' as const,
       expectedCurrentVersion: 2,
       expectedDraftRevision: 4,
       draftConfigHash: 'a'.repeat(64),
@@ -163,7 +165,7 @@ describe('deadline rule routes', () => {
       new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}/archive`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...identity, previewFingerprint: 'b'.repeat(64), reason: 'Retired', tenantId: session.tenantId }),
+        body: JSON.stringify({ ...identity, operation: 'ARCHIVE', previewFingerprint: 'b'.repeat(64), reason: 'Retired', tenantId: session.tenantId }),
       }),
       { params: Promise.resolve({ id: ruleId }) },
     );
@@ -190,6 +192,7 @@ describe('deadline rule routes', () => {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
+          operation: 'PUBLISH',
           expectedCurrentVersion: 2,
           expectedDraftRevision: 4,
           draftConfigHash: 'a'.repeat(64),
@@ -281,7 +284,7 @@ describe('deadline rule routes', () => {
       new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}/publish?tenantId=${session.tenantId}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ expectedCurrentVersion: 2, expectedDraftRevision: 4, draftConfigHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64), tenantId: 'not-a-uuid' }),
+        body: JSON.stringify({ operation: 'PUBLISH', expectedCurrentVersion: 2, expectedDraftRevision: 4, draftConfigHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64), tenantId: 'not-a-uuid' }),
       }),
       { params: Promise.resolve({ id: ruleId }) },
     );
@@ -289,7 +292,7 @@ describe('deadline rule routes', () => {
       new NextRequest('http://localhost/api/service-catalog/deadline-rules/not-a-uuid/archive', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ expectedCurrentVersion: 2, expectedDraftRevision: 4, draftConfigHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64), reason: 'Retired' }),
+        body: JSON.stringify({ operation: 'ARCHIVE', expectedCurrentVersion: 2, expectedDraftRevision: 4, draftConfigHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64), reason: 'Retired' }),
       }),
       { params: Promise.resolve({ id: 'not-a-uuid' }) },
     );
@@ -297,6 +300,27 @@ describe('deadline rule routes', () => {
     expect(invalidImpact.status).toBe(400);
     expect(invalidPublishTenant.status).toBe(400);
     expect(invalidArchiveId.status).toBe(400);
+    expect(mocks.publishDeadlineRule).not.toHaveBeenCalled();
+    expect(mocks.archiveDeadlineRule).not.toHaveBeenCalled();
+  });
+
+  it('rejects unknown and duplicate query parameters on impact, publish, and archive routes', async () => {
+    const ruleId = '33333333-3333-4333-8333-333333333333';
+    const body = JSON.stringify({
+      operation: 'PUBLISH',
+      expectedCurrentVersion: 2,
+      expectedDraftRevision: 4,
+      draftConfigHash: 'a'.repeat(64),
+      previewFingerprint: 'b'.repeat(64),
+    });
+    const archiveBody = JSON.stringify({ ...JSON.parse(body), operation: 'ARCHIVE', reason: 'Retired' });
+    const responses = await Promise.all([
+      previewImpact(new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}/impact?tenantId=${session.tenantId}&unexpected=true`, { method: 'POST', body }), { params: Promise.resolve({ id: ruleId }) }),
+      publish(new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}/publish?tenantId=${session.tenantId}&tenantId=${session.tenantId}`, { method: 'POST', body }), { params: Promise.resolve({ id: ruleId }) }),
+      archive(new NextRequest(`http://localhost/api/service-catalog/deadline-rules/${ruleId}/archive?unexpected=true`, { method: 'POST', body: archiveBody }), { params: Promise.resolve({ id: ruleId }) }),
+    ]);
+    expect(responses.map((response) => response.status)).toEqual([400, 400, 400]);
+    expect(mocks.previewDeadlineRuleImpact).not.toHaveBeenCalled();
     expect(mocks.publishDeadlineRule).not.toHaveBeenCalled();
     expect(mocks.archiveDeadlineRule).not.toHaveBeenCalled();
   });
