@@ -54,6 +54,14 @@ describe('use deadlines hooks', () => {
     expect(deadlineSearchParams(search)).toContain('types=STATUTORY%2CINTERNAL');
   });
 
+  it('serializes inline text filters and the supported page size', () => {
+    const params = deadlineSearchParams({ ...search, companyQuery: ' Oaktree ', serviceQuery: 'Annual Return', milestoneQuery: 'annual-return', limit: 100 });
+    expect(params).toContain('companyQuery=Oaktree');
+    expect(params).toContain('serviceQuery=Annual+Return');
+    expect(params).toContain('milestoneQuery=annual-return');
+    expect(params).toContain('limit=100');
+  });
+
   it('fetches a normalized deadline list with the stable key', async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ mode: 'TABLE', items: [], total: 0, page: 1, limit: 50, totalPages: 0 }));
     const { queryClient, wrapper } = createHarness();

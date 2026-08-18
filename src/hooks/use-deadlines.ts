@@ -93,6 +93,9 @@ export function normalizeDeadlineSearch(input: DeadlineSearchInput = {}): Deadli
     timing: uniqueOrdered(input.timing, timingOrder),
     openOnly: input.openOnly ?? true,
     origin: input.origin,
+    companyQuery: input.companyQuery?.trim() ?? '',
+    serviceQuery: input.serviceQuery?.trim() ?? '',
+    milestoneQuery: input.milestoneQuery?.trim() ?? '',
     page: Number.isSafeInteger(input.page) && input.page! >= 1 ? input.page : 1,
     limit: Number.isSafeInteger(input.limit) && input.limit! >= 1 ? Math.min(input.limit!, 100) : 50,
     sortBy: input.sortBy ?? 'dueDate',
@@ -122,6 +125,9 @@ export function deadlineSearchParams(search: DeadlineSearchInput = {}): string {
   params.set('timing', normalized.timing.join(','));
   params.set('openOnly', String(normalized.openOnly));
   if (normalized.origin) params.set('origin', normalized.origin);
+  if (normalized.companyQuery) params.set('companyQuery', normalized.companyQuery);
+  if (normalized.serviceQuery) params.set('serviceQuery', normalized.serviceQuery);
+  if (normalized.milestoneQuery) params.set('milestoneQuery', normalized.milestoneQuery);
   params.set('page', String(normalized.page));
   params.set('limit', String(normalized.limit));
   params.set('sortBy', normalized.sortBy);

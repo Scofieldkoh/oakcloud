@@ -303,15 +303,21 @@ export function deadlineWhereForSearch(
   const companyIds = requestedDeadlineCompanyIds(input, scope);
   const where: Prisma.DeadlineOccurrenceWhereInput = {
     tenantId: scope.tenantId,
-    company: { tenantId: scope.tenantId, deletedAt: null },
+    company: {
+      tenantId: scope.tenantId,
+      deletedAt: null,
+      ...(input.companyQuery ? { name: { contains: input.companyQuery, mode: 'insensitive' } } : {}),
+    },
     operativeDueDate: {
       gte: toDateInput(input.from as `${number}-${number}-${number}`),
       lte: toDateInput(input.to as `${number}-${number}-${number}`),
     },
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
+    ...(input.milestoneQuery ? { milestoneKey: { contains: input.milestoneQuery, mode: 'insensitive' } } : {}),
     clientService: {
       tenantId: scope.tenantId,
+      ...(input.serviceQuery ? { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } } : {}),
       serviceVariant: {
         tenantId: scope.tenantId,
         family: { tenantId: scope.tenantId },

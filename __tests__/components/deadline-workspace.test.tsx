@@ -5,6 +5,7 @@ import type { DeadlineOccurrenceDto } from '@/services/deadline';
 const hooks = vi.hoisted(() => ({
   useDeadlines: vi.fn(),
   useUpdateDeadlineOccurrence: vi.fn(),
+  useResetDeadlineDateOverride: vi.fn(),
   useServiceRosterFamilies: vi.fn(),
   useUserPreference: vi.fn(),
   useUpsertUserPreference: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/hooks/use-deadlines', () => ({
   useDeadlines: hooks.useDeadlines,
   useUpdateDeadlineOccurrence: hooks.useUpdateDeadlineOccurrence,
+  useResetDeadlineDateOverride: hooks.useResetDeadlineDateOverride,
 }));
 vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: hooks.useServiceRosterFamilies }));
 vi.mock('@/hooks/use-user-preferences', () => ({
@@ -99,6 +101,7 @@ function setup() {
     error: null,
   });
   hooks.useUpdateDeadlineOccurrence.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  hooks.useResetDeadlineDateOverride.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null });
   hooks.useServiceRosterFamilies.mockReturnValue({
     data: [{ id: familyId, name: 'Accounting', displayColor: '#3F6DA8' }],
     isLoading: false,
@@ -158,5 +161,16 @@ describe('DeadlineWorkspace', () => {
     }));
     expect(screen.getByRole('button', { name: 'Client' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Statutory' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('suppresses lifecycle writes when the deadline-write feature flag is disabled', () => {
+    const update = vi.fn();
+    hooks.useUpdateDeadlineOccurrence.mockReturnValue({ mutate: update, isPending: false });
+    render(<DeadlineWorkspace canEdit deadlineWritesEnabled={false} />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Actions for OACS Annual Return/ })[0]!);
+    expect(screen.getByText('Read-only access')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
   });
 });

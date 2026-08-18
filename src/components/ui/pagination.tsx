@@ -23,6 +23,8 @@ export interface PaginationProps {
   showJumpToPage?: boolean;
   /** Additional class name */
   className?: string;
+  /** Use 44px touch targets for dense mobile surfaces such as deadlines. */
+  largeTouchTargets?: boolean;
   /** Optional page-size options for routes with a lower API limit. */
   pageSizeOptions?: readonly number[];
 }
@@ -65,6 +67,7 @@ export function Pagination({
   showJumpToPage = true,
   className,
   pageSizeOptions = PAGE_SIZE_OPTIONS,
+  largeTouchTargets = false,
 }: PaginationProps) {
   const pageSizeId = useId();
   const jumpInputId = useId();
@@ -158,7 +161,7 @@ export function Pagination({
               id={pageSizeId}
               value={limit}
               onChange={(event) => onLimitChange(Number(event.target.value))}
-              className="h-9 rounded-xl border border-border-primary bg-background-primary px-3 text-sm text-text-primary transition-colors hover:border-oak-primary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+              className={cn(largeTouchTargets ? 'min-h-11' : 'h-9', 'rounded-xl border border-border-primary bg-background-primary px-3 text-sm text-text-primary transition-colors hover:border-oak-primary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20')}
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -177,7 +180,7 @@ export function Pagination({
             onClick={() => goToPage(page - 1)}
             disabled={page === 1}
             className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
+              cn('flex items-center justify-center rounded-xl transition-colors', largeTouchTargets ? 'min-h-11 min-w-11' : 'h-8 w-8'),
               page === 1
                 ? 'cursor-not-allowed text-text-muted'
                 : 'text-text-primary hover:bg-background-primary'
@@ -203,7 +206,7 @@ export function Pagination({
                   type="button"
                   onClick={() => goToPage(pageNumber)}
                   className={cn(
-                    'h-8 min-w-[32px] rounded-xl px-2.5 text-sm font-medium transition-colors',
+                    largeTouchTargets ? 'min-h-11 min-w-11 rounded-xl px-2.5 text-sm font-medium transition-colors' : 'h-8 min-w-[32px] rounded-xl px-2.5 text-sm font-medium transition-colors',
                     pageNumber === page
                       ? 'bg-oak-primary text-white shadow-sm'
                       : 'text-text-secondary hover:bg-background-primary hover:text-text-primary'
@@ -222,7 +225,7 @@ export function Pagination({
             onClick={() => goToPage(page + 1)}
             disabled={page === totalPages}
             className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
+              cn('flex items-center justify-center rounded-xl transition-colors', largeTouchTargets ? 'min-h-11 min-w-11' : 'h-8 w-8'),
               page === totalPages
                 ? 'cursor-not-allowed text-text-muted'
                 : 'text-text-primary hover:bg-background-primary'

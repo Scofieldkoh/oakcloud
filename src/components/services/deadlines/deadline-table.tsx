@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-react';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Pagination } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
+import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import { DeadlineEvent, milestoneLabel } from './deadline-event';
 
 export const DEADLINE_TABLE_COLUMNS = [
@@ -22,7 +23,7 @@ export const DEADLINE_TABLE_COLUMNS = [
 
 export type DeadlineTableColumnId = (typeof DEADLINE_TABLE_COLUMNS)[number];
 export type DeadlineSortBy = 'dueDate' | 'company' | 'family' | 'service' | 'type' | 'status';
-export type DeadlineColumnWidths = Record<string, number | undefined>;
+export type DeadlineColumnWidths = Record<string, number>;
 
 export interface DeadlineTableProps {
   items?: DeadlineOccurrenceDto[];
@@ -37,13 +38,15 @@ export interface DeadlineTableProps {
   columnOrder?: DeadlineTableColumnId[];
   columnVisibility?: Record<DeadlineTableColumnId, boolean>;
   canEdit?: boolean;
+  isPending?: boolean;
+  mutationError?: unknown;
   onSort?: (sortBy: DeadlineSortBy) => void;
   onPageChange?: (page: number) => void;
   onLimitChange?: (limit: number) => void;
   onColumnWidthChange?: (columnId: DeadlineTableColumnId, width: number) => void;
   onColumnResizeEnd?: (columnId: DeadlineTableColumnId, width: number) => void;
-  onComplete?: (occurrence: DeadlineOccurrenceDto) => void;
-  onWaive?: (occurrence: DeadlineOccurrenceDto) => void;
+  onUpdate?: (occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => void;
+  onResetOverride?: (occurrence: DeadlineOccurrenceDto, reason: string) => void;
 }
 
 export const deadlineColumnLabels: Record<DeadlineTableColumnId, string> = {
@@ -136,71 +139,63 @@ function FamilyServiceCell({ occurrence }: { occurrence: DeadlineOccurrenceDto }
   );
 }
 
-function SortableHeader({
-  columnId,
-  sortBy,
-  sortOrder,
-  onSort,
-  onResize,
-}: {
-  columnId: DeadlineTableColumnId;
-  sortBy: DeadlineSortBy;
-  sortOrder: 'asc' | 'desc';
-  onSort?: (sortBy: DeadlineSortBy) => void;
-  onResize: (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLButtonElement>) => void;
-}) {
-  const field = sortFields[columnId];
-  const active = field === sortBy;
-  const label = deadlineColumnLabels[columnId];
-  return (
-    <th scope="col" className="relative px-4 py-3 text-left text-xs font-medium text-text-secondary">
-      {field && onSort ? (
-        <button
-          type="button"
-          aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`}
-          onClick={() => onSort(field)}
-          className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary"
-        >
-          <span>{label}</span>
-          {active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}
-        </button>
-      ) : <span>{label}</span>}
-      {columnId !== 'actions' ? (
-        <button
-          type="button"
-          aria-label={`Resize ${label} column`}
-          onPointerDown={(event) => onResize(columnId, event)}
-          className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none"
-        />
-      ) : null}
-    </th>
-  );
+function actionDialogPosition(trigger: HTMLButtonElement): { left: number; top: number } {
+  const rect = trigger.getBoundingClientRect();
+  const width = Math.min(360, Math.max(280, window.innerWidth - 32));
+  const left = Math.min(Math.max(16, rect.right - width), Math.max(16, window.innerWidth - width - 16));
+  const estimatedHeight = 480;
+  const top = rect.bottom + estimatedHeight <= window.innerHeight - 16
+    ? rect.bottom + 8
+    : Math.max(16, rect.top - estimatedHeight - 8);
+  return { left, top };
 }
 
-function DeadlineActions({ occurrence, canEdit, onComplete, onWaive }: { occurrence: DeadlineOccurrenceDto; canEdit: boolean; onComplete?: (occurrence: DeadlineOccurrenceDto) => void; onWaive?: (occurrence: DeadlineOccurrenceDto) => void }) {
+function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpdate, onResetOverride }: { occurrence: DeadlineOccurrenceDto; canEdit: boolean; isPending: boolean; mutationError?: unknown; onUpdate?: DeadlineTableProps['onUpdate']; onResetOverride?: DeadlineTableProps['onResetOverride'] }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ left: 16, top: 16 });
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    setPosition(actionDialogPosition(triggerRef.current));
+    dialogRef.current?.querySelector<HTMLElement>('button, input, textarea')?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+    const handleOutside = (event: MouseEvent) => {
+      if (!dialogRef.current?.contains(event.target as Node) && !triggerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleOutside);
+    };
+  }, [open]);
+
   return (
     <div className="relative flex items-center justify-end">
-      <button
-        type="button"
-        aria-label={`Actions for ${occurrence.company.displayLabel} ${milestoneLabel(occurrence)}`}
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary"
-      >
+      <button ref={triggerRef} type="button" aria-label={`Actions for ${occurrence.company.displayLabel} ${milestoneLabel(occurrence)}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary">
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
       {open ? (
-        <div role="menu" className="absolute right-0 top-full z-20 mt-1 min-w-44 rounded-xl border border-border-primary bg-background-elevated p-1 shadow-elevation-2">
-          <DeadlineEvent occurrence={occurrence} onComplete={onComplete} onWaive={onWaive} />
-          {!canEdit ? <span className="block px-3 py-2 text-xs text-text-muted">Read-only access</span> : null}
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Deadline actions" className="fixed z-30 w-[min(22.5rem,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-elevated p-2 shadow-elevation-2" style={{ left: position.left, top: position.top }} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); setOpen(false); triggerRef.current?.focus(); } }}>
+          <DeadlineEvent occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />
+          {!canEdit ? <p className="px-2 py-2 text-xs text-text-muted">Read-only access</p> : null}
         </div>
       ) : null}
     </div>
   );
 }
 
-function DesktopCell({ occurrence, column, canEdit, onComplete, onWaive }: { occurrence: DeadlineOccurrenceDto; column: DeadlineTableColumnId; canEdit: boolean; onComplete?: (occurrence: DeadlineOccurrenceDto) => void; onWaive?: (occurrence: DeadlineOccurrenceDto) => void }) {
+function DesktopCell({ occurrence, column, canEdit, isPending, mutationError, onUpdate, onResetOverride }: { occurrence: DeadlineOccurrenceDto; column: DeadlineTableColumnId; canEdit: boolean; isPending: boolean; mutationError?: unknown; onUpdate?: DeadlineTableProps['onUpdate']; onResetOverride?: DeadlineTableProps['onResetOverride'] }) {
   switch (column) {
     case 'dueDate': return <td className="px-4 py-3 align-top text-sm text-text-primary"><span className="whitespace-nowrap">{dateLabel(occurrence.operativeDueDate)}</span>{occurrence.dateOverridden ? <span className="ml-1 inline-flex rounded-full bg-background-tertiary px-1.5 py-0.5 text-[10px] text-text-secondary">Override</span> : null}</td>;
     case 'timing': return <td className="px-4 py-3 align-top"><span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span></td>;
@@ -209,28 +204,40 @@ function DesktopCell({ occurrence, column, canEdit, onComplete, onWaive }: { occ
     case 'milestone': return <td className="max-w-0 px-4 py-3 align-top text-sm text-text-primary"><span className="block truncate" title={milestoneLabel(occurrence)}>{milestoneLabel(occurrence)}</span></td>;
     case 'type': return <td className="px-4 py-3 align-top"><span className="badge badge-info">{typeLabels[occurrence.deadlineType]}</span></td>;
     case 'status': return <td className="px-4 py-3 align-top"><span className={cn('badge', statusClass(occurrence.status))}>{occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()}</span></td>;
-    case 'cycleOrigin': return <td className="px-4 py-3 align-top text-xs text-text-secondary"><span className="block">{occurrence.cycle?.periodKey || '—'}</span><span className="block text-text-muted">{occurrence.origin === 'MANUAL_TRIGGER' ? 'Manual trigger' : 'Rule'}</span></td>;
-    case 'actions': return <td className="px-4 py-3 align-top"><DeadlineActions occurrence={occurrence} canEdit={canEdit} onComplete={onComplete} onWaive={onWaive} /></td>;
+    case 'cycleOrigin': return <td className="px-4 py-3 align-top text-xs text-text-secondary"><span className="block">{occurrence.cycle?.periodKey || '—'}</span><span className="block text-text-muted">{occurrence.origin === 'MANUAL_TRIGGER' ? 'Manual trigger' : `Rule ${occurrence.ruleVersionId}`}</span></td>;
+    case 'actions': return <td className="px-4 py-3 align-top"><DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} /></td>;
   }
 }
 
-function MobileDeadlineCard({ occurrence, canEdit, onComplete, onWaive }: { occurrence: DeadlineOccurrenceDto; canEdit: boolean; onComplete?: (occurrence: DeadlineOccurrenceDto) => void; onWaive?: (occurrence: DeadlineOccurrenceDto) => void }) {
+function MobileDeadlineCard({ occurrence, canEdit, isPending, mutationError, onUpdate, onResetOverride }: { occurrence: DeadlineOccurrenceDto; canEdit: boolean; isPending: boolean; mutationError?: unknown; onUpdate?: DeadlineTableProps['onUpdate']; onResetOverride?: DeadlineTableProps['onResetOverride'] }) {
   return (
     <MobileCard
       title={<CompanyCell occurrence={occurrence} />}
       subtitle={<span title={occurrence.service.name}>{occurrence.service.name || occurrence.service.variantName || '—'} · {milestoneLabel(occurrence)}</span>}
       badge={<span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span>}
-      actions={<DeadlineActions occurrence={occurrence} canEdit={canEdit} onComplete={onComplete} onWaive={onWaive} />}
+      actions={<DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />}
       details={(
         <CardDetailsGrid>
           <CardDetailItem label="Due date" value={dateLabel(occurrence.operativeDueDate)} />
           <CardDetailItem label="Family" value={<FamilyServiceCell occurrence={occurrence} />} />
           <CardDetailItem label="Type" value={typeLabels[occurrence.deadlineType]} />
           <CardDetailItem label="Status" value={occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()} />
-          <CardDetailItem label="Cycle / origin" value={`${occurrence.cycle?.periodKey || '—'} · ${occurrence.origin === 'MANUAL_TRIGGER' ? 'Manual' : 'Rule'}`} />
+          <CardDetailItem label="Cycle / origin" value={`${occurrence.cycle?.periodKey || '—'} · ${occurrence.origin === 'MANUAL_TRIGGER' ? 'Manual' : `Rule ${occurrence.ruleVersionId}`}`} />
         </CardDetailsGrid>
       )}
     />
+  );
+}
+
+function SortableHeader({ columnId, sortBy, sortOrder, onSort, onResize }: { columnId: DeadlineTableColumnId; sortBy: DeadlineSortBy; sortOrder: 'asc' | 'desc'; onSort?: (sortBy: DeadlineSortBy) => void; onResize: (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLButtonElement>) => void }) {
+  const field = sortFields[columnId];
+  const active = field === sortBy;
+  const label = deadlineColumnLabels[columnId];
+  return (
+    <th scope="col" className="relative px-4 py-3 text-left text-xs font-medium text-text-secondary">
+      {field && onSort ? <button type="button" aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`} onClick={() => onSort(field)} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary"><span>{label}</span>{active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}</button> : <span>{label}</span>}
+      {columnId !== 'actions' ? <button type="button" aria-label={`Resize ${label} column`} onPointerDown={(event) => onResize(columnId, event)} className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none" /> : null}
+    </th>
   );
 }
 
@@ -247,18 +254,17 @@ export function DeadlineTable({
   columnOrder = [...DEADLINE_TABLE_COLUMNS],
   columnVisibility = Object.fromEntries(DEADLINE_TABLE_COLUMNS.map((column) => [column, true])) as Record<DeadlineTableColumnId, boolean>,
   canEdit = false,
+  isPending = false,
+  mutationError,
   onSort,
   onPageChange,
   onLimitChange,
   onColumnWidthChange,
   onColumnResizeEnd,
-  onComplete,
-  onWaive,
+  onUpdate,
+  onResetOverride,
 }: DeadlineTableProps) {
-  const visibleColumns = useMemo(
-    () => columnOrder.filter((column) => columnVisibility[column]),
-    [columnOrder, columnVisibility],
-  );
+  const visibleColumns = useMemo(() => columnOrder.filter((column) => columnVisibility[column]), [columnOrder, columnVisibility]);
   const startResize = (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     const startX = event.clientX;
@@ -279,37 +285,21 @@ export function DeadlineTable({
 
   return (
     <>
-      <div className="space-y-3 md:hidden" aria-label="Deadline cards">
-        {items.map((occurrence) => <MobileDeadlineCard key={occurrence.id} occurrence={occurrence} canEdit={canEdit} onComplete={onComplete} onWaive={onWaive} />)}
-      </div>
-      <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
-        <table className="min-w-[1500px] w-full table-fixed border-collapse" aria-label="Deadline occurrences table">
-          <colgroup>{visibleColumns.map((column) => <col key={column} style={{ width: `${columnWidths[column] ?? defaultDeadlineColumnWidths[column]}px` }} />)}</colgroup>
-          <thead>
-            <tr className="border-b border-border-primary bg-background-tertiary/70">
-              {visibleColumns.map((column) => <SortableHeader key={column} columnId={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} />)}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((occurrence, index) => (
-              <tr key={occurrence.id} className={cn('border-b border-border-primary transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')}>
-                {visibleColumns.map((column) => <DesktopCell key={column} occurrence={occurrence} column={column} canEdit={canEdit} onComplete={onComplete} onWaive={onWaive} />)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {onPageChange ? (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          limit={limit}
-          pageSizeOptions={[10, 20, 50, 100]}
-          onPageChange={onPageChange}
-          onLimitChange={onLimitChange}
-        />
+      {items.length > 0 ? (
+        <>
+          <div className="space-y-3 md:hidden" aria-label="Deadline cards">
+            {items.map((occurrence) => <MobileDeadlineCard key={occurrence.id} occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />)}
+          </div>
+          <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
+            <table className="min-w-[1500px] w-full table-fixed border-collapse" aria-label="Deadline occurrences table">
+              <colgroup>{visibleColumns.map((column) => <col key={column} style={{ width: `${columnWidths[column] ?? defaultDeadlineColumnWidths[column]}px` }} />)}</colgroup>
+              <thead><tr className="border-b border-border-primary bg-background-tertiary/70">{visibleColumns.map((column) => <SortableHeader key={column} columnId={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} />)}</tr></thead>
+              <tbody>{items.map((occurrence, index) => <tr key={occurrence.id} className={cn('border-b border-border-primary border-l-4 transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')} style={{ borderLeftColor: occurrence.family.displayColor ?? '#58736a' }}>{visibleColumns.map((column) => <DesktopCell key={column} occurrence={occurrence} column={column} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />)}</tr>)}</tbody>
+            </table>
+          </div>
+        </>
       ) : null}
+      {onPageChange ? <Pagination page={page} totalPages={totalPages} total={total} limit={limit} pageSizeOptions={[10, 20, 50, 100]} largeTouchTargets onPageChange={onPageChange} onLimitChange={onLimitChange} /> : null}
     </>
   );
 }

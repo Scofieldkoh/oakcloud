@@ -41,7 +41,9 @@ export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = tru
   }
 
   const selectTab = (nextTab: ServicesWorkspaceTab) => {
-    router.replace(`${pathname}?tab=${nextTab}`, { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', nextTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -69,7 +71,7 @@ export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = tru
       {tab === 'services' ? (
         <ServiceRoster workspaceId={workspaceId} canEdit={canEdit} canCreate={canCreate} />
       ) : tab === 'deadlines' ? (
-        <DeadlineWorkspace workspaceId={workspaceId} canEdit={canEdit} />
+        <DeadlineWorkspace workspaceId={workspaceId} canEdit={canEdit} deadlineWritesEnabled={settings.data.deadlineWritesEnabled} />
       ) : (
         <section role="status" className="rounded-xl border border-dashed border-border-primary bg-background-secondary p-6 text-sm text-text-secondary">
           Billing tracking is coming soon.

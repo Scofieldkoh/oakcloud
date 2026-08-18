@@ -11,6 +11,7 @@ export const deadlineTimingSchema = z.enum(['UPCOMING', 'DUE', 'OVERDUE']);
 export const deadlineOriginSchema = z.enum(['RULE', 'MANUAL_TRIGGER']);
 export const deadlineSortBySchema = z.enum(['dueDate', 'company', 'family', 'service', 'type', 'status']);
 export const deadlineSortOrderSchema = z.enum(['asc', 'desc']);
+const deadlineQueryTextSchema = z.string().trim().max(200).default('');
 
 /**
  * Typed deadline filters after transport parsing. Query strings are parsed by
@@ -28,6 +29,9 @@ export const deadlineSearchSchema = z.object({
   timing: z.array(deadlineTimingSchema).max(3).default([]),
   openOnly: z.boolean().default(true),
   origin: deadlineOriginSchema.optional(),
+  companyQuery: deadlineQueryTextSchema,
+  serviceQuery: deadlineQueryTextSchema,
+  milestoneQuery: deadlineQueryTextSchema,
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   sortBy: deadlineSortBySchema.default('dueDate'),
@@ -92,7 +96,7 @@ export type ResetDeadlineDateOverrideInput = z.infer<typeof resetDeadlineDateOve
 
 const allowedQueryKeys = new Set([
   'from', 'to', 'mode', 'types', 'familyIds', 'companyIds', 'statuses', 'timing',
-  'openOnly', 'origin', 'page', 'limit', 'sortBy', 'sortOrder',
+  'openOnly', 'origin', 'companyQuery', 'serviceQuery', 'milestoneQuery', 'page', 'limit', 'sortBy', 'sortOrder',
 ]);
 
 function toSearchParams(input: Request | URL | URLSearchParams): URLSearchParams {

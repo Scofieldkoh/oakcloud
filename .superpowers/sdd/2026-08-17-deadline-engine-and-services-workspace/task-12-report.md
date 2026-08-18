@@ -1,6 +1,6 @@
 # Task 12 report — deadline table/calendar views and preferences
 
-Status: implementation-complete / pending review
+Status: implementation-complete / pending rereview
 
 ## Scope delivered
 
@@ -37,12 +37,37 @@ because the deadline workspace/calendar imports were absent:
 
 ### GREEN
 
-- Component and compatibility suite: 18 tests passed across 4 files (3
-  workspace, 2 calendar, 2 Services workspace, 11 service-roster).
+- Focused Task 12 component suite: 19 tests passed across four files,
+  including canonical URL ranges, malformed URL fallback, server-backed
+  filters, preference precedence, page-size persistence, lifecycle actions,
+  dialog focus/escape/outside/return behavior, compact agenda caps, and live
+  table-column resize persistence.
+- Relevant Task 10/11 compatibility suite: 113 tests passed across 12 files,
+  including deadline service/routes/hooks/validation and service-roster
+  preference/facet/security behavior.
 - Chromium browser fixtures: 2 tests passed in
   `__tests__/browser/services-deadlines.browser.test.tsx`.
 - `npx.cmd tsc --noEmit --pretty false`: PASS.
 - Scoped ESLint over Task 12 source/tests: PASS, 0 warnings.
+
+### Independent review remediation — pending rereview
+
+- Canonical Singapore focus-month ranges now drive both URL-backed views;
+  responsive desktop month defaults, persisted one/two/three-month overrides,
+  navigation, and Today all reset the page and update `from`/`to` together.
+- Malformed, partial, reversed, overlong, and invalid UUID/date query values
+  are discarded before strict hook input; explicit URL filters remain ahead
+  of versioned preferences. Company, service, milestone, type, due-range,
+  status, source, and family controls stay in one unlabeled toolbar and use
+  server-backed query state.
+- Saved table columns now cover chooser visibility/order, live resize and
+  debounced race-safe persistence, family row accents, supported page sizes,
+  mobile cards, and paginated DTO results. Lifecycle writes are gated by both
+  edit permission and the deadline-write feature flag, with required inputs,
+  pending/error feedback, and accessible action dialogs.
+- Loading, retryable error, filtered/unfiltered empty, family-facet error,
+  calendar truncation, and compact agenda states are distinct; event cues
+  include family/type/timing/lifecycle text and full source identity.
 
 No repository-wide suite, baseline/full build, full lint, live database, or
 migration gate was run; those remain deferred to the integrated Plan 2 gate.
@@ -56,6 +81,6 @@ migration gate was run; those remain deferred to the integrated Plan 2 gate.
   controls reachable and expose `+N more` as a real button. Family colours are
   accents only; labels, badges, and lifecycle text remain visible in both
   semantic themes.
-- Independent review should confirm exact approved mockup spacing, action
-  semantics, and final URL-range parity. Prisma/live PostgreSQL and full
-  performance acceptance remain intentionally deferred.
+- Independent rereview should confirm exact approved mockup spacing and final
+  action semantics. Prisma/live PostgreSQL and full performance acceptance
+  remain intentionally deferred.

@@ -132,6 +132,18 @@ describe('deadline service', () => {
     }));
   });
 
+  it('applies inline company, service, and milestone filters in the server predicate', async () => {
+    await listDeadlines({ ...search, companyQuery: 'Oaktree', serviceQuery: 'Annual Return', milestoneQuery: 'annual-return' }, actor);
+
+    expect(prismaMock.deadlineOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        company: expect.objectContaining({ name: { contains: 'Oaktree', mode: 'insensitive' } }),
+        milestoneKey: { contains: 'annual-return', mode: 'insensitive' },
+        clientService: expect.objectContaining({ serviceName: { contains: 'Annual Return', mode: 'insensitive' } }),
+      }),
+    }));
+  });
+
   it('preserves all accessible companies when all-company access has no requested filter', async () => {
     await listDeadlines(search, { ...actor, companyIds: undefined });
 

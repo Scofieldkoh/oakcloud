@@ -13,6 +13,7 @@ export const deadlineViewPreferenceSchema = z.object({
   tableColumnVisibility: z.record(z.string(), z.boolean()).default({}),
   sortBy: z.enum(['dueDate', 'company', 'family', 'service', 'type', 'status']).default('dueDate'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  pageSize: z.union([z.literal(10), z.literal(20), z.literal(50), z.literal(100)]).default(20),
 });
 
 export type DeadlineViewPreference = z.infer<typeof deadlineViewPreferenceSchema>;
@@ -28,6 +29,7 @@ export const defaultDeadlineViewPreference: DeadlineViewPreference = {
   tableColumnVisibility: {},
   sortBy: 'dueDate',
   sortOrder: 'asc',
+  pageSize: 20,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -44,6 +46,7 @@ export function parseDeadlineViewPreference(value: unknown): DeadlineViewPrefere
     tableColumnVisibility: value.tableColumnVisibility ?? {},
     sortBy: value.sortBy ?? 'dueDate',
     sortOrder: value.sortOrder ?? 'asc',
+    pageSize: value.pageSize ?? 20,
   });
   if (!parsed.success) return defaultDeadlineViewPreference;
 
