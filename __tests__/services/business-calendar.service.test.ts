@@ -30,6 +30,10 @@ const prismaMock = vi.hoisted(() => ({
   clientServiceDeadlineRule: {
     findMany: vi.fn(),
   },
+  serviceScheduleReconciliationRequest: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+  },
   $transaction: vi.fn(),
 }));
 
@@ -109,6 +113,8 @@ describe('business calendar service', () => {
     prismaMock.serviceCycle.findMany.mockResolvedValue([]);
     prismaMock.deadlineOccurrence.findMany.mockResolvedValue([]);
     prismaMock.clientServiceDeadlineRule.findMany.mockResolvedValue([]);
+    prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue(null);
+    prismaMock.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({ id: 'reconciliation-1', dedupeKey: 'dedupe-1' });
   });
 
   it('counts failed cycles once and preserves immutable rows before warning classification', async () => {
@@ -450,6 +456,14 @@ describe('business calendar service', () => {
       entityType: 'BusinessCalendar',
       entityId: 'calendar-1',
     }), prismaMock);
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        tenantId: actor.tenantId,
+        scopeType: 'BUSINESS_CALENDAR',
+        scopeId: 'calendar-1',
+        triggerType: 'BUSINESS_CALENDAR_CHANGED',
+      }),
+    }));
   });
 
   it('rejects an update when its impact preview is stale', async () => {

@@ -5,4 +5,22 @@ export {
   replaceVariantRuleAssociations,
   updateDeadlineRuleDraft,
 } from './service';
+export {
+  archiveDeadlineRule,
+  deadlineRuleArchiveSchema,
+  deadlineRuleImpactPreviewSchema,
+  deadlineRulePublishSchema,
+  previewDeadlineRuleImpact,
+  publishDeadlineRule,
+} from './impact';
 export type * from './types';
+export type {
+  DeadlineRuleArchiveInput,
+  DeadlineRuleImpact,
+  DeadlineRuleImpactAction,
+  DeadlineRuleImpactCounts,
+  DeadlineRuleImpactInput,
+  DeadlineRuleImpactOptions,
+  DeadlineRuleImpactSample,
+  DeadlineRulePublishInput,
+} from './impact';

@@ -20,6 +20,7 @@ import {
 import { currentDateInSingapore, formatDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
 import { evaluateDeadlineRule } from '@/services/service-schedule/evaluator';
 import { hashConfiguration } from '@/services/service-schedule/hash';
+import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 import type {
   BusinessCalendarSnapshot,
   CompanyRuleSource,
@@ -969,6 +970,15 @@ export async function updateBusinessCalendar(
       summary: `Updated business calendar "${parsed.name}"`,
       changes: changes ?? undefined,
     }, tx);
+
+    await enqueueScheduleReconciliation(tx, {
+      tenantId: params.tenantId,
+      scopeType: 'BUSINESS_CALENDAR',
+      scopeId: id,
+      triggerType: 'BUSINESS_CALENDAR_CHANGED',
+      correlationId: `business-calendar:${id}:revision:${current.revision + 1}`,
+      requestedById: params.userId,
+    });
 
     if (updated === null) {
       throw new DeadlineApiError(ErrorCodes.VERSION_CONFLICT, 'Business calendar revision is stale', 409);
