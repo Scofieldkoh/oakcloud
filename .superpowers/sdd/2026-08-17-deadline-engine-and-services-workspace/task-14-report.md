@@ -1,6 +1,6 @@
 # Task 14 report — deadline rules and business-calendar administration
 
-Status: IMPLEMENTED / pending final rereview
+Status: PASS / final-review-complete
 
 ## Scope delivered
 
@@ -104,6 +104,15 @@ Static checks passed:
 - Scoped ESLint over changed Task 14 source/hooks/tests: zero warnings and
   zero errors.
 - `git diff --check`
+
+## Final review gate
+
+Final review: **PASS — 0 Critical / 0 Important / 0 Minor**.
+The final correction is committed as `96267581` (`fix: refresh final Task14
+administration state`), on top of the implementation/remediation commit
+`a27837d9`. The bounded final gate evidence above records 5 focused files / 32
+tests, 16 compatibility files / 139 tests, Chromium 2 tests, TypeScript, and
+scoped zero-warning lint.
 
 No repository-wide baseline, full build/lint, Prisma generation/migration,
 live database, or final Plan 2 gate was run. Task 15 was not started.
