@@ -230,6 +230,27 @@ export function getDocumentExporter(): IDocumentExporter {
 - Company service labels use `getCompanyDisplayLabel`; callers must not reimplement initials.
 - Deadline and billing schedules reuse the shared schedule engine introduced by the later plans.
 
+## Deadline reconciliation operations
+
+- `Workspace.settings.servicesWorkspace.enabled` controls the operational page.
+- `Workspace.settings.servicesWorkspace.deadlineWritesEnabled` or
+  `DEADLINE_OCCURRENCE_WRITES_ENABLED=true` enables materialization.
+- Observation mode computes impact summaries without writing cycles or deadlines.
+- The scheduler task ID is `service-schedule-reconciliation` and runs each minute.
+- Failed requests retain safe errors and retry according to the 1/5/15/60/240-minute schedule.
+- A daily `ROLLING_HORIZON` request extends materialization to 12 months from the Singapore date.
+- Reconciliation requests are tenant-scoped and lease-owned. Operators recover
+  abandoned work by allowing expired leases to be reclaimed by the next minute's
+  scheduler pass; persistent safe error codes and warning counts remain on the
+  request for administrator follow-up.
+- Roster and deadline list responses include `Server-Timing: app;dur=...` and
+  `X-Response-Time-Ms` headers without changing their DTOs, status codes, cache,
+  or authorization behavior.
+- Emit exactly one structured, redacted reconciliation event per request with
+  tenant/request/correlation IDs, duration, counts, warnings, attempt, and write
+  mode. Never include uploaded company documents, notes, rule wording, secrets,
+  or other free-text content in that event.
+
 ## Service Categories
 
 ### 1. Company Services

@@ -12,7 +12,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
 vi.mock('@/lib/rbac', () => ({ requirePermission: mocks.requirePermission }));
 vi.mock('@/services/schedule-reconciliation', () => ({ requireServicesWorkspaceEnabled: mocks.requireServicesWorkspaceEnabled }));
-vi.mock('@/lib/api/company-query', () => ({ getCompanyReadScope: mocks.getCompanyReadScope }));
+vi.mock('@/lib/api/company-query', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/api/company-query')>('@/lib/api/company-query');
+  return { ...actual, getCompanyReadScope: mocks.getCompanyReadScope };
+});
 vi.mock('@/services/service-roster', () => ({ listServiceRoster: mocks.listServiceRoster }));
 
 import { GET } from '@/app/api/client-services/route';

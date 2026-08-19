@@ -8,6 +8,7 @@ import {
 } from '@/lib/api-helpers';
 import {
   getCompanyReadScope,
+  jsonWithServerTiming,
 } from '@/lib/api/company-query';
 import {
   emptyServiceRosterResult,
@@ -29,6 +30,7 @@ function safeErrorResponse(error: unknown): NextResponse {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const startedAt = performance.now();
   try {
     const session = await requireAuth();
     await requirePermission(session, 'company', 'read');
@@ -38,13 +40,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const search = parseServiceRosterSearchParams(request);
     const scope = getCompanyReadScope(session);
     if ('empty' in scope || scope.options.companyIds?.length === 0) {
-      return NextResponse.json(emptyServiceRosterResult(search));
+      return jsonWithServerTiming(emptyServiceRosterResult(search), startedAt);
     }
 
-    return NextResponse.json(await listServiceRoster(search, {
+    return jsonWithServerTiming(await listServiceRoster(search, {
       tenantId,
       companyIds: scope.options.companyIds,
-    }));
+    }), startedAt);
   } catch (error) {
     return safeErrorResponse(error);
   }

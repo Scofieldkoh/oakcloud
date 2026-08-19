@@ -26,6 +26,88 @@ const PERMANENT_ERROR_CODES = new Set([
   'DUPLICATE_SCHEDULE_ENTRY',
 ]);
 
+type SafeReconciliationWarning = {
+  code: string;
+  ruleId?: string;
+  ruleVersionId?: string;
+  missingFields?: string[];
+  permanent?: boolean;
+};
+
+export type ReconciliationLogEventInput = {
+  tenantId: string;
+  requestId: string;
+  correlationId: string;
+  durationMs: number;
+  counts: DeadlineReconciliationCounts;
+  preservedByReason: DeadlineReconciliationPreservedCounts;
+  warnings: DeadlineReconciliationWarning[];
+  attempt: number;
+  writeMode: 'OBSERVE' | 'APPLY';
+};
+
+export type ReconciliationLogEvent = {
+  event: 'reconciliation_request';
+  tenantId: string;
+  requestId: string;
+  correlationId: string;
+  durationMs: number;
+  counts: DeadlineReconciliationCounts;
+  preservedByReason: DeadlineReconciliationPreservedCounts;
+  warnings: SafeReconciliationWarning[];
+  attempt: number;
+  writeMode: 'OBSERVE' | 'APPLY';
+};
+
+/**
+ * Build the one safe structured event emitted for a reconciliation request.
+ * Warning messages are intentionally discarded: rule text, notes, uploaded
+ * documents, and other free-form values must never enter operational logs.
+ */
+export function buildReconciliationLogEvent(
+  input: ReconciliationLogEventInput,
+): ReconciliationLogEvent {
+  return {
+    event: 'reconciliation_request',
+    tenantId: input.tenantId,
+    requestId: input.requestId,
+    correlationId: input.correlationId,
+    durationMs: Math.round(Math.max(0, input.durationMs) * 10) / 10,
+    counts: { ...input.counts },
+    preservedByReason: { ...input.preservedByReason },
+    warnings: input.warnings.map((warning) => ({
+      code: warning.code,
+      ...(warning.ruleId ? { ruleId: warning.ruleId } : {}),
+      ...(warning.ruleVersionId ? { ruleVersionId: warning.ruleVersionId } : {}),
+      ...(warning.missingFields ? { missingFields: [...warning.missingFields] } : {}),
+      ...(warning.permanent !== undefined ? { permanent: warning.permanent } : {}),
+    })),
+    attempt: input.attempt,
+    writeMode: input.writeMode,
+  };
+}
+
+function emptyReconciliationCounts(): DeadlineReconciliationCounts {
+  return {
+    created: 0,
+    recalculated: 0,
+    cancelled: 0,
+    preserved: 0,
+    noChange: 0,
+  };
+}
+
+function emptyPreservedCounts(): DeadlineReconciliationPreservedCounts {
+  return {
+    MANUAL_TRIGGER: 0,
+    HISTORICAL: 0,
+    COMPLETED: 0,
+    WAIVED: 0,
+    CANCELLED: 0,
+    OVERRIDDEN: 0,
+  };
+}
+
 class LeaseLostError extends Error {
   readonly code = 'LEASE_LOST';
 
@@ -220,11 +302,38 @@ async function processSingleRequest(
   leaseMs: number,
   leaseClock: () => Date,
 ): Promise<ProcessRequestResult> {
+  const startedAt = performance.now();
+  let eventCounts = emptyReconciliationCounts();
+  let eventPreservedByReason = emptyPreservedCounts();
+  let eventWarnings: DeadlineReconciliationWarning[] = [];
+  let eventWriteMode: 'OBSERVE' | 'APPLY' = 'OBSERVE';
+  let eventEmitted = false;
+  const emitEvent = () => {
+    if (eventEmitted) return;
+    eventEmitted = true;
+    log.info('reconciliation_request', buildReconciliationLogEvent({
+      tenantId: req.tenantId,
+      requestId: req.id,
+      correlationId: req.correlationId,
+      durationMs: performance.now() - startedAt,
+      counts: eventCounts,
+      preservedByReason: eventPreservedByReason,
+      warnings: eventWarnings,
+      attempt: req.attemptCount,
+      writeMode: eventWriteMode,
+    }));
+  };
+
   try {
     const assertLease = () => renewLease(req, leaseMs, leaseClock);
     await assertLease();
     const flags = await getServiceWorkspaceFlagsForTenant(req.tenantId);
     if (!flags.workspaceEnabled) {
+      eventWarnings.push({
+        code: 'WORKSPACE_DISABLED',
+        message: 'Services workspace is disabled',
+        permanent: true,
+      });
       const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
         where: { id: req.id, tenantId: req.tenantId, status: 'PROCESSING', leaseOwner: req.leaseOwner },
         data: {
@@ -242,15 +351,13 @@ async function processSingleRequest(
         },
       });
       if (completed.count !== 1) {
-        log.warn('Reconciliation request completion lost lease ownership', {
-          requestId: req.id,
-          tenantId: req.tenantId,
-        });
+        eventWarnings.push({ code: 'LEASE_LOST', message: 'Lease ownership changed' });
         return { outcome: 'LEASE_LOST', summaries: [] };
       }
       return { outcome: 'COMPLETED', summaries: [] };
     }
     const writeMode = flags.deadlineWritesEnabled ? 'APPLY' : 'OBSERVE';
+    eventWriteMode = writeMode;
     const operation = req.triggerType === 'RULE_ARCHIVED' ? 'ARCHIVE' as const : 'PUBLISH' as const;
     const today = currentDateInSingapore(now);
     const horizonEnd = addMonthsClamped(today, 12);
@@ -258,22 +365,8 @@ async function processSingleRequest(
     const clientServiceIds = await resolveClientServiceIds(req);
     const summaries: DeadlineReconciliationResult[] = [];
 
-    const aggregatedCounts: DeadlineReconciliationCounts = {
-      created: 0,
-      recalculated: 0,
-      cancelled: 0,
-      preserved: 0,
-      noChange: 0,
-    };
-
-    const aggregatedPreserved: DeadlineReconciliationPreservedCounts = {
-      MANUAL_TRIGGER: 0,
-      HISTORICAL: 0,
-      COMPLETED: 0,
-      WAIVED: 0,
-      CANCELLED: 0,
-      OVERRIDDEN: 0,
-    };
+    const aggregatedCounts = emptyReconciliationCounts();
+    const aggregatedPreserved = emptyPreservedCounts();
 
     const allWarnings: DeadlineReconciliationWarning[] = [];
 
@@ -307,6 +400,10 @@ async function processSingleRequest(
       allWarnings.push(...result.warnings);
     }
 
+    eventCounts = { ...aggregatedCounts };
+    eventPreservedByReason = { ...aggregatedPreserved };
+    eventWarnings = [...allWarnings];
+
     const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
       where: {
         id: req.id,
@@ -329,10 +426,7 @@ async function processSingleRequest(
     });
 
     if (completed.count !== 1) {
-      log.warn('Reconciliation request completion lost lease ownership', {
-        requestId: req.id,
-        tenantId: req.tenantId,
-      });
+      eventWarnings.push({ code: 'LEASE_LOST', message: 'Lease ownership changed' });
       return { outcome: 'LEASE_LOST', summaries: [] };
     }
     return { outcome: 'COMPLETED', summaries };
@@ -340,15 +434,11 @@ async function processSingleRequest(
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorCode = (error as { code?: string })?.code ?? 'RECONCILIATION_FAILED';
 
-    log.error('Reconciliation request failed', {
-      requestId: req.id,
-      tenantId: req.tenantId,
-      error,
-    });
+    const isPermanent = PERMANENT_ERROR_CODES.has(errorCode);
+    eventWarnings.push({ code: errorCode, message: errorCode, permanent: isPermanent });
 
     if (errorCode === 'LEASE_LOST') return { outcome: 'LEASE_LOST', summaries: [] };
 
-    const isPermanent = PERMANENT_ERROR_CODES.has(errorCode);
     const backoffIndex = Math.min(req.attemptCount - 1, BACKOFF_MINUTES.length - 1);
     const backoffMinutes = BACKOFF_MINUTES[Math.max(0, backoffIndex)] ?? 1;
     const nextAttemptAt = new Date(now.getTime() + backoffMinutes * 60_000);
@@ -376,10 +466,7 @@ async function processSingleRequest(
         },
       });
       if (completed.count !== 1) {
-        log.warn('Permanent reconciliation outcome lost lease ownership', {
-          requestId: req.id,
-          tenantId: req.tenantId,
-        });
+        eventWarnings.push({ code: 'LEASE_LOST', message: 'Lease ownership changed' });
         return { outcome: 'LEASE_LOST', summaries: [] };
       }
       return { outcome: 'COMPLETED', summaries: [] };
@@ -406,13 +493,12 @@ async function processSingleRequest(
     });
 
     if (retried.count !== 1) {
-      log.warn('Transient reconciliation outcome lost lease ownership', {
-        requestId: req.id,
-        tenantId: req.tenantId,
-      });
+      eventWarnings.push({ code: 'LEASE_LOST', message: 'Lease ownership changed' });
       return { outcome: 'LEASE_LOST', summaries: [] };
     }
     return { outcome: 'FAILED', summaries: [] };
+  } finally {
+    emitEvent();
   }
 }
 

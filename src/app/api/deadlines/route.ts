@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
-import { getCompanyReadScope } from '@/lib/api/company-query';
+import { getCompanyReadScope, jsonWithServerTiming } from '@/lib/api/company-query';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { ApiError, ErrorCodes } from '@/lib/errors';
 import { requirePermission } from '@/lib/rbac';
@@ -35,6 +35,7 @@ function safeErrorResponse(error: unknown): NextResponse {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const startedAt = performance.now();
   try {
     const session = await requireAuth();
     await requirePermission(session, 'company', 'read');
@@ -44,13 +45,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const search = parseDeadlineSearchParams(request);
     const scope = getCompanyReadScope(session);
     if ('empty' in scope || scope.options.companyIds?.length === 0) {
-      return NextResponse.json(emptyDeadlineResult(search));
+      return jsonWithServerTiming(emptyDeadlineResult(search), startedAt);
     }
 
-    return NextResponse.json(await listDeadlines(search, {
+    return jsonWithServerTiming(await listDeadlines(search, {
       tenantId,
       companyIds: scope.options.companyIds,
-    }));
+    }), startedAt);
   } catch (error) {
     return safeErrorResponse(error);
   }
