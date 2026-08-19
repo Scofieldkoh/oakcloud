@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const hooks = vi.hoisted(() => ({
@@ -71,5 +71,59 @@ describe('BusinessCalendarPanel', () => {
     await waitFor(() => expect(preview.mutateAsync).toHaveBeenCalled());
     expect(screen.getByText('Date-change preview ready')).toBeVisible();
     expect(update).toBeEnabled();
+  });
+
+  it('completes the calendar update from the date-change preview dialog', async () => {
+    const updateMutation = mutation(calendar);
+    hooks.useUpdateServiceCalendar.mockReturnValue(updateMutation);
+    render(<BusinessCalendarPanel workspaceId="33333333-3333-4333-8333-333333333333" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit calendar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview date changes' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Date-change impact preview' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save calendar' }));
+
+    await waitFor(() => expect(updateMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: calendar.id,
+      input: expect.objectContaining({ expectedRevision: calendar.revision, previewFingerprint: 'fingerprint-2' }),
+    })));
+  });
+
+  it('renders every calendar and preserves the selected calendar across refreshes', async () => {
+    const secondCalendar = { ...calendar, id: '99999999-9999-4999-8999-999999999999', name: 'Singapore public holidays · 2027', revision: 1 };
+    hooks.useServiceCalendars.mockReturnValue({ data: { calendars: [calendar, secondCalendar], total: 2 }, isLoading: false, error: null, refetch: vi.fn() });
+    hooks.useServiceCalendar.mockImplementation((_workspaceId: string, id?: string) => ({ data: id === secondCalendar.id ? secondCalendar : calendar, isLoading: false, error: null }));
+    const { rerender } = render(<BusinessCalendarPanel workspaceId="33333333-3333-4333-8333-333333333333" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select calendar Singapore public holidays · 2027' }));
+    expect(screen.getByRole('heading', { name: 'Singapore public holidays · 2027' })).toBeVisible();
+    rerender(<BusinessCalendarPanel workspaceId="33333333-3333-4333-8333-333333333333" />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Singapore public holidays · 2027' })).toBeVisible());
+    expect(screen.getByRole('button', { name: 'Select calendar Singapore public holidays · 2027' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('keeps inactive holiday history visible and excludes it from active replacement input', async () => {
+    const mixedCalendar = {
+      ...calendar,
+      holidays: [
+        ...calendar.holidays,
+        { id: '33333333-3333-4333-8333-333333333333', date: '2025-12-25', name: 'Archived Christmas', description: null, isActive: false },
+      ],
+    };
+    const updateMutation = mutation(mixedCalendar);
+    hooks.useServiceCalendars.mockReturnValue({ data: { calendars: [mixedCalendar], total: 1 }, isLoading: false, error: null, refetch: vi.fn() });
+    hooks.useServiceCalendar.mockReturnValue({ data: mixedCalendar, isLoading: false, error: null });
+    hooks.useUpdateServiceCalendar.mockReturnValue(updateMutation);
+    render(<BusinessCalendarPanel workspaceId="33333333-3333-4333-8333-333333333333" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit calendar' }));
+    expect(screen.getByText('Archived')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Preview date changes' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Date-change impact preview' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save calendar' }));
+    await waitFor(() => expect(updateMutation.mutateAsync).toHaveBeenCalled());
+    expect(updateMutation.mutateAsync.mock.calls[0][0].input.holidays).toEqual([
+      { date: '2026-01-01', name: "New Year's Day", description: null },
+    ]);
   });
 });

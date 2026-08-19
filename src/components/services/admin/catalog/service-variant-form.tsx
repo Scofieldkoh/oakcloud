@@ -20,12 +20,20 @@ import type {
   ServiceVariantDeadlineRuleDto,
   ServiceVariantDto,
 } from '@/services/service-catalog/types';
+import type { DeadlineRuleParameterDto } from '@/services/deadline-rule';
 
 export interface ServicePartialOption {
   id: string;
   name: string;
   displayName: string | null;
 }
+
+export type ServiceVariantDeadlineRuleOption = {
+  id: string;
+  code: string;
+  name: string;
+  parameters: Array<Pick<DeadlineRuleParameterDto, 'key' | 'label' | 'type' | 'required' | 'validation' | 'defaultValue'>>;
+};
 
 interface ServiceVariantFormProps {
   familyId: string;
@@ -37,7 +45,8 @@ interface ServiceVariantFormProps {
     input: CreateServiceVariantInput | UpdateServiceVariantInput,
   ) => Promise<void>;
   isSubmitting?: boolean;
-  availableDeadlineRules?: Array<{ id: string; code: string; name: string }>;
+  isLoadingDeadlineRules?: boolean;
+  availableDeadlineRules?: ServiceVariantDeadlineRuleOption[];
 }
 
 type ParameterDefaultType = 'STRING' | 'INTEGER' | 'DECIMAL' | 'BOOLEAN' | 'DATE' | 'ENUM';
@@ -51,6 +60,12 @@ function inferParameterType(value: unknown): ParameterDefaultType {
   if (typeof value === 'number') return Number.isInteger(value) ? 'INTEGER' : 'DECIMAL';
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return 'DATE';
   return 'STRING';
+}
+
+function validationOptions(value: unknown): string[] {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return [];
+  const options = (value as { options?: unknown }).options;
+  return Array.isArray(options) ? options.filter((option): option is string => typeof option === 'string') : [];
 }
 
 function toScheduleEntries(value: unknown): ScheduleEntryInput[] {
@@ -135,6 +150,7 @@ export function ServiceVariantForm({
   onCancel,
   onSubmit,
   isSubmitting = false,
+  isLoadingDeadlineRules = false,
   availableDeadlineRules = [],
 }: ServiceVariantFormProps) {
   const [code, setCode] = useState(initialValue?.code ?? '');
@@ -304,9 +320,9 @@ export function ServiceVariantForm({
             : null,
         displayOrder: index,
       })),
-      deadlineRules: deadlineRules.map(({ parameterTypes: _parameterTypes, ...rule }, index) => ({
+      deadlineRules: deadlineRules.map(({ parameterTypes: _parameterTypes, ...rule }) => ({
         ...rule,
-        displayOrder: index,
+        displayOrder: rule.displayOrder,
       })),
     });
   };
@@ -578,7 +594,14 @@ export function ServiceVariantForm({
             </p>
           ) : (
             <div className="space-y-4">
-              {deadlineRules.map((rule, index) => (
+              {deadlineRules.map((rule, index) => {
+                const selectedRule = availableDeadlineRules.find((option) => option.id === rule.ruleId);
+                const parameterDefinitions = selectedRule?.parameters ?? [];
+                const parameterKeys = [...new Set([
+                  ...parameterDefinitions.map((parameter) => parameter.key),
+                  ...Object.keys(rule.parameterDefaults),
+                ])];
+                return (
                 <div
                   key={`${rule.ruleId || 'new-rule'}-${index}`}
                   className="space-y-4 rounded-lg border border-border-primary bg-background-primary p-3"
@@ -586,32 +609,22 @@ export function ServiceVariantForm({
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
                     <label className="block text-xs font-medium text-text-secondary">
                       Deadline rule
-                      {availableDeadlineRules.length > 0 ? (
-                        <select
-                          aria-label={`Deadline rule ${index + 1}`}
-                          value={rule.ruleId}
-                          onChange={(event) => updateDeadlineRule(index, { ruleId: event.target.value })}
-                          className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
-                          required
-                        >
-                          <option value="">Select a rule</option>
-                          {availableDeadlineRules.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.code} · {option.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <FormInput
-                          label=""
-                          aria-label={`Deadline rule ${index + 1}`}
-                          value={rule.ruleId}
-                          onChange={(event) => updateDeadlineRule(index, { ruleId: event.target.value })}
-                          placeholder="Rule UUID"
-                          required
-                          className="mt-2 min-h-[44px]"
-                        />
-                      )}
+                      <select
+                        aria-label={`Deadline rule ${index + 1}`}
+                        value={rule.ruleId}
+                        onChange={(event) => updateDeadlineRule(index, { ruleId: event.target.value })}
+                        disabled={isLoadingDeadlineRules || availableDeadlineRules.length === 0}
+                        className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                        required
+                      >
+                        <option value="">{isLoadingDeadlineRules ? 'Loading active deadline rules…' : availableDeadlineRules.length > 0 ? 'Select a rule' : 'No active deadline rules available'}</option>
+                        {rule.ruleId && !availableDeadlineRules.some((option) => option.id === rule.ruleId) ? <option value={rule.ruleId}>Current associated rule</option> : null}
+                        {availableDeadlineRules.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.code} · {option.name}
+                          </option>
+                        ))}
+                      </select>
                     </label>
                     <label className="flex min-h-[44px] items-center gap-2 text-sm text-text-secondary">
                       <input
@@ -621,14 +634,7 @@ export function ServiceVariantForm({
                       />
                       Enabled by default
                     </label>
-                    <FormInput
-                      label="Display order"
-                      type="number"
-                      min={0}
-                      value={String(rule.displayOrder)}
-                      onChange={(event) => updateDeadlineRule(index, { displayOrder: Number.parseInt(event.target.value, 10) || 0 })}
-                      className="min-h-[44px]"
-                    />
+                    <p className="text-xs text-text-muted">Position {rule.displayOrder + 1}; use the move controls below to reorder.</p>
                   </div>
 
                   <section aria-labelledby={`deadline-parameters-${index}`}>
@@ -637,21 +643,24 @@ export function ServiceVariantForm({
                         <h4 id={`deadline-parameters-${index}`} className="text-xs font-semibold text-text-primary">Parameter defaults</h4>
                         <p className="mt-1 text-xs text-text-muted">Values are sent as typed JSON defaults.</p>
                       </div>
-                      <Button type="button" size="xs" variant="secondary" className="min-h-[44px]" onClick={() => addParameterDefault(index)}>Add parameter</Button>
+                      <Button type="button" size="xs" variant="secondary" className="min-h-[44px]" onClick={() => addParameterDefault(index)} disabled={parameterDefinitions.length > 0}>Add parameter</Button>
                     </div>
-                    {Object.keys(rule.parameterDefaults).length === 0 ? (
+                    {parameterKeys.length === 0 ? (
                       <p className="mt-2 text-xs text-text-muted">No parameter defaults.</p>
                     ) : (
                       <div className="mt-2 space-y-2">
-                        {Object.entries(rule.parameterDefaults).map(([key, value]) => {
-                          const type = rule.parameterTypes[key] ?? inferParameterType(value);
-                          const stringValue = type === 'BOOLEAN' ? String(value) : String(value ?? '');
+                        {parameterKeys.map((key) => {
+                          const definition = parameterDefinitions.find((parameter) => parameter.key === key);
+                          const value = Object.prototype.hasOwnProperty.call(rule.parameterDefaults, key) ? rule.parameterDefaults[key] : definition?.defaultValue;
+                          const type = definition?.type ?? rule.parameterTypes[key] ?? inferParameterType(value);
+                          const stringValue = type === 'BOOLEAN' ? String(value ?? false) : String(value ?? '');
+                          const enumOptions = validationOptions(definition?.validation);
                           return (
                             <div key={key} className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_140px_minmax(0,1fr)_auto] sm:items-end">
-                              <FormInput label="Parameter key" value={key} onChange={(event) => renameParameterDefault(index, key, event.target.value.trim())} className="min-h-[44px]" />
-                              <label className="block text-xs font-medium text-text-secondary">Type<select aria-label={`Parameter type ${key}`} value={type} onChange={(event) => updateParameterDefault(index, key, stringValue, event.target.value as ParameterDefaultType)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="STRING">Text</option><option value="INTEGER">Integer</option><option value="DECIMAL">Decimal</option><option value="BOOLEAN">Boolean</option><option value="DATE">Date</option><option value="ENUM">Enum</option></select></label>
-                              {type === 'BOOLEAN' ? <label className="block text-xs font-medium text-text-secondary">Value<select aria-label={`Parameter value ${key}`} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="true">True</option><option value="false">False</option></select></label> : <FormInput label="Value" type={type === 'DATE' ? 'date' : type === 'INTEGER' || type === 'DECIMAL' ? 'number' : 'text'} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="min-h-[44px]" />}
-                              <Button type="button" size="xs" variant="ghost" iconOnly className="min-h-[44px] min-w-[44px]" aria-label={`Remove parameter ${key}`} onClick={() => removeParameterDefault(index, key)}><Trash2 className="h-4 w-4 text-status-error" /></Button>
+                              {definition ? <div className="min-h-[44px] rounded-lg border border-border-secondary px-3 py-2"><span className="block text-xs font-medium text-text-secondary">{definition.label || 'Parameter'}</span><span className="font-mono text-xs text-text-muted">{key}</span></div> : <FormInput label="Parameter key" value={key} onChange={(event) => renameParameterDefault(index, key, event.target.value.trim())} className="min-h-[44px]" />}
+                              {definition ? <p className="min-h-[44px] rounded-lg border border-border-secondary px-3 py-3 text-xs text-text-secondary">{type}</p> : <label className="block text-xs font-medium text-text-secondary">Type<select aria-label={`Parameter type ${key}`} value={type} onChange={(event) => updateParameterDefault(index, key, stringValue, event.target.value as ParameterDefaultType)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="STRING">Text</option><option value="INTEGER">Integer</option><option value="DECIMAL">Decimal</option><option value="BOOLEAN">Boolean</option><option value="DATE">Date</option><option value="ENUM">Enum</option></select></label>}
+                              {type === 'BOOLEAN' ? <label className="block text-xs font-medium text-text-secondary">Value<select aria-label={`Parameter value ${key}`} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="true">True</option><option value="false">False</option></select></label> : type === 'ENUM' && enumOptions.length > 0 ? <label className="block text-xs font-medium text-text-secondary">Value<select aria-label={`Parameter value ${key}`} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-2 text-sm text-text-primary"><option value="">Select an option</option>{enumOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label> : <FormInput label="Value" type={type === 'DATE' ? 'date' : type === 'INTEGER' || type === 'DECIMAL' ? 'number' : 'text'} value={stringValue} onChange={(event) => updateParameterDefault(index, key, event.target.value, type)} className="min-h-[44px]" />}
+                              <Button type="button" size="xs" variant="ghost" iconOnly className="min-h-[44px] min-w-[44px]" aria-label={`Remove parameter ${key}`} onClick={() => removeParameterDefault(index, key)} disabled={Boolean(definition)}><Trash2 className="h-4 w-4 text-status-error" /></Button>
                             </div>
                           );
                         })}
@@ -670,7 +679,8 @@ export function ServiceVariantForm({
                     <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" aria-label={`Remove deadline rule ${index + 1}`} onClick={() => removeDeadlineRule(index)}><Trash2 className="h-3.5 w-3.5 text-status-error" /></Button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

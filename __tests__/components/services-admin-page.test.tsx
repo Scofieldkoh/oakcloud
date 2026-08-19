@@ -153,4 +153,26 @@ describe('ServicesAdminPage', () => {
     });
     expect(screen.getByTestId('deadline-rules-content')).toHaveTextContent('workspace-1');
   });
+
+  it('supports roving keyboard tab navigation and keeps all tabpanels mounted', () => {
+    mocks.useSession.mockReturnValue({
+      data: { isSuperAdmin: false, isWorkspaceAdmin: true },
+      isLoading: false,
+    });
+
+    render(<ServicesAdminPage />);
+    const tabs = screen.getAllByRole('tab');
+    expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(3);
+    expect(document.getElementById('deadline-rules-panel')).toHaveAttribute('hidden');
+
+    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
+    expect(document.activeElement).toBe(tabs[1]);
+    fireEvent.keyDown(tabs[1], { key: 'End' });
+    expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
+    expect(document.activeElement).toBe(tabs[2]);
+    fireEvent.keyDown(tabs[2], { key: 'Home' });
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    expect(document.activeElement).toBe(tabs[0]);
+  });
 });

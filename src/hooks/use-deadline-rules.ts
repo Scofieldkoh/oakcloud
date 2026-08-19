@@ -132,6 +132,7 @@ export function normalizeDeadlineRuleFilters(input: DeadlineRuleFilters = {}): S
 export function useDeadlineRules(
   workspaceId: string | undefined,
   filters: DeadlineRuleFilters = {},
+  enabled = true,
 ) {
   const normalized = normalizeFilters(filters);
   return useQuery<DeadlineRuleListDto>({
@@ -149,20 +150,20 @@ export function useDeadlineRules(
       if (normalized.isActive !== undefined) params.set('isActive', String(normalized.isActive));
       return requestJson<DeadlineRuleListDto>(`/api/service-catalog/deadline-rules?${params.toString()}`, { signal });
     },
-    enabled: Boolean(workspaceId),
+    enabled: Boolean(workspaceId && enabled),
     placeholderData: keepPreviousData,
     retry: false,
   });
 }
 
-export function useDeadlineRule(workspaceId: string | undefined, id: string | undefined) {
+export function useDeadlineRule(workspaceId: string | undefined, id: string | undefined, enabled = true) {
   return useQuery<DeadlineRuleDto>({
     queryKey: deadlineRuleKeys.detail(workspaceId, id),
     queryFn: ({ signal }) => requestJson<DeadlineRuleDto>(
       `/api/service-catalog/deadline-rules/${encodeURIComponent(id!)}${queryString(workspaceId!)}`,
       { signal },
     ),
-    enabled: Boolean(workspaceId && id),
+    enabled: Boolean(workspaceId && id && enabled),
     retry: false,
   });
 }

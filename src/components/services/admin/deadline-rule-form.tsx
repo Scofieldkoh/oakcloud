@@ -248,7 +248,7 @@ function ApplicabilityNodeEditor({
             className="input input-sm min-h-[44px] w-auto"
             value={String(node.kind)}
             disabled={disabled}
-            onChange={(event) => onChange(path, predicateForOperator(field, event.target.value, node))}
+            onChange={(event) => onChange(path, { ...node, kind: event.target.value })}
           >
             <option value="ALL">All conditions</option>
             <option value="ANY">Any condition</option>
@@ -320,7 +320,7 @@ function ApplicabilityNodeEditor({
           className="input input-sm mt-1 min-h-[44px] w-full"
           value={String(node.kind ?? operators[0][0])}
           disabled={disabled}
-          onChange={(event) => onChange(path, { ...node, kind: event.target.value })}
+          onChange={(event) => onChange(path, predicateForOperator(field, event.target.value, node))}
         >
           {operators.map(([operator, label]) => <option key={operator} value={operator}>{label}</option>)}
         </select>
@@ -525,7 +525,8 @@ export function DeadlineRuleForm({
     const candidate = { ...draft, applicability: applicability as unknown as DeadlineRuleDraftInput['applicability'], expectedDraftRevision: initialValue?.draft?.draftRevision };
     const parsed = await import('@/lib/validations/deadline-rule').then(({ deadlineRuleDraftSchema }) => deadlineRuleDraftSchema.safeParse(candidate));
     if (!parsed.success) {
-      setValidationError(parsed.error.issues[0]?.message ?? 'Review the highlighted rule fields.');
+      const issue = parsed.error.issues[0];
+      setValidationError(issue ? `${issue.message}${issue.path.length > 0 ? ` (${issue.path.join('.')})` : ''}` : 'Review the highlighted rule fields.');
       return;
     }
     setValidationError(null);

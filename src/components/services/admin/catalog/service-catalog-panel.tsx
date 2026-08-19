@@ -18,6 +18,7 @@ import { Modal } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/components/ui/toast';
 import { useAllTemplatePartials } from '@/hooks/use-template-partials';
+import { useDeadlineRules } from '@/hooks/use-deadline-rules';
 import {
   useArchiveServiceFamily,
   useArchiveServiceVariant,
@@ -46,6 +47,7 @@ interface ServiceCatalogPanelProps {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
+  active?: boolean;
 }
 
 type EditDialog =
@@ -70,6 +72,7 @@ export function ServiceCatalogPanel({
   canCreate,
   canUpdate,
   canDelete,
+  active = true,
 }: ServiceCatalogPanelProps) {
   const toast = useToast();
   const [search, setSearch] = useState('');
@@ -87,12 +90,17 @@ export function ServiceCatalogPanel({
     page,
     limit,
   };
-  const catalog = useServiceCatalog(workspaceId, filters);
+  const catalog = useServiceCatalog(workspaceId, filters, active);
   const totalPages = Math.max(
     1,
     Math.ceil((catalog.data?.total ?? 0) / limit),
   );
-  const partialsQuery = useAllTemplatePartials(workspaceId);
+  const partialsQuery = useAllTemplatePartials(workspaceId, active);
+  const deadlineRulesQuery = useDeadlineRules(
+    workspaceId,
+    { isActive: true, includeArchived: false, page: 1, limit: 100 },
+    active && editDialog?.type === 'variant',
+  );
   const createFamily = useCreateServiceFamily(workspaceId);
   const updateFamily = useUpdateServiceFamily(workspaceId);
   const archiveFamily = useArchiveServiceFamily(workspaceId);
@@ -112,6 +120,15 @@ export function ServiceCatalogPanel({
       name: partial.name,
       displayName: partial.displayName,
     })) ?? [];
+  const deadlineRuleOptions = deadlineRulesQuery.data?.rules.map((rule) => {
+    const version = rule.draft ?? rule.currentVersion;
+    return {
+      id: rule.id,
+      code: rule.code,
+      name: rule.name,
+      parameters: version?.parameters ?? [],
+    };
+  }) ?? [];
 
   const submitFamily = async (
     input: CreateServiceFamilyInput | UpdateServiceFamilyInput,
@@ -486,6 +503,8 @@ export function ServiceCatalogPanel({
             initialValue={editDialog.variant}
             partials={partials}
             isLoadingPartials={partialsQuery.isLoading}
+            availableDeadlineRules={deadlineRuleOptions}
+            isLoadingDeadlineRules={deadlineRulesQuery.isLoading}
             onCancel={() => setEditDialog(null)}
             onSubmit={submitVariant}
             isSubmitting={createVariant.isPending || updateVariant.isPending}

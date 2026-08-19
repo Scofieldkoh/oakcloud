@@ -20,9 +20,10 @@ interface BusinessCalendarPanelProps {
   workspaceId?: string;
   canAdminister?: boolean;
   featureEnabled?: boolean;
+  active?: boolean;
 }
 
-type HolidayForm = { date: string; name: string; description: string | null };
+type HolidayForm = { id?: string; date: string; name: string; description: string | null; isActive: boolean };
 type CalendarForm = {
   name: string;
   jurisdictionCode: string;
@@ -48,7 +49,7 @@ function formFromCalendar(calendar?: BusinessCalendarDto): CalendarForm {
     jurisdictionCode: calendar?.jurisdictionCode ?? 'SG',
     timeZone: calendar?.timeZone ?? 'Asia/Singapore',
     weekendDays: calendar?.weekendDays ?? [0, 6],
-    holidays: calendar?.holidays.filter((holiday) => holiday.isActive).map((holiday) => ({ date: holiday.date, name: holiday.name, description: holiday.description })) ?? [],
+    holidays: calendar?.holidays.map((holiday) => ({ id: holiday.id, date: holiday.date, name: holiday.name, description: holiday.description, isActive: holiday.isActive })) ?? [],
     isActive: calendar?.isActive ?? true,
   };
 }
@@ -59,7 +60,10 @@ function toInput(form: CalendarForm): BusinessCalendarInput {
     jurisdictionCode: form.jurisdictionCode,
     timeZone: form.timeZone,
     weekendDays: form.weekendDays,
-    holidays: form.holidays.map((holiday) => ({ date: holiday.date, name: holiday.name.trim(), description: holiday.description?.trim() || null })),
+    // Inactive rows are historical records. The API archives active rows that
+    // are explicitly removed, so omitting inactive rows preserves their
+    // identity and state instead of reactivating them during replacement.
+    holidays: form.holidays.filter((holiday) => holiday.isActive).map((holiday) => ({ date: holiday.date, name: holiday.name.trim(), description: holiday.description?.trim() || null })),
     isActive: form.isActive,
   };
 }
@@ -72,21 +76,31 @@ export function BusinessCalendarPanel({
   workspaceId,
   canAdminister = true,
   featureEnabled = true,
+  active = true,
 }: BusinessCalendarPanelProps) {
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<CalendarForm>(() => formFromCalendar());
   const [preview, setPreview] = useState<BusinessCalendarImpact | null>(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
 
-  const calendars = useServiceCalendars(workspaceId);
+  const panelEnabled = Boolean(active && featureEnabled && canAdminister && workspaceId);
+  const calendars = useServiceCalendars(workspaceId, panelEnabled);
   const firstId = calendars.data?.calendars[0]?.id;
-  const activeId = firstId;
-  const detail = useServiceCalendar(workspaceId, activeId);
+  const activeId = selectedId ?? firstId;
+  const detail = useServiceCalendar(workspaceId, activeId, panelEnabled);
   const calendar = detail.data ?? calendars.data?.calendars.find((item) => item.id === activeId) ?? null;
   const create = useCreateServiceCalendar(workspaceId);
   const update = useUpdateServiceCalendar(workspaceId);
   const previewMutation = usePreviewServiceCalendarImpact(workspaceId);
+
+  useEffect(() => {
+    const calendarIds = calendars.data?.calendars.map((item) => item.id) ?? [];
+    if (selectedId && calendarIds.includes(selectedId)) return;
+    setSelectedId(calendarIds[0]);
+  }, [calendars.data, selectedId]);
 
   useEffect(() => {
     if (calendar && !editing && !creating) setForm(formFromCalendar(calendar));
@@ -97,12 +111,14 @@ export function BusinessCalendarPanel({
   const updateForm = (next: CalendarForm) => {
     setForm(next);
     setPreview(null);
+    setPreviewDialogOpen(false);
   };
 
   const handleEdit = () => {
     setCreating(false);
     setForm(formFromCalendar(calendar ?? undefined));
     setPreview(null);
+    setPreviewDialogOpen(false);
     setError(null);
     setEditing(true);
   };
@@ -118,6 +134,7 @@ export function BusinessCalendarPanel({
       }
       const impact = await previewMutation.mutateAsync({ id: activeId!, input });
       setPreview(impact);
+      setPreviewDialogOpen(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to preview date changes.');
     }
@@ -127,9 +144,10 @@ export function BusinessCalendarPanel({
     setError(null);
     if (creating) {
       try {
-        await create.mutateAsync(toInput(form));
+        const created = await create.mutateAsync(toInput(form));
         setCreating(false);
         setEditing(false);
+        setSelectedId(created.id);
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : 'Unable to create the business calendar.');
       }
@@ -146,8 +164,10 @@ export function BusinessCalendarPanel({
       await update.mutateAsync({ id: calendar.id, input });
       setEditing(false);
       setPreview(null);
+      setPreviewDialogOpen(false);
     } catch (reason) {
       setPreview(null);
+      setPreviewDialogOpen(false);
       setError(reason instanceof Error ? reason.message : 'Unable to save the calendar. The preview may be stale.');
     }
   };
@@ -165,11 +185,11 @@ export function BusinessCalendarPanel({
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><FormInput label="Calendar name" value={form.name} onChange={(event) => updateForm({ ...form, name: event.target.value })} required className="min-h-[44px]" /><FormInput label="Jurisdiction" value={form.jurisdictionCode} disabled hint="Singapore jurisdiction is SG in the first release." className="min-h-[44px]" /><FormInput label="Time zone" value={form.timeZone} disabled className="min-h-[44px]" /></div>
             <fieldset><legend className="text-sm font-semibold text-text-primary">Weekend days</legend><p className="mt-1 text-xs text-text-muted">Select one or more non-working weekdays.</p><div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">{WEEKDAYS.map(([day, label]) => <label key={day} className="flex min-h-[44px] items-center gap-2 rounded-lg border border-border-secondary px-3 text-sm text-text-primary"><input type="checkbox" aria-label={label} checked={selectedWeekendDays.has(day)} onChange={(event) => updateForm({ ...form, weekendDays: event.target.checked ? [...form.weekendDays, day].sort((left, right) => left - right) : form.weekendDays.filter((value) => value !== day) })} />{label}</label>)}</div></fieldset>
-            <section aria-labelledby="holiday-editor-heading"><div className="flex flex-wrap items-center justify-between gap-2"><div><h3 id="holiday-editor-heading" className="text-sm font-semibold text-text-primary">Named holidays</h3><p className="mt-1 text-xs text-text-muted">Dates are stored as Singapore civil dates.</p></div><Button type="button" size="xs" variant="secondary" className="min-h-[44px]" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => updateForm({ ...form, holidays: [...form.holidays, { date: '', name: '', description: null }] })}>Add holiday</Button></div><div className="mt-3 space-y-3">{form.holidays.length === 0 ? <p className="rounded-lg border border-dashed border-border-primary p-3 text-xs text-text-muted">No named holidays configured.</p> : form.holidays.map((holiday, index) => <div key={`${holiday.date}-${index}`} className="grid grid-cols-1 gap-3 rounded-lg border border-border-primary bg-background-primary p-3 sm:grid-cols-[160px_minmax(0,1fr)_auto]"><FormInput label="Holiday date" type="date" value={holiday.date} onChange={(event) => updateForm({ ...form, holidays: form.holidays.map((item, itemIndex) => itemIndex === index ? { ...item, date: event.target.value } : item) })} className="min-h-[44px]" required /><FormInput label="Holiday name" value={holiday.name} onChange={(event) => updateForm({ ...form, holidays: form.holidays.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} className="min-h-[44px]" required /><div className="flex items-end"><Button type="button" size="xs" variant="ghost" iconOnly className="min-h-[44px] min-w-[44px]" aria-label={`Remove holiday ${holiday.name || index + 1}`} onClick={() => updateForm({ ...form, holidays: form.holidays.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="h-4 w-4 text-status-error" /></Button></div></div>)}</div></section>
+            <section aria-labelledby="holiday-editor-heading"><div className="flex flex-wrap items-center justify-between gap-2"><div><h3 id="holiday-editor-heading" className="text-sm font-semibold text-text-primary">Named holidays</h3><p className="mt-1 text-xs text-text-muted">Dates are stored as Singapore civil dates. Archived holidays remain visible for audit history.</p></div><Button type="button" size="xs" variant="secondary" className="min-h-[44px]" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => updateForm({ ...form, holidays: [...form.holidays, { date: '', name: '', description: null, isActive: true }] })}>Add holiday</Button></div><div className="mt-3 space-y-3">{form.holidays.length === 0 ? <p className="rounded-lg border border-dashed border-border-primary p-3 text-xs text-text-muted">No named holidays configured.</p> : form.holidays.map((holiday, index) => <div key={holiday.id ?? `${holiday.date}-${index}`} className="grid grid-cols-1 gap-3 rounded-lg border border-border-primary bg-background-primary p-3 sm:grid-cols-[160px_minmax(0,1fr)_auto]"><FormInput label="Holiday date" type="date" value={holiday.date} disabled={!holiday.isActive} onChange={(event) => updateForm({ ...form, holidays: form.holidays.map((item, itemIndex) => itemIndex === index ? { ...item, date: event.target.value } : item) })} className="min-h-[44px]" required={holiday.isActive} /><div><FormInput label="Holiday name" value={holiday.name} disabled={!holiday.isActive} onChange={(event) => updateForm({ ...form, holidays: form.holidays.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} className="min-h-[44px]" required={holiday.isActive} />{!holiday.isActive ? <span className="mt-1 inline-flex badge badge-neutral">Archived</span> : null}</div><div className="flex items-end">{holiday.isActive ? <Button type="button" size="xs" variant="ghost" iconOnly className="min-h-[44px] min-w-[44px]" aria-label={`Remove holiday ${holiday.name || index + 1}`} onClick={() => updateForm({ ...form, holidays: form.holidays.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="h-4 w-4 text-status-error" /></Button> : <span className="text-xs text-text-muted">Historical</span>}</div></div>)}</div></section>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-primary pt-4"><div>{preview ? <p className="text-sm font-medium text-status-success">Date-change preview ready</p> : <p className="text-xs text-text-muted">Preview is required before a date-affecting update.</p>}</div><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="min-h-[44px]" onClick={() => { setEditing(false); setCreating(false); setPreview(null); }}>Cancel</Button><Button type="button" variant="ghost" className="min-h-[44px]" onClick={() => void handlePreview()} disabled={previewMutation.isPending || !form.name.trim()}>Preview date changes</Button><Button type="button" className="min-h-[44px]" onClick={() => void handleSave()} disabled={(!creating && !preview) || update.isPending || create.isPending} isLoading={update.isPending || create.isPending}>{creating ? 'Create calendar' : 'Save calendar'}</Button></div></div>
           </div>
         </div>
-        {preview && !creating ? <Modal isOpen onClose={() => setPreview(null)} title="Date-change impact preview" description="The server checks the current revision and fingerprint again before saving."><ModalBody><div className="grid grid-cols-3 gap-3"><div className="rounded-lg border border-border-primary p-3"><p className="text-xs text-text-muted">Recalculated</p><p className="text-xl font-semibold text-text-primary">{preview.counts.recalculated}</p></div><div className="rounded-lg border border-border-primary p-3"><p className="text-xs text-text-muted">Preserved</p><p className="text-xl font-semibold text-text-primary">{preview.counts.preserved}</p></div><div className="rounded-lg border border-border-primary p-3"><p className="text-xs text-text-muted">Warnings</p><p className="text-xl font-semibold text-text-primary">{preview.counts.warnings}</p></div></div><p className="mt-4 text-xs text-text-muted">{preview.samples.length} samples shown · revision {calendar?.revision}</p></ModalBody><ModalFooter><Button type="button" variant="secondary" className="min-h-[44px]" onClick={() => setPreview(null)}>Continue editing</Button></ModalFooter></Modal> : null}
+        {preview && !creating && previewDialogOpen ? <Modal isOpen onClose={() => { setPreview(null); setPreviewDialogOpen(false); }} title="Date-change impact preview" description="The server checks the current revision and fingerprint again before saving."><ModalBody><div className="grid grid-cols-3 gap-3"><div className="rounded-lg border border-border-primary p-3"><p className="text-xs text-text-muted">Recalculated</p><p className="text-xl font-semibold text-text-primary">{preview.counts.recalculated}</p></div><div className="rounded-lg border border-border-primary p-3"><p className="text-xs text-text-muted">Preserved</p><p className="text-xl font-semibold text-text-primary">{preview.counts.preserved}</p></div><div className="rounded-lg border border-border-primary p-3"><p className="text-xs text-text-muted">Warnings</p><p className="text-xl font-semibold text-text-primary">{preview.counts.warnings}</p></div></div><p className="mt-4 text-xs text-text-muted">{preview.samples.length} samples shown · revision {calendar?.revision}</p></ModalBody><ModalFooter><Button type="button" variant="secondary" className="min-h-[44px]" onClick={() => { setPreview(null); setPreviewDialogOpen(false); }}>Continue editing</Button><Button type="button" className="min-h-[44px]" onClick={() => void handleSave()} disabled={update.isPending} isLoading={update.isPending}>Save calendar</Button></ModalFooter></Modal> : null}
       </section>
     );
   }
@@ -178,6 +198,7 @@ export function BusinessCalendarPanel({
     <section aria-labelledby="business-calendar-heading">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 id="business-calendar-heading" className="text-lg font-semibold text-text-primary">Business calendar</h2><p className="mt-1 text-sm text-text-secondary">Singapore-first holiday data for business-day adjustments.</p></div><div className="flex flex-wrap gap-2"><Button type="button" size="sm" className="min-h-[44px] sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setCreating(true); setEditing(false); setForm(formFromCalendar()); }}>Add business calendar</Button>{calendar ? <Button type="button" variant="secondary" size="sm" className="min-h-[44px] sm:min-h-8" onClick={handleEdit}>Edit calendar</Button> : null}</div></div>
       {error ? <Alert variant="error" title="Calendar action failed">{error}</Alert> : null}
+      {calendars.data?.calendars.length ? <nav className="mb-4 rounded-lg border border-border-primary bg-background-secondary p-2" aria-label="Business calendar list"><div className="flex flex-wrap gap-2">{calendars.data.calendars.map((candidate) => <button key={candidate.id} type="button" className={`min-h-[44px] rounded-lg border px-3 py-2 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 ${candidate.id === activeId ? 'border-oak-primary bg-background-tertiary text-text-primary' : 'border-border-secondary text-text-secondary hover:bg-background-tertiary'}`} aria-label={`Select calendar ${candidate.name}`} aria-pressed={candidate.id === activeId} onClick={() => { setSelectedId(candidate.id); setCreating(false); setEditing(false); setPreview(null); setPreviewDialogOpen(false); setError(null); }}>Select {candidate.name}<span className="ml-2 text-xs text-text-muted">v{candidate.revision}</span></button>)}</div></nav> : null}
       {calendars.isLoading ? <div role="status" className="card flex items-center gap-2 p-8 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Loading business calendars…</div> : calendars.error ? <div className="card space-y-2 p-8"><p className="font-medium text-status-error">Unable to load business calendars.</p><Button type="button" variant="secondary" className="min-h-[44px]" onClick={() => void calendars.refetch()}>Retry</Button></div> : !calendar ? <div className="card p-8 text-center"><CalendarDays className="mx-auto h-12 w-12 text-text-muted" /><p className="mt-3 text-sm font-medium text-text-primary">No business calendar configured</p><p className="mt-1 text-xs text-text-muted">Create a calendar before publishing business-day rules.</p></div> : <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.35fr)]"><div className="rounded-lg border border-border-primary bg-background-secondary p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-base font-semibold text-text-primary">{calendar.name}</h3><p className="mt-1 text-xs text-text-muted">{calendar.jurisdictionCode} · {calendar.timeZone}</p></div><span className={calendar.isActive ? 'badge badge-success' : 'badge badge-neutral'}>{calendar.isActive ? `${calendar.holidays.filter((holiday) => holiday.isActive).length} configured` : 'Inactive'}</span></div><div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"><fieldset className="rounded-lg border border-border-primary bg-background-primary p-3"><legend className="px-1 text-xs font-medium text-text-muted">Weekend days</legend><div className="mt-2 grid grid-cols-2 gap-2">{WEEKDAYS.map(([day, label]) => <label key={day} className="flex min-h-[44px] items-center gap-2 rounded-lg border border-border-secondary px-3 text-sm text-text-primary"><input type="checkbox" aria-label={label} checked={calendar.weekendDays.includes(day)} disabled readOnly />{label}</label>)}</div></fieldset><div className="rounded-lg border border-border-primary bg-background-primary p-3"><p className="text-xs font-medium text-text-muted">Revision</p><p className="mt-2 text-sm font-semibold text-text-primary">Revision {calendar.revision}</p><p className="mt-1 text-xs text-text-muted">Updates require a current impact fingerprint.</p></div></div><div className="mt-4"><h4 className="text-sm font-semibold text-text-primary">Named holidays</h4>{calendar.holidays.filter((holiday) => holiday.isActive).length === 0 ? <p className="mt-2 text-sm text-text-muted">No holidays configured.</p> : <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">{calendar.holidays.filter((holiday) => holiday.isActive).map((holiday) => <li key={holiday.id ?? holiday.date} className="rounded-lg border border-border-secondary p-3"><strong className="text-sm text-text-primary">{formatDate(holiday.date)}</strong><span className="mt-1 block text-sm text-text-secondary">{holiday.name}</span></li>)}</ul>}</div></div><aside className="rounded-lg border border-border-primary bg-background-secondary p-4"><h3 className="text-sm font-semibold text-text-primary">Calendar settings</h3><dl className="mt-3 space-y-3 text-sm"><div><dt className="text-xs text-text-muted">Jurisdiction</dt><dd className="mt-1 text-text-primary">{calendar.jurisdictionCode}</dd></div><div><dt className="text-xs text-text-muted">Time zone</dt><dd className="mt-1 text-text-primary">{calendar.timeZone}</dd></div><div><dt className="text-xs text-text-muted">Working days</dt><dd className="mt-1 text-text-primary">{calendar.weekendDays.length === 2 ? 'Monday–Friday' : 'Configured weekend days'}</dd></div><div><dt className="text-xs text-text-muted">Default adjustment</dt><dd className="mt-1 text-text-primary">Configured per milestone</dd></div></dl></aside></div>}
     </section>
   );

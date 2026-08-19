@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const hooks = vi.hoisted(() => ({
@@ -14,6 +14,8 @@ const hooks = vi.hoisted(() => ({
 vi.mock('@/hooks/use-deadline-rules', () => hooks);
 
 import { DeadlineRulesPanel } from '@/components/services/admin/deadline-rules-panel';
+import { DeadlineRuleForm } from '@/components/services/admin/deadline-rule-form';
+import { deadlineRuleDraftSchema } from '@/lib/validations/deadline-rule';
 
 const rule = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -174,5 +176,139 @@ describe('DeadlineRulesPanel', () => {
       target: { value: 'Annual Return revised' },
     });
     await waitFor(() => expect(publish).toBeDisabled());
+  });
+
+  it('completes publish from the impact dialog confirmation', async () => {
+    const previewMutation = {
+      mutateAsync: vi.fn().mockImplementation(({ input }: { input: { operation: string } }) => Promise.resolve({
+        ruleId: rule.id,
+        operation: input.operation,
+        currentPublishedVersion: 4,
+        draftRevision: 4,
+        draftConfigHash: 'b'.repeat(64),
+        previewFingerprint: 'c'.repeat(64),
+        counts: { created: 0, recalculated: 2, cancelled: 0, preserved: 4, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+        samples: [],
+        sourceState: { currentVersionId: rule.currentVersionId, draftId: rule.draft!.id, draftState: 'DRAFT', isActive: true, archivedAt: null },
+      })),
+      isPending: false,
+      error: null,
+    };
+    const publishMutation = mutation();
+    hooks.usePreviewDeadlineRuleImpact.mockReturnValue(previewMutation);
+    hooks.usePublishDeadlineRule.mockReturnValue(publishMutation);
+
+    render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Publish impact preview' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publish rule' }));
+
+    await waitFor(() => expect(publishMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: rule.id,
+      input: expect.objectContaining({ operation: 'PUBLISH', previewFingerprint: 'c'.repeat(64) }),
+    })));
+  });
+
+  it('completes archive from impact confirmation through the reason dialog', async () => {
+    const previewMutation = {
+      mutateAsync: vi.fn().mockImplementation(({ input }: { input: { operation: string } }) => Promise.resolve({
+        ruleId: rule.id,
+        operation: input.operation,
+        currentPublishedVersion: 4,
+        draftRevision: 4,
+        draftConfigHash: 'b'.repeat(64),
+        previewFingerprint: 'd'.repeat(64),
+        counts: { created: 0, recalculated: 0, cancelled: 1, preserved: 3, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+        samples: [],
+        sourceState: { currentVersionId: rule.currentVersionId, draftId: rule.draft!.id, draftState: 'DRAFT', isActive: true, archivedAt: null },
+      })),
+      isPending: false,
+      error: null,
+    };
+    const archiveMutation = mutation();
+    hooks.usePreviewDeadlineRuleImpact.mockReturnValue(previewMutation);
+    hooks.useArchiveDeadlineRule.mockReturnValue(archiveMutation);
+
+    render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Preview archive impact' }));
+    const impactDialog = await screen.findByRole('dialog', { name: 'Archive impact preview' });
+    fireEvent.click(within(impactDialog).getByRole('button', { name: 'Continue to archive' }));
+    const reasonDialog = await screen.findByRole('dialog', { name: 'Archive deadline rule' });
+    fireEvent.change(within(reasonDialog).getByLabelText('Archive reason'), { target: { value: 'Retired after policy migration' } });
+    fireEvent.click(within(reasonDialog).getByRole('button', { name: 'Archive rule' }));
+
+    await waitFor(() => expect(archiveMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: rule.id,
+      input: expect.objectContaining({ operation: 'ARCHIVE', previewFingerprint: 'd'.repeat(64), reason: 'Retired after policy migration' }),
+    })));
+  });
+
+  it('requires save before preview and publishes the saved draft identity', async () => {
+    const savedRule = {
+      ...rule,
+      name: 'Annual Return revised',
+      draft: { ...rule.draft!, draftRevision: 9, configHash: 'e'.repeat(64) },
+    };
+    const updateMutation = { ...mutation(), mutateAsync: vi.fn().mockResolvedValue(savedRule) };
+    const previewMutation = {
+      mutateAsync: vi.fn().mockImplementation(({ input }: { input: { operation: string; draftConfigHash: string; expectedDraftRevision: number } }) => Promise.resolve({
+        ruleId: rule.id,
+        operation: input.operation,
+        currentPublishedVersion: 4,
+        draftRevision: input.expectedDraftRevision,
+        draftConfigHash: input.draftConfigHash,
+        previewFingerprint: 'f'.repeat(64),
+        counts: { created: 0, recalculated: 1, cancelled: 0, preserved: 1, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+        samples: [],
+        sourceState: { currentVersionId: rule.currentVersionId, draftId: rule.draft!.id, draftState: 'DRAFT', isActive: true, archivedAt: null },
+      })),
+      isPending: false,
+      error: null,
+    };
+    const publishMutation = mutation();
+    hooks.useUpdateDeadlineRule.mockReturnValue(updateMutation);
+    hooks.usePreviewDeadlineRuleImpact.mockReturnValue(previewMutation);
+    hooks.usePublishDeadlineRule.mockReturnValue(publishMutation);
+
+    render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Annual Return' }));
+    fireEvent.change(screen.getByLabelText('Rule name'), { target: { value: 'Annual Return revised' } });
+    expect(screen.getByRole('button', { name: 'Preview impact' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(updateMutation.mutateAsync).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
+    await waitFor(() => expect(previewMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: rule.id,
+      input: expect.objectContaining({ expectedDraftRevision: 9, draftConfigHash: 'e'.repeat(64) }),
+    })));
+    const dialog = await screen.findByRole('dialog', { name: 'Publish impact preview' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publish rule' }));
+    await waitFor(() => expect(publishMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: rule.id,
+      input: expect.objectContaining({ expectedDraftRevision: 9, draftConfigHash: 'e'.repeat(64), previewFingerprint: 'f'.repeat(64) }),
+    })));
+  });
+
+  it('keeps nested applicability groups schema-valid through operator transitions', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<DeadlineRuleForm initialValue={rule} onCancel={vi.fn()} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
+    const fields = screen.getAllByLabelText('Company field');
+    fireEvent.change(fields[0], { target: { value: 'status' } });
+    fireEvent.change(screen.getAllByLabelText('Operator')[0], { target: { value: 'FIELD_PRESENT' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add nested group' }));
+    const groups = screen.getAllByLabelText('Group');
+    fireEvent.change(groups[1], { target: { value: 'ANY' } });
+    const addConditions = screen.getAllByRole('button', { name: 'Add condition' });
+    fireEvent.click(addConditions[0]);
+    const nestedFields = screen.getAllByLabelText('Company field');
+    fireEvent.change(nestedFields[1], { target: { value: 'nextArDueDate' } });
+    fireEvent.change(screen.getAllByLabelText('Operator')[1], { target: { value: 'FIELD_COMPARE' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(deadlineRuleDraftSchema.safeParse(onSubmit.mock.calls[0][0]).success).toBe(true);
   });
 });

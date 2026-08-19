@@ -1,6 +1,6 @@
 # Task 14 report — deadline rules and business-calendar administration
 
-Status: IMPLEMENTED / pending review
+Status: IMPLEMENTED / pending rereview
 
 ## Scope delivered
 
@@ -42,13 +42,36 @@ The final focused admin suite is GREEN:
 
 ```text
 npm.cmd run test:run -- __tests__/components/deadline-rules-admin.test.tsx __tests__/components/business-calendar-admin.test.tsx __tests__/components/services-admin-page.test.tsx __tests__/components/service-catalog.test.tsx __tests__/components/schedule-entry-editor.test.tsx
-5 files passed; 21 tests passed
+5 files passed; 30 tests passed
 ```
 
 The focused tests cover all three administration tabs and URL state,
-publish-preview gating and invalidation after edits, calendar revision and
-date-change preview gating, variant catalog compatibility, and stable keyed
-schedule-entry limits/reordering.
+publish/archive/calendar impact confirmation mutations, saved-draft
+revision/hash gating, nested applicability transitions that remain valid
+against the accepted schema, calendar selection and inactive-holiday history,
+tenant rule option/typed parameter wiring, association ordering, and stable
+keyed schedule-entry limits/reordering.
+
+## Review-correction evidence
+
+The rereview corrections close the interaction-level gaps identified in
+`task-14-review.md`:
+
+- Impact dialogs now own the publish, archive-confirmation, and calendar-save
+  mutations; cancel/close clears the corresponding preview state.
+- Editing a rule marks the candidate dirty and disables preview/publish until
+  the server returns the saved draft. Preview and publish then use that saved
+  revision/hash identity and current impact fingerprint.
+- Applicability group and predicate transitions rebuild discriminated nodes
+  with field/operator-compatible defaults, including nested groups.
+- Service variants load tenant-scoped active rule definitions and render typed
+  parameter controls while preserving multi-association order and schedules.
+- All business calendars are selectable with selection preserved through
+  refresh; inactive holiday rows retain identity/state and explicit removal is
+  represented by omission from the active replacement set.
+- Administration panels remain mounted while hidden, tab keyboard navigation
+  supports Arrow/Home/End keys, rule pagination exposes server totals, and
+  catalog mutations invalidate the complete client-option projection prefix.
 
 ## Compatibility and verification evidence
 
@@ -57,7 +80,7 @@ selection passed:
 
 ```text
 npm.cmd run test:run -- __tests__/components/business-calendar-admin.test.tsx __tests__/components/deadline-rules-admin.test.tsx __tests__/components/services-admin-page.test.tsx __tests__/components/service-catalog.test.tsx __tests__/components/schedule-entry-editor.test.tsx __tests__/services/services-admin-foundation-schema.test.ts __tests__/services/deadline-rule-operation-schemas.test.ts __tests__/services/deadline-rule-impact.test.ts __tests__/services/deadline-rule.service.test.ts __tests__/services/business-calendar.service.test.ts __tests__/services/service-catalog.service.test.ts __tests__/lib/service-schedule-validation.test.ts __tests__/lib/service-catalog-validation.test.ts __tests__/api/deadline-rule-routes.test.ts __tests__/api/service-calendar-routes.test.ts __tests__/api/service-catalog-routes.test.ts
-16 files passed; 128 tests passed
+16 files passed; 137 tests passed
 ```
 
 Directly relevant Chromium checks passed:
@@ -82,6 +105,7 @@ live database, or final Plan 2 gate was run. Task 15 was not started.
 - `src/hooks/use-deadline-rules.ts`
 - `src/hooks/use-service-calendars.ts`
 - `src/hooks/use-service-catalog.ts`
+- `src/hooks/use-template-partials.ts`
 - `src/components/services/admin/services-admin-page.tsx`
 - `src/components/services/admin/deadline-rules-panel.tsx`
 - `src/components/services/admin/deadline-rule-form.tsx`
@@ -91,4 +115,5 @@ live database, or final Plan 2 gate was run. Task 15 was not started.
 - `__tests__/components/deadline-rules-admin.test.tsx`
 - `__tests__/components/business-calendar-admin.test.tsx`
 - `__tests__/components/services-admin-page.test.tsx`
+- `__tests__/components/service-catalog.test.tsx`
 - `__tests__/browser/services-admin.browser.test.tsx`

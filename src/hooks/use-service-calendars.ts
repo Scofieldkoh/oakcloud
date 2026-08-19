@@ -52,27 +52,27 @@ function invalidateCalendarQueries(queryClient: ReturnType<typeof useQueryClient
   ]);
 }
 
-export function useServiceCalendars(workspaceId: string | undefined) {
+export function useServiceCalendars(workspaceId: string | undefined, enabled = true) {
   return useQuery<BusinessCalendarListDto>({
     queryKey: serviceCalendarKeys.list(workspaceId),
     queryFn: ({ signal }) => requestJson<BusinessCalendarListDto>(
       `/api/service-calendars${tenantQuery(workspaceId!)}`,
       { signal },
     ),
-    enabled: Boolean(workspaceId),
+    enabled: Boolean(workspaceId && enabled),
     placeholderData: keepPreviousData,
     retry: false,
   });
 }
 
-export function useServiceCalendar(workspaceId: string | undefined, id: string | undefined) {
+export function useServiceCalendar(workspaceId: string | undefined, id: string | undefined, enabled = true) {
   return useQuery<BusinessCalendarDto>({
     queryKey: serviceCalendarKeys.detail(workspaceId, id),
     queryFn: ({ signal }) => requestJson<BusinessCalendarDto>(
       `/api/service-calendars/${encodeURIComponent(id!)}${tenantQuery(workspaceId!)}`,
       { signal },
     ),
-    enabled: Boolean(workspaceId && id),
+    enabled: Boolean(workspaceId && id && enabled),
     retry: false,
   });
 }

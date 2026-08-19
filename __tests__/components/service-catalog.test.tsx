@@ -10,11 +10,15 @@ const hookMocks = vi.hoisted(() => ({
   useUpdateServiceVariant: vi.fn(),
   useArchiveServiceVariant: vi.fn(),
   useAllTemplatePartials: vi.fn(),
+  useDeadlineRules: vi.fn(),
 }));
 
 vi.mock('@/hooks/use-service-catalog', () => hookMocks);
 vi.mock('@/hooks/use-template-partials', () => ({
   useAllTemplatePartials: hookMocks.useAllTemplatePartials,
+}));
+vi.mock('@/hooks/use-deadline-rules', () => ({
+  useDeadlineRules: hookMocks.useDeadlineRules,
 }));
 vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
@@ -78,6 +82,11 @@ describe('ServiceCatalogPanel', () => {
       },
       isLoading: false,
     });
+    hookMocks.useDeadlineRules.mockReturnValue({
+      data: { rules: [], total: 0, page: 1, limit: 100 },
+      isLoading: false,
+      error: null,
+    });
     hookMocks.useCreateServiceFamily.mockReturnValue(mutation());
     hookMocks.useUpdateServiceFamily.mockReturnValue(mutation());
     hookMocks.useArchiveServiceFamily.mockReturnValue(mutation());
@@ -102,6 +111,68 @@ describe('ServiceCatalogPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add variant' }));
     expect(screen.getByLabelText('SOW partial')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add fee row' })).toBeVisible();
+  });
+
+  it('wires tenant rule options and typed defaults into multi-association variant payloads', async () => {
+    hookMocks.useDeadlineRules.mockReturnValue({
+      data: {
+        rules: [{
+          id: 'rule-1',
+          code: 'ANNUAL_RETURN',
+          name: 'Annual return',
+          draft: {
+            parameters: [{ key: 'filingClass', label: 'Filing class', type: 'ENUM', required: false, validation: { options: ['STANDARD', 'PREMIUM'] }, defaultValue: 'STANDARD' }],
+          },
+          currentVersion: null,
+        }, {
+          id: 'rule-2',
+          code: 'VAT_RETURN',
+          name: 'VAT return',
+          draft: { parameters: [] },
+          currentVersion: null,
+        }],
+        total: 2,
+        page: 1,
+        limit: 100,
+      },
+      isLoading: false,
+      error: null,
+    });
+    const createVariant = mutation();
+    hookMocks.useCreateServiceVariant.mockReturnValue(createVariant);
+    render(
+      <ServiceCatalogPanel
+        workspaceId="tenant-1"
+        canCreate
+        canUpdate
+        canDelete
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add variant' }));
+    expect(hookMocks.useDeadlineRules).toHaveBeenLastCalledWith(
+      'tenant-1',
+      expect.objectContaining({ isActive: true, limit: 100 }),
+      true,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add deadline rule' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deadline rule 1' }), { target: { value: 'rule-1' } });
+    expect(screen.getByText('Filing class')).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Parameter value filingClass' }), { target: { value: 'PREMIUM' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add schedule entry' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add deadline rule' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deadline rule 2' }), { target: { value: 'rule-2' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add schedule entry' })[1]);
+    fireEvent.change(screen.getByLabelText('Variant code'), { target: { value: 'ANNUAL_VARIANT' } });
+    fireEvent.change(screen.getByLabelText('Variant name'), { target: { value: 'Annual variant' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create variant' }));
+
+    await waitFor(() => expect(createVariant.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      deadlineRules: [
+        expect.objectContaining({ ruleId: 'rule-1', displayOrder: 0, parameterDefaults: { filingClass: 'PREMIUM' }, scheduleDefaults: expect.arrayContaining([expect.objectContaining({ expression: expect.objectContaining({ kind: 'DAY_OF_MONTH' }) })]) }),
+        expect.objectContaining({ ruleId: 'rule-2', displayOrder: 1, scheduleDefaults: expect.arrayContaining([expect.objectContaining({ expression: expect.objectContaining({ kind: 'DAY_OF_MONTH' }) })]) }),
+      ],
+    })));
   });
 
   it('hides mutation actions for read-only users', () => {
@@ -138,7 +209,8 @@ describe('ServiceCatalogPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Go to page 2' }));
     expect(hookMocks.useServiceCatalog).toHaveBeenLastCalledWith(
       'tenant-1',
-      expect.objectContaining({ page: 2, limit: 20 }),
+       expect.objectContaining({ page: 2, limit: 20 }),
+       true,
     );
 
     fireEvent.change(screen.getByLabelText('Active state'), {
@@ -146,7 +218,8 @@ describe('ServiceCatalogPanel', () => {
     });
     expect(hookMocks.useServiceCatalog).toHaveBeenLastCalledWith(
       'tenant-1',
-      expect.objectContaining({ page: 1, isActive: false }),
+       expect.objectContaining({ page: 1, isActive: false }),
+       true,
     );
   });
 
@@ -206,7 +279,8 @@ describe('ServiceCatalogPanel', () => {
     await waitFor(() => {
       expect(hookMocks.useServiceCatalog).toHaveBeenLastCalledWith(
         'tenant-1',
-        expect.objectContaining({ page: 2, limit: 20 }),
+         expect.objectContaining({ page: 2, limit: 20 }),
+         true,
       );
     });
     expect(screen.getByText('Accounting')).toBeVisible();

@@ -202,12 +202,12 @@ export function useTemplatePartials(options: UseTemplatePartialsOptions = {}) {
   });
 }
 
-export function useAllTemplatePartials(tenantId?: string) {
+export function useAllTemplatePartials(tenantId?: string, enabled = true) {
   return useQuery({
     queryKey: [...partialKeys.allList(), tenantId],
     queryFn: () => fetchAllPartials(tenantId),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: tenantId !== undefined ? !!tenantId : true,
+    enabled: enabled && (tenantId !== undefined ? !!tenantId : true),
   });
 }
 

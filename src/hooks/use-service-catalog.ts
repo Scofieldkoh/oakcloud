@@ -56,11 +56,12 @@ async function fetchServiceCatalog(
 export function useServiceCatalog(
   workspaceId: string | undefined,
   filters: ServiceCatalogFilters,
+  enabled = true,
 ) {
   return useQuery({
     queryKey: serviceCatalogKeys.list(workspaceId, filters),
     queryFn: () => fetchServiceCatalog(workspaceId!, filters),
-    enabled: Boolean(workspaceId),
+    enabled: Boolean(workspaceId && enabled),
   });
 }
 
@@ -90,7 +91,7 @@ function useCatalogInvalidation(workspaceId: string | undefined) {
       // Client-facing service options include variant deadline-rule
       // associations and must not retain a pre-edit association set.
       queryClient.invalidateQueries({
-        queryKey: ['client-service-catalog-options', workspaceId],
+        queryKey: ['client-service-catalog-options'],
       }),
     ]);
   };

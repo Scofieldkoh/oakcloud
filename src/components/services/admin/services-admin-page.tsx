@@ -3,7 +3,7 @@
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import { ServiceCatalogPanel } from './catalog/service-catalog-panel';
 import { DeadlineRulesPanel } from './deadline-rules-panel';
 import { BusinessCalendarPanel } from './business-calendar-panel';
@@ -56,6 +56,20 @@ export function ServicesAdminPage() {
     const url = new URL(window.location.href);
     url.searchParams.set(TAB_QUERY, tab);
     window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: ServicesAdminTab) => {
+    const currentIndex = TAB_VALUES.indexOf(tab);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % TAB_VALUES.length;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + TAB_VALUES.length) % TAB_VALUES.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = TAB_VALUES.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextTab = TAB_VALUES[nextIndex];
+    selectTab(nextTab);
+    document.getElementById(tabId(nextTab))?.focus();
   };
 
   if (isLoading) {
@@ -171,6 +185,7 @@ export function ServicesAdminPage() {
             aria-controls={panelId(tab)}
             tabIndex={activeTab === tab ? 0 : -1}
             onClick={() => selectTab(tab)}
+            onKeyDown={(event) => handleTabKeyDown(event, tab)}
             className={`min-h-11 border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8 ${
               activeTab === tab
                 ? 'border-oak-primary text-text-primary'
@@ -182,43 +197,44 @@ export function ServicesAdminPage() {
         ))}
       </div>
 
-      {activeTab === 'catalog' ? (
-        <section
-          id="service-catalog-panel"
-          role="tabpanel"
-          aria-labelledby="service-catalog-tab"
-          className="pt-1"
-        >
-          <ServiceCatalogPanel
-            workspaceId={workspaceId}
-            canCreate
-            canUpdate
-            canDelete
-          />
-        </section>
-      ) : null}
+      <section
+        id="service-catalog-panel"
+        role="tabpanel"
+        aria-labelledby="service-catalog-tab"
+        hidden={activeTab !== 'catalog'}
+        aria-hidden={activeTab !== 'catalog'}
+        className="pt-1"
+      >
+        <ServiceCatalogPanel
+          workspaceId={workspaceId}
+          canCreate
+          canUpdate
+          canDelete
+          active={activeTab === 'catalog'}
+        />
+      </section>
 
-      {activeTab === 'rules' ? (
-        <section
-          id="deadline-rules-panel"
-          role="tabpanel"
-          aria-labelledby="deadline-rules-tab"
-          className="pt-1"
-        >
-          <DeadlineRulesPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} />
-        </section>
-      ) : null}
+      <section
+        id="deadline-rules-panel"
+        role="tabpanel"
+        aria-labelledby="deadline-rules-tab"
+        hidden={activeTab !== 'rules'}
+        aria-hidden={activeTab !== 'rules'}
+        className="pt-1"
+      >
+        <DeadlineRulesPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} active={activeTab === 'rules'} />
+      </section>
 
-      {activeTab === 'calendar' ? (
-        <section
-          id="business-calendar-panel"
-          role="tabpanel"
-          aria-labelledby="business-calendar-tab"
-          className="pt-1"
-        >
-          <BusinessCalendarPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} />
-        </section>
-      ) : null}
+      <section
+        id="business-calendar-panel"
+        role="tabpanel"
+        aria-labelledby="business-calendar-tab"
+        hidden={activeTab !== 'calendar'}
+        aria-hidden={activeTab !== 'calendar'}
+        className="pt-1"
+      >
+        <BusinessCalendarPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} active={activeTab === 'calendar'} />
+      </section>
     </main>
   );
 }
