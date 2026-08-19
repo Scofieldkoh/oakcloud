@@ -102,7 +102,7 @@ describe('DeadlineRulesPanel', () => {
       error: null,
       refetch: vi.fn(),
     });
-    hooks.useDeadlineRule.mockReturnValue({ data: rule, isLoading: false, error: null });
+    hooks.useDeadlineRule.mockReturnValue({ data: rule, isLoading: false, error: null, refetch: vi.fn().mockResolvedValue({ data: rule }) });
     hooks.useCreateDeadlineRule.mockReturnValue(mutation());
     hooks.useUpdateDeadlineRule.mockReturnValue(mutation());
     hooks.usePreviewDeadlineRuleImpact.mockReturnValue({
@@ -249,12 +249,26 @@ describe('DeadlineRulesPanel', () => {
       name: 'Annual Return revised',
       draft: { ...rule.draft!, draftRevision: 9, configHash: 'e'.repeat(64) },
     };
+    const publishedVersion = {
+      ...rule.currentVersion!,
+      id: '77777777-7777-4777-8777-777777777777',
+      version: 5,
+      configHash: 'h'.repeat(64),
+      draftRevision: 10,
+    };
+    const publishedRule = {
+      ...savedRule,
+      currentVersionId: publishedVersion.id,
+      currentVersion: publishedVersion,
+      draft: { ...savedRule.draft!, draftRevision: 10, configHash: 'g'.repeat(64) },
+      versions: [publishedVersion],
+    };
     const updateMutation = { ...mutation(), mutateAsync: vi.fn().mockResolvedValue(savedRule) };
     const previewMutation = {
-      mutateAsync: vi.fn().mockImplementation(({ input }: { input: { operation: string; draftConfigHash: string; expectedDraftRevision: number } }) => Promise.resolve({
+      mutateAsync: vi.fn().mockImplementation(({ input }: { input: { operation: string; draftConfigHash: string; expectedCurrentVersion: number | null; expectedDraftRevision: number } }) => Promise.resolve({
         ruleId: rule.id,
         operation: input.operation,
-        currentPublishedVersion: 4,
+        currentPublishedVersion: input.expectedCurrentVersion,
         draftRevision: input.expectedDraftRevision,
         draftConfigHash: input.draftConfigHash,
         previewFingerprint: 'f'.repeat(64),
@@ -266,6 +280,7 @@ describe('DeadlineRulesPanel', () => {
       error: null,
     };
     const publishMutation = mutation();
+    publishMutation.mutateAsync.mockResolvedValue(publishedRule);
     hooks.useUpdateDeadlineRule.mockReturnValue(updateMutation);
     hooks.usePreviewDeadlineRuleImpact.mockReturnValue(previewMutation);
     hooks.usePublishDeadlineRule.mockReturnValue(publishMutation);
@@ -288,6 +303,62 @@ describe('DeadlineRulesPanel', () => {
       id: rule.id,
       input: expect.objectContaining({ expectedDraftRevision: 9, draftConfigHash: 'e'.repeat(64), previewFingerprint: 'f'.repeat(64) }),
     })));
+    await waitFor(() => expect(screen.getByText('Active v5')).toBeVisible());
+    expect(screen.getByText('Published version 5')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
+    await waitFor(() => expect(previewMutation.mutateAsync).toHaveBeenCalledTimes(2));
+    expect(previewMutation.mutateAsync.mock.calls[1]?.[0]).toEqual(expect.objectContaining({
+      id: rule.id,
+      input: expect.objectContaining({ expectedCurrentVersion: 5, expectedDraftRevision: 10, draftConfigHash: 'g'.repeat(64) }),
+    }));
+  });
+
+  it('refreshes authoritative archive state for a subsequent preview', async () => {
+    const archivedRule = {
+      ...rule,
+      isActive: false,
+      archivedAt: new Date('2026-02-01T00:00:00.000Z'),
+      archivedById: 'user-2',
+      archiveReason: 'Retired after policy migration',
+      draft: { ...rule.draft!, draftRevision: 5, configHash: 'd'.repeat(64) },
+    };
+    const previewMutation = {
+      mutateAsync: vi.fn().mockImplementation(({ input }: { input: { operation: string; draftConfigHash: string; expectedDraftRevision: number } }) => Promise.resolve({
+        ruleId: rule.id,
+        operation: input.operation,
+        currentPublishedVersion: 4,
+        draftRevision: input.expectedDraftRevision,
+        draftConfigHash: input.draftConfigHash,
+        previewFingerprint: 'd'.repeat(64),
+        counts: { created: 0, recalculated: 0, cancelled: 1, preserved: 3, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+        samples: [],
+        sourceState: { currentVersionId: rule.currentVersionId, draftId: rule.draft!.id, draftState: 'DRAFT', isActive: true, archivedAt: null },
+      })),
+      isPending: false,
+      error: null,
+    };
+    const archiveMutation = mutation();
+    archiveMutation.mutateAsync.mockResolvedValue(archivedRule);
+    hooks.usePreviewDeadlineRuleImpact.mockReturnValue(previewMutation);
+    hooks.useArchiveDeadlineRule.mockReturnValue(archiveMutation);
+
+    render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Preview archive impact' }));
+    const impactDialog = await screen.findByRole('dialog', { name: 'Archive impact preview' });
+    fireEvent.click(within(impactDialog).getByRole('button', { name: 'Continue to archive' }));
+    const reasonDialog = await screen.findByRole('dialog', { name: 'Archive deadline rule' });
+    fireEvent.change(within(reasonDialog).getByLabelText('Archive reason'), { target: { value: 'Retired after policy migration' } });
+    fireEvent.click(within(reasonDialog).getByRole('button', { name: 'Archive rule' }));
+
+    await waitFor(() => expect(archiveMutation.mutateAsync).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText('Inactive')).toBeVisible());
+    fireEvent.click(screen.getByRole('button', { name: 'Preview archive impact' }));
+    await waitFor(() => expect(previewMutation.mutateAsync).toHaveBeenCalledTimes(2));
+    expect(previewMutation.mutateAsync.mock.calls[1]?.[0]).toEqual(expect.objectContaining({
+      id: rule.id,
+      input: expect.objectContaining({ expectedDraftRevision: 5, draftConfigHash: 'd'.repeat(64) }),
+    }));
   });
 
   it('keeps nested applicability groups schema-valid through operator transitions', async () => {

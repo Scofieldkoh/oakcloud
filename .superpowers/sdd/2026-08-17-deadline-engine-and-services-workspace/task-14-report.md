@@ -1,6 +1,6 @@
 # Task 14 report — deadline rules and business-calendar administration
 
-Status: IMPLEMENTED / pending rereview
+Status: IMPLEMENTED / pending final rereview
 
 ## Scope delivered
 
@@ -42,7 +42,7 @@ The final focused admin suite is GREEN:
 
 ```text
 npm.cmd run test:run -- __tests__/components/deadline-rules-admin.test.tsx __tests__/components/business-calendar-admin.test.tsx __tests__/components/services-admin-page.test.tsx __tests__/components/service-catalog.test.tsx __tests__/components/schedule-entry-editor.test.tsx
-5 files passed; 30 tests passed
+5 files passed; 32 tests passed
 ```
 
 The focused tests cover all three administration tabs and URL state,
@@ -72,6 +72,14 @@ The rereview corrections close the interaction-level gaps identified in
 - Administration panels remain mounted while hidden, tab keyboard navigation
   supports Arrow/Home/End keys, rule pagination exposes server totals, and
   catalog mutations invalidate the complete client-option projection prefix.
+- Publish and archive now replace the local selected rule with the
+  authoritative mutation DTO (or await detail refetch before clearing the
+  override), so the post-mutation version/state and the next preview use the
+  current server identity without reselecting the row.
+- Reassigning a variant from one rule to another rebuilds defaults only from
+  the new rule's compatible typed definitions and explicitly resets
+  association schedule entries, preventing old or wrong-type keys from being
+  submitted.
 
 ## Compatibility and verification evidence
 
@@ -80,7 +88,7 @@ selection passed:
 
 ```text
 npm.cmd run test:run -- __tests__/components/business-calendar-admin.test.tsx __tests__/components/deadline-rules-admin.test.tsx __tests__/components/services-admin-page.test.tsx __tests__/components/service-catalog.test.tsx __tests__/components/schedule-entry-editor.test.tsx __tests__/services/services-admin-foundation-schema.test.ts __tests__/services/deadline-rule-operation-schemas.test.ts __tests__/services/deadline-rule-impact.test.ts __tests__/services/deadline-rule.service.test.ts __tests__/services/business-calendar.service.test.ts __tests__/services/service-catalog.service.test.ts __tests__/lib/service-schedule-validation.test.ts __tests__/lib/service-catalog-validation.test.ts __tests__/api/deadline-rule-routes.test.ts __tests__/api/service-calendar-routes.test.ts __tests__/api/service-catalog-routes.test.ts
-16 files passed; 137 tests passed
+16 files passed; 139 tests passed
 ```
 
 Directly relevant Chromium checks passed:

@@ -68,6 +68,40 @@ function validationOptions(value: unknown): string[] {
   return Array.isArray(options) ? options.filter((option): option is string => typeof option === 'string') : [];
 }
 
+function isCompatibleParameterDefault(
+  value: unknown,
+  definition: ServiceVariantDeadlineRuleOption['parameters'][number],
+): boolean {
+  switch (definition.type) {
+    case 'STRING':
+      return typeof value === 'string';
+    case 'INTEGER':
+      return typeof value === 'number' && Number.isInteger(value) && Number.isFinite(value);
+    case 'DECIMAL':
+      return typeof value === 'number' && Number.isFinite(value);
+    case 'BOOLEAN':
+      return typeof value === 'boolean';
+    case 'DATE':
+      return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    case 'ENUM':
+      return typeof value === 'string' && validationOptions(definition.validation).includes(value);
+    default:
+      return false;
+  }
+}
+
+function defaultsForRuleOption(option: ServiceVariantDeadlineRuleOption): Pick<DeadlineRuleFormRow, 'parameterDefaults' | 'parameterTypes'> {
+  const parameterDefaults: Record<string, unknown> = {};
+  const parameterTypes: Record<string, ParameterDefaultType> = {};
+  option.parameters.forEach((definition) => {
+    parameterTypes[definition.key] = definition.type;
+    if (definition.defaultValue !== undefined && isCompatibleParameterDefault(definition.defaultValue, definition)) {
+      parameterDefaults[definition.key] = definition.defaultValue;
+    }
+  });
+  return { parameterDefaults, parameterTypes };
+}
+
 function toScheduleEntries(value: unknown): ScheduleEntryInput[] {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is ScheduleEntryInput => (
@@ -612,7 +646,19 @@ export function ServiceVariantForm({
                       <select
                         aria-label={`Deadline rule ${index + 1}`}
                         value={rule.ruleId}
-                        onChange={(event) => updateDeadlineRule(index, { ruleId: event.target.value })}
+                        onChange={(event) => {
+                          const ruleId = event.target.value;
+                          const selectedOption = availableDeadlineRules.find((option) => option.id === ruleId);
+                          const rebuilt = selectedOption ? defaultsForRuleOption(selectedOption) : { parameterDefaults: {}, parameterTypes: {} };
+                          updateDeadlineRule(index, {
+                            ruleId,
+                            ...rebuilt,
+                            // Schedule defaults belong to the association, not
+                            // the previous rule. Reset them on reassignment so
+                            // entries from rule A cannot be sent to rule B.
+                            scheduleDefaults: [],
+                          });
+                        }}
                         disabled={isLoadingDeadlineRules || availableDeadlineRules.length === 0}
                         className="mt-2 min-h-[44px] w-full rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
                         required
@@ -625,6 +671,7 @@ export function ServiceVariantForm({
                           </option>
                         ))}
                       </select>
+                      <span className="mt-1 block text-[11px] text-text-muted">Changing the rule resets typed defaults and schedule entries for the new rule.</span>
                     </label>
                     <label className="flex min-h-[44px] items-center gap-2 text-sm text-text-secondary">
                       <input

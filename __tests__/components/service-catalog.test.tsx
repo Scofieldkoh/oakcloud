@@ -27,6 +27,7 @@ vi.mock('@/components/ui/toast', () => ({
 import { ServiceCatalogPanel } from '@/components/services/admin/catalog/service-catalog-panel';
 import { ServiceFamilyForm } from '@/components/services/admin/catalog/service-family-form';
 import { ServiceVariantForm } from '@/components/services/admin/catalog/service-variant-form';
+import { serviceVariantRuleAssociationsSchema } from '@/lib/validations/deadline-rule';
 
 const family = {
   id: 'family-1',
@@ -173,6 +174,64 @@ describe('ServiceCatalogPanel', () => {
         expect.objectContaining({ ruleId: 'rule-2', displayOrder: 1, scheduleDefaults: expect.arrayContaining([expect.objectContaining({ expression: expect.objectContaining({ kind: 'DAY_OF_MONTH' }) })]) }),
       ],
     })));
+  });
+
+  it('rebuilds an existing association for the newly selected rule', async () => {
+    const ruleAId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const ruleBId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ServiceVariantForm
+        familyId="family-1"
+        partials={[{ id: 'partial-1', name: 'accounting-sow', displayName: 'Accounting SOW' }]}
+        initialValue={{
+          ...family.variants[0],
+          deadlineRules: [{
+            id: 'assoc-1',
+            ruleId: ruleAId,
+            serviceVariantId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            enabledByDefault: true,
+            parameterDefaults: { filingClass: 'PREMIUM' },
+            scheduleDefaults: [{ key: 'old-entry', label: 'Old entry', expression: { kind: 'DAY_OF_MONTH', day: 15 }, businessDayAdjustment: 'NONE' }],
+            displayOrder: 0,
+            archivedAt: null,
+          }],
+        }}
+        availableDeadlineRules={[
+          {
+            id: ruleAId,
+            code: 'RULE_A',
+            name: 'Rule A',
+            parameters: [{ key: 'filingClass', label: 'Filing class', type: 'ENUM', required: true, validation: { options: ['STANDARD', 'PREMIUM'] }, defaultValue: 'STANDARD' }],
+          },
+          {
+            id: ruleBId,
+            code: 'RULE_B',
+            name: 'Rule B',
+            parameters: [{ key: 'monthsAfterFye', label: 'Months after FYE', type: 'INTEGER', required: true, validation: null, defaultValue: 2 }],
+          },
+        ]}
+        onCancel={vi.fn()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deadline rule 1' }), { target: { value: ruleBId } });
+    expect(screen.getByText('Months after FYE')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Save variant' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    const payload = onSubmit.mock.calls[0]?.[0] as { deadlineRules: Array<Record<string, unknown>> };
+    expect(payload.deadlineRules).toEqual([
+      expect.objectContaining({
+        ruleId: ruleBId,
+        parameterDefaults: { monthsAfterFye: 2 },
+        scheduleDefaults: [],
+        displayOrder: 0,
+      }),
+    ]);
+    expect(payload.deadlineRules[0]).not.toHaveProperty('parameterDefaults.filingClass');
+    expect(serviceVariantRuleAssociationsSchema.safeParse(payload.deadlineRules).success).toBe(true);
   });
 
   it('hides mutation actions for read-only users', () => {

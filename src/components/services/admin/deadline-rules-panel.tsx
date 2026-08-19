@@ -88,6 +88,21 @@ export function DeadlineRulesPanel({
   const publish = usePublishDeadlineRule(workspaceId);
   const archive = useArchiveDeadlineRule(workspaceId);
 
+  const syncAuthoritativeRule = async (result: DeadlineRuleDto | undefined) => {
+    if (result) {
+      setSelectedOverride(result);
+      return;
+    }
+    try {
+      await detail.refetch();
+    } catch {
+      // The mutation succeeded; the query error state will expose a failed
+      // refetch without retaining the pre-mutation override.
+    } finally {
+      setSelectedOverride(null);
+    }
+  };
+
   useEffect(() => {
     if (!activeId && firstId) setSelectedId(firstId);
     if (selectedId && list.data && !list.data.rules.some((rule) => rule.id === selectedId)) setSelectedId(firstId);
@@ -148,7 +163,8 @@ export function DeadlineRulesPanel({
     const input: DeadlineRulePublishInput = { ...identity, operation: 'PUBLISH', previewFingerprint: preview.previewFingerprint };
     setActionError(null);
     try {
-      await publish.mutateAsync({ id: selected.id, input });
+      const published = await publish.mutateAsync({ id: selected.id, input });
+      await syncAuthoritativeRule(published);
       setPreview(null);
       setEditing(false);
     } catch (error) {
@@ -163,7 +179,8 @@ export function DeadlineRulesPanel({
     const input: DeadlineRuleArchiveInput = { ...identity, operation: 'ARCHIVE', previewFingerprint: archivePreview.previewFingerprint, reason: archiveReason.trim() };
     setActionError(null);
     try {
-      await archive.mutateAsync({ id: selected.id, input });
+      const archived = await archive.mutateAsync({ id: selected.id, input });
+      await syncAuthoritativeRule(archived);
       setArchiveDialogOpen(false);
       setArchiveReason('');
       setArchivePreview(null);
