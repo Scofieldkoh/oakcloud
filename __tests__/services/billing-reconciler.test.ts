@@ -336,6 +336,53 @@ describe('reconcileClientServiceBilling', () => {
     expect(mocks.billingOccurrence.updateMany.mock.calls[0]?.[0].where).not.toHaveProperty('origin');
   });
 
+  it.each([
+    ['date-overridden', { dateOverridden: true, operativeExpectedDate: new Date('2026-09-15T00:00:00.000Z') }, 'operativeExpectedDate'],
+    ['value-overridden', { valueOverridden: true, operativeAmount: '125.00' }, 'operativeAmount'],
+  ] as const)('retries hidden refresh for an initially %s row after an unrelated edit', async (_label, overrides, protectedField) => {
+    const generation = `billing-v1-${hashConfiguration({
+      feeLineId: 'fee-1',
+    })}`;
+    const stale = occurrence({
+      generationKey: generation,
+      calculatedExpectedDate: new Date('2026-08-25T00:00:00.000Z'),
+      baseAmount: '90.00',
+      ...overrides,
+    });
+    const fresh = occurrence({
+      ...stale,
+      updatedAt: new Date('2026-08-19T00:00:00.000Z'),
+      notes: 'Concurrent lifecycle edit',
+    });
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 1 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      horizonEnd: '2026-09-01',
+    });
+
+    expect(result.recalculated).toBe(0);
+    expect(result.preservedByReason.OVERRIDDEN).toBe(1);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(2);
+    const data = mocks.billingOccurrence.updateMany.mock.calls[1]?.[0].data as Record<string, unknown>;
+    expect(data).toEqual(expect.objectContaining({
+      calculatedExpectedDate: new Date('2026-09-01T00:00:00.000Z'),
+      baseAmount: '100.00',
+    }));
+    expect(data).not.toHaveProperty(protectedField);
+    expect(data).not.toHaveProperty('operativeExpectedDate');
+    expect(data).not.toHaveProperty('operativeAmount');
+    expect(mocks.billingOccurrence.updateMany.mock.calls[1]?.[0].where).toEqual(expect.objectContaining({
+      updatedAt: fresh.updatedAt,
+      dateOverridden: stale.dateOverridden,
+      valueOverridden: stale.valueOverridden,
+    }));
+  });
+
   it('does not count a concurrent writer that already applied the desired recalculation', async () => {
     const generation = `billing-v1-${hashConfiguration({
       feeLineId: 'fee-1',

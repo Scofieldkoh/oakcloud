@@ -249,8 +249,8 @@ export type WorkerServiceReconciliationInput = {
 
 /**
  * Reconcile one client service through the worker's leased transaction path.
- * Deadlines and billing share one serializable service transaction so their
- * request provenance, write mode, horizon, and lease checks stay aligned.
+ * Deadlines and billing share one per-service transaction so their request
+ * provenance, write mode, horizon, and lease checks stay aligned.
  */
 export async function reconcileClientServiceThroughWorkerTransaction(
   db: typeof prisma,

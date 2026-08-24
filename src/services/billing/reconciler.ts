@@ -333,12 +333,19 @@ function sameOccurrenceIdentity(left: StoredBillingOccurrence, right: StoredBill
   return occurrenceIdentity(left) === occurrenceIdentity(right);
 }
 
-function isGenuinelyProtected(occurrence: StoredBillingOccurrence, today: DateOnly): boolean {
+function isGenuinelyProtected(
+  occurrence: StoredBillingOccurrence,
+  today: DateOnly,
+  initial?: StoredBillingOccurrence,
+): boolean {
   if (occurrence.origin && occurrence.origin !== 'RULE') return true;
   const operative = toDateOnly(occurrence.operativeExpectedDate);
   if (!operative || compareDateOnly(operative, today) < 0) return true;
   if (occurrence.status === 'BILLED' || occurrence.status === 'WAIVED' || occurrence.status === 'CANCELLED') return true;
-  return Boolean(occurrence.dateOverridden) || Boolean(occurrence.valueOverridden);
+  return initial
+    ? Boolean(occurrence.dateOverridden) !== Boolean(initial.dateOverridden)
+      || Boolean(occurrence.valueOverridden) !== Boolean(initial.valueOverridden)
+    : Boolean(occurrence.dateOverridden) || Boolean(occurrence.valueOverridden);
 }
 
 function isMutationEligible(
@@ -405,7 +412,7 @@ async function applyOccurrenceMutation(
     const fresh = await loadOccurrence(db, input.tenantId, input.clientServiceId, occurrence.id);
     if (!fresh) return { kind: 'GONE' };
     if (!sameOccurrenceIdentity(fresh, occurrence)) return preservedMutationOutcome(fresh);
-    if (isGenuinelyProtected(fresh, input.today)) return preservedMutationOutcome(fresh);
+    if (isGenuinelyProtected(fresh, input.today, occurrence)) return preservedMutationOutcome(fresh);
     if (!isMutationEligible(fresh, occurrence, input.today)) return preservedMutationOutcome(fresh);
     if (mutationAlreadyApplied(fresh, data)) return { kind: 'ALREADY_APPLIED' };
     candidate = fresh;
