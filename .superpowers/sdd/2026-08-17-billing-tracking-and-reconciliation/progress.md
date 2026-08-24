@@ -41,6 +41,7 @@
 | Task | Status | Commit | Review |
 |---|---|---|---|
 | 1 | PASS / final-review-complete | `66197f3c`, `960d0778`, `e530c522` | `final review PASS (0 Critical / 0 Important / 0 Minor)` |
+| 2 | PASS / task-review-complete | `fcad7bba`, `1e3829e4` | `5 Important addressed; no new breakage; 1 Minor deferred` |
 
 ## RED evidence
 
@@ -83,10 +84,51 @@
 - The primary session staged and committed the closeout test after the implementation subagent's worktree index-lock attempt failed; no lock or ACL was deleted or changed.
 - No migration apply, live Postgres, repository-wide build/lint, or performance gate was run; those remain deferred until all Plan 3 tasks.
 
-## Resume checkpoint
+## Historical resume checkpoint after Task 1
 
 - Pause point: Plan 3 Task 1 is complete and independently accepted at `e530c522`.
 - Next work: begin Plan 3 Task 2, `Define fee schedules and migrate existing billing frequencies`.
-- Task 2 and all later Plan 3 tasks have not started.
+- At that checkpoint, Task 2 and all later Plan 3 tasks had not started. The current status is recorded below.
 - Continue using `gpt-5.6-luna` at `max` for implementation, `gpt-5.6-sol` at `medium` for each task review, and `gpt-5.6-sol` at `xhigh` for the final whole-branch review.
 - Keep the repository-wide baseline, full build/full lint, live migrations/PostgreSQL, and wall-clock performance gates deferred until all Plan 3 tasks are implemented.
+
+## Task 2 — fee schedules and billing-frequency backfill
+
+### Status
+
+- PASS / task review complete.
+- Implementation commit `fcad7bba`; fix-round commit `1e3829e4`.
+- Task 1 history above is unchanged.
+
+### Implemented
+
+- Added the version-1 billing schedule schema, legacy-frequency conversion, shared date-only/business-day evaluation, and public billing exports.
+- Added the mapped SQL migration for deterministic schedule snapshots, CUSTOM/missing-start coverage issues, and one idempotent pending tenant-scoped `BILLING_BACKFILL` request per active non-deleted tenant.
+- Preserved legacy amount/currency fields, composite tenant lineage, fee-line archive/status constraints, `UNREVIEWED`, and manual-only billing semantics.
+- Added unit/contract tests plus a `TEST_DATABASE_URL`-guarded isolated PostgreSQL migration/idempotency/tenant-isolation test.
+
+### Evidence
+
+- Initial equivalent collected RED: 3 new Task 2 suites failed collection because the billing contracts/migration were absent.
+- Equivalent focused GREEN: 3 files / 18 tests passed.
+- PostgreSQL migration suite: 1 file / 1 test skipped locally without `TEST_DATABASE_URL`.
+- Shared schema/date/schedule compatibility: 3 files / 40 tests passed.
+- TypeScript (`npx.cmd tsc --noEmit`): exit 0.
+- Scoped zero-warning ESLint: exit 0.
+- Prisma validation: schema valid, exit 0.
+- Diff/whitespace checks: no findings.
+- Restricted subagent execution encountered `Cannot read directory "../../../../../../..": Access is denied`. A fresh primary-session run of the exact focused worktree command with the required permission passed 23 tests; the PostgreSQL suite remained one intentional skip.
+
+### Commit and deferred gates
+
+- The primary session staged and committed the verified implementation and fix after the subagent's worktree index-lock attempts failed; no lock or ACL was changed.
+- Repository-wide build/full lint, live migration/PostgreSQL, and performance gates remain deferred until all Plan 3 tasks are complete.
+
+### Task 2 review and rulings
+
+- Initial review against `fcad7bba`: spec FAIL / quality Needs fixes; 0 Critical, 5 Important, 1 Minor.
+- Ruling: `BillingScheduleConfigV1` continues to reuse the shared `ScheduleEntry` schema and primitives, but its billing-specific validation must reject source and operand variants that cannot be resolved from the fee-schedule evaluator's declared input. The approved spec requires one shared language, not acceptance of configurations that can only fail at evaluation time. Cost if wrong: future Company-field, parameter, or milestone-based billing formulas will require an explicit evaluator-input and schema-version extension rather than becoming silently accepted now.
+- Task 2: minor (deferred): ONE_TIME accepts multiple entries but deterministically emits only the lexical first entry. Final whole-branch review must reconcile the brief's "at most one item" wording with the approved generic repeatable-entry contract before merge.
+- Fix round 1/5 implemented for: end-range look-ahead after business-day adjustment; canonical cadence/interval consistency; actual start-date lower bounds; billing-unresolvable shared expressions; non-destructive backfill reruns. Amended focused verification passed 3 files / 23 tests, compatibility passed 3 files / 40 tests, PostgreSQL remained an intentional local skip, and TypeScript/scoped lint/Prisma validation/diff checks passed.
+- Fix round 1/5 scoped rereview: all 5 Important findings ADDRESSED, no new breakage; commit `1e3829e4`.
+- Task 2: complete (commits `95275e4c..1e3829e4`, review clean; 1 Minor deferred to final whole-branch review).
