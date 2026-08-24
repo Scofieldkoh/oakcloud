@@ -22,6 +22,7 @@ describe('billing schedule backfill migration contract', () => {
     expect(migration).toContain("'ONE_TIME'");
     expect(migration).not.toMatch(/SET[\s\S]*\b(amount|currency)\b\s*=/i);
     expect(migration).not.toMatch(/SET[\s\S]*billing_disposition\s*=/i);
+    expect(migration).toMatch(/fee_line\."schedule_config"\s+IS\s+NULL/i);
   });
 
   it('does not fabricate custom dates and records deterministic open coverage issues', () => {
@@ -33,6 +34,7 @@ describe('billing schedule backfill migration contract', () => {
     expect(migration).toContain('ON CONFLICT');
     expect(migration).toContain('resolved_at');
     expect(migration).toContain('issue_key');
+    expect(migration.match(/fee_line\."schedule_config"\s+IS\s+NULL/gi)?.length).toBeGreaterThanOrEqual(3);
   });
 
   it('creates one pending tenant backfill request per active tenant with a stable dedupe key', () => {

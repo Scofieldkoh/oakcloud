@@ -46,7 +46,7 @@ function intervalMonths(config: BillingScheduleConfigV1): number {
     if (!config.customInterval) throw new ValidationError('A custom billing schedule requires a structured month interval');
     return config.customInterval.count;
   }
-  return config.customInterval?.count ?? CADENCE_INTERVALS[config.cadence];
+  return CADENCE_INTERVALS[config.cadence];
 }
 
 function monthStart(value: DateOnly): DateOnly {
@@ -169,17 +169,27 @@ export function evaluateBillingSchedule(input: BillingScheduleEvaluationInput): 
   if (entries.length === 0) return [];
 
   const startMonth = monthStart(config.startDate);
-  const firstOffset = Math.max(0, Math.floor(monthDifference(startMonth, monthStart(from)) / Math.max(interval, 1)) - 1);
+  const cadenceInterval = Math.max(interval, 1);
+  const firstOffset = config.cadence === 'ONE_TIME'
+    ? 0
+    : Math.max(0, Math.floor(monthDifference(startMonth, monthStart(from)) / cadenceInterval) - 1);
   let cursor = addMonthsClamped(startMonth, firstOffset * Math.max(interval, 1));
+  const periodsThroughEnd = Math.floor(monthDifference(startMonth, monthStart(to)) / cadenceInterval);
+  const lastCursor = addMonthsClamped(
+    startMonth,
+    Math.max(0, periodsThroughEnd + 1) * cadenceInterval,
+  );
   const occurrences: EvaluatedBillingOccurrence[] = [];
   const maxPeriods = 10_000;
-  for (let index = 0; index < maxPeriods && compareDateOnly(cursor, to) <= 0; index += 1) {
+  for (let index = 0; index < maxPeriods && compareDateOnly(cursor, lastCursor) <= 0; index += 1) {
     const nextStart = config.cadence === 'ONE_TIME' ? addMonthsClamped(cursor, 1) : addMonthsClamped(cursor, interval);
     const cycleEnd = addCalendarDays(nextStart, -1);
     const billingPeriodKey = periodKey(cursor, config.cadence, interval, config.startDate);
     for (const entry of entries) {
       const resolvedDate = resolveEntryDate(entry, cursor, cycleEnd, input.calendar);
       const { calculated: calculatedExpectedDate, operative: operativeExpectedDate } = resolvedDate;
+      if (compareDateOnly(calculatedExpectedDate, config.startDate) < 0
+        || compareDateOnly(operativeExpectedDate, config.startDate) < 0) continue;
       if (compareDateOnly(operativeExpectedDate, from) < 0 || compareDateOnly(operativeExpectedDate, to) > 0) continue;
       occurrences.push({
         feeLineId: input.feeLine.id,

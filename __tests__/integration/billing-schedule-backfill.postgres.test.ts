@@ -124,6 +124,59 @@ describePostgres('billing schedule backfill PostgreSQL integration', () => {
       `);
 
       await applyMigration(client, schemaName, billingBackfillMigration);
+
+      const initialIssues = await client.query(`
+        SELECT fee_line_id, issue_type, resolved_at
+        FROM ${table('billing_coverage_issues')}
+        ORDER BY fee_line_id
+      `);
+      expect(initialIssues.rows).toEqual([
+        { fee_line_id: 'fee-custom', issue_type: 'INVALID_CUSTOM_SCHEDULE', resolved_at: null },
+        { fee_line_id: 'fee-missing', issue_type: 'MISSING_START_DATE', resolved_at: null },
+      ]);
+
+      // Simulate a user/reconciliation update between migration applications.
+      // The rerun must preserve these structured schedules and must not insert
+      // new open legacy-derived issues after the existing issues are resolved.
+      await client.query(`
+        UPDATE ${table('client_service_fee_lines')}
+        SET schedule_config = '{
+          "schemaVersion": 1,
+          "cadence": "MONTHLY",
+          "startDate": "2026-08-31",
+          "customInterval": {"unit": "MONTH", "count": 1},
+          "scheduleEntries": [
+            {"key": "configured-date", "label": "Configured date", "expression": {"kind": "DAY_OF_MONTH", "day": 5}, "businessDayAdjustment": "PREVIOUS"},
+            {"key": "second-date", "label": "Second configured date", "expression": {"kind": "DAY_OF_MONTH", "day": 20}, "businessDayAdjustment": "NEXT"}
+          ]
+        }'::jsonb
+        WHERE id = 'fee-monthly';
+
+        UPDATE ${table('client_service_fee_lines')}
+        SET schedule_config = '{
+          "schemaVersion": 1,
+          "cadence": "CUSTOM",
+          "startDate": "2026-09-15",
+          "customInterval": {"unit": "MONTH", "count": 2},
+          "scheduleEntries": [{"key": "configured-custom", "label": "Configured custom date", "expression": {"kind": "DAY_OF_MONTH", "day": 15}, "businessDayAdjustment": "NONE"}]
+        }'::jsonb
+        WHERE id = 'fee-custom';
+
+        UPDATE ${table('client_service_fee_lines')}
+        SET schedule_config = '{
+          "schemaVersion": 1,
+          "cadence": "ANNUALLY",
+          "startDate": "2026-10-10",
+          "customInterval": {"unit": "MONTH", "count": 12},
+          "scheduleEntries": [{"key": "configured-annual", "label": "Configured annual date", "expression": {"kind": "DAY_OF_MONTH", "day": 10}, "businessDayAdjustment": "NONE"}]
+        }'::jsonb
+        WHERE id = 'fee-missing';
+
+        UPDATE ${table('billing_coverage_issues')}
+        SET resolved_at = TIMESTAMP '2026-08-18 00:00:00', updated_at = TIMESTAMP '2026-08-18 00:00:00'
+        WHERE fee_line_id IN ('fee-custom', 'fee-missing') AND resolved_at IS NULL;
+      `);
+
       await applyMigration(client, schemaName, billingBackfillMigration);
 
       const lines = await client.query(`
@@ -133,21 +186,30 @@ describePostgres('billing schedule backfill PostgreSQL integration', () => {
       `);
       expect(lines.rows).toEqual([
         {
-          id: 'fee-custom', amount: '200.00', currency: 'USD', schedule_config: null,
+          id: 'fee-custom', amount: '200.00', currency: 'USD', schedule_config: {
+            schemaVersion: 1, cadence: 'CUSTOM', startDate: '2026-09-15',
+            customInterval: { unit: 'MONTH', count: 2 }, scheduleEntries: [{
+              key: 'configured-custom', label: 'Configured custom date',
+              expression: { kind: 'DAY_OF_MONTH', day: 15 }, businessDayAdjustment: 'NONE',
+            }],
+          },
         },
         {
           id: 'fee-missing', amount: '300.00', currency: 'EUR', schedule_config: {
-            schemaVersion: 1, cadence: 'ANNUALLY', startDate: null,
-            customInterval: { unit: 'MONTH', count: 12 }, scheduleEntries: [],
+            schemaVersion: 1, cadence: 'ANNUALLY', startDate: '2026-10-10',
+            customInterval: { unit: 'MONTH', count: 12 }, scheduleEntries: [{
+              key: 'configured-annual', label: 'Configured annual date',
+              expression: { kind: 'DAY_OF_MONTH', day: 10 }, businessDayAdjustment: 'NONE',
+            }],
           },
         },
         {
           id: 'fee-monthly', amount: '125.00', currency: 'SGD', schedule_config: {
             schemaVersion: 1, cadence: 'MONTHLY', startDate: '2026-08-31',
-            customInterval: { unit: 'MONTH', count: 1 }, scheduleEntries: [{
-              key: 'default', label: 'Billing date',
-              expression: { kind: 'DAY_OF_MONTH', day: 31 }, businessDayAdjustment: 'NONE',
-            }],
+            customInterval: { unit: 'MONTH', count: 1 }, scheduleEntries: [
+              { key: 'configured-date', label: 'Configured date', expression: { kind: 'DAY_OF_MONTH', day: 5 }, businessDayAdjustment: 'PREVIOUS' },
+              { key: 'second-date', label: 'Second configured date', expression: { kind: 'DAY_OF_MONTH', day: 20 }, businessDayAdjustment: 'NEXT' },
+            ],
           },
         },
         {
@@ -177,8 +239,8 @@ describePostgres('billing schedule backfill PostgreSQL integration', () => {
         ORDER BY fee_line_id NULLS FIRST, fee_line_id
       `);
       expect(issues.rows).toEqual(expect.arrayContaining([
-        { tenant_id: 'tenant-a', client_service_id: 'service-a', fee_line_id: 'fee-custom', issue_type: 'INVALID_CUSTOM_SCHEDULE', resolved_at: null },
-        { tenant_id: 'tenant-a', client_service_id: 'service-a', fee_line_id: 'fee-missing', issue_type: 'MISSING_START_DATE', resolved_at: null },
+        { tenant_id: 'tenant-a', client_service_id: 'service-a', fee_line_id: 'fee-custom', issue_type: 'INVALID_CUSTOM_SCHEDULE', resolved_at: expect.anything() },
+        { tenant_id: 'tenant-a', client_service_id: 'service-a', fee_line_id: 'fee-missing', issue_type: 'MISSING_START_DATE', resolved_at: expect.anything() },
       ]));
       expect(issues.rows).toHaveLength(2);
 

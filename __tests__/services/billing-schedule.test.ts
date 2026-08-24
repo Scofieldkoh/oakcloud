@@ -129,6 +129,29 @@ describe('billing schedule evaluation', () => {
     expect(occurrences.every((occurrence) => occurrence.amount === '125.00' && occurrence.currency === 'SGD')).toBe(true);
   });
 
+  it('looks one cadence period beyond the requested end for previous-adjusted dates', () => {
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-07-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [entry('month-start', 1, 'PREVIOUS')],
+      },
+      feeLine: { id: 'fee-lookahead', amount: '10', currency: 'SGD' },
+      calendar,
+      from: '2026-07-01',
+      to: '2026-07-31',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2026-08',
+      calculatedExpectedDate: '2026-08-01',
+      operativeExpectedDate: '2026-07-31',
+    }));
+  });
+
   it('uses structured custom month intervals and deterministic period keys', () => {
     const config: BillingScheduleConfigV1 = {
       schemaVersion: 1,
@@ -158,7 +181,7 @@ describe('billing schedule evaluation', () => {
     const config: BillingScheduleConfigV1 = {
       schemaVersion: 1,
       cadence: 'ONE_TIME',
-      startDate: '2026-08-15',
+      startDate: '2026-08-01',
       customInterval: null,
       scheduleEntries: [entry('z-balance', 15), entry('a-deposit', 1)],
     };
@@ -182,11 +205,55 @@ describe('billing schedule evaluation', () => {
 
     expect(inRange).toHaveLength(1);
     expect(inRange[0]).toMatchObject({
-      billingPeriodKey: 'ONE_TIME:2026-08-15',
+      billingPeriodKey: 'ONE_TIME:2026-08-01',
       scheduleEntryKey: 'a-deposit',
       calculatedExpectedDate: '2026-08-01',
     });
     expect(outOfRange).toEqual([]);
+  });
+
+  it('never emits a calculated date before the actual start date', () => {
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-08-15',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [entry('too-early', 1), entry('at-start', 15)],
+      },
+      feeLine: { id: 'fee-start-date', amount: '15', currency: 'SGD' },
+      calendar,
+      from: '2026-08-01',
+      to: '2026-08-31',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toHaveLength(1);
+    expect(occurrences[0]).toMatchObject({
+      scheduleEntryKey: 'at-start',
+      calculatedExpectedDate: '2026-08-15',
+      operativeExpectedDate: '2026-08-15',
+    });
+    expect(occurrences.every((occurrence) => occurrence.calculatedExpectedDate >= '2026-08-15')).toBe(true);
+  });
+
+  it('never emits an operative date before the actual start date', () => {
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-08-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [entry('previous-start', 1, 'PREVIOUS')],
+      },
+      feeLine: { id: 'fee-operative-start', amount: '15', currency: 'SGD' },
+      calendar,
+      from: '2026-07-01',
+      to: '2026-08-01',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toEqual([]);
   });
 
   it('sorts entries by stable key so reordering configuration does not change identities or values', () => {

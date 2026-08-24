@@ -1,6 +1,70 @@
+-- Label-only CUSTOM values cannot be converted into a valid structured
+-- interval. Keep schedule_config NULL and open one stable issue per fee line.
+WITH issue_rows AS (
+  SELECT
+    fee_line."tenant_id",
+    service."company_id",
+    fee_line."client_service_id",
+    fee_line."id" AS "fee_line_id",
+    'INVALID_CUSTOM_SCHEDULE'::"BillingCoverageIssueType" AS "issue_type",
+    'ERROR'::"BillingCoverageIssueSeverity" AS "severity",
+    md5(concat_ws('|', fee_line."tenant_id", fee_line."client_service_id", fee_line."id", 'INVALID_CUSTOM_SCHEDULE')) AS "issue_key",
+    jsonb_build_object('billingFrequency', fee_line."billing_frequency"::text, 'customFrequencyLabel', fee_line."custom_frequency_label") AS "details"
+  FROM "client_service_fee_lines" AS fee_line
+  JOIN "client_services" AS service
+    ON service."tenant_id" = fee_line."tenant_id"
+   AND service."id" = fee_line."client_service_id"
+  WHERE fee_line."billing_frequency" = 'CUSTOM'::"BillingFrequency"
+    AND fee_line."schedule_config" IS NULL
+
+  UNION ALL
+
+  SELECT
+    fee_line."tenant_id",
+    service."company_id",
+    fee_line."client_service_id",
+    fee_line."id" AS "fee_line_id",
+    'MISSING_START_DATE'::"BillingCoverageIssueType" AS "issue_type",
+    'ERROR'::"BillingCoverageIssueSeverity" AS "severity",
+    md5(concat_ws('|', fee_line."tenant_id", fee_line."client_service_id", fee_line."id", 'MISSING_START_DATE')) AS "issue_key",
+    jsonb_build_object('billingFrequency', fee_line."billing_frequency"::text) AS "details"
+  FROM "client_service_fee_lines" AS fee_line
+  JOIN "client_services" AS service
+    ON service."tenant_id" = fee_line."tenant_id"
+   AND service."id" = fee_line."client_service_id"
+  WHERE fee_line."billing_frequency" IN (
+    'MONTHLY'::"BillingFrequency",
+    'QUARTERLY'::"BillingFrequency",
+    'SEMI_ANNUALLY'::"BillingFrequency",
+    'ANNUALLY'::"BillingFrequency",
+    'ONE_TIME'::"BillingFrequency"
+  )
+    AND fee_line."billing_start_date" IS NULL
+    AND fee_line."schedule_config" IS NULL
+)
+INSERT INTO "billing_coverage_issues" (
+  "id", "tenant_id", "company_id", "client_service_id", "fee_line_id",
+  "issue_type", "severity", "issue_key", "details",
+  "first_detected_at", "last_detected_at", "created_at", "updated_at"
+)
+SELECT
+  gen_random_uuid(), "tenant_id", "company_id", "client_service_id", "fee_line_id",
+  "issue_type", "severity", "issue_key", "details",
+  CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM issue_rows
+ON CONFLICT ("tenant_id", "issue_key") WHERE "resolved_at" IS NULL
+DO UPDATE SET
+  "issue_type" = EXCLUDED."issue_type",
+  "severity" = EXCLUDED."severity",
+  "details" = EXCLUDED."details",
+  "last_detected_at" = CURRENT_TIMESTAMP,
+  "updated_at" = CURRENT_TIMESTAMP;
+
 -- Convert only deterministic legacy fee-line frequencies. The legacy amount,
 -- currency, and frequency columns remain the source of truth for compatibility;
--- this migration adds a structured schedule snapshot beside them.
+-- this migration adds a structured schedule snapshot beside them. Issue rows
+-- are captured above while schedule_config is still NULL, so missing-start
+-- coverage remains observable after its deterministic config is written.
 UPDATE "client_service_fee_lines" AS fee_line
 SET "schedule_config" = jsonb_build_object(
   'schemaVersion', 1,
@@ -36,67 +100,8 @@ WHERE fee_line."billing_frequency" IN (
   'SEMI_ANNUALLY'::"BillingFrequency",
   'ANNUALLY'::"BillingFrequency",
   'ONE_TIME'::"BillingFrequency"
-);
-
--- Label-only CUSTOM values cannot be converted into a valid structured
--- interval. Keep schedule_config NULL and open one stable issue per fee line.
-WITH issue_rows AS (
-  SELECT
-    fee_line."tenant_id",
-    service."company_id",
-    fee_line."client_service_id",
-    fee_line."id" AS "fee_line_id",
-    'INVALID_CUSTOM_SCHEDULE'::"BillingCoverageIssueType" AS "issue_type",
-    'ERROR'::"BillingCoverageIssueSeverity" AS "severity",
-    md5(concat_ws('|', fee_line."tenant_id", fee_line."client_service_id", fee_line."id", 'INVALID_CUSTOM_SCHEDULE')) AS "issue_key",
-    jsonb_build_object('billingFrequency', fee_line."billing_frequency"::text, 'customFrequencyLabel', fee_line."custom_frequency_label") AS "details"
-  FROM "client_service_fee_lines" AS fee_line
-  JOIN "client_services" AS service
-    ON service."tenant_id" = fee_line."tenant_id"
-   AND service."id" = fee_line."client_service_id"
-  WHERE fee_line."billing_frequency" = 'CUSTOM'::"BillingFrequency"
-
-  UNION ALL
-
-  SELECT
-    fee_line."tenant_id",
-    service."company_id",
-    fee_line."client_service_id",
-    fee_line."id" AS "fee_line_id",
-    'MISSING_START_DATE'::"BillingCoverageIssueType" AS "issue_type",
-    'ERROR'::"BillingCoverageIssueSeverity" AS "severity",
-    md5(concat_ws('|', fee_line."tenant_id", fee_line."client_service_id", fee_line."id", 'MISSING_START_DATE')) AS "issue_key",
-    jsonb_build_object('billingFrequency', fee_line."billing_frequency"::text) AS "details"
-  FROM "client_service_fee_lines" AS fee_line
-  JOIN "client_services" AS service
-    ON service."tenant_id" = fee_line."tenant_id"
-   AND service."id" = fee_line."client_service_id"
-  WHERE fee_line."billing_frequency" IN (
-    'MONTHLY'::"BillingFrequency",
-    'QUARTERLY'::"BillingFrequency",
-    'SEMI_ANNUALLY'::"BillingFrequency",
-    'ANNUALLY'::"BillingFrequency",
-    'ONE_TIME'::"BillingFrequency"
-  )
-    AND fee_line."billing_start_date" IS NULL
 )
-INSERT INTO "billing_coverage_issues" (
-  "id", "tenant_id", "company_id", "client_service_id", "fee_line_id",
-  "issue_type", "severity", "issue_key", "details",
-  "first_detected_at", "last_detected_at", "created_at", "updated_at"
-)
-SELECT
-  gen_random_uuid(), "tenant_id", "company_id", "client_service_id", "fee_line_id",
-  "issue_type", "severity", "issue_key", "details",
-  CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM issue_rows
-ON CONFLICT ("tenant_id", "issue_key") WHERE "resolved_at" IS NULL
-DO UPDATE SET
-  "issue_type" = EXCLUDED."issue_type",
-  "severity" = EXCLUDED."severity",
-  "details" = EXCLUDED."details",
-  "last_detected_at" = CURRENT_TIMESTAMP,
-  "updated_at" = CURRENT_TIMESTAMP;
+  AND fee_line."schedule_config" IS NULL;
 
 -- Queue one durable tenant-scoped request for the shared reconciliation worker.
 -- md5 is deterministic and fits the existing VARCHAR(64) dedupe-key contract.
