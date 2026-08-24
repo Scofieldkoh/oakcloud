@@ -3,6 +3,11 @@ export {
   evaluateBillingSchedule,
 } from './schedule';
 export { reconcileClientServiceBilling } from './reconciler';
+export {
+  billingCoverageIssueKey,
+  listBillingCoverage,
+  reconcileBillingCoverage,
+} from './coverage';
 
 export type {
   BillingCadence,
@@ -18,5 +23,14 @@ export type {
   BillingReconciliationResult,
   ReconcileClientServiceBillingInput,
 } from './types';
+export type {
+  BillingCoverageIssueSeverity,
+  BillingCoverageIssueSummary,
+  BillingCoverageIssueType,
+  BillingCoverageListInput,
+  BillingCoverageResult,
+  BillingCoverageSummary,
+  ReconcileBillingCoverageInput,
+} from './coverage';
 
 export { billingScheduleConfigSchema } from '@/lib/validations/billing';

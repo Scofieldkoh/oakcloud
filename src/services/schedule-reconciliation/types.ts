@@ -1,6 +1,6 @@
 import type { Prisma } from '@/generated/prisma';
 import type { DateOnly } from '@/services/service-schedule';
-import type { BillingReconciliationResult } from '@/services/billing';
+import type { BillingCoverageResult, BillingReconciliationResult } from '@/services/billing';
 
 export type ScheduleReconciliationScopeType =
   | 'TENANT'
@@ -85,6 +85,7 @@ export type DeadlineReconciliationResult = {
 export type ServiceScheduleReconciliationSummary = {
   deadlines: DeadlineReconciliationResult;
   billing: BillingReconciliationResult;
+  coverage: BillingCoverageResult;
 };
 
 export type ReconcileClientServiceDeadlinesInput = {

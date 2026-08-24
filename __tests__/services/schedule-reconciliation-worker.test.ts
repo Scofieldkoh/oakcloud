@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   flags: vi.fn(),
   reconcile: vi.fn(),
   billingReconcile: vi.fn(),
+  coverageReconcile: vi.fn(),
   enqueue: vi.fn(),
   logger: { info: vi.fn() },
 }));
@@ -25,6 +26,7 @@ vi.mock('@/services/schedule-reconciliation/deadline-reconciler', () => ({
 }));
 vi.mock('@/services/billing', () => ({
   reconcileClientServiceBilling: mocks.billingReconcile,
+  reconcileBillingCoverage: mocks.coverageReconcile,
 }));
 vi.mock('@/services/schedule-reconciliation/queue', () => ({
   enqueueScheduleReconciliation: mocks.enqueue,
@@ -81,6 +83,13 @@ describe('schedule reconciliation worker', () => {
       },
       warnings: [],
     });
+    mocks.coverageReconcile.mockResolvedValue({
+      clientServiceId: 'service-1',
+      opened: 0,
+      refreshed: 0,
+      resolved: 0,
+      openIssues: [],
+    });
   });
 
   it('claims with a five-minute lease and SKIP LOCKED, then completes the request', async () => {
@@ -122,8 +131,12 @@ describe('schedule reconciliation worker', () => {
     });
 
     expect(leaseCalls).toBe(1);
-    expect(summary).toEqual(expect.objectContaining({ deadlines: expect.any(Object), billing: expect.any(Object) }));
+    expect(summary).toEqual(expect.objectContaining({ deadlines: expect.any(Object), billing: expect.any(Object), coverage: expect.any(Object) }));
     expect(mocks.reconcile.mock.invocationCallOrder[0]).toBeLessThan(mocks.billingReconcile.mock.invocationCallOrder[0]!);
+    expect(mocks.billingReconcile.mock.invocationCallOrder[0]).toBeLessThan(mocks.coverageReconcile.mock.invocationCallOrder[0]!);
+    expect(mocks.coverageReconcile).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId: 'tenant-1', clientServiceId: 'service-1', writeMode: 'APPLY', horizonEnd: '2027-08-18',
+    }), expect.anything());
     expect(mocks.prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
@@ -158,6 +171,20 @@ describe('schedule reconciliation worker', () => {
     const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
 
     expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1, leaseLost: 0 });
+    expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'PENDING', nextAttemptAt: new Date('2026-08-18T00:05:00.000Z') }),
+    }));
+  });
+
+  it('retries when coverage fails after billing in the shared transaction', async () => {
+    mocks.prisma.$queryRaw.mockResolvedValue([{ ...request, attemptCount: 1 }]);
+    mocks.coverageReconcile.mockRejectedValueOnce(new Error('coverage dependency failure'));
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1, leaseLost: 0 });
+    expect(mocks.billingReconcile).toHaveBeenCalledTimes(1);
+    expect(mocks.coverageReconcile).toHaveBeenCalledTimes(1);
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'PENDING', nextAttemptAt: new Date('2026-08-18T00:05:00.000Z') }),
     }));

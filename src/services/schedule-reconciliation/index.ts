@@ -10,7 +10,11 @@ export {
   classifyDeadlineChange,
   reconcileClientServiceDeadlines,
 } from './deadline-reconciler';
-export { enqueueDailyRollingHorizonRequests, processScheduleReconciliationBatch } from './worker';
+export {
+  enqueueDailyRollingHorizonRequests,
+  processScheduleReconciliationBatch,
+  reconcileClientServiceThroughWorkerTransaction,
+} from './worker';
 
 export type {
   ServiceWorkspaceFlags,

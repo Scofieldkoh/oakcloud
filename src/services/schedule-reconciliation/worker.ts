@@ -7,8 +7,9 @@ import type { DateOnly } from '@/services/service-schedule';
 import { getServiceWorkspaceFlagsForTenant } from './settings';
 import { reconcileClientServiceDeadlines } from './deadline-reconciler';
 import { enqueueScheduleReconciliation } from './queue';
-import { reconcileClientServiceBilling } from '@/services/billing';
+import { reconcileBillingCoverage, reconcileClientServiceBilling } from '@/services/billing';
 import type {
+  BillingCoverageResult,
   BillingReconciliationPreservedCounts,
   BillingReconciliationResult,
   BillingReconciliationWarning,
@@ -71,6 +72,7 @@ export type ReconciliationLogEventInput = {
   warnings: Array<DeadlineReconciliationWarning | BillingReconciliationWarning>;
   billing?: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
   billingPreservedByReason?: BillingReconciliationPreservedCounts;
+  coverage?: Pick<BillingCoverageResult, 'opened' | 'refreshed' | 'resolved'> & { openIssueCount?: number };
   attempt: number;
   writeMode: 'OBSERVE' | 'APPLY';
 };
@@ -86,6 +88,7 @@ export type ReconciliationLogEvent = {
   warnings: SafeReconciliationWarning[];
   billing?: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
   billingPreservedByReason?: BillingReconciliationPreservedCounts;
+  coverage?: Pick<BillingCoverageResult, 'opened' | 'refreshed' | 'resolved'> & { openIssueCount?: number };
   attempt: number;
   writeMode: 'OBSERVE' | 'APPLY';
 };
@@ -131,6 +134,7 @@ export function buildReconciliationLogEvent(
     warnings: input.warnings.map(safeReconciliationWarning),
     ...(input.billing ? { billing: { ...input.billing } } : {}),
     ...(input.billingPreservedByReason ? { billingPreservedByReason: { ...input.billingPreservedByReason } } : {}),
+    ...(input.coverage ? { coverage: { ...input.coverage } } : {}),
     attempt: input.attempt,
     writeMode: input.writeMode,
   };
@@ -279,7 +283,14 @@ export async function reconcileClientServiceThroughWorkerTransaction(
       cancellationActorId: input.cancellationActorId,
       assertLease: input.assertLease,
     }, tx);
-    return { deadlines, billing };
+    const coverage = await reconcileBillingCoverage({
+      tenantId: input.tenantId,
+      clientServiceId: input.clientServiceId,
+      today: input.today,
+      horizonEnd: input.horizonEnd,
+      writeMode: input.writeMode,
+    }, tx);
+    return { deadlines, billing, coverage };
   });
 }
 
@@ -439,6 +450,12 @@ async function processSingleRequest(
     CANCELLED: 0,
     OVERRIDDEN: 0,
   };
+  let eventCoverage: Pick<BillingCoverageResult, 'opened' | 'refreshed' | 'resolved'> & { openIssueCount?: number } = {
+    opened: 0,
+    refreshed: 0,
+    resolved: 0,
+    openIssueCount: 0,
+  };
   let eventWriteMode: 'OBSERVE' | 'APPLY' = 'OBSERVE';
   let eventEmitted = false;
   const emitEvent = () => {
@@ -454,6 +471,7 @@ async function processSingleRequest(
       warnings: eventWarnings,
       billing: eventBilling,
       billingPreservedByReason: eventBillingPreservedByReason,
+      coverage: eventCoverage,
       attempt: req.attemptCount,
       writeMode: eventWriteMode,
     });
@@ -510,6 +528,12 @@ async function processSingleRequest(
       cancelled: 0,
       preserved: 0,
     };
+    const coverageCounts = {
+      opened: 0,
+      refreshed: 0,
+      resolved: 0,
+      openIssueCount: 0,
+    };
     const billingPreservedByReason: BillingReconciliationPreservedCounts = {
       MANUAL_TRIGGER: 0,
       HISTORICAL: 0,
@@ -535,6 +559,7 @@ async function processSingleRequest(
       summaries.push(summary);
       const result = summary.deadlines;
       const billing = summary.billing;
+      const coverage = summary.coverage;
 
       aggregatedCounts.created += result.counts.created;
       aggregatedCounts.recalculated += result.counts.recalculated;
@@ -555,12 +580,17 @@ async function processSingleRequest(
         billingPreservedByReason[reason as keyof BillingReconciliationPreservedCounts] += count;
       }
       allWarnings.push(...billing.warnings);
+      coverageCounts.opened += coverage.opened;
+      coverageCounts.refreshed += coverage.refreshed;
+      coverageCounts.resolved += coverage.resolved;
+      coverageCounts.openIssueCount += coverage.openIssues.length;
       // Publish aggregation state immediately after each committed service.
       // A subsequent service failure or lease loss must not erase prior work.
       eventCounts = { ...aggregatedCounts };
       eventPreservedByReason = { ...aggregatedPreserved };
       eventBilling = { ...billingCounts };
       eventBillingPreservedByReason = { ...billingPreservedByReason };
+      eventCoverage = { ...coverageCounts };
       eventWarnings = [...allWarnings];
 
       await assertLease();
@@ -584,6 +614,7 @@ async function processSingleRequest(
           preservedByReason: aggregatedPreserved,
           billing: billingCounts,
           billingPreservedByReason,
+          coverage: coverageCounts,
           warnings: allWarnings.map(safeReconciliationWarning),
         } as never,
       },
