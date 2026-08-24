@@ -15,6 +15,8 @@
     "test:client-services:postgres": "vitest run __tests__/integration/client-service-manual-creation.postgres.test.ts",
     "test:deadlines:postgres": "vitest run __tests__/integration/deadline-reconciliation.postgres.test.ts __tests__/integration/deadline-tenant-isolation.postgres.test.ts",
     "test:deadlines:performance": "vitest run __tests__/integration/deadline-performance.postgres.test.ts",
+    "test:billing:postgres": "vitest run __tests__/integration/billing-schedule-backfill.postgres.test.ts __tests__/integration/billing-tracking-integrity.postgres.test.ts __tests__/integration/billing-reconciliation.postgres.test.ts __tests__/integration/billing-tenant-isolation.postgres.test.ts __tests__/integration/manual-deadline-no-billing.postgres.test.ts --maxWorkers=1",
+    "test:billing:performance": "vitest run __tests__/integration/billing-performance.postgres.test.ts",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage",
     "db:generate": "prisma generate && node scripts/normalize-generated-prisma.mjs",

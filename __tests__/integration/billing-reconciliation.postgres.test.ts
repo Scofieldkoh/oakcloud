@@ -12,6 +12,7 @@ import { reconcileClientServiceThroughWorkerTransaction } from '@/services/sched
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const migrationRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../prisma/migrations');
 const billingTrackingMigration = '20260817110000_billing_tracking';
+const deadlineOccurrenceNotesMigration = '20260819010000_deadline_occurrence_notes';
 const billingProvenanceMigration = '20260824100000_billing_reconciliation_provenance';
 const describePostgres = testDatabaseUrl ? describe : describe.skip;
 
@@ -41,7 +42,9 @@ async function applyMigration(client: PoolClient, schemaName: string, migrationD
   const schema = quoteIdentifier(schemaName);
   await client.query('BEGIN');
   try {
-    await client.query(`SET LOCAL search_path TO ${schema}, public`);
+    // Some legacy migrations contain their own COMMIT. Keep the isolated
+    // schema on the connection across those transaction boundaries.
+    await client.query(`SET search_path TO ${schema}, public`);
     await client.query(isolateMigrationSql(sql, schemaName));
     await client.query('COMMIT');
   } catch (error) {
@@ -88,6 +91,7 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
       await setupClient.query(`CREATE SCHEMA ${schema}`);
       await applyMigrationsBefore(setupClient, schemaName, billingTrackingMigration);
       await applyMigration(setupClient, schemaName, billingTrackingMigration);
+      await applyMigration(setupClient, schemaName, deadlineOccurrenceNotesMigration);
       await applyMigration(setupClient, schemaName, billingProvenanceMigration);
       await setupClient.query(`
         INSERT INTO ${table('tenants')} ("id", "name", "slug", "status", "updatedAt")
@@ -122,14 +126,14 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
         VALUES ('request-reconcile', 'tenant-reconcile', 'CLIENT_SERVICE', 'service-reconcile', 'TASK3_TEST', 'corr-reconcile', 'dedupe-reconcile-${schemaName}', 'PENDING', TIMESTAMP '2026-08-18 00:00:00', '{}'::jsonb, NULL, TIMESTAMP '2026-08-18 00:00:00');
       `);
 
-      // pg's options parameter applies search_path to every connection opened
-      // by the Prisma adapter, keeping the run isolated from public data.
+      // PrismaPg's schema option qualifies generated SQL; the pool search_path
+      // keeps raw setup/diagnostic statements isolated from public data too.
       prismaPool = new Pool({
         connectionString: testDatabaseUrl,
         max: 4,
         options: `-c search_path=${schemaName},public`,
       });
-      prisma = new PrismaClient({ adapter: new PrismaPg(prismaPool) });
+      prisma = new PrismaClient({ adapter: new PrismaPg(prismaPool, { schema: schemaName }) });
 
       const input = {
         tenantId: 'tenant-reconcile',
@@ -220,7 +224,9 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
         });
       });
       expect(billedResult.preservedByReason.BILLED).toBe(1);
-      expect(await db.billingOccurrence.findUnique({ where: { id: billedId }, select: { status: true, operativeAmount: true } })).toMatchObject({ status: 'BILLED', operativeAmount: new Prisma.Decimal('125.00') });
+      const billedOccurrence = await db.billingOccurrence.findUnique({ where: { id: billedId }, select: { status: true, operativeAmount: true } });
+      expect(billedOccurrence?.status).toBe('BILLED');
+      expect(billedOccurrence?.operativeAmount.toFixed(2)).toBe('125.00');
 
       const waivedId = rows[1]!.id;
       await db.clientServiceFeeLine.update({ where: { id: 'fee-reconcile' }, data: { amount: new Prisma.Decimal('140.00') } });
@@ -231,7 +237,9 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
         });
       });
       expect(waivedResult.preservedByReason.WAIVED).toBe(1);
-      expect(await db.billingOccurrence.findUnique({ where: { id: waivedId }, select: { status: true, operativeAmount: true } })).toMatchObject({ status: 'WAIVED', operativeAmount: new Prisma.Decimal('125.00') });
+      const waivedOccurrence = await db.billingOccurrence.findUnique({ where: { id: waivedId }, select: { status: true, operativeAmount: true } });
+      expect(waivedOccurrence?.status).toBe('WAIVED');
+      expect(waivedOccurrence?.operativeAmount.toFixed(2)).toBe('130.00');
 
       const dateOverrideId = rows[2]!.id;
       await db.clientServiceFeeLine.update({ where: { id: 'fee-reconcile' }, data: { amount: new Prisma.Decimal('150.00') } });
@@ -253,7 +261,9 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
         });
       });
       expect(valueOverrideResult.preservedByReason.OVERRIDDEN).toBeGreaterThanOrEqual(1);
-      expect(await db.billingOccurrence.findUnique({ where: { id: valueOverrideId }, select: { valueOverridden: true, operativeAmount: true } })).toMatchObject({ valueOverridden: true, operativeAmount: new Prisma.Decimal('999.00') });
+      const valueOverrideOccurrence = await db.billingOccurrence.findUnique({ where: { id: valueOverrideId }, select: { valueOverridden: true, operativeAmount: true } });
+      expect(valueOverrideOccurrence?.valueOverridden).toBe(true);
+      expect(valueOverrideOccurrence?.operativeAmount.toFixed(2)).toBe('999.00');
 
       await db.clientServiceFeeLine.update({
         where: { id: 'fee-reconcile' },

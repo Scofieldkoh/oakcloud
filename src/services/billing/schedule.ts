@@ -212,7 +212,10 @@ export function evaluateBillingSchedule(input: BillingScheduleEvaluationInput): 
 
   const interval = intervalMonths(config);
   const sortedEntries = [...config.scheduleEntries].sort((left, right) => left.key.localeCompare(right.key));
-  const entries = config.cadence === 'ONE_TIME' ? sortedEntries.slice(0, 1) : sortedEntries;
+  // A one-time schedule may still contain multiple stable entries.  Each
+  // entry is materialized once for the one-time period; the schedule-entry
+  // key is part of the occurrence identity and must not be silently dropped.
+  const entries = sortedEntries;
   if (entries.length === 0) return [];
 
   const startMonth = monthStart(config.startDate);

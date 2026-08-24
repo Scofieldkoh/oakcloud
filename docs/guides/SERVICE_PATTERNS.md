@@ -255,6 +255,77 @@ export function getDocumentExporter(): IDocumentExporter {
   mode. Never include uploaded company documents, notes, rule wording, secrets,
   or other free-text content in that event.
 
+## Billing tracking and reconciliation
+
+Billing is tracking-only. A `BillingOccurrence` records an expected or
+externally recorded billing item; Oakcloud does not issue invoices, collect
+payments, or post to an accounting ledger. `BILLED` means that a user recorded
+external billing and does not assert that an Oakcloud invoice exists.
+
+- Existing client services migrate to `UNREVIEWED`. Coverage reconciliation
+  keeps them visible as an actionable issue until the service is explicitly
+  `CONFIGURED` (with valid active fee lines) or `NOT_REQUIRED` (with a reason).
+  `Configured` services with missing fee lines, start dates, schedule
+  parameters, amount/currency, or rolling occurrences remain issues rather
+  than receiving guessed values.
+- The billed date is optional. `markedBilledAt` and `markedBilledById` are the
+  immutable lifecycle audit timestamps/actor for a Billed transition; the
+  optional external billed date may remain null.
+- Amount and currency edits require an explicit `THIS_OCCURRENCE` or
+  `THIS_AND_FUTURE` scope. Current-and-future propagation updates the selected
+  occurrence plus matching future `OPEN` rows only. Historical, Billed,
+  Waived, Cancelled, overridden, and unrelated fee-line rows are preserved.
+- Persisted fee-line removal is archival, not destructive deletion. The
+  occurrence keeps its fee-line lineage; reconciliation cancels eligible
+  future Open occurrences for removed/archived lines and preserves historical
+  and non-Open records. Re-enabling a configuration uses a new generation key.
+- Repeatable billing schedules use the shared schedule-entry language for every
+  service family, not only Payroll. Multiple stable entries—including relative
+  dates, business-day offsets, and multiple entries in a `ONE_TIME` schedule—
+  each materialize once per applicable period. Entry keys are stable across
+  reorder and are part of occurrence identity.
+- Manual historical deadline cycles have origin `MANUAL_TRIGGER` and never
+  enqueue billing reconciliation or create billing occurrences. The shared
+  worker processes only durable schedule-reconciliation requests, so a manual
+  cycle can be applied without a billing side effect.
+- The Billing tab keeps reconciliation collapsed by default. It renders issue
+  cards only for unresolved configuration gaps and a single compact healthy
+  summary when no issues exist; it does not render a success card per service.
+
+### Billing recovery runbook
+
+Reconciliation requests are tenant-scoped, idempotent, leased, and retried with
+the shared bounded backoff. Each request emits one structured, redacted event
+with billing created/recalculated/cancelled/preserved counts, coverage
+opened/resolved counts, missing-disposition services, invalid schedules,
+occurrence gaps, duration, attempt, tenant, request/correlation IDs, and
+`OBSERVE`/`APPLY` mode. Logs contain identifiers and safe codes only; notes,
+external references, uploaded files, and other customer free text are never
+included.
+
+For a safe rerun:
+
+1. Inspect the request status, attempt count, lease expiry, safe error code,
+   coverage issue totals, and the oldest pending request. Do not edit or delete
+   occurrence history to make a request pass.
+2. Let an expired lease be reclaimed by the scheduler, or use the existing
+   tenant/service reconcile action to enqueue a deduplicated request. Run in
+   `OBSERVE` mode first when reviewing a configuration change.
+3. Correct the reported disposition, fee-line, schedule, amount/currency, or
+   access-scope issue. Re-run `APPLY` after the configuration is valid; stable
+   identities and uniqueness constraints make retries safe and prevent duplicate
+   occurrences.
+4. Confirm created/recalculated/cancelled/preserved counts, coverage opened/
+   resolved counts, and that future Open cancellation/propagation did not alter
+   historical, Billed, Waived, Cancelled, or overridden rows.
+
+The two billing migrations are additive. On a clean rollout, apply the full
+migration chain, verify legacy fee amounts/currencies, confirm deterministic
+frequencies have no invented dates, inspect explicit Custom/missing-start
+coverage issues, and verify one deduplicated `BILLING_BACKFILL` request per
+active tenant. Backfill/reconciliation may be rerun against the same isolated
+tenant because schedule and request identities are deterministic.
+
 ## Service Categories
 
 ### 1. Company Services

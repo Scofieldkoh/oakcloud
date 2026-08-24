@@ -38,7 +38,9 @@ async function applyMigration(client: PoolClient, schemaName: string, migrationD
   const schema = quoteIdentifier(schemaName);
   await client.query('BEGIN');
   try {
-    await client.query(`SET LOCAL search_path TO ${schema}, public`);
+    // Some legacy migrations contain their own COMMIT. Keep the isolated
+    // schema on the connection across those transaction boundaries.
+    await client.query(`SET search_path TO ${schema}, public`);
     await client.query(isolateMigrationSql(sql, schemaName));
     await client.query('COMMIT');
   } catch (error) {

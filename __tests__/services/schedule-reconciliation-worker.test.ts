@@ -200,6 +200,75 @@ describe('schedule reconciliation worker', () => {
     expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0, leaseLost: 0 });
   });
 
+  it('emits one bounded allowlisted metrics object with billing and coverage counts', async () => {
+    mocks.billingReconcile.mockResolvedValueOnce({
+      clientServiceId: 'service-1',
+      created: 2,
+      recalculated: 3,
+      cancelled: 4,
+      preserved: 5,
+      preservedByReason: {
+        MANUAL_TRIGGER: 0,
+        HISTORICAL: 0,
+        BILLED: 0,
+        WAIVED: 0,
+        CANCELLED: 0,
+        OVERRIDDEN: 0,
+      },
+      warnings: [],
+    });
+    mocks.coverageReconcile.mockResolvedValueOnce({
+      clientServiceId: 'service-1',
+      opened: 6,
+      refreshed: 0,
+      resolved: 7,
+      openIssues: [
+        { issueKey: 'missing-disposition', type: 'MISSING_DISPOSITION', severity: 'ERROR', feeLineId: null, message: 'private note' },
+        { issueKey: 'invalid-custom', type: 'INVALID_CUSTOM_SCHEDULE', severity: 'ERROR', feeLineId: 'fee-1', message: 'uploaded document' },
+        { issueKey: 'missing-parameter', type: 'MISSING_SCHEDULE_PARAMETER', severity: 'ERROR', feeLineId: 'fee-2', message: 'customer content' },
+        { issueKey: 'gap', type: 'OCCURRENCE_GAP', severity: 'ERROR', feeLineId: 'fee-3', message: 'secret reference' },
+      ],
+    });
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0, leaseLost: 0 });
+    expect(mocks.logger.info).toHaveBeenCalledTimes(1);
+    const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    const metrics = event.metrics as Record<string, unknown>;
+    expect(Object.keys(metrics).sort()).toEqual([
+      'billing',
+      'coverage',
+      'invalidScheduleCount',
+      'occurrenceGaps',
+      'servicesMissingDisposition',
+    ]);
+    expect(metrics).toEqual({
+      billing: { created: 2, recalculated: 3, cancelled: 4, preserved: 5 },
+      coverage: { opened: 6, resolved: 7 },
+      servicesMissingDisposition: 1,
+      invalidScheduleCount: 2,
+      occurrenceGaps: 1,
+    });
+    expect(event).toMatchObject({ tenantId: 'tenant-1', requestId: 'request-1', correlationId: 'corr-1', attempt: 1, writeMode: 'OBSERVE' });
+    expect(JSON.stringify(event)).not.toContain('private note');
+    expect(JSON.stringify(event)).not.toContain('uploaded document');
+    expect(JSON.stringify(event)).not.toContain('customer content');
+    expect(JSON.stringify(event)).not.toContain('secret reference');
+  });
+
+  it('emits exactly one redacted event when a request retries after a failure', async () => {
+    mocks.reconcile.mockRejectedValueOnce(new Error('retry note must not be logged'));
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1, leaseLost: 0 });
+    expect(mocks.logger.info).toHaveBeenCalledTimes(1);
+    const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(event).toMatchObject({ tenantId: 'tenant-1', requestId: 'request-1', correlationId: 'corr-1', attempt: 1, writeMode: 'OBSERVE' });
+    expect(JSON.stringify(event)).not.toContain('retry note must not be logged');
+  });
+
   it('does not let a throwing logger replace a retryable failure outcome', async () => {
     mocks.reconcile.mockRejectedValueOnce(new Error('transient dependency failure: secret-note'));
     mocks.logger.info.mockImplementation(() => {

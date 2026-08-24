@@ -177,7 +177,7 @@ describe('billing schedule evaluation', () => {
     ]);
   });
 
-  it('returns one one-time occurrence only when its date is inside the requested range', () => {
+  it('returns every one-time occurrence only when its date is inside the requested range', () => {
     const config: BillingScheduleConfigV1 = {
       schemaVersion: 1,
       cadence: 'ONE_TIME',
@@ -203,13 +203,54 @@ describe('billing schedule evaluation', () => {
       generationKey: 'rolling-v1',
     });
 
-    expect(inRange).toHaveLength(1);
-    expect(inRange[0]).toMatchObject({
-      billingPeriodKey: 'ONE_TIME:2026-08-01',
-      scheduleEntryKey: 'a-deposit',
-      calculatedExpectedDate: '2026-08-01',
-    });
+    expect(inRange).toHaveLength(2);
+    expect(inRange.map((occurrence) => occurrence.scheduleEntryKey)).toEqual(['a-deposit', 'z-balance']);
+    expect(inRange).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        billingPeriodKey: 'ONE_TIME:2026-08-01',
+        scheduleEntryKey: 'a-deposit',
+        calculatedExpectedDate: '2026-08-01',
+      }),
+      expect.objectContaining({
+        billingPeriodKey: 'ONE_TIME:2026-08-01',
+        scheduleEntryKey: 'z-balance',
+        calculatedExpectedDate: '2026-08-15',
+      }),
+    ]));
     expect(outOfRange).toEqual([]);
+  });
+
+  it('materializes every stable one-time entry exactly once within the effective range', () => {
+    const config: BillingScheduleConfigV1 = {
+      schemaVersion: 1,
+      cadence: 'ONE_TIME',
+      startDate: '2026-08-01',
+      customInterval: null,
+      scheduleEntries: [entry('z-balance', 15), entry('a-deposit', 1)],
+    };
+
+    const occurrences = evaluateBillingSchedule({
+      config,
+      feeLine: { id: 'fee-one-time', amount: '75', currency: 'SGD' },
+      calendar,
+      from: '2026-08-01',
+      to: '2026-08-31',
+      generationKey: 'one-time-v1',
+    });
+    const repeated = evaluateBillingSchedule({
+      config,
+      feeLine: { id: 'fee-one-time', amount: '75', currency: 'SGD' },
+      calendar,
+      from: '2026-08-01',
+      to: '2026-08-31',
+      generationKey: 'one-time-v1',
+    });
+
+    expect(occurrences).toHaveLength(2);
+    expect(occurrences.map((occurrence) => occurrence.scheduleEntryKey)).toEqual(['a-deposit', 'z-balance']);
+    expect(new Set(occurrences.map((occurrence) => occurrence.scheduleEntryKey)).size).toBe(2);
+    expect(occurrences.every((occurrence) => occurrence.billingPeriodKey === 'ONE_TIME:2026-08-01')).toBe(true);
+    expect(repeated).toEqual(occurrences);
   });
 
   it('never emits a calculated date before the actual start date', () => {

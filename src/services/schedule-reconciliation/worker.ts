@@ -62,6 +62,14 @@ type SafeReconciliationWarning = {
   permanent?: boolean;
 };
 
+export type ReconciliationLogMetrics = {
+  billing: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
+  coverage: Pick<BillingCoverageResult, 'opened' | 'resolved'>;
+  servicesMissingDisposition: number;
+  invalidScheduleCount: number;
+  occurrenceGaps: number;
+};
+
 export type ReconciliationLogEventInput = {
   tenantId: string;
   requestId: string;
@@ -73,6 +81,7 @@ export type ReconciliationLogEventInput = {
   billing?: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
   billingPreservedByReason?: BillingReconciliationPreservedCounts;
   coverage?: Pick<BillingCoverageResult, 'opened' | 'refreshed' | 'resolved'> & { openIssueCount?: number };
+  metrics?: ReconciliationLogMetrics;
   attempt: number;
   writeMode: 'OBSERVE' | 'APPLY';
 };
@@ -89,6 +98,7 @@ export type ReconciliationLogEvent = {
   billing?: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
   billingPreservedByReason?: BillingReconciliationPreservedCounts;
   coverage?: Pick<BillingCoverageResult, 'opened' | 'refreshed' | 'resolved'> & { openIssueCount?: number };
+  metrics: ReconciliationLogMetrics;
   attempt: number;
   writeMode: 'OBSERVE' | 'APPLY';
 };
@@ -115,6 +125,44 @@ function safeReconciliationWarning(warning: DeadlineReconciliationWarning | Bill
   };
 }
 
+const MAX_METRIC_COUNT = 1_000_000;
+
+function boundedMetricCount(value: number | undefined): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(MAX_METRIC_COUNT, Math.max(0, Math.trunc(value ?? 0)));
+}
+
+function emptyReconciliationLogMetrics(): ReconciliationLogMetrics {
+  return {
+    billing: { created: 0, recalculated: 0, cancelled: 0, preserved: 0 },
+    coverage: { opened: 0, resolved: 0 },
+    servicesMissingDisposition: 0,
+    invalidScheduleCount: 0,
+    occurrenceGaps: 0,
+  };
+}
+
+function safeReconciliationLogMetrics(
+  input: ReconciliationLogEventInput,
+): ReconciliationLogMetrics {
+  const source = input.metrics;
+  return {
+    billing: {
+      created: boundedMetricCount(source?.billing.created ?? input.billing?.created),
+      recalculated: boundedMetricCount(source?.billing.recalculated ?? input.billing?.recalculated),
+      cancelled: boundedMetricCount(source?.billing.cancelled ?? input.billing?.cancelled),
+      preserved: boundedMetricCount(source?.billing.preserved ?? input.billing?.preserved),
+    },
+    coverage: {
+      opened: boundedMetricCount(source?.coverage.opened ?? input.coverage?.opened),
+      resolved: boundedMetricCount(source?.coverage.resolved ?? input.coverage?.resolved),
+    },
+    servicesMissingDisposition: boundedMetricCount(source?.servicesMissingDisposition),
+    invalidScheduleCount: boundedMetricCount(source?.invalidScheduleCount),
+    occurrenceGaps: boundedMetricCount(source?.occurrenceGaps),
+  };
+}
+
 /**
  * Build the one safe structured event emitted for a reconciliation request.
  * Warning messages are intentionally discarded: rule text, notes, uploaded
@@ -135,6 +183,7 @@ export function buildReconciliationLogEvent(
     ...(input.billing ? { billing: { ...input.billing } } : {}),
     ...(input.billingPreservedByReason ? { billingPreservedByReason: { ...input.billingPreservedByReason } } : {}),
     ...(input.coverage ? { coverage: { ...input.coverage } } : {}),
+    metrics: safeReconciliationLogMetrics(input),
     attempt: input.attempt,
     writeMode: input.writeMode,
   };
@@ -456,6 +505,7 @@ async function processSingleRequest(
     resolved: 0,
     openIssueCount: 0,
   };
+  let eventMetrics = emptyReconciliationLogMetrics();
   let eventWriteMode: 'OBSERVE' | 'APPLY' = 'OBSERVE';
   let eventEmitted = false;
   const emitEvent = () => {
@@ -472,6 +522,7 @@ async function processSingleRequest(
       billing: eventBilling,
       billingPreservedByReason: eventBillingPreservedByReason,
       coverage: eventCoverage,
+      metrics: eventMetrics,
       attempt: req.attemptCount,
       writeMode: eventWriteMode,
     });
@@ -542,6 +593,7 @@ async function processSingleRequest(
       CANCELLED: 0,
       OVERRIDDEN: 0,
     };
+    const metrics = emptyReconciliationLogMetrics();
 
     for (const clientServiceId of clientServiceIds) {
       const summary = await reconcileClientServiceThroughWorkerTransaction(prisma, {
@@ -584,6 +636,16 @@ async function processSingleRequest(
       coverageCounts.refreshed += coverage.refreshed;
       coverageCounts.resolved += coverage.resolved;
       coverageCounts.openIssueCount += coverage.openIssues.length;
+      metrics.servicesMissingDisposition += coverage.openIssues.some((issue) => issue.type === 'MISSING_DISPOSITION') ? 1 : 0;
+      metrics.invalidScheduleCount += coverage.openIssues.filter((issue) => (
+        issue.type === 'INVALID_CUSTOM_SCHEDULE' || issue.type === 'MISSING_SCHEDULE_PARAMETER'
+      )).length;
+      metrics.occurrenceGaps += coverage.openIssues.filter((issue) => issue.type === 'OCCURRENCE_GAP').length;
+      metrics.billing = { ...billingCounts };
+      metrics.coverage = {
+        opened: coverageCounts.opened,
+        resolved: coverageCounts.resolved,
+      };
       // Publish aggregation state immediately after each committed service.
       // A subsequent service failure or lease loss must not erase prior work.
       eventCounts = { ...aggregatedCounts };
@@ -591,6 +653,13 @@ async function processSingleRequest(
       eventBilling = { ...billingCounts };
       eventBillingPreservedByReason = { ...billingPreservedByReason };
       eventCoverage = { ...coverageCounts };
+      eventMetrics = {
+        billing: { ...metrics.billing },
+        coverage: { ...metrics.coverage },
+        servicesMissingDisposition: metrics.servicesMissingDisposition,
+        invalidScheduleCount: metrics.invalidScheduleCount,
+        occurrenceGaps: metrics.occurrenceGaps,
+      };
       eventWarnings = [...allWarnings];
 
       await assertLease();
