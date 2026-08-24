@@ -215,6 +215,67 @@ describe('schedule reconciliation worker', () => {
     expect(mocks.reconcile).toHaveBeenCalledTimes(1);
   });
 
+  it('completes a thrown permanent error with one complete safe event while the lease remains valid', async () => {
+    const permanentError = new Error('customer free text must never be emitted') as Error & { code?: string };
+    permanentError.code = 'MISSING_RULE_INPUT';
+    mocks.reconcile.mockRejectedValueOnce(permanentError);
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0, leaseLost: 0 });
+    expect(mocks.reconcile).toHaveBeenCalledTimes(1);
+    expect(mocks.reconcile.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+      tenantId: 'tenant-1',
+      clientServiceId: 'service-1',
+      reconciliationRequestId: 'request-1',
+      writeMode: 'OBSERVE',
+    }));
+
+    expect(mocks.logger.info).toHaveBeenCalledTimes(1);
+    const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    expectCompleteReconciliationEvent(event);
+    expect(event).toMatchObject({
+      tenantId: 'tenant-1',
+      requestId: 'request-1',
+      correlationId: 'corr-1',
+      attempt: 1,
+      writeMode: 'OBSERVE',
+    });
+    expect(event.warnings).toEqual([{ code: 'MISSING_RULE_INPUT', permanent: true }]);
+    expect(event.metrics).toEqual({
+      billing: { created: 0, recalculated: 0, cancelled: 0, preserved: 0 },
+      coverage: { opened: 0, resolved: 0 },
+      servicesMissingDisposition: 0,
+      invalidScheduleCount: 0,
+      occurrenceGaps: 0,
+    });
+    expect(JSON.stringify(event)).not.toContain('customer free text must never be emitted');
+
+    const finalUpdate = mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mock.calls.at(-1)?.[0] as {
+      where?: Record<string, unknown>;
+      data?: Record<string, unknown>;
+    };
+    expect(finalUpdate).toEqual(expect.objectContaining({
+      where: expect.objectContaining({
+        id: 'request-1',
+        tenantId: 'tenant-1',
+        status: 'PROCESSING',
+        leaseOwner: expect.any(String),
+      }),
+      data: expect.objectContaining({
+        status: 'COMPLETED',
+        completedAt: expect.any(Date),
+        leaseOwner: null,
+        leaseExpiresAt: null,
+        lastErrorCode: 'MISSING_RULE_INPUT',
+        lastErrorMessage: 'Reconciliation request completed with a permanent configuration error',
+        nextAttemptAt: expect.any(Date),
+        summary: { warnings: [{ code: 'MISSING_RULE_INPUT', permanent: true }], permanent: true },
+      }),
+    }));
+    expect(JSON.stringify(finalUpdate.data)).not.toContain('customer free text must never be emitted');
+  });
+
   it('backs off transient failures using the bounded retry schedule', async () => {
     mocks.prisma.$queryRaw.mockResolvedValue([{ ...request, attemptCount: 1 }]);
     mocks.reconcile.mockRejectedValueOnce(new Error('temporary dependency failure'));
