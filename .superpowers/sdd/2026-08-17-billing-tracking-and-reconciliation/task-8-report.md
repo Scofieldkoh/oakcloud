@@ -7,7 +7,8 @@ adds live PostgreSQL tenant/manual-deadline/performance acceptance coverage,
 and emits bounded allowlisted worker observability. The original
 implementation is `5d3f5b59` (`test: verify billing tracking acceptance`).
 The review hardening is `1f081801` (`test: verify billing tracking
-acceptance`); this report is committed separately.
+acceptance`). The final review coverage is `d0e7a018` (`test: cover permanent
+reconciliation failure event`); this report is committed separately.
 
 The `ONE_TIME` contract is explicit: every stable repeatable entry materializes
 exactly once, in stable-key order. It does not silently select the lexical-first
@@ -20,7 +21,7 @@ entry.
   covered.
 - Review RED exposed an absent fail-closed preflight helper and unbounded
   worker event identifiers. The focused worker/preflight GREEN result is `2
-  files / 23 tests passed`.
+  files / 24 tests passed`.
 - Worker events are one fixed structured event per request. IDs/text are capped
   at 200 characters, warnings at 50, warning `missingFields` at 20 entries,
   numeric/cardinality values at 1,000,000, and duration at 86,400,000 ms.
@@ -28,6 +29,12 @@ entry.
   and bounded identifiers/field names remain. Success, retry, exhausted retry,
   and permanent failure paths assert one complete event, fixed keys, metrics,
   bounds, and redaction.
+- A thrown `MISSING_RULE_INPUT` dependency error with a valid lease has a
+  dedicated regression test: the request completes exactly once, emits one
+  complete event with the expected IDs/attempt/write mode and metrics, persists
+  a bounded allowlisted warning and safe error, and never emits the original
+  customer/free text. The permanent lease-handoff path remains separately
+  covered as lease loss.
 - Tenant acceptance now seeds two companies in each tenant. An actor scoped to
   company one cannot list, read, mutate, or receive coverage rows for the
   same-tenant company two; the allowed company and tenant-two negatives remain
@@ -42,7 +49,7 @@ entry.
 
 | Gate | Result |
 | --- | --- |
-| Worker observability + preflight focused suites | PASS; `2 files / 23 tests`, no skips |
+| Worker observability + preflight focused suites | PASS; `2 files / 24 tests`, no skips |
 | Live tenant/company isolation suite | PASS; `1 file / 2 tests`, no skips |
 | `npm.cmd run test:billing:postgres` with isolated `TEST_DATABASE_URL` | PASS; `5 files / 9 tests`, no skips |
 | `npm.cmd run test:billing:performance` with `TEST_DATABASE_URL` and `RUN_PERFORMANCE_TESTS=true` | PASS; `1 file / 2 tests`, no skips |
@@ -124,6 +131,6 @@ production SQL predicates.
 ## Clean-worktree and artifact policy
 
 No credentials, PostgreSQL data directory, browser artifacts, performance
-output, or review package was added. The implementation commit contains only
-the accepted source/tests/package preflight helper. This report is committed
+output, or review package was added. The implementation/test commits contain
+only the accepted source/tests/package preflight helper. This report is committed
 separately as the documentation/evidence commit.
