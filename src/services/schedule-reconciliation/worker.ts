@@ -6,11 +6,17 @@ import { currentDateInSingapore, addMonthsClamped } from '@/services/service-sch
 import { getServiceWorkspaceFlagsForTenant } from './settings';
 import { reconcileClientServiceDeadlines } from './deadline-reconciler';
 import { enqueueScheduleReconciliation } from './queue';
+import { reconcileClientServiceBilling } from '@/services/billing';
+import type {
+  BillingReconciliationPreservedCounts,
+  BillingReconciliationResult,
+  BillingReconciliationWarning,
+} from '@/services/billing';
 import type {
   DeadlineReconciliationCounts,
   DeadlineReconciliationPreservedCounts,
-  DeadlineReconciliationResult,
   DeadlineReconciliationWarning,
+  ServiceScheduleReconciliationSummary,
 } from './types';
 
 const log = createLogger('schedule-reconciliation-worker');
@@ -34,6 +40,12 @@ const PUBLIC_RECONCILIATION_CODES = new Set([
   'LEASE_LOST',
   'RULE_WARNING',
   'RECONCILIATION_FAILED',
+  'CANCELLATION_ACTOR_REQUIRED',
+  'CLIENT_SERVICE_NOT_FOUND',
+  'MISSING_DISPOSITION',
+  'MISSING_FEE_LINES',
+  'INVALID_SCHEDULE',
+  'INVALID_AMOUNT_OR_CURRENCY',
 ]);
 const SAFE_TRANSIENT_ERROR_MESSAGE = 'Reconciliation failed and will retry';
 const SAFE_PERMANENT_ERROR_MESSAGE = 'Reconciliation request completed with a permanent configuration error';
@@ -43,6 +55,7 @@ type SafeReconciliationWarning = {
   ruleId?: string;
   ruleVersionId?: string;
   missingFields?: string[];
+  feeLineId?: string;
   permanent?: boolean;
 };
 
@@ -53,7 +66,9 @@ export type ReconciliationLogEventInput = {
   durationMs: number;
   counts: DeadlineReconciliationCounts;
   preservedByReason: DeadlineReconciliationPreservedCounts;
-  warnings: DeadlineReconciliationWarning[];
+  warnings: Array<DeadlineReconciliationWarning | BillingReconciliationWarning>;
+  billing?: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
+  billingPreservedByReason?: BillingReconciliationPreservedCounts;
   attempt: number;
   writeMode: 'OBSERVE' | 'APPLY';
 };
@@ -67,6 +82,8 @@ export type ReconciliationLogEvent = {
   counts: DeadlineReconciliationCounts;
   preservedByReason: DeadlineReconciliationPreservedCounts;
   warnings: SafeReconciliationWarning[];
+  billing?: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>;
+  billingPreservedByReason?: BillingReconciliationPreservedCounts;
   attempt: number;
   writeMode: 'OBSERVE' | 'APPLY';
 };
@@ -81,13 +98,14 @@ function publicReconciliationCode(code: unknown): string {
     : 'RECONCILIATION_FAILED';
 }
 
-function safeReconciliationWarning(warning: DeadlineReconciliationWarning): SafeReconciliationWarning {
+function safeReconciliationWarning(warning: DeadlineReconciliationWarning | BillingReconciliationWarning): SafeReconciliationWarning {
   const code = publicReconciliationCode(warning.code);
   return {
     code,
-    ...(warning.ruleId ? { ruleId: warning.ruleId } : {}),
-    ...(warning.ruleVersionId ? { ruleVersionId: warning.ruleVersionId } : {}),
-    ...(warning.missingFields ? { missingFields: [...warning.missingFields] } : {}),
+    ...('ruleId' in warning && warning.ruleId ? { ruleId: warning.ruleId } : {}),
+    ...('ruleVersionId' in warning && warning.ruleVersionId ? { ruleVersionId: warning.ruleVersionId } : {}),
+    ...('missingFields' in warning && warning.missingFields ? { missingFields: [...warning.missingFields] } : {}),
+    ...('feeLineId' in warning && warning.feeLineId ? { feeLineId: warning.feeLineId } : {}),
     ...(warning.permanent !== undefined ? { permanent: warning.permanent } : {}),
   };
 }
@@ -109,6 +127,8 @@ export function buildReconciliationLogEvent(
     counts: { ...input.counts },
     preservedByReason: { ...input.preservedByReason },
     warnings: input.warnings.map(safeReconciliationWarning),
+    ...(input.billing ? { billing: { ...input.billing } } : {}),
+    ...(input.billingPreservedByReason ? { billingPreservedByReason: { ...input.billingPreservedByReason } } : {}),
     attempt: input.attempt,
     writeMode: input.writeMode,
   };
@@ -170,12 +190,12 @@ export type ProcessBatchResult = {
   completed: number;
   failed: number;
   leaseLost: number;
-  summaries: DeadlineReconciliationResult[];
+  summaries: ServiceScheduleReconciliationSummary[];
 };
 
 type ProcessRequestResult = {
   outcome: 'COMPLETED' | 'FAILED' | 'LEASE_LOST';
-  summaries: DeadlineReconciliationResult[];
+  summaries: ServiceScheduleReconciliationSummary[];
 };
 
 /** Queue one tenant-scoped rolling-horizon pass for each active workspace. */
@@ -207,6 +227,7 @@ type ClaimedRequest = {
   scopeId: string;
   triggerType: string;
   correlationId: string;
+  requestedById: string | null;
   attemptCount: number;
   leaseOwner: string;
 };
@@ -229,6 +250,7 @@ async function claimRequests(
         scopeId: string;
         triggerType: string;
         correlationId: string;
+        requestedById: string | null;
         attemptCount: number;
       }>
     >(Prisma.sql`
@@ -239,6 +261,7 @@ async function claimRequests(
         "scope_id" AS "scopeId",
         "trigger_type" AS "triggerType",
         "correlation_id" AS "correlationId",
+        "requested_by_id" AS "requestedById",
         "attempt_count" AS "attemptCount"
       FROM "service_schedule_reconciliation_requests"
       WHERE ("status" = 'PENDING' AND "next_attempt_at" <= ${now})
@@ -291,7 +314,9 @@ async function resolveClientServiceIds(
 
     case 'COMPANY': {
       const services = await prisma.clientService.findMany({
-        where: { tenantId: req.tenantId, companyId: req.scopeId, deletedAt: null },
+        // Archived services remain in scope so reconciliation can cancel
+        // eligible future occurrences while preserving historical lineage.
+        where: { tenantId: req.tenantId, companyId: req.scopeId },
         select: { id: true },
       });
       return services.map((s) => s.id);
@@ -301,7 +326,6 @@ async function resolveClientServiceIds(
       const services = await prisma.clientService.findMany({
         where: {
           tenantId: req.tenantId,
-          deletedAt: null,
           deadlineRules: { some: { ruleId: req.scopeId } },
         },
         select: { id: true },
@@ -312,7 +336,9 @@ async function resolveClientServiceIds(
     case 'BUSINESS_CALENDAR':
     case 'TENANT': {
       const services = await prisma.clientService.findMany({
-        where: { tenantId: req.tenantId, deletedAt: null },
+        // Include archived rows for lifecycle cancellation; the billing and
+        // deadline reconcilers themselves stop new generation for them.
+        where: { tenantId: req.tenantId },
         select: { id: true },
       });
       return services.map((s) => s.id);
@@ -347,7 +373,21 @@ async function processSingleRequest(
   const startedAt = performance.now();
   let eventCounts = emptyReconciliationCounts();
   let eventPreservedByReason = emptyPreservedCounts();
-  let eventWarnings: DeadlineReconciliationWarning[] = [];
+  let eventWarnings: Array<DeadlineReconciliationWarning | BillingReconciliationWarning> = [];
+  let eventBilling: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'> = {
+    created: 0,
+    recalculated: 0,
+    cancelled: 0,
+    preserved: 0,
+  };
+  let eventBillingPreservedByReason: BillingReconciliationPreservedCounts = {
+    MANUAL_TRIGGER: 0,
+    HISTORICAL: 0,
+    BILLED: 0,
+    WAIVED: 0,
+    CANCELLED: 0,
+    OVERRIDDEN: 0,
+  };
   let eventWriteMode: 'OBSERVE' | 'APPLY' = 'OBSERVE';
   let eventEmitted = false;
   const emitEvent = () => {
@@ -361,6 +401,8 @@ async function processSingleRequest(
       counts: eventCounts,
       preservedByReason: eventPreservedByReason,
       warnings: eventWarnings,
+      billing: eventBilling,
+      billingPreservedByReason: eventBillingPreservedByReason,
       attempt: req.attemptCount,
       writeMode: eventWriteMode,
     });
@@ -405,27 +447,56 @@ async function processSingleRequest(
     const horizonEnd = addMonthsClamped(today, 12);
 
     const clientServiceIds = await resolveClientServiceIds(req);
-    const summaries: DeadlineReconciliationResult[] = [];
+    const summaries: ServiceScheduleReconciliationSummary[] = [];
 
     const aggregatedCounts = emptyReconciliationCounts();
     const aggregatedPreserved = emptyPreservedCounts();
 
-    const allWarnings: DeadlineReconciliationWarning[] = [];
+    const allWarnings: Array<DeadlineReconciliationWarning | BillingReconciliationWarning> = [];
+    const billingCounts = {
+      created: 0,
+      recalculated: 0,
+      cancelled: 0,
+      preserved: 0,
+    };
+    const billingPreservedByReason: BillingReconciliationPreservedCounts = {
+      MANUAL_TRIGGER: 0,
+      HISTORICAL: 0,
+      BILLED: 0,
+      WAIVED: 0,
+      CANCELLED: 0,
+      OVERRIDDEN: 0,
+    };
 
     for (const clientServiceId of clientServiceIds) {
       await assertLease();
-      const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({
-        tenantId: req.tenantId,
-        clientServiceId,
-        ruleId: req.scopeType === 'RULE' ? req.scopeId : undefined,
-        operation,
-        today,
-        horizonEnd,
-        writeMode,
-        reconciliationRequestId: req.id,
-        assertLease,
-      }, tx));
-      summaries.push(result);
+      const summary = await prisma.$transaction(async (tx) => {
+        const deadlines = await reconcileClientServiceDeadlines({
+          tenantId: req.tenantId,
+          clientServiceId,
+          ruleId: req.scopeType === 'RULE' ? req.scopeId : undefined,
+          operation,
+          today,
+          horizonEnd,
+          writeMode,
+          reconciliationRequestId: req.id,
+          assertLease,
+        }, tx);
+        const billing = await reconcileClientServiceBilling({
+          tenantId: req.tenantId,
+          clientServiceId,
+          today,
+          horizonEnd,
+          writeMode,
+          reconciliationRequestId: req.id,
+          cancellationActorId: req.requestedById,
+          assertLease,
+        }, tx);
+        return { deadlines, billing };
+      });
+      summaries.push(summary);
+      const result = summary.deadlines;
+      const billing = summary.billing;
 
       aggregatedCounts.created += result.counts.created;
       aggregatedCounts.recalculated += result.counts.recalculated;
@@ -438,10 +509,20 @@ async function processSingleRequest(
       }
 
       allWarnings.push(...result.warnings);
+      billingCounts.created += billing.created;
+      billingCounts.recalculated += billing.recalculated;
+      billingCounts.cancelled += billing.cancelled;
+      billingCounts.preserved += billing.preserved;
+      for (const [reason, count] of Object.entries(billing.preservedByReason)) {
+        billingPreservedByReason[reason as keyof BillingReconciliationPreservedCounts] += count;
+      }
+      allWarnings.push(...billing.warnings);
       // Publish aggregation state immediately after each committed service.
       // A subsequent service failure or lease loss must not erase prior work.
       eventCounts = { ...aggregatedCounts };
       eventPreservedByReason = { ...aggregatedPreserved };
+      eventBilling = { ...billingCounts };
+      eventBillingPreservedByReason = { ...billingPreservedByReason };
       eventWarnings = [...allWarnings];
 
       await assertLease();
@@ -463,6 +544,8 @@ async function processSingleRequest(
           clientServiceCount: clientServiceIds.length,
           counts: aggregatedCounts,
           preservedByReason: aggregatedPreserved,
+          billing: billingCounts,
+          billingPreservedByReason,
           warnings: allWarnings.map(safeReconciliationWarning),
         } as never,
       },
@@ -558,7 +641,7 @@ export async function processScheduleReconciliationBatch(
   let completed = 0;
   let failed = 0;
   let leaseLost = 0;
-  const allSummaries: DeadlineReconciliationResult[] = [];
+  const allSummaries: ServiceScheduleReconciliationSummary[] = [];
 
   for (let offset = 0; offset < claims.length; offset += concurrency) {
     const chunk = claims.slice(offset, offset + concurrency);

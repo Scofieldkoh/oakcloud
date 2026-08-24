@@ -27,6 +27,7 @@ export type {
   DeadlineReconciliationOperation,
   DeadlineReconciliationWarning,
   DeadlineReconciliationResult,
+  ServiceScheduleReconciliationSummary,
   ReconcileClientServiceDeadlinesInput,
   StoredDeadline,
   EvaluatedDeadlineForDiff,

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { computeChanges, createAuditLog } from '@/lib/audit';
 import { ConflictError, DeadlineApiError, ErrorCodes, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
@@ -934,20 +935,56 @@ export async function updateClientService(id: string, input: UpdateClientService
     if (claimed.count !== 1) throw new ConflictError('This service was updated by someone else. Reload it and try again.');
 
     if (input.feeLines && feesChanged) {
-      await tx.clientServiceFeeLine.deleteMany({ where: { clientServiceId: id, tenantId: params.tenantId } });
-      await tx.clientServiceFeeLine.createMany({ data: input.feeLines.map((fee) => ({
-        id: fee.id,
-        tenantId: params.tenantId,
-        clientServiceId: id,
-        sourceAgreementFeeLineId: current.feeLines.find((storedFee) => storedFee.id === fee.id)?.sourceAgreementFeeLineId ?? null,
-        description: fee.description,
-        amount: new Prisma.Decimal(fee.amount),
-        currency: fee.currency,
-        billingFrequency: fee.billingFrequency,
-        customFrequencyLabel: fee.customFrequencyLabel ?? null,
-        billingStartDate: parseDate(fee.billingStartDate) ?? null,
-        displayOrder: fee.displayOrder,
-      })) });
+      const incomingIds = new Set(input.feeLines.map((fee) => fee.id).filter((feeId): feeId is string => Boolean(feeId)));
+      const removedIds = current.feeLines
+        .filter((fee) => fee.deletedAt == null && !incomingIds.has(fee.id))
+        .map((fee) => fee.id);
+      const now = new Date();
+      if (removedIds.length > 0) {
+        await tx.clientServiceFeeLine.updateMany({
+          where: { tenantId: params.tenantId, clientServiceId: id, id: { in: removedIds }, deletedAt: null },
+          data: {
+            isActive: false,
+            deletedAt: now,
+            deletedReason: 'Removed from client service configuration',
+          },
+        });
+      }
+
+      const newFeeLines: Array<Record<string, unknown>> = [];
+      for (const fee of input.feeLines) {
+        const existing = current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt == null);
+        const data = {
+          description: fee.description,
+          amount: new Prisma.Decimal(fee.amount),
+          currency: fee.currency,
+          billingFrequency: fee.billingFrequency,
+          customFrequencyLabel: fee.customFrequencyLabel ?? null,
+          billingStartDate: parseDate(fee.billingStartDate) ?? null,
+          displayOrder: fee.displayOrder,
+          isActive: true,
+          deletedAt: null,
+          deletedReason: null,
+        };
+        if (existing && typeof tx.clientServiceFeeLine.updateMany === 'function') {
+          await tx.clientServiceFeeLine.updateMany({
+            where: { tenantId: params.tenantId, clientServiceId: id, id: existing.id, deletedAt: null },
+            data,
+          });
+        } else {
+          const archived = fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt != null) : undefined;
+          newFeeLines.push({
+            id: archived || !fee.id ? randomUUID() : fee.id,
+            tenantId: params.tenantId,
+            clientServiceId: id,
+            // An archived source row already owns its composite lineage. A
+            // replacement starts a fresh lineage instead of reusing it.
+            sourceAgreementFeeLineId: archived ? null : current.feeLines.find((storedFee) => storedFee.id === fee.id)?.sourceAgreementFeeLineId ?? null,
+            ...data,
+          });
+        }
+      }
+      if (newFeeLines.length > 0) await tx.clientServiceFeeLine.createMany({ data: newFeeLines as never });
     }
 
     if (deadlineRulesChanged && deadlineRuleValidation) {

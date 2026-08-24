@@ -1,5 +1,6 @@
 import type { Prisma } from '@/generated/prisma';
 import type { DateOnly } from '@/services/service-schedule';
+import type { BillingReconciliationResult } from '@/services/billing';
 
 export type ScheduleReconciliationScopeType =
   | 'TENANT'
@@ -79,6 +80,11 @@ export type DeadlineReconciliationResult = {
   counts: DeadlineReconciliationCounts;
   preservedByReason: DeadlineReconciliationPreservedCounts;
   warnings: DeadlineReconciliationWarning[];
+};
+
+export type ServiceScheduleReconciliationSummary = {
+  deadlines: DeadlineReconciliationResult;
+  billing: BillingReconciliationResult;
 };
 
 export type ReconcileClientServiceDeadlinesInput = {

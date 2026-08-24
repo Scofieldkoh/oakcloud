@@ -4,7 +4,7 @@ import { ErrorCodes } from '@/lib/errors';
 const prismaMock = vi.hoisted(() => ({
   clientService: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
   company: { findFirst: vi.fn() },
-  clientServiceFeeLine: { deleteMany: vi.fn(), createMany: vi.fn() },
+  clientServiceFeeLine: { deleteMany: vi.fn(), updateMany: vi.fn(), createMany: vi.fn() },
   clientServiceDeadlineRule: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
   serviceVariantDeadlineRule: { findMany: vi.fn() },
   deadlineRuleVersion: { findMany: vi.fn() },
@@ -59,10 +59,33 @@ describe('client service service', () => {
       .mockResolvedValueOnce(record)
       .mockResolvedValueOnce({ ...record, feeLines: [{ ...record.feeLines[0], description: 'Revised annual fee', amount: { toString: () => '650.00', toFixed: () => '650.00' } }] });
     await updateClientService(record.id, { expectedUpdatedAt: record.updatedAt.toISOString(), feeLines: [{ id: 'fee-1', description: 'Revised annual fee', amount: '650.00', currency: 'SGD', billingFrequency: 'ANNUALLY', billingStartDate: '2026-07-30', displayOrder: 0 }] }, actor);
-    expect(prismaMock.clientServiceFeeLine.deleteMany).toHaveBeenCalled();
-    expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ sourceAgreementFeeLineId: 'agreement-fee-1' })] }));
+    expect(prismaMock.clientServiceFeeLine.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: 'fee-1', deletedAt: null }),
+      data: expect.objectContaining({ amount: expect.anything(), currency: 'SGD' }),
+    }));
     expect(prismaMock.serviceAgreementFeeLine.update).not.toHaveBeenCalled();
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ entityType: 'ClientService', action: 'UPDATE' }), prismaMock);
+  });
+
+  it('archives removed persisted fee lines instead of deleting their lineage', async () => {
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce(record)
+      .mockResolvedValueOnce({ ...record, feeLines: [{ ...record.feeLines[0], id: 'fee-2', sourceAgreementFeeLineId: null }] });
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      feeLines: [{ id: 'fee-2', description: 'Replacement fee', amount: '650.00', currency: 'SGD', billingFrequency: 'ANNUALLY', billingStartDate: '2026-07-30', displayOrder: 0 }],
+    }, actor);
+
+    expect(prismaMock.clientServiceFeeLine.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { tenantId: actor.tenantId, clientServiceId: record.id, id: { in: ['fee-1'] }, deletedAt: null },
+      data: expect.objectContaining({
+        isActive: false,
+        deletedAt: expect.any(Date),
+        deletedReason: 'Removed from client service configuration',
+      }),
+    }));
+    expect(prismaMock.clientServiceFeeLine.deleteMany).not.toHaveBeenCalled();
   });
 
   it('persists client deadline configuration and enqueues from the same transaction', async () => {

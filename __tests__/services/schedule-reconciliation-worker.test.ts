@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   },
   flags: vi.fn(),
   reconcile: vi.fn(),
+  billingReconcile: vi.fn(),
   enqueue: vi.fn(),
   logger: { info: vi.fn() },
 }));
@@ -22,6 +23,9 @@ vi.mock('@/services/schedule-reconciliation/settings', () => ({
 vi.mock('@/services/schedule-reconciliation/deadline-reconciler', () => ({
   reconcileClientServiceDeadlines: mocks.reconcile,
 }));
+vi.mock('@/services/billing', () => ({
+  reconcileClientServiceBilling: mocks.billingReconcile,
+}));
 vi.mock('@/services/schedule-reconciliation/queue', () => ({
   enqueueScheduleReconciliation: mocks.enqueue,
 }));
@@ -30,7 +34,7 @@ import { enqueueDailyRollingHorizonRequests, processScheduleReconciliationBatch 
 
 const request = {
   id: 'request-1', tenantId: 'tenant-1', scopeType: 'CLIENT_SERVICE', scopeId: 'service-1',
-  triggerType: 'CLIENT_SERVICE_CREATED', correlationId: 'corr-1', attemptCount: 0,
+  triggerType: 'CLIENT_SERVICE_CREATED', correlationId: 'corr-1', requestedById: null, attemptCount: 0,
 };
 
 function queryText(value: unknown): string {
@@ -57,6 +61,22 @@ describe('schedule reconciliation worker', () => {
       preservedByReason: { MANUAL_TRIGGER: 0, HISTORICAL: 0, COMPLETED: 0, WAIVED: 0, CANCELLED: 0, OVERRIDDEN: 0 },
       warnings: [],
     });
+    mocks.billingReconcile.mockResolvedValue({
+      clientServiceId: 'service-1',
+      created: 0,
+      recalculated: 0,
+      cancelled: 0,
+      preserved: 0,
+      preservedByReason: {
+        MANUAL_TRIGGER: 0,
+        HISTORICAL: 0,
+        BILLED: 0,
+        WAIVED: 0,
+        CANCELLED: 0,
+        OVERRIDDEN: 0,
+      },
+      warnings: [],
+    });
   });
 
   it('claims with a five-minute lease and SKIP LOCKED, then completes the request', async () => {
@@ -69,6 +89,10 @@ describe('schedule reconciliation worker', () => {
     expect(mocks.reconcile.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
       tenantId: 'tenant-1', clientServiceId: 'service-1', writeMode: 'OBSERVE', horizonEnd: '2027-08-18',
     }));
+    expect(mocks.billingReconcile).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId: 'tenant-1', clientServiceId: 'service-1', writeMode: 'OBSERVE', horizonEnd: '2027-08-18',
+      reconciliationRequestId: 'request-1', cancellationActorId: null,
+    }), expect.anything());
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: 'request-1', tenantId: 'tenant-1', status: 'PROCESSING' }),
       data: expect.objectContaining({ status: 'COMPLETED', leaseOwner: null, leaseExpiresAt: null }),

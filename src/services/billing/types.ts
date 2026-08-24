@@ -53,3 +53,41 @@ export type BillingScheduleEvaluationInput = {
   to: DateOnly;
   generationKey: string;
 };
+
+export type BillingReconciliationWarning = {
+  code: string;
+  message: string;
+  feeLineId?: string;
+  permanent?: boolean;
+};
+
+export type BillingReconciliationPreservedCounts = {
+  MANUAL_TRIGGER: number;
+  HISTORICAL: number;
+  BILLED: number;
+  WAIVED: number;
+  CANCELLED: number;
+  OVERRIDDEN: number;
+};
+
+export type BillingReconciliationResult = {
+  clientServiceId: string;
+  created: number;
+  recalculated: number;
+  cancelled: number;
+  preserved: number;
+  preservedByReason: BillingReconciliationPreservedCounts;
+  warnings: BillingReconciliationWarning[];
+};
+
+export type ReconcileClientServiceBillingInput = {
+  tenantId: string;
+  clientServiceId: string;
+  today: DateOnly;
+  horizonEnd: DateOnly;
+  writeMode: 'OBSERVE' | 'APPLY';
+  reconciliationRequestId: string;
+  /** Required for APPLY cancellation writes because billing rows retain the actor. */
+  cancellationActorId?: string | null;
+  assertLease?: () => Promise<void>;
+};
