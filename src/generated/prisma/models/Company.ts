@@ -641,6 +641,8 @@ export type CompanyWhereInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
   serviceCycles?: Prisma.ServiceCycleListRelationFilter
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
+  billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -724,6 +726,8 @@ export type CompanyOrderByWithRelationInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchOrderByRelationAggregateInput
   serviceCycles?: Prisma.ServiceCycleOrderByRelationAggregateInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  billingOccurrences?: Prisma.BillingOccurrenceOrderByRelationAggregateInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -811,6 +815,8 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchListRelationFilter
   serviceCycles?: Prisma.ServiceCycleListRelationFilter
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
+  billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
 }, "id" | "tenantId_uen">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -1009,6 +1015,8 @@ export type CompanyCreateInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -1091,6 +1099,8 @@ export type CompanyUncheckedCreateInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -1173,6 +1183,8 @@ export type CompanyUpdateInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1255,6 +1267,8 @@ export type CompanyUncheckedUpdateInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -1973,6 +1987,34 @@ export type CompanyUpdateOneRequiredWithoutClientServicesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutClientServicesInput, Prisma.CompanyUpdateWithoutClientServicesInput>, Prisma.CompanyUncheckedUpdateWithoutClientServicesInput>
 }
 
+export type CompanyCreateNestedOneWithoutBillingOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutBillingOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutBillingOccurrencesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutBillingOccurrencesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutBillingOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutBillingOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutBillingOccurrencesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutBillingOccurrencesInput
+  upsert?: Prisma.CompanyUpsertWithoutBillingOccurrencesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutBillingOccurrencesInput, Prisma.CompanyUpdateWithoutBillingOccurrencesInput>, Prisma.CompanyUncheckedUpdateWithoutBillingOccurrencesInput>
+}
+
+export type CompanyCreateNestedOneWithoutBillingCoverageIssuesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutBillingCoverageIssuesInput, Prisma.CompanyUncheckedCreateWithoutBillingCoverageIssuesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutBillingCoverageIssuesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutBillingCoverageIssuesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutBillingCoverageIssuesInput, Prisma.CompanyUncheckedCreateWithoutBillingCoverageIssuesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutBillingCoverageIssuesInput
+  upsert?: Prisma.CompanyUpsertWithoutBillingCoverageIssuesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutBillingCoverageIssuesInput, Prisma.CompanyUpdateWithoutBillingCoverageIssuesInput>, Prisma.CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput>
+}
+
 export type CompanyCreateNestedOneWithoutServiceCyclesInput = {
   create?: Prisma.XOR<Prisma.CompanyCreateWithoutServiceCyclesInput, Prisma.CompanyUncheckedCreateWithoutServiceCyclesInput>
   connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutServiceCyclesInput
@@ -2190,6 +2232,8 @@ export type CompanyCreateWithoutTenantInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -2271,6 +2315,8 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -2435,6 +2481,8 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2516,6 +2564,8 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2613,6 +2663,8 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2694,6 +2746,8 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2775,6 +2829,8 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -2856,6 +2912,8 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -2953,6 +3011,8 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -3034,6 +3094,8 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -3115,6 +3177,8 @@ export type CompanyCreateWithoutFormerNamesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -3196,6 +3260,8 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -3293,6 +3359,8 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -3374,6 +3442,8 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -3455,6 +3525,8 @@ export type CompanyCreateWithoutAddressesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -3536,6 +3608,8 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -3633,6 +3707,8 @@ export type CompanyUpdateWithoutAddressesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -3714,6 +3790,8 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -3795,6 +3873,8 @@ export type CompanyCreateWithoutContactsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -3876,6 +3956,8 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -3973,6 +4055,8 @@ export type CompanyUpdateWithoutContactsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -4054,6 +4138,8 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -4135,6 +4221,8 @@ export type CompanyCreateWithoutContactDetailsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -4216,6 +4304,8 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -4313,6 +4403,8 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -4394,6 +4486,8 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -4475,6 +4569,8 @@ export type CompanyCreateWithoutOfficersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -4556,6 +4652,8 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -4653,6 +4751,8 @@ export type CompanyUpdateWithoutOfficersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -4734,6 +4834,8 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -4815,6 +4917,8 @@ export type CompanyCreateWithoutShareCapitalInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -4896,6 +5000,8 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -4993,6 +5099,8 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -5074,6 +5182,8 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditorInput = {
@@ -5155,6 +5265,8 @@ export type CompanyCreateWithoutAuditorInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditorInput = {
@@ -5236,6 +5348,8 @@ export type CompanyUncheckedCreateWithoutAuditorInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditorInput = {
@@ -5333,6 +5447,8 @@ export type CompanyUpdateWithoutAuditorInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditorInput = {
@@ -5414,6 +5530,8 @@ export type CompanyUncheckedUpdateWithoutAuditorInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -5495,6 +5613,8 @@ export type CompanyCreateWithoutShareholdersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -5576,6 +5696,8 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -5673,6 +5795,8 @@ export type CompanyUpdateWithoutShareholdersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -5754,6 +5878,8 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -5835,6 +5961,8 @@ export type CompanyCreateWithoutChargesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -5916,6 +6044,8 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -6013,6 +6143,8 @@ export type CompanyUpdateWithoutChargesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -6094,6 +6226,8 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -6175,6 +6309,8 @@ export type CompanyCreateWithoutDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -6256,6 +6392,8 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -6353,6 +6491,8 @@ export type CompanyUpdateWithoutDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -6434,6 +6574,8 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -6515,6 +6657,8 @@ export type CompanyCreateWithoutAuditLogsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -6596,6 +6740,8 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -6693,6 +6839,8 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -6774,6 +6922,8 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -6855,6 +7005,8 @@ export type CompanyCreateWithoutNoteTabsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -6936,6 +7088,8 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -7033,6 +7187,8 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -7114,6 +7270,8 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -7195,6 +7353,8 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -7276,6 +7436,8 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -7373,6 +7535,8 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -7454,6 +7618,8 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
@@ -7535,6 +7701,8 @@ export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
@@ -7616,6 +7784,8 @@ export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPrimaryGenerationBatchesInput = {
@@ -7713,6 +7883,8 @@ export type CompanyUpdateWithoutPrimaryGenerationBatchesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
@@ -7794,6 +7966,8 @@ export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
@@ -7875,6 +8049,8 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
@@ -7956,6 +8132,8 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPrimaryServiceAgreementsInput = {
@@ -8053,6 +8231,8 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
@@ -8134,6 +8314,8 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
@@ -8215,6 +8397,8 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
@@ -8296,6 +8480,8 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutServiceAgreementEntitiesInput = {
@@ -8393,6 +8579,8 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
@@ -8474,6 +8662,8 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutClientServicesInput = {
@@ -8555,6 +8745,8 @@ export type CompanyCreateWithoutClientServicesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutClientServicesInput = {
@@ -8636,6 +8828,8 @@ export type CompanyUncheckedCreateWithoutClientServicesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutClientServicesInput = {
@@ -8733,6 +8927,8 @@ export type CompanyUpdateWithoutClientServicesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutClientServicesInput = {
@@ -8814,6 +9010,704 @@ export type CompanyUncheckedUpdateWithoutClientServicesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutBillingOccurrencesInput = {
+  id?: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutBillingOccurrencesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorUncheckedCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutBillingOccurrencesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutBillingOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutBillingOccurrencesInput>
+}
+
+export type CompanyUpsertWithoutBillingOccurrencesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutBillingOccurrencesInput, Prisma.CompanyUncheckedUpdateWithoutBillingOccurrencesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutBillingOccurrencesInput, Prisma.CompanyUncheckedCreateWithoutBillingOccurrencesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutBillingOccurrencesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutBillingOccurrencesInput, Prisma.CompanyUncheckedUpdateWithoutBillingOccurrencesInput>
+}
+
+export type CompanyUpdateWithoutBillingOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutBillingOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUncheckedUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutBillingCoverageIssuesInput = {
+  id?: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutBillingCoverageIssuesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorUncheckedCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutBillingCoverageIssuesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutBillingCoverageIssuesInput, Prisma.CompanyUncheckedCreateWithoutBillingCoverageIssuesInput>
+}
+
+export type CompanyUpsertWithoutBillingCoverageIssuesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutBillingCoverageIssuesInput, Prisma.CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutBillingCoverageIssuesInput, Prisma.CompanyUncheckedCreateWithoutBillingCoverageIssuesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutBillingCoverageIssuesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutBillingCoverageIssuesInput, Prisma.CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput>
+}
+
+export type CompanyUpdateWithoutBillingCoverageIssuesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUncheckedUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutServiceCyclesInput = {
@@ -8895,6 +9789,8 @@ export type CompanyCreateWithoutServiceCyclesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
@@ -8976,6 +9872,8 @@ export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutServiceCyclesInput = {
@@ -9073,6 +9971,8 @@ export type CompanyUpdateWithoutServiceCyclesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
@@ -9154,6 +10054,8 @@ export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDeadlineOccurrencesInput = {
@@ -9235,6 +10137,8 @@ export type CompanyCreateWithoutDeadlineOccurrencesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
@@ -9316,6 +10220,8 @@ export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDeadlineOccurrencesInput = {
@@ -9413,6 +10319,8 @@ export type CompanyUpdateWithoutDeadlineOccurrencesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
@@ -9494,6 +10402,8 @@ export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningEnvelopesInput = {
@@ -9575,6 +10485,8 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -9656,6 +10568,8 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -9753,6 +10667,8 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -9834,6 +10750,8 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -9915,6 +10833,8 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -9996,6 +10916,8 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -10093,6 +11015,8 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -10174,6 +11098,8 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -10255,6 +11181,8 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -10336,6 +11264,8 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -10433,6 +11363,8 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -10514,6 +11446,8 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -10595,6 +11529,8 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -10676,6 +11612,8 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -10773,6 +11711,8 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -10854,6 +11794,8 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTasksInput = {
@@ -10935,6 +11877,8 @@ export type CompanyCreateWithoutTasksInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTasksInput = {
@@ -11016,6 +11960,8 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTasksInput = {
@@ -11113,6 +12059,8 @@ export type CompanyUpdateWithoutTasksInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTasksInput = {
@@ -11194,6 +12142,8 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskStageOutcomesInput = {
@@ -11275,6 +12225,8 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -11356,6 +12308,8 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -11453,6 +12407,8 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -11534,6 +12490,8 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskRecoveryContextsInput = {
@@ -11615,6 +12573,8 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
@@ -11696,6 +12656,8 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskRecoveryContextsInput = {
@@ -11793,6 +12755,8 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
@@ -11874,6 +12838,8 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyTenantInput = {
@@ -12008,6 +12974,8 @@ export type CompanyUpdateWithoutTenantInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -12089,6 +13057,8 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -12177,6 +13147,8 @@ export type CompanyCountOutputType = {
   primaryGenerationBatches: number
   serviceCycles: number
   deadlineOccurrences: number
+  billingOccurrences: number
+  billingCoverageIssues: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -12207,6 +13179,8 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   primaryGenerationBatches?: boolean | CompanyCountOutputTypeCountPrimaryGenerationBatchesArgs
   serviceCycles?: boolean | CompanyCountOutputTypeCountServiceCyclesArgs
   deadlineOccurrences?: boolean | CompanyCountOutputTypeCountDeadlineOccurrencesArgs
+  billingOccurrences?: boolean | CompanyCountOutputTypeCountBillingOccurrencesArgs
+  billingCoverageIssues?: boolean | CompanyCountOutputTypeCountBillingCoverageIssuesArgs
 }
 
 /**
@@ -12408,6 +13382,20 @@ export type CompanyCountOutputTypeCountDeadlineOccurrencesArgs<ExtArgs extends r
   where?: Prisma.DeadlineOccurrenceWhereInput
 }
 
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountBillingOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingOccurrenceWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountBillingCoverageIssuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingCoverageIssueWhereInput
+}
+
 
 export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -12490,6 +13478,8 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   primaryGenerationBatches?: boolean | Prisma.Company$primaryGenerationBatchesArgs<ExtArgs>
   serviceCycles?: boolean | Prisma.Company$serviceCyclesArgs<ExtArgs>
   deadlineOccurrences?: boolean | Prisma.Company$deadlineOccurrencesArgs<ExtArgs>
+  billingOccurrences?: boolean | Prisma.Company$billingOccurrencesArgs<ExtArgs>
+  billingCoverageIssues?: boolean | Prisma.Company$billingCoverageIssuesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -12688,6 +13678,8 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   primaryGenerationBatches?: boolean | Prisma.Company$primaryGenerationBatchesArgs<ExtArgs>
   serviceCycles?: boolean | Prisma.Company$serviceCyclesArgs<ExtArgs>
   deadlineOccurrences?: boolean | Prisma.Company$deadlineOccurrencesArgs<ExtArgs>
+  billingOccurrences?: boolean | Prisma.Company$billingOccurrencesArgs<ExtArgs>
+  billingCoverageIssues?: boolean | Prisma.Company$billingCoverageIssuesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -12729,6 +13721,8 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     primaryGenerationBatches: Prisma.$DocumentGenerationBatchPayload<ExtArgs>[]
     serviceCycles: Prisma.$ServiceCyclePayload<ExtArgs>[]
     deadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    billingOccurrences: Prisma.$BillingOccurrencePayload<ExtArgs>[]
+    billingCoverageIssues: Prisma.$BillingCoverageIssuePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -13205,6 +14199,8 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   primaryGenerationBatches<T extends Prisma.Company$primaryGenerationBatchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$primaryGenerationBatchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceCycles<T extends Prisma.Company$serviceCyclesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$serviceCyclesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deadlineOccurrences<T extends Prisma.Company$deadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$deadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  billingOccurrences<T extends Prisma.Company$billingOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$billingOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  billingCoverageIssues<T extends Prisma.Company$billingCoverageIssuesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$billingCoverageIssuesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingCoverageIssuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -14345,6 +15341,54 @@ export type Company$deadlineOccurrencesArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * Company.billingOccurrences
+ */
+export type Company$billingOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingOccurrence
+   */
+  select?: Prisma.BillingOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingOccurrence
+   */
+  omit?: Prisma.BillingOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.BillingOccurrenceWhereInput
+  orderBy?: Prisma.BillingOccurrenceOrderByWithRelationInput | Prisma.BillingOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.BillingOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingOccurrenceScalarFieldEnum | Prisma.BillingOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * Company.billingCoverageIssues
+ */
+export type Company$billingCoverageIssuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingCoverageIssue
+   */
+  select?: Prisma.BillingCoverageIssueSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingCoverageIssue
+   */
+  omit?: Prisma.BillingCoverageIssueOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingCoverageIssueInclude<ExtArgs> | null
+  where?: Prisma.BillingCoverageIssueWhereInput
+  orderBy?: Prisma.BillingCoverageIssueOrderByWithRelationInput | Prisma.BillingCoverageIssueOrderByWithRelationInput[]
+  cursor?: Prisma.BillingCoverageIssueWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingCoverageIssueScalarFieldEnum | Prisma.BillingCoverageIssueScalarFieldEnum[]
 }
 
 /**

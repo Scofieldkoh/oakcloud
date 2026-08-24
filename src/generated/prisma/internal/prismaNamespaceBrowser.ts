@@ -97,6 +97,8 @@ export const ModelName = {
   ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
   ClientService: 'ClientService',
   ClientServiceFeeLine: 'ClientServiceFeeLine',
+  BillingOccurrence: 'BillingOccurrence',
+  BillingCoverageIssue: 'BillingCoverageIssue',
   DeadlineRule: 'DeadlineRule',
   DeadlineRuleVersion: 'DeadlineRuleVersion',
   DeadlineRuleParameterDefinition: 'DeadlineRuleParameterDefinition',
@@ -1058,6 +1060,8 @@ export const ClientServiceScalarFieldEnum = {
   startDate: 'startDate',
   endDate: 'endDate',
   fieldValues: 'fieldValues',
+  billingDisposition: 'billingDisposition',
+  billingNotRequiredReason: 'billingNotRequiredReason',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
@@ -1078,12 +1082,78 @@ export const ClientServiceFeeLineScalarFieldEnum = {
   billingFrequency: 'billingFrequency',
   customFrequencyLabel: 'customFrequencyLabel',
   billingStartDate: 'billingStartDate',
+  scheduleConfig: 'scheduleConfig',
+  isActive: 'isActive',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason',
   displayOrder: 'displayOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type ClientServiceFeeLineScalarFieldEnum = (typeof ClientServiceFeeLineScalarFieldEnum)[keyof typeof ClientServiceFeeLineScalarFieldEnum]
+
+
+export const BillingOccurrenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  feeLineId: 'feeLineId',
+  billingPeriodKey: 'billingPeriodKey',
+  scheduleEntryKey: 'scheduleEntryKey',
+  generationKey: 'generationKey',
+  calculatedExpectedDate: 'calculatedExpectedDate',
+  operativeExpectedDate: 'operativeExpectedDate',
+  dateOverridden: 'dateOverridden',
+  dateOverrideReason: 'dateOverrideReason',
+  dateOverriddenAt: 'dateOverriddenAt',
+  dateOverriddenById: 'dateOverriddenById',
+  baseAmount: 'baseAmount',
+  baseCurrency: 'baseCurrency',
+  operativeAmount: 'operativeAmount',
+  operativeCurrency: 'operativeCurrency',
+  valueOverridden: 'valueOverridden',
+  valueOverrideReason: 'valueOverrideReason',
+  valueOverriddenAt: 'valueOverriddenAt',
+  valueOverriddenById: 'valueOverriddenById',
+  status: 'status',
+  billedDate: 'billedDate',
+  markedBilledAt: 'markedBilledAt',
+  markedBilledById: 'markedBilledById',
+  externalReference: 'externalReference',
+  notes: 'notes',
+  waivedAt: 'waivedAt',
+  waivedById: 'waivedById',
+  waiverReason: 'waiverReason',
+  cancelledAt: 'cancelledAt',
+  cancelledById: 'cancelledById',
+  cancellationReason: 'cancellationReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingOccurrenceScalarFieldEnum = (typeof BillingOccurrenceScalarFieldEnum)[keyof typeof BillingOccurrenceScalarFieldEnum]
+
+
+export const BillingCoverageIssueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  feeLineId: 'feeLineId',
+  type: 'type',
+  severity: 'severity',
+  issueKey: 'issueKey',
+  details: 'details',
+  firstDetectedAt: 'firstDetectedAt',
+  lastDetectedAt: 'lastDetectedAt',
+  resolvedAt: 'resolvedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingCoverageIssueScalarFieldEnum = (typeof BillingCoverageIssueScalarFieldEnum)[keyof typeof BillingCoverageIssueScalarFieldEnum]
 
 
 export const DeadlineRuleScalarFieldEnum = {

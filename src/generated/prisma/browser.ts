@@ -248,6 +248,16 @@ export type ClientService = Prisma.ClientServiceModel
  */
 export type ClientServiceFeeLine = Prisma.ClientServiceFeeLineModel
 /**
+ * Model BillingOccurrence
+ *
+ */
+export type BillingOccurrence = Prisma.BillingOccurrenceModel
+/**
+ * Model BillingCoverageIssue
+ *
+ */
+export type BillingCoverageIssue = Prisma.BillingCoverageIssueModel
+/**
  * Model DeadlineRule
  *
  */

@@ -72,6 +72,8 @@ model Workspace {
   businessHolidays                 BusinessHoliday[]
   serviceCycles                    ServiceCycle[]
   deadlineOccurrences              DeadlineOccurrence[]
+  billingOccurrences               BillingOccurrence[]
+  billingCoverageIssues            BillingCoverageIssue[]
   reconciliationRequests           ServiceScheduleReconciliationRequest[]
   backups                          WorkspaceBackup[]
   connectorAccess                  WorkspaceConnectorAccess[]
@@ -206,6 +208,11 @@ model User {
   completedDeadlineOccurrences         DeadlineOccurrence[]                   @relation("DeadlineOccurrenceCompletionActor")
   waivedDeadlineOccurrences            DeadlineOccurrence[]                   @relation("DeadlineOccurrenceWaiverActor")
   cancelledDeadlineOccurrences         DeadlineOccurrence[]                   @relation("DeadlineOccurrenceCancellationActor")
+  overriddenBillingOccurrenceDates     BillingOccurrence[]                    @relation("BillingOccurrenceDateOverrideActor")
+  overriddenBillingOccurrenceValues    BillingOccurrence[]                    @relation("BillingOccurrenceValueOverrideActor")
+  markedBilledBillingOccurrences       BillingOccurrence[]                    @relation("BillingOccurrenceBilledActor")
+  waivedBillingOccurrences             BillingOccurrence[]                    @relation("BillingOccurrenceWaiverActor")
+  cancelledBillingOccurrences          BillingOccurrence[]                    @relation("BillingOccurrenceCancellationActor")
   requestedScheduleReconciliations     ServiceScheduleReconciliationRequest[] @relation("ScheduleReconciliationRequester")
 
   @@index([email])
@@ -342,6 +349,8 @@ model Company {
   primaryGenerationBatches    DocumentGenerationBatch[]    @relation("DocumentGenerationBatchPrimaryCompany")
   serviceCycles               ServiceCycle[]
   deadlineOccurrences         DeadlineOccurrence[]
+  billingOccurrences          BillingOccurrence[]
+  billingCoverageIssues       BillingCoverageIssue[]
 
   @@unique([tenantId, uen])
   @@index([tenantId])
@@ -1300,6 +1309,8 @@ model ClientService {
   startDate           DateTime                    @map("start_date") @db.Date
   endDate             DateTime?                   @map("end_date") @db.Date
   fieldValues         Json                        @default("{}") @map("field_values")
+  billingDisposition       BillingDisposition          @default(UNREVIEWED) @map("billing_disposition")
+  billingNotRequiredReason String?                     @map("billing_not_required_reason") @db.VarChar(500)
   createdAt           DateTime                    @default(now()) @map("created_at")
   updatedAt           DateTime                    @updatedAt @map("updated_at")
   deletedAt           DateTime?                   @map("deleted_at")
@@ -1313,6 +1324,8 @@ model ClientService {
   deadlineRules       ClientServiceDeadlineRule[]
   serviceCycles       ServiceCycle[]
   deadlineOccurrences DeadlineOccurrence[]
+  billingOccurrences       BillingOccurrence[]
+  billingCoverageIssues    BillingCoverageIssue[]
 
   @@unique([agreementItemId, companyId])
   @@index([tenantId, companyId, status, deletedAt])
@@ -1325,6 +1338,34 @@ model ClientService {
 enum ClientServiceSource {
   AGREEMENT
   MANUAL
+}
+
+enum BillingDisposition {
+  CONFIGURED
+  NOT_REQUIRED
+  UNREVIEWED
+}
+
+enum BillingOccurrenceStatus {
+  OPEN
+  BILLED
+  WAIVED
+  CANCELLED
+}
+
+enum BillingCoverageIssueSeverity {
+  ERROR
+  WARNING
+}
+
+enum BillingCoverageIssueType {
+  MISSING_DISPOSITION
+  MISSING_FEE_LINES
+  MISSING_START_DATE
+  INVALID_CUSTOM_SCHEDULE
+  MISSING_SCHEDULE_PARAMETER
+  OCCURRENCE_GAP
+  INVALID_AMOUNT_OR_CURRENCY
 }
 
 enum DeadlineRuleVersionState {
@@ -1402,16 +1443,101 @@ model ClientServiceFeeLine {
   billingFrequency         BillingFrequency         @map("billing_frequency")
   customFrequencyLabel     String?                  @map("custom_frequency_label") @db.VarChar(100)
   billingStartDate         DateTime?                @map("billing_start_date") @db.Date
+  scheduleConfig           Json?                    @map("schedule_config")
+  isActive                 Boolean                  @default(true) @map("is_active")
+  deletedAt                DateTime?                @map("deleted_at")
+  deletedReason            String?                  @map("deleted_reason") @db.VarChar(1000)
   displayOrder             Int                      @default(0) @map("display_order")
   createdAt                DateTime                 @default(now()) @map("created_at")
   updatedAt                DateTime                 @updatedAt @map("updated_at")
   tenant                   Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   clientService            ClientService            @relation(fields: [clientServiceId], references: [id], onDelete: Cascade)
   sourceAgreementFeeLine   ServiceAgreementFeeLine? @relation(fields: [sourceAgreementFeeLineId], references: [id], onDelete: SetNull)
+  billingOccurrences       BillingOccurrence[]
+  billingCoverageIssues    BillingCoverageIssue[]
 
   @@unique([clientServiceId, sourceAgreementFeeLineId])
   @@index([tenantId, clientServiceId, displayOrder])
   @@map("client_service_fee_lines")
+}
+
+model BillingOccurrence {
+  id                     String                  @id @default(uuid())
+  tenantId               String                  @map("tenant_id")
+  companyId              String                  @map("company_id")
+  clientServiceId        String                  @map("client_service_id")
+  feeLineId              String                  @map("fee_line_id")
+  billingPeriodKey       String                  @map("billing_period_key") @db.VarChar(100)
+  scheduleEntryKey       String                  @default("") @map("schedule_entry_key") @db.VarChar(64)
+  generationKey          String                  @map("generation_key") @db.VarChar(100)
+  calculatedExpectedDate DateTime                @map("calculated_expected_date") @db.Date
+  operativeExpectedDate  DateTime                @map("operative_expected_date") @db.Date
+  dateOverridden         Boolean                 @default(false) @map("date_overridden")
+  dateOverrideReason     String?                 @map("date_override_reason") @db.VarChar(1000)
+  dateOverriddenAt       DateTime?               @map("date_overridden_at")
+  dateOverriddenById     String?                 @map("date_overridden_by_id")
+  baseAmount             Decimal                 @map("base_amount") @db.Decimal(18, 2)
+  baseCurrency           String                  @map("base_currency") @db.VarChar(3)
+  operativeAmount        Decimal                 @map("operative_amount") @db.Decimal(18, 2)
+  operativeCurrency      String                  @map("operative_currency") @db.VarChar(3)
+  valueOverridden        Boolean                 @default(false) @map("value_overridden")
+  valueOverrideReason    String?                 @map("value_override_reason") @db.VarChar(1000)
+  valueOverriddenAt      DateTime?               @map("value_overridden_at")
+  valueOverriddenById    String?                 @map("value_overridden_by_id")
+  status                 BillingOccurrenceStatus @default(OPEN)
+  billedDate             DateTime?               @map("billed_date") @db.Date
+  markedBilledAt         DateTime?               @map("marked_billed_at")
+  markedBilledById       String?                 @map("marked_billed_by_id")
+  externalReference      String?                 @map("external_reference") @db.VarChar(200)
+  notes                  String?                 @db.Text
+  waivedAt               DateTime?               @map("waived_at")
+  waivedById             String?                 @map("waived_by_id")
+  waiverReason           String?                 @map("waiver_reason") @db.VarChar(1000)
+  cancelledAt            DateTime?               @map("cancelled_at")
+  cancelledById          String?                 @map("cancelled_by_id")
+  cancellationReason     String?                 @map("cancellation_reason") @db.VarChar(1000)
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  tenant                 Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company                Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  clientService          ClientService           @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  feeLine                ClientServiceFeeLine    @relation(fields: [feeLineId], references: [id], onDelete: Restrict)
+  dateOverriddenBy       User?                   @relation("BillingOccurrenceDateOverrideActor", fields: [dateOverriddenById], references: [id], onDelete: SetNull)
+  valueOverriddenBy      User?                   @relation("BillingOccurrenceValueOverrideActor", fields: [valueOverriddenById], references: [id], onDelete: SetNull)
+  markedBilledBy         User?                   @relation("BillingOccurrenceBilledActor", fields: [markedBilledById], references: [id], onDelete: SetNull)
+  waivedBy               User?                   @relation("BillingOccurrenceWaiverActor", fields: [waivedById], references: [id], onDelete: SetNull)
+  cancelledBy            User?                   @relation("BillingOccurrenceCancellationActor", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, feeLineId, billingPeriodKey, scheduleEntryKey, generationKey], map: "billing_occurrences_identity_key")
+  @@index([tenantId, operativeExpectedDate, status])
+  @@index([tenantId, companyId, operativeExpectedDate, status])
+  @@index([tenantId, clientServiceId, operativeExpectedDate])
+  @@map("billing_occurrences")
+}
+
+model BillingCoverageIssue {
+  id              String                       @id @default(uuid())
+  tenantId        String                       @map("tenant_id")
+  companyId       String                       @map("company_id")
+  clientServiceId String                       @map("client_service_id")
+  feeLineId       String?                      @map("fee_line_id")
+  type            BillingCoverageIssueType     @map("issue_type")
+  severity        BillingCoverageIssueSeverity
+  issueKey        String                       @map("issue_key") @db.VarChar(64)
+  details         Json                         @default("{}")
+  firstDetectedAt DateTime                     @default(now()) @map("first_detected_at")
+  lastDetectedAt  DateTime                     @default(now()) @map("last_detected_at")
+  resolvedAt      DateTime?                    @map("resolved_at")
+  createdAt       DateTime                     @default(now()) @map("created_at")
+  updatedAt       DateTime                     @updatedAt @map("updated_at")
+  tenant          Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company         Company                      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  clientService   ClientService                @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  feeLine         ClientServiceFeeLine?        @relation(fields: [feeLineId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, clientServiceId, resolvedAt])
+  @@index([tenantId, companyId, severity, resolvedAt])
+  @@map("billing_coverage_issues")
 }
 
 model DeadlineRule {

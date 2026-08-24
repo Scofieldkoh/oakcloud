@@ -40,6 +40,46 @@ export const ClientServiceSource = {
 export type ClientServiceSource = (typeof ClientServiceSource)[keyof typeof ClientServiceSource]
 
 
+export const BillingDisposition = {
+  CONFIGURED: 'CONFIGURED',
+  NOT_REQUIRED: 'NOT_REQUIRED',
+  UNREVIEWED: 'UNREVIEWED'
+} as const
+
+export type BillingDisposition = (typeof BillingDisposition)[keyof typeof BillingDisposition]
+
+
+export const BillingOccurrenceStatus = {
+  OPEN: 'OPEN',
+  BILLED: 'BILLED',
+  WAIVED: 'WAIVED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type BillingOccurrenceStatus = (typeof BillingOccurrenceStatus)[keyof typeof BillingOccurrenceStatus]
+
+
+export const BillingCoverageIssueSeverity = {
+  ERROR: 'ERROR',
+  WARNING: 'WARNING'
+} as const
+
+export type BillingCoverageIssueSeverity = (typeof BillingCoverageIssueSeverity)[keyof typeof BillingCoverageIssueSeverity]
+
+
+export const BillingCoverageIssueType = {
+  MISSING_DISPOSITION: 'MISSING_DISPOSITION',
+  MISSING_FEE_LINES: 'MISSING_FEE_LINES',
+  MISSING_START_DATE: 'MISSING_START_DATE',
+  INVALID_CUSTOM_SCHEDULE: 'INVALID_CUSTOM_SCHEDULE',
+  MISSING_SCHEDULE_PARAMETER: 'MISSING_SCHEDULE_PARAMETER',
+  OCCURRENCE_GAP: 'OCCURRENCE_GAP',
+  INVALID_AMOUNT_OR_CURRENCY: 'INVALID_AMOUNT_OR_CURRENCY'
+} as const
+
+export type BillingCoverageIssueType = (typeof BillingCoverageIssueType)[keyof typeof BillingCoverageIssueType]
+
+
 export const DeadlineRuleVersionState = {
   DRAFT: 'DRAFT',
   PUBLISHED: 'PUBLISHED'

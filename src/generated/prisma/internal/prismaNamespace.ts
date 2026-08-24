@@ -430,6 +430,8 @@ export const ModelName = {
   ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
   ClientService: 'ClientService',
   ClientServiceFeeLine: 'ClientServiceFeeLine',
+  BillingOccurrence: 'BillingOccurrence',
+  BillingCoverageIssue: 'BillingCoverageIssue',
   DeadlineRule: 'DeadlineRule',
   DeadlineRuleVersion: 'DeadlineRuleVersion',
   DeadlineRuleParameterDefinition: 'DeadlineRuleParameterDefinition',
@@ -519,7 +521,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3924,6 +3926,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ClientServiceFeeLineCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ClientServiceFeeLineCountAggregateOutputType> | number
+        }
+      }
+    }
+    BillingOccurrence: {
+      payload: Prisma.$BillingOccurrencePayload<ExtArgs>
+      fields: Prisma.BillingOccurrenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BillingOccurrenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BillingOccurrenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>
+        }
+        findFirst: {
+          args: Prisma.BillingOccurrenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BillingOccurrenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>
+        }
+        findMany: {
+          args: Prisma.BillingOccurrenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>[]
+        }
+        create: {
+          args: Prisma.BillingOccurrenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>
+        }
+        createMany: {
+          args: Prisma.BillingOccurrenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BillingOccurrenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>[]
+        }
+        delete: {
+          args: Prisma.BillingOccurrenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>
+        }
+        update: {
+          args: Prisma.BillingOccurrenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>
+        }
+        deleteMany: {
+          args: Prisma.BillingOccurrenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BillingOccurrenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BillingOccurrenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>[]
+        }
+        upsert: {
+          args: Prisma.BillingOccurrenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingOccurrencePayload>
+        }
+        aggregate: {
+          args: Prisma.BillingOccurrenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBillingOccurrence>
+        }
+        groupBy: {
+          args: Prisma.BillingOccurrenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingOccurrenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BillingOccurrenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingOccurrenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    BillingCoverageIssue: {
+      payload: Prisma.$BillingCoverageIssuePayload<ExtArgs>
+      fields: Prisma.BillingCoverageIssueFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BillingCoverageIssueFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BillingCoverageIssueFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>
+        }
+        findFirst: {
+          args: Prisma.BillingCoverageIssueFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BillingCoverageIssueFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>
+        }
+        findMany: {
+          args: Prisma.BillingCoverageIssueFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>[]
+        }
+        create: {
+          args: Prisma.BillingCoverageIssueCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>
+        }
+        createMany: {
+          args: Prisma.BillingCoverageIssueCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BillingCoverageIssueCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>[]
+        }
+        delete: {
+          args: Prisma.BillingCoverageIssueDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>
+        }
+        update: {
+          args: Prisma.BillingCoverageIssueUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>
+        }
+        deleteMany: {
+          args: Prisma.BillingCoverageIssueDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BillingCoverageIssueUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BillingCoverageIssueUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>[]
+        }
+        upsert: {
+          args: Prisma.BillingCoverageIssueUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingCoverageIssuePayload>
+        }
+        aggregate: {
+          args: Prisma.BillingCoverageIssueAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBillingCoverageIssue>
+        }
+        groupBy: {
+          args: Prisma.BillingCoverageIssueGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingCoverageIssueGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BillingCoverageIssueCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingCoverageIssueCountAggregateOutputType> | number
         }
       }
     }
@@ -10311,6 +10461,8 @@ export const ClientServiceScalarFieldEnum = {
   startDate: 'startDate',
   endDate: 'endDate',
   fieldValues: 'fieldValues',
+  billingDisposition: 'billingDisposition',
+  billingNotRequiredReason: 'billingNotRequiredReason',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
@@ -10331,12 +10483,78 @@ export const ClientServiceFeeLineScalarFieldEnum = {
   billingFrequency: 'billingFrequency',
   customFrequencyLabel: 'customFrequencyLabel',
   billingStartDate: 'billingStartDate',
+  scheduleConfig: 'scheduleConfig',
+  isActive: 'isActive',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason',
   displayOrder: 'displayOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type ClientServiceFeeLineScalarFieldEnum = (typeof ClientServiceFeeLineScalarFieldEnum)[keyof typeof ClientServiceFeeLineScalarFieldEnum]
+
+
+export const BillingOccurrenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  feeLineId: 'feeLineId',
+  billingPeriodKey: 'billingPeriodKey',
+  scheduleEntryKey: 'scheduleEntryKey',
+  generationKey: 'generationKey',
+  calculatedExpectedDate: 'calculatedExpectedDate',
+  operativeExpectedDate: 'operativeExpectedDate',
+  dateOverridden: 'dateOverridden',
+  dateOverrideReason: 'dateOverrideReason',
+  dateOverriddenAt: 'dateOverriddenAt',
+  dateOverriddenById: 'dateOverriddenById',
+  baseAmount: 'baseAmount',
+  baseCurrency: 'baseCurrency',
+  operativeAmount: 'operativeAmount',
+  operativeCurrency: 'operativeCurrency',
+  valueOverridden: 'valueOverridden',
+  valueOverrideReason: 'valueOverrideReason',
+  valueOverriddenAt: 'valueOverriddenAt',
+  valueOverriddenById: 'valueOverriddenById',
+  status: 'status',
+  billedDate: 'billedDate',
+  markedBilledAt: 'markedBilledAt',
+  markedBilledById: 'markedBilledById',
+  externalReference: 'externalReference',
+  notes: 'notes',
+  waivedAt: 'waivedAt',
+  waivedById: 'waivedById',
+  waiverReason: 'waiverReason',
+  cancelledAt: 'cancelledAt',
+  cancelledById: 'cancelledById',
+  cancellationReason: 'cancellationReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingOccurrenceScalarFieldEnum = (typeof BillingOccurrenceScalarFieldEnum)[keyof typeof BillingOccurrenceScalarFieldEnum]
+
+
+export const BillingCoverageIssueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  feeLineId: 'feeLineId',
+  type: 'type',
+  severity: 'severity',
+  issueKey: 'issueKey',
+  details: 'details',
+  firstDetectedAt: 'firstDetectedAt',
+  lastDetectedAt: 'lastDetectedAt',
+  resolvedAt: 'resolvedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingCoverageIssueScalarFieldEnum = (typeof BillingCoverageIssueScalarFieldEnum)[keyof typeof BillingCoverageIssueScalarFieldEnum]
 
 
 export const DeadlineRuleScalarFieldEnum = {
@@ -12319,6 +12537,62 @@ export type ListEnumClientServiceStatusFieldRefInput<$PrismaModel> = FieldRefInp
 
 
 /**
+ * Reference to a field of type 'BillingDisposition'
+ */
+export type EnumBillingDispositionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingDisposition'>
+
+
+
+/**
+ * Reference to a field of type 'BillingDisposition[]'
+ */
+export type ListEnumBillingDispositionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingDisposition[]'>
+
+
+
+/**
+ * Reference to a field of type 'BillingOccurrenceStatus'
+ */
+export type EnumBillingOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingOccurrenceStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BillingOccurrenceStatus[]'
+ */
+export type ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingOccurrenceStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BillingCoverageIssueType'
+ */
+export type EnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingCoverageIssueType'>
+
+
+
+/**
+ * Reference to a field of type 'BillingCoverageIssueType[]'
+ */
+export type ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingCoverageIssueType[]'>
+
+
+
+/**
+ * Reference to a field of type 'BillingCoverageIssueSeverity'
+ */
+export type EnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingCoverageIssueSeverity'>
+
+
+
+/**
+ * Reference to a field of type 'BillingCoverageIssueSeverity[]'
+ */
+export type ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingCoverageIssueSeverity[]'>
+
+
+
+/**
  * Reference to a field of type 'DeadlineRuleVersionState'
  */
 export type EnumDeadlineRuleVersionStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineRuleVersionState'>
@@ -13466,6 +13740,8 @@ export type GlobalOmitConfig = {
   serviceAgreementFeeLine?: Prisma.ServiceAgreementFeeLineOmit
   clientService?: Prisma.ClientServiceOmit
   clientServiceFeeLine?: Prisma.ClientServiceFeeLineOmit
+  billingOccurrence?: Prisma.BillingOccurrenceOmit
+  billingCoverageIssue?: Prisma.BillingCoverageIssueOmit
   deadlineRule?: Prisma.DeadlineRuleOmit
   deadlineRuleVersion?: Prisma.DeadlineRuleVersionOmit
   deadlineRuleParameterDefinition?: Prisma.DeadlineRuleParameterDefinitionOmit

@@ -39,6 +39,8 @@ export type ClientServiceMinAggregateOutputType = {
   customCadenceLabel: string | null
   startDate: Date | null
   endDate: Date | null
+  billingDisposition: $Enums.BillingDisposition | null
+  billingNotRequiredReason: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -60,6 +62,8 @@ export type ClientServiceMaxAggregateOutputType = {
   customCadenceLabel: string | null
   startDate: Date | null
   endDate: Date | null
+  billingDisposition: $Enums.BillingDisposition | null
+  billingNotRequiredReason: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -82,6 +86,8 @@ export type ClientServiceCountAggregateOutputType = {
   startDate: number
   endDate: number
   fieldValues: number
+  billingDisposition: number
+  billingNotRequiredReason: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -105,6 +111,8 @@ export type ClientServiceMinAggregateInputType = {
   customCadenceLabel?: true
   startDate?: true
   endDate?: true
+  billingDisposition?: true
+  billingNotRequiredReason?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -126,6 +134,8 @@ export type ClientServiceMaxAggregateInputType = {
   customCadenceLabel?: true
   startDate?: true
   endDate?: true
+  billingDisposition?: true
+  billingNotRequiredReason?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -148,6 +158,8 @@ export type ClientServiceCountAggregateInputType = {
   startDate?: true
   endDate?: true
   fieldValues?: true
+  billingDisposition?: true
+  billingNotRequiredReason?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -243,6 +255,8 @@ export type ClientServiceGroupByOutputType = {
   startDate: Date
   endDate: Date | null
   fieldValues: runtime.JsonValue
+  billingDisposition: $Enums.BillingDisposition
+  billingNotRequiredReason: string | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -286,6 +300,8 @@ export type ClientServiceWhereInput = {
   startDate?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   endDate?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
   fieldValues?: Prisma.JsonFilter<"ClientService">
+  billingDisposition?: Prisma.EnumBillingDispositionFilter<"ClientService"> | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
@@ -299,6 +315,8 @@ export type ClientServiceWhereInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleListRelationFilter
   serviceCycles?: Prisma.ServiceCycleListRelationFilter
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
+  billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
 }
 
 export type ClientServiceOrderByWithRelationInput = {
@@ -317,6 +335,8 @@ export type ClientServiceOrderByWithRelationInput = {
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrderInput | Prisma.SortOrder
   fieldValues?: Prisma.SortOrder
+  billingDisposition?: Prisma.SortOrder
+  billingNotRequiredReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -330,6 +350,8 @@ export type ClientServiceOrderByWithRelationInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleOrderByRelationAggregateInput
   serviceCycles?: Prisma.ServiceCycleOrderByRelationAggregateInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  billingOccurrences?: Prisma.BillingOccurrenceOrderByRelationAggregateInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueOrderByRelationAggregateInput
 }
 
 export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
@@ -352,6 +374,8 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   startDate?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   endDate?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
   fieldValues?: Prisma.JsonFilter<"ClientService">
+  billingDisposition?: Prisma.EnumBillingDispositionFilter<"ClientService"> | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
@@ -365,6 +389,8 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   deadlineRules?: Prisma.ClientServiceDeadlineRuleListRelationFilter
   serviceCycles?: Prisma.ServiceCycleListRelationFilter
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
+  billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
 }, "id" | "agreementItemId_companyId">
 
 export type ClientServiceOrderByWithAggregationInput = {
@@ -383,6 +409,8 @@ export type ClientServiceOrderByWithAggregationInput = {
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrderInput | Prisma.SortOrder
   fieldValues?: Prisma.SortOrder
+  billingDisposition?: Prisma.SortOrder
+  billingNotRequiredReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -411,6 +439,8 @@ export type ClientServiceScalarWhereWithAggregatesInput = {
   startDate?: Prisma.DateTimeWithAggregatesFilter<"ClientService"> | Date | string
   endDate?: Prisma.DateTimeNullableWithAggregatesFilter<"ClientService"> | Date | string | null
   fieldValues?: Prisma.JsonWithAggregatesFilter<"ClientService">
+  billingDisposition?: Prisma.EnumBillingDispositionWithAggregatesFilter<"ClientService"> | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.StringNullableWithAggregatesFilter<"ClientService"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ClientService"> | Date | string | null
@@ -428,6 +458,8 @@ export type ClientServiceCreateInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -441,6 +473,8 @@ export type ClientServiceCreateInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateInput = {
@@ -459,6 +493,8 @@ export type ClientServiceUncheckedCreateInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -467,6 +503,8 @@ export type ClientServiceUncheckedCreateInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUpdateInput = {
@@ -480,6 +518,8 @@ export type ClientServiceUpdateInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -493,6 +533,8 @@ export type ClientServiceUpdateInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateInput = {
@@ -511,6 +553,8 @@ export type ClientServiceUncheckedUpdateInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -519,6 +563,8 @@ export type ClientServiceUncheckedUpdateInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateManyInput = {
@@ -537,6 +583,8 @@ export type ClientServiceCreateManyInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -554,6 +602,8 @@ export type ClientServiceUpdateManyMutationInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -576,6 +626,8 @@ export type ClientServiceUncheckedUpdateManyInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -613,6 +665,8 @@ export type ClientServiceCountOrderByAggregateInput = {
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   fieldValues?: Prisma.SortOrder
+  billingDisposition?: Prisma.SortOrder
+  billingNotRequiredReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -634,6 +688,8 @@ export type ClientServiceMaxOrderByAggregateInput = {
   customCadenceLabel?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
+  billingDisposition?: Prisma.SortOrder
+  billingNotRequiredReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -655,6 +711,8 @@ export type ClientServiceMinOrderByAggregateInput = {
   customCadenceLabel?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
+  billingDisposition?: Prisma.SortOrder
+  billingNotRequiredReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -884,6 +942,10 @@ export type EnumClientServiceStatusFieldUpdateOperationsInput = {
   set?: $Enums.ClientServiceStatus
 }
 
+export type EnumBillingDispositionFieldUpdateOperationsInput = {
+  set?: $Enums.BillingDisposition
+}
+
 export type ClientServiceCreateNestedOneWithoutFeeLinesInput = {
   create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutFeeLinesInput, Prisma.ClientServiceUncheckedCreateWithoutFeeLinesInput>
   connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutFeeLinesInput
@@ -896,6 +958,34 @@ export type ClientServiceUpdateOneRequiredWithoutFeeLinesNestedInput = {
   upsert?: Prisma.ClientServiceUpsertWithoutFeeLinesInput
   connect?: Prisma.ClientServiceWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutFeeLinesInput, Prisma.ClientServiceUpdateWithoutFeeLinesInput>, Prisma.ClientServiceUncheckedUpdateWithoutFeeLinesInput>
+}
+
+export type ClientServiceCreateNestedOneWithoutBillingOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingOccurrencesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutBillingOccurrencesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+}
+
+export type ClientServiceUpdateOneRequiredWithoutBillingOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingOccurrencesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutBillingOccurrencesInput
+  upsert?: Prisma.ClientServiceUpsertWithoutBillingOccurrencesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutBillingOccurrencesInput, Prisma.ClientServiceUpdateWithoutBillingOccurrencesInput>, Prisma.ClientServiceUncheckedUpdateWithoutBillingOccurrencesInput>
+}
+
+export type ClientServiceCreateNestedOneWithoutBillingCoverageIssuesInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingCoverageIssuesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutBillingCoverageIssuesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+}
+
+export type ClientServiceUpdateOneRequiredWithoutBillingCoverageIssuesNestedInput = {
+  create?: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingCoverageIssuesInput>
+  connectOrCreate?: Prisma.ClientServiceCreateOrConnectWithoutBillingCoverageIssuesInput
+  upsert?: Prisma.ClientServiceUpsertWithoutBillingCoverageIssuesInput
+  connect?: Prisma.ClientServiceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClientServiceUpdateToOneWithWhereWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUpdateWithoutBillingCoverageIssuesInput>, Prisma.ClientServiceUncheckedUpdateWithoutBillingCoverageIssuesInput>
 }
 
 export type ClientServiceCreateNestedOneWithoutDeadlineRulesInput = {
@@ -951,6 +1041,8 @@ export type ClientServiceCreateWithoutTenantInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -963,6 +1055,8 @@ export type ClientServiceCreateWithoutTenantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutTenantInput = {
@@ -980,6 +1074,8 @@ export type ClientServiceUncheckedCreateWithoutTenantInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -988,6 +1084,8 @@ export type ClientServiceUncheckedCreateWithoutTenantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutTenantInput = {
@@ -1035,6 +1133,8 @@ export type ClientServiceScalarWhereInput = {
   startDate?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   endDate?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
   fieldValues?: Prisma.JsonFilter<"ClientService">
+  billingDisposition?: Prisma.EnumBillingDispositionFilter<"ClientService"> | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
@@ -1052,6 +1152,8 @@ export type ClientServiceCreateWithoutCompanyInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1064,6 +1166,8 @@ export type ClientServiceCreateWithoutCompanyInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutCompanyInput = {
@@ -1081,6 +1185,8 @@ export type ClientServiceUncheckedCreateWithoutCompanyInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1089,6 +1195,8 @@ export type ClientServiceUncheckedCreateWithoutCompanyInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutCompanyInput = {
@@ -1128,6 +1236,8 @@ export type ClientServiceCreateWithoutServiceVariantInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1140,6 +1250,8 @@ export type ClientServiceCreateWithoutServiceVariantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
@@ -1157,6 +1269,8 @@ export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1165,6 +1279,8 @@ export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutServiceVariantInput = {
@@ -1204,6 +1320,8 @@ export type ClientServiceCreateWithoutAgreementInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1216,6 +1334,8 @@ export type ClientServiceCreateWithoutAgreementInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutAgreementInput = {
@@ -1233,6 +1353,8 @@ export type ClientServiceUncheckedCreateWithoutAgreementInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1241,6 +1363,8 @@ export type ClientServiceUncheckedCreateWithoutAgreementInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutAgreementInput = {
@@ -1280,6 +1404,8 @@ export type ClientServiceCreateWithoutAgreementItemInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1292,6 +1418,8 @@ export type ClientServiceCreateWithoutAgreementItemInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
@@ -1309,6 +1437,8 @@ export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1317,6 +1447,8 @@ export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutAgreementItemInput = {
@@ -1356,6 +1488,8 @@ export type ClientServiceCreateWithoutFeeLinesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1368,6 +1502,8 @@ export type ClientServiceCreateWithoutFeeLinesInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
@@ -1386,6 +1522,8 @@ export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1393,6 +1531,8 @@ export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutFeeLinesInput = {
@@ -1422,6 +1562,8 @@ export type ClientServiceUpdateWithoutFeeLinesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1434,6 +1576,8 @@ export type ClientServiceUpdateWithoutFeeLinesInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
@@ -1452,6 +1596,8 @@ export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1459,6 +1605,272 @@ export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceCreateWithoutBillingOccurrencesInput = {
+  id?: string
+  source?: $Enums.ClientServiceSource
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
+  company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
+  feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceUncheckedCreateWithoutBillingOccurrencesInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
+  serviceVariantId: string
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceCreateOrConnectWithoutBillingOccurrencesInput = {
+  where: Prisma.ClientServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingOccurrencesInput>
+}
+
+export type ClientServiceUpsertWithoutBillingOccurrencesInput = {
+  update: Prisma.XOR<Prisma.ClientServiceUpdateWithoutBillingOccurrencesInput, Prisma.ClientServiceUncheckedUpdateWithoutBillingOccurrencesInput>
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingOccurrencesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingOccurrencesInput>
+  where?: Prisma.ClientServiceWhereInput
+}
+
+export type ClientServiceUpdateToOneWithWhereWithoutBillingOccurrencesInput = {
+  where?: Prisma.ClientServiceWhereInput
+  data: Prisma.XOR<Prisma.ClientServiceUpdateWithoutBillingOccurrencesInput, Prisma.ClientServiceUncheckedUpdateWithoutBillingOccurrencesInput>
+}
+
+export type ClientServiceUpdateWithoutBillingOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
+  serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
+  feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceUncheckedUpdateWithoutBillingOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceCreateWithoutBillingCoverageIssuesInput = {
+  id?: string
+  source?: $Enums.ClientServiceSource
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutClientServicesInput
+  company: Prisma.CompanyCreateNestedOneWithoutClientServicesInput
+  agreement?: Prisma.ServiceAgreementCreateNestedOneWithoutClientServicesInput
+  agreementItem?: Prisma.ServiceAgreementItemCreateNestedOneWithoutClientServicesInput
+  serviceVariant: Prisma.ServiceVariantCreateNestedOneWithoutClientServicesInput
+  feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceUncheckedCreateWithoutBillingCoverageIssuesInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  source?: $Enums.ClientServiceSource
+  agreementId?: string | null
+  agreementItemId?: string | null
+  serviceVariantId: string
+  familyName: string
+  serviceName: string
+  status?: $Enums.ClientServiceStatus
+  serviceCadence: $Enums.ServiceCadence
+  customCadenceLabel?: string | null
+  startDate: Date | string
+  endDate?: Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+}
+
+export type ClientServiceCreateOrConnectWithoutBillingCoverageIssuesInput = {
+  where: Prisma.ClientServiceWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingCoverageIssuesInput>
+}
+
+export type ClientServiceUpsertWithoutBillingCoverageIssuesInput = {
+  update: Prisma.XOR<Prisma.ClientServiceUpdateWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUncheckedUpdateWithoutBillingCoverageIssuesInput>
+  create: Prisma.XOR<Prisma.ClientServiceCreateWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUncheckedCreateWithoutBillingCoverageIssuesInput>
+  where?: Prisma.ClientServiceWhereInput
+}
+
+export type ClientServiceUpdateToOneWithWhereWithoutBillingCoverageIssuesInput = {
+  where?: Prisma.ClientServiceWhereInput
+  data: Prisma.XOR<Prisma.ClientServiceUpdateWithoutBillingCoverageIssuesInput, Prisma.ClientServiceUncheckedUpdateWithoutBillingCoverageIssuesInput>
+}
+
+export type ClientServiceUpdateWithoutBillingCoverageIssuesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutClientServicesNestedInput
+  agreement?: Prisma.ServiceAgreementUpdateOneWithoutClientServicesNestedInput
+  agreementItem?: Prisma.ServiceAgreementItemUpdateOneWithoutClientServicesNestedInput
+  serviceVariant?: Prisma.ServiceVariantUpdateOneRequiredWithoutClientServicesNestedInput
+  feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+}
+
+export type ClientServiceUncheckedUpdateWithoutBillingCoverageIssuesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.EnumClientServiceSourceFieldUpdateOperationsInput | $Enums.ClientServiceSource
+  agreementId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agreementItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceVariantId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyName?: Prisma.StringFieldUpdateOperationsInput | string
+  serviceName?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumClientServiceStatusFieldUpdateOperationsInput | $Enums.ClientServiceStatus
+  serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
+  customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateWithoutDeadlineRulesInput = {
@@ -1472,6 +1884,8 @@ export type ClientServiceCreateWithoutDeadlineRulesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1484,6 +1898,8 @@ export type ClientServiceCreateWithoutDeadlineRulesInput = {
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutDeadlineRulesInput = {
@@ -1502,6 +1918,8 @@ export type ClientServiceUncheckedCreateWithoutDeadlineRulesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1509,6 +1927,8 @@ export type ClientServiceUncheckedCreateWithoutDeadlineRulesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutDeadlineRulesInput = {
@@ -1538,6 +1958,8 @@ export type ClientServiceUpdateWithoutDeadlineRulesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1550,6 +1972,8 @@ export type ClientServiceUpdateWithoutDeadlineRulesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutDeadlineRulesInput = {
@@ -1568,6 +1992,8 @@ export type ClientServiceUncheckedUpdateWithoutDeadlineRulesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1575,6 +2001,8 @@ export type ClientServiceUncheckedUpdateWithoutDeadlineRulesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateWithoutServiceCyclesInput = {
@@ -1588,6 +2016,8 @@ export type ClientServiceCreateWithoutServiceCyclesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1600,6 +2030,8 @@ export type ClientServiceCreateWithoutServiceCyclesInput = {
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutServiceCyclesInput = {
@@ -1618,6 +2050,8 @@ export type ClientServiceUncheckedCreateWithoutServiceCyclesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1625,6 +2059,8 @@ export type ClientServiceUncheckedCreateWithoutServiceCyclesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutServiceCyclesInput = {
@@ -1654,6 +2090,8 @@ export type ClientServiceUpdateWithoutServiceCyclesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1666,6 +2104,8 @@ export type ClientServiceUpdateWithoutServiceCyclesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutServiceCyclesInput = {
@@ -1684,6 +2124,8 @@ export type ClientServiceUncheckedUpdateWithoutServiceCyclesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1691,6 +2133,8 @@ export type ClientServiceUncheckedUpdateWithoutServiceCyclesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateWithoutDeadlineOccurrencesInput = {
@@ -1704,6 +2148,8 @@ export type ClientServiceCreateWithoutDeadlineOccurrencesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1716,6 +2162,8 @@ export type ClientServiceCreateWithoutDeadlineOccurrencesInput = {
   feeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutClientServiceInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput = {
@@ -1734,6 +2182,8 @@ export type ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1741,6 +2191,8 @@ export type ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutClientServiceInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutClientServiceInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutClientServiceInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutClientServiceInput
 }
 
 export type ClientServiceCreateOrConnectWithoutDeadlineOccurrencesInput = {
@@ -1770,6 +2222,8 @@ export type ClientServiceUpdateWithoutDeadlineOccurrencesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1782,6 +2236,8 @@ export type ClientServiceUpdateWithoutDeadlineOccurrencesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutClientServiceNestedInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
@@ -1800,6 +2256,8 @@ export type ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1807,6 +2265,8 @@ export type ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   feeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceCreateManyTenantInput = {
@@ -1824,6 +2284,8 @@ export type ClientServiceCreateManyTenantInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1841,6 +2303,8 @@ export type ClientServiceUpdateWithoutTenantInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1853,6 +2317,8 @@ export type ClientServiceUpdateWithoutTenantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutTenantInput = {
@@ -1870,6 +2336,8 @@ export type ClientServiceUncheckedUpdateWithoutTenantInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1878,6 +2346,8 @@ export type ClientServiceUncheckedUpdateWithoutTenantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutTenantInput = {
@@ -1895,6 +2365,8 @@ export type ClientServiceUncheckedUpdateManyWithoutTenantInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1916,6 +2388,8 @@ export type ClientServiceCreateManyCompanyInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1933,6 +2407,8 @@ export type ClientServiceUpdateWithoutCompanyInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1945,6 +2421,8 @@ export type ClientServiceUpdateWithoutCompanyInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
@@ -1962,6 +2440,8 @@ export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1970,6 +2450,8 @@ export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutCompanyInput = {
@@ -1987,6 +2469,8 @@ export type ClientServiceUncheckedUpdateManyWithoutCompanyInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2008,6 +2492,8 @@ export type ClientServiceCreateManyServiceVariantInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2025,6 +2511,8 @@ export type ClientServiceUpdateWithoutServiceVariantInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2037,6 +2525,8 @@ export type ClientServiceUpdateWithoutServiceVariantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
@@ -2054,6 +2544,8 @@ export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2062,6 +2554,8 @@ export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutServiceVariantInput = {
@@ -2079,6 +2573,8 @@ export type ClientServiceUncheckedUpdateManyWithoutServiceVariantInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2100,6 +2596,8 @@ export type ClientServiceCreateManyAgreementInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2117,6 +2615,8 @@ export type ClientServiceUpdateWithoutAgreementInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2129,6 +2629,8 @@ export type ClientServiceUpdateWithoutAgreementInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
@@ -2146,6 +2648,8 @@ export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2154,6 +2658,8 @@ export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutAgreementInput = {
@@ -2171,6 +2677,8 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2192,6 +2700,8 @@ export type ClientServiceCreateManyAgreementItemInput = {
   startDate: Date | string
   endDate?: Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: $Enums.BillingDisposition
+  billingNotRequiredReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2209,6 +2719,8 @@ export type ClientServiceUpdateWithoutAgreementItemInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2221,6 +2733,8 @@ export type ClientServiceUpdateWithoutAgreementItemInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
@@ -2238,6 +2752,8 @@ export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2246,6 +2762,8 @@ export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
   deadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutClientServiceNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutClientServiceNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceNestedInput
 }
 
 export type ClientServiceUncheckedUpdateManyWithoutAgreementItemInput = {
@@ -2263,6 +2781,8 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementItemInput = {
   startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
+  billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2279,6 +2799,8 @@ export type ClientServiceCountOutputType = {
   deadlineRules: number
   serviceCycles: number
   deadlineOccurrences: number
+  billingOccurrences: number
+  billingCoverageIssues: number
 }
 
 export type ClientServiceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2286,6 +2808,8 @@ export type ClientServiceCountOutputTypeSelect<ExtArgs extends runtime.Types.Ext
   deadlineRules?: boolean | ClientServiceCountOutputTypeCountDeadlineRulesArgs
   serviceCycles?: boolean | ClientServiceCountOutputTypeCountServiceCyclesArgs
   deadlineOccurrences?: boolean | ClientServiceCountOutputTypeCountDeadlineOccurrencesArgs
+  billingOccurrences?: boolean | ClientServiceCountOutputTypeCountBillingOccurrencesArgs
+  billingCoverageIssues?: boolean | ClientServiceCountOutputTypeCountBillingCoverageIssuesArgs
 }
 
 /**
@@ -2326,6 +2850,20 @@ export type ClientServiceCountOutputTypeCountDeadlineOccurrencesArgs<ExtArgs ext
   where?: Prisma.DeadlineOccurrenceWhereInput
 }
 
+/**
+ * ClientServiceCountOutputType without action
+ */
+export type ClientServiceCountOutputTypeCountBillingOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingOccurrenceWhereInput
+}
+
+/**
+ * ClientServiceCountOutputType without action
+ */
+export type ClientServiceCountOutputTypeCountBillingCoverageIssuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingCoverageIssueWhereInput
+}
+
 
 export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2343,6 +2881,8 @@ export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   startDate?: boolean
   endDate?: boolean
   fieldValues?: boolean
+  billingDisposition?: boolean
+  billingNotRequiredReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -2356,6 +2896,8 @@ export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   deadlineRules?: boolean | Prisma.ClientService$deadlineRulesArgs<ExtArgs>
   serviceCycles?: boolean | Prisma.ClientService$serviceCyclesArgs<ExtArgs>
   deadlineOccurrences?: boolean | Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs>
+  billingOccurrences?: boolean | Prisma.ClientService$billingOccurrencesArgs<ExtArgs>
+  billingCoverageIssues?: boolean | Prisma.ClientService$billingCoverageIssuesArgs<ExtArgs>
   _count?: boolean | Prisma.ClientServiceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["clientService"]>
 
@@ -2375,6 +2917,8 @@ export type ClientServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   startDate?: boolean
   endDate?: boolean
   fieldValues?: boolean
+  billingDisposition?: boolean
+  billingNotRequiredReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -2402,6 +2946,8 @@ export type ClientServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   startDate?: boolean
   endDate?: boolean
   fieldValues?: boolean
+  billingDisposition?: boolean
+  billingNotRequiredReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -2429,13 +2975,15 @@ export type ClientServiceSelectScalar = {
   startDate?: boolean
   endDate?: boolean
   fieldValues?: boolean
+  billingDisposition?: boolean
+  billingNotRequiredReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
 }
 
-export type ClientServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "source" | "agreementId" | "agreementItemId" | "serviceVariantId" | "familyName" | "serviceName" | "status" | "serviceCadence" | "customCadenceLabel" | "startDate" | "endDate" | "fieldValues" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["clientService"]>
+export type ClientServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "source" | "agreementId" | "agreementItemId" | "serviceVariantId" | "familyName" | "serviceName" | "status" | "serviceCadence" | "customCadenceLabel" | "startDate" | "endDate" | "fieldValues" | "billingDisposition" | "billingNotRequiredReason" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["clientService"]>
 export type ClientServiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -2446,6 +2994,8 @@ export type ClientServiceInclude<ExtArgs extends runtime.Types.Extensions.Intern
   deadlineRules?: boolean | Prisma.ClientService$deadlineRulesArgs<ExtArgs>
   serviceCycles?: boolean | Prisma.ClientService$serviceCyclesArgs<ExtArgs>
   deadlineOccurrences?: boolean | Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs>
+  billingOccurrences?: boolean | Prisma.ClientService$billingOccurrencesArgs<ExtArgs>
+  billingCoverageIssues?: boolean | Prisma.ClientService$billingCoverageIssuesArgs<ExtArgs>
   _count?: boolean | Prisma.ClientServiceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ClientServiceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2475,6 +3025,8 @@ export type $ClientServicePayload<ExtArgs extends runtime.Types.Extensions.Inter
     deadlineRules: Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>[]
     serviceCycles: Prisma.$ServiceCyclePayload<ExtArgs>[]
     deadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    billingOccurrences: Prisma.$BillingOccurrencePayload<ExtArgs>[]
+    billingCoverageIssues: Prisma.$BillingCoverageIssuePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2492,6 +3044,8 @@ export type $ClientServicePayload<ExtArgs extends runtime.Types.Extensions.Inter
     startDate: Date
     endDate: Date | null
     fieldValues: runtime.JsonValue
+    billingDisposition: $Enums.BillingDisposition
+    billingNotRequiredReason: string | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -2899,6 +3453,8 @@ export interface Prisma__ClientServiceClient<T, Null = never, ExtArgs extends ru
   deadlineRules<T extends Prisma.ClientService$deadlineRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$deadlineRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceDeadlineRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceCycles<T extends Prisma.ClientService$serviceCyclesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$serviceCyclesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deadlineOccurrences<T extends Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$deadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  billingOccurrences<T extends Prisma.ClientService$billingOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$billingOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  billingCoverageIssues<T extends Prisma.ClientService$billingCoverageIssuesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientService$billingCoverageIssuesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingCoverageIssuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2943,6 +3499,8 @@ export interface ClientServiceFieldRefs {
   readonly startDate: Prisma.FieldRef<"ClientService", 'DateTime'>
   readonly endDate: Prisma.FieldRef<"ClientService", 'DateTime'>
   readonly fieldValues: Prisma.FieldRef<"ClientService", 'Json'>
+  readonly billingDisposition: Prisma.FieldRef<"ClientService", 'BillingDisposition'>
+  readonly billingNotRequiredReason: Prisma.FieldRef<"ClientService", 'String'>
   readonly createdAt: Prisma.FieldRef<"ClientService", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ClientService", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"ClientService", 'DateTime'>
@@ -3474,6 +4032,54 @@ export type ClientService$deadlineOccurrencesArgs<ExtArgs extends runtime.Types.
   take?: number
   skip?: number
   distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * ClientService.billingOccurrences
+ */
+export type ClientService$billingOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingOccurrence
+   */
+  select?: Prisma.BillingOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingOccurrence
+   */
+  omit?: Prisma.BillingOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.BillingOccurrenceWhereInput
+  orderBy?: Prisma.BillingOccurrenceOrderByWithRelationInput | Prisma.BillingOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.BillingOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingOccurrenceScalarFieldEnum | Prisma.BillingOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * ClientService.billingCoverageIssues
+ */
+export type ClientService$billingCoverageIssuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingCoverageIssue
+   */
+  select?: Prisma.BillingCoverageIssueSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingCoverageIssue
+   */
+  omit?: Prisma.BillingCoverageIssueOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingCoverageIssueInclude<ExtArgs> | null
+  where?: Prisma.BillingCoverageIssueWhereInput
+  orderBy?: Prisma.BillingCoverageIssueOrderByWithRelationInput | Prisma.BillingCoverageIssueOrderByWithRelationInput[]
+  cursor?: Prisma.BillingCoverageIssueWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingCoverageIssueScalarFieldEnum | Prisma.BillingCoverageIssueScalarFieldEnum[]
 }
 
 /**

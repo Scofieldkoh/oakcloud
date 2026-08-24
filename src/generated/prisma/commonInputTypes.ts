@@ -763,6 +763,13 @@ export type EnumClientServiceStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel> | $Enums.ClientServiceStatus
 }
 
+export type EnumBillingDispositionFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingDisposition | Prisma.EnumBillingDispositionFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingDispositionFilter<$PrismaModel> | $Enums.BillingDisposition
+}
+
 export type EnumClientServiceSourceWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ClientServiceSource | Prisma.EnumClientServiceSourceFieldRefInput<$PrismaModel>
   in?: $Enums.ClientServiceSource[] | Prisma.ListEnumClientServiceSourceFieldRefInput<$PrismaModel>
@@ -781,6 +788,67 @@ export type EnumClientServiceStatusWithAggregatesFilter<$PrismaModel = never> = 
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
+}
+
+export type EnumBillingDispositionWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingDisposition | Prisma.EnumBillingDispositionFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingDispositionWithAggregatesFilter<$PrismaModel> | $Enums.BillingDisposition
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingDispositionFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingDispositionFilter<$PrismaModel>
+}
+
+export type EnumBillingOccurrenceStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingOccurrenceStatus | Prisma.EnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingOccurrenceStatusFilter<$PrismaModel> | $Enums.BillingOccurrenceStatus
+}
+
+export type EnumBillingOccurrenceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingOccurrenceStatus | Prisma.EnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingOccurrenceStatusWithAggregatesFilter<$PrismaModel> | $Enums.BillingOccurrenceStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingOccurrenceStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingOccurrenceStatusFilter<$PrismaModel>
+}
+
+export type EnumBillingCoverageIssueTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueType | Prisma.EnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel> | $Enums.BillingCoverageIssueType
+}
+
+export type EnumBillingCoverageIssueSeverityFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueSeverity | Prisma.EnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel> | $Enums.BillingCoverageIssueSeverity
+}
+
+export type EnumBillingCoverageIssueTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueType | Prisma.EnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueTypeWithAggregatesFilter<$PrismaModel> | $Enums.BillingCoverageIssueType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel>
+}
+
+export type EnumBillingCoverageIssueSeverityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueSeverity | Prisma.EnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueSeverityWithAggregatesFilter<$PrismaModel> | $Enums.BillingCoverageIssueSeverity
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel>
 }
 
 export type EnumDeadlineRuleVersionStateFilter<$PrismaModel = never> = {
@@ -2762,6 +2830,13 @@ export type NestedEnumClientServiceStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel> | $Enums.ClientServiceStatus
 }
 
+export type NestedEnumBillingDispositionFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingDisposition | Prisma.EnumBillingDispositionFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingDispositionFilter<$PrismaModel> | $Enums.BillingDisposition
+}
+
 export type NestedEnumClientServiceSourceWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ClientServiceSource | Prisma.EnumClientServiceSourceFieldRefInput<$PrismaModel>
   in?: $Enums.ClientServiceSource[] | Prisma.ListEnumClientServiceSourceFieldRefInput<$PrismaModel>
@@ -2780,6 +2855,67 @@ export type NestedEnumClientServiceStatusWithAggregatesFilter<$PrismaModel = nev
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumBillingDispositionWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingDisposition | Prisma.EnumBillingDispositionFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingDisposition[] | Prisma.ListEnumBillingDispositionFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingDispositionWithAggregatesFilter<$PrismaModel> | $Enums.BillingDisposition
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingDispositionFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingDispositionFilter<$PrismaModel>
+}
+
+export type NestedEnumBillingOccurrenceStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingOccurrenceStatus | Prisma.EnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingOccurrenceStatusFilter<$PrismaModel> | $Enums.BillingOccurrenceStatus
+}
+
+export type NestedEnumBillingOccurrenceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingOccurrenceStatus | Prisma.EnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingOccurrenceStatus[] | Prisma.ListEnumBillingOccurrenceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingOccurrenceStatusWithAggregatesFilter<$PrismaModel> | $Enums.BillingOccurrenceStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingOccurrenceStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingOccurrenceStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueType | Prisma.EnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel> | $Enums.BillingCoverageIssueType
+}
+
+export type NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueSeverity | Prisma.EnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel> | $Enums.BillingCoverageIssueSeverity
+}
+
+export type NestedEnumBillingCoverageIssueTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueType | Prisma.EnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueType[] | Prisma.ListEnumBillingCoverageIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueTypeWithAggregatesFilter<$PrismaModel> | $Enums.BillingCoverageIssueType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingCoverageIssueTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumBillingCoverageIssueSeverityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BillingCoverageIssueSeverity | Prisma.EnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  in?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BillingCoverageIssueSeverity[] | Prisma.ListEnumBillingCoverageIssueSeverityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBillingCoverageIssueSeverityWithAggregatesFilter<$PrismaModel> | $Enums.BillingCoverageIssueSeverity
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBillingCoverageIssueSeverityFilter<$PrismaModel>
 }
 
 export type NestedEnumDeadlineRuleVersionStateFilter<$PrismaModel = never> = {

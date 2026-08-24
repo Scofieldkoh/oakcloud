@@ -377,6 +377,8 @@ export type WorkspaceWhereInput = {
   businessHolidays?: Prisma.BusinessHolidayListRelationFilter
   serviceCycles?: Prisma.ServiceCycleListRelationFilter
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
+  billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestListRelationFilter
   backups?: Prisma.WorkspaceBackupListRelationFilter
   connectorAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
@@ -459,6 +461,8 @@ export type WorkspaceOrderByWithRelationInput = {
   businessHolidays?: Prisma.BusinessHolidayOrderByRelationAggregateInput
   serviceCycles?: Prisma.ServiceCycleOrderByRelationAggregateInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceOrderByRelationAggregateInput
+  billingOccurrences?: Prisma.BillingOccurrenceOrderByRelationAggregateInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueOrderByRelationAggregateInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestOrderByRelationAggregateInput
   backups?: Prisma.WorkspaceBackupOrderByRelationAggregateInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessOrderByRelationAggregateInput
@@ -544,6 +548,8 @@ export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
   businessHolidays?: Prisma.BusinessHolidayListRelationFilter
   serviceCycles?: Prisma.ServiceCycleListRelationFilter
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
+  billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
+  billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestListRelationFilter
   backups?: Prisma.WorkspaceBackupListRelationFilter
   connectorAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
@@ -678,6 +684,8 @@ export type WorkspaceCreateInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -760,6 +768,8 @@ export type WorkspaceUncheckedCreateInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -842,6 +852,8 @@ export type WorkspaceUpdateInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -924,6 +936,8 @@ export type WorkspaceUncheckedUpdateInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -1495,6 +1509,34 @@ export type WorkspaceUpdateOneRequiredWithoutClientServiceFeeLinesNestedInput = 
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUpdateWithoutClientServiceFeeLinesInput>, Prisma.WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput>
 }
 
+export type WorkspaceCreateNestedOneWithoutBillingOccurrencesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingOccurrencesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingOccurrencesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutBillingOccurrencesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutBillingOccurrencesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingOccurrencesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingOccurrencesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutBillingOccurrencesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutBillingOccurrencesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutBillingOccurrencesInput, Prisma.WorkspaceUpdateWithoutBillingOccurrencesInput>, Prisma.WorkspaceUncheckedUpdateWithoutBillingOccurrencesInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutBillingCoverageIssuesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingCoverageIssuesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutBillingCoverageIssuesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutBillingCoverageIssuesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingCoverageIssuesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutBillingCoverageIssuesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutBillingCoverageIssuesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUpdateWithoutBillingCoverageIssuesInput>, Prisma.WorkspaceUncheckedUpdateWithoutBillingCoverageIssuesInput>
+}
+
 export type WorkspaceCreateNestedOneWithoutDeadlineRulesInput = {
   create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDeadlineRulesInput, Prisma.WorkspaceUncheckedCreateWithoutDeadlineRulesInput>
   connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDeadlineRulesInput
@@ -2039,6 +2081,8 @@ export type WorkspaceCreateWithoutRolesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -2120,6 +2164,8 @@ export type WorkspaceUncheckedCreateWithoutRolesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -2217,6 +2263,8 @@ export type WorkspaceUpdateWithoutRolesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -2298,6 +2346,8 @@ export type WorkspaceUncheckedUpdateWithoutRolesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -2380,6 +2430,8 @@ export type WorkspaceCreateWithoutUsersInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -2461,6 +2513,8 @@ export type WorkspaceUncheckedCreateWithoutUsersInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -2558,6 +2612,8 @@ export type WorkspaceUpdateWithoutUsersInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -2639,6 +2695,8 @@ export type WorkspaceUncheckedUpdateWithoutUsersInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -2719,6 +2777,8 @@ export type WorkspaceCreateWithoutCompaniesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -2800,6 +2860,8 @@ export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -2897,6 +2959,8 @@ export type WorkspaceUpdateWithoutCompaniesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -2978,6 +3042,8 @@ export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -3059,6 +3125,8 @@ export type WorkspaceCreateWithoutContactsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -3140,6 +3208,8 @@ export type WorkspaceUncheckedCreateWithoutContactsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -3237,6 +3307,8 @@ export type WorkspaceUpdateWithoutContactsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -3318,6 +3390,8 @@ export type WorkspaceUncheckedUpdateWithoutContactsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -3399,6 +3473,8 @@ export type WorkspaceCreateWithoutContactDetailsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -3480,6 +3556,8 @@ export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -3577,6 +3655,8 @@ export type WorkspaceUpdateWithoutContactDetailsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -3658,6 +3738,8 @@ export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -3739,6 +3821,8 @@ export type WorkspaceCreateWithoutDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -3820,6 +3904,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -3917,6 +4003,8 @@ export type WorkspaceUpdateWithoutDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -3998,6 +4086,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -4079,6 +4169,8 @@ export type WorkspaceCreateWithoutAuditLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -4160,6 +4252,8 @@ export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -4257,6 +4351,8 @@ export type WorkspaceUpdateWithoutAuditLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -4338,6 +4434,8 @@ export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -4419,6 +4517,8 @@ export type WorkspaceCreateWithoutConnectorsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -4500,6 +4600,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -4597,6 +4699,8 @@ export type WorkspaceUpdateWithoutConnectorsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -4678,6 +4782,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -4760,6 +4866,8 @@ export type WorkspaceCreateWithoutConnectorAccessInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -4841,6 +4949,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -4938,6 +5048,8 @@ export type WorkspaceUpdateWithoutConnectorAccessInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -5019,6 +5131,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -5099,6 +5213,8 @@ export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -5180,6 +5296,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -5277,6 +5395,8 @@ export type WorkspaceUpdateWithoutConnectorUsageLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -5358,6 +5478,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -5439,6 +5561,8 @@ export type WorkspaceCreateWithoutDocumentTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -5520,6 +5644,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -5617,6 +5743,8 @@ export type WorkspaceUpdateWithoutDocumentTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -5698,6 +5826,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -5779,6 +5909,8 @@ export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -5860,6 +5992,8 @@ export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -5957,6 +6091,8 @@ export type WorkspaceUpdateWithoutGeneratedDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -6038,6 +6174,8 @@ export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -6120,6 +6258,8 @@ export type WorkspaceCreateWithoutDocumentGenerationBatchesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -6201,6 +6341,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -6298,6 +6440,8 @@ export type WorkspaceUpdateWithoutDocumentGenerationBatchesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -6379,6 +6523,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -6460,6 +6606,8 @@ export type WorkspaceCreateWithoutDocumentGenerationBatchItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -6541,6 +6689,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -6638,6 +6788,8 @@ export type WorkspaceUpdateWithoutDocumentGenerationBatchItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -6719,6 +6871,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -6800,6 +6954,8 @@ export type WorkspaceCreateWithoutLetterheadInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -6881,6 +7037,8 @@ export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -6978,6 +7136,8 @@ export type WorkspaceUpdateWithoutLetterheadInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -7059,6 +7219,8 @@ export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -7139,6 +7301,8 @@ export type WorkspaceCreateWithoutTemplatePartialsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -7220,6 +7384,8 @@ export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -7317,6 +7483,8 @@ export type WorkspaceUpdateWithoutTemplatePartialsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -7398,6 +7566,8 @@ export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -7479,6 +7649,8 @@ export type WorkspaceCreateWithoutServiceFamiliesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -7560,6 +7732,8 @@ export type WorkspaceUncheckedCreateWithoutServiceFamiliesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -7657,6 +7831,8 @@ export type WorkspaceUpdateWithoutServiceFamiliesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -7738,6 +7914,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceFamiliesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -7819,6 +7997,8 @@ export type WorkspaceCreateWithoutServiceVariantsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -7900,6 +8080,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -7997,6 +8179,8 @@ export type WorkspaceUpdateWithoutServiceVariantsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -8078,6 +8262,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -8159,6 +8345,8 @@ export type WorkspaceCreateWithoutServiceVariantFeeTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -8240,6 +8428,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantFeeTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -8337,6 +8527,8 @@ export type WorkspaceUpdateWithoutServiceVariantFeeTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -8418,6 +8610,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantFeeTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -8499,6 +8693,8 @@ export type WorkspaceCreateWithoutServiceAgreementsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -8580,6 +8776,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -8677,6 +8875,8 @@ export type WorkspaceUpdateWithoutServiceAgreementsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -8758,6 +8958,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -8839,6 +9041,8 @@ export type WorkspaceCreateWithoutServiceAgreementEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -8920,6 +9124,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -9017,6 +9223,8 @@ export type WorkspaceUpdateWithoutServiceAgreementEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -9098,6 +9306,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -9179,6 +9389,8 @@ export type WorkspaceCreateWithoutServiceAgreementItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -9260,6 +9472,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -9357,6 +9571,8 @@ export type WorkspaceUpdateWithoutServiceAgreementItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -9438,6 +9654,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -9519,6 +9737,8 @@ export type WorkspaceCreateWithoutServiceAgreementItemEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -9600,6 +9820,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -9697,6 +9919,8 @@ export type WorkspaceUpdateWithoutServiceAgreementItemEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -9778,6 +10002,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemEntitiesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -9859,6 +10085,8 @@ export type WorkspaceCreateWithoutServiceAgreementFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -9940,6 +10168,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -10037,6 +10267,8 @@ export type WorkspaceUpdateWithoutServiceAgreementFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -10118,6 +10350,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -10199,6 +10433,8 @@ export type WorkspaceCreateWithoutClientServicesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -10280,6 +10516,8 @@ export type WorkspaceUncheckedCreateWithoutClientServicesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -10377,6 +10615,8 @@ export type WorkspaceUpdateWithoutClientServicesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -10458,6 +10698,8 @@ export type WorkspaceUncheckedUpdateWithoutClientServicesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -10539,6 +10781,8 @@ export type WorkspaceCreateWithoutClientServiceFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -10620,6 +10864,8 @@ export type WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -10717,6 +10963,8 @@ export type WorkspaceUpdateWithoutClientServiceFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -10798,6 +11046,704 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutBillingOccurrencesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutTenantInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionCreateNestedManyWithoutTenantInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateCreateNestedManyWithoutTenantInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutTenantInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutTenantInput
+  businessCalendars?: Prisma.BusinessCalendarCreateNestedManyWithoutTenantInput
+  businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutBillingOccurrencesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUncheckedCreateNestedManyWithoutTenantInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  businessCalendars?: Prisma.BusinessCalendarUncheckedCreateNestedManyWithoutTenantInput
+  businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutBillingOccurrencesInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingOccurrencesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingOccurrencesInput>
+}
+
+export type WorkspaceUpsertWithoutBillingOccurrencesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutBillingOccurrencesInput, Prisma.WorkspaceUncheckedUpdateWithoutBillingOccurrencesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingOccurrencesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingOccurrencesInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutBillingOccurrencesInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutBillingOccurrencesInput, Prisma.WorkspaceUncheckedUpdateWithoutBillingOccurrencesInput>
+}
+
+export type WorkspaceUpdateWithoutBillingOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutTenantNestedInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUpdateManyWithoutTenantNestedInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUpdateManyWithoutTenantNestedInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutTenantNestedInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutTenantNestedInput
+  businessCalendars?: Prisma.BusinessCalendarUpdateManyWithoutTenantNestedInput
+  businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutBillingOccurrencesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  businessCalendars?: Prisma.BusinessCalendarUncheckedUpdateManyWithoutTenantNestedInput
+  businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutBillingCoverageIssuesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutTenantInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionCreateNestedManyWithoutTenantInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateCreateNestedManyWithoutTenantInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutTenantInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutTenantInput
+  businessCalendars?: Prisma.BusinessCalendarCreateNestedManyWithoutTenantInput
+  businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutBillingCoverageIssuesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUncheckedCreateNestedManyWithoutTenantInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  businessCalendars?: Prisma.BusinessCalendarUncheckedCreateNestedManyWithoutTenantInput
+  businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutBillingCoverageIssuesInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingCoverageIssuesInput>
+}
+
+export type WorkspaceUpsertWithoutBillingCoverageIssuesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUncheckedUpdateWithoutBillingCoverageIssuesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUncheckedCreateWithoutBillingCoverageIssuesInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutBillingCoverageIssuesInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutBillingCoverageIssuesInput, Prisma.WorkspaceUncheckedUpdateWithoutBillingCoverageIssuesInput>
+}
+
+export type WorkspaceUpdateWithoutBillingCoverageIssuesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutTenantNestedInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUpdateManyWithoutTenantNestedInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUpdateManyWithoutTenantNestedInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutTenantNestedInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutTenantNestedInput
+  businessCalendars?: Prisma.BusinessCalendarUpdateManyWithoutTenantNestedInput
+  businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutBillingCoverageIssuesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  businessCalendars?: Prisma.BusinessCalendarUncheckedUpdateManyWithoutTenantNestedInput
+  businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -10879,6 +11825,8 @@ export type WorkspaceCreateWithoutDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -10960,6 +11908,8 @@ export type WorkspaceUncheckedCreateWithoutDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -11057,6 +12007,8 @@ export type WorkspaceUpdateWithoutDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -11138,6 +12090,8 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -11219,6 +12173,8 @@ export type WorkspaceCreateWithoutDeadlineRuleVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -11300,6 +12256,8 @@ export type WorkspaceUncheckedCreateWithoutDeadlineRuleVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -11397,6 +12355,8 @@ export type WorkspaceUpdateWithoutDeadlineRuleVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -11478,6 +12438,8 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineRuleVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -11559,6 +12521,8 @@ export type WorkspaceCreateWithoutDeadlineRuleParameterDefinitionsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -11640,6 +12604,8 @@ export type WorkspaceUncheckedCreateWithoutDeadlineRuleParameterDefinitionsInput
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -11737,6 +12703,8 @@ export type WorkspaceUpdateWithoutDeadlineRuleParameterDefinitionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -11818,6 +12786,8 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineRuleParameterDefinitionsInput
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -11899,6 +12869,8 @@ export type WorkspaceCreateWithoutDeadlineMilestoneTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -11980,6 +12952,8 @@ export type WorkspaceUncheckedCreateWithoutDeadlineMilestoneTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -12077,6 +13051,8 @@ export type WorkspaceUpdateWithoutDeadlineMilestoneTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -12158,6 +13134,8 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineMilestoneTemplatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -12239,6 +13217,8 @@ export type WorkspaceCreateWithoutServiceVariantDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -12320,6 +13300,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -12417,6 +13399,8 @@ export type WorkspaceUpdateWithoutServiceVariantDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -12498,6 +13482,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -12579,6 +13565,8 @@ export type WorkspaceCreateWithoutClientServiceDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -12660,6 +13648,8 @@ export type WorkspaceUncheckedCreateWithoutClientServiceDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -12757,6 +13747,8 @@ export type WorkspaceUpdateWithoutClientServiceDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -12838,6 +13830,8 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceDeadlineRulesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -12919,6 +13913,8 @@ export type WorkspaceCreateWithoutBusinessCalendarsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -13000,6 +13996,8 @@ export type WorkspaceUncheckedCreateWithoutBusinessCalendarsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -13097,6 +14095,8 @@ export type WorkspaceUpdateWithoutBusinessCalendarsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -13178,6 +14178,8 @@ export type WorkspaceUncheckedUpdateWithoutBusinessCalendarsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -13259,6 +14261,8 @@ export type WorkspaceCreateWithoutBusinessHolidaysInput = {
   businessCalendars?: Prisma.BusinessCalendarCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -13340,6 +14344,8 @@ export type WorkspaceUncheckedCreateWithoutBusinessHolidaysInput = {
   businessCalendars?: Prisma.BusinessCalendarUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -13437,6 +14443,8 @@ export type WorkspaceUpdateWithoutBusinessHolidaysInput = {
   businessCalendars?: Prisma.BusinessCalendarUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -13518,6 +14526,8 @@ export type WorkspaceUncheckedUpdateWithoutBusinessHolidaysInput = {
   businessCalendars?: Prisma.BusinessCalendarUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -13599,6 +14609,8 @@ export type WorkspaceCreateWithoutServiceCyclesInput = {
   businessCalendars?: Prisma.BusinessCalendarCreateNestedManyWithoutTenantInput
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -13680,6 +14692,8 @@ export type WorkspaceUncheckedCreateWithoutServiceCyclesInput = {
   businessCalendars?: Prisma.BusinessCalendarUncheckedCreateNestedManyWithoutTenantInput
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -13777,6 +14791,8 @@ export type WorkspaceUpdateWithoutServiceCyclesInput = {
   businessCalendars?: Prisma.BusinessCalendarUpdateManyWithoutTenantNestedInput
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -13858,6 +14874,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceCyclesInput = {
   businessCalendars?: Prisma.BusinessCalendarUncheckedUpdateManyWithoutTenantNestedInput
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -13939,6 +14957,8 @@ export type WorkspaceCreateWithoutDeadlineOccurrencesInput = {
   businessCalendars?: Prisma.BusinessCalendarCreateNestedManyWithoutTenantInput
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -14020,6 +15040,8 @@ export type WorkspaceUncheckedCreateWithoutDeadlineOccurrencesInput = {
   businessCalendars?: Prisma.BusinessCalendarUncheckedCreateNestedManyWithoutTenantInput
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -14117,6 +15139,8 @@ export type WorkspaceUpdateWithoutDeadlineOccurrencesInput = {
   businessCalendars?: Prisma.BusinessCalendarUpdateManyWithoutTenantNestedInput
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -14198,6 +15222,8 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   businessCalendars?: Prisma.BusinessCalendarUncheckedUpdateManyWithoutTenantNestedInput
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -14280,6 +15306,8 @@ export type WorkspaceCreateWithoutReconciliationRequestsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -14361,6 +15389,8 @@ export type WorkspaceUncheckedCreateWithoutReconciliationRequestsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -14458,6 +15488,8 @@ export type WorkspaceUpdateWithoutReconciliationRequestsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -14539,6 +15571,8 @@ export type WorkspaceUncheckedUpdateWithoutReconciliationRequestsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -14619,6 +15653,8 @@ export type WorkspaceCreateWithoutAiConversationsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -14700,6 +15736,8 @@ export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -14797,6 +15835,8 @@ export type WorkspaceUpdateWithoutAiConversationsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -14878,6 +15918,8 @@ export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -14959,6 +16001,8 @@ export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -15040,6 +16084,8 @@ export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -15137,6 +16183,8 @@ export type WorkspaceUpdateWithoutEsigningEnvelopesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -15218,6 +16266,8 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -15299,6 +16349,8 @@ export type WorkspaceCreateWithoutEsigningEmailDeliveriesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -15380,6 +16432,8 @@ export type WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -15477,6 +16531,8 @@ export type WorkspaceUpdateWithoutEsigningEmailDeliveriesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -15558,6 +16614,8 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -15639,6 +16697,8 @@ export type WorkspaceCreateWithoutExchangeRatesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -15720,6 +16780,8 @@ export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -15817,6 +16879,8 @@ export type WorkspaceUpdateWithoutExchangeRatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -15898,6 +16962,8 @@ export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -15979,6 +17045,8 @@ export type WorkspaceCreateWithoutFormsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -16060,6 +17128,8 @@ export type WorkspaceUncheckedCreateWithoutFormsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -16157,6 +17227,8 @@ export type WorkspaceUpdateWithoutFormsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -16238,6 +17310,8 @@ export type WorkspaceUncheckedUpdateWithoutFormsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -16319,6 +17393,8 @@ export type WorkspaceCreateWithoutFormFieldsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -16400,6 +17476,8 @@ export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -16497,6 +17575,8 @@ export type WorkspaceUpdateWithoutFormFieldsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -16578,6 +17658,8 @@ export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -16659,6 +17741,8 @@ export type WorkspaceCreateWithoutFormOptionPresetsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -16740,6 +17824,8 @@ export type WorkspaceUncheckedCreateWithoutFormOptionPresetsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -16837,6 +17923,8 @@ export type WorkspaceUpdateWithoutFormOptionPresetsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -16918,6 +18006,8 @@ export type WorkspaceUncheckedUpdateWithoutFormOptionPresetsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -16999,6 +18089,8 @@ export type WorkspaceCreateWithoutFormUrlHealthInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -17080,6 +18172,8 @@ export type WorkspaceUncheckedCreateWithoutFormUrlHealthInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -17177,6 +18271,8 @@ export type WorkspaceUpdateWithoutFormUrlHealthInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -17258,6 +18354,8 @@ export type WorkspaceUncheckedUpdateWithoutFormUrlHealthInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -17339,6 +18437,8 @@ export type WorkspaceCreateWithoutFormSubmissionsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -17420,6 +18520,8 @@ export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -17517,6 +18619,8 @@ export type WorkspaceUpdateWithoutFormSubmissionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -17598,6 +18702,8 @@ export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -17679,6 +18785,8 @@ export type WorkspaceCreateWithoutFormDraftsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -17760,6 +18868,8 @@ export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -17857,6 +18967,8 @@ export type WorkspaceUpdateWithoutFormDraftsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -17938,6 +19050,8 @@ export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -18019,6 +19133,8 @@ export type WorkspaceCreateWithoutFormUploadsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -18100,6 +19216,8 @@ export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -18197,6 +19315,8 @@ export type WorkspaceUpdateWithoutFormUploadsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -18278,6 +19398,8 @@ export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -18360,6 +19482,8 @@ export type WorkspaceCreateWithoutBackupsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -18441,6 +19565,8 @@ export type WorkspaceUncheckedCreateWithoutBackupsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -18538,6 +19664,8 @@ export type WorkspaceUpdateWithoutBackupsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -18619,6 +19747,8 @@ export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -18699,6 +19829,8 @@ export type WorkspaceCreateWithoutBackupScheduleInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -18780,6 +19912,8 @@ export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -18877,6 +20011,8 @@ export type WorkspaceUpdateWithoutBackupScheduleInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -18958,6 +20094,8 @@ export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -19039,6 +20177,8 @@ export type WorkspaceCreateWithoutChartOfAccountsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -19120,6 +20260,8 @@ export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -19217,6 +20359,8 @@ export type WorkspaceUpdateWithoutChartOfAccountsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -19298,6 +20442,8 @@ export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -19380,6 +20526,8 @@ export type WorkspaceCreateWithoutTaskPipelinesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -19461,6 +20609,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -19558,6 +20708,8 @@ export type WorkspaceUpdateWithoutTaskPipelinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -19639,6 +20791,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -19720,6 +20874,8 @@ export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -19801,6 +20957,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -19898,6 +21056,8 @@ export type WorkspaceUpdateWithoutTaskPipelineVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -19979,6 +21139,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -20060,6 +21222,8 @@ export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -20141,6 +21305,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -20238,6 +21404,8 @@ export type WorkspaceUpdateWithoutTaskPipelineStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -20319,6 +21487,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -20400,6 +21570,8 @@ export type WorkspaceCreateWithoutTasksInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -20481,6 +21653,8 @@ export type WorkspaceUncheckedCreateWithoutTasksInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -20578,6 +21752,8 @@ export type WorkspaceUpdateWithoutTasksInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -20659,6 +21835,8 @@ export type WorkspaceUncheckedUpdateWithoutTasksInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -20740,6 +21918,8 @@ export type WorkspaceCreateWithoutTaskStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -20821,6 +22001,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -20918,6 +22100,8 @@ export type WorkspaceUpdateWithoutTaskStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -20999,6 +22183,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -21080,6 +22266,8 @@ export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -21161,6 +22349,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -21258,6 +22448,8 @@ export type WorkspaceUpdateWithoutTaskStageChecklistItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -21339,6 +22531,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -21420,6 +22614,8 @@ export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -21501,6 +22697,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -21598,6 +22796,8 @@ export type WorkspaceUpdateWithoutTaskStageOutcomesInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -21679,6 +22879,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -21759,6 +22961,8 @@ export type WorkspaceCreateWithoutTaskEsigningPreparationsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -21840,6 +23044,8 @@ export type WorkspaceUncheckedCreateWithoutTaskEsigningPreparationsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -21937,6 +23143,8 @@ export type WorkspaceUpdateWithoutTaskEsigningPreparationsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -22018,6 +23226,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -22100,6 +23310,8 @@ export type WorkspaceCreateWithoutTaskCompanyRecoveryContextsInput = {
   businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
@@ -22181,6 +23393,8 @@ export type WorkspaceUncheckedCreateWithoutTaskCompanyRecoveryContextsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
   serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -22278,6 +23492,8 @@ export type WorkspaceUpdateWithoutTaskCompanyRecoveryContextsInput = {
   businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
@@ -22359,6 +23575,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskCompanyRecoveryContextsInput = {
   businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
   serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
   deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
   reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -22425,6 +23643,8 @@ export type WorkspaceCountOutputType = {
   businessHolidays: number
   serviceCycles: number
   deadlineOccurrences: number
+  billingOccurrences: number
+  billingCoverageIssues: number
   reconciliationRequests: number
   backups: number
   connectorAccess: number
@@ -22486,6 +23706,8 @@ export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   businessHolidays?: boolean | WorkspaceCountOutputTypeCountBusinessHolidaysArgs
   serviceCycles?: boolean | WorkspaceCountOutputTypeCountServiceCyclesArgs
   deadlineOccurrences?: boolean | WorkspaceCountOutputTypeCountDeadlineOccurrencesArgs
+  billingOccurrences?: boolean | WorkspaceCountOutputTypeCountBillingOccurrencesArgs
+  billingCoverageIssues?: boolean | WorkspaceCountOutputTypeCountBillingCoverageIssuesArgs
   reconciliationRequests?: boolean | WorkspaceCountOutputTypeCountReconciliationRequestsArgs
   backups?: boolean | WorkspaceCountOutputTypeCountBackupsArgs
   connectorAccess?: boolean | WorkspaceCountOutputTypeCountConnectorAccessArgs
@@ -22823,6 +24045,20 @@ export type WorkspaceCountOutputTypeCountDeadlineOccurrencesArgs<ExtArgs extends
 /**
  * WorkspaceCountOutputType without action
  */
+export type WorkspaceCountOutputTypeCountBillingOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingOccurrenceWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
+export type WorkspaceCountOutputTypeCountBillingCoverageIssuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingCoverageIssueWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
 export type WorkspaceCountOutputTypeCountReconciliationRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
 }
@@ -22984,6 +24220,8 @@ export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   businessHolidays?: boolean | Prisma.Workspace$businessHolidaysArgs<ExtArgs>
   serviceCycles?: boolean | Prisma.Workspace$serviceCyclesArgs<ExtArgs>
   deadlineOccurrences?: boolean | Prisma.Workspace$deadlineOccurrencesArgs<ExtArgs>
+  billingOccurrences?: boolean | Prisma.Workspace$billingOccurrencesArgs<ExtArgs>
+  billingCoverageIssues?: boolean | Prisma.Workspace$billingCoverageIssuesArgs<ExtArgs>
   reconciliationRequests?: boolean | Prisma.Workspace$reconciliationRequestsArgs<ExtArgs>
   backups?: boolean | Prisma.Workspace$backupsArgs<ExtArgs>
   connectorAccess?: boolean | Prisma.Workspace$connectorAccessArgs<ExtArgs>
@@ -23115,6 +24353,8 @@ export type WorkspaceInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   businessHolidays?: boolean | Prisma.Workspace$businessHolidaysArgs<ExtArgs>
   serviceCycles?: boolean | Prisma.Workspace$serviceCyclesArgs<ExtArgs>
   deadlineOccurrences?: boolean | Prisma.Workspace$deadlineOccurrencesArgs<ExtArgs>
+  billingOccurrences?: boolean | Prisma.Workspace$billingOccurrencesArgs<ExtArgs>
+  billingCoverageIssues?: boolean | Prisma.Workspace$billingCoverageIssuesArgs<ExtArgs>
   reconciliationRequests?: boolean | Prisma.Workspace$reconciliationRequestsArgs<ExtArgs>
   backups?: boolean | Prisma.Workspace$backupsArgs<ExtArgs>
   connectorAccess?: boolean | Prisma.Workspace$connectorAccessArgs<ExtArgs>
@@ -23183,6 +24423,8 @@ export type $WorkspacePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     businessHolidays: Prisma.$BusinessHolidayPayload<ExtArgs>[]
     serviceCycles: Prisma.$ServiceCyclePayload<ExtArgs>[]
     deadlineOccurrences: Prisma.$DeadlineOccurrencePayload<ExtArgs>[]
+    billingOccurrences: Prisma.$BillingOccurrencePayload<ExtArgs>[]
+    billingCoverageIssues: Prisma.$BillingCoverageIssuePayload<ExtArgs>[]
     reconciliationRequests: Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>[]
     backups: Prisma.$WorkspaceBackupPayload<ExtArgs>[]
     connectorAccess: Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>[]
@@ -23658,6 +24900,8 @@ export interface Prisma__WorkspaceClient<T, Null = never, ExtArgs extends runtim
   businessHolidays<T extends Prisma.Workspace$businessHolidaysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$businessHolidaysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BusinessHolidayPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceCycles<T extends Prisma.Workspace$serviceCyclesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$serviceCyclesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deadlineOccurrences<T extends Prisma.Workspace$deadlineOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$deadlineOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  billingOccurrences<T extends Prisma.Workspace$billingOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$billingOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  billingCoverageIssues<T extends Prisma.Workspace$billingCoverageIssuesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$billingCoverageIssuesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingCoverageIssuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reconciliationRequests<T extends Prisma.Workspace$reconciliationRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$reconciliationRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   backups<T extends Prisma.Workspace$backupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$backupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceBackupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   connectorAccess<T extends Prisma.Workspace$connectorAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$connectorAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -25181,6 +26425,54 @@ export type Workspace$deadlineOccurrencesArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * Workspace.billingOccurrences
+ */
+export type Workspace$billingOccurrencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingOccurrence
+   */
+  select?: Prisma.BillingOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingOccurrence
+   */
+  omit?: Prisma.BillingOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.BillingOccurrenceWhereInput
+  orderBy?: Prisma.BillingOccurrenceOrderByWithRelationInput | Prisma.BillingOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.BillingOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingOccurrenceScalarFieldEnum | Prisma.BillingOccurrenceScalarFieldEnum[]
+}
+
+/**
+ * Workspace.billingCoverageIssues
+ */
+export type Workspace$billingCoverageIssuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingCoverageIssue
+   */
+  select?: Prisma.BillingCoverageIssueSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingCoverageIssue
+   */
+  omit?: Prisma.BillingCoverageIssueOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingCoverageIssueInclude<ExtArgs> | null
+  where?: Prisma.BillingCoverageIssueWhereInput
+  orderBy?: Prisma.BillingCoverageIssueOrderByWithRelationInput | Prisma.BillingCoverageIssueOrderByWithRelationInput[]
+  cursor?: Prisma.BillingCoverageIssueWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingCoverageIssueScalarFieldEnum | Prisma.BillingCoverageIssueScalarFieldEnum[]
 }
 
 /**
