@@ -2,112 +2,128 @@
 
 ## Outcome
 
-Task 8 closes the deferred generic `ONE_TIME` schedule contract, adds live
-PostgreSQL tenant/manual-trigger/performance acceptance coverage, emits bounded
-allowlisted worker metrics, and documents the billing recovery/migration
-runbook. The implementation is committed as `5d3f5b59` (`test: verify billing
-tracking acceptance`).
+Task 8 closes the deferred generic `ONE_TIME` repeatable-entry contract,
+adds live PostgreSQL tenant/manual-deadline/performance acceptance coverage,
+and emits bounded allowlisted worker observability. The original
+implementation is `5d3f5b59` (`test: verify billing tracking acceptance`).
+The review hardening is `1f081801` (`test: verify billing tracking
+acceptance`); this report is committed separately.
 
-## TDD evidence
+The `ONE_TIME` contract is explicit: every stable repeatable entry materializes
+exactly once, in stable-key order. It does not silently select the lexical-first
+entry.
 
-- `ONE_TIME` RED: the focused schedule suite was `1 failed / 15 passed` because
-  the evaluator selected only the lexical-first entry. GREEN is `16 passed`;
-  multiple stable entries now each materialize once, in stable-key order, with
-  deterministic repeated evaluation and bounded-range behavior.
-- Worker metrics RED: the focused worker suite was `2 failed / 15 passed`.
-  GREEN is `17 passed`. The single event now contains the exact allowlisted
-  metrics object, bounded counts, and no warning/error/customer free text on
-  success and retry paths. Worker/schedule compatibility is `4 files / 57
-  tests passed`.
-- The first combined PostgreSQL acceptance attempt exposed concurrent fixture
-  setup locks (`3 failed / 2 passed` files). The release script now runs these
-  five isolated files with `--maxWorkers=1`; the package-level rerun is `5
-  files / 9 tests passed` with no skips.
-- The performance harness initially exposed stale planner statistics and a
-  raw-array type mismatch. Refreshing statistics after bulk fixture creation
-  and using the typed PostgreSQL array predicate produced the final green
-  run; no production query was replaced with a test-only substitute.
+## TDD and review evidence
 
-## Final verification matrix
+- The original `ONE_TIME` RED was `1 failed / 15 passed`; GREEN was `16
+  passed`. Repeated evaluation is deterministic and bounded-range behavior is
+  covered.
+- Review RED exposed an absent fail-closed preflight helper and unbounded
+  worker event identifiers. The focused worker/preflight GREEN result is `2
+  files / 23 tests passed`.
+- Worker events are one fixed structured event per request. IDs/text are capped
+  at 200 characters, warnings at 50, warning `missingFields` at 20 entries,
+  numeric/cardinality values at 1,000,000, and duration at 86,400,000 ms.
+  Warning/error/customer free text is discarded; only allowlisted warning codes
+  and bounded identifiers/field names remain. Success, retry, exhausted retry,
+  and permanent failure paths assert one complete event, fixed keys, metrics,
+  bounds, and redaction.
+- Tenant acceptance now seeds two companies in each tenant. An actor scoped to
+  company one cannot list, read, mutate, or receive coverage rows for the
+  same-tenant company two; the allowed company and tenant-two negatives remain
+  covered. The service predicates enforce this in SQL.
+- Billing acceptance scripts fail closed before Vitest. Without variables,
+  `test:billing:postgres` exits `1` with `TEST_DATABASE_URL`, and
+  `test:billing:performance` exits `1` with `TEST_DATABASE_URL,
+  RUN_PERFORMANCE_TESTS=true`. The enabled PostgreSQL scripts run serially with
+  `--maxWorkers=1`.
+
+## Verification matrix
 
 | Gate | Result |
 | --- | --- |
-| `npm.cmd run db:generate` (disposable `DATABASE_URL`) | PASS; Prisma Client 7.2.0 generated |
-| Plan 3 focused billing matrix | PASS; `16 files / 158 tests` |
-| Worker/schedule regression matrix | PASS; `4 files / 57 tests` |
-| `npm.cmd run test:browser -- __tests__/browser/services-billing.browser.test.tsx` | PASS; Chromium `1 file / 2 tests` |
-| `npm.cmd run test:billing:postgres` (isolated `TEST_DATABASE_URL`) | PASS; `5 files / 9 tests`, no skips |
-| `npm.cmd run test:billing:performance` with `RUN_PERFORMANCE_TESTS=true` | PASS; `1 file / 2 tests`, no skips |
-| `npx.cmd tsc --noEmit` | PASS; exit 0 |
-| `npm.cmd run lint` | PASS; 0 errors, 4 existing warnings |
+| Worker observability + preflight focused suites | PASS; `2 files / 23 tests`, no skips |
+| Live tenant/company isolation suite | PASS; `1 file / 2 tests`, no skips |
+| `npm.cmd run test:billing:postgres` with isolated `TEST_DATABASE_URL` | PASS; `5 files / 9 tests`, no skips |
+| `npm.cmd run test:billing:performance` with `TEST_DATABASE_URL` and `RUN_PERFORMANCE_TESTS=true` | PASS; `1 file / 2 tests`, no skips |
+| `npx.cmd prisma migrate status` on disposable database | PASS; `54 migrations found`, database schema up to date |
+| `npx.cmd tsc --noEmit` | FAIL only at pre-existing generated route validation: `.next/types/app/api/services/settings/route.ts:38`; no changed-file errors |
+| `npm.cmd run lint` (`eslint src`) | PASS; 0 errors, 4 existing warnings |
+| `npm.cmd run build` | Compiled successfully; then failed at the same pre-existing generated route type error above |
 | `git diff --check` | PASS; no findings |
-| Guarded repository baseline, `npm.cmd run test:run -- --reporter=dot` | Exit 1: `343 passed / 8 failed / 19 skipped` files; `2,866 passed / 33 failed / 54 skipped` tests; duration `333.64s` |
-| `npm.cmd run build` with disposable `DATABASE_URL` | Reached successful app compilation and type checking, then failed in generated route validation at `.next/types/app/api/services/settings/route.ts:38` because the existing GET handler exposes an optional `Request` parameter. |
 
-The baseline failures are outside this change: one company-create test, eleven
-BizFile contact-resolution tests, one client-service schema test, one form
-option-preset schema test, one service-agreement schema test, one service
-catalog schema test, three task-list tests, and fourteen task-workspace tests.
-Their observed causes are existing schema expectations and missing UI test
-providers/roles; no billing acceptance test failed and no test was weakened or
-removed. The build route error is likewise outside the changed files.
+The earlier repository-wide baseline is preserved as evidence rather than
+rerun after these scoped acceptance-harness/observability changes: `343
+passed / 8 failed / 19 skipped` files and `2,866 passed / 33 failed / 54
+skipped` tests. Its failures were unrelated existing schema expectations and
+missing UI test providers/roles; no billing acceptance test was weakened or
+removed. The 19 skipped files / 54 skipped tests are environment-gated
+optional suites. The dedicated billing PostgreSQL and performance gates above
+were enabled and had no skips.
 
-The baseline's 19 skipped files / 54 skipped tests are the repository's
-environment-gated optional suites under the intentionally unset database and
-performance variables. The dedicated billing PostgreSQL, performance, and
-browser gates above have no skips.
-
-An earlier repository-wide attempt with database variables enabled was not
-counted: unrelated PostgreSQL suites ran concurrently against one database and
-produced cross-suite cleanup/foreign-key conflicts (including deadline-rule
-version and document-batch user references). It was stopped, the disposable
-database sessions were terminated, and the billing suites were rerun serially
-against their isolated target.
+Prior Task 8 evidence also remains valid for the Plan 3 focused matrix (`16
+files / 158 tests`), worker/schedule regression matrix (`4 files / 57 tests`),
+browser smoke (`1 file / 2 tests`), and the original build/baseline diagnosis;
+the review reruns above cover every changed production path and acceptance
+gate.
 
 ## Disposable PostgreSQL and migration evidence
 
-Docker Desktop was unavailable. A disposable PostgreSQL 17 cluster was started
-locally at `127.0.0.1:55432` under
-`C:\Users\Scotfield\AppData\Local\Temp\oakcloud-task8-pg-20260825` with
-trust-only local authentication. No credentials are recorded here. Acceptance
-used distinct databases `oakcloud_task8_20260825` and
-`oakcloud_task8_perf3_20260825`; no shared/source database was migrated or
-modified.
+Docker Desktop was unavailable. A fresh PostgreSQL 17 cluster was created
+locally with trust-only authentication at
+`127.0.0.1:55433`, under
+`C:\Users\Scotfield\AppData\Local\Temp\oakcloud-task8-review-pg-20260825`,
+using database `oakcloud_task8_review_20260825`. No credentials are recorded,
+and no shared/source database was migrated or modified.
 
-- A clean disposable database received the complete Prisma chain: `54
-  migrations found` and `Database schema is up to date`.
-- The live backfill suite verified legacy amount/currency preservation,
-  deterministic schedules, explicit invalid-CUSTOM and missing-start issues,
-  tenant isolation, and one deduplicated `BILLING_BACKFILL` request per active
-  tenant on rerun.
-- The billing indexes inspected after the live run were
-  `billing_occurrences_tenant_id_operative_expected_date_status_id` (Postgres
-  display truncates the physical name) and
-  `billing_coverage_issues_tenant_id_company_id_severity_resolved_`, alongside
-  the identity/open-issue indexes. The performance fixture cleaned up to zero
-  rows after the test.
+The cluster received the complete Prisma migration chain (`54 migrations
+found`; `Database schema is up to date`). The live package matrix and
+performance suite ran against this database, cleaned their tenant fixtures,
+and the cluster was stopped and its disposable data directory removed after
+verification.
+
+The live billing index inspection showed PostgreSQL's 63-character physical
+names, including:
+
+- `billing_occurrences_tenant_id_operative_expected_date_status_id`
+- `billing_occurrences_tenant_id_client_service_id_operative_expec`
+- `billing_occurrences_tenant_id_company_id_operative_expected_dat`
+- `billing_coverage_issues_tenant_id_company_id_severity_resolved_`
 
 ## Live performance evidence
 
-The isolated performance run seeded 1,000 companies, 10,000 client services,
+The performance fixture seeded 1,000 companies, 10,000 client services,
 10,000 fee lines, 100,000 billing occurrences, and 1,000 unresolved coverage
-issues. It exercised the production paginated occurrence list and coverage
-summary services after `ANALYZE` refreshed planner statistics.
+issues, then ran `ANALYZE` before reads.
 
-- `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` selected the tenant/date/status
-  occurrence index and the tenant/company/severity/unresolved coverage index.
-- Measured production-service durations: occurrence list `348.0085 ms`,
-  coverage summary `125.6226 ms`; both satisfy the `<= 1,500 ms` acceptance
-  target.
-- Tenant-isolation acceptance covered same-tenant controls plus cross-tenant
-  and cross-company list/detail/mutation/coverage negatives using production
-  SQL predicates. Manual historical deadline acceptance confirmed no billing
-  request or billing occurrence side effect after the worker ran.
+The EXPLAIN harness captures Prisma query events emitted by the actual
+`listBillingOccurrences` and `listBillingCoverage` production services,
+interpolates their bound parameters, and runs `EXPLAIN (ANALYZE, BUFFERS,
+FORMAT JSON)` on those captured query shapes. It does not use handcrafted SQL
+or force `enable_seqscan`. With one selective company input, PostgreSQL
+naturally chose the tenant/client-service/operative-date occurrence index
+family (with status in the production filter) and the
+tenant/company/severity/unresolved coverage index.
+
+Measured local PostgreSQL 17 representative acceptance timings were:
+
+- occurrence list: `473.05 ms`
+- coverage summary: `83.46 ms`
+- target: each `<= 1,500 ms`
+
+These are local representative acceptance results, not staging evidence. No
+staging target was available in this environment; a staging-sized rerun with
+production-like data remains a release/environment gate and is explicitly not
+fabricated here.
+
+The manual historical-deadline acceptance passed in the serial matrix and
+confirmed no billing request or billing occurrence side effect. The tenant
+suite covered same-tenant company controls and tenant-two negatives with
+production SQL predicates.
 
 ## Clean-worktree and artifact policy
 
 No credentials, PostgreSQL data directory, browser artifacts, performance
-output, or review package was added. The disposable cluster is stopped and
-removed after final handoff. The implementation commit contains only the
-accepted source/tests/scripts/guide files; this report is committed separately
-as the documentation/evidence commit.
+output, or review package was added. The implementation commit contains only
+the accepted source/tests/package preflight helper. This report is committed
+separately as the documentation/evidence commit.
