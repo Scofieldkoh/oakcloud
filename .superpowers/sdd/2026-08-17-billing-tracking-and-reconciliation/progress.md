@@ -4,7 +4,7 @@
 
 - Worktree: `C:\Users\Scotfield\OneDrive\Documents\Python Project\oakcloud_development\oakcloud\.worktrees\services-administration`
 - Branch: `codex/services-administration`
-- Task scope: Tasks 1–5 complete — billing persistence, schedules/backfill, occurrence and coverage reconciliation, and client-service billing configuration.
+- Task scope: Tasks 1–6 complete — billing persistence, schedules/backfill, occurrence/coverage reconciliation, client-service configuration, and occurrence lifecycle APIs.
 - Implementation model: `gpt-5.6-luna`, reasoning `max`.
 - Review model: `gpt-5.6-sol`, reasoning `medium`.
 - Final branch review: `gpt-5.6-sol`, reasoning `xhigh`.
@@ -45,6 +45,7 @@
 | 3 | PASS / task-review-complete | `c36f141a`, `4f638b17`, `9a7df209`, `baa1e7e1` | `all findings addressed; no new breakage` |
 | 4 | PASS / task-review-complete | `f6c5c0ac`, `7e1353e2` | `4 Important and 2 Minor addressed; final 0 / 0 / 0` |
 | 5 | PASS / task-review-complete | `b809cbda`, `9c4ac9c3`, `c6e91916` | `8 Important and 1 Minor addressed across two rounds; final 0 / 0 / 0` |
+| 6 | PASS / task-review-complete | `077e6876`, `97f6eb12` | `1 Important and 1 Minor addressed; final 0 / 0 / 0` |
 
 ## RED evidence
 
@@ -197,3 +198,18 @@
 - Ruling: `CONFIGURED` is a materializable state: it requires at least one active fee, an effective start date, and at least one stable schedule entry. CUSTOM recurrence exposes a validated 1–120 month interval. Default entry synthesis is limited to genuinely absent legacy configuration; ordinary cadence/start edits preserve all authored entries and keys.
 - Ruling: structured `scheduleConfig` is canonical and must agree with compatibility `billingFrequency` and `billingStartDate`. One helper is shared by create, update, agreement activation, coverage, and occurrence reconciliation. Omitted legacy create disposition remains `UNREVIEWED`; explicit manual create accepts only Configured or Not required, and Not required accepts no fee rows.
 - Ruling: fee/schedule audits use bounded allowlisted snapshots (up to 100 fee rows and 31 entries per row, bounded text) and must retain exact persisted fee identity and immutable agreement lineage. Switching to Not required archives active fee rows with the user's reason and queues reconciliation in the same Serializable transaction; future Open occurrences are cancelled while historical Open, Billed, and Waived rows are preserved under the existing reconciliation rules.
+
+## Task 6 — billing occurrence list and lifecycle APIs
+
+### Implementation and evidence
+
+- Initial implementation commit `077e6876` (`feat: track billing occurrence status`) added strict search/mutation/reset schemas, tenant/access-scoped table and detail services, Singapore timing derivation, audited optimistic lifecycle/override mutations, enabled-workspace/RBAC routes, and normalized abortable hooks. Focused verification passed 3 files / 22 tests; directly affected compatibility passed 12 files / 153 tests; TypeScript, scoped lint, and diff checks passed.
+- Initial review reported 0 Critical, 1 Important, and 1 Minor. The Important found that a historical selected occurrence used its own date as the only propagation lower bound, allowing other overdue Open rows to change. The Minor requested deeper lifecycle/filter/reset/permission/count-mismatch coverage.
+- Fix commit `97f6eb12` (`fix: protect historical billing occurrences`) captured one Singapore date and used `max(selected operative date, today)` for matching future Open rows while retaining an independent optimistic update of the selected row. Expanded focused verification passed 3 files / 37 tests and the 12-file compatibility matrix / 168 tests; TypeScript, scoped zero-warning ESLint, and diff checks passed.
+- Final rereview `task-6-rereview.md`: PASS, 0 Critical / 0 Important / 0 Minor; both findings ADDRESSED and no new breakage.
+
+### Task 6 rulings
+
+- Ruling: `THIS_AND_FUTURE` always updates the selected non-Cancelled occurrence through its own `id + tenant + expectedUpdatedAt` claim, even when the selected row is historical or Billed. Additional rows must match tenant/company/service/fee line/schedule entry/generation, remain Open, and be on or after both the selected operative date and one captured current Singapore date. Historical matching rows are never propagated.
+- Ruling: user lifecycle mutations cannot set or modify Cancelled. Billed accepts an optional/null billed date; Waived and reopen transitions require reasons and maintain their exact lifecycle metadata. Date/value overrides require reasons, and reset actions restore only the requested calculated/base dimensions.
+- Ruling: current-and-future selection, update, count validation, and one affected-ID/count audit occur inside the same Serializable transaction. A future count mismatch throws before audit and rolls back the selected and partial future writes together.
