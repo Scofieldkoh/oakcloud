@@ -1,6 +1,69 @@
 # Task 15 report — rollout, observability, isolation, performance, and documentation
 
-Status: PASS / pending review
+Status: PASS — review findings closed; PostgreSQL/final rollout gates remain deferred
+
+## Review correction evidence (2026-08-24)
+
+The independent review's 7 Important and 3 Minor findings were reproduced
+against the implementation and closed as follows:
+
+1. Reconciliation event emission is best-effort and non-throwing. Regression
+   tests cover successful, retryable-failure, and lease-loss outcomes with a
+   logger that throws.
+2. Counts, preserved-by-reason totals, and warning metadata are copied into
+   event state after every committed client service and before the subsequent
+   lease check. Regression tests cover later-service failure and lease loss.
+3. Roster and deadline list error responses now receive timing headers through
+   an in-place response decorator, preserving status, body, and response
+   behavior. Tests cover 401, 403, disabled-workspace 404, validation 400,
+   service 500, and empty-scope 200 responses.
+4. Both new PostgreSQL suites fail explicitly in CI when `TEST_DATABASE_URL`
+   is absent while retaining local `describe.skip` behavior.
+5. Isolation coverage now materializes an own-tenant control occurrence,
+   asserts an exact positive list result and negative cross-tenant result,
+   compares inaccessible and nonexistent mutation errors, and verifies the
+   target occurrence and audit count are unchanged.
+6. Request storage and summaries retain only stable public error codes/messages;
+   arbitrary dependency text, notes, documents, and rule wording are dropped.
+   Structured event tests assert the same redaction.
+7. Tenant and environment write flags use boolean-OR semantics, including the
+   explicit-false/ environment-true case, and the operations guide states this
+   precedence.
+8. EXPLAIN coverage parses JSON plan nodes and checks tenant/date/status (and
+   roster tenant/company/status/deleted) conditions, bounded actual rows,
+   expected index nodes, and a normal-planner absence of an occurrence
+   sequential scan.
+9. PostgreSQL cleanup is idempotent, continues after individual fixture
+   cleanup errors, and disconnects in `finally` blocks.
+10. Performance fixtures assert persisted tenant-scoped counts of exactly
+    1,000 companies, 10,000 client services, and 100,000 occurrences before
+    plan acceptance.
+
+## Correction TDD and verification evidence
+
+The correction RED run was:
+
+```text
+npm.cmd run test:run -- __tests__/services/schedule-reconciliation-worker.test.ts __tests__/services/schedule-reconciliation.test.ts __tests__/api/task-15-server-timing.test.ts __tests__/task-15-contract.test.ts
+16 tests failed / 33 passed; failures covered logger propagation, missing
+error timing, flag precedence, and missing CI/rollout contracts.
+```
+
+Fresh correction GREEN evidence:
+
+- Task 15 focused selection: 5 files passed / 2 PostgreSQL files skipped;
+  50 tests passed / 4 skipped.
+- Plan 2 invariant selection: 18 files / 236 tests passed.
+- Additional scheduler, observability, roster-route, and deadline-route
+  compatibility selection: 4 files / 24 tests passed.
+- `npx.cmd tsc --noEmit --pretty false`: exit 0.
+- Scoped ESLint with `--max-warnings 0` over changed routes, timing helper,
+  settings, worker, tests, and PostgreSQL fixtures: exit 0 with zero warnings.
+- `git diff --check`: exit 0.
+
+The PostgreSQL suites remained locally skipped because `TEST_DATABASE_URL` was
+not configured. No live PostgreSQL, wall-clock performance, migration, Prisma
+generation, repository-wide build, or repository-wide lint command was run.
 
 ## Scope delivered
 
@@ -108,6 +171,8 @@ the complete three-plan implementation is assembled:
 
 - `src/app/api/client-services/route.ts`
 - `src/app/api/deadlines/route.ts`
+- `src/lib/api/company-query.ts`
+- `src/services/schedule-reconciliation/settings.ts`
 - `src/services/schedule-reconciliation/worker.ts`
 - `__tests__/api/deadline-routes.test.ts`
 - `__tests__/api/service-roster-route.test.ts`
@@ -115,6 +180,8 @@ the complete three-plan implementation is assembled:
 - `__tests__/integration/deadline-tenant-isolation.postgres.test.ts`
 - `__tests__/integration/deadline-performance.postgres.test.ts`
 - `__tests__/services/schedule-reconciliation-observability.test.ts`
+- `__tests__/services/schedule-reconciliation-worker.test.ts`
+- `__tests__/services/schedule-reconciliation.test.ts`
 - `__tests__/task-15-contract.test.ts`
 - `docs/guides/SERVICE_PATTERNS.md`
 - `package.json`

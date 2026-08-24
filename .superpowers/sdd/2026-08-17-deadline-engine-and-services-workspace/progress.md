@@ -72,4 +72,16 @@
 | 12 | PASS / final-review-complete | `a1b12e3`, `e1f96d89`, `e855e2dc` | Final review PASS: 0 Critical / 0 Important / 0 Minor; focused 29 tests, Chromium 2 tests, exact 12-file compatibility 110 tests, TS/scoped zero-warning lint and diff evidence in task-12-report.md |
 | 13 | PASS / final-review-complete | `656bcdb5`, `3a60e3c7`, `79d4e17d`, `6d5bb7a8`, `aa42dbe5` | Final review PASS: 0 Critical / 0 Important / 0 Minor; focused Task13 6/58, evaluator/Task11 4/81, exact Task8 6/70, exact compatibility 12/112, TypeScript/scoped zero-warning lint/diff evidence recorded in `task-13-report.md`; known unrelated client-service-schema exact-format assertion remains isolated |
 | 14 | PASS / final-review-complete | `a27837d9`, `96267581` | Final review PASS: 0 Critical / 0 Important / 0 Minor; focused admin suite 5 files/32 tests; Task3–8/10/catalog compatibility 16 files/139 tests; Chromium 2 tests; TypeScript/scoped zero-warning lint/diff green; final evidence in `task-14-report.md` |
-| 15 | PASS / pending review | implementation pending handoff | Focused Task15 7/7; invariant compatibility 235 tests; PostgreSQL/live/performance/final gates deferred; evidence in `task-15-report.md` |
+| 15 | PASS / review findings closed | `5a43cb48`, `1496067e` | Correction focused 50/50 with 4 PostgreSQL skips; invariant compatibility 236 tests; scheduler/route compatibility 24 tests; TypeScript/scoped zero-warning lint/diff green; PostgreSQL/live/performance/final gates deferred; evidence in `task-15-report.md` |
+
+### Task 15 review-correction ledger (2026-08-24)
+
+All 7 Important and 3 Minor findings in `task-15-review.md` were validated and
+closed in the services-administration worktree. The worker now treats logging
+as best effort, updates event aggregates incrementally, and persists only safe
+stable error data. Roster/deadline error responses retain timing headers,
+PostgreSQL acceptance suites enforce `TEST_DATABASE_URL` in CI while skipping
+locally, isolation assertions include own-tenant controls and nonmutation
+readback, rollout flags use tenant-or-environment semantics, and performance
+fixtures parse EXPLAIN JSON with exact persisted cardinalities and failure-safe
+cleanup. See `task-15-report.md` for command output and deferred-gate limits.
