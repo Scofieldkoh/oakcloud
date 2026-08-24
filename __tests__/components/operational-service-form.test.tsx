@@ -170,6 +170,46 @@ describe('OperationalServiceForm', () => {
     expect(interval).toHaveValue(18);
   });
 
+  it('preserves every authored billing entry when cadence or start date changes', () => {
+    const values = baseValues();
+    const repeatableValues = {
+      ...values,
+      fees: [{
+        ...values.fees[0],
+        scheduleConfig: {
+          ...values.fees[0].scheduleConfig!,
+          scheduleEntries: [
+            {
+              key: 'primary',
+              label: 'Primary billing date',
+              expression: { kind: 'DAY_OF_MONTH' as const, day: 1 },
+              businessDayAdjustment: 'NONE' as const,
+            },
+            {
+              key: 'follow-up',
+              label: 'Follow-up billing date',
+              expression: { kind: 'DAY_OF_MONTH' as const, day: 15 },
+              businessDayAdjustment: 'NEXT' as const,
+            },
+          ],
+        },
+      }],
+    };
+    render(<Harness initial={repeatableValues} />);
+    const labels = () => screen.getAllByLabelText('Entry label').map((input) => (input as HTMLInputElement).value);
+    const keys = () => screen.getAllByLabelText('Entry label').map((input) => input.id.replace(/^schedule-/, '').replace(/-label$/, ''));
+
+    expect(labels()).toEqual(['Primary billing date', 'Follow-up billing date']);
+    expect(keys()).toEqual(['primary', 'follow-up']);
+    fireEvent.change(screen.getByLabelText('Fee 1 billing start date'), { target: { value: '2026-09-01' } });
+    expect(labels()).toEqual(['Primary billing date', 'Follow-up billing date']);
+    expect(keys()).toEqual(['primary', 'follow-up']);
+    fireEvent.change(screen.getByLabelText('Fee 1 frequency'), { target: { value: 'MONTHLY' } });
+    expect(labels()).toEqual(['Primary billing date', 'Follow-up billing date']);
+    expect(keys()).toEqual(['primary', 'follow-up']);
+    expect(screen.getAllByLabelText('Day of month').map((input) => (input as HTMLInputElement).value)).toEqual(['1', '15']);
+  });
+
   it('associates field-addressable errors with their controls', () => {
     const values = baseValues();
     const feeId = values.fees[0].uiId;

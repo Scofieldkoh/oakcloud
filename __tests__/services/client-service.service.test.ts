@@ -66,7 +66,22 @@ describe('client service service', () => {
       data: expect.objectContaining({ amount: expect.anything(), currency: 'SGD' }),
     }));
     expect(prismaMock.serviceAgreementFeeLine.update).not.toHaveBeenCalled();
-    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ entityType: 'ClientService', action: 'UPDATE' }), prismaMock);
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      entityType: 'ClientService',
+      action: 'UPDATE',
+      changes: expect.objectContaining({
+        feeLines: expect.objectContaining({
+          new: expect.objectContaining({
+            snapshot: expect.objectContaining({
+              items: expect.arrayContaining([expect.objectContaining({
+                id: 'fee-1',
+                sourceAgreementFeeLineId: 'agreement-fee-1',
+              })]),
+            }),
+          }),
+        }),
+      }),
+    }), prismaMock);
   });
 
   it('archives removed persisted fee lines instead of deleting their lineage', async () => {

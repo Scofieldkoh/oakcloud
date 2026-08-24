@@ -24,6 +24,9 @@ const BILLING_INTERVALS: Record<string, number | null> = {
 function scheduleConfigForFee(fee: OperationalServiceValues['fees'][number], fallbackStartDate = ''): BillingScheduleConfigV1 {
   const cadence = fee.billingFrequency || 'CUSTOM';
   const interval = BILLING_INTERVALS[cadence];
+  const existingScheduleConfig = fee.scheduleConfig;
+  const existingCustomIntervalCount = existingScheduleConfig?.customInterval?.count ?? 1;
+  if (existingScheduleConfig) return existingScheduleConfig;
   try {
     const canonical = canonicalizeBillingSchedule({
       billingFrequency: cadence,
@@ -42,7 +45,7 @@ function scheduleConfigForFee(fee: OperationalServiceValues['fees'][number], fal
     startDate: /^\d{4}-\d{2}-\d{2}$/.test(fee.billingStartDate || fallbackStartDate)
       ? (fee.billingStartDate || fallbackStartDate) as BillingScheduleConfigV1['startDate']
       : null,
-    customInterval: interval === null ? (cadence === 'CUSTOM' ? { unit: 'MONTH', count: fee.scheduleConfig?.customInterval?.count ?? 1 } : null) : { unit: 'MONTH', count: interval },
+    customInterval: interval === null ? (cadence === 'CUSTOM' ? { unit: 'MONTH', count: existingCustomIntervalCount } : null) : { unit: 'MONTH', count: interval },
     scheduleEntries: /^\d{4}-\d{2}-\d{2}$/.test(fee.billingStartDate || fallbackStartDate)
       ? [{
         key: 'default',
@@ -328,6 +331,9 @@ export function OperationalServiceForm({
                 const billingFrequency = event.target.value as typeof fee.billingFrequency;
                 const nextFee = { ...fee, billingFrequency, customFrequencyLabel: billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : '' };
                 const nextSchedule = scheduleConfigForFee(nextFee, values.startDate);
+                const customIntervalCount = fee.billingFrequency === 'CUSTOM'
+                  ? fee.scheduleConfig?.customInterval?.count ?? 1
+                  : 1;
                 updateFee({
                   billingFrequency,
                   customFrequencyLabel: nextFee.customFrequencyLabel,
@@ -335,7 +341,7 @@ export function OperationalServiceForm({
                     ...nextSchedule,
                     cadence: billingFrequency === '' ? 'CUSTOM' : billingFrequency as BillingScheduleConfigV1['cadence'],
                     customInterval: billingFrequency === '' || billingFrequency === 'CUSTOM'
-                      ? { unit: 'MONTH', count: fee.scheduleConfig?.customInterval?.count ?? 1 }
+                      ? { unit: 'MONTH', count: customIntervalCount }
                       : BILLING_INTERVALS[billingFrequency] === null ? null : { unit: 'MONTH', count: BILLING_INTERVALS[billingFrequency]! },
                   },
                 });

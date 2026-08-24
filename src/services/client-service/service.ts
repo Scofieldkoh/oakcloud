@@ -935,6 +935,17 @@ export async function updateClientService(id: string, input: UpdateClientService
         scheduleConfig,
       };
     });
+    const persistedIncomingFeeLines = preparedIncomingFeeLines?.map((fee) => {
+      const existing = current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt == null);
+      const archived = fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt != null) : undefined;
+      if (archived) throw new ValidationError('Archived fee lines cannot be submitted in a service edit');
+      return {
+        ...fee,
+        id: existing?.id ?? fee.id ?? randomUUID(),
+        sourceAgreementFeeLineId: existing?.sourceAgreementFeeLineId
+          ?? (fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id)?.sourceAgreementFeeLineId ?? null : null),
+      };
+    });
     const feeSummaryAfter = billingDisposition === 'NOT_REQUIRED'
       ? summarizeClientServiceFees([])
       : preparedIncomingFeeLines ? summarizeClientServiceFees(preparedIncomingFeeLines) : feeSummaryBefore;
@@ -1016,10 +1027,8 @@ export async function updateClientService(id: string, input: UpdateClientService
       }
 
       const newFeeLines: Array<Record<string, unknown>> = [];
-      for (const fee of preparedIncomingFeeLines ?? []) {
+      for (const fee of persistedIncomingFeeLines ?? []) {
         const existing = current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt == null);
-        const archived = fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt != null) : undefined;
-        if (archived) throw new ValidationError('Archived fee lines cannot be submitted in a service edit');
         const data = {
           description: fee.description,
           amount: new Prisma.Decimal(fee.amount),
@@ -1040,12 +1049,12 @@ export async function updateClientService(id: string, input: UpdateClientService
           });
         } else {
           newFeeLines.push({
-            id: archived || !fee.id ? randomUUID() : fee.id,
+            id: fee.id,
             tenantId: params.tenantId,
             clientServiceId: id,
             // An archived source row already owns its composite lineage. A
             // replacement starts a fresh lineage instead of reusing it.
-            sourceAgreementFeeLineId: archived ? null : current.feeLines.find((storedFee) => storedFee.id === fee.id)?.sourceAgreementFeeLineId ?? null,
+            sourceAgreementFeeLineId: fee.sourceAgreementFeeLineId,
             ...data,
           });
         }
@@ -1080,10 +1089,10 @@ export async function updateClientService(id: string, input: UpdateClientService
         ? { isActive: false, deletedAt: billingArchiveAt, deletedReason: billingNotRequiredReason }
         : {}),
     }));
-    const incomingAuditIds = preparedIncomingFeeLines
-      ? new Set(preparedIncomingFeeLines.map((fee) => fee.id).filter((feeId): feeId is string => Boolean(feeId)))
+    const incomingAuditIds = persistedIncomingFeeLines
+      ? new Set(persistedIncomingFeeLines.map((fee) => fee.id))
       : null;
-    const removedAfterRows = preparedIncomingFeeLines
+    const removedAfterRows = persistedIncomingFeeLines
       ? current.feeLines
         .filter((fee) => !incomingAuditIds?.has(fee.id))
         .map((fee) => fee.isActive !== false && fee.deletedAt == null
@@ -1092,8 +1101,8 @@ export async function updateClientService(id: string, input: UpdateClientService
       : current.feeLines;
     const feeAuditAfterRows = billingDisposition === 'NOT_REQUIRED' && shouldArchiveBillingFees
       ? archivedAfterRows
-      : preparedIncomingFeeLines
-        ? [...removedAfterRows, ...preparedIncomingFeeLines]
+      : persistedIncomingFeeLines
+        ? [...removedAfterRows, ...persistedIncomingFeeLines]
         : current.feeLines;
     const feeAuditAfter = snapshotClientServiceFees(feeAuditAfterRows);
     const changes = {
