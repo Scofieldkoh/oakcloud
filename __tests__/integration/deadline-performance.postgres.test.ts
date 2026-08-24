@@ -4,6 +4,15 @@ import { deadlineSearchSchema } from '@/lib/validations/deadline';
 import { serviceRosterSearchSchema } from '@/lib/validations/service-roster';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+
+if (process.env.CI === 'true' && !testDatabaseUrl) {
+  describe('deadline performance PostgreSQL configuration', () => {
+    it('requires TEST_DATABASE_URL in CI', () => {
+      throw new Error('TEST_DATABASE_URL must reference an isolated PostgreSQL test database in CI');
+    });
+  });
+}
+
 const describePostgres = testDatabaseUrl ? describe : describe.skip;
 const runPerformanceAssertions = process.env.RUN_PERFORMANCE_TESTS === 'true';
 const INSERT_BATCH_SIZE = 2_000;
@@ -169,22 +178,41 @@ describePostgres('deadline workspace representative PostgreSQL performance', () 
 
   afterAll(async () => {
     if (!prisma) return;
-    await prisma.deadlineOccurrence.deleteMany({ where: { tenantId } });
-    await prisma.serviceCycle.deleteMany({ where: { tenantId } });
-    await prisma.clientService.deleteMany({ where: { tenantId } });
-    await prisma.deadlineRule.updateMany({ where: { tenantId }, data: { currentVersionId: null } });
-    await prisma.deadlineRuleVersion.deleteMany({ where: { tenantId } });
-    await prisma.deadlineRule.deleteMany({ where: { tenantId } });
-    await prisma.serviceVariant.deleteMany({ where: { tenantId } });
-    await prisma.serviceFamily.deleteMany({ where: { tenantId } });
-    await prisma.templatePartial.deleteMany({ where: { tenantId } });
-    await prisma.user.deleteMany({ where: { tenantId } });
-    await prisma.company.deleteMany({ where: { tenantId } });
-    await prisma.workspace.delete({ where: { id: tenantId } });
-    await prisma.$disconnect();
+    const failures: unknown[] = [];
+    const attempt = async (operation: () => Promise<unknown>) => {
+      try {
+        await operation();
+      } catch (error) {
+        failures.push(error);
+      }
+    };
+    try {
+      const where = { tenantId };
+      await attempt(() => prisma.auditLog.deleteMany({ where }));
+      await attempt(() => prisma.deadlineOccurrence.deleteMany({ where }));
+      await attempt(() => prisma.serviceCycle.deleteMany({ where }));
+      await attempt(() => prisma.clientService.deleteMany({ where }));
+      await attempt(() => prisma.deadlineRule.updateMany({ where, data: { currentVersionId: null } }));
+      await attempt(() => prisma.deadlineRuleVersion.deleteMany({ where }));
+      await attempt(() => prisma.deadlineRule.deleteMany({ where }));
+      await attempt(() => prisma.serviceVariant.deleteMany({ where }));
+      await attempt(() => prisma.serviceFamily.deleteMany({ where }));
+      await attempt(() => prisma.templatePartial.deleteMany({ where }));
+      await attempt(() => prisma.user.deleteMany({ where }));
+      await attempt(() => prisma.company.deleteMany({ where }));
+      await attempt(() => prisma.workspace.deleteMany({ where: { id: tenantId } }));
+    } finally {
+      await prisma.$disconnect();
+    }
+    if (failures.length > 0) {
+      throw new Error(`Performance cleanup failed in ${failures.length} step(s)`);
+    }
   }, 120_000);
 
   it('uses tenant/date/status and roster tenant/company indexes in JSON plans', async () => {
+    expect(await prisma.company.count({ where: { tenantId } })).toBe(1_000);
+    expect(await prisma.clientService.count({ where: { tenantId } })).toBe(10_000);
+    expect(await prisma.deadlineOccurrence.count({ where: { tenantId } })).toBe(100_000);
     expect(clientServiceCount).toBe(10_000);
     expect(occurrenceCount).toBe(100_000);
 
@@ -218,8 +246,39 @@ describePostgres('deadline workspace representative PostgreSQL performance', () 
       `, tenantId, companyIds);
     });
 
-    expect(deadlinePlan).toMatch(/deadline_occurrences_tenant_id_operative_due_date_status_idx/i);
-    expect(rosterPlan).toMatch(/client_services_tenant_id_company_id_status_deleted_at_idx/i);
+    const deadlineNodes = flattenExplainNodes(deadlinePlan);
+    const rosterNodes = flattenExplainNodes(rosterPlan);
+    const deadlineIndex = deadlineNodes.find((node) => node['Index Name'] === 'deadline_occurrences_tenant_id_operative_due_date_status_idx');
+    const rosterIndex = rosterNodes.find((node) => node['Index Name'] === 'client_services_tenant_id_company_id_status_deleted_at_idx');
+    expect(deadlineIndex).toBeDefined();
+    const deadlineConditions = `${deadlineIndex?.['Index Cond'] ?? ''} ${deadlineIndex?.Filter ?? ''}`;
+    expect(deadlineConditions).toContain('tenant_id');
+    expect(deadlineConditions).toContain('operative_due_date');
+    expect(deadlineConditions).toContain('status');
+    expect(deadlineIndex?.['Actual Rows'] ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(5_000);
+    expect(rosterIndex).toBeDefined();
+    const rosterConditions = `${rosterIndex?.['Index Cond'] ?? ''} ${rosterIndex?.Filter ?? ''}`;
+    expect(rosterConditions).toContain('tenant_id');
+    expect(rosterConditions).toContain('company_id');
+    expect(rosterConditions).toContain('status');
+    expect(rosterConditions).toContain('deleted_at');
+    expect(rosterIndex?.['Actual Rows'] ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(100);
+
+    const normalDeadlinePlan = await explainJsonWithClient(prisma, `
+      EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+      SELECT id
+      FROM deadline_occurrences
+      WHERE tenant_id = $1
+        AND operative_due_date >= $2::date
+        AND operative_due_date <= $3::date
+        AND status = 'OPEN'
+      ORDER BY operative_due_date ASC
+      LIMIT 5000
+    `, tenantId, '2026-08-01', '2026-09-30');
+    const normalDeadlineNodes = flattenExplainNodes(normalDeadlinePlan);
+    expect(normalDeadlineNodes.some((node) => node['Relation Name'] === 'deadline_occurrences' && node['Node Type'] === 'Seq Scan')).toBe(false);
+    expect(normalDeadlineNodes.some((node) => node['Index Name'] === 'deadline_occurrences_tenant_id_operative_due_date_status_idx')).toBe(true);
+    expect(normalDeadlineNodes[0]?.['Actual Rows'] ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(5_000);
   });
 
   it('runs representative roster and two-month calendar queries with bounded results', async () => {
@@ -267,7 +326,33 @@ async function explainJsonWithClient(
   client: Pick<PrismaClient, '$queryRawUnsafe'>,
   sql: string,
   ...parameters: unknown[]
-): Promise<string> {
+): Promise<unknown> {
   const rows = await client.$queryRawUnsafe<Array<{ 'QUERY PLAN': unknown }>>(sql, ...parameters);
-  return JSON.stringify(rows[0]?.['QUERY PLAN'] ?? rows);
+  return rows[0]?.['QUERY PLAN'] ?? rows;
+}
+
+type ExplainNode = {
+  'Node Type'?: string;
+  'Relation Name'?: string;
+  'Index Name'?: string;
+  'Index Cond'?: string;
+  Filter?: string;
+  'Actual Rows'?: number;
+  Plans?: ExplainNode[];
+};
+
+function flattenExplainNodes(value: unknown): ExplainNode[] {
+  let parsed = value;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(parsed)) return parsed.flatMap((entry) => flattenExplainNodes(entry));
+  if (!parsed || typeof parsed !== 'object') return [];
+  const record = parsed as { Plan?: ExplainNode } & ExplainNode;
+  const node = record.Plan ?? record;
+  return [node, ...(node.Plans ?? []).flatMap((child) => flattenExplainNodes(child))];
 }

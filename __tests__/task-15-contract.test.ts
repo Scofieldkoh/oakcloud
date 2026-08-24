@@ -10,6 +10,18 @@ const reconciliationWorker = readFileSync(
   resolve(process.cwd(), 'src/services/schedule-reconciliation/worker.ts'),
   'utf8',
 );
+const reconciliationSettings = readFileSync(
+  resolve(process.cwd(), 'src/services/schedule-reconciliation/settings.ts'),
+  'utf8',
+);
+const tenantIsolationSuite = readFileSync(
+  resolve(process.cwd(), '__tests__/integration/deadline-tenant-isolation.postgres.test.ts'),
+  'utf8',
+);
+const performanceSuite = readFileSync(
+  resolve(process.cwd(), '__tests__/integration/deadline-performance.postgres.test.ts'),
+  'utf8',
+);
 
 describe('Task 15 rollout contract', () => {
   it('registers the gated PostgreSQL and performance scripts exactly', () => {
@@ -48,9 +60,15 @@ describe('Task 15 rollout contract', () => {
   });
 
   it('has one structured reconciliation log call and no duplicate request-level error logs', () => {
-    expect(reconciliationWorker.match(/log\.info\('reconciliation_request'/g)).toHaveLength(1);
+    expect(reconciliationWorker.match(/emitReconciliationLogEvent\(log,/g)).toHaveLength(1);
     expect(reconciliationWorker).not.toContain('log.error(\'Reconciliation request failed\'');
     expect(reconciliationWorker).not.toContain('log.warn(\'Reconciliation request completion lost lease ownership\'');
     expect(reconciliationWorker).not.toContain('log.warn(\'Transient reconciliation outcome lost lease ownership\'');
+  });
+
+  it('uses boolean-OR rollout semantics and guards PostgreSQL gates in CI', () => {
+    expect(reconciliationSettings).toContain("deadlineWritesEnabled: tenantDeadlineWritesEnabled === true || process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED === 'true'");
+    expect(tenantIsolationSuite).toContain("if (process.env.CI === 'true' && !testDatabaseUrl)");
+    expect(performanceSuite).toContain("if (process.env.CI === 'true' && !testDatabaseUrl)");
   });
 });

@@ -9,6 +9,7 @@ import {
 import {
   getCompanyReadScope,
   jsonWithServerTiming,
+  withServerTiming,
 } from '@/lib/api/company-query';
 import {
   emptyServiceRosterResult,
@@ -48,6 +49,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       companyIds: scope.options.companyIds,
     }), startedAt);
   } catch (error) {
-    return safeErrorResponse(error);
+    return withServerTiming(safeErrorResponse(error), startedAt);
   }
 }

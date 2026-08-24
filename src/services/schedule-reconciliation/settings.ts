@@ -15,11 +15,12 @@ export function getServiceWorkspaceFlags(settings: unknown): ServiceWorkspaceFla
     }).optional(),
   }).passthrough();
   const parsed = workspaceSettingsSchema.safeParse(settings);
+  const tenantDeadlineWritesEnabled = parsed.success
+    ? parsed.data.servicesWorkspace?.deadlineWritesEnabled
+    : undefined;
   return {
     workspaceEnabled: parsed.success ? parsed.data.servicesWorkspace?.enabled ?? true : true,
-    deadlineWritesEnabled: parsed.success
-      ? parsed.data.servicesWorkspace?.deadlineWritesEnabled ?? process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED === 'true'
-      : process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED === 'true',
+    deadlineWritesEnabled: tenantDeadlineWritesEnabled === true || process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED === 'true',
   };
 }
 

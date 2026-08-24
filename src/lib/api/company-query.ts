@@ -92,7 +92,14 @@ export function jsonWithServerTiming<T>(
   startedAt: number,
   init?: ResponseInit
 ) {
-  const response = NextResponse.json(data, init);
+  return withServerTiming(NextResponse.json(data, init), startedAt);
+}
+
+/** Add response timing headers without recreating or changing an existing response. */
+export function withServerTiming<T extends Response>(
+  response: T,
+  startedAt: number,
+): T {
   const durationMs = Math.max(0, performance.now() - startedAt);
   response.headers.set('Server-Timing', `app;dur=${durationMs.toFixed(1)}`);
   response.headers.set('X-Response-Time-Ms', durationMs.toFixed(1));

@@ -38,6 +38,19 @@ describe('schedule reconciliation workspace settings', () => {
       process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED = originalEnv;
     }
   });
+
+  it('enables writes when the environment flag is true even if the tenant setting is explicitly false', () => {
+    const originalEnv = process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED;
+    try {
+      process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED = 'true';
+      const flags = getServiceWorkspaceFlags({
+        servicesWorkspace: { deadlineWritesEnabled: false },
+      });
+      expect(flags.deadlineWritesEnabled).toBe(true);
+    } finally {
+      process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED = originalEnv;
+    }
+  });
 });
 
 describe('classifyDeadlineChange', () => {

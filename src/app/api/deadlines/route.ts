@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
-import { getCompanyReadScope, jsonWithServerTiming } from '@/lib/api/company-query';
+import { getCompanyReadScope, jsonWithServerTiming, withServerTiming } from '@/lib/api/company-query';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { ApiError, ErrorCodes } from '@/lib/errors';
 import { requirePermission } from '@/lib/rbac';
@@ -53,6 +53,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       companyIds: scope.options.companyIds,
     }), startedAt);
   } catch (error) {
-    return safeErrorResponse(error);
+    return withServerTiming(safeErrorResponse(error), startedAt);
   }
 }

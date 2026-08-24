@@ -234,10 +234,14 @@ export function getDocumentExporter(): IDocumentExporter {
 
 - `Workspace.settings.servicesWorkspace.enabled` controls the operational page.
 - `Workspace.settings.servicesWorkspace.deadlineWritesEnabled` or
-  `DEADLINE_OCCURRENCE_WRITES_ENABLED=true` enables materialization.
+  `DEADLINE_OCCURRENCE_WRITES_ENABLED=true` enables materialization; these
+  controls use boolean-OR semantics, so an explicit tenant `false` does not
+  override the environment rollout flag.
 - Observation mode computes impact summaries without writing cycles or deadlines.
 - The scheduler task ID is `service-schedule-reconciliation` and runs each minute.
-- Failed requests retain safe errors and retry according to the 1/5/15/60/240-minute schedule.
+- Failed requests retain only stable public error codes/messages and retry
+  according to the 1/5/15/60/240-minute schedule; arbitrary dependency text is
+  discarded rather than persisted.
 - A daily `ROLLING_HORIZON` request extends materialization to 12 months from the Singapore date.
 - Reconciliation requests are tenant-scoped and lease-owned. Operators recover
   abandoned work by allowing expired leases to be reclaimed by the next minute's

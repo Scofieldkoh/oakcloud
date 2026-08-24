@@ -25,6 +25,18 @@ const PERMANENT_ERROR_CODES = new Set([
   'SCHEDULE_LIMIT_EXCEEDED',
   'DUPLICATE_SCHEDULE_ENTRY',
 ]);
+const PUBLIC_RECONCILIATION_CODES = new Set([
+  ...PERMANENT_ERROR_CODES,
+  'MISSING_INPUT',
+  'CLIENT_SERVICE_NOT_FOUND',
+  'RULE_VERSION_MISSING',
+  'WORKSPACE_DISABLED',
+  'LEASE_LOST',
+  'RULE_WARNING',
+  'RECONCILIATION_FAILED',
+]);
+const SAFE_TRANSIENT_ERROR_MESSAGE = 'Reconciliation failed and will retry';
+const SAFE_PERMANENT_ERROR_MESSAGE = 'Reconciliation request completed with a permanent configuration error';
 
 type SafeReconciliationWarning = {
   code: string;
@@ -59,6 +71,27 @@ export type ReconciliationLogEvent = {
   writeMode: 'OBSERVE' | 'APPLY';
 };
 
+export type ReconciliationLogger = {
+  info: (message: string, ...args: unknown[]) => void;
+};
+
+function publicReconciliationCode(code: unknown): string {
+  return typeof code === 'string' && PUBLIC_RECONCILIATION_CODES.has(code)
+    ? code
+    : 'RECONCILIATION_FAILED';
+}
+
+function safeReconciliationWarning(warning: DeadlineReconciliationWarning): SafeReconciliationWarning {
+  const code = publicReconciliationCode(warning.code);
+  return {
+    code,
+    ...(warning.ruleId ? { ruleId: warning.ruleId } : {}),
+    ...(warning.ruleVersionId ? { ruleVersionId: warning.ruleVersionId } : {}),
+    ...(warning.missingFields ? { missingFields: [...warning.missingFields] } : {}),
+    ...(warning.permanent !== undefined ? { permanent: warning.permanent } : {}),
+  };
+}
+
 /**
  * Build the one safe structured event emitted for a reconciliation request.
  * Warning messages are intentionally discarded: rule text, notes, uploaded
@@ -75,16 +108,25 @@ export function buildReconciliationLogEvent(
     durationMs: Math.round(Math.max(0, input.durationMs) * 10) / 10,
     counts: { ...input.counts },
     preservedByReason: { ...input.preservedByReason },
-    warnings: input.warnings.map((warning) => ({
-      code: warning.code,
-      ...(warning.ruleId ? { ruleId: warning.ruleId } : {}),
-      ...(warning.ruleVersionId ? { ruleVersionId: warning.ruleVersionId } : {}),
-      ...(warning.missingFields ? { missingFields: [...warning.missingFields] } : {}),
-      ...(warning.permanent !== undefined ? { permanent: warning.permanent } : {}),
-    })),
+    warnings: input.warnings.map(safeReconciliationWarning),
     attempt: input.attempt,
     writeMode: input.writeMode,
   };
+}
+
+/**
+ * Structured reconciliation logging is observational only. A logger/sink
+ * failure must never change the already-finalized request outcome.
+ */
+export function emitReconciliationLogEvent(
+  logger: ReconciliationLogger,
+  input: ReconciliationLogEventInput,
+): void {
+  try {
+    logger.info('reconciliation_request', buildReconciliationLogEvent(input));
+  } catch {
+    // Logging is best effort; request state is persisted independently.
+  }
 }
 
 function emptyReconciliationCounts(): DeadlineReconciliationCounts {
@@ -311,7 +353,7 @@ async function processSingleRequest(
   const emitEvent = () => {
     if (eventEmitted) return;
     eventEmitted = true;
-    log.info('reconciliation_request', buildReconciliationLogEvent({
+    emitReconciliationLogEvent(log, {
       tenantId: req.tenantId,
       requestId: req.id,
       correlationId: req.correlationId,
@@ -321,7 +363,7 @@ async function processSingleRequest(
       warnings: eventWarnings,
       attempt: req.attemptCount,
       writeMode: eventWriteMode,
-    }));
+    });
   };
 
   try {
@@ -342,11 +384,11 @@ async function processSingleRequest(
           leaseOwner: null,
           leaseExpiresAt: null,
           summary: {
-            warnings: [{
+            warnings: [safeReconciliationWarning({
               code: 'WORKSPACE_DISABLED',
               message: 'Services workspace is disabled for this workspace',
               permanent: true,
-            }],
+            })],
           } as never,
         },
       });
@@ -383,8 +425,6 @@ async function processSingleRequest(
         reconciliationRequestId: req.id,
         assertLease,
       }, tx));
-      await assertLease();
-
       summaries.push(result);
 
       aggregatedCounts.created += result.counts.created;
@@ -398,11 +438,14 @@ async function processSingleRequest(
       }
 
       allWarnings.push(...result.warnings);
-    }
+      // Publish aggregation state immediately after each committed service.
+      // A subsequent service failure or lease loss must not erase prior work.
+      eventCounts = { ...aggregatedCounts };
+      eventPreservedByReason = { ...aggregatedPreserved };
+      eventWarnings = [...allWarnings];
 
-    eventCounts = { ...aggregatedCounts };
-    eventPreservedByReason = { ...aggregatedPreserved };
-    eventWarnings = [...allWarnings];
+      await assertLease();
+    }
 
     const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
       where: {
@@ -420,7 +463,7 @@ async function processSingleRequest(
           clientServiceCount: clientServiceIds.length,
           counts: aggregatedCounts,
           preservedByReason: aggregatedPreserved,
-          warnings: allWarnings,
+          warnings: allWarnings.map(safeReconciliationWarning),
         } as never,
       },
     });
@@ -431,11 +474,11 @@ async function processSingleRequest(
     }
     return { outcome: 'COMPLETED', summaries };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorCode = (error as { code?: string })?.code ?? 'RECONCILIATION_FAILED';
+    const errorCode = publicReconciliationCode((error as { code?: unknown })?.code);
 
     const isPermanent = PERMANENT_ERROR_CODES.has(errorCode);
-    eventWarnings.push({ code: errorCode, message: errorCode, permanent: isPermanent });
+    const safeErrorMessage = isPermanent ? SAFE_PERMANENT_ERROR_MESSAGE : SAFE_TRANSIENT_ERROR_MESSAGE;
+    eventWarnings.push({ code: errorCode, message: safeErrorMessage, permanent: isPermanent });
 
     if (errorCode === 'LEASE_LOST') return { outcome: 'LEASE_LOST', summaries: [] };
 
@@ -457,9 +500,9 @@ async function processSingleRequest(
           leaseOwner: null,
           leaseExpiresAt: null,
           lastErrorCode: errorCode,
-          lastErrorMessage: errorMessage,
+          lastErrorMessage: safeErrorMessage,
           summary: {
-            warnings: [{ code: errorCode, message: errorMessage, permanent: true }],
+            warnings: [safeReconciliationWarning({ code: errorCode, message: safeErrorMessage, permanent: true })],
             permanent: true,
           } as never,
           nextAttemptAt: now,
@@ -487,7 +530,7 @@ async function processSingleRequest(
         leaseOwner: null,
         leaseExpiresAt: null,
         lastErrorCode: errorCode,
-        lastErrorMessage: errorMessage,
+        lastErrorMessage: safeErrorMessage,
         nextAttemptAt: retryExhausted ? now : nextAttemptAt,
       },
     });
