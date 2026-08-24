@@ -4,7 +4,7 @@
 
 - Worktree: `C:\Users\Scotfield\OneDrive\Documents\Python Project\oakcloud_development\oakcloud\.worktrees\services-administration`
 - Branch: `codex/services-administration`
-- Task scope: Tasks 1–4 complete — billing persistence, schedules/backfill, occurrence reconciliation, and materialized coverage.
+- Task scope: Tasks 1–5 complete — billing persistence, schedules/backfill, occurrence and coverage reconciliation, and client-service billing configuration.
 - Implementation model: `gpt-5.6-luna`, reasoning `max`.
 - Review model: `gpt-5.6-sol`, reasoning `medium`.
 - Final branch review: `gpt-5.6-sol`, reasoning `xhigh`.
@@ -44,6 +44,7 @@
 | 2 | PASS / task-review-complete | `fcad7bba`, `1e3829e4` | `5 Important addressed; no new breakage; 1 Minor deferred` |
 | 3 | PASS / task-review-complete | `c36f141a`, `4f638b17`, `9a7df209`, `baa1e7e1` | `all findings addressed; no new breakage` |
 | 4 | PASS / task-review-complete | `f6c5c0ac`, `7e1353e2` | `4 Important and 2 Minor addressed; final 0 / 0 / 0` |
+| 5 | PASS / task-review-complete | `b809cbda`, `9c4ac9c3`, `c6e91916` | `8 Important and 1 Minor addressed across two rounds; final 0 / 0 / 0` |
 
 ## RED evidence
 
@@ -180,3 +181,19 @@
 - Ruling: ended/deleted services do not receive an invented coverage issue for unresolved Open billing occurrences. Those occurrences remain visible through the billing-occurrence projection; only genuine pre-existing unresolved coverage issues remain in the coverage result. The obsolete synthetic Task 4 issue key, if present from an intermediate build, is resolved with Observe/Apply count parity.
 - Ruling: production issue materialization uses PostgreSQL `INSERT ... ON CONFLICT` against the migration-managed partial open-issue index, preserving resolved history and returning truthful opened/refreshed outcomes. Delegate-only test clients use bounded unique-collision reload/update recovery. The raw PostgreSQL execution remains part of the deferred whole-implementation live-database gate.
 - Ruling: missing required CUSTOM interval/entry data is `MISSING_SCHEDULE_PARAMETER`; structurally present but malformed custom schedules are `INVALID_CUSTOM_SCHEDULE`. Safe bounded diagnostic details retain the stable schedule key and rolling-gap context.
+
+## Task 5 — client-service billing configuration forms and persistence
+
+### Implementation and review evidence
+
+- Initial implementation commit `b809cbda` (`feat: configure client service billing tracking`) added explicit Configured/Not-required/Unreviewed handling, structured fee schedules, transactional create/update/activation persistence, audit and enqueue integration, and the shared company-service form controls. Initial focused verification passed 9 files / 168 tests plus TypeScript, scoped lint, and diff checks.
+- Initial review reported 0 Critical, 6 Important, and 1 Minor findings. Fix commit `9c4ac9c3` (`fix: harden client service billing configuration`) constrained billing editor capabilities, required materializable schedules, added configurable CUSTOM intervals, enforced create lifecycle invariants, canonicalized structured/legacy schedules, added bounded audit snapshots, strengthened activation/reconciliation/state-transition tests, and removed React `act(...)` warnings.
+- First rereview accepted five original Important findings and the Minor, but retained one audit-lineage Important and found one new schedule-state Important. Fix commit `c6e91916` (`fix: preserve billing schedule and audit lineage`) made persistence and audit share exact fee IDs/immutable agreement lineage and preserved every authored entry/key across cadence/start edits.
+- Final Task 5 verification: 10 files / 185 tests; directly affected billing/worker compatibility 7 files / 106 tests; TypeScript, scoped zero-warning ESLint, and diff checks passed. Final rereview `task-5-rereview-2.md`: PASS, 0 Critical / 0 Important / 0 Minor.
+
+### Task 5 rulings
+
+- Ruling: the repeatable shared schedule-entry editor remains available to every service family, but billing mode exposes only expression sources and operands the billing evaluator supports. Deadline mode retains the full expression language. This applies the accepted Task 2 evaluator-input constraint at authoring time instead of allowing save-time surprises.
+- Ruling: `CONFIGURED` is a materializable state: it requires at least one active fee, an effective start date, and at least one stable schedule entry. CUSTOM recurrence exposes a validated 1–120 month interval. Default entry synthesis is limited to genuinely absent legacy configuration; ordinary cadence/start edits preserve all authored entries and keys.
+- Ruling: structured `scheduleConfig` is canonical and must agree with compatibility `billingFrequency` and `billingStartDate`. One helper is shared by create, update, agreement activation, coverage, and occurrence reconciliation. Omitted legacy create disposition remains `UNREVIEWED`; explicit manual create accepts only Configured or Not required, and Not required accepts no fee rows.
+- Ruling: fee/schedule audits use bounded allowlisted snapshots (up to 100 fee rows and 31 entries per row, bounded text) and must retain exact persisted fee identity and immutable agreement lineage. Switching to Not required archives active fee rows with the user's reason and queues reconciliation in the same Serializable transaction; future Open occurrences are cancelled while historical Open, Billed, and Waived rows are preserved under the existing reconciliation rules.
