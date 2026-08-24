@@ -11,6 +11,7 @@ type Occurrence = Record<string, unknown> & {
   generationKey: string;
   calculatedExpectedDate: Date;
   operativeExpectedDate: Date;
+  updatedAt: Date;
   dateOverridden: boolean;
   valueOverridden: boolean;
   status: string;
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   businessCalendar: { findFirst: vi.fn() },
   billingOccurrence: {
     findMany: vi.fn(),
+    findFirst: vi.fn(),
     createMany: vi.fn(),
     updateMany: vi.fn(),
   },
@@ -90,6 +92,7 @@ function occurrence(overrides: Partial<Occurrence> = {}): Occurrence {
     generationKey: 'generation-1',
     calculatedExpectedDate: new Date('2026-09-01T00:00:00.000Z'),
     operativeExpectedDate: new Date('2026-09-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-08-18T00:00:00.000Z'),
     dateOverridden: false,
     valueOverridden: false,
     baseAmount: '100.00',
@@ -174,7 +177,7 @@ describe('reconcileClientServiceBilling', () => {
     expect(mocks.billingOccurrence.createMany).not.toHaveBeenCalled();
   });
 
-  it('does not generate for a not-required service and reports future cancellation as a proposed change', async () => {
+  it('cancels future rows for a not-required service with request provenance', async () => {
     mocks.clientService.findFirst.mockResolvedValue(service({ billingDisposition: 'NOT_REQUIRED', billingNotRequiredReason: 'Included elsewhere' }));
     mocks.billingOccurrence.findMany.mockResolvedValue([occurrence({ billingPeriodKey: '2026-09' })]);
 
@@ -182,10 +185,18 @@ describe('reconcileClientServiceBilling', () => {
 
     expect(result.created).toBe(0);
     expect(result.cancelled).toBe(1);
-    expect(result.warnings).toEqual(expect.arrayContaining([
+    expect(result.warnings).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'CANCELLATION_ACTOR_REQUIRED' }),
     ]));
-    expect(mocks.billingOccurrence.updateMany).not.toHaveBeenCalled();
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'CANCELLED',
+        cancelledById: null,
+        cancellationReconciliationRequestId: 'request-1',
+        cancelledAt: expect.any(Date),
+        cancellationReason: expect.any(String),
+      }),
+    }));
   });
 
   it('preserves existing rows when a fee-line schedule is incomplete', async () => {
@@ -207,7 +218,6 @@ describe('reconcileClientServiceBilling', () => {
   it('refreshes calculated/base values while retaining operative overrides', async () => {
     const generation = `billing-v1-${hashConfiguration({
       feeLineId: 'fee-1',
-      config: feeLine().scheduleConfig,
     })}`;
     const overridden = occurrence({
       id: 'occ-overridden',
@@ -228,7 +238,7 @@ describe('reconcileClientServiceBilling', () => {
 
     expect(result.preservedByReason.OVERRIDDEN).toBe(1);
     expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 'occ-overridden', tenantId: 'tenant-1', clientServiceId: 'service-1' },
+      where: expect.objectContaining({ id: 'occ-overridden', tenantId: 'tenant-1', clientServiceId: 'service-1' }),
       data: expect.objectContaining({
         calculatedExpectedDate: new Date('2026-09-01T00:00:00.000Z'),
         baseAmount: '100.00',
@@ -251,9 +261,100 @@ describe('reconcileClientServiceBilling', () => {
       data: expect.objectContaining({
         status: 'CANCELLED',
         cancelledById: 'user-1',
+        cancellationReconciliationRequestId: 'request-1',
         cancelledAt: expect.any(Date),
         cancellationReason: expect.any(String),
       }),
     }));
+  });
+
+  it.each([
+    ['BILLED', { status: 'BILLED' }, 'BILLED'],
+    ['WAIVED', { status: 'WAIVED' }, 'WAIVED'],
+    ['date override', { dateOverridden: true, operativeExpectedDate: new Date('2026-09-15') }, 'OVERRIDDEN'],
+    ['value override', { valueOverridden: true, operativeAmount: '125.00' }, 'OVERRIDDEN'],
+  ] as const)('does not overwrite a concurrent %s transition when recalculating', async (_label, freshChanges, preservedReason) => {
+    const generation = `billing-v1-${hashConfiguration({
+      feeLineId: 'fee-1',
+    })}`;
+    const stale = occurrence({ generationKey: generation, baseAmount: '90.00' });
+    const fresh = occurrence({ generationKey: generation, ...freshChanges });
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany.mockResolvedValue({ count: 0 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.recalculated).toBe(0);
+    expect(result.preservedByReason[preservedReason]).toBe(1);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id: stale.id,
+        tenantId: input.tenantId,
+        clientServiceId: input.clientServiceId,
+        feeLineId: stale.feeLineId,
+        billingPeriodKey: stale.billingPeriodKey,
+        scheduleEntryKey: stale.scheduleEntryKey,
+        generationKey: stale.generationKey,
+        updatedAt: stale.updatedAt,
+        status: 'OPEN',
+        operativeExpectedDate: { gte: new Date('2026-08-18T00:00:00.000Z') },
+        dateOverridden: stale.dateOverridden,
+        valueOverridden: stale.valueOverridden,
+      }),
+    }));
+  });
+
+  it('does not report a cancellation when a concurrent write changes its optimistic token', async () => {
+    mocks.billingOccurrence.findMany.mockResolvedValue([occurrence({ generationKey: 'old-generation' })]);
+    mocks.billingOccurrence.updateMany.mockResolvedValue({ count: 0 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(occurrence({ notes: 'concurrent edit' }));
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.cancelled).toBe(0);
+    expect(result.preserved).toBe(1);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        updatedAt: new Date('2026-08-18T00:00:00.000Z'),
+        status: 'OPEN',
+        operativeExpectedDate: { gte: new Date('2026-08-18T00:00:00.000Z') },
+        dateOverridden: false,
+        valueOverridden: false,
+      }),
+    }));
+  });
+
+  it('keeps the generation stable across ordinary schedule edits while changing fee-line lifecycle identity', async () => {
+    const run = async (line: Record<string, unknown>) => {
+      mocks.billingOccurrence.findMany.mockResolvedValue([]);
+      mocks.clientService.findFirst.mockResolvedValue(service({ feeLines: [line] }));
+      await reconcileClientServiceBilling(input);
+      return (mocks.billingOccurrence.createMany.mock.calls.at(-1)?.[0].data as Array<Record<string, unknown>>)[0].generationKey;
+    };
+
+    const first = await run(feeLine());
+    const reordered = await run(feeLine({
+      scheduleConfig: {
+        ...feeLine().scheduleConfig as Record<string, unknown>,
+        scheduleEntries: [...(feeLine().scheduleConfig as Record<string, unknown>).scheduleEntries as Array<Record<string, unknown>>].reverse(),
+      },
+    }));
+    const edited = await run(feeLine({
+      scheduleConfig: {
+        ...feeLine().scheduleConfig as Record<string, unknown>,
+        scheduleEntries: [{
+          key: 'default',
+          label: 'Edited billing date',
+          expression: { kind: 'DAY_OF_MONTH', day: 2 },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
+    }));
+    const reactivated = await run(feeLine({ id: 'fee-2' }));
+
+    expect(reordered).toBe(first);
+    expect(edited).toBe(first);
+    expect(reactivated).not.toBe(first);
   });
 });

@@ -87,7 +87,7 @@ export type ReconcileClientServiceBillingInput = {
   horizonEnd: DateOnly;
   writeMode: 'OBSERVE' | 'APPLY';
   reconciliationRequestId: string;
-  /** Required for APPLY cancellation writes because billing rows retain the actor. */
+  /** Optional human actor; automatic APPLY cancellations retain request provenance. */
   cancellationActorId?: string | null;
   assertLease?: () => Promise<void>;
 };

@@ -6,7 +6,7 @@ import type { TenantAwareParams } from '@/lib/types';
 import { clientServiceDeadlineImpactSchema, clientServiceDeadlineRulesSchema, type ClientServiceDeadlineRuleInput, type ClientServiceDeadlineScheduleSnapshot, type SearchClientServicesInput, type UpdateClientServiceInput } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
-import { clientServiceInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
+import { clientServiceInclude, clientServiceInternalInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
 import { summarizeClientServiceFees } from './fee-summary';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 import {
@@ -413,7 +413,12 @@ async function loadCompanyRuleSource(
   return isRecord(company) ? company : {};
 }
 
-async function requireService(id: string, params: ClientServiceAccessParams, db: Prisma.TransactionClient | typeof prisma = prisma) {
+async function requireService<T extends Prisma.ClientServiceInclude = typeof clientServiceInclude>(
+  id: string,
+  params: ClientServiceAccessParams,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+  include: T = clientServiceInclude as T,
+): Promise<Prisma.ClientServiceGetPayload<{ include: T }>> {
   const companyScope = params.allCompaniesAccess
     ? { tenantId: params.tenantId, deletedAt: null }
     : params.accessibleCompanyIds !== undefined
@@ -426,7 +431,7 @@ async function requireService(id: string, params: ClientServiceAccessParams, db:
       deletedAt: null,
       ...(companyScope ? { company: companyScope } : {}),
     },
-    include: clientServiceInclude,
+    include,
   });
   if (!service) throw new NotFoundError('Client service not found');
   return service;
@@ -810,7 +815,7 @@ export async function getClientService(id: string, params: ClientServiceAccessPa
 
 export async function updateClientService(id: string, input: UpdateClientServiceInput, params: ClientServiceAccessParams): Promise<ClientServiceDto> {
   const updated: ClientServiceRecord = await prisma.$transaction(async (tx): Promise<ClientServiceRecord> => {
-    const current = await requireService(id, params, tx);
+    const current = await requireService(id, params, tx, clientServiceInternalInclude);
     if (current.updatedAt.toISOString() !== input.expectedUpdatedAt) {
       throw new ConflictError('This service was updated by someone else. Reload it and try again.');
     }
@@ -881,10 +886,11 @@ export async function updateClientService(id: string, input: UpdateClientService
         deadlineRuleValidation = currentDeadlineRuleValidation;
       }
     }
-    const feeSummaryBefore = summarizeClientServiceFees(current.feeLines);
+    const activeCurrentFeeLines = current.feeLines.filter((fee) => fee.isActive !== false && fee.deletedAt == null);
+    const feeSummaryBefore = summarizeClientServiceFees(activeCurrentFeeLines);
     const feeSummaryAfter = input.feeLines ? summarizeClientServiceFees(input.feeLines) : feeSummaryBefore;
     const feesChanged = input.feeLines !== undefined && !sameJson(
-      current.feeLines.map((fee) => ({ id: fee.id, description: fee.description, amount: fee.amount.toFixed(2), currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: dateOnly(fee.billingStartDate), displayOrder: fee.displayOrder })),
+      activeCurrentFeeLines.map((fee) => ({ id: fee.id, description: fee.description, amount: fee.amount.toFixed(2), currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: dateOnly(fee.billingStartDate), displayOrder: fee.displayOrder })),
       input.feeLines.map((fee) => ({ ...fee, customFrequencyLabel: fee.customFrequencyLabel ?? null, billingStartDate: fee.billingStartDate ?? null })),
     );
     if (Object.keys(scalarChanges).length === 0 && !fieldValuesChanged && !feesChanged && !deadlineRulesChanged) return current;
@@ -954,6 +960,8 @@ export async function updateClientService(id: string, input: UpdateClientService
       const newFeeLines: Array<Record<string, unknown>> = [];
       for (const fee of input.feeLines) {
         const existing = current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt == null);
+        const archived = fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt != null) : undefined;
+        if (archived) throw new ValidationError('Archived fee lines cannot be submitted in a service edit');
         const data = {
           description: fee.description,
           amount: new Prisma.Decimal(fee.amount),
@@ -972,7 +980,6 @@ export async function updateClientService(id: string, input: UpdateClientService
             data,
           });
         } else {
-          const archived = fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt != null) : undefined;
           newFeeLines.push({
             id: archived || !fee.id ? randomUUID() : fee.id,
             tenantId: params.tenantId,
@@ -996,7 +1003,7 @@ export async function updateClientService(id: string, input: UpdateClientService
     }
 
     const result = await requireService(id, params, tx);
-    const reconciliationCorrelationId = scheduleConfigurationChanged
+    const reconciliationCorrelationId = (scheduleConfigurationChanged || feesChanged)
       ? `client-service-update-${id}-${Date.now()}`
       : null;
     const persistedDeadlineRuleRows = ((current as ClientServiceRecord & { deadlineRules?: ClientServiceDeadlineRuleRecord[] }).deadlineRules ?? []);

@@ -334,6 +334,7 @@ export type ServiceScheduleReconciliationRequestWhereInput = {
   requestedById?: Prisma.StringNullableFilter<"ServiceScheduleReconciliationRequest"> | string | null
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   requestedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceListRelationFilter
 }
 
 export type ServiceScheduleReconciliationRequestOrderByWithRelationInput = {
@@ -359,11 +360,13 @@ export type ServiceScheduleReconciliationRequestOrderByWithRelationInput = {
   requestedById?: Prisma.SortOrderInput | Prisma.SortOrder
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   requestedBy?: Prisma.UserOrderByWithRelationInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceOrderByRelationAggregateInput
 }
 
 export type ServiceScheduleReconciliationRequestWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   dedupeKey?: string
+  tenantId_id?: Prisma.ServiceScheduleReconciliationRequestTenantIdIdCompoundUniqueInput
   AND?: Prisma.ServiceScheduleReconciliationRequestWhereInput | Prisma.ServiceScheduleReconciliationRequestWhereInput[]
   OR?: Prisma.ServiceScheduleReconciliationRequestWhereInput[]
   NOT?: Prisma.ServiceScheduleReconciliationRequestWhereInput | Prisma.ServiceScheduleReconciliationRequestWhereInput[]
@@ -387,7 +390,8 @@ export type ServiceScheduleReconciliationRequestWhereUniqueInput = Prisma.AtLeas
   requestedById?: Prisma.StringNullableFilter<"ServiceScheduleReconciliationRequest"> | string | null
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   requestedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-}, "id" | "dedupeKey">
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceListRelationFilter
+}, "id" | "dedupeKey" | "tenantId_id">
 
 export type ServiceScheduleReconciliationRequestOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -464,6 +468,7 @@ export type ServiceScheduleReconciliationRequestCreateInput = {
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   tenant: Prisma.WorkspaceCreateNestedOneWithoutReconciliationRequestsInput
   requestedBy?: Prisma.UserCreateNestedOneWithoutRequestedScheduleReconciliationsInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancellationReconciliationRequestInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedCreateInput = {
@@ -487,6 +492,7 @@ export type ServiceScheduleReconciliationRequestUncheckedCreateInput = {
   updatedAt?: Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   requestedById?: string | null
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancellationReconciliationRequestInput
 }
 
 export type ServiceScheduleReconciliationRequestUpdateInput = {
@@ -510,6 +516,7 @@ export type ServiceScheduleReconciliationRequestUpdateInput = {
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutReconciliationRequestsNestedInput
   requestedBy?: Prisma.UserUpdateOneWithoutRequestedScheduleReconciliationsNestedInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUpdateManyWithoutCancellationReconciliationRequestNestedInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedUpdateInput = {
@@ -533,6 +540,7 @@ export type ServiceScheduleReconciliationRequestUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   requestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliationRequestNestedInput
 }
 
 export type ServiceScheduleReconciliationRequestCreateManyInput = {
@@ -610,6 +618,16 @@ export type ServiceScheduleReconciliationRequestListRelationFilter = {
 
 export type ServiceScheduleReconciliationRequestOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type ServiceScheduleReconciliationRequestNullableScalarRelationFilter = {
+  is?: Prisma.ServiceScheduleReconciliationRequestWhereInput | null
+  isNot?: Prisma.ServiceScheduleReconciliationRequestWhereInput | null
+}
+
+export type ServiceScheduleReconciliationRequestTenantIdIdCompoundUniqueInput = {
+  tenantId: string
+  id: string
 }
 
 export type ServiceScheduleReconciliationRequestCountOrderByAggregateInput = {
@@ -771,6 +789,22 @@ export type ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutReques
   deleteMany?: Prisma.ServiceScheduleReconciliationRequestScalarWhereInput | Prisma.ServiceScheduleReconciliationRequestScalarWhereInput[]
 }
 
+export type ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput = {
+  create?: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestCreateWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUncheckedCreateWithoutBillingOccurrenceCancellationsInput>
+  connectOrCreate?: Prisma.ServiceScheduleReconciliationRequestCreateOrConnectWithoutBillingOccurrenceCancellationsInput
+  connect?: Prisma.ServiceScheduleReconciliationRequestWhereUniqueInput
+}
+
+export type ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput = {
+  create?: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestCreateWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUncheckedCreateWithoutBillingOccurrenceCancellationsInput>
+  connectOrCreate?: Prisma.ServiceScheduleReconciliationRequestCreateOrConnectWithoutBillingOccurrenceCancellationsInput
+  upsert?: Prisma.ServiceScheduleReconciliationRequestUpsertWithoutBillingOccurrenceCancellationsInput
+  disconnect?: Prisma.ServiceScheduleReconciliationRequestWhereInput | boolean
+  delete?: Prisma.ServiceScheduleReconciliationRequestWhereInput | boolean
+  connect?: Prisma.ServiceScheduleReconciliationRequestWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestUpdateToOneWithWhereWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUpdateWithoutBillingOccurrenceCancellationsInput>, Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateWithoutBillingOccurrenceCancellationsInput>
+}
+
 export type EnumScheduleReconciliationScopeTypeFieldUpdateOperationsInput = {
   set?: $Enums.ScheduleReconciliationScopeType
 }
@@ -799,6 +833,7 @@ export type ServiceScheduleReconciliationRequestCreateWithoutTenantInput = {
   updatedAt?: Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   requestedBy?: Prisma.UserCreateNestedOneWithoutRequestedScheduleReconciliationsInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancellationReconciliationRequestInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedCreateWithoutTenantInput = {
@@ -821,6 +856,7 @@ export type ServiceScheduleReconciliationRequestUncheckedCreateWithoutTenantInpu
   updatedAt?: Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   requestedById?: string | null
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancellationReconciliationRequestInput
 }
 
 export type ServiceScheduleReconciliationRequestCreateOrConnectWithoutTenantInput = {
@@ -895,6 +931,7 @@ export type ServiceScheduleReconciliationRequestCreateWithoutRequestedByInput = 
   updatedAt?: Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   tenant: Prisma.WorkspaceCreateNestedOneWithoutReconciliationRequestsInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancellationReconciliationRequestInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedCreateWithoutRequestedByInput = {
@@ -917,6 +954,7 @@ export type ServiceScheduleReconciliationRequestUncheckedCreateWithoutRequestedB
   completedAt?: Date | string | null
   updatedAt?: Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancellationReconciliationRequestInput
 }
 
 export type ServiceScheduleReconciliationRequestCreateOrConnectWithoutRequestedByInput = {
@@ -943,6 +981,114 @@ export type ServiceScheduleReconciliationRequestUpdateWithWhereUniqueWithoutRequ
 export type ServiceScheduleReconciliationRequestUpdateManyWithWhereWithoutRequestedByInput = {
   where: Prisma.ServiceScheduleReconciliationRequestScalarWhereInput
   data: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestUpdateManyMutationInput, Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByInput>
+}
+
+export type ServiceScheduleReconciliationRequestCreateWithoutBillingOccurrenceCancellationsInput = {
+  id?: string
+  scopeType: $Enums.ScheduleReconciliationScopeType
+  scopeId: string
+  triggerType: string
+  correlationId: string
+  dedupeKey: string
+  status?: $Enums.ScheduleReconciliationStatus
+  attemptCount?: number
+  leaseOwner?: string | null
+  leaseExpiresAt?: Date | string | null
+  nextAttemptAt?: Date | string
+  lastErrorCode?: string | null
+  lastErrorMessage?: string | null
+  createdAt?: Date | string
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  updatedAt?: Date | string
+  summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutReconciliationRequestsInput
+  requestedBy?: Prisma.UserCreateNestedOneWithoutRequestedScheduleReconciliationsInput
+}
+
+export type ServiceScheduleReconciliationRequestUncheckedCreateWithoutBillingOccurrenceCancellationsInput = {
+  id?: string
+  tenantId: string
+  scopeType: $Enums.ScheduleReconciliationScopeType
+  scopeId: string
+  triggerType: string
+  correlationId: string
+  dedupeKey: string
+  status?: $Enums.ScheduleReconciliationStatus
+  attemptCount?: number
+  leaseOwner?: string | null
+  leaseExpiresAt?: Date | string | null
+  nextAttemptAt?: Date | string
+  lastErrorCode?: string | null
+  lastErrorMessage?: string | null
+  createdAt?: Date | string
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  updatedAt?: Date | string
+  summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  requestedById?: string | null
+}
+
+export type ServiceScheduleReconciliationRequestCreateOrConnectWithoutBillingOccurrenceCancellationsInput = {
+  where: Prisma.ServiceScheduleReconciliationRequestWhereUniqueInput
+  create: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestCreateWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUncheckedCreateWithoutBillingOccurrenceCancellationsInput>
+}
+
+export type ServiceScheduleReconciliationRequestUpsertWithoutBillingOccurrenceCancellationsInput = {
+  update: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestUpdateWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateWithoutBillingOccurrenceCancellationsInput>
+  create: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestCreateWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUncheckedCreateWithoutBillingOccurrenceCancellationsInput>
+  where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
+}
+
+export type ServiceScheduleReconciliationRequestUpdateToOneWithWhereWithoutBillingOccurrenceCancellationsInput = {
+  where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
+  data: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestUpdateWithoutBillingOccurrenceCancellationsInput, Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateWithoutBillingOccurrenceCancellationsInput>
+}
+
+export type ServiceScheduleReconciliationRequestUpdateWithoutBillingOccurrenceCancellationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  scopeType?: Prisma.EnumScheduleReconciliationScopeTypeFieldUpdateOperationsInput | $Enums.ScheduleReconciliationScopeType
+  scopeId?: Prisma.StringFieldUpdateOperationsInput | string
+  triggerType?: Prisma.StringFieldUpdateOperationsInput | string
+  correlationId?: Prisma.StringFieldUpdateOperationsInput | string
+  dedupeKey?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumScheduleReconciliationStatusFieldUpdateOperationsInput | $Enums.ScheduleReconciliationStatus
+  attemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  leaseOwner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAttemptAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastErrorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastErrorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutReconciliationRequestsNestedInput
+  requestedBy?: Prisma.UserUpdateOneWithoutRequestedScheduleReconciliationsNestedInput
+}
+
+export type ServiceScheduleReconciliationRequestUncheckedUpdateWithoutBillingOccurrenceCancellationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  scopeType?: Prisma.EnumScheduleReconciliationScopeTypeFieldUpdateOperationsInput | $Enums.ScheduleReconciliationScopeType
+  scopeId?: Prisma.StringFieldUpdateOperationsInput | string
+  triggerType?: Prisma.StringFieldUpdateOperationsInput | string
+  correlationId?: Prisma.StringFieldUpdateOperationsInput | string
+  dedupeKey?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumScheduleReconciliationStatusFieldUpdateOperationsInput | $Enums.ScheduleReconciliationStatus
+  attemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  leaseOwner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  leaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAttemptAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastErrorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastErrorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  requestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ServiceScheduleReconciliationRequestCreateManyTenantInput = {
@@ -987,6 +1133,7 @@ export type ServiceScheduleReconciliationRequestUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   requestedBy?: Prisma.UserUpdateOneWithoutRequestedScheduleReconciliationsNestedInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUpdateManyWithoutCancellationReconciliationRequestNestedInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedUpdateWithoutTenantInput = {
@@ -1009,6 +1156,7 @@ export type ServiceScheduleReconciliationRequestUncheckedUpdateWithoutTenantInpu
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   requestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliationRequestNestedInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantInput = {
@@ -1075,6 +1223,7 @@ export type ServiceScheduleReconciliationRequestUpdateWithoutRequestedByInput = 
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutReconciliationRequestsNestedInput
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUpdateManyWithoutCancellationReconciliationRequestNestedInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedUpdateWithoutRequestedByInput = {
@@ -1097,6 +1246,7 @@ export type ServiceScheduleReconciliationRequestUncheckedUpdateWithoutRequestedB
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   summary?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  billingOccurrenceCancellations?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliationRequestNestedInput
 }
 
 export type ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByInput = {
@@ -1122,6 +1272,35 @@ export type ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutReques
 }
 
 
+/**
+ * Count Type ServiceScheduleReconciliationRequestCountOutputType
+ */
+
+export type ServiceScheduleReconciliationRequestCountOutputType = {
+  billingOccurrenceCancellations: number
+}
+
+export type ServiceScheduleReconciliationRequestCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  billingOccurrenceCancellations?: boolean | ServiceScheduleReconciliationRequestCountOutputTypeCountBillingOccurrenceCancellationsArgs
+}
+
+/**
+ * ServiceScheduleReconciliationRequestCountOutputType without action
+ */
+export type ServiceScheduleReconciliationRequestCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceScheduleReconciliationRequestCountOutputType
+   */
+  select?: Prisma.ServiceScheduleReconciliationRequestCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ServiceScheduleReconciliationRequestCountOutputType without action
+ */
+export type ServiceScheduleReconciliationRequestCountOutputTypeCountBillingOccurrenceCancellationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingOccurrenceWhereInput
+}
+
 
 export type ServiceScheduleReconciliationRequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1146,6 +1325,8 @@ export type ServiceScheduleReconciliationRequestSelect<ExtArgs extends runtime.T
   requestedById?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   requestedBy?: boolean | Prisma.ServiceScheduleReconciliationRequest$requestedByArgs<ExtArgs>
+  billingOccurrenceCancellations?: boolean | Prisma.ServiceScheduleReconciliationRequest$billingOccurrenceCancellationsArgs<ExtArgs>
+  _count?: boolean | Prisma.ServiceScheduleReconciliationRequestCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["serviceScheduleReconciliationRequest"]>
 
 export type ServiceScheduleReconciliationRequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1225,6 +1406,8 @@ export type ServiceScheduleReconciliationRequestOmit<ExtArgs extends runtime.Typ
 export type ServiceScheduleReconciliationRequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   requestedBy?: boolean | Prisma.ServiceScheduleReconciliationRequest$requestedByArgs<ExtArgs>
+  billingOccurrenceCancellations?: boolean | Prisma.ServiceScheduleReconciliationRequest$billingOccurrenceCancellationsArgs<ExtArgs>
+  _count?: boolean | Prisma.ServiceScheduleReconciliationRequestCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ServiceScheduleReconciliationRequestIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -1240,6 +1423,7 @@ export type $ServiceScheduleReconciliationRequestPayload<ExtArgs extends runtime
   objects: {
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     requestedBy: Prisma.$UserPayload<ExtArgs> | null
+    billingOccurrenceCancellations: Prisma.$BillingOccurrencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1658,6 +1842,7 @@ export interface Prisma__ServiceScheduleReconciliationRequestClient<T, Null = ne
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   requestedBy<T extends Prisma.ServiceScheduleReconciliationRequest$requestedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceScheduleReconciliationRequest$requestedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  billingOccurrenceCancellations<T extends Prisma.ServiceScheduleReconciliationRequest$billingOccurrenceCancellationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceScheduleReconciliationRequest$billingOccurrenceCancellationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2119,6 +2304,30 @@ export type ServiceScheduleReconciliationRequest$requestedByArgs<ExtArgs extends
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
+}
+
+/**
+ * ServiceScheduleReconciliationRequest.billingOccurrenceCancellations
+ */
+export type ServiceScheduleReconciliationRequest$billingOccurrenceCancellationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingOccurrence
+   */
+  select?: Prisma.BillingOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingOccurrence
+   */
+  omit?: Prisma.BillingOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.BillingOccurrenceWhereInput
+  orderBy?: Prisma.BillingOccurrenceOrderByWithRelationInput | Prisma.BillingOccurrenceOrderByWithRelationInput[]
+  cursor?: Prisma.BillingOccurrenceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingOccurrenceScalarFieldEnum | Prisma.BillingOccurrenceScalarFieldEnum[]
 }
 
 /**

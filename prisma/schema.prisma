@@ -1499,6 +1499,7 @@ model BillingOccurrence {
   cancelledAt            DateTime?               @map("cancelled_at")
   cancelledById          String?                 @map("cancelled_by_id")
   cancellationReason     String?                 @map("cancellation_reason") @db.VarChar(1000)
+  cancellationReconciliationRequestId String?    @map("cancellation_reconciliation_request_id")
   createdAt              DateTime                @default(now()) @map("created_at")
   updatedAt              DateTime                @updatedAt @map("updated_at")
   tenant                 Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1510,6 +1511,7 @@ model BillingOccurrence {
   markedBilledBy         User?                   @relation("BillingOccurrenceBilledActor", fields: [markedBilledById], references: [id], onDelete: Restrict)
   waivedBy               User?                   @relation("BillingOccurrenceWaiverActor", fields: [waivedById], references: [id], onDelete: Restrict)
   cancelledBy            User?                   @relation("BillingOccurrenceCancellationActor", fields: [cancelledById], references: [id], onDelete: Restrict)
+  cancellationReconciliationRequest ServiceScheduleReconciliationRequest? @relation("BillingOccurrenceCancellationRequest", fields: [tenantId, cancellationReconciliationRequestId], references: [tenantId, id], onDelete: Restrict)
 
   @@unique([tenantId, feeLineId, billingPeriodKey, scheduleEntryKey, generationKey], map: "billing_occurrences_identity_key")
   @@index([tenantId, operativeExpectedDate, status])
@@ -1846,7 +1848,9 @@ model ServiceScheduleReconciliationRequest {
   requestedById    String?                         @map("requested_by_id")
   tenant           Workspace                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   requestedBy      User?                           @relation("ScheduleReconciliationRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  billingOccurrenceCancellations BillingOccurrence[] @relation("BillingOccurrenceCancellationRequest")
 
+  @@unique([tenantId, id], map: "service_schedule_reconciliation_requests_tenant_id_id_key")
   @@index([tenantId, status, nextAttemptAt])
   @@index([scopeType, scopeId, status])
   @@map("service_schedule_reconciliation_requests")

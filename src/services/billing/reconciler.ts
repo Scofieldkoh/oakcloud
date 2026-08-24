@@ -47,6 +47,7 @@ type StoredBillingOccurrence = {
   generationKey: string;
   calculatedExpectedDate: Date | string;
   operativeExpectedDate: Date | string;
+  updatedAt: Date | string;
   dateOverridden: boolean;
   valueOverridden?: boolean;
   status: string;
@@ -71,6 +72,7 @@ type EvaluatedProposal = {
 
 type BillingOccurrenceDelegate = {
   findMany?: (args: unknown) => Promise<unknown>;
+  findFirst?: (args: unknown) => Promise<unknown>;
   createMany?: (args: unknown) => Promise<{ count: number }>;
   upsert?: (args: unknown) => Promise<unknown>;
   updateMany?: (args: unknown) => Promise<{ count: number }>;
@@ -184,23 +186,12 @@ function warning(
   warnings.push({ code, message, ...(feeLineId ? { feeLineId } : {}), ...(permanent ? { permanent } : {}) });
 }
 
-function generationConfig(config: unknown): unknown {
-  const record = asRecord(config);
-  if (!Array.isArray(record.scheduleEntries)) return config;
-  return {
-    ...record,
-    // Entry keys, rather than editor order, are the billing identity. Keep a
-    // reorder from creating a second generation of the same occurrences.
-    scheduleEntries: [...record.scheduleEntries].sort((left, right) => (
-      String(asRecord(left).key ?? '').localeCompare(String(asRecord(right).key ?? ''))
-    )),
-  };
-}
-
-function generationKey(feeLine: BillingFeeLine, config: unknown): string {
+function generationKey(feeLine: BillingFeeLine): string {
+  // The fee-line row is the lifecycle identity. Schedule edits recalculate
+  // this generation in place; archival/replacement creates a new fee-line row
+  // and therefore a new generation without reopening archived occurrences.
   return `billing-v1-${hashConfiguration({
     feeLineId: feeLine.id,
-    config: generationConfig(config),
   })}`;
 }
 
@@ -248,16 +239,75 @@ async function loadExistingOccurrences(db: BillingDb, tenantId: string, clientSe
   return (Array.isArray(rows) ? rows : []) as StoredBillingOccurrence[];
 }
 
-async function updateOccurrence(
+async function loadOccurrence(
   db: BillingDb,
   tenantId: string,
   clientServiceId: string,
   occurrenceId: string,
-  data: Record<string, unknown>,
-): Promise<void> {
+): Promise<StoredBillingOccurrence | null> {
   const delegate = (db as unknown as { billingOccurrence?: BillingOccurrenceDelegate }).billingOccurrence;
-  if (!delegate?.updateMany) return;
-  await delegate.updateMany({ where: { id: occurrenceId, tenantId, clientServiceId }, data });
+  if (!delegate) return null;
+  const where = { id: occurrenceId, tenantId, clientServiceId };
+  if (delegate.findFirst) {
+    const row = await delegate.findFirst({ where });
+    return row && typeof row === 'object' ? row as StoredBillingOccurrence : null;
+  }
+  if (delegate.findMany) {
+    const rows = await delegate.findMany({ where, take: 1 });
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return row && typeof row === 'object' ? row as StoredBillingOccurrence : null;
+  }
+  return null;
+}
+
+async function updateOccurrence(
+  db: BillingDb,
+  tenantId: string,
+  clientServiceId: string,
+  occurrence: StoredBillingOccurrence,
+  today: DateOnly,
+  data: Record<string, unknown>,
+): Promise<number> {
+  const delegate = (db as unknown as { billingOccurrence?: BillingOccurrenceDelegate }).billingOccurrence;
+  if (!delegate?.updateMany) return 0;
+  const result = await delegate.updateMany({
+    where: {
+      id: occurrence.id,
+      tenantId,
+      clientServiceId,
+      feeLineId: occurrence.feeLineId,
+      billingPeriodKey: occurrence.billingPeriodKey,
+      scheduleEntryKey: occurrence.scheduleEntryKey,
+      generationKey: occurrence.generationKey,
+      updatedAt: occurrence.updatedAt,
+      status: 'OPEN',
+      operativeExpectedDate: { gte: dateValue(today) },
+      dateOverridden: Boolean(occurrence.dateOverridden),
+      valueOverridden: Boolean(occurrence.valueOverridden),
+    },
+    data,
+  });
+  return result?.count ?? 0;
+}
+
+function recordPreserved(
+  result: BillingReconciliationResult,
+  occurrence: StoredBillingOccurrence,
+  today: DateOnly,
+): void {
+  const reason = preserveReason(occurrence, today);
+  result.preserved += 1;
+  result.preservedByReason[reason] += 1;
+}
+
+async function preserveAfterConcurrentChange(
+  result: BillingReconciliationResult,
+  db: BillingDb,
+  input: ReconcileClientServiceBillingInput,
+  occurrence: StoredBillingOccurrence,
+): Promise<void> {
+  const current = await loadOccurrence(db, input.tenantId, input.clientServiceId, occurrence.id);
+  recordPreserved(result, current ?? occurrence, input.today);
 }
 
 function dateChanged(left: unknown, right: DateOnly): boolean {
@@ -273,25 +323,15 @@ async function cancelOccurrence(
   input: ReconcileClientServiceBillingInput,
   db: BillingDb,
   occurrence: StoredBillingOccurrence,
-  warnings: BillingReconciliationWarning[],
   reason: string,
-): Promise<void> {
-  if (input.writeMode !== 'APPLY') return;
-  if (!input.cancellationActorId) {
-    warning(
-      warnings,
-      'CANCELLATION_ACTOR_REQUIRED',
-      'A user actor is required to persist automatic billing cancellation',
-      occurrence.feeLineId,
-      true,
-    );
-    return;
-  }
-  await updateOccurrence(db, input.tenantId, input.clientServiceId, occurrence.id, {
+): Promise<number> {
+  if (input.writeMode !== 'APPLY') return 0;
+  return updateOccurrence(db, input.tenantId, input.clientServiceId, occurrence, input.today, {
     status: 'CANCELLED',
     cancelledAt: new Date(),
-    cancelledById: input.cancellationActorId,
-    cancellationReason: reason,
+    cancelledById: input.cancellationActorId ?? null,
+    cancellationReason: reason.trim(),
+    cancellationReconciliationRequestId: input.reconciliationRequestId,
   });
 }
 
@@ -436,7 +476,7 @@ export async function reconcileClientServiceBilling(
         skipCleanupFeeLineIds.add(feeLine.id);
         continue;
       }
-      const generation = generationKey(feeLine, config);
+      const generation = generationKey(feeLine);
       try {
         const evaluated = evaluateBillingSchedule({
           config,
@@ -513,13 +553,26 @@ export async function reconcileClientServiceBilling(
     if (!valueOverride && valueChanged(existing.operativeAmount, proposal.amount)) data.operativeAmount = proposal.amount;
     if (!valueOverride && existing.operativeCurrency !== proposal.currency) data.operativeCurrency = proposal.currency;
     if (Object.keys(data).length > 0) {
-      if (dateOverride || valueOverride) {
-        result.preserved += 1;
-        result.preservedByReason.OVERRIDDEN += 1;
+      if (input.writeMode === 'OBSERVE') {
+        if (dateOverride || valueOverride) {
+          result.preserved += 1;
+          result.preservedByReason.OVERRIDDEN += 1;
+        } else {
+          result.recalculated += 1;
+        }
       } else {
-        result.recalculated += 1;
+        const updated = await updateOccurrence(db, input.tenantId, input.clientServiceId, existing, input.today, data);
+        if (updated === 1) {
+          if (dateOverride || valueOverride) {
+            result.preserved += 1;
+            result.preservedByReason.OVERRIDDEN += 1;
+          } else {
+            result.recalculated += 1;
+          }
+        } else {
+          await preserveAfterConcurrentChange(result, db, input, existing);
+        }
       }
-      if (input.writeMode === 'APPLY') await updateOccurrence(db, input.tenantId, input.clientServiceId, existing.id, data);
     } else {
       // The row is still a valid future generated identity, even when no value changed.
       result.preserved += dateOverride || valueOverride ? 1 : 0;
@@ -547,12 +600,21 @@ export async function reconcileClientServiceBilling(
       continue;
     }
     if (isFutureOpenEligible(occurrence, input.today) && (shouldCancelUnmatched || disposition === 'CONFIGURED')) {
-      result.cancelled += 1;
-      await cancelOccurrence(input, db, occurrence, result.warnings, serviceDeleted
+      const cancellationReason = serviceDeleted
         ? 'Client service archived or deleted'
         : disposition === 'NOT_REQUIRED'
           ? 'Billing marked not required'
-          : 'Fee-line schedule removed or replaced');
+          : 'Fee-line schedule removed or replaced';
+      if (input.writeMode === 'OBSERVE') {
+        result.cancelled += 1;
+      } else {
+        const cancelled = await cancelOccurrence(input, db, occurrence, cancellationReason);
+        if (cancelled === 1) {
+          result.cancelled += 1;
+        } else {
+          await preserveAfterConcurrentChange(result, db, input, occurrence);
+        }
+      }
       continue;
     }
     result.preserved += 1;

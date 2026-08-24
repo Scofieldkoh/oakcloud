@@ -9,6 +9,11 @@ describe('billing tracking schema', () => {
     'prisma/migrations/20260817110000_billing_tracking/migration.sql',
   );
   const migration = existsSync(migrationPath) ? readFileSync(migrationPath, 'utf8') : '';
+  const provenanceMigrationPath = resolve(
+    process.cwd(),
+    'prisma/migrations/20260824100000_billing_reconciliation_provenance/migration.sql',
+  );
+  const provenanceMigration = existsSync(provenanceMigrationPath) ? readFileSync(provenanceMigrationPath, 'utf8') : '';
 
   const enumMembers = (name: string): string[] => {
     const match = schema.match(new RegExp(`enum ${name} \\{([\\s\\S]*?)\\n\\}`));
@@ -122,5 +127,16 @@ describe('billing tracking schema', () => {
     expect(schema).toContain('@relation("BillingOccurrenceBilledActor"');
     expect(schema).toContain('@relation("BillingOccurrenceWaiverActor"');
     expect(schema).toContain('@relation("BillingOccurrenceCancellationActor"');
+  });
+
+  it('attributes automatic cancellations to durable reconciliation requests', () => {
+    expect(schema).toMatch(/cancellationReconciliationRequestId\s+String\?\s+@map\("cancellation_reconciliation_request_id"\)/);
+    expect(schema).toContain('@relation("BillingOccurrenceCancellationRequest"');
+    expect(schema).toContain('@@unique([tenantId, id], map: "service_schedule_reconciliation_requests_tenant_id_id_key")');
+    expect(provenanceMigration).toContain('cancellation_reconciliation_request_id');
+    expect(provenanceMigration).toContain('billing_occurrences_cancellation_request_fkey');
+    expect(provenanceMigration).toContain('ON DELETE RESTRICT');
+    expect(provenanceMigration).toMatch(/"status" = 'CANCELLED'[\s\S]*?"cancelled_by_id" IS NOT NULL OR "cancellation_reconciliation_request_id" IS NOT NULL/);
+    expect(provenanceMigration).toMatch(/"status" <> 'CANCELLED'[\s\S]*?"cancellation_reconciliation_request_id" IS NULL/);
   });
 });

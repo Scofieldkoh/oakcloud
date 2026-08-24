@@ -39,6 +39,12 @@ export const clientServiceInclude = {
   },
 } satisfies Prisma.ClientServiceInclude;
 
+export const clientServiceInternalInclude = {
+  // Internal archival/lineage flows intentionally retain archived fee lines;
+  // public DTO mapping below filters them from normal service responses.
+  ...clientServiceInclude,
+} satisfies Prisma.ClientServiceInclude;
+
 export type ClientServiceRecord = Prisma.ClientServiceGetPayload<{
   include: typeof clientServiceInclude;
 }>;
@@ -62,16 +68,18 @@ export function toClientServiceDto(service: ClientServiceRecord): ClientServiceD
     startDate: dateOnly(service.startDate)!,
     endDate: dateOnly(service.endDate),
     fieldValues: (service.fieldValues ?? {}) as Record<string, string>,
-    feeLines: service.feeLines.map((fee) => ({
-      id: fee.id,
-      description: fee.description,
-      amount: fee.amount.toFixed(2),
-      currency: fee.currency,
-      billingFrequency: fee.billingFrequency,
-      customFrequencyLabel: fee.customFrequencyLabel,
-      billingStartDate: dateOnly(fee.billingStartDate),
-      displayOrder: fee.displayOrder,
-    })),
+    feeLines: service.feeLines
+      .filter((fee) => fee.isActive !== false && fee.deletedAt == null)
+      .map((fee) => ({
+        id: fee.id,
+        description: fee.description,
+        amount: fee.amount.toFixed(2),
+        currency: fee.currency,
+        billingFrequency: fee.billingFrequency,
+        customFrequencyLabel: fee.customFrequencyLabel,
+        billingStartDate: dateOnly(fee.billingStartDate),
+        displayOrder: fee.displayOrder,
+      })),
     deadlineRules: (service.deadlineRules ?? []).map((clientRule) => ({
       id: clientRule.id,
       ruleId: clientRule.ruleId,

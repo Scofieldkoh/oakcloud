@@ -1129,6 +1129,7 @@ export const BillingOccurrenceScalarFieldEnum = {
   cancelledAt: 'cancelledAt',
   cancelledById: 'cancelledById',
   cancellationReason: 'cancellationReason',
+  cancellationReconciliationRequestId: 'cancellationReconciliationRequestId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

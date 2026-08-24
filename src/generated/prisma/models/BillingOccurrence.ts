@@ -71,6 +71,7 @@ export type BillingOccurrenceMinAggregateOutputType = {
   cancelledAt: Date | null
   cancelledById: string | null
   cancellationReason: string | null
+  cancellationReconciliationRequestId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -110,6 +111,7 @@ export type BillingOccurrenceMaxAggregateOutputType = {
   cancelledAt: Date | null
   cancelledById: string | null
   cancellationReason: string | null
+  cancellationReconciliationRequestId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -149,6 +151,7 @@ export type BillingOccurrenceCountAggregateOutputType = {
   cancelledAt: number
   cancelledById: number
   cancellationReason: number
+  cancellationReconciliationRequestId: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -200,6 +203,7 @@ export type BillingOccurrenceMinAggregateInputType = {
   cancelledAt?: true
   cancelledById?: true
   cancellationReason?: true
+  cancellationReconciliationRequestId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -239,6 +243,7 @@ export type BillingOccurrenceMaxAggregateInputType = {
   cancelledAt?: true
   cancelledById?: true
   cancellationReason?: true
+  cancellationReconciliationRequestId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -278,6 +283,7 @@ export type BillingOccurrenceCountAggregateInputType = {
   cancelledAt?: true
   cancelledById?: true
   cancellationReason?: true
+  cancellationReconciliationRequestId?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -404,6 +410,7 @@ export type BillingOccurrenceGroupByOutputType = {
   cancelledAt: Date | null
   cancelledById: string | null
   cancellationReason: string | null
+  cancellationReconciliationRequestId: string | null
   createdAt: Date
   updatedAt: Date
   _count: BillingOccurrenceCountAggregateOutputType | null
@@ -466,6 +473,7 @@ export type BillingOccurrenceWhereInput = {
   cancelledAt?: Prisma.DateTimeNullableFilter<"BillingOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
+  cancellationReconciliationRequestId?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   createdAt?: Prisma.DateTimeFilter<"BillingOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BillingOccurrence"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
@@ -477,6 +485,7 @@ export type BillingOccurrenceWhereInput = {
   markedBilledBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   waivedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   cancelledBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  cancellationReconciliationRequest?: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestNullableScalarRelationFilter, Prisma.ServiceScheduleReconciliationRequestWhereInput> | null
 }
 
 export type BillingOccurrenceOrderByWithRelationInput = {
@@ -514,6 +523,7 @@ export type BillingOccurrenceOrderByWithRelationInput = {
   cancelledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   cancelledById?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationReconciliationRequestId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
@@ -525,6 +535,7 @@ export type BillingOccurrenceOrderByWithRelationInput = {
   markedBilledBy?: Prisma.UserOrderByWithRelationInput
   waivedBy?: Prisma.UserOrderByWithRelationInput
   cancelledBy?: Prisma.UserOrderByWithRelationInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestOrderByWithRelationInput
 }
 
 export type BillingOccurrenceWhereUniqueInput = Prisma.AtLeast<{
@@ -566,6 +577,7 @@ export type BillingOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   cancelledAt?: Prisma.DateTimeNullableFilter<"BillingOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
+  cancellationReconciliationRequestId?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   createdAt?: Prisma.DateTimeFilter<"BillingOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BillingOccurrence"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
@@ -577,6 +589,7 @@ export type BillingOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   markedBilledBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   waivedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   cancelledBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  cancellationReconciliationRequest?: Prisma.XOR<Prisma.ServiceScheduleReconciliationRequestNullableScalarRelationFilter, Prisma.ServiceScheduleReconciliationRequestWhereInput> | null
 }, "id" | "tenantId_feeLineId_billingPeriodKey_scheduleEntryKey_generationKey">
 
 export type BillingOccurrenceOrderByWithAggregationInput = {
@@ -614,6 +627,7 @@ export type BillingOccurrenceOrderByWithAggregationInput = {
   cancelledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   cancelledById?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationReconciliationRequestId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.BillingOccurrenceCountOrderByAggregateInput
@@ -661,6 +675,7 @@ export type BillingOccurrenceScalarWhereWithAggregatesInput = {
   cancelledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"BillingOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableWithAggregatesFilter<"BillingOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableWithAggregatesFilter<"BillingOccurrence"> | string | null
+  cancellationReconciliationRequestId?: Prisma.StringNullableWithAggregatesFilter<"BillingOccurrence"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"BillingOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"BillingOccurrence"> | Date | string
 }
@@ -702,6 +717,7 @@ export type BillingOccurrenceCreateInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateInput = {
@@ -739,6 +755,7 @@ export type BillingOccurrenceUncheckedCreateInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -780,6 +797,7 @@ export type BillingOccurrenceUpdateInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateInput = {
@@ -817,6 +835,7 @@ export type BillingOccurrenceUncheckedUpdateInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -856,6 +875,7 @@ export type BillingOccurrenceCreateManyInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -925,6 +945,7 @@ export type BillingOccurrenceUncheckedUpdateManyInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -982,6 +1003,7 @@ export type BillingOccurrenceCountOrderByAggregateInput = {
   cancelledAt?: Prisma.SortOrder
   cancelledById?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  cancellationReconciliationRequestId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -1026,6 +1048,7 @@ export type BillingOccurrenceMaxOrderByAggregateInput = {
   cancelledAt?: Prisma.SortOrder
   cancelledById?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  cancellationReconciliationRequestId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -1065,6 +1088,7 @@ export type BillingOccurrenceMinOrderByAggregateInput = {
   cancelledAt?: Prisma.SortOrder
   cancelledById?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  cancellationReconciliationRequestId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -1456,6 +1480,48 @@ export type EnumBillingOccurrenceStatusFieldUpdateOperationsInput = {
   set?: $Enums.BillingOccurrenceStatus
 }
 
+export type BillingOccurrenceCreateNestedManyWithoutCancellationReconciliationRequestInput = {
+  create?: Prisma.XOR<Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput> | Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput[] | Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput[]
+  connectOrCreate?: Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput[]
+  createMany?: Prisma.BillingOccurrenceCreateManyCancellationReconciliationRequestInputEnvelope
+  connect?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+}
+
+export type BillingOccurrenceUncheckedCreateNestedManyWithoutCancellationReconciliationRequestInput = {
+  create?: Prisma.XOR<Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput> | Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput[] | Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput[]
+  connectOrCreate?: Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput[]
+  createMany?: Prisma.BillingOccurrenceCreateManyCancellationReconciliationRequestInputEnvelope
+  connect?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+}
+
+export type BillingOccurrenceUpdateManyWithoutCancellationReconciliationRequestNestedInput = {
+  create?: Prisma.XOR<Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput> | Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput[] | Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput[]
+  connectOrCreate?: Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput[]
+  upsert?: Prisma.BillingOccurrenceUpsertWithWhereUniqueWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceUpsertWithWhereUniqueWithoutCancellationReconciliationRequestInput[]
+  createMany?: Prisma.BillingOccurrenceCreateManyCancellationReconciliationRequestInputEnvelope
+  set?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  disconnect?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  delete?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  connect?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  update?: Prisma.BillingOccurrenceUpdateWithWhereUniqueWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceUpdateWithWhereUniqueWithoutCancellationReconciliationRequestInput[]
+  updateMany?: Prisma.BillingOccurrenceUpdateManyWithWhereWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceUpdateManyWithWhereWithoutCancellationReconciliationRequestInput[]
+  deleteMany?: Prisma.BillingOccurrenceScalarWhereInput | Prisma.BillingOccurrenceScalarWhereInput[]
+}
+
+export type BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliationRequestNestedInput = {
+  create?: Prisma.XOR<Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput> | Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput[] | Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput[]
+  connectOrCreate?: Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput[]
+  upsert?: Prisma.BillingOccurrenceUpsertWithWhereUniqueWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceUpsertWithWhereUniqueWithoutCancellationReconciliationRequestInput[]
+  createMany?: Prisma.BillingOccurrenceCreateManyCancellationReconciliationRequestInputEnvelope
+  set?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  disconnect?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  delete?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  connect?: Prisma.BillingOccurrenceWhereUniqueInput | Prisma.BillingOccurrenceWhereUniqueInput[]
+  update?: Prisma.BillingOccurrenceUpdateWithWhereUniqueWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceUpdateWithWhereUniqueWithoutCancellationReconciliationRequestInput[]
+  updateMany?: Prisma.BillingOccurrenceUpdateManyWithWhereWithoutCancellationReconciliationRequestInput | Prisma.BillingOccurrenceUpdateManyWithWhereWithoutCancellationReconciliationRequestInput[]
+  deleteMany?: Prisma.BillingOccurrenceScalarWhereInput | Prisma.BillingOccurrenceScalarWhereInput[]
+}
+
 export type BillingOccurrenceCreateWithoutTenantInput = {
   id?: string
   billingPeriodKey: string
@@ -1492,6 +1558,7 @@ export type BillingOccurrenceCreateWithoutTenantInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutTenantInput = {
@@ -1528,6 +1595,7 @@ export type BillingOccurrenceUncheckedCreateWithoutTenantInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1596,6 +1664,7 @@ export type BillingOccurrenceScalarWhereInput = {
   cancelledAt?: Prisma.DateTimeNullableFilter<"BillingOccurrence"> | Date | string | null
   cancelledById?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   cancellationReason?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
+  cancellationReconciliationRequestId?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   createdAt?: Prisma.DateTimeFilter<"BillingOccurrence"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BillingOccurrence"> | Date | string
 }
@@ -1636,6 +1705,7 @@ export type BillingOccurrenceCreateWithoutDateOverriddenByInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutDateOverriddenByInput = {
@@ -1672,6 +1742,7 @@ export type BillingOccurrenceUncheckedCreateWithoutDateOverriddenByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1722,6 +1793,7 @@ export type BillingOccurrenceCreateWithoutValueOverriddenByInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutValueOverriddenByInput = {
@@ -1758,6 +1830,7 @@ export type BillingOccurrenceUncheckedCreateWithoutValueOverriddenByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1808,6 +1881,7 @@ export type BillingOccurrenceCreateWithoutMarkedBilledByInput = {
   valueOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenBillingOccurrenceValuesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutMarkedBilledByInput = {
@@ -1844,6 +1918,7 @@ export type BillingOccurrenceUncheckedCreateWithoutMarkedBilledByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1894,6 +1969,7 @@ export type BillingOccurrenceCreateWithoutWaivedByInput = {
   valueOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenBillingOccurrenceValuesInput
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutWaivedByInput = {
@@ -1930,6 +2006,7 @@ export type BillingOccurrenceUncheckedCreateWithoutWaivedByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1980,6 +2057,7 @@ export type BillingOccurrenceCreateWithoutCancelledByInput = {
   valueOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenBillingOccurrenceValuesInput
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutCancelledByInput = {
@@ -2016,6 +2094,7 @@ export type BillingOccurrenceUncheckedCreateWithoutCancelledByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2146,6 +2225,7 @@ export type BillingOccurrenceCreateWithoutCompanyInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutCompanyInput = {
@@ -2181,6 +2261,7 @@ export type BillingOccurrenceUncheckedCreateWithoutCompanyInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2247,6 +2328,7 @@ export type BillingOccurrenceCreateWithoutClientServiceInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutClientServiceInput = {
@@ -2281,6 +2363,7 @@ export type BillingOccurrenceUncheckedCreateWithoutClientServiceInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2347,6 +2430,7 @@ export type BillingOccurrenceCreateWithoutFeeLineInput = {
   markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
   cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestCreateNestedOneWithoutBillingOccurrenceCancellationsInput
 }
 
 export type BillingOccurrenceUncheckedCreateWithoutFeeLineInput = {
@@ -2381,6 +2465,7 @@ export type BillingOccurrenceUncheckedCreateWithoutFeeLineInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2409,6 +2494,109 @@ export type BillingOccurrenceUpdateWithWhereUniqueWithoutFeeLineInput = {
 export type BillingOccurrenceUpdateManyWithWhereWithoutFeeLineInput = {
   where: Prisma.BillingOccurrenceScalarWhereInput
   data: Prisma.XOR<Prisma.BillingOccurrenceUpdateManyMutationInput, Prisma.BillingOccurrenceUncheckedUpdateManyWithoutFeeLineInput>
+}
+
+export type BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput = {
+  id?: string
+  billingPeriodKey: string
+  scheduleEntryKey?: string
+  generationKey: string
+  calculatedExpectedDate: Date | string
+  operativeExpectedDate: Date | string
+  dateOverridden?: boolean
+  dateOverrideReason?: string | null
+  dateOverriddenAt?: Date | string | null
+  baseAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  baseCurrency: string
+  operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  operativeCurrency: string
+  valueOverridden?: boolean
+  valueOverrideReason?: string | null
+  valueOverriddenAt?: Date | string | null
+  status?: $Enums.BillingOccurrenceStatus
+  billedDate?: Date | string | null
+  markedBilledAt?: Date | string | null
+  externalReference?: string | null
+  notes?: string | null
+  waivedAt?: Date | string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancellationReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutBillingOccurrencesInput
+  company: Prisma.CompanyCreateNestedOneWithoutBillingOccurrencesInput
+  clientService: Prisma.ClientServiceCreateNestedOneWithoutBillingOccurrencesInput
+  feeLine: Prisma.ClientServiceFeeLineCreateNestedOneWithoutBillingOccurrencesInput
+  dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenBillingOccurrenceDatesInput
+  valueOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenBillingOccurrenceValuesInput
+  markedBilledBy?: Prisma.UserCreateNestedOneWithoutMarkedBilledBillingOccurrencesInput
+  waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedBillingOccurrencesInput
+  cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledBillingOccurrencesInput
+}
+
+export type BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput = {
+  id?: string
+  companyId: string
+  clientServiceId: string
+  feeLineId: string
+  billingPeriodKey: string
+  scheduleEntryKey?: string
+  generationKey: string
+  calculatedExpectedDate: Date | string
+  operativeExpectedDate: Date | string
+  dateOverridden?: boolean
+  dateOverrideReason?: string | null
+  dateOverriddenAt?: Date | string | null
+  dateOverriddenById?: string | null
+  baseAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  baseCurrency: string
+  operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  operativeCurrency: string
+  valueOverridden?: boolean
+  valueOverrideReason?: string | null
+  valueOverriddenAt?: Date | string | null
+  valueOverriddenById?: string | null
+  status?: $Enums.BillingOccurrenceStatus
+  billedDate?: Date | string | null
+  markedBilledAt?: Date | string | null
+  markedBilledById?: string | null
+  externalReference?: string | null
+  notes?: string | null
+  waivedAt?: Date | string | null
+  waivedById?: string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancelledById?: string | null
+  cancellationReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type BillingOccurrenceCreateOrConnectWithoutCancellationReconciliationRequestInput = {
+  where: Prisma.BillingOccurrenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput>
+}
+
+export type BillingOccurrenceCreateManyCancellationReconciliationRequestInputEnvelope = {
+  data: Prisma.BillingOccurrenceCreateManyCancellationReconciliationRequestInput | Prisma.BillingOccurrenceCreateManyCancellationReconciliationRequestInput[]
+  skipDuplicates?: boolean
+}
+
+export type BillingOccurrenceUpsertWithWhereUniqueWithoutCancellationReconciliationRequestInput = {
+  where: Prisma.BillingOccurrenceWhereUniqueInput
+  update: Prisma.XOR<Prisma.BillingOccurrenceUpdateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedUpdateWithoutCancellationReconciliationRequestInput>
+  create: Prisma.XOR<Prisma.BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationRequestInput>
+}
+
+export type BillingOccurrenceUpdateWithWhereUniqueWithoutCancellationReconciliationRequestInput = {
+  where: Prisma.BillingOccurrenceWhereUniqueInput
+  data: Prisma.XOR<Prisma.BillingOccurrenceUpdateWithoutCancellationReconciliationRequestInput, Prisma.BillingOccurrenceUncheckedUpdateWithoutCancellationReconciliationRequestInput>
+}
+
+export type BillingOccurrenceUpdateManyWithWhereWithoutCancellationReconciliationRequestInput = {
+  where: Prisma.BillingOccurrenceScalarWhereInput
+  data: Prisma.XOR<Prisma.BillingOccurrenceUpdateManyMutationInput, Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliationRequestInput>
 }
 
 export type BillingOccurrenceCreateManyTenantInput = {
@@ -2445,6 +2633,7 @@ export type BillingOccurrenceCreateManyTenantInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2485,6 +2674,7 @@ export type BillingOccurrenceUpdateWithoutTenantInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutTenantInput = {
@@ -2521,6 +2711,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutTenantInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2559,6 +2750,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutTenantInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2597,6 +2789,7 @@ export type BillingOccurrenceCreateManyDateOverriddenByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2635,6 +2828,7 @@ export type BillingOccurrenceCreateManyValueOverriddenByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2673,6 +2867,7 @@ export type BillingOccurrenceCreateManyMarkedBilledByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2711,6 +2906,7 @@ export type BillingOccurrenceCreateManyWaivedByInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2749,6 +2945,7 @@ export type BillingOccurrenceCreateManyCancelledByInput = {
   waiverReason?: string | null
   cancelledAt?: Date | string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2789,6 +2986,7 @@ export type BillingOccurrenceUpdateWithoutDateOverriddenByInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutDateOverriddenByInput = {
@@ -2825,6 +3023,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutDateOverriddenByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2863,6 +3062,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutDateOverriddenByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2903,6 +3103,7 @@ export type BillingOccurrenceUpdateWithoutValueOverriddenByInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutValueOverriddenByInput = {
@@ -2939,6 +3140,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutValueOverriddenByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2977,6 +3179,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutValueOverriddenByInput = 
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3017,6 +3220,7 @@ export type BillingOccurrenceUpdateWithoutMarkedBilledByInput = {
   valueOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenBillingOccurrenceValuesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutMarkedBilledByInput = {
@@ -3053,6 +3257,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutMarkedBilledByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3091,6 +3296,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3131,6 +3337,7 @@ export type BillingOccurrenceUpdateWithoutWaivedByInput = {
   valueOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenBillingOccurrenceValuesNestedInput
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutWaivedByInput = {
@@ -3167,6 +3374,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutWaivedByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3205,6 +3413,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutWaivedByInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3245,6 +3454,7 @@ export type BillingOccurrenceUpdateWithoutCancelledByInput = {
   valueOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenBillingOccurrenceValuesNestedInput
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutCancelledByInput = {
@@ -3281,6 +3491,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutCancelledByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3319,6 +3530,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCancelledByInput = {
   waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3356,6 +3568,7 @@ export type BillingOccurrenceCreateManyCompanyInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -3396,6 +3609,7 @@ export type BillingOccurrenceUpdateWithoutCompanyInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutCompanyInput = {
@@ -3431,6 +3645,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutCompanyInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3468,6 +3683,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCompanyInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3504,6 +3720,7 @@ export type BillingOccurrenceCreateManyClientServiceInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -3544,6 +3761,7 @@ export type BillingOccurrenceUpdateWithoutClientServiceInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutClientServiceInput = {
@@ -3578,6 +3796,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutClientServiceInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3614,6 +3833,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3650,6 +3870,7 @@ export type BillingOccurrenceCreateManyFeeLineInput = {
   cancelledAt?: Date | string | null
   cancelledById?: string | null
   cancellationReason?: string | null
+  cancellationReconciliationRequestId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -3690,6 +3911,7 @@ export type BillingOccurrenceUpdateWithoutFeeLineInput = {
   markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
   cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+  cancellationReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestUpdateOneWithoutBillingOccurrenceCancellationsNestedInput
 }
 
 export type BillingOccurrenceUncheckedUpdateWithoutFeeLineInput = {
@@ -3724,6 +3946,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutFeeLineInput = {
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -3731,6 +3954,160 @@ export type BillingOccurrenceUncheckedUpdateWithoutFeeLineInput = {
 export type BillingOccurrenceUncheckedUpdateManyWithoutFeeLineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  generationKey?: Prisma.StringFieldUpdateOperationsInput | string
+  calculatedExpectedDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeExpectedDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  baseAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  valueOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumBillingOccurrenceStatusFieldUpdateOperationsInput | $Enums.BillingOccurrenceStatus
+  billedDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  markedBilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  markedBilledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReconciliationRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type BillingOccurrenceCreateManyCancellationReconciliationRequestInput = {
+  id?: string
+  companyId: string
+  clientServiceId: string
+  feeLineId: string
+  billingPeriodKey: string
+  scheduleEntryKey?: string
+  generationKey: string
+  calculatedExpectedDate: Date | string
+  operativeExpectedDate: Date | string
+  dateOverridden?: boolean
+  dateOverrideReason?: string | null
+  dateOverriddenAt?: Date | string | null
+  dateOverriddenById?: string | null
+  baseAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  baseCurrency: string
+  operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  operativeCurrency: string
+  valueOverridden?: boolean
+  valueOverrideReason?: string | null
+  valueOverriddenAt?: Date | string | null
+  valueOverriddenById?: string | null
+  status?: $Enums.BillingOccurrenceStatus
+  billedDate?: Date | string | null
+  markedBilledAt?: Date | string | null
+  markedBilledById?: string | null
+  externalReference?: string | null
+  notes?: string | null
+  waivedAt?: Date | string | null
+  waivedById?: string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancelledById?: string | null
+  cancellationReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type BillingOccurrenceUpdateWithoutCancellationReconciliationRequestInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  generationKey?: Prisma.StringFieldUpdateOperationsInput | string
+  calculatedExpectedDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeExpectedDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  baseAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumBillingOccurrenceStatusFieldUpdateOperationsInput | $Enums.BillingOccurrenceStatus
+  billedDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  markedBilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutBillingOccurrencesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutBillingOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutBillingOccurrencesNestedInput
+  feeLine?: Prisma.ClientServiceFeeLineUpdateOneRequiredWithoutBillingOccurrencesNestedInput
+  dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenBillingOccurrenceDatesNestedInput
+  valueOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenBillingOccurrenceValuesNestedInput
+  markedBilledBy?: Prisma.UserUpdateOneWithoutMarkedBilledBillingOccurrencesNestedInput
+  waivedBy?: Prisma.UserUpdateOneWithoutWaivedBillingOccurrencesNestedInput
+  cancelledBy?: Prisma.UserUpdateOneWithoutCancelledBillingOccurrencesNestedInput
+}
+
+export type BillingOccurrenceUncheckedUpdateWithoutCancellationReconciliationRequestInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  feeLineId?: Prisma.StringFieldUpdateOperationsInput | string
+  billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  generationKey?: Prisma.StringFieldUpdateOperationsInput | string
+  calculatedExpectedDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeExpectedDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  baseAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  valueOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumBillingOccurrenceStatusFieldUpdateOperationsInput | $Enums.BillingOccurrenceStatus
+  billedDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  markedBilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  markedBilledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliationRequestInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  feeLineId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   generationKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3801,6 +4178,7 @@ export type BillingOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.Int
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  cancellationReconciliationRequestId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -3812,6 +4190,7 @@ export type BillingOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.Int
   markedBilledBy?: boolean | Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.BillingOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>
+  cancellationReconciliationRequest?: boolean | Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>
 }, ExtArgs["result"]["billingOccurrence"]>
 
 export type BillingOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -3849,6 +4228,7 @@ export type BillingOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.T
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  cancellationReconciliationRequestId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -3860,6 +4240,7 @@ export type BillingOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.T
   markedBilledBy?: boolean | Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.BillingOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>
+  cancellationReconciliationRequest?: boolean | Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>
 }, ExtArgs["result"]["billingOccurrence"]>
 
 export type BillingOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -3897,6 +4278,7 @@ export type BillingOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  cancellationReconciliationRequestId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -3908,6 +4290,7 @@ export type BillingOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   markedBilledBy?: boolean | Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.BillingOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>
+  cancellationReconciliationRequest?: boolean | Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>
 }, ExtArgs["result"]["billingOccurrence"]>
 
 export type BillingOccurrenceSelectScalar = {
@@ -3945,11 +4328,12 @@ export type BillingOccurrenceSelectScalar = {
   cancelledAt?: boolean
   cancelledById?: boolean
   cancellationReason?: boolean
+  cancellationReconciliationRequestId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type BillingOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "feeLineId" | "billingPeriodKey" | "scheduleEntryKey" | "generationKey" | "calculatedExpectedDate" | "operativeExpectedDate" | "dateOverridden" | "dateOverrideReason" | "dateOverriddenAt" | "dateOverriddenById" | "baseAmount" | "baseCurrency" | "operativeAmount" | "operativeCurrency" | "valueOverridden" | "valueOverrideReason" | "valueOverriddenAt" | "valueOverriddenById" | "status" | "billedDate" | "markedBilledAt" | "markedBilledById" | "externalReference" | "notes" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "createdAt" | "updatedAt", ExtArgs["result"]["billingOccurrence"]>
+export type BillingOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "feeLineId" | "billingPeriodKey" | "scheduleEntryKey" | "generationKey" | "calculatedExpectedDate" | "operativeExpectedDate" | "dateOverridden" | "dateOverrideReason" | "dateOverriddenAt" | "dateOverriddenById" | "baseAmount" | "baseCurrency" | "operativeAmount" | "operativeCurrency" | "valueOverridden" | "valueOverrideReason" | "valueOverriddenAt" | "valueOverriddenById" | "status" | "billedDate" | "markedBilledAt" | "markedBilledById" | "externalReference" | "notes" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "cancellationReconciliationRequestId" | "createdAt" | "updatedAt", ExtArgs["result"]["billingOccurrence"]>
 export type BillingOccurrenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -3960,6 +4344,7 @@ export type BillingOccurrenceInclude<ExtArgs extends runtime.Types.Extensions.In
   markedBilledBy?: boolean | Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.BillingOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>
+  cancellationReconciliationRequest?: boolean | Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>
 }
 export type BillingOccurrenceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -3971,6 +4356,7 @@ export type BillingOccurrenceIncludeCreateManyAndReturn<ExtArgs extends runtime.
   markedBilledBy?: boolean | Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.BillingOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>
+  cancellationReconciliationRequest?: boolean | Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>
 }
 export type BillingOccurrenceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -3982,6 +4368,7 @@ export type BillingOccurrenceIncludeUpdateManyAndReturn<ExtArgs extends runtime.
   markedBilledBy?: boolean | Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.BillingOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>
+  cancellationReconciliationRequest?: boolean | Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>
 }
 
 export type $BillingOccurrencePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3996,6 +4383,7 @@ export type $BillingOccurrencePayload<ExtArgs extends runtime.Types.Extensions.I
     markedBilledBy: Prisma.$UserPayload<ExtArgs> | null
     waivedBy: Prisma.$UserPayload<ExtArgs> | null
     cancelledBy: Prisma.$UserPayload<ExtArgs> | null
+    cancellationReconciliationRequest: Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4032,6 +4420,7 @@ export type $BillingOccurrencePayload<ExtArgs extends runtime.Types.Extensions.I
     cancelledAt: Date | null
     cancelledById: string | null
     cancellationReason: string | null
+    cancellationReconciliationRequestId: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["billingOccurrence"]>
@@ -4437,6 +4826,7 @@ export interface Prisma__BillingOccurrenceClient<T, Null = never, ExtArgs extend
   markedBilledBy<T extends Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BillingOccurrence$markedBilledByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   waivedBy<T extends Prisma.BillingOccurrence$waivedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BillingOccurrence$waivedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   cancelledBy<T extends Prisma.BillingOccurrence$cancelledByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BillingOccurrence$cancelledByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  cancellationReconciliationRequest<T extends Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs>>): Prisma.Prisma__ServiceScheduleReconciliationRequestClient<runtime.Types.Result.GetResult<Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4500,6 +4890,7 @@ export interface BillingOccurrenceFieldRefs {
   readonly cancelledAt: Prisma.FieldRef<"BillingOccurrence", 'DateTime'>
   readonly cancelledById: Prisma.FieldRef<"BillingOccurrence", 'String'>
   readonly cancellationReason: Prisma.FieldRef<"BillingOccurrence", 'String'>
+  readonly cancellationReconciliationRequestId: Prisma.FieldRef<"BillingOccurrence", 'String'>
   readonly createdAt: Prisma.FieldRef<"BillingOccurrence", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"BillingOccurrence", 'DateTime'>
 }
@@ -4990,6 +5381,25 @@ export type BillingOccurrence$cancelledByArgs<ExtArgs extends runtime.Types.Exte
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
+}
+
+/**
+ * BillingOccurrence.cancellationReconciliationRequest
+ */
+export type BillingOccurrence$cancellationReconciliationRequestArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceScheduleReconciliationRequest
+   */
+  select?: Prisma.ServiceScheduleReconciliationRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceScheduleReconciliationRequest
+   */
+  omit?: Prisma.ServiceScheduleReconciliationRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceScheduleReconciliationRequestInclude<ExtArgs> | null
+  where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
 }
 
 /**

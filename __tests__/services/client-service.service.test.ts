@@ -180,7 +180,7 @@ describe('client service service', () => {
     expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
   });
 
-  it('does not enqueue reconciliation for fee-only edits', async () => {
+  it('enqueues fee-only reconciliation in the same transaction without a deadline preview', async () => {
     prismaMock.clientService.findFirst
       .mockResolvedValueOnce(record)
       .mockResolvedValueOnce({ ...record, feeLines: [{ ...record.feeLines[0], amount: { toString: () => '650.00', toFixed: () => '650.00' } }] });
@@ -193,7 +193,41 @@ describe('client service service', () => {
       }],
     }, actor);
 
-    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        tenantId: actor.tenantId,
+        scopeId: record.id,
+        triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED',
+        requestedById: actor.userId,
+      }),
+    }));
+  });
+
+  it('hides archived fee lines from public DTOs and does not recreate them on later edits', async () => {
+    const archived = {
+      ...record.feeLines[0],
+      id: 'fee-archived',
+      isActive: false,
+      deletedAt: new Date('2026-08-01T00:00:00.000Z'),
+      deletedReason: 'Removed from client service configuration',
+    };
+    prismaMock.clientService.findFirst.mockResolvedValueOnce({ ...record, feeLines: [...record.feeLines, archived] });
+    const dto = await getClientService(record.id, actor);
+    expect(dto.feeLines.map((fee) => fee.id)).toEqual(['fee-1']);
+
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce({ ...record, feeLines: [...record.feeLines, archived] })
+      .mockResolvedValueOnce({ ...record, feeLines: [record.feeLines[0]] });
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      feeLines: [{
+        id: 'fee-1', description: 'Revised annual fee', amount: '650.00', currency: 'SGD',
+        billingFrequency: 'ANNUALLY', billingStartDate: '2026-07-30', displayOrder: 0,
+      }],
+    }, actor);
+    expect(prismaMock.clientServiceFeeLine.createMany).not.toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.arrayContaining([expect.objectContaining({ id: 'fee-archived' })]),
+    }));
   });
 
   it('rejects a stale competing editor before replacing fees', async () => {
