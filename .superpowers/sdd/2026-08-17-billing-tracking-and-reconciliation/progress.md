@@ -213,3 +213,20 @@
 - Ruling: `THIS_AND_FUTURE` always updates the selected non-Cancelled occurrence through its own `id + tenant + expectedUpdatedAt` claim, even when the selected row is historical or Billed. Additional rows must match tenant/company/service/fee line/schedule entry/generation, remain Open, and be on or after both the selected operative date and one captured current Singapore date. Historical matching rows are never propagated.
 - Ruling: user lifecycle mutations cannot set or modify Cancelled. Billed accepts an optional/null billed date; Waived and reopen transitions require reasons and maintain their exact lifecycle metadata. Date/value overrides require reasons, and reset actions restore only the requested calculated/base dimensions.
 - Ruling: current-and-future selection, update, count validation, and one affected-ID/count audit occur inside the same Serializable transaction. A future count mismatch throws before audit and rolls back the selected and partial future writes together.
+
+## Task 7 — Billing workspace and reconciliation panel
+
+### Implementation and evidence
+
+- Initial implementation commit `855c3752` (`feat: add billing tracking workspace`) added the Billing workspace, server-backed occurrence table/mobile cards, filters, collapsed reconciliation summary, lifecycle/reset dialogs, persisted table preferences, the third Services workspace tab, and roster billing indicators. Initial focused verification passed 14 files / 111 tests plus 2 Chromium flows, TypeScript, scoped lint, and diff checks.
+- Initial independent review reported 0 Critical, 6 Important, and 2 Minor findings. Fix commit `f8ec5aad` (`fix: address Task 7 billing review findings`) omitted unchanged value fields, constrained lifecycle choices, retained mutation errors in-place, moved search/company filtering before pagination, synchronized URL state, added a dedicated roster Billing column and next-state projection, grouped reconciliation issues, exposed `aria-sort`, and expanded responsive browser coverage.
+- First rereview accepted the original query, roster, coverage, accessibility, and browser findings but retained one lifecycle Important and one stale-error Minor. Fix commit `d2a78803` (`fix: preserve billing lifecycle metadata`) omitted unchanged status/billed-date fields and reset mutation state between dialog sessions.
+- Final Task 7 focused verification passed 14 files / 126 tests plus 2 Chromium desktop/tablet/mobile flows, TypeScript, scoped zero-warning ESLint, and diff checks. The in-app Browser attempt was blocked by the worktree's missing `DATABASE_URL`; the exact `net::ERR_CONNECTION_REFUSED`/startup failure is retained in `task-7-report.md`, and the approved repository Chromium fallback passed.
+- Final independent rereview: PASS, 0 Critical / 0 Important / 0 Minor. Task 7 is complete through `efadec0b`.
+
+### Task 7 rulings
+
+- Ruling: the Billing workspace is URL-addressable under `/services?tab=billing`; server-side company/service/fee/general predicates run before count and pagination, while status/timing/date/family/sort/page state round-trips through URL parameters.
+- Ruling: edit payloads include only changed lifecycle/value fields. Notes or reference edits must not manufacture value overrides, re-run a Waived/Billed transition, or rewrite original audit metadata. Failed mutations remain visible without closing the dialog, and mutation/input state resets before another occurrence is opened.
+- Ruling: reconciliation stays collapsed by default, its header carries count and severity, issue cards are grouped by Company/service and render only when unresolved issues exist, and healthy coverage remains one compact summary.
+- Ruling: the roster exposes Billing as its own column and projects the next Open/Billed tracking state rather than treating historical Waived/Billed rows as the next occurrence. Desktop/tablet retain the table; mobile uses non-duplicated cards.
