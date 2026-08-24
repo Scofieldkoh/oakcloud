@@ -150,12 +150,16 @@ describePostgres('billing tracking migration PostgreSQL integrity', () => {
     );
   }
 
-  async function insertCoverageIssue(issueKey: string, resolvedAt: string | null = null): Promise<void> {
+  async function insertCoverageIssue(
+    issueKey: string,
+    resolvedAt: string | null = null,
+    feeLineId: string | null = 'fee-a',
+  ): Promise<void> {
     await client.query(
       `INSERT INTO ${table('billing_coverage_issues')}
         ("id", "tenant_id", "company_id", "client_service_id", "fee_line_id", "issue_type", "severity", "issue_key", "details", "first_detected_at", "last_detected_at", "resolved_at", "created_at", "updated_at")
-       VALUES ($1, 'tenant-a', 'company-a', 'service-a', 'fee-a', 'MISSING_START_DATE', 'ERROR', $2, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      [`issue-${randomUUID()}`, issueKey, resolvedAt],
+       VALUES ($1, 'tenant-a', 'company-a', 'service-a', $2, 'MISSING_START_DATE', 'ERROR', $3, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [`issue-${randomUUID()}`, feeLineId, issueKey, resolvedAt],
     );
   }
 
@@ -220,6 +224,7 @@ describePostgres('billing tracking migration PostgreSQL integrity', () => {
     await insertCoverageIssue('duplicate-key');
     await expect(insertCoverageIssue('duplicate-key')).rejects.toThrow();
     await expect(insertCoverageIssue('duplicate-key', '2026-08-18')).resolves.toBeUndefined();
+    await expect(insertCoverageIssue('nullable-fee-line', null, null)).resolves.toBeUndefined();
     await expect(client.query(`DELETE FROM ${table('companies')} WHERE "id" = 'company-a'`)).rejects.toThrow();
     await expect(client.query(`DELETE FROM ${table('client_services')} WHERE "id" = 'service-a'`)).rejects.toThrow();
     await expect(client.query(`DELETE FROM ${table('client_service_fee_lines')} WHERE "id" = 'fee-a'`)).rejects.toThrow();
