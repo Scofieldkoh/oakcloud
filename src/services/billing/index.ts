@@ -8,6 +8,16 @@ export {
   listBillingCoverage,
   reconcileBillingCoverage,
 } from './coverage';
+export {
+  billingOccurrenceWhereForSearch,
+  deriveBillingTiming,
+  getBillingOccurrence,
+  listBillingOccurrences,
+  resetBillingOverride,
+  searchBillingOccurrences,
+  toBillingOccurrenceDto,
+  updateBillingOccurrence,
+} from './service';
 
 export type {
   BillingCadence,
@@ -22,6 +32,17 @@ export type {
   BillingReconciliationPreservedCounts,
   BillingReconciliationResult,
   ReconcileClientServiceBillingInput,
+  BillingOccurrenceActor,
+  BillingOccurrenceDb,
+  BillingOccurrenceDto,
+  BillingOccurrenceListResult,
+  BillingOccurrenceRecord,
+  BillingOccurrenceSearchOptions,
+  BillingOccurrenceTiming,
+  BillingOccurrenceSearch,
+  BillingOccurrenceSearchInput,
+  ResetBillingOverrideInput,
+  UpdateBillingOccurrenceInput,
 } from './types';
 export type {
   BillingCoverageIssueSeverity,

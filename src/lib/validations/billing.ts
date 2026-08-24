@@ -4,6 +4,7 @@ import {
   dateOnlySchema,
   scheduleEntriesSchema,
 } from './service-schedule';
+import { ValidationError } from '@/lib/errors';
 
 const customIntervalSchema = z.object({
   unit: z.literal('MONTH'),
@@ -84,3 +85,138 @@ export const billingCustomIntervalSchema = customIntervalSchema;
 
 export type BillingScheduleConfigInput = z.input<typeof billingScheduleConfigSchema>;
 export type BillingScheduleConfigOutput = z.output<typeof billingScheduleConfigSchema>;
+
+export const billingOccurrenceStatusSchema = z.enum(['OPEN', 'BILLED', 'WAIVED', 'CANCELLED']);
+export const billingOccurrenceMutationStatusSchema = z.enum(['OPEN', 'BILLED', 'WAIVED']);
+export const billingOccurrenceTimingSchema = z.enum(['UPCOMING', 'DUE', 'OVERDUE']);
+export const billingOccurrenceSortBySchema = z.enum([
+  'expectedDate', 'company', 'family', 'service', 'status', 'amount',
+]);
+export const billingOccurrenceSortOrderSchema = z.enum(['asc', 'desc']);
+export const billingOccurrenceUpdateScopeSchema = z.enum(['THIS_OCCURRENCE', 'THIS_AND_FUTURE']);
+
+/** Strict, bounded filters for the paginated manual billing table. */
+export const billingOccurrenceSearchSchema = z.object({
+  from: dateOnlySchema,
+  to: dateOnlySchema,
+  companyIds: z.array(z.string().uuid()).max(100).default([]),
+  familyIds: z.array(z.string().uuid()).max(50).default([]),
+  statuses: z.array(billingOccurrenceStatusSchema).max(4).default([]),
+  timing: z.array(billingOccurrenceTimingSchema).max(3).default([]),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  sortBy: billingOccurrenceSortBySchema.default('expectedDate'),
+  sortOrder: billingOccurrenceSortOrderSchema.default('asc'),
+}).strict().superRefine((value, ctx) => {
+  const from = Date.parse(`${value.from}T00:00:00.000Z`);
+  const to = Date.parse(`${value.to}T00:00:00.000Z`);
+  const range = (to - from) / 86_400_000;
+  if (range < 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['to'], message: 'Date range end must be on or after the start date' });
+  }
+});
+
+export type BillingOccurrenceSearch = z.infer<typeof billingOccurrenceSearchSchema>;
+export type BillingOccurrenceSearchInput = Omit<Partial<BillingOccurrenceSearch>, 'companyIds' | 'familyIds' | 'statuses' | 'timing'> & {
+  companyIds?: readonly string[];
+  familyIds?: readonly string[];
+  statuses?: readonly BillingOccurrenceSearch['statuses'][number][];
+  timing?: readonly BillingOccurrenceSearch['timing'][number][];
+};
+
+export const updateBillingOccurrenceSchema = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  status: billingOccurrenceMutationStatusSchema.optional(),
+  billedDate: dateOnlySchema.nullable().optional(),
+  operativeExpectedDate: dateOnlySchema.optional(),
+  amount: z.string().regex(/^\d{1,16}(\.\d{1,2})?$/).optional(),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional(),
+  externalReference: z.string().trim().max(200).nullable().optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
+  updateScope: billingOccurrenceUpdateScopeSchema,
+  reason: z.string().trim().min(3).max(1000).nullable(),
+}).strict().superRefine((value, ctx) => {
+  if (
+    value.status === undefined
+    && value.billedDate === undefined
+    && value.operativeExpectedDate === undefined
+    && value.amount === undefined
+    && value.currency === undefined
+    && value.externalReference === undefined
+    && value.notes === undefined
+  ) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'At least one billing occurrence field must be updated' });
+  }
+  if (value.operativeExpectedDate !== undefined && !value.reason) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: 'A reason is required when overriding an expected billing date' });
+  }
+  if ((value.amount !== undefined || value.currency !== undefined) && !value.reason) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: 'A reason is required when overriding billing values' });
+  }
+  if (value.status === 'WAIVED' && !value.reason) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: 'A reason is required when waiving a billing occurrence' });
+  }
+});
+
+export type UpdateBillingOccurrenceInput = z.infer<typeof updateBillingOccurrenceSchema>;
+
+export const resetBillingOverrideSchema = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  target: z.enum(['DATE', 'VALUE', 'ALL']),
+  reason: z.string().trim().min(3).max(1000),
+}).strict();
+
+export type ResetBillingOverrideInput = z.infer<typeof resetBillingOverrideSchema>;
+
+const billingOccurrenceAllowedQueryKeys = new Set([
+  'from', 'to', 'companyIds', 'familyIds', 'statuses', 'timing', 'page', 'limit', 'sortBy', 'sortOrder',
+]);
+
+function searchParamsFrom(input: Request | URL | URLSearchParams): URLSearchParams {
+  if (input instanceof URLSearchParams) return input;
+  if (input instanceof URL) return input.searchParams;
+  return new URL(input.url).searchParams;
+}
+
+function uniqueCommaValues(value: string): string[] {
+  return [...new Set(value.split(',').map((part) => part.trim()).filter(Boolean))];
+}
+
+function strictPositiveInteger(value: string, key: string): number {
+  if (!/^[1-9]\d*$/.test(value)) throw new ValidationError(`Invalid ${key}; expected a positive integer`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) throw new ValidationError(`Invalid ${key}; expected a positive integer`);
+  return parsed;
+}
+
+/** Parse query strings without silently dropping unknown or duplicate keys. */
+export function parseBillingOccurrenceSearchParams(input: Request | URL | URLSearchParams): BillingOccurrenceSearch {
+  const params = searchParamsFrom(input);
+  const raw: Record<string, unknown> = {};
+  for (const [key, value] of params.entries()) {
+    if (!billingOccurrenceAllowedQueryKeys.has(key)) throw new ValidationError(`Unknown query parameter: ${key}`);
+    if (Object.prototype.hasOwnProperty.call(raw, key)) throw new ValidationError(`Duplicate query parameter: ${key}`);
+    switch (key) {
+      case 'companyIds':
+      case 'familyIds':
+      case 'statuses':
+      case 'timing':
+        raw[key] = uniqueCommaValues(value);
+        break;
+      case 'page':
+      case 'limit':
+        raw[key] = strictPositiveInteger(value, key);
+        break;
+      default:
+        raw[key] = value;
+        break;
+    }
+  }
+  const parsed = billingOccurrenceSearchSchema.safeParse(raw);
+  if (!parsed.success) throw new ValidationError('Invalid billing occurrence query', { issues: parsed.error.issues });
+  return parsed.data;
+}
+
+export function emptyBillingOccurrenceResult(input: Pick<BillingOccurrenceSearch, 'page' | 'limit'>) {
+  return { mode: 'TABLE' as const, items: [], total: 0, page: input.page, limit: input.limit, totalPages: 0 };
+}
