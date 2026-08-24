@@ -1,4 +1,5 @@
 import { Prisma } from '@/generated/prisma';
+import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import type { ClientServiceDto } from './types';
 
 export const clientServiceInclude = {
@@ -67,6 +68,8 @@ export function toClientServiceDto(service: ClientServiceRecord): ClientServiceD
     customCadenceLabel: service.customCadenceLabel,
     startDate: dateOnly(service.startDate)!,
     endDate: dateOnly(service.endDate),
+    billingDisposition: service.billingDisposition ?? 'UNREVIEWED',
+    billingNotRequiredReason: service.billingNotRequiredReason ?? null,
     fieldValues: (service.fieldValues ?? {}) as Record<string, string>,
     feeLines: service.feeLines
       .filter((fee) => fee.isActive !== false && fee.deletedAt == null)
@@ -78,6 +81,7 @@ export function toClientServiceDto(service: ClientServiceRecord): ClientServiceD
         billingFrequency: fee.billingFrequency,
         customFrequencyLabel: fee.customFrequencyLabel,
         billingStartDate: dateOnly(fee.billingStartDate),
+        scheduleConfig: (fee.scheduleConfig ?? null) as BillingScheduleConfigV1 | null,
         displayOrder: fee.displayOrder,
       })),
     deadlineRules: (service.deadlineRules ?? []).map((clientRule) => ({

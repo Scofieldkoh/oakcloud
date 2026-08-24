@@ -2,6 +2,7 @@ import type { BillingFrequency, ClientServiceStatus, ServiceCadence } from '@/ge
 import type { ClientServiceDeadlineRuleDto, ClientServiceDto, ManualClientServiceCatalogDeadlineRule, ManualClientServiceCatalogField, ManualClientServiceCatalogParameterDefinition, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
+import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 
 export interface OperationalFieldRow {
   uiId: string;
@@ -21,6 +22,7 @@ export interface OperationalFeeRow {
   billingFrequency: BillingFrequency | '';
   customFrequencyLabel: string;
   billingStartDate: string;
+  scheduleConfig?: BillingScheduleConfigV1 | null;
   catalogDerived: boolean;
 }
 
@@ -45,6 +47,8 @@ export interface OperationalServiceValues {
   customCadenceLabel: string;
   startDate: string;
   endDate: string;
+  billingDisposition: 'CONFIGURED' | 'NOT_REQUIRED' | 'UNREVIEWED' | '';
+  billingNotRequiredReason: string;
   fields: OperationalFieldRow[];
   fees: OperationalFeeRow[];
   deadlineRules: OperationalDeadlineRuleRow[];
@@ -61,7 +65,17 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
   if (values.endDate && values.startDate && values.endDate < values.startDate) {
     errors.endDate = 'End date must be on or after start date.';
   }
-  for (const [index, fee] of values.fees.entries()) {
+  if (!values.billingDisposition || values.billingDisposition === 'UNREVIEWED') {
+    errors.billingDisposition = 'Select Billing configured or No billing required before saving.';
+  }
+  if (values.billingDisposition === 'NOT_REQUIRED' && values.billingNotRequiredReason.trim().length < 3) {
+    errors.billingNotRequiredReason = 'Explain why billing is not required.';
+  }
+  const activeFees = values.fees.filter((fee) => fee.description.trim() || fee.amount.trim() || fee.billingFrequency);
+  if (values.billingDisposition === 'CONFIGURED' && activeFees.length === 0) {
+    errors.feeLines = 'Configured billing requires at least one fee line.';
+  }
+  for (const [index, fee] of (values.billingDisposition === 'NOT_REQUIRED' ? [] : values.fees).entries()) {
     const prefix = `fee-${fee.uiId}`;
     if (!fee.description.trim()) errors[`${prefix}-description`] = `Fee ${index + 1} description is required.`;
     if (!/^\d{1,16}(?:\.\d{1,2})?$/.test(fee.amount)) errors[`${prefix}-amount`] = `Fee ${index + 1} amount is invalid.`;
@@ -137,6 +151,7 @@ export function operationalFieldValues(values: OperationalServiceValues): Record
 }
 
 export function manualCreateFeeLines(values: OperationalServiceValues) {
+  if (values.billingDisposition === 'NOT_REQUIRED') return [];
   return values.fees.map((fee) => {
     if (!fee.billingFrequency) throw new Error('Fee frequency is required');
     return {
@@ -146,11 +161,13 @@ export function manualCreateFeeLines(values: OperationalServiceValues) {
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : null,
       billingStartDate: fee.billingStartDate || null,
+      scheduleConfig: fee.scheduleConfig,
     };
   });
 }
 
 export function updateFeeLines(values: OperationalServiceValues) {
+  if (values.billingDisposition === 'NOT_REQUIRED') return [];
   return values.fees.map((fee, displayOrder) => {
     if (!fee.billingFrequency) throw new Error('Fee frequency is required');
     return {
@@ -161,6 +178,7 @@ export function updateFeeLines(values: OperationalServiceValues) {
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : null,
       billingStartDate: fee.billingStartDate || null,
+      scheduleConfig: fee.scheduleConfig,
       displayOrder,
     };
   });
@@ -222,6 +240,8 @@ export function valuesFromClientService(service: ClientServiceDto): OperationalS
     customCadenceLabel: service.customCadenceLabel ?? '',
     startDate: service.startDate,
     endDate: service.endDate ?? '',
+    billingDisposition: service.billingDisposition ?? 'UNREVIEWED',
+    billingNotRequiredReason: service.billingNotRequiredReason ?? '',
     fields: Object.entries(service.fieldValues).map(([key, value]) => ({
       uiId: crypto.randomUUID(),
       key,
@@ -239,6 +259,7 @@ export function valuesFromClientService(service: ClientServiceDto): OperationalS
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.customFrequencyLabel ?? '',
       billingStartDate: fee.billingStartDate ?? '',
+      scheduleConfig: fee.scheduleConfig ?? null,
       catalogDerived: false,
     })),
     deadlineRules: (service.deadlineRules ?? []).map(serviceDeadlineRuleRow),
@@ -252,6 +273,8 @@ export function emptyManualOperationalValues(): OperationalServiceValues {
     customCadenceLabel: '',
     startDate: '',
     endDate: '',
+    billingDisposition: '',
+    billingNotRequiredReason: '',
     fields: [],
     fees: [],
     deadlineRules: [],
@@ -265,6 +288,8 @@ export function catalogReplacementForVariant(variant: ManualClientServiceCatalog
     customCadenceLabel: variant.customCadenceLabel ?? '',
     startDate: '',
     endDate: '',
+    billingDisposition: variant.feeTemplates.length > 0 ? 'CONFIGURED' : '',
+    billingNotRequiredReason: '',
     fields: variant.fields.map((field) => ({
       uiId: crypto.randomUUID(),
       key: field.key,
@@ -280,9 +305,10 @@ export function catalogReplacementForVariant(variant: ManualClientServiceCatalog
         amount: fee.defaultAmount ?? '',
         currency: fee.currency,
         billingFrequency: fee.billingFrequency,
-        customFrequencyLabel: fee.customFrequencyLabel ?? '',
-        billingStartDate: '',
-        catalogDerived: true,
+         customFrequencyLabel: fee.customFrequencyLabel ?? '',
+         billingStartDate: '',
+         scheduleConfig: null,
+         catalogDerived: true,
       }))
       : [{
         uiId: crypto.randomUUID(),
@@ -290,9 +316,10 @@ export function catalogReplacementForVariant(variant: ManualClientServiceCatalog
         amount: '',
         currency: 'SGD',
         billingFrequency: '',
-        customFrequencyLabel: '',
-        billingStartDate: '',
-        catalogDerived: true,
+         customFrequencyLabel: '',
+         billingStartDate: '',
+         scheduleConfig: null,
+         catalogDerived: true,
       }],
     deadlineRules: (variant.deadlineRules ?? []).map(catalogDeadlineRuleRow),
   };
@@ -302,14 +329,17 @@ function operationalSignature(values: OperationalServiceValues): string {
   return JSON.stringify({
     serviceCadence: values.serviceCadence,
     customCadenceLabel: values.customCadenceLabel,
+    billingDisposition: values.billingDisposition,
+    billingNotRequiredReason: values.billingNotRequiredReason,
     fields: values.fields.map(({ key, label, type, value }) => ({ key, label, type, value })),
-    fees: values.fees.map(({ description, amount, currency, billingFrequency, customFrequencyLabel, billingStartDate }) => ({
+    fees: values.fees.map(({ description, amount, currency, billingFrequency, customFrequencyLabel, billingStartDate, scheduleConfig }) => ({
       description,
       amount,
       currency,
       billingFrequency,
       customFrequencyLabel,
       billingStartDate,
+      scheduleConfig,
     })),
     deadlineRules: values.deadlineRules.map(({ ruleId, enabled, parameterValues, parameterProvenance, scheduleEntries }) => ({ ruleId, enabled, parameterValues, parameterProvenance, scheduleEntries })),
   });
@@ -328,6 +358,10 @@ export function createManualPayload(variantId: string, values: OperationalServic
     startDate: values.startDate,
     endDate: values.endDate || null,
     fieldValues: operationalFieldValues(values),
+    billingDisposition: values.billingDisposition === 'CONFIGURED' || values.billingDisposition === 'NOT_REQUIRED'
+      ? values.billingDisposition
+      : undefined,
+    billingNotRequiredReason: values.billingDisposition === 'NOT_REQUIRED' ? values.billingNotRequiredReason : null,
     feeLines: manualCreateFeeLines(values),
     deadlineRules: deadlineRuleInputs(values),
     confirmDuplicate,
@@ -341,6 +375,8 @@ function manualDirtySignature(values: OperationalServiceValues): string {
     customCadenceLabel: values.customCadenceLabel,
     startDate: values.startDate,
     endDate: values.endDate,
+    billingDisposition: values.billingDisposition,
+    billingNotRequiredReason: values.billingNotRequiredReason,
     fields: values.fields.map(({ key, label, type, value, catalogDerived }) => ({ key, label, type, value, catalogDerived })),
     fees: values.fees.map((fee) => ({
       description: fee.description,
@@ -349,6 +385,7 @@ function manualDirtySignature(values: OperationalServiceValues): string {
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.customFrequencyLabel,
       billingStartDate: fee.billingStartDate,
+      scheduleConfig: fee.scheduleConfig,
       catalogDerived: fee.catalogDerived,
     })),
     deadlineRules: values.deadlineRules.map((rule) => ({

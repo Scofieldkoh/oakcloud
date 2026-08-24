@@ -160,6 +160,8 @@ export function ClientServiceEditor({
           startDate: submitValues.startDate,
           endDate: submitValues.endDate || null,
           fieldValues: operationalFieldValues(submitValues),
+          billingDisposition: submitValues.billingDisposition === '' ? undefined : submitValues.billingDisposition,
+          billingNotRequiredReason: submitValues.billingDisposition === 'NOT_REQUIRED' ? submitValues.billingNotRequiredReason : null,
           feeLines: updateFeeLines(submitValues),
           ...(deadlineRulesChanged ? { deadlineRules: nextDeadlineRules, impactFingerprint } : impactRequired ? { impactFingerprint } : {}),
         },

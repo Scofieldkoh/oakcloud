@@ -28,15 +28,17 @@ const record = {
   agreementItemId: 'item-1', source: 'AGREEMENT', serviceVariantId: 'variant-1', familyName: 'Corporate Services',
   serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY',
   customCadenceLabel: null, startDate: new Date('2026-07-30'), endDate: null, fieldValues: {},
+  billingDisposition: 'CONFIGURED', billingNotRequiredReason: null,
   createdAt: new Date('2026-07-30T00:00:00Z'), updatedAt: new Date('2026-07-30T00:00:00Z'),
   deletedAt: null, deletedReason: null,
-  feeLines: [{ id: 'fee-1', sourceAgreementFeeLineId: 'agreement-fee-1', description: 'Annual fee', amount: { toString: () => '500.00', toFixed: () => '500.00' }, currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: new Date('2026-07-30'), displayOrder: 0 }],
+  feeLines: [{ id: 'fee-1', sourceAgreementFeeLineId: 'agreement-fee-1', description: 'Annual fee', amount: { toString: () => '500.00', toFixed: () => '500.00' }, currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: new Date('2026-07-30'), scheduleConfig: null, isActive: true, deletedAt: null, deletedReason: null, displayOrder: 0 }],
   agreement: { status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocument: { id: 'document-1', title: 'Service Agreement' } },
 };
 
 describe('client service service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.clientService.findFirst.mockReset();
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
     prismaMock.serviceAgreement.findMany.mockResolvedValue([]);
     prismaMock.clientService.updateMany.mockResolvedValue({ count: 1 });
@@ -201,6 +203,68 @@ describe('client service service', () => {
         requestedById: actor.userId,
       }),
     }));
+  });
+
+  it('persists configured billing disposition and schedules without reintroducing updatedAt inputs', async () => {
+    const scheduleConfig = {
+      schemaVersion: 1 as const,
+      cadence: 'MONTHLY' as const,
+      startDate: '2026-08-01',
+      customInterval: { unit: 'MONTH' as const, count: 1 },
+      scheduleEntries: [{ key: 'deposit', label: 'Deposit', expression: { kind: 'DAY_OF_MONTH' as const, day: 1 }, businessDayAdjustment: 'NEXT' as const }],
+    };
+    const unreviewedRecord = { ...record, billingDisposition: 'UNREVIEWED' as const };
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce(unreviewedRecord)
+      .mockResolvedValueOnce({ ...unreviewedRecord, billingDisposition: 'CONFIGURED', feeLines: [{ ...record.feeLines[0], scheduleConfig, amount: { toString: () => '650.00', toFixed: () => '650.00' } }] });
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      billingDisposition: 'CONFIGURED',
+      billingNotRequiredReason: null,
+      feeLines: [{
+        id: 'fee-1', description: 'Annual fee', amount: '650.00', currency: 'SGD', billingFrequency: 'ANNUALLY',
+        billingStartDate: '2026-07-30', displayOrder: 0, scheduleConfig,
+      }],
+    }, actor);
+
+    expect(prismaMock.clientService.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ billingDisposition: 'CONFIGURED', billingNotRequiredReason: null }),
+    }));
+    expect(prismaMock.clientServiceFeeLine.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ scheduleConfig }),
+    }));
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      changes: expect.objectContaining({
+        billingDisposition: { old: 'UNREVIEWED', new: 'CONFIGURED' },
+      }),
+    }), prismaMock);
+  });
+
+  it('archives active fee schedules with the confirmed not-required reason', async () => {
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce(record)
+      .mockResolvedValueOnce({ ...record, billingDisposition: 'NOT_REQUIRED', billingNotRequiredReason: 'Included elsewhere', feeLines: [] });
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: 'Included elsewhere',
+    }, actor);
+
+    expect(prismaMock.clientServiceFeeLine.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ clientServiceId: record.id, deletedAt: null }),
+      data: expect.objectContaining({ isActive: false, deletedReason: 'Included elsewhere' }),
+    }));
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ triggerType: 'CLIENT_SERVICE_CONFIGURATION_CHANGED' }),
+    }));
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      changes: expect.objectContaining({
+        billingDisposition: { old: 'CONFIGURED', new: 'NOT_REQUIRED' },
+        billingNotRequiredReason: { old: null, new: 'Included elsewhere' },
+      }),
+    }), prismaMock);
   });
 
   it('hides archived fee lines from public DTOs and does not recreate them on later edits', async () => {

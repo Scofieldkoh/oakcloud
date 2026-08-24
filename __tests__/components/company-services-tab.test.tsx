@@ -19,7 +19,7 @@ import { CompanyTabs } from '@/components/companies/company-detail/company-tabs'
 const service = {
   id: 'service-1', companyId: 'company-1', agreementId: 'agreement-1', agreementItemId: 'item-1', serviceVariantId: 'variant-1',
   source: 'AGREEMENT', familyName: 'Corporate Services', serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY', customCadenceLabel: null,
-  startDate: '2026-07-30', endDate: null, fieldValues: {}, createdAt: '2026-07-30T00:00:00Z', updatedAt: '2026-07-30T00:00:00Z',
+  startDate: '2026-07-30', endDate: null, billingDisposition: 'CONFIGURED', billingNotRequiredReason: null, fieldValues: {}, createdAt: '2026-07-30T00:00:00Z', updatedAt: '2026-07-30T00:00:00Z',
   feeLines: [{ id: 'fee-1', description: 'Annual fee', amount: '500.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: '2026-07-30', displayOrder: 0 }],
   agreement: { title: 'Service Agreement', status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocumentId: 'document-1', href: '/generated-documents/document-1' },
 };

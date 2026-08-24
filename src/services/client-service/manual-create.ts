@@ -3,21 +3,51 @@ import { NotFoundError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { isSerializationConflict, runSerializableTransaction } from '@/lib/prisma-transaction';
 import type { TenantAwareParams } from '@/lib/types';
-import type { ClientServiceDeadlineRuleInput, CreateManualClientServiceInput } from '@/lib/validations/client-service';
+import type { ClientServiceDeadlineRuleInput, CreateManualClientServiceInput, CreateManualClientServiceRequest } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
+import type { BillingDisposition } from '@/generated/prisma';
 import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './errors';
 import { summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import { convertLegacyBillingSchedule } from '@/services/billing/schedule';
 import { canonicalDeadlineRuleAudit, persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
 
 const parseDateOnly = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
+function scheduleConfigForFee(fee: CreateManualClientServiceInput['feeLines'][number]) {
+  if (fee.scheduleConfig != null) return fee.scheduleConfig;
+  return convertLegacyBillingSchedule({
+    billingFrequency: fee.billingFrequency,
+    billingStartDate: fee.billingStartDate,
+    customFrequencyLabel: fee.customFrequencyLabel,
+  }).config;
+}
+
 export async function createManualClientService(
   companyId: string,
-  input: CreateManualClientServiceInput,
+  rawInput: CreateManualClientServiceRequest | CreateManualClientServiceInput,
   params: TenantAwareParams,
 ) {
+  // API callers pass the parsed schema output, while older service callers may
+  // still omit the billing fields. Normalize the compatibility shape here
+  // without re-validating identifiers that are intentionally stubbed in unit
+  // tests and trusted at this service boundary.
+  const input: CreateManualClientServiceInput = {
+    ...rawInput,
+    status: rawInput.status ?? 'ACTIVE',
+    customCadenceLabel: rawInput.customCadenceLabel ?? null,
+    endDate: rawInput.endDate ?? null,
+    fieldValues: rawInput.fieldValues ?? {},
+    billingDisposition: (rawInput.billingDisposition ?? 'UNREVIEWED') as CreateManualClientServiceInput['billingDisposition'],
+    billingNotRequiredReason: rawInput.billingDisposition === 'NOT_REQUIRED' ? rawInput.billingNotRequiredReason ?? null : null,
+    feeLines: rawInput.feeLines.map((fee) => ({
+      ...fee,
+      customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel ?? null : null,
+      billingStartDate: fee.billingStartDate ?? null,
+    })),
+    confirmDuplicate: rawInput.confirmDuplicate ?? false,
+  } as CreateManualClientServiceInput;
   try {
     return await runSerializableTransaction(prisma, async (tx) => {
       const company = await tx.company.findFirst({
@@ -103,23 +133,29 @@ export async function createManualClientService(
           startDate: parseDateOnly(input.startDate),
           endDate: input.endDate ? parseDateOnly(input.endDate) : null,
           fieldValues: input.fieldValues as Prisma.InputJsonValue,
+          billingDisposition: input.billingDisposition as BillingDisposition,
+          billingNotRequiredReason: input.billingDisposition === 'NOT_REQUIRED' ? input.billingNotRequiredReason : null,
         },
       });
 
-      await tx.clientServiceFeeLine.createMany({
-        data: input.feeLines.map((fee, displayOrder) => ({
-          tenantId: params.tenantId,
-          clientServiceId: service.id,
-          sourceAgreementFeeLineId: null,
-          description: fee.description,
-          amount: new Prisma.Decimal(fee.amount),
-          currency: fee.currency,
-          billingFrequency: fee.billingFrequency,
-          customFrequencyLabel: fee.customFrequencyLabel,
-          billingStartDate: fee.billingStartDate ? parseDateOnly(fee.billingStartDate) : null,
-          displayOrder,
-        })),
-      });
+      if (input.feeLines.length > 0) {
+        await tx.clientServiceFeeLine.createMany({
+          data: input.feeLines.map((fee, displayOrder) => ({
+            tenantId: params.tenantId,
+            clientServiceId: service.id,
+            sourceAgreementFeeLineId: null,
+            description: fee.description,
+            amount: new Prisma.Decimal(fee.amount),
+            currency: fee.currency,
+            billingFrequency: fee.billingFrequency,
+            customFrequencyLabel: fee.customFrequencyLabel,
+            billingStartDate: fee.billingStartDate ? parseDateOnly(fee.billingStartDate) : null,
+            scheduleConfig: scheduleConfigForFee(fee) ?? Prisma.JsonNull,
+            isActive: fee.isActive !== false,
+            displayOrder,
+          })),
+        });
+      }
 
       const feeSummary = summarizeClientServiceFees(input.feeLines);
 
@@ -229,6 +265,10 @@ export async function createManualClientService(
         changes: {
           source: { old: null, new: 'MANUAL' },
           serviceVariantId: { old: null, new: variant.id },
+          billingDisposition: { old: null, new: input.billingDisposition },
+          ...(input.billingDisposition === 'NOT_REQUIRED' ? {
+            billingNotRequiredReason: { old: null, new: input.billingNotRequiredReason },
+          } : {}),
           feeLines: { old: { count: 0, totals: {} }, new: feeSummary },
           deadlineRules: { old: canonicalDeadlineRuleAudit(undefined), new: canonicalDeadlineRuleAudit(deadlineRuleValidation) },
           reconciliationCorrelationId: { old: null, new: reconciliationCorrelationId },

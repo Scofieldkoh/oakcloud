@@ -152,6 +152,21 @@ describe('ClientServiceCreator', () => {
     expect(screen.getByLabelText('Fee 1 frequency')).toHaveValue('ANNUALLY');
   });
 
+  it('requires an explicit billing choice and confirms before hiding active schedules', async () => {
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+
+    expect(screen.getByRole('button', { name: 'Billing configured' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'No billing required' })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'No billing required' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Hide billing schedules?' });
+    expect(dialog).toHaveTextContent(/active billing schedules/i);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Hide schedules' }));
+    expect(screen.getByLabelText('Why is billing not required?')).toBeVisible();
+    expect(screen.queryByLabelText('Fee 1 amount')).not.toBeInTheDocument();
+  });
+
   it('creates one incomplete fee row for variants without fee templates', async () => {
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Payroll Bureau');

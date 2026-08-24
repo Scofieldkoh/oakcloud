@@ -18,6 +18,82 @@ const fourMonthlyEntries = [1, 8, 15, 22].map((day, index) => ({
 }));
 
 describe('client service validation', () => {
+  const billingSchedule = {
+    schemaVersion: 1 as const,
+    cadence: 'MONTHLY' as const,
+    startDate: '2026-08-01',
+    customInterval: { unit: 'MONTH' as const, count: 1 },
+    scheduleEntries: [
+      { key: 'deposit', label: 'Deposit', expression: { kind: 'DAY_OF_MONTH' as const, day: 1 }, businessDayAdjustment: 'NEXT' as const },
+      { key: 'balance', label: 'Balance', expression: { kind: 'DAY_OF_MONTH' as const, day: 15 }, businessDayAdjustment: 'NEXT' as const },
+    ],
+  };
+
+  const configuredBillingInput = {
+    serviceVariantId: variantId,
+    serviceCadence: 'MONTHLY' as const,
+    startDate: '2026-08-01',
+    billingDisposition: 'CONFIGURED' as const,
+    feeLines: [{
+      description: 'Monthly service fee', amount: '100.00', currency: 'SGD', billingFrequency: 'MONTHLY' as const,
+      scheduleConfig: billingSchedule,
+    }],
+  };
+
+  it('requires an active fee line when billing is configured', () => {
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      feeLines: [],
+    }).success).toBe(false);
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      feeLines: [{ ...configuredBillingInput.feeLines[0], isActive: false }],
+    }).success).toBe(false);
+  });
+
+  it('requires a reason when billing is not required', () => {
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: null,
+      feeLines: [],
+    }).success).toBe(false);
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: '  ',
+      feeLines: [],
+    }).success).toBe(false);
+  });
+
+  it('accepts a structured schedule for any service family and normalizes the disposition', () => {
+    const parsed = createManualClientServiceSchema.parse(configuredBillingInput);
+    expect(parsed.billingDisposition).toBe('CONFIGURED');
+    expect(parsed.feeLines[0]?.scheduleConfig?.scheduleEntries).toHaveLength(2);
+
+    const legacy = createManualClientServiceSchema.parse({
+      ...configuredBillingInput,
+      billingDisposition: undefined,
+      billingNotRequiredReason: undefined,
+    });
+    expect(legacy.billingDisposition).toBe('UNREVIEWED');
+  });
+
+  it('allows a configured update to carry the same structured schedule without a legacy updatedAt input', () => {
+    const parsed = updateClientServiceSchema.parse({
+      expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{
+        id: '33333333-3333-4333-8333-333333333333',
+        description: 'Monthly service fee', amount: '100.00', currency: 'SGD', billingFrequency: 'MONTHLY',
+        scheduleConfig: billingSchedule, displayOrder: 0,
+      }],
+    });
+    expect(parsed.billingDisposition).toBe('CONFIGURED');
+    expect(parsed.expectedUpdatedAt).toBe('2026-07-30T00:00:00.000Z');
+    expect('updatedAt' in parsed).toBe(false);
+  });
+
   it('requires an optimistic timestamp and at least one mutation', () => {
     expect(updateClientServiceSchema.safeParse({ status: 'PAUSED' }).success).toBe(false);
     expect(updateClientServiceSchema.safeParse({ updatedAt: '2026-07-30T00:00:00.000Z' }).success).toBe(false);

@@ -39,6 +39,18 @@ const input = {
   }],
   confirmDuplicate: false,
 };
+const billingSchedule = {
+  schemaVersion: 1 as const,
+  cadence: 'MONTHLY' as const,
+  startDate: '2026-08-01',
+  customInterval: { unit: 'MONTH' as const, count: 1 },
+  scheduleEntries: [{
+    key: 'deposit',
+    label: 'Deposit',
+    expression: { kind: 'DAY_OF_MONTH' as const, day: 1 },
+    businessDayAdjustment: 'NEXT' as const,
+  }],
+};
 const variant = { id: 'variant-1', name: 'Corporate Secretarial (Latest)', family: { name: 'Corporate Services' } };
 const createdRecord = {
   id: 'service-1',
@@ -116,6 +128,52 @@ describe('manual client service creation', () => {
     }), prismaMock);
     expect(JSON.stringify(auditMock.createAuditLog.mock.calls[0][0].changes)).not.toContain('fieldValues');
     expect(result).toMatchObject({ id: 'service-1', source: 'MANUAL', serviceName: 'Corporate Secretarial (Latest)' });
+  });
+
+  it('persists configured billing disposition and structured fee schedules in the creation transaction', async () => {
+    await createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{ ...input.feeLines[0], scheduleConfig: billingSchedule }],
+    }, params);
+
+    expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        billingDisposition: 'CONFIGURED',
+        billingNotRequiredReason: null,
+      }),
+    }));
+    expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: [expect.objectContaining({ scheduleConfig: billingSchedule })],
+    }));
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      changes: expect.objectContaining({
+        billingDisposition: { old: null, new: 'CONFIGURED' },
+      }),
+    }), prismaMock);
+  });
+
+  it('allows not-required billing without fee rows and preserves the user reason', async () => {
+    await createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: 'Included in another engagement',
+      feeLines: [],
+    }, params);
+
+    expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        billingDisposition: 'NOT_REQUIRED',
+        billingNotRequiredReason: 'Included in another engagement',
+      }),
+    }));
+    expect(prismaMock.clientServiceFeeLine.createMany).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      changes: expect.objectContaining({
+        billingDisposition: { old: null, new: 'NOT_REQUIRED' },
+        billingNotRequiredReason: { old: null, new: 'Included in another engagement' },
+      }),
+    }), prismaMock);
   });
 
   it('attaches only enabled catalog default rules with defaults and provenance', async () => {

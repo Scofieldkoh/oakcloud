@@ -1,6 +1,7 @@
 import type { BillingFrequency, ClientServiceSource, ClientServiceStatus, ServiceAgreementActivationStatus, ServiceAgreementStatus, ServiceCadence } from '@/generated/prisma';
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
+import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 
 export interface AgreementSummary {
   title: string;
@@ -87,6 +88,7 @@ export interface ClientServiceFeeLineDto {
   billingFrequency: BillingFrequency;
   customFrequencyLabel: string | null;
   billingStartDate: string | null;
+  scheduleConfig: BillingScheduleConfigV1 | null;
   displayOrder: number;
 }
 
@@ -130,6 +132,8 @@ export interface ClientServiceDto {
   customCadenceLabel: string | null;
   startDate: string;
   endDate: string | null;
+  billingDisposition: 'CONFIGURED' | 'NOT_REQUIRED' | 'UNREVIEWED';
+  billingNotRequiredReason: string | null;
   fieldValues: Record<string, string>;
   feeLines: ClientServiceFeeLineDto[];
   deadlineRules: ClientServiceDeadlineRuleDto[];

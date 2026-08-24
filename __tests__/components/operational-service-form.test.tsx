@@ -16,6 +16,8 @@ function baseValues(): OperationalServiceValues {
     customCadenceLabel: '',
     startDate: '2026-08-01',
     endDate: '',
+    billingDisposition: 'CONFIGURED',
+    billingNotRequiredReason: '',
     fields: [{ uiId: uuid(), key: 'filingMonth', label: 'Filing month', type: 'text', value: 'July', catalogDerived: true }],
     fees: [{
       uiId: uuid(),
