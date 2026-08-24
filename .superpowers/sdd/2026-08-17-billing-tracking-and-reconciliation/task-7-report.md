@@ -65,4 +65,7 @@ The implementation stays within Task 7 and reuses the existing billing occurrenc
 
 ## Review-fix handoff
 
-The review fixes are contained in the same implementation branch. Commit and clean-worktree status are recorded in the final handoff after the last verification run.
+The review fixes are contained in the same implementation branch.
+
+- Commit: `f8ec5aad fix: address Task 7 billing review findings`
+- Working tree: clean after the final verification run.
