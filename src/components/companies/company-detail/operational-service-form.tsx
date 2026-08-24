@@ -8,6 +8,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import type { OperationalServiceValues } from './client-service-form-state';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
+import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 
 const uuid = () => crypto.randomUUID();
 
@@ -20,18 +21,36 @@ const BILLING_INTERVALS: Record<string, number | null> = {
   CUSTOM: null,
 };
 
-function scheduleConfigForFee(fee: OperationalServiceValues['fees'][number]): BillingScheduleConfigV1 {
-  if (fee.scheduleConfig) return fee.scheduleConfig;
+function scheduleConfigForFee(fee: OperationalServiceValues['fees'][number], fallbackStartDate = ''): BillingScheduleConfigV1 {
   const cadence = fee.billingFrequency || 'CUSTOM';
   const interval = BILLING_INTERVALS[cadence];
+  try {
+    const canonical = canonicalizeBillingSchedule({
+      billingFrequency: cadence,
+      billingStartDate: fee.billingStartDate || fallbackStartDate || null,
+      customFrequencyLabel: fee.customFrequencyLabel || null,
+      scheduleConfig: fee.scheduleConfig,
+    });
+    if (canonical) return canonical;
+  } catch {
+    // Keep an invalid migrated value editable; save validation reports the
+    // precise compatibility/materialization issue to the form.
+  }
   return {
     schemaVersion: 1,
     cadence: cadence as BillingScheduleConfigV1['cadence'],
-    startDate: /^\d{4}-\d{2}-\d{2}$/.test(fee.billingStartDate)
-      ? fee.billingStartDate as BillingScheduleConfigV1['startDate']
+    startDate: /^\d{4}-\d{2}-\d{2}$/.test(fee.billingStartDate || fallbackStartDate)
+      ? (fee.billingStartDate || fallbackStartDate) as BillingScheduleConfigV1['startDate']
       : null,
-    customInterval: interval === null ? (cadence === 'CUSTOM' ? { unit: 'MONTH', count: 1 } : null) : { unit: 'MONTH', count: interval },
-    scheduleEntries: [],
+    customInterval: interval === null ? (cadence === 'CUSTOM' ? { unit: 'MONTH', count: fee.scheduleConfig?.customInterval?.count ?? 1 } : null) : { unit: 'MONTH', count: interval },
+    scheduleEntries: /^\d{4}-\d{2}-\d{2}$/.test(fee.billingStartDate || fallbackStartDate)
+      ? [{
+        key: 'default',
+        label: 'Billing date',
+        expression: { kind: 'DAY_OF_MONTH', day: Number((fee.billingStartDate || fallbackStartDate).slice(8, 10)) },
+        businessDayAdjustment: 'NONE',
+      }]
+      : [],
   };
 }
 
@@ -177,7 +196,7 @@ export function OperationalServiceForm({
   };
 
   const requestBillingDisposition = (next: 'CONFIGURED' | 'NOT_REQUIRED') => {
-    if (next === 'NOT_REQUIRED' && values.billingDisposition !== 'NOT_REQUIRED' && values.fees.length > 0) {
+    if (next === 'NOT_REQUIRED' && values.fees.length > 0) {
       setBillingHideConfirmationOpen(true);
       return;
     }
@@ -299,7 +318,7 @@ export function OperationalServiceForm({
         {values.fees.map((fee, index) => {
           const prefix = `fee-${fee.uiId}`;
           const updateFee = (changes: Partial<typeof fee>) => updateValue('fees', values.fees.map((item) => item.uiId === fee.uiId ? { ...item, ...changes } : item));
-          const scheduleConfig = scheduleConfigForFee(fee);
+          const scheduleConfig = scheduleConfigForFee(fee, values.startDate);
           return (
             <div key={fee.uiId} className="grid grid-cols-1 gap-3 rounded-lg border border-border-primary bg-background-primary p-3 sm:grid-cols-2">
               <FormInput id={`${prefix}-description`} className="sm:col-span-2" label="Description" aria-label={`Fee ${index + 1} description`} disabled={disabled || sectionsDisabled} value={fee.description} error={errors[`${prefix}-description`]} onChange={(event) => updateFee({ description: event.target.value })} />
@@ -307,17 +326,38 @@ export function OperationalServiceForm({
               <FormInput id={`${prefix}-currency`} label="Currency" aria-label={`Fee ${index + 1} currency`} className="uppercase" maxLength={3} disabled={disabled || sectionsDisabled} value={fee.currency} error={errors[`${prefix}-currency`]} onChange={(event) => updateFee({ currency: event.target.value.toUpperCase() })} />
               <SelectField id={`${prefix}-frequency`} label="Frequency" aria-label={`Fee ${index + 1} frequency`} disabled={disabled || sectionsDisabled} value={fee.billingFrequency} error={errors[`${prefix}-frequency`]} onChange={(event) => {
                 const billingFrequency = event.target.value as typeof fee.billingFrequency;
-                updateFee({ billingFrequency, customFrequencyLabel: billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : '', scheduleConfig: { ...scheduleConfig, cadence: billingFrequency === '' ? 'CUSTOM' : billingFrequency as BillingScheduleConfigV1['cadence'], customInterval: billingFrequency === '' || billingFrequency === 'CUSTOM' ? { unit: 'MONTH', count: 1 } : BILLING_INTERVALS[billingFrequency] === null ? null : { unit: 'MONTH', count: BILLING_INTERVALS[billingFrequency]! } } });
+                const nextFee = { ...fee, billingFrequency, customFrequencyLabel: billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : '' };
+                const nextSchedule = scheduleConfigForFee(nextFee, values.startDate);
+                updateFee({
+                  billingFrequency,
+                  customFrequencyLabel: nextFee.customFrequencyLabel,
+                  scheduleConfig: {
+                    ...nextSchedule,
+                    cadence: billingFrequency === '' ? 'CUSTOM' : billingFrequency as BillingScheduleConfigV1['cadence'],
+                    customInterval: billingFrequency === '' || billingFrequency === 'CUSTOM'
+                      ? { unit: 'MONTH', count: fee.scheduleConfig?.customInterval?.count ?? 1 }
+                      : BILLING_INTERVALS[billingFrequency] === null ? null : { unit: 'MONTH', count: BILLING_INTERVALS[billingFrequency]! },
+                  },
+                });
               }}>
                 <option value="">Select frequency</option>
                 {['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY', 'ONE_TIME', 'CUSTOM'].map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}
               </SelectField>
-              <FormInput id={`${prefix}-billing-start-date`} label="Billing start date" aria-label={`Fee ${index + 1} billing start date`} type="date" disabled={disabled || sectionsDisabled} value={fee.billingStartDate} error={errors[`${prefix}-billing-start-date`]} onChange={(event) => updateFee({ billingStartDate: event.target.value, scheduleConfig: { ...scheduleConfig, startDate: event.target.value ? event.target.value as BillingScheduleConfigV1['startDate'] : null } })} />
-              {fee.billingFrequency === 'CUSTOM' ? <FormInput id={`${prefix}-custom-frequency`} className="sm:col-span-2" label="Custom frequency" aria-label={`Fee ${index + 1} custom frequency`} disabled={disabled || sectionsDisabled} value={fee.customFrequencyLabel} error={errors[`${prefix}-custom-frequency`]} onChange={(event) => updateFee({ customFrequencyLabel: event.target.value })} /> : null}
+              <FormInput id={`${prefix}-billing-start-date`} label="Billing start date" aria-label={`Fee ${index + 1} billing start date`} type="date" disabled={disabled || sectionsDisabled} value={fee.billingStartDate} error={errors[`${prefix}-billing-start-date`]} onChange={(event) => {
+                const billingStartDate = event.target.value;
+                const nextSchedule = scheduleConfigForFee({ ...fee, billingStartDate }, values.startDate);
+                const effectiveStartDate = billingStartDate || values.startDate || null;
+                updateFee({ billingStartDate, scheduleConfig: { ...nextSchedule, startDate: effectiveStartDate as BillingScheduleConfigV1['startDate'] | null } });
+              }} />
+              {fee.billingFrequency === 'CUSTOM' ? <>
+                <FormInput id={`${prefix}-custom-frequency`} className="sm:col-span-2" label="Custom frequency" aria-label={`Fee ${index + 1} custom frequency`} disabled={disabled || sectionsDisabled} value={fee.customFrequencyLabel} error={errors[`${prefix}-custom-frequency`]} onChange={(event) => updateFee({ customFrequencyLabel: event.target.value })} />
+                <FormInput id={`${prefix}-custom-interval-months`} label="Custom interval months" aria-label={`Fee ${index + 1} custom interval months`} type="number" min={1} max={120} disabled={disabled || sectionsDisabled} value={scheduleConfig.customInterval?.count ?? 1} onChange={(event) => updateFee({ scheduleConfig: { ...scheduleConfig, customInterval: { unit: 'MONTH', count: Number(event.target.value) } } })} />
+              </> : null}
               <div className="sm:col-span-2">
                 <ScheduleEntryEditor
                   value={scheduleConfig.scheduleEntries}
                   disabled={disabled || sectionsDisabled}
+                  capabilities={{ allowedRelativeSourceKinds: ['CYCLE_START', 'CYCLE_END', 'CURRENT_SCHEDULE_ENTRY'], allowParameterizedOffsets: false }}
                   onChange={(scheduleEntries) => updateFee({ scheduleConfig: { ...scheduleConfig, startDate: fee.billingStartDate ? fee.billingStartDate as BillingScheduleConfigV1['startDate'] : scheduleConfig.startDate, scheduleEntries } })}
                 />
               </div>

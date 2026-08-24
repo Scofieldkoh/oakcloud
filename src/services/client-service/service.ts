@@ -7,9 +7,9 @@ import { clientServiceDeadlineImpactSchema, clientServiceDeadlineRulesSchema, ty
 import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
 import { clientServiceInclude, clientServiceInternalInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
-import { summarizeClientServiceFees } from './fee-summary';
+import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { convertLegacyBillingSchedule } from '@/services/billing/schedule';
+import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import {
   addMonthsClamped,
   currentDateInSingapore,
@@ -34,13 +34,16 @@ function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function billingScheduleConfigForFee(fee: NonNullable<UpdateClientServiceInput['feeLines']>[number]) {
-  if (fee.scheduleConfig != null) return fee.scheduleConfig;
-  return convertLegacyBillingSchedule({
+function billingScheduleConfigForFee(
+  fee: NonNullable<UpdateClientServiceInput['feeLines']>[number],
+  requireMaterializable: boolean,
+) {
+  return canonicalizeBillingSchedule({
     billingFrequency: fee.billingFrequency,
-    billingStartDate: fee.billingStartDate ?? null,
+    billingStartDate: fee.billingStartDate,
     customFrequencyLabel: fee.customFrequencyLabel ?? null,
-  }).config;
+    scheduleConfig: fee.scheduleConfig,
+  }, { requireMaterializable });
 }
 
 type ClientServiceDeadlineRuleRecord = {
@@ -905,6 +908,9 @@ export async function updateClientService(id: string, input: UpdateClientService
     }
     const activeCurrentFeeLines = current.feeLines.filter((fee) => fee.isActive !== false && fee.deletedAt == null);
     const feeSummaryBefore = summarizeClientServiceFees(activeCurrentFeeLines);
+    if (billingDisposition === 'NOT_REQUIRED' && (input.feeLines?.length ?? 0) > 0) {
+      throw new ValidationError('Not-required billing fee lines must be empty');
+    }
     const activeIncomingFeeLines = input.feeLines?.filter((fee) => fee.isActive !== false) ?? activeCurrentFeeLines;
     if (billingDisposition === 'CONFIGURED' && activeIncomingFeeLines.length === 0) {
       throw new ValidationError('Configured billing requires at least one fee line');
@@ -919,14 +925,22 @@ export async function updateClientService(id: string, input: UpdateClientService
     const billingReasonChanged = input.billingNotRequiredReason !== undefined && billingNotRequiredReason !== (current.billingNotRequiredReason ?? null);
     const billingConfigurationChanged = billingDispositionChanged || billingReasonChanged;
     const shouldArchiveBillingFees = billingDisposition === 'NOT_REQUIRED'
-      && activeCurrentFeeLines.length > 0
-      && (currentBillingDisposition !== 'NOT_REQUIRED' || billingReasonChanged);
+      && activeCurrentFeeLines.length > 0;
+    const preparedIncomingFeeLines = input.feeLines?.filter((fee) => fee.isActive !== false).map((fee) => {
+      const scheduleConfig = billingScheduleConfigForFee(fee, billingDisposition === 'CONFIGURED');
+      return {
+        ...fee,
+        customFrequencyLabel: fee.customFrequencyLabel ?? null,
+        billingStartDate: fee.billingStartDate ?? scheduleConfig?.startDate ?? null,
+        scheduleConfig,
+      };
+    });
     const feeSummaryAfter = billingDisposition === 'NOT_REQUIRED'
       ? summarizeClientServiceFees([])
-      : input.feeLines ? summarizeClientServiceFees(input.feeLines.filter((fee) => fee.isActive !== false)) : feeSummaryBefore;
+      : preparedIncomingFeeLines ? summarizeClientServiceFees(preparedIncomingFeeLines) : feeSummaryBefore;
     const feesChanged = input.feeLines !== undefined && !sameJson(
       activeCurrentFeeLines.map((fee) => ({ id: fee.id, description: fee.description, amount: fee.amount.toFixed(2), currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: dateOnly(fee.billingStartDate), scheduleConfig: fee.scheduleConfig ?? null, displayOrder: fee.displayOrder })),
-      input.feeLines.filter((fee) => fee.isActive !== false).map((fee) => ({ ...fee, customFrequencyLabel: fee.customFrequencyLabel ?? null, billingStartDate: fee.billingStartDate ?? null, scheduleConfig: billingScheduleConfigForFee(fee), isActive: true })),
+      (preparedIncomingFeeLines ?? []).map((fee) => ({ ...fee, isActive: true })),
     );
     const effectiveFeesChanged = feesChanged || shouldArchiveBillingFees;
     if (Object.keys(scalarChanges).length === 0 && !fieldValuesChanged && !effectiveFeesChanged && !billingConfigurationChanged && !deadlineRulesChanged) return current;
@@ -978,14 +992,14 @@ export async function updateClientService(id: string, input: UpdateClientService
     });
     if (claimed.count !== 1) throw new ConflictError('This service was updated by someone else. Reload it and try again.');
 
+    const billingArchiveAt = shouldArchiveBillingFees ? new Date() : null;
     if (billingDisposition === 'NOT_REQUIRED' && shouldArchiveBillingFees) {
-      const now = new Date();
       await tx.clientServiceFeeLine.updateMany({
         where: { tenantId: params.tenantId, clientServiceId: id, deletedAt: null, isActive: true },
-        data: { isActive: false, deletedAt: now, deletedReason: billingNotRequiredReason },
+        data: { isActive: false, deletedAt: billingArchiveAt!, deletedReason: billingNotRequiredReason },
       });
     } else if (input.feeLines && feesChanged && billingDisposition !== 'NOT_REQUIRED') {
-      const incomingIds = new Set(input.feeLines.filter((fee) => fee.isActive !== false).map((fee) => fee.id).filter((feeId): feeId is string => Boolean(feeId)));
+      const incomingIds = new Set((preparedIncomingFeeLines ?? []).map((fee) => fee.id).filter((feeId): feeId is string => Boolean(feeId)));
       const removedIds = current.feeLines
         .filter((fee) => fee.deletedAt == null && !incomingIds.has(fee.id))
         .map((fee) => fee.id);
@@ -1002,7 +1016,7 @@ export async function updateClientService(id: string, input: UpdateClientService
       }
 
       const newFeeLines: Array<Record<string, unknown>> = [];
-      for (const fee of input.feeLines.filter((line) => line.isActive !== false)) {
+      for (const fee of preparedIncomingFeeLines ?? []) {
         const existing = current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt == null);
         const archived = fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id && storedFee.deletedAt != null) : undefined;
         if (archived) throw new ValidationError('Archived fee lines cannot be submitted in a service edit');
@@ -1013,7 +1027,7 @@ export async function updateClientService(id: string, input: UpdateClientService
           billingFrequency: fee.billingFrequency,
           customFrequencyLabel: fee.customFrequencyLabel ?? null,
           billingStartDate: parseDate(fee.billingStartDate) ?? null,
-          scheduleConfig: billingScheduleConfigForFee(fee) ?? Prisma.JsonNull,
+          scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull,
           displayOrder: fee.displayOrder,
           isActive: true,
           deletedAt: null,
@@ -1059,10 +1073,38 @@ export async function updateClientService(id: string, input: UpdateClientService
     const newDeadlineRuleAudit = deadlineRulesChanged
       ? canonicalDeadlineRuleAudit(deadlineRuleValidation ?? currentDeadlineRuleValidation)
       : oldDeadlineRuleAudit;
+    const feeAuditBefore = snapshotClientServiceFees(current.feeLines);
+    const archivedAfterRows = current.feeLines.map((fee) => ({
+      ...fee,
+      ...(fee.isActive !== false && fee.deletedAt == null && billingArchiveAt
+        ? { isActive: false, deletedAt: billingArchiveAt, deletedReason: billingNotRequiredReason }
+        : {}),
+    }));
+    const incomingAuditIds = preparedIncomingFeeLines
+      ? new Set(preparedIncomingFeeLines.map((fee) => fee.id).filter((feeId): feeId is string => Boolean(feeId)))
+      : null;
+    const removedAfterRows = preparedIncomingFeeLines
+      ? current.feeLines
+        .filter((fee) => !incomingAuditIds?.has(fee.id))
+        .map((fee) => fee.isActive !== false && fee.deletedAt == null
+          ? { ...fee, isActive: false, deletedAt: new Date(), deletedReason: 'Removed from client service configuration' }
+          : fee)
+      : current.feeLines;
+    const feeAuditAfterRows = billingDisposition === 'NOT_REQUIRED' && shouldArchiveBillingFees
+      ? archivedAfterRows
+      : preparedIncomingFeeLines
+        ? [...removedAfterRows, ...preparedIncomingFeeLines]
+        : current.feeLines;
+    const feeAuditAfter = snapshotClientServiceFees(feeAuditAfterRows);
     const changes = {
       ...scalarChanges,
       ...(fieldValuesChanged ? { fieldValues: { old: '[redacted]', new: '[redacted]' } } : {}),
-      ...(effectiveFeesChanged ? { feeLines: { old: feeSummaryBefore, new: feeSummaryAfter } } : {}),
+      ...(effectiveFeesChanged ? {
+        feeLines: {
+          old: { summary: feeSummaryBefore, snapshot: feeAuditBefore },
+          new: { summary: feeSummaryAfter, snapshot: feeAuditAfter },
+        },
+      } : {}),
       ...(billingConfigurationChanged ? {
         billingDisposition: { old: currentBillingDisposition, new: billingDisposition },
         billingNotRequiredReason: { old: current.billingNotRequiredReason ?? null, new: billingDisposition === 'NOT_REQUIRED' ? billingNotRequiredReason : null },

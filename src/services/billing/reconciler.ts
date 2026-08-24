@@ -2,7 +2,7 @@ import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { compareDateOnly, formatDateOnly, parseDateOnly, type BusinessCalendarSnapshot, type DateOnly } from '@/services/service-schedule';
 import { hashConfiguration } from '@/services/service-schedule/hash';
-import { convertLegacyBillingSchedule, evaluateBillingSchedule } from './schedule';
+import { canonicalizeBillingSchedule, evaluateBillingSchedule } from './schedule';
 import type {
   BillingReconciliationPreservedCounts,
   BillingReconciliationResult,
@@ -214,17 +214,17 @@ function feeLineIsActive(feeLine: BillingFeeLine): boolean {
 }
 
 function scheduleConfigFor(feeLine: BillingFeeLine): BillingScheduleConfigV1 | null {
+  if (!feeLine.billingFrequency) return null;
   let config: BillingScheduleConfigV1 | null;
-  if (feeLine.scheduleConfig !== null && feeLine.scheduleConfig !== undefined) {
-    config = feeLine.scheduleConfig as BillingScheduleConfigV1;
-  } else {
-    if (!feeLine.billingFrequency) return null;
-    const conversion = convertLegacyBillingSchedule({
-      billingFrequency: feeLine.billingFrequency as never,
+  try {
+    config = canonicalizeBillingSchedule({
+      billingFrequency: feeLine.billingFrequency,
       billingStartDate: feeLine.billingStartDate ?? null,
       customFrequencyLabel: feeLine.customFrequencyLabel ?? null,
+      scheduleConfig: feeLine.scheduleConfig,
     });
-    config = conversion.config;
+  } catch {
+    return null;
   }
   // A schema-valid object still cannot generate a rolling occurrence without
   // an anchor date and at least one stable schedule entry. Treat this as an

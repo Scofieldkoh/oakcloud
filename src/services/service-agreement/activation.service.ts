@@ -10,7 +10,8 @@ import type { MarkServiceAgreementEffectiveInput } from '@/lib/validations/clien
 import { Prisma } from '@/generated/prisma';
 import type { ServiceAgreementActivationDto } from '@/services/client-service';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { convertLegacyBillingSchedule } from '@/services/billing/schedule';
+import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
+import { snapshotClientServiceFees } from '@/services/client-service/fee-summary';
 
 const log = createLogger('service-agreement-activation');
 const activationInclude = {
@@ -196,12 +197,25 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           const created = !service;
           const fees = item.feeLines.filter((fee) => fee.agreementEntityId === link.agreementEntityId);
           const activationBillingDisposition = fees.length > 0 ? 'CONFIGURED' : 'UNREVIEWED';
+          const activationFees = fees.map((fee) => {
+            const billingStartDate = fee.billingStartDate ?? item.startDate;
+            const scheduleConfig = canonicalizeBillingSchedule({
+              billingFrequency: fee.billingFrequency,
+              billingStartDate,
+              customFrequencyLabel: fee.customFrequencyLabel,
+            });
+            return {
+              ...fee,
+              billingStartDate,
+              scheduleConfig,
+            };
+          });
           if (!service) {
             service = await tx.clientService.create({ data: { tenantId: agreement.tenantId, companyId, source: 'AGREEMENT', agreementId: agreement.id, agreementItemId: item.id, serviceVariantId: item.serviceVariantId, familyName: item.familyNameSnapshot, serviceName: item.variantNameSnapshot, serviceCadence: item.serviceCadence, customCadenceLabel: item.customCadenceLabel, startDate: item.startDate, endDate: item.endDate, fieldValues: item.fieldValues as Prisma.InputJsonValue, billingDisposition: activationBillingDisposition, billingNotRequiredReason: null } });
           }
           clientServiceCount += 1;
           if (created && fees.length > 0) {
-            await tx.clientServiceFeeLine.createMany({ data: fees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, scheduleConfig: convertLegacyBillingSchedule({ billingFrequency: fee.billingFrequency, billingStartDate: fee.billingStartDate, customFrequencyLabel: fee.customFrequencyLabel }).config ?? Prisma.JsonNull, isActive: true, displayOrder: fee.displayOrder })) });
+            await tx.clientServiceFeeLine.createMany({ data: activationFees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull, isActive: true, displayOrder: fee.displayOrder })) });
           }
           if (created) {
             const variantRules = tx.serviceVariantDeadlineRule?.findMany
@@ -252,7 +266,7 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
               requestedById: agreement.activationRequestedById ?? null,
             });
 
-            await createAuditLog({ tenantId: agreement.tenantId, userId: agreement.activationRequestedById ?? undefined, companyId, entityType: 'ClientService', entityId: service.id, entityName: item.variantNameSnapshot, action: 'CREATE', changeSource: agreement.activationSource === 'MANUAL' ? 'MANUAL' : 'SYSTEM', changes: { billingDisposition: { old: null, new: activationBillingDisposition }, feeLines: { old: { count: 0 }, new: { count: fees.length } } }, summary: 'Created operational service from signed Service Agreement' }, tx);
+            await createAuditLog({ tenantId: agreement.tenantId, userId: agreement.activationRequestedById ?? undefined, companyId, entityType: 'ClientService', entityId: service.id, entityName: item.variantNameSnapshot, action: 'CREATE', changeSource: agreement.activationSource === 'MANUAL' ? 'MANUAL' : 'SYSTEM', changes: { billingDisposition: { old: null, new: activationBillingDisposition }, feeLines: { old: { count: 0, snapshot: snapshotClientServiceFees([]) }, new: { count: fees.length, snapshot: snapshotClientServiceFees(activationFees) } } }, summary: 'Created operational service from signed Service Agreement' }, tx);
           }
         }
       }

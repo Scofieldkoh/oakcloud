@@ -65,9 +65,35 @@ describe('service agreement activation', () => {
     const result = await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
     expect(result).toEqual({ status: 'completed', clientServiceCount: 2 });
     expect(prismaMock.clientService.create).toHaveBeenCalledTimes(2);
-    expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ source: 'AGREEMENT' }) }));
+    expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ source: 'AGREEMENT', billingDisposition: 'CONFIGURED' }) }));
+    expect(prismaMock.clientService.create.mock.calls[1]?.[0].data).toEqual(expect.objectContaining({ billingDisposition: 'UNREVIEWED' }));
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledTimes(1);
-    expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ sourceAgreementFeeLineId: 'agreement-fee-1' })] }));
+    expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({
+      sourceAgreementFeeLineId: 'agreement-fee-1',
+      billingStartDate: new Date('2026-07-30T00:00:00.000Z'),
+      scheduleConfig: expect.objectContaining({
+        cadence: 'ANNUALLY',
+        startDate: '2026-07-30',
+        scheduleEntries: [expect.objectContaining({ key: 'default' })],
+      }),
+    })] }));
+    expect(prismaMock.$queryRaw).toHaveBeenCalled();
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      entityType: 'ClientService',
+      changes: expect.objectContaining({
+        billingDisposition: { old: null, new: 'CONFIGURED' },
+        feeLines: expect.objectContaining({
+          new: expect.objectContaining({
+            snapshot: expect.objectContaining({
+              items: expect.arrayContaining([expect.objectContaining({
+                scheduleConfigHash: expect.any(String),
+                state: 'ACTIVE',
+              })]),
+            }),
+          }),
+        }),
+      }),
+    }), prismaMock);
   });
 
   it('attaches enabled catalog defaults to each activated service before enqueueing reconciliation', async () => {

@@ -36,6 +36,7 @@ describe('client service validation', () => {
     billingDisposition: 'CONFIGURED' as const,
     feeLines: [{
       description: 'Monthly service fee', amount: '100.00', currency: 'SGD', billingFrequency: 'MONTHLY' as const,
+      billingStartDate: '2026-08-01',
       scheduleConfig: billingSchedule,
     }],
   };
@@ -63,6 +64,53 @@ describe('client service validation', () => {
       billingDisposition: 'NOT_REQUIRED',
       billingNotRequiredReason: '  ',
       feeLines: [],
+    }).success).toBe(false);
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: 'Included elsewhere',
+      feeLines: configuredBillingInput.feeLines,
+    }).success).toBe(false);
+  });
+
+  it('requires configured fee schedules to have a start date and stable entry', () => {
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      feeLines: [{
+        ...configuredBillingInput.feeLines[0],
+        scheduleConfig: { ...billingSchedule, startDate: null, scheduleEntries: [] },
+      }],
+    }).success).toBe(false);
+
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      feeLines: [{ ...configuredBillingInput.feeLines[0], scheduleConfig: undefined }],
+    }).success).toBe(true);
+  });
+
+  it('cross-validates structured cadence and compatibility start date fields', () => {
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      feeLines: [{
+        ...configuredBillingInput.feeLines[0],
+        billingFrequency: 'ANNUALLY',
+      }],
+    }).success).toBe(false);
+    expect(updateClientServiceSchema.safeParse({
+      expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{
+        id: '33333333-3333-4333-8333-333333333333',
+        description: 'Monthly service fee', amount: '100.00', currency: 'SGD', billingFrequency: 'MONTHLY',
+        billingStartDate: '2026-09-01', scheduleConfig: billingSchedule, displayOrder: 0,
+      }],
+    }).success).toBe(false);
+  });
+
+  it('rejects caller-controlled manual fee lifecycle fields', () => {
+    expect(createManualClientServiceSchema.safeParse({
+      ...configuredBillingInput,
+      feeLines: [{ ...configuredBillingInput.feeLines[0], isActive: false }],
     }).success).toBe(false);
   });
 

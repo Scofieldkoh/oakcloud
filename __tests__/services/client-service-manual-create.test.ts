@@ -35,15 +35,15 @@ const input = {
     currency: 'SGD',
     billingFrequency: 'ANNUALLY' as const,
     customFrequencyLabel: null,
-    billingStartDate: null,
+    billingStartDate: '2026-08-01',
   }],
   confirmDuplicate: false,
 };
 const billingSchedule = {
   schemaVersion: 1 as const,
-  cadence: 'MONTHLY' as const,
+  cadence: 'ANNUALLY' as const,
   startDate: '2026-08-01',
-  customInterval: { unit: 'MONTH' as const, count: 1 },
+  customInterval: { unit: 'MONTH' as const, count: 12 },
   scheduleEntries: [{
     key: 'deposit',
     label: 'Deposit',
@@ -149,8 +149,65 @@ describe('manual client service creation', () => {
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       changes: expect.objectContaining({
         billingDisposition: { old: null, new: 'CONFIGURED' },
+        feeLines: expect.objectContaining({
+          new: expect.objectContaining({
+            snapshot: expect.objectContaining({
+              items: expect.arrayContaining([expect.objectContaining({
+                description: 'Annual service fee',
+                billingFrequency: 'ANNUALLY',
+                billingStartDate: '2026-08-01',
+                scheduleConfigHash: expect.any(String),
+                state: 'ACTIVE',
+              })]),
+            }),
+          }),
+        }),
       }),
     }), prismaMock);
+  });
+
+  it('materializes a deterministic legacy schedule when a configured fee omits structured config', async () => {
+    await createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{ ...input.feeLines[0], scheduleConfig: undefined }],
+    }, params);
+
+    expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: [expect.objectContaining({
+        billingStartDate: new Date('2026-08-01T00:00:00.000Z'),
+        scheduleConfig: expect.objectContaining({
+          cadence: 'ANNUALLY',
+          startDate: '2026-08-01',
+          scheduleEntries: [expect.objectContaining({ key: 'default' })],
+        }),
+      })],
+    }));
+  });
+
+  it('rejects not-required fee rows and caller-controlled inactive rows at the service boundary', async () => {
+    await expect(createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: 'Included elsewhere',
+      feeLines: [input.feeLines[0]],
+    }, params)).rejects.toThrow(/fee lines must be empty/i);
+
+    await expect(createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{ ...input.feeLines[0], isActive: false }],
+    } as never, params)).rejects.toThrow(/inactive|lifecycle/i);
+    expect(prismaMock.clientService.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects conflicting structured and legacy billing fields before writing', async () => {
+    await expect(createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{ ...input.feeLines[0], scheduleConfig: { ...billingSchedule, cadence: 'MONTHLY', customInterval: { unit: 'MONTH', count: 1 } } }],
+    }, params)).rejects.toThrow(/frequency|cadence/i);
+    expect(prismaMock.clientService.create).not.toHaveBeenCalled();
   });
 
   it('allows not-required billing without fee rows and preserves the user reason', async () => {

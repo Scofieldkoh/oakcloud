@@ -3,6 +3,7 @@ import type { ClientServiceDeadlineRuleDto, ClientServiceDto, ManualClientServic
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
+import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 
 export interface OperationalFieldRow {
   uiId: string;
@@ -84,6 +85,21 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
     if (fee.billingFrequency === 'CUSTOM' && !fee.customFrequencyLabel.trim()) {
       errors[`${prefix}-custom-frequency`] = `Fee ${index + 1} custom frequency is required.`;
     }
+    if (fee.billingFrequency) {
+      try {
+        const schedule = canonicalizeBillingSchedule({
+          billingFrequency: fee.billingFrequency,
+          billingStartDate: fee.billingStartDate || values.startDate || null,
+          customFrequencyLabel: fee.customFrequencyLabel || null,
+          scheduleConfig: fee.scheduleConfig,
+        });
+        if (!schedule?.startDate || schedule.scheduleEntries.length === 0) {
+          errors.feeLines = 'Each configured fee requires a valid billing start date and at least one schedule entry.';
+        }
+      } catch (error) {
+        errors.feeLines = error instanceof Error ? error.message : 'Billing schedule is invalid.';
+      }
+    }
   }
   const seenRules = new Set<string>();
   for (const rule of values.deadlineRules) {
@@ -160,7 +176,7 @@ export function manualCreateFeeLines(values: OperationalServiceValues) {
       currency: fee.currency.trim().toUpperCase(),
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : null,
-      billingStartDate: fee.billingStartDate || null,
+      billingStartDate: fee.billingStartDate || values.startDate || null,
       scheduleConfig: fee.scheduleConfig,
     };
   });
@@ -177,7 +193,7 @@ export function updateFeeLines(values: OperationalServiceValues) {
       currency: fee.currency.trim().toUpperCase(),
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : null,
-      billingStartDate: fee.billingStartDate || null,
+      billingStartDate: fee.billingStartDate || values.startDate || null,
       scheduleConfig: fee.scheduleConfig,
       displayOrder,
     };
@@ -233,6 +249,24 @@ function serviceDeadlineRuleRow(rule: ClientServiceDeadlineRuleDto): Operational
   };
 }
 
+function serviceFeeScheduleConfig(
+  fee: ClientServiceDto['feeLines'][number],
+  fallbackStartDate: string,
+): BillingScheduleConfigV1 | null {
+  if (fee.scheduleConfig) return fee.scheduleConfig;
+  try {
+    return canonicalizeBillingSchedule({
+      billingFrequency: fee.billingFrequency,
+      billingStartDate: fee.billingStartDate ?? fallbackStartDate,
+      customFrequencyLabel: fee.customFrequencyLabel,
+    });
+  } catch {
+    // Legacy CUSTOM rows without a structured configuration remain editable;
+    // validation will require the user to supply a materializable schedule.
+    return null;
+  }
+}
+
 export function valuesFromClientService(service: ClientServiceDto): OperationalServiceValues {
   return {
     status: service.status,
@@ -259,7 +293,7 @@ export function valuesFromClientService(service: ClientServiceDto): OperationalS
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.customFrequencyLabel ?? '',
       billingStartDate: fee.billingStartDate ?? '',
-      scheduleConfig: fee.scheduleConfig ?? null,
+      scheduleConfig: serviceFeeScheduleConfig(fee, service.startDate),
       catalogDerived: false,
     })),
     deadlineRules: (service.deadlineRules ?? []).map(serviceDeadlineRuleRow),

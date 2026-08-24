@@ -5,11 +5,10 @@ import {
   type BusinessCalendarSnapshot,
   type DateOnly,
 } from '@/services/service-schedule';
-import { billingScheduleConfigSchema } from '@/lib/validations/billing';
 import { prisma } from '@/lib/prisma';
 import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import { Prisma, type Prisma as PrismaTypes } from '@/generated/prisma';
-import { convertLegacyBillingSchedule, evaluateBillingSchedule } from './schedule';
+import { canonicalizeBillingSchedule, evaluateBillingSchedule } from './schedule';
 import type { BillingScheduleConfigV1, EvaluatedBillingOccurrence } from './types';
 
 export type BillingCoverageIssueType =
@@ -357,55 +356,41 @@ function occurrenceIdentity(value: CoverageOccurrence): string {
   return [value.feeLineId, value.billingPeriodKey, value.scheduleEntryKey, value.generationKey].join('|');
 }
 
-function hasOwn(record: Record<string, unknown>, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(record, key);
-}
-
 function scheduleConfigFor(line: CoverageFeeLine): { config: BillingScheduleConfigV1 | null; issueType: BillingCoverageIssueType | null } {
-  if (line.scheduleConfig !== null && line.scheduleConfig !== undefined) {
-    const raw = asRecord(line.scheduleConfig);
-    const cadence = raw.cadence;
-    if (!hasOwn(raw, 'startDate') || raw.startDate === null) {
-      return { config: null, issueType: 'MISSING_START_DATE' };
-    }
-    const entries = raw.scheduleEntries;
-    if (!hasOwn(raw, 'scheduleEntries') || entries === null || (Array.isArray(entries) && entries.length === 0)) {
+  if (!line.billingFrequency) return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
+  const raw = line.scheduleConfig !== null && line.scheduleConfig !== undefined ? asRecord(line.scheduleConfig) : null;
+  const rawCadence = typeof raw?.cadence === 'string' ? raw.cadence : line.billingFrequency;
+  if (raw) {
+    if (!hasOwn(raw, 'startDate') || raw.startDate === null) return { config: null, issueType: 'MISSING_START_DATE' };
+    if (!hasOwn(raw, 'scheduleEntries') || raw.scheduleEntries === null || (Array.isArray(raw.scheduleEntries) && raw.scheduleEntries.length === 0)) {
       return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
     }
-    if (cadence === 'CUSTOM') {
-      if (!hasOwn(raw, 'customInterval') || raw.customInterval === null) {
-        return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
-      }
-      if (typeof raw.customInterval !== 'object' || Array.isArray(raw.customInterval)) {
-        return { config: null, issueType: 'INVALID_CUSTOM_SCHEDULE' };
-      }
+    if (rawCadence === 'CUSTOM') {
+      if (!hasOwn(raw, 'customInterval') || raw.customInterval === null) return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
+      if (typeof raw.customInterval !== 'object' || Array.isArray(raw.customInterval)) return { config: null, issueType: 'INVALID_CUSTOM_SCHEDULE' };
       const interval = asRecord(raw.customInterval);
-      if (!hasOwn(interval, 'unit') || !hasOwn(interval, 'count') || interval.unit === null || interval.count === null) {
-        return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
-      }
-    }
-    try {
-      const config = billingScheduleConfigSchema.parse(line.scheduleConfig) as BillingScheduleConfigV1;
-      if (config.cadence === 'CUSTOM' && !config.customInterval) return { config, issueType: 'MISSING_SCHEDULE_PARAMETER' };
-      if (config.scheduleEntries.length === 0) return { config, issueType: 'MISSING_SCHEDULE_PARAMETER' };
-      return { config, issueType: null };
-    } catch {
-      return { config: null, issueType: cadence === 'CUSTOM' ? 'INVALID_CUSTOM_SCHEDULE' : 'MISSING_SCHEDULE_PARAMETER' };
+      if (!hasOwn(interval, 'unit') || !hasOwn(interval, 'count') || interval.unit === null || interval.count === null) return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
     }
   }
+  let config: BillingScheduleConfigV1 | null;
+  try {
+    config = canonicalizeBillingSchedule({
+      billingFrequency: line.billingFrequency,
+      billingStartDate: line.billingStartDate ?? null,
+      customFrequencyLabel: line.customFrequencyLabel ?? null,
+      scheduleConfig: line.scheduleConfig,
+    });
+  } catch {
+    return { config: null, issueType: rawCadence === 'CUSTOM' ? 'INVALID_CUSTOM_SCHEDULE' : 'MISSING_SCHEDULE_PARAMETER' };
+  }
+  if (!config) return { config: null, issueType: rawCadence === 'CUSTOM' ? 'INVALID_CUSTOM_SCHEDULE' : 'MISSING_SCHEDULE_PARAMETER' };
+  if (!config.startDate) return { config, issueType: 'MISSING_START_DATE' };
+  if (config.scheduleEntries.length === 0) return { config, issueType: 'MISSING_SCHEDULE_PARAMETER' };
+  return { config, issueType: null };
+}
 
-  if (!line.billingFrequency) return { config: null, issueType: 'MISSING_SCHEDULE_PARAMETER' };
-  const conversion = convertLegacyBillingSchedule({
-    billingFrequency: line.billingFrequency as never,
-    billingStartDate: line.billingStartDate ?? null,
-    customFrequencyLabel: line.customFrequencyLabel ?? null,
-  });
-  if (!conversion.config) {
-    return { config: null, issueType: conversion.issueType === 'INVALID_CUSTOM_SCHEDULE' ? 'INVALID_CUSTOM_SCHEDULE' : 'MISSING_SCHEDULE_PARAMETER' };
-  }
-  if (!conversion.config.startDate) return { config: conversion.config, issueType: 'MISSING_START_DATE' };
-  if (conversion.config.scheduleEntries.length === 0) return { config: conversion.config, issueType: 'MISSING_SCHEDULE_PARAMETER' };
-  return { config: conversion.config, issueType: null };
+function hasOwn(record: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key);
 }
 
 function buildIssue(

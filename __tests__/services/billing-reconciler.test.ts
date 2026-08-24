@@ -199,6 +199,26 @@ describe('reconcileClientServiceBilling', () => {
     }));
   });
 
+  it('cancels only future open rows for not-required billing and preserves billing history', async () => {
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: 'Included elsewhere',
+    }));
+    mocks.billingOccurrence.findMany.mockResolvedValue([
+      occurrence({ id: 'future-open', billingPeriodKey: '2026-09', status: 'OPEN' }),
+      occurrence({ id: 'historical-open', billingPeriodKey: '2026-07', operativeExpectedDate: new Date('2026-07-01'), status: 'OPEN' }),
+      occurrence({ id: 'billed', billingPeriodKey: '2026-10', status: 'BILLED' }),
+      occurrence({ id: 'waived', billingPeriodKey: '2026-11', status: 'WAIVED' }),
+    ]);
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.cancelled).toBe(1);
+    expect(result.preservedByReason).toMatchObject({ HISTORICAL: 1, BILLED: 1, WAIVED: 1 });
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(1);
+    expect(mocks.billingOccurrence.updateMany.mock.calls[0]?.[0].where).toEqual(expect.objectContaining({ id: 'future-open', status: 'OPEN' }));
+  });
+
   it('preserves existing rows when a fee-line schedule is incomplete', async () => {
     mocks.clientService.findFirst.mockResolvedValue(service({
       feeLines: [feeLine({ scheduleConfig: null, billingStartDate: null })],

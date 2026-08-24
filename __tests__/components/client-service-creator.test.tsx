@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 const hooksMock = vi.hoisted(() => ({
   useManualClientServiceCatalogOptions: vi.fn(),
@@ -48,6 +49,22 @@ const options = {
       customCadenceLabel: null,
       fields: [],
       feeTemplates: [],
+    },
+    {
+      id: 'variant-4',
+      name: 'Custom Support',
+      family: { id: 'family-3', name: 'Specialist Services' },
+      serviceCadence: 'MONTHLY',
+      customCadenceLabel: null,
+      fields: [],
+      feeTemplates: [{
+        description: 'Custom support fee',
+        defaultAmount: '1800.00',
+        currency: 'SGD',
+        billingFrequency: 'CUSTOM' as const,
+        customFrequencyLabel: 'Every 18 months',
+        displayOrder: 0,
+      }],
     },
   ],
 };
@@ -152,18 +169,34 @@ describe('ClientServiceCreator', () => {
     expect(screen.getByLabelText('Fee 1 frequency')).toHaveValue('ANNUALLY');
   });
 
+  it('materializes a deterministic billing entry when a catalog fee receives its start date', async () => {
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+    fireEvent.change(screen.getByLabelText('Fee 1 billing start date'), { target: { value: '2026-08-01' } });
+    expect(screen.getByRole('status')).toHaveTextContent('1 of 31 schedule entries configured');
+  });
+
+  it('allows a custom catalog fee to use a non-one-month interval', async () => {
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Custom Support');
+    const interval = screen.getByLabelText('Fee 1 custom interval months');
+    fireEvent.change(interval, { target: { value: '18' } });
+    expect(interval).toHaveValue(18);
+  });
+
   it('requires an explicit billing choice and confirms before hiding active schedules', async () => {
+    const user = userEvent.setup();
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');
 
     expect(screen.getByRole('button', { name: 'Billing configured' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'No billing required' })).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(screen.getByRole('button', { name: 'No billing required' }));
+    await user.click(screen.getByRole('button', { name: 'No billing required' }));
 
-    const dialog = screen.getByRole('dialog', { name: 'Hide billing schedules?' });
+    const dialog = await screen.findByRole('dialog', { name: 'Hide billing schedules?' });
     expect(dialog).toHaveTextContent(/active billing schedules/i);
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Hide schedules' }));
-    expect(screen.getByLabelText('Why is billing not required?')).toBeVisible();
+    await user.click(within(dialog).getByRole('button', { name: 'Hide schedules' }));
+    expect(await screen.findByLabelText('Why is billing not required?')).toBeVisible();
     expect(screen.queryByLabelText('Fee 1 amount')).not.toBeInTheDocument();
   });
 

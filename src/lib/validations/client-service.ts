@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { billingFrequencySchema, serviceCadenceSchema } from '@/lib/validations/service-catalog';
 import { billingScheduleConfigSchema } from '@/lib/validations/billing';
 import { scheduleEntriesSchema } from '@/lib/validations/service-schedule';
+import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 
 const dateOrderIssue = (ctx: z.RefinementCtx) => ctx.addIssue({
   code: z.ZodIssueCode.custom,
@@ -22,7 +23,13 @@ const jsonObjectSchema = z.record(jsonValueSchema);
 const billingDispositionSchema = z.enum(['CONFIGURED', 'NOT_REQUIRED', 'UNREVIEWED']);
 const manualBillingDispositionSchema = z.enum(['CONFIGURED', 'NOT_REQUIRED']);
 
-type BillingLineLike = { isActive?: boolean };
+type BillingLineLike = {
+  isActive?: boolean;
+  billingFrequency?: string;
+  billingStartDate?: string | Date | null;
+  customFrequencyLabel?: string | null;
+  scheduleConfig?: unknown;
+};
 
 function validateBillingConfiguration(
   value: {
@@ -40,8 +47,30 @@ function validateBillingConfiguration(
   if (value.billingDisposition === 'NOT_REQUIRED' && !value.billingNotRequiredReason?.trim()) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['billingNotRequiredReason'], message: 'Explain why billing is not required' });
   }
+  if (value.billingDisposition === 'NOT_REQUIRED' && (value.feeLines?.length ?? 0) > 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['feeLines'], message: 'Not-required billing must not include fee lines' });
+  }
   if (value.billingDisposition !== 'NOT_REQUIRED' && value.billingNotRequiredReason != null) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['billingNotRequiredReason'], message: 'A not-required reason is only valid when billing is not required' });
+  }
+  if (value.feeLines) {
+    value.feeLines.forEach((fee, index) => {
+      if (value.billingDisposition === 'NOT_REQUIRED') return;
+      try {
+        canonicalizeBillingSchedule({
+          billingFrequency: fee.billingFrequency ?? '',
+          billingStartDate: fee.billingStartDate,
+          customFrequencyLabel: fee.customFrequencyLabel,
+          scheduleConfig: fee.scheduleConfig,
+        }, { requireMaterializable: value.billingDisposition === 'CONFIGURED' });
+      } catch (error) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['feeLines', index, 'scheduleConfig'],
+          message: error instanceof Error ? error.message : 'Billing schedule is invalid',
+        });
+      }
+    });
   }
   if (options.legacyEmptyFeeLinesAreInvalid && value.billingDisposition === undefined && activeFeeLines.length === 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['feeLines'], message: 'At least one fee line is required' });
@@ -170,7 +199,6 @@ const manualFeeLineSchema = z.object({
   customFrequencyLabel: z.string().trim().min(1).max(100).nullable().optional(),
   billingStartDate: z.string().date().nullable().optional(),
   scheduleConfig: billingScheduleConfigSchema.nullable().optional(),
-  isActive: z.boolean().optional(),
 }).strict().superRefine((value, ctx) => {
   if (value.billingFrequency === 'CUSTOM' && !value.customFrequencyLabel?.trim()) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['customFrequencyLabel'], message: 'Custom frequency label is required' });
@@ -205,7 +233,7 @@ export const createManualClientServiceSchema = z.object({
   feeLines: value.feeLines.map((fee) => ({
     ...fee,
     customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel ?? null : null,
-    billingStartDate: fee.billingStartDate ?? null,
+    billingStartDate: fee.billingStartDate ?? fee.scheduleConfig?.startDate ?? null,
   })),
 }));
 

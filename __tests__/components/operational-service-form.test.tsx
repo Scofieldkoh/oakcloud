@@ -27,7 +27,19 @@ function baseValues(): OperationalServiceValues {
       currency: 'SGD',
       billingFrequency: 'ANNUALLY',
       customFrequencyLabel: '',
-      billingStartDate: '',
+      billingStartDate: '2026-08-01',
+      scheduleConfig: {
+        schemaVersion: 1,
+        cadence: 'ANNUALLY',
+        startDate: '2026-08-01',
+        customInterval: { unit: 'MONTH', count: 12 },
+        scheduleEntries: [{
+          key: 'default',
+          label: 'Billing date',
+          expression: { kind: 'DAY_OF_MONTH', day: 1 },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
       catalogDerived: true,
     }],
     deadlineRules: [],
@@ -116,6 +128,46 @@ describe('OperationalServiceForm', () => {
       fees: [{ ...values.fees[0], billingFrequency: 'CUSTOM', customFrequencyLabel: 'Every 18 months' }],
     });
     expect(valid[`fee-${values.fees[0].uiId}-custom-frequency`]).toBeUndefined();
+  });
+
+  it('requires a materializable billing schedule for configured fees', () => {
+    const values = baseValues();
+    expect(validateOperationalServiceValues({
+      ...values,
+      startDate: '',
+      fees: [{ ...values.fees[0], billingStartDate: '' }],
+    }).feeLines).toBeTruthy();
+    expect(validateOperationalServiceValues({
+      ...values,
+      fees: [{ ...values.fees[0], scheduleConfig: { ...values.fees[0].scheduleConfig!, scheduleEntries: [] } }],
+    }).feeLines).toBeTruthy();
+  });
+
+  it('lets custom billing schedules choose a non-default month interval', () => {
+    const values = {
+      ...baseValues(),
+      fees: [{
+        ...baseValues().fees[0],
+        billingFrequency: 'CUSTOM' as const,
+        customFrequencyLabel: 'Every 18 months',
+        scheduleConfig: {
+          schemaVersion: 1 as const,
+          cadence: 'CUSTOM' as const,
+          startDate: '2026-08-01' as const,
+          customInterval: { unit: 'MONTH' as const, count: 1 },
+          scheduleEntries: [{
+            key: 'default', label: 'Billing date',
+            expression: { kind: 'DAY_OF_MONTH' as const, day: 1 },
+            businessDayAdjustment: 'NONE' as const,
+          }],
+        },
+      }],
+    };
+    render(<Harness initial={values} />);
+    const interval = screen.getByLabelText('Fee 1 custom interval months');
+    expect(interval).toHaveValue(1);
+    fireEvent.change(interval, { target: { value: '18' } });
+    expect(interval).toHaveValue(18);
   });
 
   it('associates field-addressable errors with their controls', () => {

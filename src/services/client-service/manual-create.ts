@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { createAuditLog } from '@/lib/audit';
-import { NotFoundError } from '@/lib/errors';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { isSerializationConflict, runSerializableTransaction } from '@/lib/prisma-transaction';
 import type { TenantAwareParams } from '@/lib/types';
@@ -7,21 +8,24 @@ import type { ClientServiceDeadlineRuleInput, CreateManualClientServiceInput, Cr
 import { Prisma } from '@/generated/prisma';
 import type { BillingDisposition } from '@/generated/prisma';
 import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './errors';
-import { summarizeClientServiceFees } from './fee-summary';
+import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { convertLegacyBillingSchedule } from '@/services/billing/schedule';
+import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import { canonicalDeadlineRuleAudit, persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
 
 const parseDateOnly = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
-function scheduleConfigForFee(fee: CreateManualClientServiceInput['feeLines'][number]) {
-  if (fee.scheduleConfig != null) return fee.scheduleConfig;
-  return convertLegacyBillingSchedule({
+function scheduleConfigForFee(
+  fee: CreateManualClientServiceInput['feeLines'][number],
+  requireMaterializable: boolean,
+) {
+  return canonicalizeBillingSchedule({
     billingFrequency: fee.billingFrequency,
     billingStartDate: fee.billingStartDate,
     customFrequencyLabel: fee.customFrequencyLabel,
-  }).config;
+    scheduleConfig: fee.scheduleConfig,
+  }, { requireMaterializable });
 }
 
 export async function createManualClientService(
@@ -44,10 +48,35 @@ export async function createManualClientService(
     feeLines: rawInput.feeLines.map((fee) => ({
       ...fee,
       customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel ?? null : null,
-      billingStartDate: fee.billingStartDate ?? null,
+      billingStartDate: fee.billingStartDate ?? fee.scheduleConfig?.startDate ?? null,
     })),
     confirmDuplicate: rawInput.confirmDuplicate ?? false,
   } as CreateManualClientServiceInput;
+
+  const rawFeeLines = rawInput.feeLines as Array<Record<string, unknown>>;
+  if (rawFeeLines.some((fee) => Object.prototype.hasOwnProperty.call(fee, 'isActive'))) {
+    throw new ValidationError('Manual fee lines cannot specify lifecycle state');
+  }
+  if (input.billingDisposition === 'NOT_REQUIRED' && input.feeLines.length > 0) {
+    throw new ValidationError('Not-required billing fee lines must be empty');
+  }
+  if (input.billingDisposition === 'NOT_REQUIRED' && (input.billingNotRequiredReason ?? '').trim().length < 3) {
+    throw new ValidationError('Explain why billing is not required');
+  }
+  if (input.billingDisposition !== 'NOT_REQUIRED' && rawInput.billingNotRequiredReason != null) {
+    throw new ValidationError('A not-required reason is only valid when billing is not required');
+  }
+  if (input.billingDisposition === 'CONFIGURED' && input.feeLines.length === 0) {
+    throw new ValidationError('Configured billing requires at least one fee line');
+  }
+  const preparedFees = input.feeLines.map((fee) => {
+    const scheduleConfig = scheduleConfigForFee(fee, input.billingDisposition === 'CONFIGURED');
+    return {
+      ...fee,
+      billingStartDate: fee.billingStartDate ?? scheduleConfig?.startDate ?? null,
+      scheduleConfig,
+    };
+  });
   try {
     return await runSerializableTransaction(prisma, async (tx) => {
       const company = await tx.company.findFirst({
@@ -138,9 +167,10 @@ export async function createManualClientService(
         },
       });
 
-      if (input.feeLines.length > 0) {
+      const feeRows = preparedFees.map((fee, displayOrder) => ({ ...fee, id: randomUUID(), displayOrder }));
+      if (feeRows.length > 0) {
         await tx.clientServiceFeeLine.createMany({
-          data: input.feeLines.map((fee, displayOrder) => ({
+          data: feeRows.map((fee) => ({
             tenantId: params.tenantId,
             clientServiceId: service.id,
             sourceAgreementFeeLineId: null,
@@ -150,14 +180,15 @@ export async function createManualClientService(
             billingFrequency: fee.billingFrequency,
             customFrequencyLabel: fee.customFrequencyLabel,
             billingStartDate: fee.billingStartDate ? parseDateOnly(fee.billingStartDate) : null,
-            scheduleConfig: scheduleConfigForFee(fee) ?? Prisma.JsonNull,
-            isActive: fee.isActive !== false,
-            displayOrder,
+            scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull,
+            isActive: true,
+            displayOrder: fee.displayOrder,
           })),
         });
       }
 
-      const feeSummary = summarizeClientServiceFees(input.feeLines);
+      const feeSummary = summarizeClientServiceFees(preparedFees);
+      const feeAuditSnapshot = snapshotClientServiceFees(feeRows);
 
       let deadlineRuleValidation;
       if (input.deadlineRules !== undefined) {
@@ -269,7 +300,10 @@ export async function createManualClientService(
           ...(input.billingDisposition === 'NOT_REQUIRED' ? {
             billingNotRequiredReason: { old: null, new: input.billingNotRequiredReason },
           } : {}),
-          feeLines: { old: { count: 0, totals: {} }, new: feeSummary },
+          feeLines: {
+            old: { summary: { count: 0, totals: {} }, snapshot: snapshotClientServiceFees([]) },
+            new: { summary: feeSummary, snapshot: feeAuditSnapshot },
+          },
           deadlineRules: { old: canonicalDeadlineRuleAudit(undefined), new: canonicalDeadlineRuleAudit(deadlineRuleValidation) },
           reconciliationCorrelationId: { old: null, new: reconciliationCorrelationId },
           duplicateConfirmed: { old: false, new: input.confirmDuplicate },

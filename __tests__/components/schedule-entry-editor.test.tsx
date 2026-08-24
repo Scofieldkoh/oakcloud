@@ -68,4 +68,42 @@ describe('ScheduleEntryEditor', () => {
       expression: expect.objectContaining({ offset: { kind: 'INTEGER_PARAMETER', key: 'daysAfterDue' } }),
     })]);
   });
+
+  it('restricts billing schedules to evaluator-safe relative sources and literal offsets', () => {
+    const onChange = vi.fn();
+    render(<ScheduleEntryEditor
+      value={[{
+        key: 'billing-date',
+        label: 'Billing date',
+        expression: {
+          kind: 'RELATIVE_TO_SOURCE' as const,
+          source: { kind: 'CYCLE_START' as const },
+          offset: 1,
+          unit: 'CALENDAR_DAY' as const,
+        },
+        businessDayAdjustment: 'NONE' as const,
+      }]}
+      onChange={onChange}
+      capabilities={{
+        allowedRelativeSourceKinds: ['CYCLE_START', 'CYCLE_END', 'CURRENT_SCHEDULE_ENTRY'],
+        allowParameterizedOffsets: false,
+      }}
+    />);
+
+    const source = screen.getByLabelText('Relative source');
+    expect(screen.getByRole('option', { name: /Cycle start/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Cycle end/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Current schedule entry/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Company field/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Parameter/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Milestone/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /^Schedule entry$/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Offset operand')).toHaveValue('LITERAL');
+    expect(screen.queryByRole('option', { name: /Integer parameter/i })).not.toBeInTheDocument();
+
+    fireEvent.change(source, { target: { value: 'CYCLE_END' } });
+    expect(onChange).toHaveBeenCalledWith([expect.objectContaining({
+      expression: expect.objectContaining({ source: { kind: 'CYCLE_END' } }),
+    })]);
+  });
 });

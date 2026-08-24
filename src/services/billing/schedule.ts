@@ -14,6 +14,7 @@ import {
 } from '@/services/service-schedule';
 import type { DateOnly, DateSource, ScheduleEntry } from '@/services/service-schedule';
 import type {
+  BillingCadence,
   BillingScheduleConfigV1,
   BillingScheduleConversion,
   BillingScheduleEvaluationInput,
@@ -32,6 +33,52 @@ function asDateOnly(value: Date | string): DateOnly {
   if (value instanceof Date) return formatDateOnly(value);
   parseDateOnly(value as DateOnly);
   return value as DateOnly;
+}
+
+type CanonicalBillingScheduleInput = {
+  billingFrequency: BillingCadence | string;
+  billingStartDate?: DateOnly | Date | string | null;
+  customFrequencyLabel?: string | null;
+  scheduleConfig?: unknown;
+};
+
+/**
+ * Resolve a fee's structured schedule once, preserving legacy compatibility
+ * fields as the canonical cadence/start-date contract. Callers that persist a
+ * CONFIGURED fee must request materialization so empty schedules cannot enter
+ * the rolling evaluator.
+ */
+export function canonicalizeBillingSchedule(
+  input: CanonicalBillingScheduleInput,
+  options: { requireMaterializable?: boolean } = {},
+): BillingScheduleConfigV1 | null {
+  const legacyStartDate = input.billingStartDate === undefined
+    ? undefined
+    : input.billingStartDate === null
+      ? null
+      : asDateOnly(input.billingStartDate);
+  let config: BillingScheduleConfigV1 | null;
+
+  if (input.scheduleConfig !== undefined && input.scheduleConfig !== null) {
+    config = billingScheduleConfigSchema.parse(input.scheduleConfig) as BillingScheduleConfigV1;
+    if (config.cadence !== input.billingFrequency) {
+      throw new ValidationError('Structured billing cadence must match billing frequency');
+    }
+    if (legacyStartDate !== undefined && legacyStartDate !== config.startDate) {
+      throw new ValidationError('Structured billing start date must match billing start date');
+    }
+  } else {
+    config = convertLegacyBillingSchedule({
+      billingFrequency: input.billingFrequency as never,
+      billingStartDate: input.billingStartDate ?? null,
+      customFrequencyLabel: input.customFrequencyLabel ?? null,
+    }).config;
+  }
+
+  if (options.requireMaterializable && (!config?.startDate || config.scheduleEntries.length === 0)) {
+    throw new ValidationError('Configured billing requires a valid start date and at least one schedule entry');
+  }
+  return config;
 }
 
 function assertNonEmpty(value: string, name: string): void {
