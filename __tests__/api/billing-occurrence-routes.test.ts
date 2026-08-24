@@ -104,6 +104,37 @@ describe('billing occurrence routes', () => {
     expect(mocks.updateBillingOccurrence).toHaveBeenCalledWith(occurrenceId, expect.objectContaining({ status: 'BILLED' }), { tenantId, userId: session.id, companyIds: [companyId] });
   });
 
+  it('blocks lifecycle mutations when the Services workspace is disabled', async () => {
+    mocks.requireServicesWorkspaceEnabled.mockRejectedValueOnce(new NotFoundError('Services workspace is disabled'));
+
+    const response = await detailPATCH(
+      new NextRequest(`http://localhost/api/billing-occurrences/${occurrenceId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expectedUpdatedAt: occurrence.updatedAt, status: 'BILLED', billedDate: null, updateScope: 'THIS_OCCURRENCE', reason: null }),
+      }),
+      { params: Promise.resolve({ id: occurrenceId }) },
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.getBillingOccurrence).not.toHaveBeenCalled();
+    expect(mocks.updateBillingOccurrence).not.toHaveBeenCalled();
+  });
+
+  it('returns a safe not-found response when lifecycle permission is denied', async () => {
+    mocks.requirePermission.mockRejectedValueOnce(new Error('Permission denied for company'));
+
+    const response = await detailPATCH(
+      new NextRequest(`http://localhost/api/billing-occurrences/${occurrenceId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expectedUpdatedAt: occurrence.updatedAt, status: 'BILLED', billedDate: null, updateScope: 'THIS_OCCURRENCE', reason: null }),
+      }),
+      { params: Promise.resolve({ id: occurrenceId }) },
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.updateBillingOccurrence).not.toHaveBeenCalled();
+  });
+
   it('checks company:update for override reset', async () => {
     const response = await resetPOST(
       new NextRequest(`http://localhost/api/billing-occurrences/${occurrenceId}/reset-override`, {
@@ -116,6 +147,37 @@ describe('billing occurrence routes', () => {
     expect(response.status).toBe(200);
     expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', companyId);
     expect(mocks.resetBillingOverride).toHaveBeenCalledWith(occurrenceId, expect.objectContaining({ target: 'ALL' }), { tenantId, userId: session.id, companyIds: [companyId] });
+  });
+
+  it('blocks override reset when the Services workspace is disabled', async () => {
+    mocks.requireServicesWorkspaceEnabled.mockRejectedValueOnce(new NotFoundError('Services workspace is disabled'));
+
+    const response = await resetPOST(
+      new NextRequest(`http://localhost/api/billing-occurrences/${occurrenceId}/reset-override`, {
+        method: 'POST',
+        body: JSON.stringify({ expectedUpdatedAt: occurrence.updatedAt, target: 'ALL', reason: 'Revert manual values' }),
+      }),
+      { params: Promise.resolve({ id: occurrenceId }) },
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.getBillingOccurrence).not.toHaveBeenCalled();
+    expect(mocks.resetBillingOverride).not.toHaveBeenCalled();
+  });
+
+  it('returns a safe not-found response when override reset permission is denied', async () => {
+    mocks.requirePermission.mockRejectedValueOnce(new Error('Permission denied for company'));
+
+    const response = await resetPOST(
+      new NextRequest(`http://localhost/api/billing-occurrences/${occurrenceId}/reset-override`, {
+        method: 'POST',
+        body: JSON.stringify({ expectedUpdatedAt: occurrence.updatedAt, target: 'ALL', reason: 'Revert manual values' }),
+      }),
+      { params: Promise.resolve({ id: occurrenceId }) },
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.resetBillingOverride).not.toHaveBeenCalled();
   });
 
   it('returns tenant-scoped detail only after company:read', async () => {

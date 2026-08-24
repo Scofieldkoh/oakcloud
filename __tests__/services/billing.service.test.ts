@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes } from '@/lib/errors';
 
 const prismaMock = vi.hoisted(() => ({
@@ -19,7 +19,6 @@ vi.mock('@/lib/audit', () => auditMock);
 
 import {
   deriveBillingTiming,
-  getBillingOccurrence,
   listBillingOccurrences,
   resetBillingOverride,
   updateBillingOccurrence,
@@ -104,6 +103,10 @@ describe('billing occurrence service', () => {
     auditMock.createAuditLog.mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it.each([
     ['2026-08-18', 'UPCOMING'],
     ['2026-08-17', 'DUE'],
@@ -127,6 +130,37 @@ describe('billing occurrence service', () => {
         companyId: { in: ['company-1'] },
         operativeExpectedDate: { gte: new Date('2026-08-01T00:00:00.000Z'), lte: new Date('2026-08-31T00:00:00.000Z') },
         company: expect.objectContaining({ tenantId: actor.tenantId, deletedAt: null }),
+      }),
+    }));
+  });
+
+  it('keeps family, status, timing, pagination, and amount-sort predicates in the list query', async () => {
+    prismaMock.billingOccurrence.count.mockResolvedValue(25);
+    const familyId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const result = await listBillingOccurrences({
+      ...search,
+      familyIds: [familyId],
+      statuses: ['OPEN'],
+      timing: ['DUE'],
+      page: 2,
+      limit: 10,
+      sortBy: 'amount',
+      sortOrder: 'desc',
+    }, actor, prismaMock as never, { today: '2026-08-17' });
+
+    expect(result).toMatchObject({ page: 2, limit: 10, total: 25, totalPages: 3 });
+    expect(prismaMock.billingOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      skip: 10,
+      take: 10,
+      orderBy: [{ operativeAmount: 'desc' }, { operativeExpectedDate: 'asc' }, { id: 'asc' }],
+      where: expect.objectContaining({
+        status: { in: ['OPEN'] },
+        clientService: expect.objectContaining({
+          serviceVariant: expect.objectContaining({
+            family: expect.objectContaining({ id: { in: [familyId] } }),
+          }),
+        }),
+        AND: [{ status: 'OPEN', OR: [{ operativeExpectedDate: new Date('2026-08-17T00:00:00.000Z') }] }],
       }),
     }));
   });
@@ -173,7 +207,98 @@ describe('billing occurrence service', () => {
     }), expect.anything());
   });
 
+  it('records waiver metadata when an Open occurrence is waived', async () => {
+    await updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: 'WAIVED',
+      updateScope: 'THIS_OCCURRENCE',
+      reason: 'Client confirmed no billing is required',
+    }, actor, prismaMock as never);
+
+    expect(prismaMock.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'WAIVED',
+        waivedAt: expect.any(Date),
+        waivedById: actor.userId,
+        waiverReason: 'Client confirmed no billing is required',
+        markedBilledAt: null,
+        markedBilledById: null,
+        billedDate: null,
+      }),
+    }));
+  });
+
+  it.each([
+    ['BILLED', { markedBilledAt: new Date('2026-08-11T00:00:00.000Z'), markedBilledById: 'previous-user', billedDate: new Date('2026-08-11T00:00:00.000Z') }],
+    ['WAIVED', { waivedAt: new Date('2026-08-11T00:00:00.000Z'), waivedById: 'previous-user', waiverReason: 'Previous reason' }],
+  ] as const)('reopens %s only with a reason and clears terminal metadata', async (status, metadata) => {
+    prismaMock.billingOccurrence.findFirst.mockResolvedValue({ ...occurrence, status, ...metadata });
+
+    await updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: 'OPEN',
+      updateScope: 'THIS_OCCURRENCE',
+      reason: 'Reopened after client review',
+    }, actor, prismaMock as never);
+
+    expect(prismaMock.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'OPEN',
+        markedBilledAt: null,
+        markedBilledById: null,
+        billedDate: null,
+        waivedAt: null,
+        waivedById: null,
+        waiverReason: null,
+      }),
+    }));
+  });
+
+  it('requires a reason when reopening a billed occurrence', async () => {
+    prismaMock.billingOccurrence.findFirst.mockResolvedValue({
+      ...occurrence,
+      status: 'BILLED',
+      markedBilledAt: new Date('2026-08-11T00:00:00.000Z'),
+      markedBilledById: 'previous-user',
+    });
+
+    await expect(updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: 'OPEN',
+      updateScope: 'THIS_OCCURRENCE',
+      reason: null,
+    }, actor, prismaMock as never)).rejects.toMatchObject({ code: ErrorCodes.VALIDATION_ERROR });
+    expect(prismaMock.billingOccurrence.updateMany).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['BILLED', 'WAIVED'],
+    ['WAIVED', 'BILLED'],
+  ] as const)('rejects the forbidden %s to %s transition', async (currentStatus, nextStatus) => {
+    prismaMock.billingOccurrence.findFirst.mockResolvedValue({ ...occurrence, status: currentStatus });
+
+    await expect(updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      status: nextStatus,
+      updateScope: 'THIS_OCCURRENCE',
+      reason: 'Invalid direct transition',
+    }, actor, prismaMock as never)).rejects.toMatchObject({ code: ErrorCodes.VALIDATION_ERROR });
+    expect(prismaMock.billingOccurrence.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects a billed date on a non-Billed occurrence', async () => {
+    await expect(updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      billedDate: '2026-08-20',
+      updateScope: 'THIS_OCCURRENCE',
+      reason: null,
+    }, actor, prismaMock as never)).rejects.toMatchObject({ code: ErrorCodes.VALIDATION_ERROR });
+    expect(prismaMock.billingOccurrence.updateMany).not.toHaveBeenCalled();
+  });
+
   it('updates selected plus matching future Open rows only for THIS_AND_FUTURE value edits', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-17T04:00:00.000Z'));
     prismaMock.billingOccurrence.findMany.mockResolvedValue([{ id: 'future-1' }]);
     await updateBillingOccurrence('occurrence-1', {
       expectedUpdatedAt: occurrence.updatedAt.toISOString(),
@@ -199,6 +324,51 @@ describe('billing occurrence service', () => {
     }));
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       metadata: expect.objectContaining({ updateScope: 'THIS_AND_FUTURE', affectedCount: 2, affectedIds: ['occurrence-1', 'future-1'] }),
+    }), expect.anything());
+  });
+
+  it('preserves historical rows when a historical selected row updates current and future values', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-17T04:00:00.000Z'));
+    const selected = {
+      ...occurrence,
+      status: 'BILLED' as const,
+      calculatedExpectedDate: new Date('2026-08-10T00:00:00.000Z'),
+      operativeExpectedDate: new Date('2026-08-10T00:00:00.000Z'),
+    };
+    const futureRows = [
+      { id: 'future-yesterday', operativeExpectedDate: new Date('2026-08-16T00:00:00.000Z') },
+      { id: 'future-today', operativeExpectedDate: new Date('2026-08-17T00:00:00.000Z') },
+      { id: 'future-tomorrow', operativeExpectedDate: new Date('2026-08-18T00:00:00.000Z') },
+    ];
+    prismaMock.billingOccurrence.findFirst.mockResolvedValue(selected);
+    prismaMock.billingOccurrence.findMany.mockImplementation(async (args: { where: { operativeExpectedDate?: { gte?: Date } } }) => {
+      const lowerBound = args.where.operativeExpectedDate?.gte ?? new Date(0);
+      return futureRows.filter((row) => row.operativeExpectedDate >= lowerBound).map(({ id }) => ({ id }));
+    });
+    prismaMock.billingOccurrence.updateMany.mockImplementation(async (args: { where: { id?: string | { in?: string[] } } }) => ({
+      count: typeof args.where.id === 'string' ? 1 : args.where.id?.in?.length ?? 0,
+    }));
+
+    await updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: selected.updatedAt.toISOString(),
+      amount: '1500.00',
+      currency: 'USD',
+      updateScope: 'THIS_AND_FUTURE',
+      reason: 'Updated engagement pricing',
+    }, actor, prismaMock as never);
+
+    expect(prismaMock.billingOccurrence.updateMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: expect.objectContaining({
+        operativeExpectedDate: { gte: new Date('2026-08-17T00:00:00.000Z') },
+        id: { in: ['future-today', 'future-tomorrow'] },
+      }),
+    }));
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({
+        affectedCount: 3,
+        affectedIds: ['occurrence-1', 'future-today', 'future-tomorrow'],
+      }),
     }), expect.anything());
   });
 
@@ -254,5 +424,71 @@ describe('billing occurrence service', () => {
       }),
     }));
     expect(auditMock.createAuditLog).toHaveBeenCalled();
+  });
+
+  it('resets only value override metadata for VALUE and both dimensions for ALL', async () => {
+    const overridden = {
+      ...occurrence,
+      dateOverridden: true,
+      dateOverrideReason: 'Client request',
+      dateOverriddenById: actor.userId,
+      dateOverriddenAt: new Date('2026-08-10T00:00:00.000Z'),
+      operativeExpectedDate: new Date('2026-08-20T00:00:00.000Z'),
+      valueOverridden: true,
+      valueOverrideReason: 'Pricing review',
+      valueOverriddenById: actor.userId,
+      valueOverriddenAt: new Date('2026-08-10T00:00:00.000Z'),
+      operativeAmount: '150.00',
+      operativeCurrency: 'USD',
+    };
+    prismaMock.billingOccurrence.findFirst.mockResolvedValue(overridden);
+
+    await resetBillingOverride('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      target: 'VALUE',
+      reason: 'Reset price override',
+    }, actor, prismaMock as never);
+    expect(prismaMock.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        operativeAmount: overridden.baseAmount,
+        operativeCurrency: overridden.baseCurrency,
+        valueOverridden: false,
+        valueOverrideReason: null,
+      }),
+    }));
+    expect(prismaMock.billingOccurrence.updateMany.mock.calls[0]?.[0].data).not.toHaveProperty('operativeExpectedDate');
+
+    vi.clearAllMocks();
+    auditMock.createAuditLog.mockResolvedValue(undefined);
+    prismaMock.billingOccurrence.findFirst.mockResolvedValue(overridden);
+    prismaMock.billingOccurrence.updateMany.mockResolvedValue({ count: 1 });
+    await resetBillingOverride('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      target: 'ALL',
+      reason: 'Reset all overrides',
+    }, actor, prismaMock as never);
+    expect(prismaMock.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        operativeExpectedDate: overridden.calculatedExpectedDate,
+        operativeAmount: overridden.baseAmount,
+        dateOverridden: false,
+        valueOverridden: false,
+      }),
+    }));
+  });
+
+  it('does not audit or complete current-and-future edits when future count diverges', async () => {
+    prismaMock.billingOccurrence.findMany.mockResolvedValue([{ id: 'future-1' }]);
+    prismaMock.billingOccurrence.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    await expect(updateBillingOccurrence('occurrence-1', {
+      expectedUpdatedAt: occurrence.updatedAt.toISOString(),
+      amount: '1500.00',
+      updateScope: 'THIS_AND_FUTURE',
+      reason: 'Pricing review',
+    }, actor, prismaMock as never)).rejects.toMatchObject({ code: ErrorCodes.VERSION_CONFLICT });
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
   });
 });

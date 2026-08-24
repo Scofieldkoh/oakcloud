@@ -489,7 +489,13 @@ function optimisticWhere(current: DbRecord, actor: BillingOccurrenceActor, expec
   };
 }
 
-function futureValueWhere(current: DbRecord, actor: BillingOccurrenceActor): Prisma.BillingOccurrenceWhereInput {
+function futureValueWhere(
+  current: DbRecord,
+  actor: BillingOccurrenceActor,
+  today: DateOnly,
+): Prisma.BillingOccurrenceWhereInput {
+  const selectedDate = asDateOnly(current.operativeExpectedDate);
+  const lowerBound = compareDateOnly(selectedDate, today) > 0 ? selectedDate : today;
   return {
     id: { not: current.id },
     tenantId: actor.tenantId,
@@ -499,7 +505,7 @@ function futureValueWhere(current: DbRecord, actor: BillingOccurrenceActor): Pri
     scheduleEntryKey: current.scheduleEntryKey,
     generationKey: current.generationKey,
     status: 'OPEN',
-    operativeExpectedDate: { gte: current.operativeExpectedDate instanceof Date ? current.operativeExpectedDate : new Date(current.operativeExpectedDate) },
+    operativeExpectedDate: { gte: parseDateOnly(lowerBound) },
   };
 }
 
@@ -520,6 +526,9 @@ export async function updateBillingOccurrence(
   const input = updateBillingOccurrenceSchema.parse(rawInput);
   const current = await findMutationRecord(id, actor, db);
   const { data, valueData, next } = buildMutationData(current, input, actor);
+  // Capture the Singapore civil date once so every future-row predicate in
+  // this mutation uses one consistent historical boundary.
+  const today = currentDateInSingapore();
   const result = await runInSerializableTransaction(db, async (tx) => {
     const selected = await tx.billingOccurrence.updateMany({ where: optimisticWhere(current, actor, input.expectedUpdatedAt), data });
     if (selected.count !== 1) {
@@ -529,13 +538,14 @@ export async function updateBillingOccurrence(
     let futureCount = 0;
     let futureIds: string[] = [];
     if (input.updateScope === 'THIS_AND_FUTURE' && Object.keys(valueData).some((key) => key !== 'updatedAt')) {
-      const futureRows = await tx.billingOccurrence.findMany({ where: futureValueWhere(current, actor), select: { id: true } });
+      const futureWhere = futureValueWhere(current, actor, today);
+      const futureRows = await tx.billingOccurrence.findMany({ where: futureWhere, select: { id: true } });
       futureIds = (Array.isArray(futureRows) ? futureRows : [])
         .map((row) => (row as { id?: unknown }).id)
         .filter((rowId): rowId is string => typeof rowId === 'string' && rowId !== current.id);
       if (futureIds.length > 0) {
         const future = await tx.billingOccurrence.updateMany({
-          where: { ...futureValueWhere(current, actor), id: { in: futureIds } },
+          where: { ...futureWhere, id: { in: futureIds } },
           data: valueData,
         });
         if (future.count !== futureIds.length) {

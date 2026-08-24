@@ -42,6 +42,21 @@ All scoped gates passed. Repository-wide build/lint, live migrations,
 PostgreSQL integration, browser/performance checks, and unrelated test suites
 were intentionally not run.
 
+## Review-fix RED/GREEN evidence
+
+The review regression was first run before the fix:
+
+    npm.cmd run test:run -- __tests__/services/billing.service.test.ts --reporter=dot
+
+Result: 2 failures and 20 passing tests. One failure was the intended
+historical-boundary regression; the other exposed an invalid UUID in the new
+test fixture and was corrected before the implementation GREEN run.
+
+After the fix, the focused Task 6 command passed with 3 test files and 37
+tests. The directly affected compatibility matrix passed with 12 test files
+and 168 tests. The final TypeScript, scoped zero-warning ESLint, and diff
+checks also passed.
+
 ## Files and implementation decisions
 
 - `src/lib/validations/billing.ts`: strict occurrence search, lifecycle, and
@@ -55,8 +70,10 @@ were intentionally not run.
   `expectedUpdatedAt` claims, serializable transactions, complete before/after
   audit changes, and reset behavior. Cancelled rows are system-only and
   immutable. Current-and-future edits select the matching future IDs inside the
-  transaction, update only future OPEN rows, and audit truthful affected IDs
-  and counts.
+  transaction, using one captured Singapore current-date boundary plus the
+  selected operative date, update only future OPEN rows, and audit truthful
+  affected IDs and counts. Historical selected rows remain editable while
+  historical matching rows are preserved.
 - `src/app/api/billing-occurrences/`: enabled-workspace routes with
   `company:read` list/detail access, `company:update` mutation access, tenant
   and accessible-company scoping, and structured errors.
@@ -68,7 +85,8 @@ were intentionally not run.
   `__tests__/hooks/use-billing-occurrences.test.ts`: RED/GREEN focused tests
   covering timing, scope, DTO serialization, nullable billed dates, lifecycle
   and immutable states, optimistic conflicts, current-and-future edits, route
-  permissions, query strictness, and hook invalidation.
+  permissions, query strictness, pagination/sort, family/status/timing filters,
+  reset isolation, future count conflicts, and hook invalidation.
 
 ## Commit
 
@@ -80,7 +98,9 @@ reported in the handoff).
 - Only Task 6 production, test, and report files were changed; `progress.md`
   and review artifacts were not edited.
 - Current-and-future is limited to amount/currency edits and preserves billed,
-  waived, cancelled, historical, and unrelated fee-line occurrences.
+  waived, cancelled, historical, and unrelated fee-line occurrences. Its
+  lower bound is the later of the selected operative date and one captured
+  Singapore civil date.
 - Status and timing are intentionally separate: timing is derived only for
   OPEN rows from Singapore's current date and is never persisted.
 - Billed is a user-recorded external tracking state; the implementation does

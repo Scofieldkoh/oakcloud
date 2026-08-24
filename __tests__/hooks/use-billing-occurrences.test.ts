@@ -95,7 +95,9 @@ describe('use billing occurrences hooks', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: billingOccurrenceKeys.all });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: billingOccurrenceKeys.detail('occurrence-1') });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['billing-coverage'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['service-roster'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['client-service', 'service-1'] });
   });
 });
