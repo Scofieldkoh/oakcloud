@@ -52,6 +52,11 @@ const PUBLIC_RECONCILIATION_CODES = new Set([
 ]);
 const SAFE_TRANSIENT_ERROR_MESSAGE = 'Reconciliation failed and will retry';
 const SAFE_PERMANENT_ERROR_MESSAGE = 'Reconciliation request completed with a permanent configuration error';
+const MAX_LOG_TEXT_LENGTH = 200;
+const MAX_LOG_WARNINGS = 50;
+const MAX_WARNING_MISSING_FIELDS = 20;
+const MAX_METRIC_COUNT = 1_000_000;
+const MAX_DURATION_MS = 86_400_000;
 
 type SafeReconciliationWarning = {
   code: string;
@@ -113,23 +118,99 @@ function publicReconciliationCode(code: unknown): string {
     : 'RECONCILIATION_FAILED';
 }
 
+function safeLogText(value: unknown): string {
+  return typeof value === 'string' ? value.slice(0, MAX_LOG_TEXT_LENGTH) : '';
+}
+
+function safeLogIdentifier(value: unknown): string | undefined {
+  const text = safeLogText(value);
+  return text.length > 0 ? text : undefined;
+}
+
 function safeReconciliationWarning(warning: DeadlineReconciliationWarning | BillingReconciliationWarning): SafeReconciliationWarning {
   const code = publicReconciliationCode(warning.code);
+  const ruleId = 'ruleId' in warning ? safeLogIdentifier(warning.ruleId) : undefined;
+  const ruleVersionId = 'ruleVersionId' in warning ? safeLogIdentifier(warning.ruleVersionId) : undefined;
+  const feeLineId = 'feeLineId' in warning ? safeLogIdentifier(warning.feeLineId) : undefined;
+  const rawMissingFields = 'missingFields' in warning ? warning.missingFields : undefined;
+  const missingFields = Array.isArray(rawMissingFields)
+    ? rawMissingFields
+      .filter((field): field is string => typeof field === 'string')
+      .slice(0, MAX_WARNING_MISSING_FIELDS)
+      .map((field) => safeLogText(field))
+    : undefined;
   return {
     code,
-    ...('ruleId' in warning && warning.ruleId ? { ruleId: warning.ruleId } : {}),
-    ...('ruleVersionId' in warning && warning.ruleVersionId ? { ruleVersionId: warning.ruleVersionId } : {}),
-    ...('missingFields' in warning && warning.missingFields ? { missingFields: [...warning.missingFields] } : {}),
-    ...('feeLineId' in warning && warning.feeLineId ? { feeLineId: warning.feeLineId } : {}),
+    ...(ruleId ? { ruleId } : {}),
+    ...(ruleVersionId ? { ruleVersionId } : {}),
+    ...('missingFields' in warning && missingFields ? { missingFields } : {}),
+    ...(feeLineId ? { feeLineId } : {}),
     ...(warning.permanent !== undefined ? { permanent: warning.permanent } : {}),
   };
 }
 
-const MAX_METRIC_COUNT = 1_000_000;
+function boundedLogCount(value: unknown): number {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+  if (value === Number.POSITIVE_INFINITY) return MAX_METRIC_COUNT;
+  if (value === Number.NEGATIVE_INFINITY) return 0;
+  return Math.min(MAX_METRIC_COUNT, Math.max(0, Math.trunc(value)));
+}
 
-function boundedMetricCount(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.min(MAX_METRIC_COUNT, Math.max(0, Math.trunc(value ?? 0)));
+function boundedDuration(value: unknown): number {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+  if (value === Number.POSITIVE_INFINITY) return MAX_DURATION_MS;
+  if (value === Number.NEGATIVE_INFINITY) return 0;
+  return Math.min(MAX_DURATION_MS, Math.max(0, Math.round(value * 10) / 10));
+}
+
+function safeReconciliationCounts(value: DeadlineReconciliationCounts): DeadlineReconciliationCounts {
+  return {
+    created: boundedLogCount(value.created),
+    recalculated: boundedLogCount(value.recalculated),
+    cancelled: boundedLogCount(value.cancelled),
+    preserved: boundedLogCount(value.preserved),
+    noChange: boundedLogCount(value.noChange),
+  };
+}
+
+function safeDeadlinePreservedCounts(value: DeadlineReconciliationPreservedCounts): DeadlineReconciliationPreservedCounts {
+  return {
+    MANUAL_TRIGGER: boundedLogCount(value.MANUAL_TRIGGER),
+    HISTORICAL: boundedLogCount(value.HISTORICAL),
+    COMPLETED: boundedLogCount(value.COMPLETED),
+    WAIVED: boundedLogCount(value.WAIVED),
+    CANCELLED: boundedLogCount(value.CANCELLED),
+    OVERRIDDEN: boundedLogCount(value.OVERRIDDEN),
+  };
+}
+
+function safeBillingPreservedCounts(value: BillingReconciliationPreservedCounts): BillingReconciliationPreservedCounts {
+  return {
+    MANUAL_TRIGGER: boundedLogCount(value.MANUAL_TRIGGER),
+    HISTORICAL: boundedLogCount(value.HISTORICAL),
+    BILLED: boundedLogCount(value.BILLED),
+    WAIVED: boundedLogCount(value.WAIVED),
+    CANCELLED: boundedLogCount(value.CANCELLED),
+    OVERRIDDEN: boundedLogCount(value.OVERRIDDEN),
+  };
+}
+
+function safeBillingCounts(value: Pick<BillingReconciliationResult, 'created' | 'recalculated' | 'cancelled' | 'preserved'>) {
+  return {
+    created: boundedLogCount(value.created),
+    recalculated: boundedLogCount(value.recalculated),
+    cancelled: boundedLogCount(value.cancelled),
+    preserved: boundedLogCount(value.preserved),
+  };
+}
+
+function safeCoverageCounts(value: Pick<BillingCoverageResult, 'opened' | 'refreshed' | 'resolved'> & { openIssueCount?: number }) {
+  return {
+    opened: boundedLogCount(value.opened),
+    refreshed: boundedLogCount(value.refreshed),
+    resolved: boundedLogCount(value.resolved),
+    openIssueCount: boundedLogCount(value.openIssueCount),
+  };
 }
 
 function emptyReconciliationLogMetrics(): ReconciliationLogMetrics {
@@ -148,18 +229,18 @@ function safeReconciliationLogMetrics(
   const source = input.metrics;
   return {
     billing: {
-      created: boundedMetricCount(source?.billing.created ?? input.billing?.created),
-      recalculated: boundedMetricCount(source?.billing.recalculated ?? input.billing?.recalculated),
-      cancelled: boundedMetricCount(source?.billing.cancelled ?? input.billing?.cancelled),
-      preserved: boundedMetricCount(source?.billing.preserved ?? input.billing?.preserved),
+      created: boundedLogCount(source?.billing?.created ?? input.billing?.created),
+      recalculated: boundedLogCount(source?.billing?.recalculated ?? input.billing?.recalculated),
+      cancelled: boundedLogCount(source?.billing?.cancelled ?? input.billing?.cancelled),
+      preserved: boundedLogCount(source?.billing?.preserved ?? input.billing?.preserved),
     },
     coverage: {
-      opened: boundedMetricCount(source?.coverage.opened ?? input.coverage?.opened),
-      resolved: boundedMetricCount(source?.coverage.resolved ?? input.coverage?.resolved),
+      opened: boundedLogCount(source?.coverage?.opened ?? input.coverage?.opened),
+      resolved: boundedLogCount(source?.coverage?.resolved ?? input.coverage?.resolved),
     },
-    servicesMissingDisposition: boundedMetricCount(source?.servicesMissingDisposition),
-    invalidScheduleCount: boundedMetricCount(source?.invalidScheduleCount),
-    occurrenceGaps: boundedMetricCount(source?.occurrenceGaps),
+    servicesMissingDisposition: boundedLogCount(source?.servicesMissingDisposition),
+    invalidScheduleCount: boundedLogCount(source?.invalidScheduleCount),
+    occurrenceGaps: boundedLogCount(source?.occurrenceGaps),
   };
 }
 
@@ -173,18 +254,18 @@ export function buildReconciliationLogEvent(
 ): ReconciliationLogEvent {
   return {
     event: 'reconciliation_request',
-    tenantId: input.tenantId,
-    requestId: input.requestId,
-    correlationId: input.correlationId,
-    durationMs: Math.round(Math.max(0, input.durationMs) * 10) / 10,
-    counts: { ...input.counts },
-    preservedByReason: { ...input.preservedByReason },
-    warnings: input.warnings.map(safeReconciliationWarning),
-    ...(input.billing ? { billing: { ...input.billing } } : {}),
-    ...(input.billingPreservedByReason ? { billingPreservedByReason: { ...input.billingPreservedByReason } } : {}),
-    ...(input.coverage ? { coverage: { ...input.coverage } } : {}),
+    tenantId: safeLogText(input.tenantId),
+    requestId: safeLogText(input.requestId),
+    correlationId: safeLogText(input.correlationId),
+    durationMs: boundedDuration(input.durationMs),
+    counts: safeReconciliationCounts(input.counts),
+    preservedByReason: safeDeadlinePreservedCounts(input.preservedByReason),
+    warnings: input.warnings.slice(0, MAX_LOG_WARNINGS).map(safeReconciliationWarning),
+    ...(input.billing ? { billing: safeBillingCounts(input.billing) } : {}),
+    ...(input.billingPreservedByReason ? { billingPreservedByReason: safeBillingPreservedCounts(input.billingPreservedByReason) } : {}),
+    ...(input.coverage ? { coverage: safeCoverageCounts(input.coverage) } : {}),
     metrics: safeReconciliationLogMetrics(input),
-    attempt: input.attempt,
+    attempt: boundedLogCount(input.attempt),
     writeMode: input.writeMode,
   };
 }

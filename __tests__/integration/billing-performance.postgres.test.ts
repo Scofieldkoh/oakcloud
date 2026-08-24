@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { Prisma } from '@/generated/prisma';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -119,7 +118,7 @@ describePerformance('billing representative PostgreSQL performance', () => {
       currency: 'SGD',
       billingFrequency: 'MONTHLY' as const,
       billingStartDate: new Date('2026-01-01T00:00:00.000Z'),
-      scheduleConfig: Prisma.JsonNull,
+      scheduleConfig: {},
     })));
 
     const occurrenceRows = clientServiceIds.flatMap((clientServiceId, serviceIndex) => Array.from({ length: 10 }, (_, periodIndex) => {
@@ -187,47 +186,37 @@ describePerformance('billing representative PostgreSQL performance', () => {
     if (failures.length > 0) throw new Error(`Billing performance cleanup failed in ${failures.length} step(s)`);
   }, 120_000);
 
-  it('uses tenant/date/status and unresolved-coverage indexes for representative queries', async () => {
+  it('uses production billing indexes for selective representative queries', async () => {
     expect(await prisma.company.count({ where: { tenantId } })).toBe(1_000);
     expect(await prisma.clientService.count({ where: { tenantId } })).toBe(10_000);
     expect(await prisma.billingOccurrence.count({ where: { tenantId } })).toBe(100_000);
     expect(await prisma.billingCoverageIssue.count({ where: { tenantId, resolvedAt: null } })).toBe(1_000);
 
-    const occurrencePlan = await prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe('SET LOCAL enable_seqscan = off');
-      return explainJsonWithClient(tx, `
-        EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
-        SELECT id
-        FROM billing_occurrences
-        WHERE tenant_id = $1
-          AND operative_expected_date >= $2::date
-          AND operative_expected_date <= $3::date
-          AND status = 'OPEN'
-        ORDER BY operative_expected_date ASC
-        LIMIT 100
-      `, tenantId, '2026-08-01', '2026-09-30');
-    });
-    // Keep the EXPLAIN predicate selective enough to demonstrate the
-    // tenant/company/severity/resolution index; the API acceptance below
-    // still exercises the full tenant coverage summary.
+    const { listBillingOccurrences, listBillingCoverage } = await import('@/services/billing');
+    const selectiveCompanyIds = companyIds.slice(0, 1);
+    const occurrencePlan = await captureProductionQueryPlan(prisma, 'billing_occurrences', () => listBillingOccurrences({
+      from: '2026-08-01',
+      to: '2026-09-30',
+      statuses: ['OPEN'],
+      companyIds: selectiveCompanyIds,
+      page: 1,
+      limit: 100,
+      sortBy: 'expectedDate',
+      sortOrder: 'asc',
+    }, { tenantId, companyIds: selectiveCompanyIds }, prisma, { today: '2026-08-18' }));
+
     const coverageCompanyIds = companyIds.slice(0, 1);
-    const coveragePlan = await prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe('SET LOCAL enable_seqscan = off');
-      return explainJsonWithClient(tx, `
-        EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
-        SELECT id
-        FROM billing_coverage_issues
-        WHERE tenant_id = $1
-          AND company_id = ANY($2::text[])
-          AND resolved_at IS NULL
-        ORDER BY company_id ASC, severity ASC
-        LIMIT 100
-      `, tenantId, coverageCompanyIds);
-    });
+    const coveragePlan = await captureProductionQueryPlan(prisma, 'billing_coverage_issues', () => listBillingCoverage({
+      tenantId,
+      companyIds: coverageCompanyIds,
+    }, prisma));
 
     const occurrenceNodes = flattenExplainNodes(occurrencePlan);
     const coverageNodes = flattenExplainNodes(coveragePlan);
-    const occurrenceIndex = occurrenceNodes.find((node) => node['Index Name']?.startsWith('billing_occurrences_tenant_id_operative_expected_date_status'));
+    const occurrenceIndex = occurrenceNodes.find((node) => {
+      const name = node['Index Name'] ?? '';
+      return name.startsWith('billing_occurrences_tenant_id_') && name.includes('_operative_');
+    });
     const coverageIndex = coverageNodes.find((node) => node['Index Name']?.startsWith('billing_coverage_issues_tenant_id_company_id_severity_resolved'));
     expect(occurrenceIndex).toBeDefined();
     expect(`${occurrenceIndex?.['Index Cond'] ?? ''} ${occurrenceIndex?.Filter ?? ''}`).toContain('tenant_id');
@@ -277,13 +266,42 @@ async function createManyInBatches<Row>(
   }
 }
 
-async function explainJsonWithClient(
-  client: Pick<PrismaClient, '$queryRawUnsafe'>,
-  sql: string,
-  ...parameters: unknown[]
+type QueryEvent = { query: string; params: string };
+
+async function captureProductionQueryPlan(
+  client: PrismaClient,
+  relation: 'billing_occurrences' | 'billing_coverage_issues',
+  operation: () => Promise<unknown>,
 ): Promise<unknown> {
-  const rows = await client.$queryRawUnsafe<Array<{ 'QUERY PLAN': unknown }>>(sql, ...parameters);
+  const events: QueryEvent[] = [];
+  let capturing = true;
+  const queryEventsClient = client as unknown as {
+    $on: (event: 'query', listener: (event: QueryEvent) => void) => void;
+  };
+  queryEventsClient.$on('query', (event: QueryEvent) => {
+    if (capturing) events.push(event);
+  });
+  await operation();
+  capturing = false;
+  const event = events.find((candidate) => candidate.query.includes(`FROM "public"."${relation}"`));
+  if (!event) throw new Error(`Production ${relation} query was not captured`);
+  const sql = interpolateQueryParameters(event.query, JSON.parse(event.params) as unknown[]);
+  const rows = await client.$queryRawUnsafe<Array<{ 'QUERY PLAN': unknown }>>(
+    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`,
+  );
   return rows[0]?.['QUERY PLAN'] ?? rows;
+}
+
+function interpolateQueryParameters(query: string, parameters: unknown[]): string {
+  return query.replace(/\$(\d+)/g, (_placeholder, index: string) => sqlLiteral(parameters[Number(index) - 1]));
+}
+
+function sqlLiteral(value: unknown): string {
+  if (value === null || value === undefined) return 'NULL';
+  if (typeof value === 'number' || typeof value === 'bigint') return String(value);
+  if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  return `'${text.replaceAll("'", "''")}'`;
 }
 
 type ExplainNode = {

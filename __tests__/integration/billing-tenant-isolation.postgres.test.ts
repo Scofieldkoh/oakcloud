@@ -17,8 +17,11 @@ type TenantFixture = {
   tenantId: string;
   userId: string;
   companyId: string;
+  restrictedCompanyId: string;
   configuredServiceId: string;
+  restrictedConfiguredServiceId: string;
   unreviewedServiceId: string;
+  restrictedUnreviewedServiceId: string;
   feeLineId: string;
 };
 
@@ -55,9 +58,24 @@ describePostgres('billing tenant isolation and company scope PostgreSQL integrat
         writeMode: 'APPLY',
         reconciliationRequestId: randomUUID(),
       }, prisma);
+      await reconcileClientServiceBilling({
+        tenantId: fixture.tenantId,
+        clientServiceId: fixture.restrictedConfiguredServiceId,
+        today: '2026-08-18',
+        horizonEnd: '2027-08-18',
+        writeMode: 'APPLY',
+        reconciliationRequestId: randomUUID(),
+      }, prisma);
       await reconcileBillingCoverage({
         tenantId: fixture.tenantId,
         clientServiceId: fixture.unreviewedServiceId,
+        today: '2026-08-18',
+        horizonEnd: '2027-08-18',
+        writeMode: 'APPLY',
+      }, prisma);
+      await reconcileBillingCoverage({
+        tenantId: fixture.tenantId,
+        clientServiceId: fixture.restrictedUnreviewedServiceId,
         today: '2026-08-18',
         horizonEnd: '2027-08-18',
         writeMode: 'APPLY',
@@ -94,6 +112,9 @@ describePostgres('billing tenant isolation and company scope PostgreSQL integrat
     const otherOccurrence = await prisma.billingOccurrence.findFirstOrThrow({
       where: { tenantId: tenantTwo.tenantId, clientServiceId: tenantTwo.configuredServiceId },
     });
+    const sameTenantRestrictedOccurrence = await prisma.billingOccurrence.findFirstOrThrow({
+      where: { tenantId: tenantOne.tenantId, clientServiceId: tenantOne.restrictedConfiguredServiceId },
+    });
 
     const search = {
       from: '2026-08-01' as const,
@@ -110,6 +131,10 @@ describePostgres('billing tenant isolation and company scope PostgreSQL integrat
     expect(ownList.items.length).toBeGreaterThan(0);
     expect(ownList.items.every((item) => item.tenantId === tenantOne.tenantId && item.companyId === tenantOne.companyId)).toBe(true);
     expect(ownList.items).not.toContainEqual(expect.objectContaining({ id: otherOccurrence.id, tenantId: tenantTwo.tenantId }));
+    expect(ownList.items).not.toContainEqual(expect.objectContaining({
+      id: sameTenantRestrictedOccurrence.id,
+      companyId: tenantOne.restrictedCompanyId,
+    }));
 
     const crossCompanyList = await listBillingOccurrences({ ...search, companyIds: [tenantTwo.companyId] }, {
       tenantId: tenantOne.tenantId,
@@ -129,9 +154,25 @@ describePostgres('billing tenant isolation and company scope PostgreSQL integrat
       userId: tenantOne.userId,
       companyIds: [tenantOne.companyId],
     }, prisma)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(getBillingOccurrence(sameTenantRestrictedOccurrence.id, {
+      tenantId: tenantOne.tenantId,
+      userId: tenantOne.userId,
+      companyIds: [tenantOne.companyId],
+    }, prisma)).rejects.toMatchObject({ statusCode: 404 });
 
     await expect(updateBillingOccurrence(otherOccurrence.id, {
       expectedUpdatedAt: otherOccurrence.updatedAt.toISOString(),
+      status: 'BILLED',
+      billedDate: null,
+      updateScope: 'THIS_OCCURRENCE',
+      reason: null,
+    }, {
+      tenantId: tenantOne.tenantId,
+      userId: tenantOne.userId,
+      companyIds: [tenantOne.companyId],
+    }, prisma)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(updateBillingOccurrence(sameTenantRestrictedOccurrence.id, {
+      expectedUpdatedAt: sameTenantRestrictedOccurrence.updatedAt.toISOString(),
       status: 'BILLED',
       billedDate: null,
       updateScope: 'THIS_OCCURRENCE',
@@ -173,6 +214,10 @@ describePostgres('billing tenant isolation and company scope PostgreSQL integrat
       company: { id: tenantOne.companyId },
       service: { id: tenantOne.unreviewedServiceId },
     });
+    expect(ownCoverage.issues).not.toContainEqual(expect.objectContaining({
+      company: { id: tenantOne.restrictedCompanyId },
+      service: { id: tenantOne.restrictedUnreviewedServiceId },
+    }));
 
     const crossCompanyCoverage = await listBillingCoverage({
       tenantId: tenantOne.tenantId,
@@ -188,12 +233,16 @@ async function seedTenant(label: string, prisma: PrismaClient): Promise<TenantFi
   const tenantId = randomUUID();
   const userId = randomUUID();
   const companyId = randomUUID();
+  const restrictedCompanyId = randomUUID();
   const partialId = randomUUID();
   const familyId = randomUUID();
   const variantId = randomUUID();
   const configuredServiceId = randomUUID();
+  const restrictedConfiguredServiceId = randomUUID();
   const unreviewedServiceId = randomUUID();
+  const restrictedUnreviewedServiceId = randomUUID();
   const feeLineId = randomUUID();
+  const restrictedFeeLineId = randomUUID();
   const suffix = tenantId.replaceAll('-', '').slice(0, 12);
 
   await prisma.workspace.create({
@@ -254,6 +303,16 @@ async function seedTenant(label: string, prisma: PrismaClient): Promise<TenantFi
       status: 'LIVE',
     },
   });
+  await prisma.company.create({
+    data: {
+      id: restrictedCompanyId,
+      tenantId,
+      uen: `R${suffix.toUpperCase()}`,
+      name: `${label} restricted company`,
+      entityType: 'PRIVATE_LIMITED',
+      status: 'LIVE',
+    },
+  });
   await prisma.clientService.create({
     data: {
       id: configuredServiceId,
@@ -283,6 +342,33 @@ async function seedTenant(label: string, prisma: PrismaClient): Promise<TenantFi
   });
   await prisma.clientService.create({
     data: {
+      id: restrictedConfiguredServiceId,
+      tenantId,
+      companyId: restrictedCompanyId,
+      source: 'MANUAL',
+      serviceVariantId: variantId,
+      familyName: `${label} family`,
+      serviceName: `${label} restricted configured service`,
+      status: 'ACTIVE',
+      serviceCadence: 'MONTHLY',
+      startDate: new Date('2026-01-01T00:00:00.000Z'),
+      billingDisposition: 'CONFIGURED',
+      feeLines: {
+        create: {
+          id: restrictedFeeLineId,
+          tenantId,
+          description: 'Restricted monthly tracking fee',
+          amount: '125.00',
+          currency: 'SGD',
+          billingFrequency: 'MONTHLY',
+          billingStartDate: new Date('2026-08-01T00:00:00.000Z'),
+          scheduleConfig,
+        },
+      },
+    },
+  });
+  await prisma.clientService.create({
+    data: {
       id: unreviewedServiceId,
       tenantId,
       companyId,
@@ -296,6 +382,31 @@ async function seedTenant(label: string, prisma: PrismaClient): Promise<TenantFi
       billingDisposition: 'UNREVIEWED',
     },
   });
+  await prisma.clientService.create({
+    data: {
+      id: restrictedUnreviewedServiceId,
+      tenantId,
+      companyId: restrictedCompanyId,
+      source: 'MANUAL',
+      serviceVariantId: variantId,
+      familyName: `${label} family`,
+      serviceName: `${label} restricted unreviewed service`,
+      status: 'ACTIVE',
+      serviceCadence: 'MONTHLY',
+      startDate: new Date('2026-01-01T00:00:00.000Z'),
+      billingDisposition: 'UNREVIEWED',
+    },
+  });
 
-  return { tenantId, userId, companyId, configuredServiceId, unreviewedServiceId, feeLineId };
+  return {
+    tenantId,
+    userId,
+    companyId,
+    restrictedCompanyId,
+    configuredServiceId,
+    restrictedConfiguredServiceId,
+    unreviewedServiceId,
+    restrictedUnreviewedServiceId,
+    feeLineId,
+  };
 }

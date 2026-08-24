@@ -33,6 +33,7 @@ vi.mock('@/services/schedule-reconciliation/queue', () => ({
 }));
 
 import {
+  buildReconciliationLogEvent,
   enqueueDailyRollingHorizonRequests,
   processScheduleReconciliationBatch,
   reconcileClientServiceThroughWorkerTransaction,
@@ -46,6 +47,50 @@ const request = {
 function queryText(value: unknown): string {
   const shape = value as { sql?: string; strings?: readonly string[] };
   return [shape.sql, ...(shape.strings ?? [])].filter(Boolean).join(' ');
+}
+
+function expectCompleteReconciliationEvent(event: Record<string, unknown>): void {
+  expect(Object.keys(event).sort()).toEqual([
+    'attempt',
+    'billing',
+    'billingPreservedByReason',
+    'correlationId',
+    'counts',
+    'coverage',
+    'durationMs',
+    'event',
+    'metrics',
+    'preservedByReason',
+    'requestId',
+    'tenantId',
+    'warnings',
+    'writeMode',
+  ]);
+  expect(event.event).toBe('reconciliation_request');
+  expect(typeof event.tenantId).toBe('string');
+  expect(typeof event.requestId).toBe('string');
+  expect(typeof event.correlationId).toBe('string');
+  expect(typeof event.durationMs).toBe('number');
+  expect(typeof event.attempt).toBe('number');
+  expect(Array.isArray(event.warnings)).toBe(true);
+  expect(Object.keys(event.counts as Record<string, unknown>).sort()).toEqual([
+    'cancelled', 'created', 'noChange', 'preserved', 'recalculated',
+  ]);
+  expect(Object.keys(event.preservedByReason as Record<string, unknown>).sort()).toEqual([
+    'CANCELLED', 'COMPLETED', 'HISTORICAL', 'MANUAL_TRIGGER', 'OVERRIDDEN', 'WAIVED',
+  ]);
+  expect(Object.keys(event.billing as Record<string, unknown>).sort()).toEqual([
+    'cancelled', 'created', 'preserved', 'recalculated',
+  ]);
+  expect(Object.keys(event.billingPreservedByReason as Record<string, unknown>).sort()).toEqual([
+    'BILLED', 'CANCELLED', 'HISTORICAL', 'MANUAL_TRIGGER', 'OVERRIDDEN', 'WAIVED',
+  ]);
+  expect(Object.keys(event.coverage as Record<string, unknown>).sort()).toEqual([
+    'openIssueCount', 'opened', 'refreshed', 'resolved',
+  ]);
+  expect(Object.keys(event.metrics as Record<string, unknown>).sort()).toEqual([
+    'billing', 'coverage', 'invalidScheduleCount', 'occurrenceGaps', 'servicesMissingDisposition',
+  ]);
 }
 
 describe('schedule reconciliation worker', () => {
@@ -161,6 +206,12 @@ describe('schedule reconciliation worker', () => {
     }));
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mock.calls.at(-1)?.[0].data.summary)
       .toEqual(expect.objectContaining({ warnings: [expect.objectContaining({ code: 'MISSING_INPUT', permanent: true })] }));
+    expect(mocks.logger.info).toHaveBeenCalledTimes(1);
+    const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    expectCompleteReconciliationEvent(event);
+    expect(event).toMatchObject({ event: 'reconciliation_request', attempt: 2, writeMode: 'OBSERVE' });
+    expect(event.metrics).toBeDefined();
+    expect(JSON.stringify(event)).not.toContain('Company.entityType is required');
     expect(mocks.reconcile).toHaveBeenCalledTimes(1);
   });
 
@@ -235,6 +286,7 @@ describe('schedule reconciliation worker', () => {
     expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0, leaseLost: 0 });
     expect(mocks.logger.info).toHaveBeenCalledTimes(1);
     const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    expectCompleteReconciliationEvent(event);
     const metrics = event.metrics as Record<string, unknown>;
     expect(Object.keys(metrics).sort()).toEqual([
       'billing',
@@ -265,8 +317,112 @@ describe('schedule reconciliation worker', () => {
     expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1, leaseLost: 0 });
     expect(mocks.logger.info).toHaveBeenCalledTimes(1);
     const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    expectCompleteReconciliationEvent(event);
     expect(event).toMatchObject({ tenantId: 'tenant-1', requestId: 'request-1', correlationId: 'corr-1', attempt: 1, writeMode: 'OBSERVE' });
     expect(JSON.stringify(event)).not.toContain('retry note must not be logged');
+    expect(event.metrics).toEqual({
+      billing: { created: 0, recalculated: 0, cancelled: 0, preserved: 0 },
+      coverage: { opened: 0, resolved: 0 },
+      servicesMissingDisposition: 0,
+      invalidScheduleCount: 0,
+      occurrenceGaps: 0,
+    });
+  });
+
+  it('bounds every variable event field while retaining the fixed schema', () => {
+    const oversized = 'customer-free-text-'.repeat(100);
+    const event = buildReconciliationLogEvent({
+      tenantId: oversized,
+      requestId: oversized,
+      correlationId: oversized,
+      durationMs: Number.POSITIVE_INFINITY,
+      counts: {
+        created: Number.MAX_SAFE_INTEGER,
+        recalculated: Number.MAX_SAFE_INTEGER,
+        cancelled: Number.MAX_SAFE_INTEGER,
+        preserved: Number.MAX_SAFE_INTEGER,
+        noChange: Number.MAX_SAFE_INTEGER,
+      },
+      preservedByReason: {
+        MANUAL_TRIGGER: Number.MAX_SAFE_INTEGER,
+        HISTORICAL: Number.MAX_SAFE_INTEGER,
+        COMPLETED: Number.MAX_SAFE_INTEGER,
+        WAIVED: Number.MAX_SAFE_INTEGER,
+        CANCELLED: Number.MAX_SAFE_INTEGER,
+        OVERRIDDEN: Number.MAX_SAFE_INTEGER,
+      },
+      warnings: Array.from({ length: 100 }, () => ({
+        code: 'MISSING_INPUT',
+        message: oversized,
+        ruleId: oversized,
+        ruleVersionId: oversized,
+        missingFields: Array.from({ length: 100 }, () => oversized),
+        feeLineId: oversized,
+        permanent: true,
+      })),
+      billing: { created: Number.MAX_SAFE_INTEGER, recalculated: Number.MAX_SAFE_INTEGER, cancelled: Number.MAX_SAFE_INTEGER, preserved: Number.MAX_SAFE_INTEGER },
+      billingPreservedByReason: {
+        MANUAL_TRIGGER: Number.MAX_SAFE_INTEGER,
+        HISTORICAL: Number.MAX_SAFE_INTEGER,
+        BILLED: Number.MAX_SAFE_INTEGER,
+        WAIVED: Number.MAX_SAFE_INTEGER,
+        CANCELLED: Number.MAX_SAFE_INTEGER,
+        OVERRIDDEN: Number.MAX_SAFE_INTEGER,
+      },
+      coverage: { opened: Number.MAX_SAFE_INTEGER, refreshed: Number.MAX_SAFE_INTEGER, resolved: Number.MAX_SAFE_INTEGER, openIssueCount: Number.MAX_SAFE_INTEGER },
+      metrics: {
+        billing: { created: Number.MAX_SAFE_INTEGER, recalculated: Number.MAX_SAFE_INTEGER, cancelled: Number.MAX_SAFE_INTEGER, preserved: Number.MAX_SAFE_INTEGER },
+        coverage: { opened: Number.MAX_SAFE_INTEGER, resolved: Number.MAX_SAFE_INTEGER },
+        servicesMissingDisposition: Number.MAX_SAFE_INTEGER,
+        invalidScheduleCount: Number.MAX_SAFE_INTEGER,
+        occurrenceGaps: Number.MAX_SAFE_INTEGER,
+      },
+      attempt: Number.MAX_SAFE_INTEGER,
+      writeMode: 'APPLY',
+    });
+
+    expect(Object.keys(event).sort()).toEqual([
+      'attempt',
+      'billing',
+      'billingPreservedByReason',
+      'correlationId',
+      'counts',
+      'coverage',
+      'durationMs',
+      'event',
+      'metrics',
+      'preservedByReason',
+      'requestId',
+      'tenantId',
+      'warnings',
+      'writeMode',
+    ]);
+    expect(event.tenantId).toHaveLength(200);
+    expect(event.durationMs).toBe(86_400_000);
+    expect(event.attempt).toBe(1_000_000);
+    expect((event.counts as Record<string, number>).created).toBe(1_000_000);
+    expect((event.billing as Record<string, number>).created).toBe(1_000_000);
+    expect((event.coverage as Record<string, number>).openIssueCount).toBe(1_000_000);
+    expect((event.warnings as Array<Record<string, unknown>>)).toHaveLength(50);
+    expect((event.warnings as Array<Record<string, unknown>>)[0]?.ruleId).toHaveLength(200);
+    expect(((event.warnings as Array<Record<string, unknown>>)[0]?.missingFields as string[])).toHaveLength(20);
+    expect(((event.warnings as Array<Record<string, unknown>>)[0]?.missingFields as string[])[0]).toHaveLength(200);
+    expect(JSON.stringify(event)).not.toContain(oversized);
+  });
+
+  it('emits one complete bounded event for an exhausted retry', async () => {
+    mocks.prisma.$queryRaw.mockResolvedValue([{ ...request, attemptCount: 5 }]);
+    mocks.reconcile.mockRejectedValueOnce(new Error('exhausted customer note'));
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 0, failed: 1, leaseLost: 0 });
+    expect(mocks.logger.info).toHaveBeenCalledTimes(1);
+    const event = mocks.logger.info.mock.calls[0]?.[1] as Record<string, unknown>;
+    expectCompleteReconciliationEvent(event);
+    expect(event).toMatchObject({ event: 'reconciliation_request', attempt: 6, writeMode: 'OBSERVE' });
+    expect(event.metrics).toBeDefined();
+    expect(JSON.stringify(event)).not.toContain('exhausted customer note');
   });
 
   it('does not let a throwing logger replace a retryable failure outcome', async () => {
