@@ -15,7 +15,7 @@ GREEN verification:
 
 - `npx.cmd vitest run --config .\\vitest.config.ts __tests__/components/billing-workspace.test.tsx __tests__/components/billing-coverage-panel.test.tsx __tests__/components/billing-occurrence-dialog.test.tsx __tests__/components/services-workspace.test.tsx __tests__/components/service-roster.test.tsx __tests__/components/service-roster-preferences.test.ts __tests__/services/service-roster.service.test.ts` — 7 files, 44 tests passed.
 - `npx.cmd vitest run --config .\\vitest.config.ts __tests__/services/billing.service.test.ts __tests__/services/billing-coverage.test.ts __tests__/api/billing-occurrence-routes.test.ts __tests__/api/billing-coverage-routes.test.ts __tests__/hooks/use-billing-occurrences.test.ts __tests__/hooks/use-billing-coverage.test.ts` — 6 files, 67 tests passed.
-- Review-fix focused run: `npx.cmd vitest run --config .\\vitest.config.ts __tests__/components/billing-workspace.test.tsx __tests__/components/billing-coverage-panel.test.tsx __tests__/components/billing-occurrence-dialog.test.tsx __tests__/components/billing-table.test.tsx __tests__/components/services-workspace.test.tsx __tests__/components/service-roster.test.tsx __tests__/components/service-roster-preferences.test.ts __tests__/services/service-roster.service.test.ts __tests__/services/billing.service.test.ts __tests__/services/billing-coverage.test.ts __tests__/api/billing-occurrence-routes.test.ts __tests__/api/billing-coverage-routes.test.ts __tests__/hooks/use-billing-occurrences.test.ts __tests__/hooks/use-billing-coverage.test.ts` — 14 files, 121 tests passed.
+- Review-fix focused run: `npx.cmd vitest run --config .\\vitest.config.ts __tests__/components/billing-workspace.test.tsx __tests__/components/billing-coverage-panel.test.tsx __tests__/components/billing-occurrence-dialog.test.tsx __tests__/components/billing-table.test.tsx __tests__/components/services-workspace.test.tsx __tests__/components/service-roster.test.tsx __tests__/components/service-roster-preferences.test.ts __tests__/services/service-roster.service.test.ts __tests__/services/billing.service.test.ts __tests__/services/billing-coverage.test.ts __tests__/api/billing-occurrence-routes.test.ts __tests__/api/billing-coverage-routes.test.ts __tests__/hooks/use-billing-occurrences.test.ts __tests__/hooks/use-billing-coverage.test.ts` — 14 files, 126 tests passed.
 - `npx.cmd vitest run --config .\\vitest.browser.config.ts __tests__/browser/services-billing.browser.test.tsx` — Chromium ServicesWorkspace route-equivalent at `/services?tab=billing`, desktop/tablet/mobile flows, 2 tests passed.
 - `npx.cmd tsc --noEmit` — passed.
 - Scoped ESLint over all changed production files — passed with no warnings.
@@ -25,6 +25,7 @@ Review-fix RED/GREEN evidence:
 
 - RED assertions covered value-field omission and scope prompting, invalid lifecycle options, mutation error retention, server-side text predicates, URL state, roster billing projection/column placement, grouped coverage severity, and sortable-header `aria-sort`; the focused run failed before the corresponding fixes.
 - GREEN now omits unchanged amount/currency, restricts Billed/Waived transitions, keeps failed dialogs open with input intact, sends company/service/fee/general searches into the paginated server query, round-trips filters/sort/page/date state through URL parameters, projects the next Open/Billed roster occurrence, renders Billing as a dedicated roster column, groups issue cards by company/service, and exposes `aria-sort`.
+- Rereview RED run: the two focused component files failed 5 regression assertions because unchanged `status`/`billedDate` were still submitted and mutation errors were not reset across selection. Rereview GREEN now sends lifecycle fields only when changed (including billed-date-only and real Open/Billed transitions), preserves Waived metadata on notes/reference edits, and resets both mutation states on close and before opening another row.
 
 ## Visual/browser QA
 
@@ -41,6 +42,7 @@ Reference fidelity decisions from approved gallery view 4/view 1:
 - Roster indicators expose Covered, No billing required, Missing disposition, Missing start, and next-occurrence timing with a Billing link.
 - Dialogs reset values on close, prompt This occurrence versus This and future for amount/currency changes, and support reset of expected-date/value overrides.
 - Server-side predicates cover company name/display alias/UEN, service/family/variant, fee description/period, and general search before count/pagination; unchanged lifecycle/notes edits do not send value override fields.
+- Lifecycle payloads are sparse: unchanged status/billed date are omitted, while actual transitions and billed-date edits remain explicit; closing or changing rows clears mutation state before the next dialog opens.
 
 ## Files
 
@@ -67,5 +69,5 @@ The implementation stays within Task 7 and reuses the existing billing occurrenc
 
 The review fixes are contained in the same implementation branch.
 
-- Commit: `f8ec5aad fix: address Task 7 billing review findings`
+- Commits: `f8ec5aad fix: address Task 7 billing review findings`; `d2a78803 fix: preserve billing lifecycle metadata`
 - Working tree: clean after the final verification run.
