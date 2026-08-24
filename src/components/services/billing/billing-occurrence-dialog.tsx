@@ -1,0 +1,182 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import type { BillingOccurrenceDto } from '@/services/billing';
+import type { ResetBillingOverrideInput, UpdateBillingOccurrenceInput } from '@/lib/validations/billing';
+import { formatCurrency } from '@/lib/utils';
+
+interface BillingOccurrenceDialogProps {
+  occurrence: BillingOccurrenceDto | null;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSave?: (input: UpdateBillingOccurrenceInput) => void;
+  onReset?: (input: ResetBillingOverrideInput) => void;
+  isSaving?: boolean;
+  isResetting?: boolean;
+}
+
+function dateValue(value: string | null): string {
+  return value?.slice(0, 10) ?? '';
+}
+
+export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrence), onClose = () => undefined, onSave, onReset, isSaving = false, isResetting = false }: BillingOccurrenceDialogProps) {
+  const [status, setStatus] = useState<UpdateBillingOccurrenceInput['status']>('OPEN');
+  const [billedDate, setBilledDate] = useState('');
+  const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('SGD');
+  const [externalReference, setExternalReference] = useState('');
+  const [notes, setNotes] = useState('');
+  const [reason, setReason] = useState('');
+  const [scopePromptOpen, setScopePromptOpen] = useState(false);
+  const [resetPromptOpen, setResetPromptOpen] = useState(false);
+  const [resetReason, setResetReason] = useState('');
+
+  useEffect(() => {
+    if (!occurrence) return;
+    setStatus(occurrence.status === 'CANCELLED' ? 'OPEN' : occurrence.status);
+    setBilledDate(dateValue(occurrence.billedDate));
+    setAmount(occurrence.operativeAmount);
+    setCurrency(occurrence.operativeCurrency);
+    setExternalReference(occurrence.externalReference ?? '');
+    setNotes(occurrence.notes ?? '');
+    setReason('');
+    setScopePromptOpen(false);
+    setResetPromptOpen(false);
+    setResetReason('');
+  }, [occurrence]);
+
+  if (!occurrence) return null;
+
+  const amountChanged = amount !== occurrence.operativeAmount || currency.toUpperCase() !== occurrence.operativeCurrency.toUpperCase();
+
+  const payloadFor = (updateScope: UpdateBillingOccurrenceInput['updateScope']): UpdateBillingOccurrenceInput => ({
+    expectedUpdatedAt: occurrence.updatedAt,
+    status,
+    billedDate: billedDate || null,
+    amount,
+    currency: currency.trim().toUpperCase(),
+    externalReference: externalReference.trim() || null,
+    notes: notes.trim() || null,
+    updateScope,
+    reason: reason.trim() || null,
+  });
+
+  const submit = (updateScope: UpdateBillingOccurrenceInput['updateScope']) => {
+    onSave?.(payloadFor(updateScope));
+    setScopePromptOpen(false);
+  };
+
+  const save = () => {
+    if (amountChanged) {
+      setScopePromptOpen(true);
+      return;
+    }
+    submit('THIS_OCCURRENCE');
+  };
+
+  const canResetOverrides = occurrence.dateOverridden || occurrence.valueOverridden;
+  const reset = (target: ResetBillingOverrideInput['target']) => {
+    const cleanedReason = resetReason.trim();
+    if (cleanedReason.length < 3) return;
+    onReset?.({ expectedUpdatedAt: occurrence.updatedAt, target, reason: cleanedReason });
+    setResetPromptOpen(false);
+  };
+
+  return (
+    <>
+      <Modal
+        isOpen={isOpen && !scopePromptOpen && !resetPromptOpen}
+        onClose={onClose}
+        title="Edit billing tracking"
+        description={`${occurrence.company.displayLabel} · ${occurrence.service.name}`}
+        size="lg"
+      >
+        <ModalBody>
+          {canResetOverrides ? (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-status-warning/30 bg-status-warning/5 p-3">
+              <p className="text-xs text-text-secondary">This row has a manually overridden tracked value.</p>
+              <Button type="button" size="xs" variant="ghost" onClick={() => setResetPromptOpen(true)}>Reset tracked overrides</Button>
+            </div>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
+              Status
+              <select aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value as UpdateBillingOccurrenceInput['status'])} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9">
+                <option value="OPEN">Open</option>
+                <option value="BILLED">Billed</option>
+                <option value="WAIVED">Waived</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
+              Billed date
+              <input aria-label="Billed date" type="date" value={billedDate} onChange={(event) => setBilledDate(event.target.value)} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9" />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
+              Amount
+              <input aria-label="Amount" type="number" min="0" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9" />
+              <span className="text-xs font-normal text-text-secondary">Current: {formatCurrency(occurrence.operativeAmount, occurrence.operativeCurrency)}</span>
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
+              Currency
+              <input aria-label="Currency" value={currency} maxLength={3} onChange={(event) => setCurrency(event.target.value.toUpperCase())} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal uppercase text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9" />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary sm:col-span-2">
+              External reference
+              <input aria-label="External reference" value={externalReference} onChange={(event) => setExternalReference(event.target.value)} placeholder="Optional" className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9" />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary sm:col-span-2">
+              Notes
+              <textarea aria-label="Notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Optional tracking notes" className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm font-normal text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20" />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-text-primary sm:col-span-2">
+              Reason
+              <textarea aria-label="Reason" value={reason} onChange={(event) => setReason(event.target.value)} rows={2} placeholder="Required when waiving or changing tracked values" className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm font-normal text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20" />
+            </label>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="primary" isLoading={isSaving} onClick={save}>Save tracking update</Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={resetPromptOpen}
+        onClose={() => setResetPromptOpen(false)}
+        title="Reset tracking override"
+        description="Restore the configured value or expected date for this occurrence."
+        size="md"
+      >
+        <ModalBody>
+          <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
+            Reset reason
+            <textarea aria-label="Reset reason" value={resetReason} onChange={(event) => setResetReason(event.target.value)} rows={3} placeholder="Explain why the override is being reset" className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm font-normal text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20" />
+          </label>
+        </ModalBody>
+        <ModalFooter className="justify-stretch sm:justify-end">
+          {occurrence.dateOverridden ? <Button type="button" variant="secondary" className="w-full sm:w-auto" disabled={isResetting} onClick={() => reset('DATE')}>Reset expected date</Button> : null}
+          {occurrence.valueOverridden ? <Button type="button" variant="secondary" className="w-full sm:w-auto" disabled={isResetting} onClick={() => reset('VALUE')}>Reset amount</Button> : null}
+          <Button type="button" variant="primary" className="w-full sm:w-auto" isLoading={isResetting} disabled={resetReason.trim().length < 3} onClick={() => reset('ALL')}>Reset all overrides</Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={scopePromptOpen}
+        onClose={() => setScopePromptOpen(false)}
+        title="Apply amount change"
+        description="Choose which open tracking rows should use this amount and currency."
+        size="md"
+      >
+        <ModalBody>
+          <p className="text-sm text-text-secondary">This change affects the tracked amount or currency. Apply it only here, or to this and future matching open occurrences.</p>
+        </ModalBody>
+        <ModalFooter className="justify-stretch sm:justify-end">
+          <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => submit('THIS_OCCURRENCE')}>This occurrence</Button>
+          <Button type="button" variant="primary" className="w-full sm:w-auto" onClick={() => submit('THIS_AND_FUTURE')}>This and future</Button>
+        </ModalFooter>
+      </Modal>
+    </>
+  );
+}

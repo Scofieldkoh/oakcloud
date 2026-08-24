@@ -1,6 +1,7 @@
 import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
+import { currentDateInSingapore } from '@/services/service-schedule';
 import type { ServiceRosterSearch } from '@/lib/validations/service-roster';
 import { emptyServiceRosterResult } from '@/lib/validations/service-roster';
 import type {
@@ -33,6 +34,8 @@ type RosterRecord = {
   familyName: string;
   serviceName: string;
   status: 'ACTIVE' | 'PAUSED' | 'ENDED';
+  billingDisposition?: 'CONFIGURED' | 'NOT_REQUIRED' | 'UNREVIEWED';
+  billingNotRequiredReason?: string | null;
   serviceCadence: ServiceRosterItem['cadence'];
   customCadenceLabel: string | null;
   startDate: Date | string;
@@ -72,6 +75,15 @@ type RosterRecord = {
     operativeDueDate: Date | string;
     status: 'OPEN';
     origin: 'RULE' | 'MANUAL_TRIGGER';
+  }>;
+  billingOccurrences?: Array<{
+    status: 'OPEN' | 'BILLED' | 'WAIVED' | 'CANCELLED';
+    operativeExpectedDate: Date | string;
+  }>;
+  billingCoverageIssues?: Array<{
+    severity: 'ERROR' | 'WARNING';
+    type: string;
+    details?: unknown;
   }>;
 };
 
@@ -430,6 +442,18 @@ function includeForRoster(
         origin: true,
       },
     },
+    billingOccurrences: {
+      where: { tenantId, status: { in: ['OPEN', 'BILLED', 'WAIVED'] } },
+      orderBy: [{ operativeExpectedDate: 'asc' }, { id: 'asc' }],
+      take: 1,
+      select: { status: true, operativeExpectedDate: true },
+    },
+    billingCoverageIssues: {
+      where: { tenantId, resolvedAt: null },
+      orderBy: [{ severity: 'asc' }, { lastDetectedAt: 'asc' }, { id: 'asc' }],
+      take: 1,
+      select: { severity: true, type: true, details: true },
+    },
   };
 }
 
@@ -532,6 +556,26 @@ function toServiceRosterItem(value: unknown): ServiceRosterItem {
     startDate: dateOnly(record.startDate) ?? '',
     endDate: dateOnly(record.endDate),
   };
+  const nextBillingOccurrence = record.billingOccurrences?.[0];
+  const nextBilling = nextBillingOccurrence
+    ? {
+      status: nextBillingOccurrence.status,
+      expectedDate: dateOnly(nextBillingOccurrence.operativeExpectedDate) ?? '',
+      timingState: nextBillingOccurrence.status === 'OPEN'
+        ? (dateOnly(nextBillingOccurrence.operativeExpectedDate)! > currentDateInSingapore()
+          ? 'UPCOMING' as const
+          : dateOnly(nextBillingOccurrence.operativeExpectedDate) === currentDateInSingapore()
+            ? 'DUE' as const
+            : 'OVERDUE' as const)
+        : null,
+    }
+    : null;
+  const billingCoverageIssue = record.billingCoverageIssues?.[0]
+    ? {
+      severity: record.billingCoverageIssues[0].severity,
+      type: record.billingCoverageIssues[0].type,
+    }
+    : null;
 
   return {
     id: record.id,
@@ -570,6 +614,10 @@ function toServiceRosterItem(value: unknown): ServiceRosterItem {
     applicabilityState: applicability.state,
     ruleWarning,
     warning: ruleWarning,
+    billingDisposition: record.billingDisposition ?? 'UNREVIEWED',
+    billingNotRequiredReason: record.billingNotRequiredReason ?? null,
+    billingCoverageIssue,
+    nextBilling,
     updatedAt: instant(record.updatedAt),
   };
 }

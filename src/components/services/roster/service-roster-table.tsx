@@ -127,14 +127,47 @@ function CompanyCell({ item }: { item: ServiceRosterItem }) {
 }
 
 function WarningCell({ item }: { item: ServiceRosterItem }) {
-  if (!item.hasRuleWarning) return <span className="text-text-muted">—</span>;
-  const reason = item.warning.reasons[0] ?? 'Review service configuration';
-  return (
-    <span className="inline-flex items-center gap-1 text-status-warning" title={reason}>
+  const ruleWarning = item.hasRuleWarning ? (
+    <span className="inline-flex items-center gap-1 text-status-warning" title={item.warning.reasons[0] ?? 'Review service configuration'}>
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
       <span className="text-xs">Review</span>
     </span>
-  );
+  ) : null;
+  const billingIndicator = <BillingIndicator item={item} />;
+  if (!ruleWarning && !billingIndicator) return <span className="text-text-muted">—</span>;
+  return <div className="flex flex-col items-start gap-1">{ruleWarning}{billingIndicator}</div>;
+}
+
+function BillingIndicator({ item }: { item: ServiceRosterItem }) {
+  if (!item.billingDisposition) return null;
+  if (item.billingCoverageIssue) {
+    const issueLabel = item.billingCoverageIssue.type === 'MISSING_START_DATE'
+      ? 'Missing start'
+      : item.billingCoverageIssue.type === 'MISSING_DISPOSITION'
+        ? 'Missing disposition'
+        : item.billingCoverageIssue.type.replaceAll('_', ' ').toLowerCase().replace(/^./, (value) => value.toUpperCase());
+    return (
+      <Link
+        href={`/services?tab=billing&serviceId=${encodeURIComponent(item.id)}`}
+        aria-label={`Billing warning for ${item.serviceName}`}
+        className="inline-flex min-h-11 items-center gap-1 text-status-warning hover:underline sm:min-h-0"
+        title={item.billingCoverageIssue.type.replaceAll('_', ' ').toLowerCase()}
+      >
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="text-xs">{issueLabel}</span>
+      </Link>
+    );
+  }
+  if (item.billingDisposition === 'NOT_REQUIRED') {
+    return <span className="badge badge-neutral" aria-label="Billing: no billing required">No billing required</span>;
+  }
+  if (item.billingDisposition === 'UNREVIEWED') {
+    return <Link href={`/services?tab=billing&serviceId=${encodeURIComponent(item.id)}`} className="badge badge-warning" aria-label="Billing: missing disposition">Missing disposition</Link>;
+  }
+  if (!item.nextBilling) return <span className="badge badge-success" aria-label="Billing: configured">Covered</span>;
+  const nextState = item.nextBilling.status === 'OPEN' ? item.nextBilling.timingState ?? 'OPEN' : item.nextBilling.status;
+  const nextStateLabel = nextState.charAt(0) + nextState.slice(1).toLowerCase();
+  return <span className="badge badge-success" aria-label={`Billing: configured, ${nextStateLabel.toLowerCase()}`}>Configured · {nextStateLabel}</span>;
 }
 
 function ServiceActions({ item, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
@@ -265,6 +298,7 @@ function MobileRosterCard({ item, canEdit, onEdit, onTrigger }: { item: ServiceR
           <CardDetailItem label="Next deadline" value={formatDate(item.nextDeadline?.operativeDueDate ?? null)} />
           <CardDetailItem label="Start/end" value={`${formatDate(item.startDate)} – ${formatDate(item.endDate)}`} />
           <CardDetailItem label="Warnings" value={<WarningCell item={item} />} />
+          <CardDetailItem label="Billing" value={<BillingIndicator item={item} />} fullWidth />
         </CardDetailsGrid>
       )}
     />

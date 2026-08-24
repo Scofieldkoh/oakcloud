@@ -100,6 +100,15 @@ export interface ServiceRosterItem {
   applicabilityState: ServiceRosterApplicabilityState;
   ruleWarning: ServiceRosterWarningSummary;
   warning: ServiceRosterWarningSummary;
+  /** Billing tracking projection used by the roster indicator. */
+  billingDisposition?: 'CONFIGURED' | 'NOT_REQUIRED' | 'UNREVIEWED';
+  billingNotRequiredReason?: string | null;
+  billingCoverageIssue?: { severity: 'ERROR' | 'WARNING'; type: string; message?: string } | null;
+  nextBilling?: {
+    status: 'OPEN' | 'BILLED' | 'WAIVED' | 'CANCELLED';
+    expectedDate: string;
+    timingState: 'UPCOMING' | 'DUE' | 'OVERDUE' | null;
+  } | null;
   updatedAt: string;
 }
 

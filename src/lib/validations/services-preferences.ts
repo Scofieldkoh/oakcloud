@@ -5,6 +5,83 @@ const DEADLINE_COLUMN_IDS = ['dueDate', 'timing', 'company', 'familyService', 'm
 export const DEADLINE_COLUMN_WIDTH_MIN = 96;
 export const DEADLINE_COLUMN_WIDTH_MAX = 800;
 
+export const BILLING_TABLE_PREFERENCE_KEY = 'services.billing.table.v1';
+export const BILLING_COLUMN_IDS = [
+  'expectedDate',
+  'timing',
+  'company',
+  'familyService',
+  'feeLinePeriod',
+  'status',
+  'amount',
+  'billedDate',
+  'reference',
+  'actions',
+] as const;
+export type BillingColumnId = (typeof BILLING_COLUMN_IDS)[number];
+export const BILLING_COLUMN_WIDTH_MIN = 96;
+export const BILLING_COLUMN_WIDTH_MAX = 800;
+
+const billingColumnIdSchema = z.enum(BILLING_COLUMN_IDS);
+
+export const billingTablePreferenceSchema = z.object({
+  version: z.literal(1),
+  columnWidths: z.record(z.string(), z.number().finite().min(BILLING_COLUMN_WIDTH_MIN).max(BILLING_COLUMN_WIDTH_MAX)).default({}),
+  columnOrder: z.array(billingColumnIdSchema).max(20).default([]),
+  columnVisibility: z.record(z.string(), z.boolean()).default({}),
+  sortBy: z.enum(['expectedDate', 'company', 'family', 'service', 'status', 'amount']).default('expectedDate'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  pageSize: z.union([z.literal(10), z.literal(20), z.literal(50), z.literal(100)]).default(20),
+});
+
+export type BillingTablePreference = z.infer<typeof billingTablePreferenceSchema>;
+
+export const defaultBillingTablePreference: BillingTablePreference = {
+  version: 1,
+  columnWidths: {},
+  columnOrder: [...BILLING_COLUMN_IDS],
+  columnVisibility: Object.fromEntries(BILLING_COLUMN_IDS.map((column) => [column, true])),
+  sortBy: 'expectedDate',
+  sortOrder: 'asc',
+  pageSize: 20,
+};
+
+/** Restore the versioned billing table contract without letting bad saved data affect queries. */
+export function parseBillingTablePreference(value: unknown): BillingTablePreference {
+  if (!isRecord(value) || value.version !== 1) return defaultBillingTablePreference;
+
+  const rawWidths = isRecord(value.columnWidths) ? value.columnWidths : {};
+  const rawOrder = Array.isArray(value.columnOrder) ? value.columnOrder : [];
+  const rawVisibility = isRecord(value.columnVisibility) ? value.columnVisibility : {};
+  const parsed = billingTablePreferenceSchema.safeParse({
+    ...value,
+    columnWidths: {},
+    columnOrder: [],
+    columnVisibility: {},
+    sortBy: value.sortBy ?? 'expectedDate',
+    sortOrder: value.sortOrder ?? 'asc',
+    pageSize: value.pageSize ?? 20,
+  });
+  if (!parsed.success) return defaultBillingTablePreference;
+
+  const widths = Object.fromEntries(
+    BILLING_COLUMN_IDS
+      .filter((column) => typeof rawWidths[column] === 'number' && Number.isFinite(rawWidths[column]))
+      .map((column) => [column, Math.min(BILLING_COLUMN_WIDTH_MAX, Math.max(BILLING_COLUMN_WIDTH_MIN, Math.round(rawWidths[column] as number)))]),
+  );
+  const knownOrder = rawOrder.filter((column): column is BillingColumnId => typeof column === 'string' && BILLING_COLUMN_IDS.includes(column as BillingColumnId));
+  const columnOrder = [...new Set([...knownOrder, ...BILLING_COLUMN_IDS])];
+  const columnVisibility = Object.fromEntries(BILLING_COLUMN_IDS.map((column) => [column, column === 'actions' ? true : rawVisibility[column] !== false]));
+
+  return {
+    ...defaultBillingTablePreference,
+    ...parsed.data,
+    columnWidths: widths,
+    columnOrder,
+    columnVisibility,
+  };
+}
+
 export const deadlineViewPreferenceSchema = z.object({
   version: z.literal(1),
   defaultView: z.enum(['TABLE', 'CALENDAR']),
