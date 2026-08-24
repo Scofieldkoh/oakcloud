@@ -787,7 +787,6 @@ export type BillingCoverageIssueCreateWithoutCompanyInput = {
 
 export type BillingCoverageIssueUncheckedCreateWithoutCompanyInput = {
   id?: string
-  tenantId: string
   clientServiceId: string
   feeLineId?: string | null
   type: $Enums.BillingCoverageIssueType
@@ -845,8 +844,6 @@ export type BillingCoverageIssueCreateWithoutClientServiceInput = {
 
 export type BillingCoverageIssueUncheckedCreateWithoutClientServiceInput = {
   id?: string
-  tenantId: string
-  companyId: string
   feeLineId?: string | null
   type: $Enums.BillingCoverageIssueType
   severity: $Enums.BillingCoverageIssueSeverity
@@ -903,9 +900,7 @@ export type BillingCoverageIssueCreateWithoutFeeLineInput = {
 
 export type BillingCoverageIssueUncheckedCreateWithoutFeeLineInput = {
   id?: string
-  tenantId: string
   companyId: string
-  clientServiceId: string
   type: $Enums.BillingCoverageIssueType
   severity: $Enums.BillingCoverageIssueSeverity
   issueKey: string
@@ -1009,7 +1004,6 @@ export type BillingCoverageIssueUncheckedUpdateManyWithoutTenantInput = {
 
 export type BillingCoverageIssueCreateManyCompanyInput = {
   id?: string
-  tenantId: string
   clientServiceId: string
   feeLineId?: string | null
   type: $Enums.BillingCoverageIssueType
@@ -1041,7 +1035,6 @@ export type BillingCoverageIssueUpdateWithoutCompanyInput = {
 
 export type BillingCoverageIssueUncheckedUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumBillingCoverageIssueTypeFieldUpdateOperationsInput | $Enums.BillingCoverageIssueType
@@ -1057,7 +1050,6 @@ export type BillingCoverageIssueUncheckedUpdateWithoutCompanyInput = {
 
 export type BillingCoverageIssueUncheckedUpdateManyWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumBillingCoverageIssueTypeFieldUpdateOperationsInput | $Enums.BillingCoverageIssueType
@@ -1073,8 +1065,6 @@ export type BillingCoverageIssueUncheckedUpdateManyWithoutCompanyInput = {
 
 export type BillingCoverageIssueCreateManyClientServiceInput = {
   id?: string
-  tenantId: string
-  companyId: string
   feeLineId?: string | null
   type: $Enums.BillingCoverageIssueType
   severity: $Enums.BillingCoverageIssueSeverity
@@ -1105,8 +1095,6 @@ export type BillingCoverageIssueUpdateWithoutClientServiceInput = {
 
 export type BillingCoverageIssueUncheckedUpdateWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumBillingCoverageIssueTypeFieldUpdateOperationsInput | $Enums.BillingCoverageIssueType
   severity?: Prisma.EnumBillingCoverageIssueSeverityFieldUpdateOperationsInput | $Enums.BillingCoverageIssueSeverity
@@ -1121,8 +1109,6 @@ export type BillingCoverageIssueUncheckedUpdateWithoutClientServiceInput = {
 
 export type BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumBillingCoverageIssueTypeFieldUpdateOperationsInput | $Enums.BillingCoverageIssueType
   severity?: Prisma.EnumBillingCoverageIssueSeverityFieldUpdateOperationsInput | $Enums.BillingCoverageIssueSeverity
@@ -1137,9 +1123,7 @@ export type BillingCoverageIssueUncheckedUpdateManyWithoutClientServiceInput = {
 
 export type BillingCoverageIssueCreateManyFeeLineInput = {
   id?: string
-  tenantId: string
   companyId: string
-  clientServiceId: string
   type: $Enums.BillingCoverageIssueType
   severity: $Enums.BillingCoverageIssueSeverity
   issueKey: string
@@ -1169,9 +1153,7 @@ export type BillingCoverageIssueUpdateWithoutFeeLineInput = {
 
 export type BillingCoverageIssueUncheckedUpdateWithoutFeeLineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumBillingCoverageIssueTypeFieldUpdateOperationsInput | $Enums.BillingCoverageIssueType
   severity?: Prisma.EnumBillingCoverageIssueSeverityFieldUpdateOperationsInput | $Enums.BillingCoverageIssueSeverity
   issueKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1185,9 +1167,7 @@ export type BillingCoverageIssueUncheckedUpdateWithoutFeeLineInput = {
 
 export type BillingCoverageIssueUncheckedUpdateManyWithoutFeeLineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumBillingCoverageIssueTypeFieldUpdateOperationsInput | $Enums.BillingCoverageIssueType
   severity?: Prisma.EnumBillingCoverageIssueSeverityFieldUpdateOperationsInput | $Enums.BillingCoverageIssueSeverity
   issueKey?: Prisma.StringFieldUpdateOperationsInput | string

@@ -357,6 +357,7 @@ export type ClientServiceOrderByWithRelationInput = {
 export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   agreementItemId_companyId?: Prisma.ClientServiceAgreementItemIdCompanyIdCompoundUniqueInput
+  tenantId_id_companyId?: Prisma.ClientServiceTenantIdIdCompanyIdCompoundUniqueInput
   AND?: Prisma.ClientServiceWhereInput | Prisma.ClientServiceWhereInput[]
   OR?: Prisma.ClientServiceWhereInput[]
   NOT?: Prisma.ClientServiceWhereInput | Prisma.ClientServiceWhereInput[]
@@ -391,7 +392,7 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
   billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
-}, "id" | "agreementItemId_companyId">
+}, "id" | "agreementItemId_companyId" | "tenantId_id_companyId">
 
 export type ClientServiceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -646,6 +647,12 @@ export type ClientServiceOrderByRelationAggregateInput = {
 
 export type ClientServiceAgreementItemIdCompanyIdCompoundUniqueInput = {
   agreementItemId: string
+  companyId: string
+}
+
+export type ClientServiceTenantIdIdCompanyIdCompoundUniqueInput = {
+  tenantId: string
+  id: string
   companyId: string
 }
 

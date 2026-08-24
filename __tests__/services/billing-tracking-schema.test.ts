@@ -64,6 +64,12 @@ describe('billing tracking schema', () => {
     expect(schema).toContain('@@index([tenantId, operativeExpectedDate, status])');
     expect(schema).toContain('@@index([tenantId, companyId, operativeExpectedDate, status])');
     expect(schema).toContain('@@index([tenantId, clientServiceId, operativeExpectedDate])');
+    expect(schema).toContain('@@unique([tenantId, id], map: "companies_tenant_id_id_key")');
+    expect(schema).toContain('@@unique([tenantId, id, companyId], map: "client_services_tenant_id_id_company_id_key")');
+    expect(schema).toContain('@@unique([tenantId, id, clientServiceId], map: "client_service_fee_lines_tenant_id_id_client_service_id_key")');
+    expect(schema).toMatch(/company\s+Company\s+@relation\(fields:\s*\[tenantId, companyId\], references:\s*\[tenantId, id\], onDelete:\s*Restrict\)/);
+    expect(schema).toMatch(/clientService\s+ClientService\s+@relation\(fields:\s*\[tenantId, clientServiceId, companyId\], references:\s*\[tenantId, id, companyId\], onDelete:\s*Restrict\)/);
+    expect(schema).toMatch(/feeLine\s+ClientServiceFeeLine\??\s+@relation\(fields:\s*\[tenantId, feeLineId, clientServiceId\], references:\s*\[tenantId, id, clientServiceId\], onDelete:\s*Restrict\)/);
     expect(schema).not.toContain('billing_coverage_issues_open_issue_key');
   });
 
@@ -76,18 +82,41 @@ describe('billing tracking schema', () => {
     expect(migration).toContain('billing_occurrences_billed_consistency');
     expect(migration).toContain('billing_occurrences_waiver_consistency');
     expect(migration).toContain('billing_occurrences_cancellation_consistency');
+    expect(migration).toContain('billing_occurrences_billed_date_status');
     expect(migration).toContain('billing_occurrences_currency_codes');
     expect(migration).toContain('billing_occurrences_nonnegative_amounts');
+    expect(migration).toMatch(/"billing_disposition" = 'NOT_REQUIRED'[\s\S]*?"billing_not_required_reason" IS NOT NULL[\s\S]*?length\(btrim\("billing_not_required_reason"\)\) >= 3/);
+    expect(migration).toContain('client_service_fee_lines_archive_consistency');
+    expect(migration).toContain('"calculated_expected_date" = "operative_expected_date"');
+    expect(migration).toContain('"base_amount" = "operative_amount"');
+    expect(migration).toContain('"base_currency" = "operative_currency"');
+    expect(migration).toContain('"companies_tenant_id_id_key" UNIQUE ("tenantId", "id")');
+    expect(migration).toContain('"client_services_tenant_id_id_company_id_key" UNIQUE ("tenant_id", "id", "company_id")');
+    expect(migration).toContain('"client_service_fee_lines_tenant_id_id_client_service_id_key" UNIQUE ("tenant_id", "id", "client_service_id")');
+    expect(migration).toContain('"billed_date" IS NULL');
+    expect(migration).toContain('"marked_billed_at" IS NULL');
+    expect(migration).toContain('"marked_billed_by_id" IS NULL');
+    expect(migration).toContain('"waived_by_id" IS NULL');
+    expect(migration).toContain('"cancelled_by_id" IS NULL');
+    expect(migration).toMatch(/FOREIGN KEY \("tenant_id", "company_id"\) REFERENCES "companies"\("tenantId", "id"\)/);
+    expect(migration).toMatch(/FOREIGN KEY \("tenant_id", "client_service_id", "company_id"\) REFERENCES "client_services"\("tenant_id", "id", "company_id"\)/);
+    expect(migration).toMatch(/FOREIGN KEY \("tenant_id", "fee_line_id", "client_service_id"\) REFERENCES "client_service_fee_lines"\("tenant_id", "id", "client_service_id"\)/);
     expect(migration).not.toMatch(/@@index.*billing_coverage_issues_open_issue_key/);
     expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE)\b/i);
   });
 
-  it('keeps source lineage restrictive and user actors nullable', () => {
-    expect(schema).toMatch(/feeLine\s+ClientServiceFeeLine\s+@relation\(fields:\s*\[feeLineId\], references:\s*\[id\], onDelete:\s*Restrict\)/);
-    expect(schema).toMatch(/clientService\s+ClientService\s+@relation\(fields:\s*\[clientServiceId\], references:\s*\[id\], onDelete:\s*Restrict\)/);
-    expect(schema).toMatch(/company\s+Company\s+@relation\(fields:\s*\[companyId\], references:\s*\[id\], onDelete:\s*Restrict\)/);
-    expect(migration).toMatch(/billing_occurrences_fee_line_id_fkey[\s\S]*?ON DELETE RESTRICT/);
-    expect(migration).toMatch(/billing_coverage_issues_fee_line_id_fkey[\s\S]*?ON DELETE RESTRICT/);
+  it('keeps source lineage restrictive and user actors retained', () => {
+    expect(migration).toMatch(/billing_occurrences_fee_line_lineage_fkey[\s\S]*?ON DELETE RESTRICT/);
+    expect(migration).toMatch(/billing_coverage_issues_fee_line_lineage_fkey[\s\S]*?ON DELETE RESTRICT/);
+    for (const actor of [
+      'date_overridden_by_id',
+      'value_overridden_by_id',
+      'marked_billed_by_id',
+      'waived_by_id',
+      'cancelled_by_id',
+    ]) {
+      expect(migration).toMatch(new RegExp(`${actor}_fkey[\\s\\S]*?ON DELETE RESTRICT`));
+    }
     expect(schema).toContain('@relation("BillingOccurrenceDateOverrideActor"');
     expect(schema).toContain('@relation("BillingOccurrenceValueOverrideActor"');
     expect(schema).toContain('@relation("BillingOccurrenceBilledActor"');

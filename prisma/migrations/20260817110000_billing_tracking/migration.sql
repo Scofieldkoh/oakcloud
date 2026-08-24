@@ -21,6 +21,15 @@ ALTER TABLE "client_service_fee_lines"
   ADD COLUMN "deleted_at" TIMESTAMP(3),
   ADD COLUMN "deleted_reason" VARCHAR(1000);
 
+ALTER TABLE "companies"
+  ADD CONSTRAINT "companies_tenant_id_id_key" UNIQUE ("tenantId", "id");
+
+ALTER TABLE "client_services"
+  ADD CONSTRAINT "client_services_tenant_id_id_company_id_key" UNIQUE ("tenant_id", "id", "company_id");
+
+ALTER TABLE "client_service_fee_lines"
+  ADD CONSTRAINT "client_service_fee_lines_tenant_id_id_client_service_id_key" UNIQUE ("tenant_id", "id", "client_service_id");
+
 CREATE TABLE "billing_occurrences" (
   "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
   "tenant_id" TEXT NOT NULL,
@@ -99,37 +108,45 @@ CREATE UNIQUE INDEX "billing_coverage_issues_open_issue_key"
 ALTER TABLE "billing_occurrences"
   ADD CONSTRAINT "billing_occurrences_tenant_id_fkey"
   FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT "billing_occurrences_company_id_fkey"
-  FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT "billing_occurrences_client_service_id_fkey"
-  FOREIGN KEY ("client_service_id") REFERENCES "client_services"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT "billing_occurrences_fee_line_id_fkey"
-  FOREIGN KEY ("fee_line_id") REFERENCES "client_service_fee_lines"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "billing_occurrences_company_tenant_id_fkey"
+  FOREIGN KEY ("tenant_id", "company_id") REFERENCES "companies"("tenantId", "id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "billing_occurrences_client_service_lineage_fkey"
+  FOREIGN KEY ("tenant_id", "client_service_id", "company_id") REFERENCES "client_services"("tenant_id", "id", "company_id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "billing_occurrences_fee_line_lineage_fkey"
+  FOREIGN KEY ("tenant_id", "fee_line_id", "client_service_id") REFERENCES "client_service_fee_lines"("tenant_id", "id", "client_service_id") ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT "billing_occurrences_date_overridden_by_id_fkey"
-  FOREIGN KEY ("date_overridden_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY ("date_overridden_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT "billing_occurrences_value_overridden_by_id_fkey"
-  FOREIGN KEY ("value_overridden_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY ("value_overridden_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT "billing_occurrences_marked_billed_by_id_fkey"
-  FOREIGN KEY ("marked_billed_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY ("marked_billed_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT "billing_occurrences_waived_by_id_fkey"
-  FOREIGN KEY ("waived_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY ("waived_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT "billing_occurrences_cancelled_by_id_fkey"
-  FOREIGN KEY ("cancelled_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  FOREIGN KEY ("cancelled_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE "billing_coverage_issues"
   ADD CONSTRAINT "billing_coverage_issues_tenant_id_fkey"
   FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT "billing_coverage_issues_company_id_fkey"
-  FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT "billing_coverage_issues_client_service_id_fkey"
-  FOREIGN KEY ("client_service_id") REFERENCES "client_services"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT "billing_coverage_issues_fee_line_id_fkey"
-  FOREIGN KEY ("fee_line_id") REFERENCES "client_service_fee_lines"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+  ADD CONSTRAINT "billing_coverage_issues_company_tenant_id_fkey"
+  FOREIGN KEY ("tenant_id", "company_id") REFERENCES "companies"("tenantId", "id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "billing_coverage_issues_client_service_lineage_fkey"
+  FOREIGN KEY ("tenant_id", "client_service_id", "company_id") REFERENCES "client_services"("tenant_id", "id", "company_id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "billing_coverage_issues_fee_line_lineage_fkey"
+  FOREIGN KEY ("tenant_id", "fee_line_id", "client_service_id") REFERENCES "client_service_fee_lines"("tenant_id", "id", "client_service_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE "client_service_fee_lines"
+  ADD CONSTRAINT "client_service_fee_lines_archive_consistency"
+  CHECK (
+    ("is_active" = TRUE AND "deleted_at" IS NULL AND "deleted_reason" IS NULL)
+    OR
+    ("is_active" = FALSE AND "deleted_at" IS NOT NULL AND "deleted_reason" IS NOT NULL AND length(btrim("deleted_reason")) >= 3)
+  );
 
 ALTER TABLE "client_services"
   ADD CONSTRAINT "client_services_billing_disposition_reason"
   CHECK (
-    ("billing_disposition" = 'NOT_REQUIRED' AND length(trim("billing_not_required_reason")) >= 3)
+    ("billing_disposition" = 'NOT_REQUIRED' AND "billing_not_required_reason" IS NOT NULL AND length(btrim("billing_not_required_reason")) >= 3)
     OR
     ("billing_disposition" <> 'NOT_REQUIRED' AND "billing_not_required_reason" IS NULL)
   );
@@ -137,22 +154,36 @@ ALTER TABLE "client_services"
 ALTER TABLE "billing_occurrences"
   ADD CONSTRAINT "billing_occurrences_date_override_consistency"
   CHECK (
-    ("date_overridden" = FALSE AND "date_override_reason" IS NULL AND "date_overridden_at" IS NULL AND "date_overridden_by_id" IS NULL)
+    ("date_overridden" = FALSE AND "calculated_expected_date" = "operative_expected_date" AND "date_override_reason" IS NULL AND "date_overridden_at" IS NULL AND "date_overridden_by_id" IS NULL)
     OR
     ("date_overridden" = TRUE AND "date_override_reason" IS NOT NULL AND "date_overridden_at" IS NOT NULL AND "date_overridden_by_id" IS NOT NULL)
   ),
   ADD CONSTRAINT "billing_occurrences_value_override_consistency"
   CHECK (
-    ("value_overridden" = FALSE AND "value_override_reason" IS NULL AND "value_overridden_at" IS NULL AND "value_overridden_by_id" IS NULL)
+    ("value_overridden" = FALSE AND "base_amount" = "operative_amount" AND "base_currency" = "operative_currency" AND "value_override_reason" IS NULL AND "value_overridden_at" IS NULL AND "value_overridden_by_id" IS NULL)
     OR
     ("value_overridden" = TRUE AND "value_override_reason" IS NOT NULL AND "value_overridden_at" IS NOT NULL AND "value_overridden_by_id" IS NOT NULL)
   ),
   ADD CONSTRAINT "billing_occurrences_billed_consistency"
-  CHECK (("status" = 'BILLED') = ("marked_billed_at" IS NOT NULL AND "marked_billed_by_id" IS NOT NULL)),
+  CHECK (
+    ("status" = 'BILLED' AND "marked_billed_at" IS NOT NULL AND "marked_billed_by_id" IS NOT NULL)
+    OR
+    ("status" <> 'BILLED' AND "marked_billed_at" IS NULL AND "marked_billed_by_id" IS NULL)
+  ),
   ADD CONSTRAINT "billing_occurrences_waiver_consistency"
-  CHECK (("status" = 'WAIVED') = ("waived_at" IS NOT NULL AND "waiver_reason" IS NOT NULL)),
+  CHECK (
+    ("status" = 'WAIVED' AND "waived_at" IS NOT NULL AND "waived_by_id" IS NOT NULL AND "waiver_reason" IS NOT NULL)
+    OR
+    ("status" <> 'WAIVED' AND "waived_at" IS NULL AND "waived_by_id" IS NULL AND "waiver_reason" IS NULL)
+  ),
   ADD CONSTRAINT "billing_occurrences_cancellation_consistency"
-  CHECK (("status" = 'CANCELLED') = ("cancelled_at" IS NOT NULL AND "cancellation_reason" IS NOT NULL)),
+  CHECK (
+    ("status" = 'CANCELLED' AND "cancelled_at" IS NOT NULL AND "cancelled_by_id" IS NOT NULL AND "cancellation_reason" IS NOT NULL)
+    OR
+    ("status" <> 'CANCELLED' AND "cancelled_at" IS NULL AND "cancelled_by_id" IS NULL AND "cancellation_reason" IS NULL)
+  ),
+  ADD CONSTRAINT "billing_occurrences_billed_date_status"
+  CHECK ("status" = 'BILLED' OR "billed_date" IS NULL),
   ADD CONSTRAINT "billing_occurrences_currency_codes"
   CHECK ("base_currency" ~ '^[A-Z]{3}$' AND "operative_currency" ~ '^[A-Z]{3}$'),
   ADD CONSTRAINT "billing_occurrences_nonnegative_amounts"

@@ -353,6 +353,7 @@ model Company {
   billingCoverageIssues       BillingCoverageIssue[]
 
   @@unique([tenantId, uen])
+  @@unique([tenantId, id], map: "companies_tenant_id_id_key")
   @@index([tenantId])
   @@index([uen])
   @@index([name])
@@ -1328,6 +1329,7 @@ model ClientService {
   billingCoverageIssues    BillingCoverageIssue[]
 
   @@unique([agreementItemId, companyId])
+  @@unique([tenantId, id, companyId], map: "client_services_tenant_id_id_company_id_key")
   @@index([tenantId, companyId, status, deletedAt])
   @@index([tenantId, agreementId])
   @@index([serviceVariantId])
@@ -1457,6 +1459,7 @@ model ClientServiceFeeLine {
   billingCoverageIssues    BillingCoverageIssue[]
 
   @@unique([clientServiceId, sourceAgreementFeeLineId])
+  @@unique([tenantId, id, clientServiceId], map: "client_service_fee_lines_tenant_id_id_client_service_id_key")
   @@index([tenantId, clientServiceId, displayOrder])
   @@map("client_service_fee_lines")
 }
@@ -1499,14 +1502,14 @@ model BillingOccurrence {
   createdAt              DateTime                @default(now()) @map("created_at")
   updatedAt              DateTime                @updatedAt @map("updated_at")
   tenant                 Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  company                Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  clientService          ClientService           @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
-  feeLine                ClientServiceFeeLine    @relation(fields: [feeLineId], references: [id], onDelete: Restrict)
-  dateOverriddenBy       User?                   @relation("BillingOccurrenceDateOverrideActor", fields: [dateOverriddenById], references: [id], onDelete: SetNull)
-  valueOverriddenBy      User?                   @relation("BillingOccurrenceValueOverrideActor", fields: [valueOverriddenById], references: [id], onDelete: SetNull)
-  markedBilledBy         User?                   @relation("BillingOccurrenceBilledActor", fields: [markedBilledById], references: [id], onDelete: SetNull)
-  waivedBy               User?                   @relation("BillingOccurrenceWaiverActor", fields: [waivedById], references: [id], onDelete: SetNull)
-  cancelledBy            User?                   @relation("BillingOccurrenceCancellationActor", fields: [cancelledById], references: [id], onDelete: SetNull)
+  company                Company                 @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+  clientService          ClientService           @relation(fields: [tenantId, clientServiceId, companyId], references: [tenantId, id, companyId], onDelete: Restrict)
+  feeLine                ClientServiceFeeLine    @relation(fields: [tenantId, feeLineId, clientServiceId], references: [tenantId, id, clientServiceId], onDelete: Restrict)
+  dateOverriddenBy       User?                   @relation("BillingOccurrenceDateOverrideActor", fields: [dateOverriddenById], references: [id], onDelete: Restrict)
+  valueOverriddenBy      User?                   @relation("BillingOccurrenceValueOverrideActor", fields: [valueOverriddenById], references: [id], onDelete: Restrict)
+  markedBilledBy         User?                   @relation("BillingOccurrenceBilledActor", fields: [markedBilledById], references: [id], onDelete: Restrict)
+  waivedBy               User?                   @relation("BillingOccurrenceWaiverActor", fields: [waivedById], references: [id], onDelete: Restrict)
+  cancelledBy            User?                   @relation("BillingOccurrenceCancellationActor", fields: [cancelledById], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, feeLineId, billingPeriodKey, scheduleEntryKey, generationKey], map: "billing_occurrences_identity_key")
   @@index([tenantId, operativeExpectedDate, status])
@@ -1531,9 +1534,9 @@ model BillingCoverageIssue {
   createdAt       DateTime                     @default(now()) @map("created_at")
   updatedAt       DateTime                     @updatedAt @map("updated_at")
   tenant          Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  company         Company                      @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  clientService   ClientService                @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
-  feeLine         ClientServiceFeeLine?        @relation(fields: [feeLineId], references: [id], onDelete: Restrict)
+  company         Company                      @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+  clientService   ClientService                @relation(fields: [tenantId, clientServiceId, companyId], references: [tenantId, id, companyId], onDelete: Restrict)
+  feeLine         ClientServiceFeeLine?        @relation(fields: [tenantId, feeLineId, clientServiceId], references: [tenantId, id, clientServiceId], onDelete: Restrict)
 
   @@index([tenantId, clientServiceId, resolvedAt])
   @@index([tenantId, companyId, severity, resolvedAt])

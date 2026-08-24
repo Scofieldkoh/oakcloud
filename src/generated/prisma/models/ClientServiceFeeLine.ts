@@ -347,6 +347,7 @@ export type ClientServiceFeeLineOrderByWithRelationInput = {
 export type ClientServiceFeeLineWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   clientServiceId_sourceAgreementFeeLineId?: Prisma.ClientServiceFeeLineClientServiceIdSourceAgreementFeeLineIdCompoundUniqueInput
+  tenantId_id_clientServiceId?: Prisma.ClientServiceFeeLineTenantIdIdClientServiceIdCompoundUniqueInput
   AND?: Prisma.ClientServiceFeeLineWhereInput | Prisma.ClientServiceFeeLineWhereInput[]
   OR?: Prisma.ClientServiceFeeLineWhereInput[]
   NOT?: Prisma.ClientServiceFeeLineWhereInput | Prisma.ClientServiceFeeLineWhereInput[]
@@ -371,7 +372,7 @@ export type ClientServiceFeeLineWhereUniqueInput = Prisma.AtLeast<{
   sourceAgreementFeeLine?: Prisma.XOR<Prisma.ServiceAgreementFeeLineNullableScalarRelationFilter, Prisma.ServiceAgreementFeeLineWhereInput> | null
   billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
-}, "id" | "clientServiceId_sourceAgreementFeeLineId">
+}, "id" | "clientServiceId_sourceAgreementFeeLineId" | "tenantId_id_clientServiceId">
 
 export type ClientServiceFeeLineOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -579,6 +580,12 @@ export type ClientServiceFeeLineOrderByRelationAggregateInput = {
 export type ClientServiceFeeLineClientServiceIdSourceAgreementFeeLineIdCompoundUniqueInput = {
   clientServiceId: string
   sourceAgreementFeeLineId: string
+}
+
+export type ClientServiceFeeLineTenantIdIdClientServiceIdCompoundUniqueInput = {
+  tenantId: string
+  id: string
+  clientServiceId: string
 }
 
 export type ClientServiceFeeLineCountOrderByAggregateInput = {

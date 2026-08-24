@@ -733,6 +733,7 @@ export type CompanyOrderByWithRelationInput = {
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   tenantId_uen?: Prisma.CompanyTenantIdUenCompoundUniqueInput
+  tenantId_id?: Prisma.CompanyTenantIdIdCompoundUniqueInput
   AND?: Prisma.CompanyWhereInput | Prisma.CompanyWhereInput[]
   OR?: Prisma.CompanyWhereInput[]
   NOT?: Prisma.CompanyWhereInput | Prisma.CompanyWhereInput[]
@@ -817,7 +818,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   deadlineOccurrences?: Prisma.DeadlineOccurrenceListRelationFilter
   billingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
-}, "id" | "tenantId_uen">
+}, "id" | "tenantId_uen" | "tenantId_id">
 
 export type CompanyOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -1455,6 +1456,11 @@ export type CompanyScalarRelationFilter = {
 export type CompanyTenantIdUenCompoundUniqueInput = {
   tenantId: string
   uen: string
+}
+
+export type CompanyTenantIdIdCompoundUniqueInput = {
+  tenantId: string
+  id: string
 }
 
 export type CompanyCountOrderByAggregateInput = {

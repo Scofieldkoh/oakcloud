@@ -2150,7 +2150,6 @@ export type BillingOccurrenceCreateWithoutCompanyInput = {
 
 export type BillingOccurrenceUncheckedCreateWithoutCompanyInput = {
   id?: string
-  tenantId: string
   clientServiceId: string
   feeLineId: string
   billingPeriodKey: string
@@ -2252,8 +2251,6 @@ export type BillingOccurrenceCreateWithoutClientServiceInput = {
 
 export type BillingOccurrenceUncheckedCreateWithoutClientServiceInput = {
   id?: string
-  tenantId: string
-  companyId: string
   feeLineId: string
   billingPeriodKey: string
   scheduleEntryKey?: string
@@ -2354,9 +2351,7 @@ export type BillingOccurrenceCreateWithoutFeeLineInput = {
 
 export type BillingOccurrenceUncheckedCreateWithoutFeeLineInput = {
   id?: string
-  tenantId: string
   companyId: string
-  clientServiceId: string
   billingPeriodKey: string
   scheduleEntryKey?: string
   generationKey: string
@@ -3330,7 +3325,6 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCancelledByInput = {
 
 export type BillingOccurrenceCreateManyCompanyInput = {
   id?: string
-  tenantId: string
   clientServiceId: string
   feeLineId: string
   billingPeriodKey: string
@@ -3406,7 +3400,6 @@ export type BillingOccurrenceUpdateWithoutCompanyInput = {
 
 export type BillingOccurrenceUncheckedUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3444,7 +3437,6 @@ export type BillingOccurrenceUncheckedUpdateWithoutCompanyInput = {
 
 export type BillingOccurrenceUncheckedUpdateManyWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3482,8 +3474,6 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCompanyInput = {
 
 export type BillingOccurrenceCreateManyClientServiceInput = {
   id?: string
-  tenantId: string
-  companyId: string
   feeLineId: string
   billingPeriodKey: string
   scheduleEntryKey?: string
@@ -3558,8 +3548,6 @@ export type BillingOccurrenceUpdateWithoutClientServiceInput = {
 
 export type BillingOccurrenceUncheckedUpdateWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3596,8 +3584,6 @@ export type BillingOccurrenceUncheckedUpdateWithoutClientServiceInput = {
 
 export type BillingOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
   feeLineId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3634,9 +3620,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
 
 export type BillingOccurrenceCreateManyFeeLineInput = {
   id?: string
-  tenantId: string
   companyId: string
-  clientServiceId: string
   billingPeriodKey: string
   scheduleEntryKey?: string
   generationKey: string
@@ -3710,9 +3694,7 @@ export type BillingOccurrenceUpdateWithoutFeeLineInput = {
 
 export type BillingOccurrenceUncheckedUpdateWithoutFeeLineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   generationKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3748,9 +3730,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutFeeLineInput = {
 
 export type BillingOccurrenceUncheckedUpdateManyWithoutFeeLineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
   billingPeriodKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   generationKey?: Prisma.StringFieldUpdateOperationsInput | string
