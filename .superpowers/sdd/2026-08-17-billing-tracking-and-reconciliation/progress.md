@@ -4,7 +4,7 @@
 
 - Worktree: `C:\Users\Scotfield\OneDrive\Documents\Python Project\oakcloud_development\oakcloud\.worktrees\services-administration`
 - Branch: `codex/services-administration`
-- Task scope: Task 1 only — additive billing disposition, fee-line archive fields, billing occurrences, and coverage issues.
+- Task scope: Tasks 1–4 complete — billing persistence, schedules/backfill, occurrence reconciliation, and materialized coverage.
 - Implementation model: `gpt-5.6-luna`, reasoning `max`.
 - Review model: `gpt-5.6-sol`, reasoning `medium`.
 - Final branch review: `gpt-5.6-sol`, reasoning `xhigh`.
@@ -43,6 +43,7 @@
 | 1 | PASS / final-review-complete | `66197f3c`, `960d0778`, `e530c522` | `final review PASS (0 Critical / 0 Important / 0 Minor)` |
 | 2 | PASS / task-review-complete | `fcad7bba`, `1e3829e4` | `5 Important addressed; no new breakage; 1 Minor deferred` |
 | 3 | PASS / task-review-complete | `c36f141a`, `4f638b17`, `9a7df209`, `baa1e7e1` | `all findings addressed; no new breakage` |
+| 4 | PASS / task-review-complete | `f6c5c0ac`, `7e1353e2` | `4 Important and 2 Minor addressed; final 0 / 0 / 0` |
 
 ## RED evidence
 
@@ -162,3 +163,20 @@
 - Controller final focused verification: 6 files passed plus 1 guarded skip; 91 tests passed plus 1 skipped. TypeScript, scoped zero-warning ESLint, and diff checks passed.
 - Round-3 rereview: remaining Critical ADDRESSED; transaction-comment Minor ADDRESSED; no new breakage.
 - Task 3: complete (commits `bbe8d119..baa1e7e1`; final verdict PASS — spec compliant and quality acceptable for integration). The isolated live-PostgreSQL execution remains deferred to the agreed whole-implementation/release gate.
+
+## Task 4 — materialized billing coverage reconciliation
+
+### Implementation and evidence
+
+- Initial implementation commit `f6c5c0ac` (`feat: reconcile billing configuration coverage`) added the seven approved coverage issue checks, deterministic SHA-256 issue keys, Observe/Apply modes, access-scoped summary and manual-reconcile APIs, normalized coverage hooks, and coverage execution inside the shared per-service worker transaction.
+- Initial focused verification passed 4 files / 28 tests, TypeScript, scoped zero-warning ESLint, and diff checks.
+- Initial independent review reported 0 Critical, 4 Important, and 2 Minor findings: incomplete CUSTOM schedules were misclassified; Cancelled occurrences hid genuine gaps; issue creation was not concurrency-safe; inactive-service handling synthesized a permanent false gap and diverged between Observe/Apply; structured details were lost; and exact classification/access-query coverage was incomplete.
+- Fix commit `7e1353e2` (`fix: harden billing coverage reconciliation`) addressed every finding. Task 4 focused verification passed 4 files / 45 tests; prior billing reconciler/schedule reconciliation compatibility passed 2 files / 45 tests; TypeScript, scoped zero-warning ESLint, and diff checks passed.
+- Final rereview `task-4-rereview.md`: PASS, 0 Critical / 0 Important / 0 Minor; all original findings ADDRESSED and no new breakage.
+
+### Task 4 rulings
+
+- Ruling: billing coverage treats `OPEN`, `BILLED`, and `WAIVED` occurrence identities as satisfying the expected rolling horizon. `CANCELLED` is retained as lifecycle history but does not satisfy coverage and therefore cannot hide an `OCCURRENCE_GAP`.
+- Ruling: ended/deleted services do not receive an invented coverage issue for unresolved Open billing occurrences. Those occurrences remain visible through the billing-occurrence projection; only genuine pre-existing unresolved coverage issues remain in the coverage result. The obsolete synthetic Task 4 issue key, if present from an intermediate build, is resolved with Observe/Apply count parity.
+- Ruling: production issue materialization uses PostgreSQL `INSERT ... ON CONFLICT` against the migration-managed partial open-issue index, preserving resolved history and returning truthful opened/refreshed outcomes. Delegate-only test clients use bounded unique-collision reload/update recovery. The raw PostgreSQL execution remains part of the deferred whole-implementation live-database gate.
+- Ruling: missing required CUSTOM interval/entry data is `MISSING_SCHEDULE_PARAMETER`; structurally present but malformed custom schedules are `INVALID_CUSTOM_SCHEDULE`. Safe bounded diagnostic details retain the stable schedule key and rolling-gap context.
