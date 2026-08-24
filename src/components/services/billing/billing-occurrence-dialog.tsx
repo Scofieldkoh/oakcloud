@@ -52,6 +52,9 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
 
   const amountChanged = amount !== occurrence.operativeAmount || currency.toUpperCase() !== occurrence.operativeCurrency.toUpperCase();
   const currentStatus = occurrence.status === 'CANCELLED' ? 'OPEN' : occurrence.status;
+  const originalBilledDate = dateValue(occurrence.billedDate);
+  const statusChanged = status !== currentStatus;
+  const billedDateChanged = billedDate !== originalBilledDate;
   const statusOptions = currentStatus === 'OPEN'
     ? (['OPEN', 'BILLED', 'WAIVED'] as const)
     : currentStatus === 'BILLED'
@@ -61,13 +64,13 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
   const payloadFor = (updateScope: UpdateBillingOccurrenceInput['updateScope']): UpdateBillingOccurrenceInput => {
     const payload: UpdateBillingOccurrenceInput = {
       expectedUpdatedAt: occurrence.updatedAt,
-      status,
-      billedDate: billedDate || null,
       externalReference: externalReference.trim() || null,
       notes: notes.trim() || null,
       updateScope,
       reason: reason.trim() || null,
     };
+    if (statusChanged) payload.status = status;
+    if (billedDateChanged) payload.billedDate = billedDate || null;
     if (amountChanged) {
       payload.amount = amount;
       payload.currency = currency.trim().toUpperCase();

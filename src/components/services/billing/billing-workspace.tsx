@@ -237,12 +237,27 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
     });
   };
 
+  const clearMutationState = () => {
+    occurrenceMutation.reset?.();
+    resetMutation.reset?.();
+  };
+
+  const openOccurrence = (occurrence: BillingOccurrenceDto) => {
+    clearMutationState();
+    setSelectedOccurrence(occurrence);
+  };
+
+  const closeOccurrence = () => {
+    setSelectedOccurrence(null);
+    clearMutationState();
+  };
+
   const applyOccurrenceUpdate = (id: string, input: Parameters<NonNullable<React.ComponentProps<typeof BillingOccurrenceDialog>['onSave']>>[0]) => {
-    occurrenceMutation.mutate({ id, data: input }, { onSuccess: () => setSelectedOccurrence(null) });
+    occurrenceMutation.mutate({ id, data: input }, { onSuccess: closeOccurrence });
   };
 
   const resetOccurrenceOverrides = (id: string, input: Parameters<NonNullable<React.ComponentProps<typeof BillingOccurrenceDialog>['onReset']>>[0]) => {
-    resetMutation.mutate({ id, data: input }, { onSuccess: () => setSelectedOccurrence(null) });
+    resetMutation.mutate({ id, data: input }, { onSuccess: closeOccurrence });
   };
 
   return (
@@ -278,12 +293,12 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
           onSort={handleSort}
           onColumnWidthChange={handleColumnWidthChange}
           onColumnResizeEnd={handleColumnResizeEnd}
-          onEdit={setSelectedOccurrence}
+          onEdit={openOccurrence}
         />
         {occurrenceQuery.data ? <Pagination page={occurrenceQuery.data.page} totalPages={occurrenceQuery.data.totalPages} total={occurrenceQuery.data.total} limit={occurrenceQuery.data.limit} onPageChange={(nextPage) => replaceUrl({ page: String(nextPage) })} onLimitChange={(limit) => { updatePreference({ pageSize: limit as BillingTablePreference['pageSize'] }); replaceUrl({ page: '1' }); }} pageSizeOptions={[10, 20, 50, 100]} /> : null}
       </div>
 
-      <BillingOccurrenceDialog occurrence={selectedOccurrence} isOpen={Boolean(selectedOccurrence)} onClose={() => setSelectedOccurrence(null)} isSaving={occurrenceMutation.isPending} isResetting={resetMutation.isPending} errorMessage={occurrenceMutation.error?.message ?? resetMutation.error?.message ?? null} onSave={(input) => selectedOccurrence && applyOccurrenceUpdate(selectedOccurrence.id, input)} onReset={(input) => selectedOccurrence && resetOccurrenceOverrides(selectedOccurrence.id, input)} />
+      <BillingOccurrenceDialog occurrence={selectedOccurrence} isOpen={Boolean(selectedOccurrence)} onClose={closeOccurrence} isSaving={occurrenceMutation.isPending} isResetting={resetMutation.isPending} errorMessage={occurrenceMutation.error?.message ?? resetMutation.error?.message ?? null} onSave={(input) => selectedOccurrence && applyOccurrenceUpdate(selectedOccurrence.id, input)} onReset={(input) => selectedOccurrence && resetOccurrenceOverrides(selectedOccurrence.id, input)} />
     </section>
   );
 }

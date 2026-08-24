@@ -82,13 +82,26 @@ const occurrence = {
   feeLine: { id: 'fee-1', description: 'Annual filing', amount: '1200.00', currency: 'SGD' },
 } satisfies BillingOccurrenceDto;
 
+const secondOccurrence: BillingOccurrenceDto = {
+  ...occurrence,
+  id: 'occurrence-2',
+  companyId: 'company-2',
+  clientServiceId: 'service-2',
+  feeLineId: 'fee-2',
+  externalReference: 'REF-2',
+  notes: 'Second row note',
+  company: { id: 'company-2', name: 'Other Pte. Ltd.', displayAlias: null, displayLabel: 'Other', uen: null },
+  service: { id: 'service-2', name: 'Monthly Payroll', familyName: 'Payroll', variantId: null, variantName: null },
+  feeLine: { id: 'fee-2', description: 'Monthly payroll', amount: '1200.00', currency: 'SGD' },
+};
+
 describe('BillingWorkspace', () => {
   beforeEach(() => {
     navigation.searchParams = new URLSearchParams();
     navigation.replace.mockReset();
     hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [], total: 0, page: 1, limit: 20, totalPages: 0 }, isLoading: false, isFetching: false, error: null });
-    hooks.useUpdateBillingOccurrence.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    hooks.useResetBillingOverride.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    hooks.useUpdateBillingOccurrence.mockReturnValue({ mutate: vi.fn(), isPending: false, reset: vi.fn() });
+    hooks.useResetBillingOverride.mockReturnValue({ mutate: vi.fn(), isPending: false, reset: vi.fn() });
     hooks.useServiceRosterFamilies.mockReturnValue({ data: [], isLoading: false, error: null });
     hooks.useBillingCoverage.mockReturnValue({ data: { openIssueCount: 0, affectedServiceCount: 0, healthyActiveServiceCount: 0, issues: [] }, isLoading: false, error: null });
     hooks.useUserPreference.mockReturnValue({ data: { value: null }, isLoading: false });
@@ -147,5 +160,30 @@ describe('BillingWorkspace', () => {
     expect(screen.getByRole('dialog', { name: 'Edit billing tracking' })).toBeVisible();
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to update billing tracking');
     expect(notes).toHaveValue('Keep this after failure');
+  });
+
+  it('resets mutation state when closing and opening a different occurrence', () => {
+    let mutationError: Error | null = null;
+    const resetMutation = vi.fn(() => {
+      mutationError = null;
+    });
+    hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence, secondOccurrence], total: 2, page: 1, limit: 20, totalPages: 1 }, isLoading: false, isFetching: false, error: null });
+    hooks.useUpdateBillingOccurrence.mockImplementation(() => ({ mutate: vi.fn(), isPending: false, error: mutationError, reset: resetMutation }));
+    hooks.useResetBillingOverride.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null, reset: resetMutation });
+    const view = render(<BillingWorkspace />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Example' })[0]!);
+    mutationError = new Error('Unable to update billing tracking');
+    view.rerender(<BillingWorkspace />);
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Unsaved failed note' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to update billing tracking');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(resetMutation).toHaveBeenCalled();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Other' })[0]!);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Notes')).toHaveValue('Second row note');
+    expect(screen.getByLabelText('External reference')).toHaveValue('REF-2');
   });
 });

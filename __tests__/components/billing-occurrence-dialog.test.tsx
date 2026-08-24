@@ -79,9 +79,84 @@ describe('BillingOccurrenceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
 
     expect(screen.queryByRole('dialog', { name: 'Apply amount change' })).not.toBeInTheDocument();
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ status: 'BILLED', notes: 'Updated tracking note', updateScope: 'THIS_OCCURRENCE' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ notes: 'Updated tracking note', updateScope: 'THIS_OCCURRENCE' }));
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('status');
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('billedDate');
     expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('amount');
     expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('currency');
+  });
+
+  it('omits unchanged lifecycle fields when editing a waived occurrence', () => {
+    const onSave = vi.fn();
+    const waivedOccurrence: BillingOccurrenceDto = {
+      ...billedOccurrence,
+      status: 'WAIVED',
+      billedDate: null,
+      markedBilledAt: null,
+      markedBilledById: null,
+      waivedAt: '2026-08-20T08:00:00.000Z',
+      waivedById: 'user-1',
+      waiverReason: 'Client confirmed no billing is required',
+    };
+    render(<BillingOccurrenceDialog occurrence={waivedOccurrence} onSave={onSave} />);
+
+    fireEvent.change(screen.getByLabelText('External reference'), { target: { value: 'WAIVER-REF' } });
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Waived after client confirmation' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      externalReference: 'WAIVER-REF',
+      notes: 'Waived after client confirmation',
+      updateScope: 'THIS_OCCURRENCE',
+      reason: null,
+    }));
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('status');
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('billedDate');
+  });
+
+  it('sends only the lifecycle field for a real Open to Billed transition', () => {
+    const onSave = vi.fn();
+    const openOccurrence: BillingOccurrenceDto = {
+      ...billedOccurrence,
+      status: 'OPEN',
+      billedDate: null,
+      markedBilledAt: null,
+      markedBilledById: null,
+    };
+    render(<BillingOccurrenceDialog occurrence={openOccurrence} onSave={onSave} />);
+
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'BILLED' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ status: 'BILLED', updateScope: 'THIS_OCCURRENCE' }));
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('billedDate');
+  });
+
+  it('sends the reopen transition and clears the billed date when moving Billed to Open', () => {
+    const onSave = vi.fn();
+    render(<BillingOccurrenceDialog occurrence={billedOccurrence} onSave={onSave} />);
+
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'OPEN' } });
+    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Reopen after client review' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'OPEN',
+      billedDate: null,
+      reason: 'Reopen after client review',
+      updateScope: 'THIS_OCCURRENCE',
+    }));
+  });
+
+  it('sends a billed-date-only edit without resubmitting lifecycle state', () => {
+    const onSave = vi.fn();
+    render(<BillingOccurrenceDialog occurrence={billedOccurrence} onSave={onSave} />);
+
+    fireEvent.change(screen.getByLabelText('Billed date'), { target: { value: '2026-09-01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ billedDate: '2026-09-01', updateScope: 'THIS_OCCURRENCE' }));
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('status');
   });
 
   it.each([
