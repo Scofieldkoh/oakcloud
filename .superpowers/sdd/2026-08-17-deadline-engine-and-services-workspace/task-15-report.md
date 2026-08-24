@@ -1,6 +1,20 @@
 # Task 15 report — rollout, observability, isolation, performance, and documentation
 
-Status: PASS — review findings closed; PostgreSQL/final rollout gates remain deferred
+Status: PASS / final-review-complete — 0 Critical / 0 Important / 0 Minor
+
+## Plan 2 handoff and completion-gate assessment (2026-08-24)
+
+Task 15 is ready for the Plan 2 handoff. All functional, unit, integration-
+contract, invariant-compatibility, TypeScript, scoped zero-warning ESLint, and
+diff gates completed for this worktree are green. The independent final
+rereview recorded 0 Critical, 0 Important, and 0 Minor findings.
+
+The following Plan 2 completion-gate items remain intentionally deferred by
+the user ruling until Plan 3 completes: live PostgreSQL/database acceptance,
+live migration execution, Prisma/generated-client generation, repository-wide
+baseline/full lint, repository-wide full build, and wall-clock/live
+performance execution. The focused EXPLAIN/cardinality/cleanup coverage is
+green, but it does not claim those deferred live gates passed.
 
 ## Review correction evidence (2026-08-24)
 
