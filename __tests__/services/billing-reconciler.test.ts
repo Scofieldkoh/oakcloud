@@ -305,6 +305,134 @@ describe('reconcileClientServiceBilling', () => {
     }));
   });
 
+  it('retries a recalculation after an unrelated concurrent edit keeps the row eligible', async () => {
+    const generation = `billing-v1-${hashConfiguration({
+      feeLineId: 'fee-1',
+    })}`;
+    const stale = occurrence({ generationKey: generation, baseAmount: '90.00' });
+    const fresh = occurrence({
+      generationKey: generation,
+      baseAmount: '90.00',
+      updatedAt: new Date('2026-08-19T00:00:00.000Z'),
+      notes: 'Concurrent lifecycle edit',
+    });
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 1 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      horizonEnd: '2026-09-01',
+    });
+
+    expect(result.recalculated).toBe(1);
+    expect(result.preserved).toBe(0);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(2);
+    expect(mocks.billingOccurrence.updateMany.mock.calls[1]?.[0]).toEqual(expect.objectContaining({
+      where: expect.objectContaining({ updatedAt: fresh.updatedAt }),
+    }));
+    expect(mocks.billingOccurrence.updateMany.mock.calls[0]?.[0].where).not.toHaveProperty('origin');
+  });
+
+  it('does not count a concurrent writer that already applied the desired recalculation', async () => {
+    const generation = `billing-v1-${hashConfiguration({
+      feeLineId: 'fee-1',
+    })}`;
+    const stale = occurrence({ generationKey: generation, baseAmount: '90.00' });
+    const fresh = occurrence({
+      generationKey: generation,
+      updatedAt: new Date('2026-08-19T00:00:00.000Z'),
+      baseAmount: '100.00',
+      baseCurrency: 'SGD',
+      operativeAmount: '100.00',
+      operativeCurrency: 'SGD',
+      calculatedExpectedDate: new Date('2026-09-01T00:00:00.000Z'),
+      operativeExpectedDate: new Date('2026-09-01T00:00:00.000Z'),
+    });
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany.mockResolvedValue({ count: 0 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      horizonEnd: '2026-09-01',
+    });
+
+    expect(result.recalculated).toBe(0);
+    expect(result.preserved).toBe(0);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves a cancellation when a concurrent writer protects the row', async () => {
+    const stale = occurrence({ generationKey: 'old-generation' });
+    const fresh = occurrence({
+      generationKey: 'old-generation',
+      status: 'CANCELLED',
+      updatedAt: new Date('2026-08-19T00:00:00.000Z'),
+      cancellationReconciliationRequestId: 'request-1',
+      cancellationReason: 'Already cancelled by another worker',
+      cancelledAt: new Date('2026-08-19T00:00:00.000Z'),
+    });
+    mocks.clientService.findFirst.mockResolvedValue(service({ billingDisposition: 'NOT_REQUIRED' }));
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany.mockResolvedValue({ count: 0 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.cancelled).toBe(0);
+    expect(result.preservedByReason.CANCELLED).toBe(1);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a cancellation after an unrelated concurrent edit keeps the row eligible', async () => {
+    const stale = occurrence({ generationKey: 'old-generation' });
+    const fresh = occurrence({
+      generationKey: 'old-generation',
+      updatedAt: new Date('2026-08-19T00:00:00.000Z'),
+      notes: 'Concurrent lifecycle edit',
+    });
+    mocks.clientService.findFirst.mockResolvedValue(service({ billingDisposition: 'NOT_REQUIRED' }));
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 1 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.cancelled).toBe(1);
+    expect(result.preserved).toBe(0);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(2);
+    expect(mocks.billingOccurrence.updateMany.mock.calls[1]?.[0]).toEqual(expect.objectContaining({
+      where: expect.objectContaining({ updatedAt: fresh.updatedAt }),
+    }));
+  });
+
+  it('surfaces a transient conflict after bounded optimistic retries are exhausted', async () => {
+    const generation = `billing-v1-${hashConfiguration({
+      feeLineId: 'fee-1',
+    })}`;
+    const stale = occurrence({ generationKey: generation, baseAmount: '90.00' });
+    const fresh = occurrence({
+      generationKey: generation,
+      baseAmount: '90.00',
+      updatedAt: new Date('2026-08-19T00:00:00.000Z'),
+      notes: 'Repeated concurrent edit',
+    });
+    mocks.billingOccurrence.findMany.mockResolvedValue([stale]);
+    mocks.billingOccurrence.updateMany.mockResolvedValue({ count: 0 });
+    mocks.billingOccurrence.findFirst.mockResolvedValue(fresh);
+
+    await expect(reconcileClientServiceBilling({
+      ...input,
+      horizonEnd: '2026-09-01',
+    })).rejects.toMatchObject({ code: 'BILLING_RECONCILIATION_CONFLICT' });
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledTimes(3);
+  });
+
   it('does not report a cancellation when a concurrent write changes its optimistic token', async () => {
     mocks.billingOccurrence.findMany.mockResolvedValue([occurrence({ generationKey: 'old-generation' })]);
     mocks.billingOccurrence.updateMany.mockResolvedValue({ count: 0 });

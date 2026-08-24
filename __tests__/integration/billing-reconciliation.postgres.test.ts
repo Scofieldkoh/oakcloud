@@ -7,6 +7,7 @@ import { Prisma, PrismaClient } from '@/generated/prisma';
 import { Pool, type PoolClient } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import { reconcileClientServiceBilling } from '@/services/billing';
+import { reconcileClientServiceThroughWorkerTransaction } from '@/services/schedule-reconciliation/worker';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const migrationRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../prisma/migrations');
@@ -169,6 +170,21 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
       const db = prisma;
       if (!db) throw new Error('Prisma test client was not initialized');
 
+      let workerLeaseCalls = 0;
+      const workerSummary = await reconcileClientServiceThroughWorkerTransaction(db, {
+        tenantId: input.tenantId,
+        clientServiceId: input.clientServiceId,
+        operation: 'PUBLISH',
+        today: input.today,
+        horizonEnd: input.horizonEnd,
+        writeMode: input.writeMode,
+        reconciliationRequestId: input.reconciliationRequestId,
+        cancellationActorId: null,
+        assertLease: async () => { workerLeaseCalls += 1; },
+      });
+      expect(workerLeaseCalls).toBeGreaterThan(0);
+      expect(workerSummary.billing).toEqual(expect.objectContaining({ clientServiceId: input.clientServiceId }));
+
       const reconcileWithConcurrentWrite = async (
         occurrenceId: string,
         concurrentWrite: () => Promise<void>,
@@ -247,13 +263,9 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
       const cancellationRaceResult = await reconcileWithConcurrentWrite(cancellationRaceId, async () => {
         await db.billingOccurrence.update({ where: { id: cancellationRaceId }, data: { notes: 'Concurrent lifecycle edit' } });
       });
-      expect(cancellationRaceResult.cancelled).toBe(7);
-      expect(await db.billingOccurrence.findUnique({ where: { id: cancellationRaceId }, select: { status: true, notes: true } })).toMatchObject({ status: 'OPEN', notes: 'Concurrent lifecycle edit' });
-
-      const actorlessCancellation = await reconcileClientServiceBilling({ ...input, cancellationActorId: null }, db);
-      expect(actorlessCancellation.cancelled).toBe(1);
-      const cancelled = await db.billingOccurrence.findUnique({ where: { id: cancellationRaceId }, select: { status: true, cancelledById: true, cancellationReconciliationRequestId: true } });
-      expect(cancelled).toEqual({ status: 'CANCELLED', cancelledById: null, cancellationReconciliationRequestId: 'request-reconcile' });
+      expect(cancellationRaceResult.cancelled).toBe(8);
+      const cancelled = await db.billingOccurrence.findUnique({ where: { id: cancellationRaceId }, select: { status: true, notes: true, cancelledById: true, cancellationReconciliationRequestId: true } });
+      expect(cancelled).toEqual({ status: 'CANCELLED', notes: 'Concurrent lifecycle edit', cancelledById: null, cancellationReconciliationRequestId: 'request-reconcile' });
 
       await expect(setupClient.query(`
         INSERT INTO ${table('billing_occurrences')}

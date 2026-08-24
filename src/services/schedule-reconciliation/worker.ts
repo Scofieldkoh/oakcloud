@@ -3,6 +3,7 @@ import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { currentDateInSingapore, addMonthsClamped } from '@/services/service-schedule/date-only';
+import type { DateOnly } from '@/services/service-schedule';
 import { getServiceWorkspaceFlagsForTenant } from './settings';
 import { reconcileClientServiceDeadlines } from './deadline-reconciler';
 import { enqueueScheduleReconciliation } from './queue';
@@ -46,6 +47,7 @@ const PUBLIC_RECONCILIATION_CODES = new Set([
   'MISSING_FEE_LINES',
   'INVALID_SCHEDULE',
   'INVALID_AMOUNT_OR_CURRENCY',
+  'BILLING_RECONCILIATION_CONFLICT',
 ]);
 const SAFE_TRANSIENT_ERROR_MESSAGE = 'Reconciliation failed and will retry';
 const SAFE_PERMANENT_ERROR_MESSAGE = 'Reconciliation request completed with a permanent configuration error';
@@ -231,6 +233,55 @@ type ClaimedRequest = {
   attemptCount: number;
   leaseOwner: string;
 };
+
+export type WorkerServiceReconciliationInput = {
+  tenantId: string;
+  clientServiceId: string;
+  ruleId?: string;
+  operation: 'PUBLISH' | 'ARCHIVE';
+  today: DateOnly;
+  horizonEnd: DateOnly;
+  writeMode: 'OBSERVE' | 'APPLY';
+  reconciliationRequestId: string;
+  cancellationActorId?: string | null;
+  assertLease: () => Promise<void>;
+};
+
+/**
+ * Reconcile one client service through the worker's leased transaction path.
+ * Deadlines and billing share one serializable service transaction so their
+ * request provenance, write mode, horizon, and lease checks stay aligned.
+ */
+export async function reconcileClientServiceThroughWorkerTransaction(
+  db: typeof prisma,
+  input: WorkerServiceReconciliationInput,
+): Promise<ServiceScheduleReconciliationSummary> {
+  await input.assertLease();
+  return db.$transaction(async (tx) => {
+    const deadlines = await reconcileClientServiceDeadlines({
+      tenantId: input.tenantId,
+      clientServiceId: input.clientServiceId,
+      ruleId: input.ruleId,
+      operation: input.operation,
+      today: input.today,
+      horizonEnd: input.horizonEnd,
+      writeMode: input.writeMode,
+      reconciliationRequestId: input.reconciliationRequestId,
+      assertLease: input.assertLease,
+    }, tx);
+    const billing = await reconcileClientServiceBilling({
+      tenantId: input.tenantId,
+      clientServiceId: input.clientServiceId,
+      today: input.today,
+      horizonEnd: input.horizonEnd,
+      writeMode: input.writeMode,
+      reconciliationRequestId: input.reconciliationRequestId,
+      cancellationActorId: input.cancellationActorId,
+      assertLease: input.assertLease,
+    }, tx);
+    return { deadlines, billing };
+  });
+}
 
 async function claimRequests(
   limit: number,
@@ -469,30 +520,17 @@ async function processSingleRequest(
     };
 
     for (const clientServiceId of clientServiceIds) {
-      await assertLease();
-      const summary = await prisma.$transaction(async (tx) => {
-        const deadlines = await reconcileClientServiceDeadlines({
-          tenantId: req.tenantId,
-          clientServiceId,
-          ruleId: req.scopeType === 'RULE' ? req.scopeId : undefined,
-          operation,
-          today,
-          horizonEnd,
-          writeMode,
-          reconciliationRequestId: req.id,
-          assertLease,
-        }, tx);
-        const billing = await reconcileClientServiceBilling({
-          tenantId: req.tenantId,
-          clientServiceId,
-          today,
-          horizonEnd,
-          writeMode,
-          reconciliationRequestId: req.id,
-          cancellationActorId: req.requestedById,
-          assertLease,
-        }, tx);
-        return { deadlines, billing };
+      const summary = await reconcileClientServiceThroughWorkerTransaction(prisma, {
+        tenantId: req.tenantId,
+        clientServiceId,
+        ruleId: req.scopeType === 'RULE' ? req.scopeId : undefined,
+        operation,
+        today,
+        horizonEnd,
+        writeMode,
+        reconciliationRequestId: req.id,
+        cancellationActorId: req.requestedById,
+        assertLease,
       });
       summaries.push(summary);
       const result = summary.deadlines;

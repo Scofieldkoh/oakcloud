@@ -30,7 +30,11 @@ vi.mock('@/services/schedule-reconciliation/queue', () => ({
   enqueueScheduleReconciliation: mocks.enqueue,
 }));
 
-import { enqueueDailyRollingHorizonRequests, processScheduleReconciliationBatch } from '@/services/schedule-reconciliation/worker';
+import {
+  enqueueDailyRollingHorizonRequests,
+  processScheduleReconciliationBatch,
+  reconcileClientServiceThroughWorkerTransaction,
+} from '@/services/schedule-reconciliation/worker';
 
 const request = {
   id: 'request-1', tenantId: 'tenant-1', scopeType: 'CLIENT_SERVICE', scopeId: 'service-1',
@@ -100,6 +104,27 @@ describe('schedule reconciliation worker', () => {
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mock.calls.filter(([call]) => (
       call.where?.leaseOwner !== undefined && call.data?.leaseExpiresAt instanceof Date
     ))).not.toHaveLength(0);
+  });
+
+  it('runs deadlines then billing through one leased service transaction', async () => {
+    let leaseCalls = 0;
+
+    const summary = await reconcileClientServiceThroughWorkerTransaction(mocks.prisma as never, {
+      tenantId: 'tenant-1',
+      clientServiceId: 'service-1',
+      operation: 'PUBLISH',
+      today: '2026-08-18',
+      horizonEnd: '2027-08-18',
+      writeMode: 'APPLY',
+      reconciliationRequestId: 'request-1',
+      cancellationActorId: null,
+      assertLease: async () => { leaseCalls += 1; },
+    });
+
+    expect(leaseCalls).toBe(1);
+    expect(summary).toEqual(expect.objectContaining({ deadlines: expect.any(Object), billing: expect.any(Object) }));
+    expect(mocks.reconcile.mock.invocationCallOrder[0]).toBeLessThan(mocks.billingReconcile.mock.invocationCallOrder[0]!);
+    expect(mocks.prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
   it('reclaims expired processing work and completes permanent missing-input outcomes with warnings', async () => {

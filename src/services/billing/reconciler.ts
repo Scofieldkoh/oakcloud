@@ -56,6 +56,10 @@ type StoredBillingOccurrence = {
   baseCurrency?: string;
   operativeAmount?: unknown;
   operativeCurrency?: string;
+  cancelledAt?: Date | string | null;
+  cancelledById?: string | null;
+  cancellationReason?: string | null;
+  cancellationReconciliationRequestId?: string | null;
 };
 
 type EvaluatedProposal = {
@@ -77,6 +81,16 @@ type BillingOccurrenceDelegate = {
   upsert?: (args: unknown) => Promise<unknown>;
   updateMany?: (args: unknown) => Promise<{ count: number }>;
 };
+
+const MAX_OPTIMISTIC_WRITE_ATTEMPTS = 3;
+
+class BillingReconciliationConflictError extends Error {
+  readonly code = 'BILLING_RECONCILIATION_CONFLICT';
+
+  constructor() {
+    super('Billing reconciliation encountered a concurrent update and will retry');
+  }
+}
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -300,16 +314,6 @@ function recordPreserved(
   result.preservedByReason[reason] += 1;
 }
 
-async function preserveAfterConcurrentChange(
-  result: BillingReconciliationResult,
-  db: BillingDb,
-  input: ReconcileClientServiceBillingInput,
-  occurrence: StoredBillingOccurrence,
-): Promise<void> {
-  const current = await loadOccurrence(db, input.tenantId, input.clientServiceId, occurrence.id);
-  recordPreserved(result, current ?? occurrence, input.today);
-}
-
 function dateChanged(left: unknown, right: DateOnly): boolean {
   const date = toDateOnly(left);
   return date !== right;
@@ -319,14 +323,104 @@ function valueChanged(left: unknown, right: string): boolean {
   return amountString(left) !== right;
 }
 
+type MutationOutcome =
+  | { kind: 'UPDATED' }
+  | { kind: 'ALREADY_APPLIED' }
+  | { kind: 'PRESERVED'; occurrence: StoredBillingOccurrence }
+  | { kind: 'GONE' };
+
+function sameOccurrenceIdentity(left: StoredBillingOccurrence, right: StoredBillingOccurrence): boolean {
+  return occurrenceIdentity(left) === occurrenceIdentity(right);
+}
+
+function isGenuinelyProtected(occurrence: StoredBillingOccurrence, today: DateOnly): boolean {
+  if (occurrence.origin && occurrence.origin !== 'RULE') return true;
+  const operative = toDateOnly(occurrence.operativeExpectedDate);
+  if (!operative || compareDateOnly(operative, today) < 0) return true;
+  if (occurrence.status === 'BILLED' || occurrence.status === 'WAIVED' || occurrence.status === 'CANCELLED') return true;
+  return Boolean(occurrence.dateOverridden) || Boolean(occurrence.valueOverridden);
+}
+
+function isMutationEligible(
+  occurrence: StoredBillingOccurrence,
+  initial: StoredBillingOccurrence,
+  today: DateOnly,
+): boolean {
+  const operative = toDateOnly(occurrence.operativeExpectedDate);
+  return sameOccurrenceIdentity(occurrence, initial)
+    && occurrence.status === 'OPEN'
+    && Boolean(operative)
+    && compareDateOnly(operative!, today) >= 0
+    && occurrence.origin !== 'MANUAL_TRIGGER'
+    && Boolean(occurrence.dateOverridden) === Boolean(initial.dateOverridden)
+    && Boolean(occurrence.valueOverridden) === Boolean(initial.valueOverridden);
+}
+
+function mutationValueMatches(current: unknown, desired: unknown, key: string): boolean {
+  if (key === 'cancelledAt') return current != null;
+  if (key === 'calculatedExpectedDate' || key === 'operativeExpectedDate') {
+    const desiredDate = toDateOnly(desired);
+    return desiredDate !== null && toDateOnly(current) === desiredDate;
+  }
+  if (key === 'baseAmount' || key === 'operativeAmount') return amountString(current) === amountString(desired);
+  return current === desired;
+}
+
+function mutationAlreadyApplied(occurrence: StoredBillingOccurrence, data: Record<string, unknown>): boolean {
+  if (data.status === 'CANCELLED') {
+    return occurrence.status === 'CANCELLED'
+      && occurrence.cancelledAt != null
+      && occurrence.cancelledById === data.cancelledById
+      && occurrence.cancellationReason === data.cancellationReason
+      && occurrence.cancellationReconciliationRequestId === data.cancellationReconciliationRequestId;
+  }
+  return Object.entries(data).every(([key, desired]) => mutationValueMatches(occurrence[key as keyof StoredBillingOccurrence], desired, key));
+}
+
+function preservedMutationOutcome(occurrence: StoredBillingOccurrence): MutationOutcome {
+  return { kind: 'PRESERVED', occurrence };
+}
+
+async function applyOccurrenceMutation(
+  db: BillingDb,
+  input: ReconcileClientServiceBillingInput,
+  occurrence: StoredBillingOccurrence,
+  data: Record<string, unknown>,
+): Promise<MutationOutcome> {
+  let candidate = occurrence;
+  for (let attempt = 0; attempt < MAX_OPTIMISTIC_WRITE_ATTEMPTS; attempt += 1) {
+    if (!isMutationEligible(candidate, occurrence, input.today)) return preservedMutationOutcome(candidate);
+    if (mutationAlreadyApplied(candidate, data)) return { kind: 'ALREADY_APPLIED' };
+
+    const updated = await updateOccurrence(
+      db,
+      input.tenantId,
+      input.clientServiceId,
+      candidate,
+      input.today,
+      data,
+    );
+    if (updated === 1) return { kind: 'UPDATED' };
+
+    const fresh = await loadOccurrence(db, input.tenantId, input.clientServiceId, occurrence.id);
+    if (!fresh) return { kind: 'GONE' };
+    if (!sameOccurrenceIdentity(fresh, occurrence)) return preservedMutationOutcome(fresh);
+    if (isGenuinelyProtected(fresh, input.today)) return preservedMutationOutcome(fresh);
+    if (!isMutationEligible(fresh, occurrence, input.today)) return preservedMutationOutcome(fresh);
+    if (mutationAlreadyApplied(fresh, data)) return { kind: 'ALREADY_APPLIED' };
+    candidate = fresh;
+  }
+  throw new BillingReconciliationConflictError();
+}
+
 async function cancelOccurrence(
   input: ReconcileClientServiceBillingInput,
   db: BillingDb,
   occurrence: StoredBillingOccurrence,
   reason: string,
-): Promise<number> {
-  if (input.writeMode !== 'APPLY') return 0;
-  return updateOccurrence(db, input.tenantId, input.clientServiceId, occurrence, input.today, {
+): Promise<MutationOutcome> {
+  if (input.writeMode !== 'APPLY') return { kind: 'GONE' };
+  return applyOccurrenceMutation(db, input, occurrence, {
     status: 'CANCELLED',
     cancelledAt: new Date(),
     cancelledById: input.cancellationActorId ?? null,
@@ -561,16 +655,16 @@ export async function reconcileClientServiceBilling(
           result.recalculated += 1;
         }
       } else {
-        const updated = await updateOccurrence(db, input.tenantId, input.clientServiceId, existing, input.today, data);
-        if (updated === 1) {
+        const mutation = await applyOccurrenceMutation(db, input, existing, data);
+        if (mutation.kind === 'UPDATED') {
           if (dateOverride || valueOverride) {
             result.preserved += 1;
             result.preservedByReason.OVERRIDDEN += 1;
           } else {
             result.recalculated += 1;
           }
-        } else {
-          await preserveAfterConcurrentChange(result, db, input, existing);
+        } else if (mutation.kind === 'PRESERVED') {
+          recordPreserved(result, mutation.occurrence, input.today);
         }
       }
     } else {
@@ -608,11 +702,11 @@ export async function reconcileClientServiceBilling(
       if (input.writeMode === 'OBSERVE') {
         result.cancelled += 1;
       } else {
-        const cancelled = await cancelOccurrence(input, db, occurrence, cancellationReason);
-        if (cancelled === 1) {
+        const mutation = await cancelOccurrence(input, db, occurrence, cancellationReason);
+        if (mutation.kind === 'UPDATED') {
           result.cancelled += 1;
-        } else {
-          await preserveAfterConcurrentChange(result, db, input, occurrence);
+        } else if (mutation.kind === 'PRESERVED') {
+          recordPreserved(result, mutation.occurrence, input.today);
         }
       }
       continue;
