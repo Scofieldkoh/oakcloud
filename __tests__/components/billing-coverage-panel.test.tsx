@@ -44,7 +44,7 @@ describe('BillingCoveragePanel', () => {
 
     render(<BillingCoveragePanel />);
 
-    const toggle = screen.getByRole('button', { name: /Billing reconciliation.*2 issues/i });
+    const toggle = screen.getByRole('button', { name: /Billing reconciliation.*2 issues.*1 error/i });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('Missing billing disposition')).not.toBeInTheDocument();
 
@@ -52,6 +52,9 @@ describe('BillingCoveragePanel', () => {
 
     expect(screen.getByText('Missing billing disposition')).toBeVisible();
     expect(screen.getAllByTestId('billing-issue-card')).toHaveLength(2);
+    expect(screen.getByRole('group', { name: 'Northstar · Corporate Secretary' })).toBeVisible();
+    expect(screen.getByRole('group', { name: 'Fieldstone · Monthly Payroll' })).toBeVisible();
+    expect(screen.getByRole('button', { name: /1 error · 1 warning/ })).toBeVisible();
   });
 
   it('renders one compact healthy summary without healthy service cards', () => {

@@ -165,6 +165,44 @@ describe('billing occurrence service', () => {
     }));
   });
 
+  it('applies company, service, fee, and general search predicates before pagination', async () => {
+    await listBillingOccurrences({
+      ...search,
+      query: 'annual',
+      companyQuery: 'Example',
+      serviceQuery: 'Return',
+      feeQuery: 'filing',
+    }, actor, prismaMock as never, { today: '2026-08-17' });
+
+    const call = prismaMock.billingOccurrence.findMany.mock.calls[0]?.[0] as { where: { company: Record<string, unknown>; clientService: Record<string, unknown>; feeLine: Record<string, unknown>; AND?: unknown[] } };
+    expect(call.where.company).toEqual(expect.objectContaining({
+      OR: expect.arrayContaining([
+        expect.objectContaining({ name: expect.objectContaining({ contains: 'Example' }) }),
+        expect.objectContaining({ displayAlias: expect.objectContaining({ contains: 'Example' }) }),
+      ]),
+    }));
+    expect(call.where.clientService).toEqual(expect.objectContaining({
+      OR: expect.arrayContaining([
+        expect.objectContaining({ serviceName: expect.objectContaining({ contains: 'Return' }) }),
+        expect.objectContaining({ familyName: expect.objectContaining({ contains: 'Return' }) }),
+      ]),
+    }));
+    expect(call.where.feeLine).toEqual(expect.objectContaining({
+      description: expect.objectContaining({ contains: 'filing' }),
+    }));
+    expect(call.where.AND).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        OR: expect.arrayContaining([
+          expect.objectContaining({ company: expect.any(Object) }),
+          expect.objectContaining({ clientService: expect.any(Object) }),
+          expect.objectContaining({ feeLine: expect.any(Object) }),
+          expect.objectContaining({ billingPeriodKey: expect.any(Object) }),
+        ]),
+      }),
+      expect.objectContaining({ OR: expect.arrayContaining([expect.objectContaining({ feeLine: expect.any(Object) })]) }),
+    ]));
+  });
+
   it('returns a serializable DTO with company, family, fee, dates, values, and timing', async () => {
     const result = await listBillingOccurrences(search, actor, prismaMock as never, { today: '2026-08-17' });
 

@@ -133,6 +133,13 @@ const rosterItem: ServiceRosterItem = {
     missingInputCount: 0,
     reasons: [],
   },
+  billingDisposition: 'CONFIGURED',
+  billingCoverageIssue: null,
+  nextBilling: {
+    status: 'OPEN',
+    expectedDate: '2026-08-31',
+    timingState: 'UPCOMING',
+  },
   updatedAt: '2026-08-18T00:00:00.000Z',
 };
 
@@ -159,6 +166,19 @@ function setup() {
 }
 
 describe('ServiceRoster', () => {
+  it('renders billing as its own roster column without duplicating it in Warnings', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    expect(within(table).getByRole('columnheader', { name: 'Billing' })).toBeVisible();
+    const rows = within(table).getAllByRole('row');
+    const cells = rows.at(-1)?.querySelectorAll('td');
+    expect(cells).toBeDefined();
+    expect(cells?.[7]).not.toHaveTextContent('Configured');
+    expect(cells?.[8]).toHaveTextContent('Open · Upcoming');
+  });
+
   it('hides the historical trigger when workspace writes are disabled', () => {
     setup();
     servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: false }, isLoading: false, error: null });

@@ -15,13 +15,14 @@ interface BillingOccurrenceDialogProps {
   onReset?: (input: ResetBillingOverrideInput) => void;
   isSaving?: boolean;
   isResetting?: boolean;
+  errorMessage?: string | null;
 }
 
 function dateValue(value: string | null): string {
   return value?.slice(0, 10) ?? '';
 }
 
-export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrence), onClose = () => undefined, onSave, onReset, isSaving = false, isResetting = false }: BillingOccurrenceDialogProps) {
+export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrence), onClose = () => undefined, onSave, onReset, isSaving = false, isResetting = false, errorMessage = null }: BillingOccurrenceDialogProps) {
   const [status, setStatus] = useState<UpdateBillingOccurrenceInput['status']>('OPEN');
   const [billedDate, setBilledDate] = useState('');
   const [amount, setAmount] = useState('');
@@ -50,18 +51,29 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
   if (!occurrence) return null;
 
   const amountChanged = amount !== occurrence.operativeAmount || currency.toUpperCase() !== occurrence.operativeCurrency.toUpperCase();
+  const currentStatus = occurrence.status === 'CANCELLED' ? 'OPEN' : occurrence.status;
+  const statusOptions = currentStatus === 'OPEN'
+    ? (['OPEN', 'BILLED', 'WAIVED'] as const)
+    : currentStatus === 'BILLED'
+      ? (['BILLED', 'OPEN'] as const)
+      : (['WAIVED', 'OPEN'] as const);
 
-  const payloadFor = (updateScope: UpdateBillingOccurrenceInput['updateScope']): UpdateBillingOccurrenceInput => ({
-    expectedUpdatedAt: occurrence.updatedAt,
-    status,
-    billedDate: billedDate || null,
-    amount,
-    currency: currency.trim().toUpperCase(),
-    externalReference: externalReference.trim() || null,
-    notes: notes.trim() || null,
-    updateScope,
-    reason: reason.trim() || null,
-  });
+  const payloadFor = (updateScope: UpdateBillingOccurrenceInput['updateScope']): UpdateBillingOccurrenceInput => {
+    const payload: UpdateBillingOccurrenceInput = {
+      expectedUpdatedAt: occurrence.updatedAt,
+      status,
+      billedDate: billedDate || null,
+      externalReference: externalReference.trim() || null,
+      notes: notes.trim() || null,
+      updateScope,
+      reason: reason.trim() || null,
+    };
+    if (amountChanged) {
+      payload.amount = amount;
+      payload.currency = currency.trim().toUpperCase();
+    }
+    return payload;
+  };
 
   const submit = (updateScope: UpdateBillingOccurrenceInput['updateScope']) => {
     onSave?.(payloadFor(updateScope));
@@ -94,6 +106,7 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
         size="lg"
       >
         <ModalBody>
+          {errorMessage ? <div role="alert" className="mb-4 rounded-lg border border-status-error/30 bg-status-error/5 p-3 text-sm text-status-error">{errorMessage}</div> : null}
           {canResetOverrides ? (
             <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-status-warning/30 bg-status-warning/5 p-3">
               <p className="text-xs text-text-secondary">This row has a manually overridden tracked value.</p>
@@ -103,10 +116,12 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
               Status
-              <select aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value as UpdateBillingOccurrenceInput['status'])} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9">
-                <option value="OPEN">Open</option>
-                <option value="BILLED">Billed</option>
-                <option value="WAIVED">Waived</option>
+              <select aria-label="Status" value={status} onChange={(event) => {
+                const nextStatus = event.target.value as UpdateBillingOccurrenceInput['status'];
+                setStatus(nextStatus);
+                if (nextStatus !== 'BILLED') setBilledDate('');
+              }} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9">
+                {statusOptions.map((option) => <option key={option} value={option}>{option.charAt(0) + option.slice(1).toLowerCase()}</option>)}
               </select>
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">

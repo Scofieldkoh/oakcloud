@@ -19,7 +19,7 @@ describe('service roster table preferences', () => {
     expect(parsed).toEqual(expect.objectContaining({
       version: 1,
       columnWidths: expect.objectContaining({ company: 340 }),
-      columnOrder: ['service', 'company', 'family', 'status', 'cadence', 'nextDeadline', 'startEnd', 'warnings', 'actions'],
+      columnOrder: ['service', 'company', 'family', 'status', 'cadence', 'nextDeadline', 'startEnd', 'warnings', 'billing', 'actions'],
       columnVisibility: expect.objectContaining({ company: false, service: true, actions: true }),
       sortBy: 'service',
       sortOrder: 'desc',

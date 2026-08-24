@@ -62,6 +62,10 @@ export function normalizeBillingOccurrenceSearch(input: BillingOccurrenceSearchI
   return billingOccurrenceSearchSchema.parse({
     from,
     to,
+    query: input.query ?? '',
+    companyQuery: input.companyQuery ?? '',
+    serviceQuery: input.serviceQuery ?? '',
+    feeQuery: input.feeQuery ?? '',
     companyIds: uniqueStrings(input.companyIds),
     familyIds: uniqueStrings(input.familyIds),
     statuses: uniqueOrdered(input.statuses, statusOrder),
@@ -84,6 +88,10 @@ export function billingOccurrenceSearchParams(search: BillingOccurrenceSearchInp
   const params = new URLSearchParams();
   params.set('from', normalized.from);
   params.set('to', normalized.to);
+  if (normalized.query) params.set('query', normalized.query);
+  if (normalized.companyQuery) params.set('companyQuery', normalized.companyQuery);
+  if (normalized.serviceQuery) params.set('serviceQuery', normalized.serviceQuery);
+  if (normalized.feeQuery) params.set('feeQuery', normalized.feeQuery);
   if (normalized.companyIds.length > 0) params.set('companyIds', normalized.companyIds.join(','));
   if (normalized.familyIds.length > 0) params.set('familyIds', normalized.familyIds.join(','));
   if (normalized.statuses.length > 0) params.set('statuses', normalized.statuses.join(','));

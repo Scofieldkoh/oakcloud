@@ -99,6 +99,10 @@ export const billingOccurrenceUpdateScopeSchema = z.enum(['THIS_OCCURRENCE', 'TH
 export const billingOccurrenceSearchSchema = z.object({
   from: dateOnlySchema,
   to: dateOnlySchema,
+  query: z.string().trim().max(120).default(''),
+  companyQuery: z.string().trim().max(120).default(''),
+  serviceQuery: z.string().trim().max(120).default(''),
+  feeQuery: z.string().trim().max(120).default(''),
   companyIds: z.array(z.string().uuid()).max(100).default([]),
   familyIds: z.array(z.string().uuid()).max(50).default([]),
   statuses: z.array(billingOccurrenceStatusSchema).max(4).default([]),
@@ -169,7 +173,7 @@ export const resetBillingOverrideSchema = z.object({
 export type ResetBillingOverrideInput = z.infer<typeof resetBillingOverrideSchema>;
 
 const billingOccurrenceAllowedQueryKeys = new Set([
-  'from', 'to', 'companyIds', 'familyIds', 'statuses', 'timing', 'page', 'limit', 'sortBy', 'sortOrder',
+  'from', 'to', 'query', 'companyQuery', 'serviceQuery', 'feeQuery', 'companyIds', 'familyIds', 'statuses', 'timing', 'page', 'limit', 'sortBy', 'sortOrder',
 ]);
 
 function searchParamsFrom(input: Request | URL | URLSearchParams): URLSearchParams {

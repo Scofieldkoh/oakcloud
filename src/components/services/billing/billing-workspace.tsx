@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
 import { useBillingOccurrences } from '@/hooks/use-billing-occurrences';
@@ -42,30 +43,72 @@ function isDateRangeValid(from: string, to: string): boolean {
   return Boolean(from && to && from <= to);
 }
 
-function filterOccurrences(items: BillingOccurrenceDto[], query: string, inlineFilters: BillingInlineFilters): BillingOccurrenceDto[] {
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const normalizedCompany = inlineFilters.company?.trim().toLocaleLowerCase();
-  const normalizedFamilyService = inlineFilters.familyService?.trim().toLocaleLowerCase();
-  const normalizedFeeLine = inlineFilters.feeLinePeriod?.trim().toLocaleLowerCase();
-  if (!normalizedQuery && !normalizedCompany && !normalizedFamilyService && !normalizedFeeLine) return items;
+const BILLING_STATUSES = ['OPEN', 'BILLED', 'WAIVED', 'CANCELLED'] as const;
+const BILLING_TIMINGS = ['UPCOMING', 'DUE', 'OVERDUE'] as const;
+const BILLING_SORT_FIELDS = ['expectedDate', 'company', 'family', 'service', 'status', 'amount'] as const;
 
-  return items.filter((item) => {
-    const companyText = `${item.company.displayLabel} ${item.company.name}`.toLocaleLowerCase();
-    const familyServiceText = `${item.family.name} ${item.service.familyName} ${item.service.name}`.toLocaleLowerCase();
-    const feeLineText = `${item.feeLine.description} ${item.billingPeriodKey}`.toLocaleLowerCase();
-    return (!normalizedQuery || `${companyText} ${familyServiceText} ${feeLineText}`.includes(normalizedQuery))
-      && (!normalizedCompany || companyText.includes(normalizedCompany))
-      && (!normalizedFamilyService || familyServiceText.includes(normalizedFamilyService))
-      && (!normalizedFeeLine || feeLineText.includes(normalizedFeeLine));
-  });
+function readQuery(value: string | null): string {
+  return value?.trim() ?? '';
+}
+
+function readDate(value: string | null): string | null {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
+function readPage(value: string | null): number {
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page >= 1 ? page : 1;
+}
+
+function readList<T extends string>(value: string | null, allowed: readonly T[], fallback: T[] = []): T[] {
+  if (value === null) return fallback;
+  return value.split(',').filter((item, index, values): item is T => allowed.includes(item as T) && values.indexOf(item) === index);
+}
+
+export interface BillingUrlState {
+  filters: BillingFilterState;
+  inlineFilters: BillingInlineFilters;
+  page: number;
+  sortBy: BillingTablePreference['sortBy'];
+  sortOrder: BillingTablePreference['sortOrder'];
+}
+
+export function parseBillingUrlState(searchKey: string, preference: BillingTablePreference = defaultBillingTablePreference, today: DateOnly = currentDateInSingapore()): BillingUrlState {
+  const params = new URLSearchParams(searchKey);
+  const defaultTo = addCalendarDays(today, 30);
+  const sortCandidate = params.get('sortBy');
+  const sortBy = BILLING_SORT_FIELDS.includes(sortCandidate as BillingTablePreference['sortBy'])
+    ? sortCandidate as BillingTablePreference['sortBy']
+    : preference.sortBy;
+  return {
+    filters: {
+      query: readQuery(params.get('query')),
+      statuses: readList(params.get('statuses'), BILLING_STATUSES, ['OPEN']),
+      timing: readList(params.get('timing'), BILLING_TIMINGS),
+      from: readDate(params.get('from')) ?? today,
+      to: readDate(params.get('to')) ?? defaultTo,
+      familyIds: params.get('familyIds')?.split(',').map((value) => value.trim()).filter(Boolean) ?? [],
+    },
+    inlineFilters: {
+      company: readQuery(params.get('companyQuery')) || undefined,
+      familyService: readQuery(params.get('serviceQuery')) || undefined,
+      feeLinePeriod: readQuery(params.get('feeQuery')) || undefined,
+    },
+    page: readPage(params.get('page')),
+    sortBy,
+    sortOrder: params.get('sortOrder') === 'desc' ? 'desc' : params.has('sortOrder') ? 'asc' : preference.sortOrder,
+  };
 }
 
 export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: BillingWorkspaceProps) {
-  const [filters, setFilters] = useState<BillingFilterState>(initialFilters);
-  const [inlineFilters, setInlineFilters] = useState<BillingInlineFilters>({});
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const canonicalSearchKey = searchParams.toString();
+  const [optimisticSearchKey, setOptimisticSearchKey] = useState<string | null>(null);
   const [selectedOccurrence, setSelectedOccurrence] = useState<BillingOccurrenceDto | null>(null);
   const [tablePreference, setTablePreference] = useState<BillingTablePreference>(defaultBillingTablePreference);
+  const effectiveSearchKey = optimisticSearchKey ?? canonicalSearchKey;
 
   const familiesQuery = useServiceRosterFamilies();
   const preferenceQuery = useUserPreference<unknown>(BILLING_TABLE_PREFERENCE_KEY);
@@ -74,29 +117,51 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
   const resetMutation = useResetBillingOverride();
 
   useEffect(() => {
+    setOptimisticSearchKey(null);
+  }, [canonicalSearchKey]);
+
+  useEffect(() => {
     if (preferenceQuery.data?.value !== undefined) {
       setTablePreference(parseBillingTablePreference(preferenceQuery.data.value));
     }
   }, [preferenceQuery.data?.value]);
 
+  const urlState = useMemo(() => parseBillingUrlState(effectiveSearchKey, tablePreference), [effectiveSearchKey, tablePreference]);
+  const { filters, inlineFilters, page } = urlState;
+
+  const replaceUrl = useCallback((next: Partial<Record<string, string | undefined>>) => {
+    const params = new URLSearchParams(effectiveSearchKey);
+    for (const [key, value] of Object.entries(next)) {
+      if (value === undefined || value === '') params.delete(key);
+      else params.set(key, value);
+    }
+    const nextKey = params.toString();
+    setOptimisticSearchKey(nextKey);
+    router.replace(nextKey ? `${pathname}?${nextKey}` : pathname, { scroll: false });
+  }, [effectiveSearchKey, pathname, router]);
+
   const search = useMemo(() => ({
     from: filters.from as DateOnly,
     to: filters.to as DateOnly,
+    query: filters.query.trim() || undefined,
+    companyQuery: inlineFilters.company,
+    serviceQuery: inlineFilters.familyService,
+    feeQuery: inlineFilters.feeLinePeriod,
     statuses: filters.statuses,
     timing: filters.timing,
     familyIds: filters.familyIds,
     page,
     limit: tablePreference.pageSize,
-    sortBy: tablePreference.sortBy,
-    sortOrder: tablePreference.sortOrder,
-  }), [filters.from, filters.to, filters.statuses, filters.timing, filters.familyIds, page, tablePreference.pageSize, tablePreference.sortBy, tablePreference.sortOrder]);
+    sortBy: urlState.sortBy,
+    sortOrder: urlState.sortOrder,
+  }), [filters.from, filters.to, filters.query, inlineFilters.company, inlineFilters.familyService, inlineFilters.feeLinePeriod, filters.statuses, filters.timing, filters.familyIds, page, tablePreference.pageSize, urlState.sortBy, urlState.sortOrder]);
   const safeSearch = useMemo(() => {
     if (isDateRangeValid(filters.from, filters.to)) return search;
     const fallback = (filters.from || currentDateInSingapore()) as DateOnly;
     return { ...search, from: fallback, to: fallback };
   }, [filters.from, filters.to, search]);
   const occurrenceQuery = useBillingOccurrences(safeSearch);
-  const items = useMemo(() => filterOccurrences(occurrenceQuery.data?.items ?? [], filters.query, inlineFilters), [occurrenceQuery.data?.items, filters.query, inlineFilters]);
+  const items = occurrenceQuery.data?.items ?? [];
   const families = familiesQuery.data ?? [];
 
   const savePreference = useCallback((next: BillingTablePreference) => {
@@ -109,18 +174,36 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
   }, [savePreference, tablePreference]);
 
   const handleFilterChange = (next: BillingFilterState) => {
-    setFilters(next);
-    setPage(1);
+    replaceUrl({
+      query: next.query.trim() || undefined,
+      statuses: next.statuses.length > 0 ? next.statuses.join(',') : undefined,
+      timing: next.timing.length > 0 ? next.timing.join(',') : undefined,
+      from: next.from || undefined,
+      to: next.to || undefined,
+      familyIds: next.familyIds.length > 0 ? next.familyIds.join(',') : undefined,
+      page: '1',
+    });
   };
 
   const resetFilters = () => {
-    setFilters(initialFilters());
-    setInlineFilters({});
-    setPage(1);
+    const defaults = initialFilters();
+    replaceUrl({
+      query: undefined,
+      companyQuery: undefined,
+      serviceQuery: undefined,
+      feeQuery: undefined,
+      statuses: defaults.statuses.join(','),
+      timing: undefined,
+      from: defaults.from,
+      to: defaults.to,
+      familyIds: undefined,
+      page: '1',
+    });
   };
 
   const handleSort = (sortBy: NonNullable<Parameters<NonNullable<React.ComponentProps<typeof BillingTable>['onSort']>>[0]>) => {
-    const sortOrder = tablePreference.sortBy === sortBy && tablePreference.sortOrder === 'asc' ? 'desc' : 'asc';
+    const sortOrder = urlState.sortBy === sortBy && urlState.sortOrder === 'asc' ? 'desc' : 'asc';
+    replaceUrl({ sortBy, sortOrder });
     updatePreference({ sortBy, sortOrder });
   };
 
@@ -145,14 +228,21 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
     updatePreference({ columnOrder: nextOrder });
   };
 
+  const handleInlineFilterChange = (change: Partial<BillingInlineFilters>) => {
+    replaceUrl({
+      companyQuery: change.company === undefined ? inlineFilters.company : change.company.trim() || undefined,
+      serviceQuery: change.familyService === undefined ? inlineFilters.familyService : change.familyService.trim() || undefined,
+      feeQuery: change.feeLinePeriod === undefined ? inlineFilters.feeLinePeriod : change.feeLinePeriod.trim() || undefined,
+      page: '1',
+    });
+  };
+
   const applyOccurrenceUpdate = (id: string, input: Parameters<NonNullable<React.ComponentProps<typeof BillingOccurrenceDialog>['onSave']>>[0]) => {
-    occurrenceMutation.mutate({ id, data: input });
-    setSelectedOccurrence(null);
+    occurrenceMutation.mutate({ id, data: input }, { onSuccess: () => setSelectedOccurrence(null) });
   };
 
   const resetOccurrenceOverrides = (id: string, input: Parameters<NonNullable<React.ComponentProps<typeof BillingOccurrenceDialog>['onReset']>>[0]) => {
-    resetMutation.mutate({ id, data: input });
-    setSelectedOccurrence(null);
+    resetMutation.mutate({ id, data: input }, { onSuccess: () => setSelectedOccurrence(null) });
   };
 
   return (
@@ -181,19 +271,19 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
           columnWidths={tablePreference.columnWidths}
           columnOrder={tablePreference.columnOrder}
           columnVisibility={tablePreference.columnVisibility as Record<BillingColumnId, boolean>}
-          sortBy={tablePreference.sortBy}
-          sortOrder={tablePreference.sortOrder}
+          sortBy={urlState.sortBy}
+          sortOrder={urlState.sortOrder}
           inlineFilters={inlineFilters}
-          onInlineFilterChange={(change) => { setInlineFilters((current) => ({ ...current, ...change })); setPage(1); }}
+          onInlineFilterChange={handleInlineFilterChange}
           onSort={handleSort}
           onColumnWidthChange={handleColumnWidthChange}
           onColumnResizeEnd={handleColumnResizeEnd}
           onEdit={setSelectedOccurrence}
         />
-        {occurrenceQuery.data ? <Pagination page={occurrenceQuery.data.page} totalPages={occurrenceQuery.data.totalPages} total={occurrenceQuery.data.total} limit={occurrenceQuery.data.limit} onPageChange={setPage} onLimitChange={(limit) => updatePreference({ pageSize: limit as BillingTablePreference['pageSize'] })} pageSizeOptions={[10, 20, 50, 100]} /> : null}
+        {occurrenceQuery.data ? <Pagination page={occurrenceQuery.data.page} totalPages={occurrenceQuery.data.totalPages} total={occurrenceQuery.data.total} limit={occurrenceQuery.data.limit} onPageChange={(nextPage) => replaceUrl({ page: String(nextPage) })} onLimitChange={(limit) => { updatePreference({ pageSize: limit as BillingTablePreference['pageSize'] }); replaceUrl({ page: '1' }); }} pageSizeOptions={[10, 20, 50, 100]} /> : null}
       </div>
 
-      <BillingOccurrenceDialog occurrence={selectedOccurrence} isOpen={Boolean(selectedOccurrence)} onClose={() => setSelectedOccurrence(null)} isSaving={occurrenceMutation.isPending} isResetting={resetMutation.isPending} onSave={(input) => selectedOccurrence && applyOccurrenceUpdate(selectedOccurrence.id, input)} onReset={(input) => selectedOccurrence && resetOccurrenceOverrides(selectedOccurrence.id, input)} />
+      <BillingOccurrenceDialog occurrence={selectedOccurrence} isOpen={Boolean(selectedOccurrence)} onClose={() => setSelectedOccurrence(null)} isSaving={occurrenceMutation.isPending} isResetting={resetMutation.isPending} errorMessage={occurrenceMutation.error?.message ?? resetMutation.error?.message ?? null} onSave={(input) => selectedOccurrence && applyOccurrenceUpdate(selectedOccurrence.id, input)} onReset={(input) => selectedOccurrence && resetOccurrenceOverrides(selectedOccurrence.id, input)} />
     </section>
   );
 }

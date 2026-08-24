@@ -122,7 +122,7 @@ function SortableHeader({ column, sortBy, sortOrder, onSort, onResize }: { colum
   const field = sortableColumns[column];
   const active = field === sortBy;
   return (
-    <th scope="col" className="relative px-3 py-3 text-left text-xs font-medium text-text-secondary">
+    <th scope="col" aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-3 py-3 text-left text-xs font-medium text-text-secondary">
       {field && onSort ? (
         <button type="button" onClick={() => onSort(field)} aria-label={active ? `Sort by ${billingColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${billingColumnLabels[column]}`} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-0">
           <span>{billingColumnLabels[column]}</span>

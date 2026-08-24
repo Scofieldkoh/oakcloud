@@ -1,7 +1,7 @@
 import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
-import { currentDateInSingapore } from '@/services/service-schedule';
+import { currentDateInSingapore, parseDateOnly, type DateOnly } from '@/services/service-schedule';
 import type { ServiceRosterSearch } from '@/lib/validations/service-roster';
 import { emptyServiceRosterResult } from '@/lib/validations/service-roster';
 import type {
@@ -396,6 +396,7 @@ async function nextDeadlinePageIds(
 function includeForRoster(
   tenantId: string,
   companyIds: string[] | undefined,
+  today: DateOnly = currentDateInSingapore(),
 ): Prisma.ClientServiceInclude {
   return {
     company: {
@@ -443,7 +444,11 @@ function includeForRoster(
       },
     },
     billingOccurrences: {
-      where: { tenantId, status: { in: ['OPEN', 'BILLED', 'WAIVED'] } },
+      where: {
+        tenantId,
+        status: { in: ['OPEN', 'BILLED'] },
+        operativeExpectedDate: { gte: parseDateOnly(today) },
+      },
       orderBy: [{ operativeExpectedDate: 'asc' }, { id: 'asc' }],
       take: 1,
       select: { status: true, operativeExpectedDate: true },
@@ -556,15 +561,20 @@ function toServiceRosterItem(value: unknown): ServiceRosterItem {
     startDate: dateOnly(record.startDate) ?? '',
     endDate: dateOnly(record.endDate),
   };
-  const nextBillingOccurrence = record.billingOccurrences?.[0];
+  const today = currentDateInSingapore();
+  const nextBillingOccurrence = record.billingOccurrences?.find((candidate) => {
+    if (candidate.status !== 'OPEN' && candidate.status !== 'BILLED') return false;
+    const expectedDate = dateOnly(candidate.operativeExpectedDate);
+    return Boolean(expectedDate && expectedDate >= today);
+  });
   const nextBilling = nextBillingOccurrence
     ? {
       status: nextBillingOccurrence.status,
       expectedDate: dateOnly(nextBillingOccurrence.operativeExpectedDate) ?? '',
       timingState: nextBillingOccurrence.status === 'OPEN'
-        ? (dateOnly(nextBillingOccurrence.operativeExpectedDate)! > currentDateInSingapore()
+        ? (dateOnly(nextBillingOccurrence.operativeExpectedDate)! > today
           ? 'UPCOMING' as const
-          : dateOnly(nextBillingOccurrence.operativeExpectedDate) === currentDateInSingapore()
+          : dateOnly(nextBillingOccurrence.operativeExpectedDate) === today
             ? 'DUE' as const
             : 'OVERDUE' as const)
         : null,
@@ -634,6 +644,7 @@ export async function listServiceRoster(
   const inputResult = input;
   const scope = normalizeScope(scopeLike);
   const companyIds = visibleCompanyIds(inputResult, scope);
+  const today = currentDateInSingapore();
   if (companyIds?.length === 0 || inputResult.statuses.length === 0) {
     return emptyResult(inputResult);
   }
@@ -660,7 +671,7 @@ export async function listServiceRoster(
     // order; this is ordering, not a permission post-filter.
     const records = await db.clientService.findMany({
       where: { ...where, id: { in: pageIds } },
-      include: includeForRoster(scope.tenantId, companyIds),
+      include: includeForRoster(scope.tenantId, companyIds, today),
       orderBy: [{ id: 'asc' }],
       take: pageIds.length,
     });
@@ -686,7 +697,7 @@ export async function listServiceRoster(
   const [records, total] = await Promise.all([
     db.clientService.findMany({
       where,
-      include: includeForRoster(scope.tenantId, companyIds),
+      include: includeForRoster(scope.tenantId, companyIds, today),
       orderBy: orderBy(inputResult),
       skip: (inputResult.page - 1) * inputResult.limit,
       take: inputResult.limit,

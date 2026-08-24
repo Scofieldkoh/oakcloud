@@ -16,6 +16,7 @@ export const SERVICE_ROSTER_COLUMNS = [
   'nextDeadline',
   'startEnd',
   'warnings',
+  'billing',
   'actions',
 ] as const;
 
@@ -59,6 +60,7 @@ export const columnLabels: Record<ServiceRosterColumnId, string> = {
   nextDeadline: 'Next deadline',
   startEnd: 'Start/end',
   warnings: 'Warnings',
+  billing: 'Billing',
   actions: 'Actions',
 };
 
@@ -71,6 +73,7 @@ export const defaultWidths: Record<ServiceRosterColumnId, number> = {
   nextDeadline: 140,
   startEnd: 150,
   warnings: 120,
+  billing: 170,
   actions: 82,
 };
 
@@ -133,9 +136,8 @@ function WarningCell({ item }: { item: ServiceRosterItem }) {
       <span className="text-xs">Review</span>
     </span>
   ) : null;
-  const billingIndicator = <BillingIndicator item={item} />;
-  if (!ruleWarning && !billingIndicator) return <span className="text-text-muted">—</span>;
-  return <div className="flex flex-col items-start gap-1">{ruleWarning}{billingIndicator}</div>;
+  if (!ruleWarning) return <span className="text-text-muted">—</span>;
+  return <div className="flex flex-col items-start gap-1">{ruleWarning}</div>;
 }
 
 function BillingIndicator({ item }: { item: ServiceRosterItem }) {
@@ -165,9 +167,10 @@ function BillingIndicator({ item }: { item: ServiceRosterItem }) {
     return <Link href={`/services?tab=billing&serviceId=${encodeURIComponent(item.id)}`} className="badge badge-warning" aria-label="Billing: missing disposition">Missing disposition</Link>;
   }
   if (!item.nextBilling) return <span className="badge badge-success" aria-label="Billing: configured">Covered</span>;
-  const nextState = item.nextBilling.status === 'OPEN' ? item.nextBilling.timingState ?? 'OPEN' : item.nextBilling.status;
-  const nextStateLabel = nextState.charAt(0) + nextState.slice(1).toLowerCase();
-  return <span className="badge badge-success" aria-label={`Billing: configured, ${nextStateLabel.toLowerCase()}`}>Configured · {nextStateLabel}</span>;
+  if (item.nextBilling.status === 'BILLED') return <span className="badge badge-success" aria-label="Billing: billed">Billed</span>;
+  const timingLabel = item.nextBilling.timingState ?? 'UPCOMING';
+  const timingStateLabel = timingLabel.charAt(0) + timingLabel.slice(1).toLowerCase();
+  return <span className="badge badge-success" aria-label={`Billing: open, ${timingStateLabel.toLowerCase()}`}>Open · {timingStateLabel}</span>;
 }
 
 function ServiceActions({ item, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
@@ -272,6 +275,7 @@ function DesktopCell({ item, column, canEdit, onEdit, onTrigger }: { item: Servi
     case 'nextDeadline': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatDate(item.nextDeadline?.operativeDueDate ?? null)}</td>;
     case 'startEnd': return <td className="px-4 py-3 align-top text-sm text-text-secondary"><span className="whitespace-nowrap">{formatDate(item.startDate)}</span><span className="mx-1 text-text-muted">–</span><span className="whitespace-nowrap">{formatDate(item.endDate)}</span></td>;
     case 'warnings': return <td className="px-4 py-3 align-top"><WarningCell item={item} /></td>;
+    case 'billing': return <td className="px-4 py-3 align-top"><BillingIndicator item={item} /></td>;
     case 'actions': return <td className="px-4 py-3 align-top"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} /></td>;
   }
 }

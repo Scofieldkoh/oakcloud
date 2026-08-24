@@ -22,6 +22,7 @@ import {
   type ServiceRosterScope,
 } from '@/services/service-roster';
 import type { ServiceRosterSearch } from '@/lib/validations/service-roster';
+import { addCalendarDays, currentDateInSingapore } from '@/services/service-schedule';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const companyId = '22222222-2222-4222-8222-222222222222';
@@ -168,6 +169,32 @@ describe('service roster service', () => {
       { id: 'asc' },
     ]);
     expect(call.include.deadlineOccurrences.take).toBe(1);
+  });
+
+  it('projects the next required Open or Billed billing state and skips historical waived/billed rows', async () => {
+    const today = currentDateInSingapore();
+    const nextDate = addCalendarDays(today, 5);
+    mocks.findMany.mockResolvedValue([rosterRecord({
+      billingDisposition: 'CONFIGURED',
+      billingOccurrences: [
+        { status: 'WAIVED', operativeExpectedDate: new Date('2020-01-01T00:00:00.000Z') },
+        { status: 'BILLED', operativeExpectedDate: new Date('2020-02-01T00:00:00.000Z') },
+        { status: 'OPEN', operativeExpectedDate: new Date(`${nextDate}T00:00:00.000Z`) },
+      ],
+    })]);
+
+    const result = await listServiceRoster(search, scope);
+
+    expect(result.items[0]?.nextBilling).toMatchObject({ status: 'OPEN', expectedDate: nextDate });
+    const call = mocks.findMany.mock.calls[0]![0] as {
+      include: { billingOccurrences: { where: Record<string, unknown>; orderBy: unknown; take: number } };
+    };
+    expect(call.include.billingOccurrences.where).toEqual(expect.objectContaining({
+      tenantId,
+      status: { in: ['OPEN', 'BILLED'] },
+      operativeExpectedDate: { gte: new Date(`${today}T00:00:00.000Z`) },
+    }));
+    expect(call.include.billingOccurrences.take).toBe(1);
   });
 
   it.each([

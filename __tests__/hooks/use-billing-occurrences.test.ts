@@ -48,6 +48,21 @@ describe('use billing occurrences hooks', () => {
     expect(billingOccurrenceSearchParams(search)).toContain('statuses=OPEN%2CWAIVED');
   });
 
+  it('serializes server-side text filters for company, service, fee, and general search', () => {
+    const params = billingOccurrenceSearchParams({
+      ...search,
+      query: 'annual return',
+      companyQuery: 'Example',
+      serviceQuery: 'Return',
+      feeQuery: 'filing',
+    });
+
+    expect(params).toContain('query=annual+return');
+    expect(params).toContain('companyQuery=Example');
+    expect(params).toContain('serviceQuery=Return');
+    expect(params).toContain('feeQuery=filing');
+  });
+
   it('fetches a normalized list and forwards an AbortSignal', async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ mode: 'TABLE', items: [], total: 0, page: 1, limit: 50, totalPages: 0 }));
     const { queryClient, wrapper } = createHarness();

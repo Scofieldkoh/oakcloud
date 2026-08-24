@@ -51,26 +51,46 @@ const billedOccurrence: BillingOccurrenceDto = {
 
 describe('BillingOccurrenceDialog', () => {
   it('asks update scope whenever amount or currency changes', () => {
-    render(<BillingOccurrenceDialog occurrence={billedOccurrence} />);
+    const onSave = vi.fn();
+    render(<BillingOccurrenceDialog occurrence={billedOccurrence} onSave={onSave} />);
 
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1500.00' } });
+    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Updated engagement pricing' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
 
     expect(screen.getByRole('dialog', { name: 'Apply amount change' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'This occurrence' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'This and future' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'This and future' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      amount: '1500.00',
+      currency: 'SGD',
+      reason: 'Updated engagement pricing',
+      updateScope: 'THIS_AND_FUTURE',
+    }));
   });
 
   it('submits a non-value tracking update without opening a scope prompt', () => {
     const onSave = vi.fn();
     render(<BillingOccurrenceDialog occurrence={billedOccurrence} onSave={onSave} />);
 
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'WAIVED' } });
-    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Client requested waiver' } });
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Updated tracking note' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save tracking update' }));
 
     expect(screen.queryByRole('dialog', { name: 'Apply amount change' })).not.toBeInTheDocument();
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ status: 'WAIVED', updateScope: 'THIS_OCCURRENCE' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ status: 'BILLED', notes: 'Updated tracking note', updateScope: 'THIS_OCCURRENCE' }));
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('amount');
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('currency');
+  });
+
+  it.each([
+    ['BILLED', 'Waived'],
+    ['WAIVED', 'Billed'],
+  ] as const)('does not offer the invalid %s to %s lifecycle transition', (status, forbiddenLabel) => {
+    render(<BillingOccurrenceDialog occurrence={{ ...billedOccurrence, status }} />);
+
+    expect(screen.queryByRole('option', { name: forbiddenLabel })).not.toBeInTheDocument();
   });
 
   it('offers a reset lifecycle for overridden expected values', () => {
@@ -88,5 +108,15 @@ describe('BillingOccurrenceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset all overrides' }));
 
     expect(onReset).toHaveBeenCalledWith(expect.objectContaining({ target: 'ALL', reason: 'Use configured fee line amount' }));
+  });
+
+  it('surfaces a mutation error without losing the edited tracking note', () => {
+    render(<BillingOccurrenceDialog occurrence={billedOccurrence} errorMessage="Unable to update billing tracking" />);
+
+    const notes = screen.getByLabelText('Notes');
+    fireEvent.change(notes, { target: { value: 'Keep this note after a failed save' } });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to update billing tracking');
+    expect(notes).toHaveValue('Keep this note after a failed save');
   });
 });

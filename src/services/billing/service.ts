@@ -223,21 +223,47 @@ export function billingOccurrenceWhereForSearch(
   today: DateOnly = currentDateInSingapore(),
 ): Prisma.BillingOccurrenceWhereInput {
   const companyIds = requestedCompanyIds(input, actor);
-  const where: Prisma.BillingOccurrenceWhereInput = {
+  const companyWhere: Prisma.CompanyWhereInput = {
     tenantId: actor.tenantId,
-    company: { tenantId: actor.tenantId, deletedAt: null, ...(companyIds === undefined ? {} : { id: { in: companyIds } }) },
-    clientService: {
+    deletedAt: null,
+    ...(companyIds === undefined ? {} : { id: { in: companyIds } }),
+    ...(input.companyQuery ? {
+      OR: [
+        { name: { contains: input.companyQuery, mode: 'insensitive' } },
+        { displayAlias: { contains: input.companyQuery, mode: 'insensitive' } },
+        { uen: { contains: input.companyQuery, mode: 'insensitive' } },
+      ],
+    } : {}),
+  };
+  const clientServiceWhere: Prisma.ClientServiceWhereInput = {
+    tenantId: actor.tenantId,
+    ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
+    serviceVariant: {
       tenantId: actor.tenantId,
-      ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
-      serviceVariant: {
+      family: {
         tenantId: actor.tenantId,
-        family: {
-          tenantId: actor.tenantId,
-          ...(input.familyIds.length > 0 ? { id: { in: input.familyIds } } : {}),
-        },
+        ...(input.familyIds.length > 0 ? { id: { in: input.familyIds } } : {}),
       },
     },
-    feeLine: { tenantId: actor.tenantId, clientService: { tenantId: actor.tenantId } },
+    ...(input.serviceQuery ? {
+      OR: [
+        { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } },
+        { familyName: { contains: input.serviceQuery, mode: 'insensitive' } },
+        { serviceVariant: { name: { contains: input.serviceQuery, mode: 'insensitive' } } },
+        { serviceVariant: { family: { name: { contains: input.serviceQuery, mode: 'insensitive' } } } },
+      ],
+    } : {}),
+  };
+  const feeLineWhere: Prisma.ClientServiceFeeLineWhereInput = {
+    tenantId: actor.tenantId,
+    clientService: { tenantId: actor.tenantId },
+    ...(input.feeQuery ? { description: { contains: input.feeQuery, mode: 'insensitive' } } : {}),
+  };
+  const where: Prisma.BillingOccurrenceWhereInput = {
+    tenantId: actor.tenantId,
+    company: companyWhere,
+    clientService: clientServiceWhere,
+    feeLine: feeLineWhere,
     operativeExpectedDate: {
       gte: parseDateOnly(input.from as DateOnly),
       lte: parseDateOnly(input.to as DateOnly),
@@ -245,8 +271,30 @@ export function billingOccurrenceWhereForSearch(
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.statuses.length > 0 ? { status: { in: input.statuses } } : {}),
   };
+  const and: Prisma.BillingOccurrenceWhereInput[] = [];
+  if (input.query) {
+    and.push({
+      OR: [
+        { company: { OR: [{ name: { contains: input.query, mode: 'insensitive' } }, { displayAlias: { contains: input.query, mode: 'insensitive' } }, { uen: { contains: input.query, mode: 'insensitive' } }] } },
+        { clientService: { OR: [{ serviceName: { contains: input.query, mode: 'insensitive' } }, { familyName: { contains: input.query, mode: 'insensitive' } }, { serviceVariant: { name: { contains: input.query, mode: 'insensitive' } } }, { serviceVariant: { family: { name: { contains: input.query, mode: 'insensitive' } } } }] } },
+        { feeLine: { description: { contains: input.query, mode: 'insensitive' } } },
+        { billingPeriodKey: { contains: input.query, mode: 'insensitive' } },
+        { externalReference: { contains: input.query, mode: 'insensitive' } },
+        { notes: { contains: input.query, mode: 'insensitive' } },
+      ],
+    });
+  }
+  if (input.feeQuery) {
+    and.push({
+      OR: [
+        { feeLine: { description: { contains: input.feeQuery, mode: 'insensitive' } } },
+        { billingPeriodKey: { contains: input.feeQuery, mode: 'insensitive' } },
+      ],
+    });
+  }
   const timing = timingWhere(input, today);
-  if (timing) where.AND = [timing];
+  if (timing) and.push(timing);
+  if (and.length > 0) where.AND = and;
   return where;
 }
 
