@@ -42,6 +42,7 @@
 |---|---|---|---|
 | 1 | PASS / final-review-complete | `66197f3c`, `960d0778`, `e530c522` | `final review PASS (0 Critical / 0 Important / 0 Minor)` |
 | 2 | PASS / task-review-complete | `fcad7bba`, `1e3829e4` | `5 Important addressed; no new breakage; 1 Minor deferred` |
+| 3 | PASS / task-review-complete | `c36f141a`, `4f638b17`, `9a7df209`, `baa1e7e1` | `all findings addressed; no new breakage` |
 
 ## RED evidence
 
@@ -132,3 +133,32 @@
 - Fix round 1/5 implemented for: end-range look-ahead after business-day adjustment; canonical cadence/interval consistency; actual start-date lower bounds; billing-unresolvable shared expressions; non-destructive backfill reruns. Amended focused verification passed 3 files / 23 tests, compatibility passed 3 files / 40 tests, PostgreSQL remained an intentional local skip, and TypeScript/scoped lint/Prisma validation/diff checks passed.
 - Fix round 1/5 scoped rereview: all 5 Important findings ADDRESSED, no new breakage; commit `1e3829e4`.
 - Task 2: complete (commits `95275e4c..1e3829e4`, review clean; 1 Minor deferred to final whole-branch review).
+
+## Task 3 — rolling billing occurrence reconciliation
+
+### Initial implementation and review
+
+- Initial implementation commit `c36f141a` (`feat: reconcile billing tracking occurrences`).
+- Focused implementation evidence: 5 files / 67 tests passed; the isolated PostgreSQL suite remained one intentional local skip without `TEST_DATABASE_URL`. TypeScript, scoped zero-warning ESLint, Prisma validation, and diff checks passed.
+- Independent Task 3 review: not spec compliant / needs fixes; 1 Critical, 3 Important, 1 Minor.
+- Critical: read-then-write recalculation/cancellation did not reassert lifecycle and override eligibility, and APPLY counts were not based on affected-row counts.
+- Important: actor-less rolling cancellations could not persist but were reported as cancelled; fee-only changes did not enqueue actor-backed reconciliation; archived fee lines leaked through the public DTO/edit flow.
+- Minor: guarded PostgreSQL coverage exercised concurrent creation but not the production update/cancellation race paths.
+
+### Task 3 cancellation-provenance ruling
+
+- Ruling: automatic `BillingOccurrence` cancellation is attributed to the durable `ServiceScheduleReconciliationRequest`, never to a synthetic or arbitrarily selected user. A cancelled occurrence must retain `cancelledAt`, a trimmed reason, and at least one durable attribution source: a human `cancelledById` and/or a restrictive reconciliation-request reference. Worker cancellations always retain the request reference and additionally retain `requestedById` when present; later manual lifecycle APIs may use a human actor without a reconciliation request. Non-cancelled rows retain no cancellation metadata or provenance.
+- Reason: daily `ROLLING_HORIZON` requests intentionally have no requesting user, while Task 3 must persist automatic cancellations and Task 1 correctly prohibited anonymous, unauditable lifecycle writes. Request provenance resolves both requirements without falsifying user attribution.
+- Cost if wrong: this adds one persisted relation and forward migration to billing occurrences; downstream lifecycle APIs, serializers, exports, and retention policies must preserve or explicitly expose that provenance rather than assuming every cancellation has a human actor.
+- Fix round 1/5 commit `4f638b17` addressed request provenance, fee-only enqueueing, archived fee-line visibility, generation lifecycle, destructive concurrent transitions, and affected-row counts.
+- Scoped rereview: actor-less cancellation provenance, fee-only enqueue, and archived fee-line behavior ADDRESSED; concurrency/counts and PostgreSQL production-path coverage PARTIALLY ADDRESSED; no distinct new breakage.
+- Remaining Critical gap: an unrelated optimistic collision reloads a still-eligible future Open row but misclassifies it as historical instead of retrying, so the worker can complete with stale state.
+- Remaining Minor gap: PostgreSQL races cover the production reconciler directly but not the production per-service worker transaction/lease helper.
+- Fix round 2/5 is assigned to the same `gpt-5.6-luna` max implementer for bounded eligible-row retry/transient exhaustion and guarded production worker-path coverage.
+- Fix round 2/5 commit `9a7df209` added bounded retry/transient conflict handling and the production per-service worker transaction helper with guarded PostgreSQL coverage. Controller verification passed 89 focused tests with one guarded skip plus TypeScript/scoped lint/diff checks.
+- Round-2 rereview: production worker-path coverage ADDRESSED; concurrency PARTIALLY ADDRESSED because an unrelated collision on a row already overridden at initial read skips the required hidden calculated/base refresh. New Minor: helper comment incorrectly said serializable although it uses the configured/default transaction isolation.
+- Fix round 3/5 is assigned to the same `gpt-5.6-luna` max implementer for unchanged-pre-existing-override retry coverage and the transaction-comment correction.
+- Fix round 3/5 commit `baa1e7e1` preserves pre-existing date/value overrides across unrelated optimistic collisions while refreshing hidden calculated/base values, and corrects the transaction-isolation comment.
+- Controller final focused verification: 6 files passed plus 1 guarded skip; 91 tests passed plus 1 skipped. TypeScript, scoped zero-warning ESLint, and diff checks passed.
+- Round-3 rereview: remaining Critical ADDRESSED; transaction-comment Minor ADDRESSED; no new breakage.
+- Task 3: complete (commits `bbe8d119..baa1e7e1`; final verdict PASS — spec compliant and quality acceptable for integration). The isolated live-PostgreSQL execution remains deferred to the agreed whole-implementation/release gate.
