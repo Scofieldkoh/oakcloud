@@ -140,6 +140,28 @@ describe('legacy billing schedule conversion', () => {
 });
 
 describe('billing schedule evaluation', () => {
+  it.each([
+    ['id', { ...calendar, id: '' }, /business calendar id is required/i],
+    ['revision', { ...calendar, revision: 0 }, /business calendar revision must be a positive integer/i],
+    ['weekend day', { ...calendar, weekendDays: new Set([7]) }, /weekend days must be integers from 0 through 6/i],
+    ['holiday', { ...calendar, holidays: new Set<DateOnly>(['2026-02-30' as DateOnly]) }, /expected a real Gregorian date/i],
+  ] as const)('rejects a malformed %s calendar for plain calendar-day entries', (_field, malformedCalendar, message) => {
+    expect(() => evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-08-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [entry('plain', 1)],
+      },
+      feeLine: { id: 'fee-plain-calendar', amount: '10', currency: 'SGD' },
+      calendar: malformedCalendar,
+      from: '2026-08-01',
+      to: '2026-08-31',
+      generationKey: 'plain-calendar-v1',
+    })).toThrow(message);
+  });
+
   it('looks back beyond one cadence for a positive relative cycle-start offset', () => {
     const occurrences = evaluateBillingSchedule({
       config: {
@@ -651,7 +673,7 @@ describe('billing schedule evaluation', () => {
     expect(evaluateBillingSchedule({
       config: base,
       feeLine: { id: 'fee-5', amount: '10', currency: 'SGD' },
-      calendar,
+      calendar: { ...calendar, id: '' },
       from: '2026-08-01',
       to: '2026-08-31',
       generationKey: 'rolling-v1',

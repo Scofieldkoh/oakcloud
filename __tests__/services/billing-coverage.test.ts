@@ -155,6 +155,30 @@ describe('reconcileBillingCoverage', () => {
     expect(mocks.billingCoverageIssue.updateMany).not.toHaveBeenCalled();
   });
 
+  it('classifies a malformed business calendar as an invalid schedule', async () => {
+    mocks.clientService.findFirst.mockResolvedValue({
+      ...baseService,
+      billingDisposition: 'CONFIGURED',
+      feeLines: [feeLine()],
+    });
+    mocks.businessCalendar.findFirst.mockResolvedValue({
+      id: 'malformed-calendar',
+      timeZone: 'Asia/Singapore',
+      revision: 1,
+      weekendDays: [7],
+      holidays: [],
+    });
+
+    const result = await reconcileBillingCoverage({ ...input, writeMode: 'OBSERVE' });
+
+    expect(result.openIssues).toContainEqual(expect.objectContaining({
+      type: 'INVALID_CUSTOM_SCHEDULE',
+      feeLineId: 'fee-1',
+    }));
+    expect(mocks.billingOccurrence.findMany).toHaveBeenCalled();
+    expect(mocks.billingCoverageIssue.create).not.toHaveBeenCalled();
+  });
+
   it('retains existing issues for paused services without creating rolling-gap issues', async () => {
     mocks.clientService.findFirst.mockResolvedValue({ ...baseService, status: 'PAUSED' });
     mocks.billingCoverageIssue.findMany.mockResolvedValue([{

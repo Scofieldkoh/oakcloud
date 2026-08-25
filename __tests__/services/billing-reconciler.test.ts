@@ -345,6 +345,24 @@ describe('reconcileClientServiceBilling', () => {
     expect(mocks.billingOccurrence.updateMany).not.toHaveBeenCalled();
   });
 
+  it('classifies a malformed business calendar as invalid schedule without materializing', async () => {
+    mocks.businessCalendar.findFirst.mockResolvedValue({
+      id: 'malformed-calendar',
+      timeZone: 'Asia/Singapore',
+      revision: 1,
+      weekendDays: [7],
+      holidays: [],
+    });
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'INVALID_SCHEDULE', feeLineId: 'fee-1' }),
+    ]));
+    expect(result.created).toBe(0);
+    expect(mocks.billingOccurrence.createMany).not.toHaveBeenCalled();
+  });
+
   it('refreshes calculated/base values while retaining operative overrides', async () => {
     const generation = `billing-v1-${hashConfiguration({
       feeLineId: 'fee-1',
