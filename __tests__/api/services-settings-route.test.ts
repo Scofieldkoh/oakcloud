@@ -23,7 +23,7 @@ describe('GET /api/services/settings', () => {
   });
 
   it('returns workspace-safe service feature flags from the authenticated session workspace', async () => {
-    const response = await GET();
+    const response = await GET(new Request('http://localhost/api/services/settings'));
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -44,7 +44,7 @@ describe('GET /api/services/settings', () => {
   it('requires authenticated workspace context', async () => {
     mocks.requireAuth.mockResolvedValue({ id: 'user-1', tenantId: null });
 
-    const response = await GET();
+    const response = await GET(new Request('http://localhost/api/services/settings'));
 
     expect(response.status).toBe(400);
     expect(mocks.getServiceWorkspaceFlagsForTenant).not.toHaveBeenCalled();

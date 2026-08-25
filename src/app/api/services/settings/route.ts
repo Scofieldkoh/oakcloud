@@ -7,7 +7,7 @@ import { getServiceWorkspaceFlagsForTenant } from '@/services/schedule-reconcili
  * always derived from the session; this endpoint intentionally has no tenant
  * query parameter.
  */
-export async function GET(_request?: Request) {
+export async function GET(_request: Request) {
   try {
     const session = await requireAuth();
     if (!session.tenantId) {
