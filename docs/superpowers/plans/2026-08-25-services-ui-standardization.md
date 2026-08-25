@@ -396,4 +396,3 @@ graph TD
 - 2026-08-25: UI audit completed against `docs/guides/DESIGN_GUIDELINE.md` and the approved Services mockup index.
 - 2026-08-25: User approved Companies and Document Vault as the visual source of truth.
 - 2026-08-25: Implementation plan created for Luna/max subagent-driven execution.
-
