@@ -43,7 +43,7 @@ export function FamilyFilterChips({
             onClick={() => onToggle(family.id)}
             style={style}
             className={cn(
-              'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors sm:min-h-8',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
               selected
                 ? 'border-[var(--family-color)] bg-[var(--family-color)]/10 text-text-primary'

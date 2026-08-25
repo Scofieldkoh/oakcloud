@@ -220,6 +220,7 @@ describe('ServiceRoster', () => {
     render(<ServiceRoster workspaceId="workspace-1" />);
 
     const familyChip = screen.getByRole('button', { name: 'Accounting' });
+    expect(familyChip).toHaveClass('min-h-11', 'sm:min-h-8');
     expect(familyChip).toHaveAttribute('aria-pressed', 'false');
     expect(familyChip.querySelector('[aria-hidden="true"]')).toBeTruthy();
     expect(familyChip).toHaveStyle({ '--family-color': '#3F6DA8' });

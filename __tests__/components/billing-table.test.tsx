@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BillingOccurrenceDto } from '@/services/billing';
 import { BillingTable } from '@/components/services/billing/billing-table';
@@ -67,5 +67,21 @@ describe('BillingTable', () => {
 
     expect(screen.getByRole('columnheader', { name: /Expected date/ })).toHaveAttribute('aria-sort', 'ascending');
     expect(screen.getByRole('columnheader', { name: /Company/ })).toHaveAttribute('aria-sort', 'none');
+  });
+
+  it('keeps the desktop edit action compact while preserving the mobile touch target', () => {
+    render(
+      <BillingTable
+        items={[occurrence]}
+        columnWidths={defaultBillingTablePreference.columnWidths}
+        columnOrder={[...BILLING_COLUMN_IDS]}
+        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        sortBy="expectedDate"
+        sortOrder="asc"
+      />,
+    );
+
+    expect(within(screen.getByRole('table', { name: 'Billing occurrences table' })).getByRole('button', { name: 'Edit tracking for Northstar' }))
+      .toHaveClass('min-h-11', 'min-w-11', 'sm:min-h-8', 'sm:min-w-8');
   });
 });

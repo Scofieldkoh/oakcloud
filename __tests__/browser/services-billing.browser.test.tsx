@@ -141,7 +141,7 @@ describe('Services billing responsive browser surface', () => {
     const mainRect = main.getBoundingClientRect();
     const headerRect = header.getBoundingClientRect();
     const tablistRect = tablist.getBoundingClientRect();
-    expect(Math.round(mainRect.left)).toBe(24);
+    expect(Math.round(headerRect.left - mainRect.left)).toBe(24);
     expect(Math.round(tablistRect.top - headerRect.bottom)).toBe(24);
     expect(screen.getByRole('tab', { name: 'Billing' }).getBoundingClientRect().height)
       .toBeGreaterThanOrEqual(32);
@@ -194,7 +194,10 @@ describe('Services billing responsive browser surface', () => {
     await expect.element(screen.getByRole('region', { name: 'Billing occurrence cards' })).toBeVisible();
     const billingCards = screen.getByRole('region', { name: 'Billing occurrence cards' });
     await expect.element(within(billingCards).getByText(/Monthly payroll fee/)).toBeVisible();
-    expect(Math.round(screen.getByRole('main').getBoundingClientRect().left)).toBe(16);
+    const mobileMain = screen.getByRole('main');
+    const mobileHeader = screen.getByRole('heading', { name: 'Services' }).closest('header');
+    if (!mobileHeader) throw new Error('Services mobile header missing');
+    expect(Math.round(mobileHeader.getBoundingClientRect().left - mobileMain.getBoundingClientRect().left)).toBe(16);
     for (const tab of screen.getAllByRole('tab')) {
       expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
     }

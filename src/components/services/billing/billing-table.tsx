@@ -184,7 +184,7 @@ function Cell({ item, column, canEdit, onEdit }: { item: BillingOccurrenceDto; c
     case 'amount': return <td className="px-4 py-3 align-top text-sm text-text-primary">{amount}</td>;
     case 'billedDate': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{displayDate(item.billedDate)}</td>;
     case 'reference': return <td className="max-w-0 px-4 py-3 align-top text-sm text-text-secondary"><span className="block truncate" title={item.externalReference ?? undefined}>{item.externalReference || '—'}</span></td>;
-    case 'actions': return <td className="px-4 py-3 align-top"><Button type="button" variant="ghost" size="sm" iconOnly aria-label={`Edit tracking for ${item.company.displayLabel}`} onClick={() => onEdit?.(item)} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
+    case 'actions': return <td className="px-4 py-3 align-top"><Button type="button" variant="ghost" size="sm" iconOnly className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" aria-label={`Edit tracking for ${item.company.displayLabel}`} onClick={() => onEdit?.(item)} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
   }
 }
 
