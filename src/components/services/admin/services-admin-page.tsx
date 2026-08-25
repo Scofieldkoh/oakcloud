@@ -156,12 +156,12 @@ export function ServicesAdminPage() {
   }
 
   return (
-    <main className="p-4 sm:p-6 space-y-6">
-      <header className="space-y-1">
+    <main className="ml-4 p-4 pl-0 sm:ml-6 sm:p-6 sm:pl-0">
+      <header className="mb-6">
         <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">
           Services administration
         </h1>
-        <p className="text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-text-secondary">
           Manage service offerings, deadline rules, and business calendars.
         </p>
       </header>
@@ -169,7 +169,7 @@ export function ServicesAdminPage() {
       <div
         role="tablist"
         aria-label="Services administration sections"
-        className="flex flex-wrap gap-x-2 border-b border-border-primary"
+        className="mb-6 flex overflow-x-auto border-b border-border-primary"
       >
         {([
           ['catalog', 'Service catalog'],
@@ -186,7 +186,7 @@ export function ServicesAdminPage() {
             tabIndex={activeTab === tab ? 0 : -1}
             onClick={() => selectTab(tab)}
             onKeyDown={(event) => handleTabKeyDown(event, tab)}
-            className={`min-h-11 border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8 ${
+            className={`min-h-11 shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8 ${
               activeTab === tab
                 ? 'border-oak-primary text-text-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -203,7 +203,6 @@ export function ServicesAdminPage() {
         aria-labelledby="service-catalog-tab"
         hidden={activeTab !== 'catalog'}
         aria-hidden={activeTab !== 'catalog'}
-        className="pt-1"
       >
         <ServiceCatalogPanel
           workspaceId={workspaceId}
@@ -220,7 +219,6 @@ export function ServicesAdminPage() {
         aria-labelledby="deadline-rules-tab"
         hidden={activeTab !== 'rules'}
         aria-hidden={activeTab !== 'rules'}
-        className="pt-1"
       >
         <DeadlineRulesPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} active={activeTab === 'rules'} />
       </section>
@@ -231,7 +229,6 @@ export function ServicesAdminPage() {
         aria-labelledby="business-calendar-tab"
         hidden={activeTab !== 'calendar'}
         aria-hidden={activeTab !== 'calendar'}
-        className="pt-1"
       >
         <BusinessCalendarPanel workspaceId={workspaceId} featureEnabled={settings.data.workspaceEnabled} active={activeTab === 'calendar'} />
       </section>

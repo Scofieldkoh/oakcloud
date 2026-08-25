@@ -153,6 +153,9 @@ describe('Services administration browser surface', () => {
     const tabs = screen.getByRole('tablist', { name: 'Services administration sections' });
     const catalogTab = screen.getByRole('tab', { name: 'Service catalog' });
     const catalogPanel = screen.getByRole('tabpanel', { name: 'Service catalog' });
+    const main = screen.getByRole('main');
+    const header = heading.closest('header');
+    if (!header) throw new Error('Administration header missing');
     await expect.element(heading).toBeVisible();
     await expect.element(tabs).toBeVisible();
     await expect.element(catalogTab).toBeVisible();
@@ -162,6 +165,14 @@ describe('Services administration browser surface', () => {
     expect(catalogTab).toHaveAttribute('aria-controls', 'service-catalog-panel');
     expect(catalogPanel).toHaveAttribute('aria-labelledby', 'service-catalog-tab');
     await expect.element(screen.getByText('Accounting')).toBeVisible();
+
+    expect(Math.round(main.getBoundingClientRect().left)).toBe(24);
+    expect(Math.round(tabs.getBoundingClientRect().top - header.getBoundingClientRect().bottom)).toBe(24);
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
+      expect(tab.getBoundingClientRect().height).toBeLessThanOrEqual(40);
+    }
+    expect(Math.abs(catalogPanel.getBoundingClientRect().left - tabs.getBoundingClientRect().left)).toBeLessThanOrEqual(1);
 
     await act(async () => {
       await userEvent.click(screen.getByRole('button', { name: 'Add service family' }));

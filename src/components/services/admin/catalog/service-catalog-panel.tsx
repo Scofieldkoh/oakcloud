@@ -190,7 +190,7 @@ export function ServiceCatalogPanel({
 
   return (
     <section aria-labelledby="service-catalog-heading">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2
             id="service-catalog-heading"
@@ -203,14 +203,16 @@ export function ServiceCatalogPanel({
           </p>
         </div>
         {canCreate ? (
-          <Button
-            size="sm"
-            className="min-h-11 sm:min-h-8"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setEditDialog({ type: 'family' })}
-          >
-            Add service family
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              size="sm"
+              className="min-h-11 sm:min-h-8"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setEditDialog({ type: 'family' })}
+            >
+              Add service family
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -235,7 +237,7 @@ export function ServiceCatalogPanel({
               setStatus(event.target.value as typeof status);
               setPage(1);
             }}
-            className="mt-2 h-8 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary sm:min-h-8"
+            className="input input-sm mt-2 min-h-11 w-full sm:min-h-8"
           >
             <option value="all">All</option>
             <option value="active">Active</option>
@@ -245,12 +247,12 @@ export function ServiceCatalogPanel({
       </div>
 
       {catalog.isLoading ? (
-        <div className="card flex items-center justify-center gap-2 p-8 text-sm text-text-muted">
+        <div className="card flex items-center justify-center gap-2 p-4 text-sm text-text-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading service catalog…
         </div>
       ) : catalog.error ? (
-        <div className="card p-6 text-center">
+        <div className="card p-4 text-center">
           <p className="text-sm font-medium text-status-error">
             Unable to load the service catalog
           </p>
@@ -260,7 +262,7 @@ export function ServiceCatalogPanel({
         </div>
       ) : !catalog.data
         || (!catalog.data.families.length && catalog.data.total === 0) ? (
-        <div className="card p-6 text-center sm:p-12">
+        <div className="card p-4 text-center sm:p-8">
           <BriefcaseBusiness className="mx-auto h-12 w-12 text-text-muted" />
           <h3 className="mt-4 text-lg font-semibold text-text-primary">
             No service offerings found
@@ -278,7 +280,7 @@ export function ServiceCatalogPanel({
               key={family.id}
               className="overflow-hidden rounded-lg border border-border-primary bg-background-secondary"
             >
-              <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+              <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold text-text-primary">
@@ -303,12 +305,12 @@ export function ServiceCatalogPanel({
                     </p>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   {canCreate ? (
                     <Button
                       size="xs"
                       variant="secondary"
-                      className="min-h-11 sm:min-h-7"
+                      className="min-h-11 sm:min-h-8"
                       leftIcon={<Plus className="h-3.5 w-3.5" />}
                       onClick={() =>
                         setEditDialog({ type: 'variant', familyId: family.id })
@@ -321,7 +323,7 @@ export function ServiceCatalogPanel({
                     <Button
                       size="xs"
                       variant="ghost"
-                      className="min-h-11 sm:min-h-7"
+                      className="min-h-11 sm:min-h-8"
                       aria-label={`Edit ${family.name}`}
                       leftIcon={<Pencil className="h-3.5 w-3.5" />}
                       onClick={() =>
@@ -335,7 +337,7 @@ export function ServiceCatalogPanel({
                     <Button
                       size="xs"
                       variant="ghost"
-                      className="min-h-11 sm:min-h-7"
+                      className="min-h-11 sm:min-h-8"
                       aria-label={`Archive ${family.name}`}
                       leftIcon={<Archive className="h-3.5 w-3.5" />}
                       onClick={() =>
@@ -402,7 +404,7 @@ export function ServiceCatalogPanel({
                         <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
                           {canUpdate ? (
                             <Link
-                              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-medium text-text-primary transition-colors hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-7"
+                              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-medium text-text-primary transition-colors hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8"
                               href={`/template-partials/editor?type=partial&tab=services&id=${variant.sowPartial.id}`}
                             >
                               <FilePenLine className="h-3.5 w-3.5" />
@@ -413,7 +415,7 @@ export function ServiceCatalogPanel({
                             <Button
                               size="xs"
                               variant="ghost"
-                              className="min-h-11 sm:min-h-7"
+                              className="min-h-11 sm:min-h-8"
                               aria-label={`Edit ${variant.name}`}
                               onClick={() =>
                                 setEditDialog({
@@ -430,7 +432,7 @@ export function ServiceCatalogPanel({
                             <Button
                               size="xs"
                               variant="ghost"
-                              className="min-h-11 sm:min-h-7"
+                              className="min-h-11 sm:min-h-8"
                               aria-label={`Archive ${variant.name}`}
                               onClick={() =>
                                 setArchiveTarget({
