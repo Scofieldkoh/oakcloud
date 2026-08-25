@@ -166,7 +166,9 @@ describe('Services administration browser surface', () => {
     expect(catalogPanel).toHaveAttribute('aria-labelledby', 'service-catalog-tab');
     await expect.element(screen.getByText('Accounting')).toBeVisible();
 
-    expect(Math.round(main.getBoundingClientRect().left)).toBe(24);
+    const mainRect = main.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    expect(Math.round(headerRect.left - mainRect.left)).toBe(24);
     expect(Math.round(tabs.getBoundingClientRect().top - header.getBoundingClientRect().bottom)).toBe(24);
     for (const tab of screen.getAllByRole('tab')) {
       expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);

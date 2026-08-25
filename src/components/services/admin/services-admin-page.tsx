@@ -156,7 +156,7 @@ export function ServicesAdminPage() {
   }
 
   return (
-    <main className="ml-4 p-4 pl-0 sm:ml-6 sm:p-6 sm:pl-0">
+    <main className="p-4 sm:p-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">
           Services administration
