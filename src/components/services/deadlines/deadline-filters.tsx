@@ -80,7 +80,7 @@ export function DeadlineFilters({
             disabled={selected && selectedTypes.length === 1}
             onClick={() => onToggleType(type)}
             className={cn(
-              'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors',
+              'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors sm:min-h-8',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
               selected
                 ? 'border-oak-primary bg-oak-primary text-white'
@@ -96,7 +96,7 @@ export function DeadlineFilters({
         aria-pressed={openOnly}
         onClick={onToggleOpenOnly}
         className={cn(
-          'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors',
+          'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors sm:min-h-8',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
           openOnly
             ? 'border-oak-primary bg-oak-primary text-white'
@@ -138,7 +138,7 @@ function FilterField({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-11 w-full min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20"
+        className="input input-sm min-h-11 w-full min-w-0 px-3 sm:min-h-8"
       />
     </label>
   );
@@ -147,8 +147,8 @@ function FilterField({
 /** Server-backed column/detail filters shared by table and calendar views. */
 export function DeadlineInlineFilters({ values, onChange, className }: DeadlineInlineFiltersProps) {
   return (
-    <div className={cn('rounded-xl border border-border-primary bg-background-secondary p-3 sm:p-4', className)}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className={cn('space-y-4', className)}>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <FilterField label="Company" value={values.companyQuery} onChange={(value) => onChange({ companyQuery: value })} />
         <FilterField label="Service" value={values.serviceQuery} onChange={(value) => onChange({ serviceQuery: value })} />
         <FilterField label="Milestone" value={values.milestoneQuery} onChange={(value) => onChange({ milestoneQuery: value })} />
@@ -158,7 +158,7 @@ export function DeadlineInlineFilters({ values, onChange, className }: DeadlineI
             aria-label="Filter Type"
             value={values.type}
             onChange={(event) => onChange({ type: event.target.value as DeadlineFilterType | '' })}
-            className="min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20"
+            className="input input-sm min-h-11 w-full px-3 sm:min-h-8"
           >
             <option value="">All types</option>
             {(Object.keys(typeLabels) as DeadlineFilterType[]).map((type) => <option key={type} value={type}>{typeLabels[type]}</option>)}
@@ -172,7 +172,7 @@ export function DeadlineInlineFilters({ values, onChange, className }: DeadlineI
             aria-label="Filter Status"
             value={values.status}
             onChange={(event) => onChange({ status: event.target.value as DeadlineFilterStatus | '' })}
-            className="min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20"
+            className="input input-sm min-h-11 w-full px-3 sm:min-h-8"
           >
             <option value="">All statuses</option>
             {(Object.keys(statusLabels) as DeadlineFilterStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
@@ -184,7 +184,7 @@ export function DeadlineInlineFilters({ values, onChange, className }: DeadlineI
             aria-label="Filter Source"
             value={values.origin}
             onChange={(event) => onChange({ origin: event.target.value as DeadlineFilterOrigin | '' })}
-            className="min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary outline-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20"
+            className="input input-sm min-h-11 w-full px-3 sm:min-h-8"
           >
             <option value="">All sources</option>
             {(Object.keys(originLabels) as DeadlineFilterOrigin[]).map((origin) => <option key={origin} value={origin}>{originLabels[origin]}</option>)}

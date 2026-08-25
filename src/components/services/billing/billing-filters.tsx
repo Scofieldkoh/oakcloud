@@ -62,7 +62,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
 
   return (
     <section aria-label="Billing filters" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <label className="relative min-w-[220px] flex-1 sm:max-w-sm">
             <span className="sr-only">Search company or fee line</span>
@@ -73,7 +73,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
               value={queryDraft}
               onChange={(event) => setQueryDraft(event.target.value)}
               placeholder="Search company or fee line"
-              className="min-h-11 w-full rounded-lg border border-border-primary bg-background-secondary py-2 pl-9 pr-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9"
+              className="input input-sm min-h-11 w-full py-2 pl-9 pr-3 sm:min-h-8"
             />
           </label>
           <div role="group" aria-label="Billing status filters" className="flex flex-wrap items-center gap-2">
@@ -86,7 +86,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
                   aria-pressed={selected}
                   onClick={() => onChange({ ...value, statuses: toggle(value.statuses, option.value) })}
                   className={cn(
-                    'min-h-11 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:min-h-9',
+                    'min-h-11 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:min-h-8',
                     selected ? 'border-oak-primary bg-oak-primary text-white' : 'border-border-primary bg-background-secondary text-text-secondary hover:border-oak-primary hover:text-text-primary',
                   )}
                 >
@@ -97,7 +97,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs text-text-secondary sm:min-h-9">
+          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs text-text-secondary sm:min-h-8">
             <span>From</span>
             <input
               type="date"
@@ -107,7 +107,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
               className="min-w-0 bg-transparent text-text-primary outline-none"
             />
           </label>
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs text-text-secondary sm:min-h-9">
+          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs text-text-secondary sm:min-h-8">
             <span>To</span>
             <input
               type="date"
@@ -137,7 +137,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
                 aria-pressed={selected}
                 onClick={() => onChange({ ...value, timing: toggle(value.timing, option.value) })}
                 className={cn(
-                  'min-h-11 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:min-h-9',
+                  'min-h-11 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:min-h-8',
                   selected ? 'border-oak-primary bg-oak-primary/10 text-oak-primary' : 'border-border-primary bg-background-secondary text-text-secondary hover:border-oak-primary hover:text-text-primary',
                 )}
               >

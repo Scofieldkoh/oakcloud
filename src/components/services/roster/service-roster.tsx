@@ -391,17 +391,16 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
 
   return (
     <section aria-labelledby="services-roster-heading" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 id="services-roster-heading" className="text-lg font-semibold text-text-primary">Services roster</h2>
-          <p className="mt-1 text-sm text-text-secondary">Track active services across accessible companies.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             aria-expanded={columnsOpen}
             onClick={() => setColumnsOpen((open) => !open)}
-            className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary"
+            className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary sm:min-h-8"
           >
             Customize columns
           </button>
@@ -417,8 +416,8 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {columnOrder.map((column, index) => (
-              <div key={column} className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary px-2">
-                <label className="flex min-h-11 min-w-0 flex-1 self-stretch items-center gap-2 text-sm text-text-secondary">
+              <div key={column} className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary px-2 sm:min-h-8">
+                <label className="flex min-h-11 min-w-0 flex-1 self-stretch items-center gap-2 text-sm text-text-secondary sm:min-h-8">
                   <input
                     type="checkbox"
                     checked={columnVisibility[column]}
@@ -428,15 +427,15 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
                   />
                   <span className="truncate">{columnLabels[column]}</span>
                 </label>
-                <button type="button" aria-label={`Move ${columnLabels[column]} column up`} disabled={index === 0} onClick={() => moveColumn(column, -1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↑</button>
-                <button type="button" aria-label={`Move ${columnLabels[column]} column down`} disabled={index === columnOrder.length - 1} onClick={() => moveColumn(column, 1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↓</button>
+                <button type="button" aria-label={`Move ${columnLabels[column]} column up`} disabled={index === 0} onClick={() => moveColumn(column, -1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↑</button>
+                <button type="button" aria-label={`Move ${columnLabels[column]} column down`} disabled={index === columnOrder.length - 1} onClick={() => moveColumn(column, 1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↓</button>
               </div>
             ))}
           </div>
         </div>
       ) : null}
 
-      <div role="group" aria-label="Service filters" className="space-y-3 rounded-xl border border-border-primary bg-background-secondary p-3 sm:p-4">
+      <div role="group" aria-label="Service filters" className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-1 text-xs font-medium uppercase tracking-wide text-text-muted">Status</span>
           {STATUS_VALUES.map((status) => (
@@ -445,7 +444,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
               type="button"
               aria-pressed={statuses.includes(status)}
               onClick={() => toggleStatus(status)}
-              className={statuses.includes(status) ? 'min-h-11 rounded-full bg-oak-primary px-3 text-xs font-medium text-white' : 'min-h-11 rounded-full border border-border-primary px-3 text-xs font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary'}
+              className={statuses.includes(status) ? 'min-h-11 rounded-full bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-full border border-border-primary px-3 text-xs font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary sm:min-h-8'}
             >
               {status.charAt(0) + status.slice(1).toLowerCase()}
             </button>
@@ -455,7 +454,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
             type="button"
             aria-pressed={archived}
             onClick={() => replaceUrl({ archived: String(!archived), page: '1' })}
-            className={archived ? 'min-h-11 rounded-full bg-background-tertiary px-3 text-xs font-medium text-text-primary' : 'min-h-11 rounded-full border border-border-primary px-3 text-xs font-medium text-text-secondary hover:text-text-primary'}
+            className={archived ? 'min-h-11 rounded-full bg-background-tertiary px-3 text-xs font-medium text-text-primary sm:min-h-8' : 'min-h-11 rounded-full border border-border-primary px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}
           >
             Archived
           </button>
@@ -468,19 +467,19 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
                 type="button"
                 aria-label="Retry family filters"
                 onClick={() => familyFacets.refetch()}
-                className="min-h-11 rounded-md border border-current px-3 text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10"
+                className="min-h-11 rounded-md border border-current px-3 text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10 sm:min-h-8"
               >
                 Retry
               </button>
             </div>
           </Alert>
         ) : null}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className="relative flex min-h-11 min-w-0 flex-1 items-center rounded-lg border border-border-primary bg-background-secondary/50 focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/20">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <label className="relative flex min-h-11 min-w-0 flex-1 items-center rounded-lg border border-border-primary bg-background-secondary/50 focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/20 sm:min-h-8">
             <Search className="ml-3 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
             <span className="sr-only">Search services</span>
-            <input type="search" aria-label="Search services" value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Search companies or services" className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm text-text-primary outline-none placeholder:text-text-muted" />
-            {query ? <button type="button" aria-label="Clear search" onClick={() => updateQuery('')} className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded text-text-muted hover:bg-background-tertiary"><X className="h-4 w-4" aria-hidden="true" /></button> : null}
+            <input type="search" aria-label="Search services" value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Search companies or services" className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm text-text-primary outline-none placeholder:text-text-muted sm:h-8" />
+            {query ? <button type="button" aria-label="Clear search" onClick={() => updateQuery('')} className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded text-text-muted hover:bg-background-tertiary sm:min-h-8 sm:min-w-8"><X className="h-4 w-4" aria-hidden="true" /></button> : null}
           </label>
           <span className="text-xs text-text-secondary">{total.toLocaleString()} services</span>
         </div>

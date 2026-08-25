@@ -48,13 +48,13 @@ export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = tru
   };
 
   return (
-    <main className="space-y-5 p-4 sm:space-y-6 sm:p-6">
-      <header className="space-y-1">
+    <main className="ml-4 p-4 pl-0 sm:ml-6 sm:p-6 sm:pl-0">
+      <header className="mb-6">
         <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">Services</h1>
-        <p className="text-sm text-text-secondary">Manage cross-company services, deadlines, and billing tracking.</p>
+        <p className="mt-1 text-sm text-text-secondary">Manage cross-company services, deadlines, and billing tracking.</p>
       </header>
 
-      <div role="tablist" aria-label="Services workspace sections" className="flex items-center overflow-x-auto border-b border-border-primary">
+      <div role="tablist" aria-label="Services workspace sections" className="mb-6 flex items-center overflow-x-auto border-b border-border-primary">
         {(['services', 'deadlines', 'billing'] as const).map((tabId) => (
           <button
             key={tabId}
@@ -62,7 +62,7 @@ export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = tru
             role="tab"
             aria-selected={tab === tabId}
             onClick={() => selectTab(tabId)}
-            className={`min-h-11 shrink-0 border-b-2 px-4 py-2.5 text-sm transition-colors sm:min-h-0 ${tab === tabId ? 'border-oak-light text-text-primary' : 'border-transparent text-text-muted hover:text-text-primary'}`}
+            className={`min-h-11 shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors sm:min-h-8 ${tab === tabId ? 'border-oak-primary text-text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
           >
             {tabId.charAt(0).toUpperCase() + tabId.slice(1)}
           </button>

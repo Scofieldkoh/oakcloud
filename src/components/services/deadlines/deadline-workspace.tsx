@@ -459,14 +459,13 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   return (
     <section aria-label="Deadline workspace" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-text-primary">Deadlines</h2>
-          <p className="text-sm text-text-secondary">Monitor statutory, client, and internal deadlines across accessible companies.</p>
         </div>
-        <div role="group" aria-label="Deadline view" className="inline-flex min-h-11 items-center rounded-xl border border-border-primary bg-background-secondary p-1">
-          <button type="button" aria-pressed={urlState.view === 'TABLE'} onClick={() => switchView('TABLE')} className={urlState.view === 'TABLE' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary'}>Table view</button>
-          <button type="button" aria-pressed={urlState.view === 'CALENDAR'} onClick={() => switchView('CALENDAR')} className={urlState.view === 'CALENDAR' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary'}>Calendar view</button>
+        <div role="group" aria-label="Deadline view" className="inline-flex min-h-11 items-center rounded-xl border border-border-primary bg-background-secondary p-1 sm:min-h-8">
+          <button type="button" aria-pressed={urlState.view === 'TABLE'} onClick={() => switchView('TABLE')} className={urlState.view === 'TABLE' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Table view</button>
+          <button type="button" aria-pressed={urlState.view === 'CALENDAR'} onClick={() => switchView('CALENDAR')} className={urlState.view === 'CALENDAR' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Calendar view</button>
         </div>
       </div>
 
@@ -485,14 +484,14 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         <Alert variant="error" title="Family filters unavailable">
           <div className="flex flex-wrap items-center gap-2">
             <span>{familyFacets.error instanceof Error ? familyFacets.error.message : 'Unable to load family filters.'}</span>
-            <button type="button" aria-label="Retry family filters" onClick={() => familyFacets.refetch()} className="min-h-11 rounded-md border border-current px-3 text-sm font-medium">Retry</button>
+            <button type="button" aria-label="Retry family filters" onClick={() => familyFacets.refetch()} className="min-h-11 rounded-md border border-current px-3 text-sm font-medium sm:min-h-8">Retry</button>
           </div>
         </Alert>
       ) : null}
 
       {activeBadges.length > 0 ? (
         <div aria-label="Active deadline filters" className="flex flex-wrap items-center gap-2">
-          {activeBadges.map((badge) => <button key={badge.key} type="button" onClick={badge.onRemove} className="inline-flex min-h-11 items-center rounded-full bg-oak-primary/10 px-3 text-xs text-oak-light hover:bg-oak-primary/20" aria-label={`Remove ${badge.label}`}>{badge.label}<span aria-hidden="true" className="ml-1">×</span></button>)}
+          {activeBadges.map((badge) => <button key={badge.key} type="button" onClick={badge.onRemove} className="inline-flex min-h-11 items-center rounded-full bg-oak-primary/10 px-3 text-xs text-oak-light hover:bg-oak-primary/20 sm:min-h-8" aria-label={`Remove ${badge.label}`}>{badge.label}<span aria-hidden="true" className="ml-1">×</span></button>)}
         </div>
       ) : null}
 
@@ -500,7 +499,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         <Alert variant="error" title="Unable to load deadlines">
           <div className="flex flex-wrap items-center gap-2">
             <span>{deadlines.error instanceof Error ? deadlines.error.message : 'Please retry the deadline query.'}</span>
-            <button type="button" onClick={() => deadlines.refetch()} className="min-h-11 rounded-md border border-current px-3 text-sm font-medium">Retry</button>
+            <button type="button" onClick={() => deadlines.refetch()} className="min-h-11 rounded-md border border-current px-3 text-sm font-medium sm:min-h-8">Retry</button>
           </div>
         </Alert>
       ) : null}
@@ -510,8 +509,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
       {urlState.view === 'TABLE' ? (
         <>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" aria-expanded={columnsOpen} onClick={() => setColumnsOpen((open) => !open)} className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary">Customize columns</button>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <span className="sr-only">Deadline table actions</span>
+            <button type="button" aria-expanded={columnsOpen} onClick={() => setColumnsOpen((open) => !open)} className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary sm:min-h-8">Customize columns</button>
           </div>
           {columnsOpen ? (
             <div role="dialog" aria-label="Customize columns" className="rounded-xl border border-border-primary bg-background-secondary p-3 sm:p-4">
@@ -519,9 +519,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {columnOrder.map((column, index) => (
                   <div key={column} className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary px-2">
-                    <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-sm text-text-secondary"><input type="checkbox" checked={columnVisibility[column]} disabled={column === 'actions'} aria-label={`Show ${({ dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' } as Record<DeadlineTableColumnId, string>)[column]} column`} onChange={() => { if (column === 'actions') return; const next = { ...columnVisibility, [column]: !columnVisibility[column] }; setColumnVisibility(next); persistPreference({ tableColumnVisibility: next }); }} /><span className="truncate">{({ dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' } as Record<DeadlineTableColumnId, string>)[column]}</span></label>
-                    <button type="button" aria-label={`Move ${column} column up`} disabled={index === 0} onClick={() => { if (index === 0) return; const next = [...columnOrder]; [next[index - 1], next[index]] = [next[index]!, next[index - 1]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↑</button>
-                    <button type="button" aria-label={`Move ${column} column down`} disabled={index === columnOrder.length - 1} onClick={() => { if (index === columnOrder.length - 1) return; const next = [...columnOrder]; [next[index], next[index + 1]] = [next[index + 1]!, next[index]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40">↓</button>
+                    <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-sm text-text-secondary sm:min-h-8"><input type="checkbox" checked={columnVisibility[column]} disabled={column === 'actions'} aria-label={`Show ${({ dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' } as Record<DeadlineTableColumnId, string>)[column]} column`} onChange={() => { if (column === 'actions') return; const next = { ...columnVisibility, [column]: !columnVisibility[column] }; setColumnVisibility(next); persistPreference({ tableColumnVisibility: next }); }} /><span className="truncate">{({ dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' } as Record<DeadlineTableColumnId, string>)[column]}</span></label>
+                    <button type="button" aria-label={`Move ${column} column up`} disabled={index === 0} onClick={() => { if (index === 0) return; const next = [...columnOrder]; [next[index - 1], next[index]] = [next[index]!, next[index - 1]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↑</button>
+                    <button type="button" aria-label={`Move ${column} column down`} disabled={index === columnOrder.length - 1} onClick={() => { if (index === columnOrder.length - 1) return; const next = [...columnOrder]; [next[index], next[index + 1]] = [next[index + 1]!, next[index]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↓</button>
                   </div>
                 ))}
               </div>

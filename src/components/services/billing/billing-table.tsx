@@ -123,9 +123,9 @@ function SortableHeader({ column, sortBy, sortOrder, onSort, onResize }: { colum
   const field = sortableColumns[column];
   const active = field === sortBy;
   return (
-    <th scope="col" aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-3 py-3 text-left text-xs font-medium text-text-secondary">
+    <th scope="col" aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-4 py-2.5 text-left text-xs font-medium text-text-secondary">
       {field && onSort ? (
-        <button type="button" onClick={() => onSort(field)} aria-label={active ? `Sort by ${billingColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${billingColumnLabels[column]}`} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-0">
+        <button type="button" onClick={() => onSort(field)} aria-label={active ? `Sort by ${billingColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${billingColumnLabels[column]}`} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-8">
           <span>{billingColumnLabels[column]}</span>
           {active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}
         </button>
@@ -152,7 +152,7 @@ function DebouncedInlineFilter({ label, value, filterKey, onChange }: { label: s
     return () => window.clearTimeout(timeout);
   }, [draft, filterKey, value]);
 
-  return <input type="search" aria-label={`Filter ${label}`} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="All" className="h-9 w-full min-w-0 rounded-lg border border-border-primary bg-background-secondary/50 px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20" />;
+  return <input type="search" aria-label={`Filter ${label}`} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="All" className="input input-sm w-full min-w-0 px-2 text-xs" />;
 }
 
 function InlineFilterRow({ columns, filters, onChange }: { columns: BillingColumnId[]; filters: BillingInlineFilters; onChange?: BillingTableProps['onInlineFilterChange'] }) {
@@ -161,7 +161,7 @@ function InlineFilterRow({ columns, filters, onChange }: { columns: BillingColum
   return (
     <tr className="border-b border-border-primary bg-background-secondary/60">
       {columns.map((column) => (
-        <th key={column} scope="row" className="px-3 py-2">
+        <th key={column} scope="row" className="px-4 py-2">
           {column === 'company' ? filter('company', filters.company, 'company') : null}
           {column === 'familyService' ? filter('family or service', filters.familyService, 'familyService') : null}
           {column === 'feeLinePeriod' ? filter('fee line', filters.feeLinePeriod, 'feeLinePeriod') : null}
@@ -175,16 +175,16 @@ function InlineFilterRow({ columns, filters, onChange }: { columns: BillingColum
 function Cell({ item, column, canEdit, onEdit }: { item: BillingOccurrenceDto; column: BillingColumnId; canEdit: boolean; onEdit?: (occurrence: BillingOccurrenceDto) => void }) {
   const amount = formatCurrency(item.operativeAmount, item.operativeCurrency);
   switch (column) {
-    case 'expectedDate': return <td className="px-3 py-3 align-top text-sm text-text-secondary">{displayDate(item.operativeExpectedDate)}</td>;
-    case 'timing': return <td className="px-3 py-3 align-top"><span className={cn('badge', statusClass(item.status, item.timingState))}>{timingLabel(item)}</span></td>;
-    case 'company': return <td className="max-w-0 px-3 py-3 align-top"><CompanyCell item={item} /></td>;
-    case 'familyService': return <td className="max-w-0 px-3 py-3 align-top"><FamilyServiceCell item={item} /></td>;
-    case 'feeLinePeriod': return <td className="max-w-0 px-3 py-3 align-top"><FeeLinePeriodCell item={item} /></td>;
-    case 'status': return <td className="px-3 py-3 align-top"><span className={cn('badge', statusClass(item.status, item.timingState))}>{statusLabel(item.status)}</span></td>;
-    case 'amount': return <td className="px-3 py-3 align-top text-sm text-text-primary">{amount}</td>;
-    case 'billedDate': return <td className="px-3 py-3 align-top text-sm text-text-secondary">{displayDate(item.billedDate)}</td>;
-    case 'reference': return <td className="max-w-0 px-3 py-3 align-top text-sm text-text-secondary"><span className="block truncate" title={item.externalReference ?? undefined}>{item.externalReference || '—'}</span></td>;
-    case 'actions': return <td className="px-3 py-3 align-top"><Button type="button" variant="ghost" size="xs" iconOnly aria-label={`Edit tracking for ${item.company.displayLabel}`} onClick={() => onEdit?.(item)} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
+    case 'expectedDate': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{displayDate(item.operativeExpectedDate)}</td>;
+    case 'timing': return <td className="px-4 py-3 align-top"><span className={cn('badge', statusClass(item.status, item.timingState))}>{timingLabel(item)}</span></td>;
+    case 'company': return <td className="max-w-0 px-4 py-3 align-top"><CompanyCell item={item} /></td>;
+    case 'familyService': return <td className="max-w-0 px-4 py-3 align-top"><FamilyServiceCell item={item} /></td>;
+    case 'feeLinePeriod': return <td className="max-w-0 px-4 py-3 align-top"><FeeLinePeriodCell item={item} /></td>;
+    case 'status': return <td className="px-4 py-3 align-top"><span className={cn('badge', statusClass(item.status, item.timingState))}>{statusLabel(item.status)}</span></td>;
+    case 'amount': return <td className="px-4 py-3 align-top text-sm text-text-primary">{amount}</td>;
+    case 'billedDate': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{displayDate(item.billedDate)}</td>;
+    case 'reference': return <td className="max-w-0 px-4 py-3 align-top text-sm text-text-secondary"><span className="block truncate" title={item.externalReference ?? undefined}>{item.externalReference || '—'}</span></td>;
+    case 'actions': return <td className="px-4 py-3 align-top"><Button type="button" variant="ghost" size="sm" iconOnly aria-label={`Edit tracking for ${item.company.displayLabel}`} onClick={() => onEdit?.(item)} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
   }
 }
 
@@ -194,7 +194,7 @@ function MobileBillingCard({ item, canEdit, onEdit }: { item: BillingOccurrenceD
       title={<CompanyCell item={item} />}
       subtitle={<span title={item.service.name}>{item.service.name}</span>}
       badge={<span className={cn('badge', statusClass(item.status, item.timingState))}>{item.status === 'OPEN' ? timingLabel(item) : statusLabel(item.status)}</span>}
-      actions={<Button type="button" variant="ghost" size="xs" iconOnly aria-label={`Edit tracking for ${item.company.displayLabel}`} onClick={() => onEdit?.(item)} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} />}
+      actions={<Button type="button" variant="ghost" size="sm" iconOnly className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" aria-label={`Edit tracking for ${item.company.displayLabel}`} onClick={() => onEdit?.(item)} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} />}
       details={(
         <CardDetailsGrid>
           <CardDetailItem label="Family" value={item.family.name || item.service.familyName} />
@@ -239,8 +239,9 @@ export function BillingTable({ items, isFetching = false, canEdit = true, column
       <div role="region" className="space-y-3 md:hidden" aria-label="Billing occurrence cards">
         {items.map((item) => <MobileBillingCard key={item.id} item={item} canEdit={canEdit} onEdit={onEdit} />)}
       </div>
-      <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
-        <table className="min-w-[1480px] w-full table-fixed border-collapse" aria-label="Billing occurrences table">
+      <div className={cn('table-container hidden overflow-hidden md:block', isFetching && 'opacity-60')}>
+        <div className="overflow-x-auto">
+          <table className="min-w-[1480px] w-full table-fixed border-collapse" aria-label="Billing occurrences table">
           <colgroup>{visibleColumns.map((column) => <col key={column} style={{ width: `${columnWidths[column] ?? defaultBillingColumnWidths[column]}px` }} />)}</colgroup>
           <thead>
             <InlineFilterRow columns={visibleColumns} filters={inlineFilters} onChange={onInlineFilterChange} />
@@ -251,7 +252,8 @@ export function BillingTable({ items, isFetching = false, canEdit = true, column
           <tbody>
             {items.map((item, index) => <tr key={item.id} className={cn('border-b border-border-primary transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')}>{visibleColumns.map((column) => <Cell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} />)}</tr>)}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </>
   );

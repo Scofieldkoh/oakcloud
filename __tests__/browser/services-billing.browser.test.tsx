@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import type { BillingOccurrenceDto } from '@/services/billing';
+import '@/app/globals.css';
 
 const hooks = vi.hoisted(() => ({
   useBillingOccurrences: vi.fn(),
@@ -133,7 +134,21 @@ describe('Services billing responsive browser surface', () => {
     await expect.element(screen.getByRole('tab', { name: 'Billing' })).toHaveAttribute('aria-selected', 'true');
     await expect.element(screen.getByRole('heading', { name: 'Manual billing tracking' })).toBeVisible();
     await expect.element(screen.getByRole('table', { name: 'Billing occurrences table' })).toBeVisible();
-    await expect.element(screen.getAllByText('Fieldstone')[0]).toBeVisible();
+    const main = screen.getByRole('main');
+    const header = screen.getByRole('heading', { name: 'Services' }).closest('header');
+    const tablist = screen.getByRole('tablist', { name: 'Services workspace sections' });
+    if (!header) throw new Error('Services header missing');
+    const mainRect = main.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    const tablistRect = tablist.getBoundingClientRect();
+    expect(Math.round(mainRect.left)).toBe(24);
+    expect(Math.round(tablistRect.top - headerRect.bottom)).toBe(24);
+    expect(screen.getByRole('tab', { name: 'Billing' }).getBoundingClientRect().height)
+      .toBeGreaterThanOrEqual(32);
+    expect(screen.getByRole('tab', { name: 'Billing' }).getBoundingClientRect().height)
+      .toBeLessThanOrEqual(40);
+    const billingTable = screen.getByRole('table', { name: 'Billing occurrences table' });
+    await expect.element(within(billingTable).getByText('Fieldstone')).toBeVisible();
     const reconciliation = screen.getByRole('button', { name: /Billing reconciliation · 1 issue · 1 error/ });
     expect(reconciliation).toHaveAttribute('aria-expanded', 'false');
     await reconciliation.click();
@@ -177,8 +192,12 @@ describe('Services billing responsive browser surface', () => {
 
     await expect.element(screen.getByRole('searchbox', { name: 'Search company or fee line' })).toBeVisible();
     await expect.element(screen.getByRole('region', { name: 'Billing occurrence cards' })).toBeVisible();
-    await expect.element(screen.getByText('Monthly payroll fee')).toBeVisible();
-    expect(screen.getByRole('main')).toHaveClass('space-y-5');
+    const billingCards = screen.getByRole('region', { name: 'Billing occurrence cards' });
+    await expect.element(within(billingCards).getByText(/Monthly payroll fee/)).toBeVisible();
+    expect(Math.round(screen.getByRole('main').getBoundingClientRect().left)).toBe(16);
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    }
     expect(screen.getByRole('button', { name: /Billing reconciliation/ })).toHaveAttribute('aria-expanded', 'false');
   });
 });

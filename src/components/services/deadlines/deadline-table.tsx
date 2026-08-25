@@ -201,7 +201,7 @@ function DeadlineActions({ occurrence, canEdit, isPending, mutationError, onUpda
 
   return (
     <div className="relative flex items-center justify-end">
-      <button ref={triggerRef} type="button" aria-label={`Actions for ${occurrence.company.displayLabel} ${milestoneLabel(occurrence)}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary">
+      <button ref={triggerRef} type="button" aria-label={`Actions for ${occurrence.company.displayLabel} ${milestoneLabel(occurrence)}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary sm:min-h-8 sm:min-w-8">
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
       {open ? (
@@ -262,8 +262,8 @@ function SortableHeader({ columnId, sortBy, sortOrder, onSort, onResize, onResiz
   const active = field === sortBy;
   const label = deadlineColumnLabels[columnId];
   return (
-    <th scope="col" aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-4 py-3 text-left text-xs font-medium text-text-secondary">
-      {field && onSort ? <button type="button" aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`} onClick={() => onSort(field)} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary"><span>{label}</span>{active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}</button> : <span>{label}</span>}
+    <th scope="col" aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-4 py-2.5 text-left text-xs font-medium text-text-secondary">
+      {field && onSort ? <button type="button" aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`} onClick={() => onSort(field)} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-8"><span>{label}</span>{active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}</button> : <span>{label}</span>}
       {columnId !== 'actions' ? <button type="button" aria-label={`Resize ${label} column`} onPointerDown={(event) => onResize(columnId, event)} onKeyDown={(event) => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); onResizeKeyboard(columnId, event.key === 'ArrowRight' ? 16 : -16); } }} className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none" /> : null}
     </th>
   );
@@ -339,12 +339,14 @@ export function DeadlineTable({
           <div className="space-y-3 md:hidden" aria-label="Deadline cards">
             {items.map((occurrence) => <MobileDeadlineCard key={occurrence.id} occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />)}
           </div>
-          <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
-            <table className="min-w-[1500px] w-full table-fixed border-collapse" aria-label="Deadline occurrences table">
+          <div className={cn('table-container hidden overflow-hidden md:block', isFetching && 'opacity-60')}>
+            <div className="overflow-x-auto">
+              <table className="min-w-[1500px] w-full table-fixed border-collapse" aria-label="Deadline occurrences table">
               <colgroup>{visibleColumns.map((column) => <col key={column} style={{ width: `${columnWidths[column] ?? defaultDeadlineColumnWidths[column]}px` }} />)}</colgroup>
               <thead><tr className="border-b border-border-primary bg-background-tertiary/70">{visibleColumns.map((column) => <SortableHeader key={column} columnId={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} onResizeKeyboard={resizeColumnByKeyboard} />)}</tr></thead>
               <tbody>{items.map((occurrence, index) => <tr key={occurrence.id} className={cn('border-b border-border-primary border-l-4 transition-colors hover:bg-background-tertiary/60', index % 2 === 0 && 'bg-oak-row-alt')} style={{ borderLeftColor: occurrence.family.displayColor ?? '#58736a' }}>{visibleColumns.map((column) => <DesktopCell key={column} occurrence={occurrence} column={column} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} />)}</tr>)}</tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </>
       ) : null}

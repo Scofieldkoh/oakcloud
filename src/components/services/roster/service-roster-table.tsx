@@ -152,7 +152,7 @@ function BillingIndicator({ item }: { item: ServiceRosterItem }) {
       <Link
         href={`/services?tab=billing&serviceId=${encodeURIComponent(item.id)}`}
         aria-label={`Billing warning for ${item.serviceName}`}
-        className="inline-flex min-h-11 items-center gap-1 text-status-warning hover:underline sm:min-h-0"
+        className="inline-flex min-h-11 items-center gap-1 text-status-warning hover:underline sm:min-h-8"
         title={item.billingCoverageIssue.type.replaceAll('_', ' ').toLowerCase()}
       >
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -178,7 +178,7 @@ function ServiceActions({ item, canEdit, onEdit, onTrigger }: { item: ServiceRos
   return (
     <Dropdown>
       <DropdownTrigger asChild aria-label={`Actions for ${item.serviceName}`}>
-        <button type="button" className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary">
+        <button type="button" className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-tertiary hover:text-text-primary sm:min-h-8 sm:min-w-8">
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
         </button>
       </DropdownTrigger>
@@ -215,13 +215,13 @@ function SortableHeader({
   const active = field === sortBy;
   const label = columnLabels[columnId];
   return (
-    <th className="relative px-4 py-3 text-left text-xs font-medium text-text-secondary" scope="col">
+    <th className="relative px-4 py-2.5 text-left text-xs font-medium text-text-secondary" scope="col">
       {field ? (
         <button
           type="button"
           aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`}
           onClick={() => onSort(field)}
-          className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary"
+          className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-8"
         >
           <span>{label}</span>
           {active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}
@@ -247,7 +247,7 @@ function InlineFilterRow({ columns, filters, onChange }: { columns: ServiceRoste
       value={value ?? ''}
       onChange={(event) => onChange({ [key]: event.target.value || undefined })}
       placeholder="All"
-      className="h-9 w-full min-w-0 rounded-lg border border-border-primary bg-background-secondary/50 px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20"
+      className="input input-sm w-full min-w-0 px-2 text-xs"
     />
   );
 
@@ -351,8 +351,9 @@ export function ServiceRosterTable({
       <div className="space-y-3 md:hidden" aria-label="Services roster cards">
         {items.map((item) => <MobileRosterCard key={item.id} item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />)}
       </div>
-      <div className={cn('hidden overflow-x-auto rounded-xl border border-border-primary bg-background-secondary md:block', isFetching && 'opacity-70')}>
-        <table className="min-w-[1280px] w-full table-fixed border-collapse" aria-label="Services roster table">
+      <div className={cn('table-container hidden overflow-hidden md:block', isFetching && 'opacity-60')}>
+        <div className="overflow-x-auto">
+          <table className="min-w-[1280px] w-full table-fixed border-collapse" aria-label="Services roster table">
           <colgroup>
             {visibleColumns.map((columnId) => <col key={columnId} style={{ width: `${columnWidths[columnId] ?? defaultWidths[columnId]}px` }} />)}
           </colgroup>
@@ -367,7 +368,8 @@ export function ServiceRosterTable({
           <tbody>
             {items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} columns={visibleColumns} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />)}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </>
   );

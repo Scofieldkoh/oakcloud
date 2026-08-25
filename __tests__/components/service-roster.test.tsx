@@ -296,7 +296,7 @@ describe('ServiceRoster', () => {
     expect(screen.getByRole('combobox', { name: 'Per page:' })).toHaveValue('50');
     expect(screen.queryByRole('option', { name: '200' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
-    expect(screen.getByRole('button', { name: 'Customize columns' })).toHaveClass('min-h-11');
+    expect(screen.getByRole('button', { name: 'Customize columns' })).toHaveClass('min-h-11', 'sm:min-h-8');
     const familyCheckbox = screen.getByRole('checkbox', { name: 'Show Family column' });
     expect(familyCheckbox).not.toBeChecked();
     expect(familyCheckbox.closest('label')).toHaveClass('self-stretch', 'min-h-11');

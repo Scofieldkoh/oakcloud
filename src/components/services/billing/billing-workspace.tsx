@@ -261,10 +261,9 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
   };
 
   return (
-    <section aria-labelledby="billing-tracking-heading" className="space-y-6">
-      <header className="space-y-1">
+    <section aria-labelledby="billing-tracking-heading" className="space-y-4">
+      <header>
         <h2 id="billing-tracking-heading" className="text-lg font-semibold text-text-primary">Manual billing tracking</h2>
-        <p className="text-sm text-text-secondary">Record expected billing, external references, and tracking notes for accessible services.</p>
       </header>
 
       <BillingCoveragePanel />
@@ -312,8 +311,8 @@ interface BillingTableToolbarProps {
 function BillingTableToolbar({ preference, onToggleColumn, onMoveColumn }: BillingTableToolbarProps) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      <button type="button" className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs font-medium text-text-secondary transition-colors hover:border-oak-primary hover:text-text-primary sm:min-h-9" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <button type="button" className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs font-medium text-text-secondary transition-colors hover:border-oak-primary hover:text-text-primary sm:min-h-8" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
         Columns · {Object.values(preference.columnVisibility).filter(Boolean).length}
       </button>
       {open ? (
@@ -321,11 +320,11 @@ function BillingTableToolbar({ preference, onToggleColumn, onMoveColumn }: Billi
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Customize columns</p>
           <div className="grid gap-1 sm:grid-cols-2">
             {preference.columnOrder.map((column) => (
-              <label key={column} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs text-text-secondary hover:bg-background-tertiary sm:min-h-9">
+              <label key={column} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs text-text-secondary hover:bg-background-tertiary sm:min-h-8">
                 <input type="checkbox" checked={preference.columnVisibility[column] !== false} onChange={() => onToggleColumn(column)} />
                 <span className="truncate">{column}</span>
-                <button type="button" aria-label={`Move ${column} column up`} className="ml-auto px-1 text-text-muted hover:text-text-primary" onClick={() => onMoveColumn(column, -1)}>↑</button>
-                <button type="button" aria-label={`Move ${column} column down`} className="px-1 text-text-muted hover:text-text-primary" onClick={() => onMoveColumn(column, 1)}>↓</button>
+                <button type="button" aria-label={`Move ${column} column up`} className="ml-auto min-h-11 min-w-11 px-1 text-text-muted hover:text-text-primary sm:min-h-8 sm:min-w-8" onClick={() => onMoveColumn(column, -1)}>↑</button>
+                <button type="button" aria-label={`Move ${column} column down`} className="min-h-11 min-w-11 px-1 text-text-muted hover:text-text-primary sm:min-h-8 sm:min-w-8" onClick={() => onMoveColumn(column, 1)}>↓</button>
               </label>
             ))}
           </div>
