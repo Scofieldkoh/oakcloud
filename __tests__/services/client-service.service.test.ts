@@ -220,6 +220,53 @@ describe('client service service', () => {
     expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
   });
 
+  it('treats formatting-equivalent decimal fee amounts as a no-op', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue(record);
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      feeLines: [{
+        id: 'fee-1',
+        description: 'Annual fee',
+        amount: '500',
+        currency: 'SGD',
+        billingFrequency: 'ANNUALLY',
+        billingStartDate: '2026-07-30',
+        displayOrder: 0,
+      }],
+    }, actor);
+
+    expect(prismaMock.clientServiceFeeLine.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.clientServiceFeeLine.createMany).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
+  it('persists, audits, and reconciles a display-order-only fee change', async () => {
+    prismaMock.clientService.findFirst
+      .mockResolvedValueOnce(record)
+      .mockResolvedValueOnce({ ...record, feeLines: [{ ...record.feeLines[0], displayOrder: 1 }] });
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      feeLines: [{
+        id: 'fee-1',
+        description: 'Annual fee',
+        amount: '500',
+        currency: 'SGD',
+        billingFrequency: 'ANNUALLY',
+        billingStartDate: '2026-07-30',
+        displayOrder: 1,
+      }],
+    }, actor);
+
+    expect(prismaMock.clientServiceFeeLine.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ displayOrder: 1 }),
+    }));
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'UPDATE' }), prismaMock);
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).toHaveBeenCalled();
+  });
+
   it('enqueues fee-only reconciliation in the same transaction without a deadline preview', async () => {
     prismaMock.clientService.findFirst
       .mockResolvedValueOnce(record)

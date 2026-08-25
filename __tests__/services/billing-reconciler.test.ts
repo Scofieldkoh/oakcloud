@@ -201,6 +201,61 @@ describe('reconcileClientServiceBilling', () => {
     expect(mocks.billingOccurrence.createMany).not.toHaveBeenCalled();
   });
 
+  it('preserves a future occurrence whose positive offset crosses dense weekday holidays', async () => {
+    const denseHolidays = new Set<string>();
+    let cursor = new Date('2025-01-02T00:00:00.000Z');
+    while (denseHolidays.size < 100) {
+      const day = cursor.getUTCDay();
+      if (day !== 0 && day !== 6) denseHolidays.add(cursor.toISOString().slice(0, 10));
+      cursor = new Date(cursor.getTime() + 86_400_000);
+    }
+    const generation = `billing-v1-${hashConfiguration({ feeLineId: 'fee-1' })}`;
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      feeLines: [feeLine({
+        scheduleConfig: {
+          schemaVersion: 1,
+          cadence: 'MONTHLY',
+          startDate: '2025-01-01',
+          customInterval: { unit: 'MONTH', count: 1 },
+          scheduleEntries: [{
+            key: 'dense-positive',
+            label: 'Dense positive',
+            expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: 1, unit: 'BUSINESS_DAY' },
+            businessDayAdjustment: 'NONE',
+          }],
+        },
+        billingStartDate: new Date('2025-01-01T00:00:00.000Z'),
+      })],
+      companyId: 'company-1',
+    }));
+    mocks.businessCalendar.findFirst.mockResolvedValue({
+      id: 'dense-calendar',
+      timeZone: 'Asia/Singapore',
+      revision: 1,
+      weekendDays: [0, 6],
+      holidays: [...denseHolidays],
+    });
+    mocks.billingOccurrence.findMany.mockResolvedValue([occurrence({
+      billingPeriodKey: '2025-01',
+      scheduleEntryKey: 'dense-positive',
+      generationKey: generation,
+      calculatedExpectedDate: new Date('2025-05-22T00:00:00.000Z'),
+      operativeExpectedDate: new Date('2025-05-22T00:00:00.000Z'),
+    })]);
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      today: '2025-05-22',
+      horizonEnd: '2025-05-22',
+    });
+
+    expect(result.cancelled).toBe(0);
+    expect(mocks.billingOccurrence.updateMany).not.toHaveBeenCalled();
+    expect(mocks.billingOccurrence.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.not.arrayContaining([expect.objectContaining({ billingPeriodKey: '2025-01' })]),
+    }));
+  });
+
   it.each([
     ['PAUSED', null],
     ['ENDED', null],

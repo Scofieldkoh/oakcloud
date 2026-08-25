@@ -206,18 +206,21 @@ function dayDifference(from: DateOnly, to: DateOnly): number {
 }
 
 function businessDayMovementBound(offset: number, calendar: BillingScheduleEvaluationInput['calendar']): number {
-  // The shared business-day engine accepts at most MAX_SEARCH_DAYS of
-  // deterministic movement. Include the configured calendar's finite holiday
-  // set and the worst possible weekend density when deriving the period
-  // lookaround; this keeps the search bounded without assuming one cadence.
+  // A seven-day block is sufficient for one required business day, one
+  // potentially blocking holiday, and one configured weekend day. Count all
+  // finite blockers before capping at the shared deterministic search bound;
+  // this remains safe for dense holiday calendars and six weekend days.
   return Math.min(
     MAX_SEARCH_DAYS,
-    Math.abs(offset) * 7 + calendar.holidays.size + calendar.weekendDays.size + 1,
+    7 * (Math.abs(offset) + calendar.holidays.size + calendar.weekendDays.size + 1),
   );
 }
 
 function businessDayAdjustmentBound(calendar: BillingScheduleEvaluationInput['calendar']): number {
-  return Math.min(MAX_SEARCH_DAYS, calendar.holidays.size + calendar.weekendDays.size + 1);
+  return Math.min(
+    MAX_SEARCH_DAYS,
+    7 * (calendar.holidays.size + calendar.weekendDays.size + 1),
+  );
 }
 
 function scheduleLookaroundDays(

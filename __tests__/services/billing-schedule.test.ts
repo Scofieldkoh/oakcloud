@@ -4,8 +4,9 @@ import {
   convertLegacyBillingSchedule,
   evaluateBillingSchedule,
 } from '@/services/billing';
+import { addBusinessDays, addCalendarDays, MAX_SEARCH_DAYS } from '@/services/service-schedule';
 import type { BillingScheduleConfigV1 } from '@/services/billing';
-import type { BusinessCalendarSnapshot } from '@/services/service-schedule';
+import type { BusinessCalendarSnapshot, DateOnly } from '@/services/service-schedule';
 
 const calendar: BusinessCalendarSnapshot = {
   id: 'sg-calendar',
@@ -21,6 +22,17 @@ const entry = (key: string, day: number, businessDayAdjustment: 'NONE' | 'PREVIO
   expression: { kind: 'DAY_OF_MONTH' as const, day },
   businessDayAdjustment,
 });
+
+function consecutiveWeekdayHolidays(start: DateOnly, count: number): Set<DateOnly> {
+  const holidays = new Set<DateOnly>();
+  let cursor = start;
+  while (holidays.size < count) {
+    const day = new Date(`${cursor}T00:00:00.000Z`).getUTCDay();
+    if (day !== 0 && day !== 6) holidays.add(cursor);
+    cursor = addCalendarDays(cursor, 1);
+  }
+  return holidays;
+}
 
 describe('legacy billing schedule conversion', () => {
   it.each([
@@ -178,6 +190,169 @@ describe('billing schedule evaluation', () => {
       calculatedExpectedDate: '2026-08-03',
       operativeExpectedDate: '2026-08-03',
     }));
+  });
+
+  it('looks back across dense weekday holidays for a positive business-day offset', () => {
+    const denseHolidayCalendar: BusinessCalendarSnapshot = {
+      ...calendar,
+      holidays: consecutiveWeekdayHolidays('2025-01-02', 100),
+    };
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2025-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'dense-positive',
+          label: 'Dense positive',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: 1, unit: 'BUSINESS_DAY' },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
+      feeLine: { id: 'fee-dense-positive', amount: '10', currency: 'SGD' },
+      calendar: denseHolidayCalendar,
+      from: '2025-05-22',
+      to: '2025-05-22',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2025-01',
+      calculatedExpectedDate: '2025-05-22',
+    }));
+  });
+
+  it('looks ahead across dense weekday holidays for a negative business-day offset', () => {
+    const denseHolidayCalendar: BusinessCalendarSnapshot = {
+      ...calendar,
+      holidays: consecutiveWeekdayHolidays('2025-01-17', 100),
+    };
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2025-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'dense-negative',
+          label: 'Dense negative',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: -1, unit: 'BUSINESS_DAY' },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
+      feeLine: { id: 'fee-dense-negative', amount: '10', currency: 'SGD' },
+      calendar: denseHolidayCalendar,
+      from: '2025-01-16',
+      to: '2025-01-16',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2025-06',
+      calculatedExpectedDate: '2025-01-16',
+    }));
+  });
+
+  it('keeps NEXT adjustment lookaround safe across dense weekday holidays', () => {
+    const denseHolidayCalendar: BusinessCalendarSnapshot = {
+      ...calendar,
+      holidays: consecutiveWeekdayHolidays('2025-02-03', 100),
+    };
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2025-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'dense-next-adjustment',
+          label: 'Dense next adjustment',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_END' }, offset: 1, unit: 'CALENDAR_DAY' },
+          businessDayAdjustment: 'NEXT',
+        }],
+      },
+      feeLine: { id: 'fee-dense-next-adjustment', amount: '10', currency: 'SGD' },
+      calendar: denseHolidayCalendar,
+      from: '2025-06-23',
+      to: '2025-06-23',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2025-01',
+      calculatedExpectedDate: '2025-02-01',
+      operativeExpectedDate: '2025-06-23',
+    }));
+  });
+
+  it('keeps PREVIOUS adjustment lookaround safe across dense weekday holidays', () => {
+    const denseHolidayCalendar: BusinessCalendarSnapshot = {
+      ...calendar,
+      holidays: consecutiveWeekdayHolidays('2025-01-17', 100),
+    };
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2025-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'dense-previous-adjustment',
+          label: 'Dense previous adjustment',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: -1, unit: 'CALENDAR_DAY' },
+          businessDayAdjustment: 'PREVIOUS',
+        }],
+      },
+      feeLine: { id: 'fee-dense-previous-adjustment', amount: '10', currency: 'SGD' },
+      calendar: denseHolidayCalendar,
+      from: '2025-01-16',
+      to: '2025-01-16',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2025-06',
+      calculatedExpectedDate: '2025-05-31',
+      operativeExpectedDate: '2025-01-16',
+    }));
+  });
+
+  it('looks past six configured weekend days without exceeding the bounded search', () => {
+    const sixWeekendCalendar: BusinessCalendarSnapshot = {
+      ...calendar,
+      weekendDays: new Set([0, 1, 2, 3, 4, 5]),
+      holidays: new Set(),
+    };
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2025-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'six-weekend-days',
+          label: 'Six weekend days',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: 1, unit: 'BUSINESS_DAY' },
+          businessDayAdjustment: 'NEXT',
+        }],
+      },
+      feeLine: { id: 'fee-six-weekend-days', amount: '10', currency: 'SGD' },
+      calendar: sixWeekendCalendar,
+      from: '2025-01-04',
+      to: '2025-01-04',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2025-01',
+      calculatedExpectedDate: '2025-01-04',
+      operativeExpectedDate: '2025-01-04',
+    }));
+  });
+
+  it('preserves the shared deterministic cap for business-day movement', () => {
+    expect(() => addBusinessDays('2025-01-01', MAX_SEARCH_DAYS + 1, calendar)).toThrow(/cannot exceed 100000 days/i);
   });
 
   it('clamps month dates and applies Singapore business-day adjustments at cadence boundaries', () => {

@@ -44,15 +44,20 @@ type BillingFeeProjectionInput = {
   customFrequencyLabel?: string | null;
   billingStartDate?: Date | string | null;
   scheduleConfig?: unknown;
+  displayOrder: number;
   isActive?: boolean;
   deletedAt?: Date | string | null;
 };
 
 function billingFeeAmount(value: unknown): string {
-  if (value && typeof value === 'object' && 'toFixed' in value && typeof value.toFixed === 'function') {
-    return value.toFixed(2);
+  const rawValue = value && typeof value === 'object' && 'toString' in value && typeof value.toString === 'function'
+    ? value.toString()
+    : String(value ?? '');
+  try {
+    return new Prisma.Decimal(rawValue).toFixed(2);
+  } catch {
+    return rawValue;
   }
-  return String(value ?? '');
 }
 
 function billingFeeStartDate(value: Date | string | null | undefined): string | null {
@@ -97,6 +102,7 @@ function canonicalBillingFeeProjection(fees: readonly BillingFeeProjectionInput[
       customFrequencyLabel: fee.customFrequencyLabel ?? null,
       billingStartDate: billingFeeStartDate(fee.billingStartDate),
       scheduleConfig: billingScheduleProjection(fee),
+      displayOrder: fee.displayOrder,
     }))
     .sort((left, right) => String(left.id).localeCompare(String(right.id)));
 }
