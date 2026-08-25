@@ -10,6 +10,7 @@ import {
   compareDateOnly,
   dayOfMonth,
   formatDateOnly,
+  MAX_SEARCH_DAYS,
   parseDateOnly,
 } from '@/services/service-schedule';
 import type { DateOnly, DateSource, ScheduleEntry } from '@/services/service-schedule';
@@ -29,6 +30,8 @@ const CADENCE_INTERVALS: Record<Exclude<BillingScheduleConfigV1['cadence'], 'ONE
   ANNUALLY: 12,
 };
 
+const MAX_RELATIVE_OFFSET_DAYS = 3660;
+
 function asDateOnly(value: Date | string): DateOnly {
   if (value instanceof Date) return formatDateOnly(value);
   parseDateOnly(value as DateOnly);
@@ -40,6 +43,10 @@ type CanonicalBillingScheduleInput = {
   billingStartDate?: DateOnly | Date | string | null;
   customFrequencyLabel?: string | null;
   scheduleConfig?: unknown;
+};
+
+export type BillingScheduleMaterializationInput = CanonicalBillingScheduleInput & {
+  isActive?: boolean;
 };
 
 /**
@@ -79,6 +86,30 @@ export function canonicalizeBillingSchedule(
     throw new ValidationError('Configured billing requires a valid start date and at least one schedule entry');
   }
   return config;
+}
+
+/** Enforce the final persisted CONFIGURED billing materialization invariant. */
+export function assertConfiguredBillingState(input: {
+  billingDisposition: string;
+  feeLines: readonly BillingScheduleMaterializationInput[];
+}): void {
+  if (input.billingDisposition !== 'CONFIGURED') return;
+  const activeFeeLines = input.feeLines.filter((fee) => fee.isActive !== false);
+  if (activeFeeLines.length === 0) {
+    throw new ValidationError('Configured billing requires at least one fee line');
+  }
+  for (const fee of activeFeeLines) {
+    canonicalizeBillingSchedule(fee, { requireMaterializable: true });
+  }
+}
+
+export function isMaterializableBillingSchedule(input: BillingScheduleMaterializationInput): boolean {
+  try {
+    canonicalizeBillingSchedule(input, { requireMaterializable: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function assertNonEmpty(value: string, name: string): void {
@@ -170,6 +201,50 @@ function monthDifference(from: DateOnly, to: DateOnly): number {
     - ((Number(from.slice(0, 4)) * 12) + Number(from.slice(5, 7)));
 }
 
+function dayDifference(from: DateOnly, to: DateOnly): number {
+  return Math.abs(Math.round((parseDateOnly(to).getTime() - parseDateOnly(from).getTime()) / 86_400_000));
+}
+
+function businessDayMovementBound(offset: number, calendar: BillingScheduleEvaluationInput['calendar']): number {
+  // The shared business-day engine accepts at most MAX_SEARCH_DAYS of
+  // deterministic movement. Include the configured calendar's finite holiday
+  // set and the worst possible weekend density when deriving the period
+  // lookaround; this keeps the search bounded without assuming one cadence.
+  return Math.min(
+    MAX_SEARCH_DAYS,
+    Math.abs(offset) * 7 + calendar.holidays.size + calendar.weekendDays.size + 1,
+  );
+}
+
+function businessDayAdjustmentBound(calendar: BillingScheduleEvaluationInput['calendar']): number {
+  return Math.min(MAX_SEARCH_DAYS, calendar.holidays.size + calendar.weekendDays.size + 1);
+}
+
+function scheduleLookaroundDays(
+  config: BillingScheduleConfigV1,
+  interval: number,
+  calendar: BillingScheduleEvaluationInput['calendar'],
+): number {
+  if (config.cadence === 'ONE_TIME') return 0;
+  const startMonth = monthStart(config.startDate!);
+  const cycleSpan = dayDifference(startMonth, addMonthsClamped(startMonth, interval));
+  let maximum = cycleSpan;
+  const adjustmentBound = businessDayAdjustmentBound(calendar);
+  for (const entry of config.scheduleEntries) {
+    const expression = entry.expression;
+    if (expression.kind === 'RELATIVE_TO_SOURCE') {
+      if (typeof expression.offset !== 'number') continue;
+      const movement = expression.unit === 'BUSINESS_DAY'
+        ? businessDayMovementBound(expression.offset, calendar)
+        : Math.min(MAX_RELATIVE_OFFSET_DAYS, Math.abs(expression.offset));
+      const sourceCycleSpan = expression.source.kind === 'CYCLE_END' ? cycleSpan : 0;
+      maximum = Math.max(maximum, movement + sourceCycleSpan);
+    }
+    if (entry.businessDayAdjustment !== 'NONE') maximum = Math.min(MAX_SEARCH_DAYS, maximum + adjustmentBound);
+  }
+  return Math.min(MAX_SEARCH_DAYS, maximum);
+}
+
 /** Convert a legacy fee-line frequency without inventing missing dates. */
 export function convertLegacyBillingSchedule(input: LegacyBillingScheduleInput): BillingScheduleConversion {
   const frequency = input.billingFrequency;
@@ -220,14 +295,17 @@ export function evaluateBillingSchedule(input: BillingScheduleEvaluationInput): 
 
   const startMonth = monthStart(config.startDate);
   const cadenceInterval = Math.max(interval, 1);
+  const lookaroundDays = scheduleLookaroundDays(config, interval, input.calendar);
+  const searchFrom = addCalendarDays(from, -lookaroundDays) as DateOnly;
+  const searchTo = addCalendarDays(to, lookaroundDays) as DateOnly;
   const firstOffset = config.cadence === 'ONE_TIME'
     ? 0
-    : Math.max(0, Math.floor(monthDifference(startMonth, monthStart(from)) / cadenceInterval) - 1);
+    : Math.max(0, Math.floor(monthDifference(startMonth, monthStart(searchFrom)) / cadenceInterval));
   let cursor = addMonthsClamped(startMonth, firstOffset * Math.max(interval, 1));
-  const periodsThroughEnd = Math.floor(monthDifference(startMonth, monthStart(to)) / cadenceInterval);
+  const periodsThroughEnd = Math.floor(monthDifference(startMonth, monthStart(searchTo)) / cadenceInterval);
   const lastCursor = addMonthsClamped(
     startMonth,
-    Math.max(0, periodsThroughEnd + 1) * cadenceInterval,
+    Math.max(0, periodsThroughEnd) * cadenceInterval,
   );
   const occurrences: EvaluatedBillingOccurrence[] = [];
   const maxPeriods = 10_000;

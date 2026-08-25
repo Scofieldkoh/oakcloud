@@ -1,6 +1,7 @@
 'use client';
 
 import { Search, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FamilyFilterChips, type ServiceFamilyFilter } from '@/components/services/shared/family-filter-chips';
 import { cn } from '@/lib/utils';
@@ -39,7 +40,25 @@ function toggle<T extends string>(values: readonly T[], value: T): T[] {
 }
 
 export function BillingFilters({ value, families, onChange, onReset }: BillingFiltersProps) {
-  const hasFilters = Boolean(value.query || value.timing.length || value.familyIds.length || value.from || value.to);
+  const [queryDraft, setQueryDraft] = useState(value.query);
+  const valueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+  valueRef.current = value;
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setQueryDraft(value.query);
+  }, [value.query]);
+
+  useEffect(() => {
+    if (queryDraft === value.query) return undefined;
+    const timeout = window.setTimeout(() => {
+      onChangeRef.current({ ...valueRef.current, query: queryDraft });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [queryDraft, value.query]);
+
+  const hasFilters = Boolean(queryDraft || value.timing.length || value.familyIds.length || value.from || value.to);
 
   return (
     <section aria-label="Billing filters" className="space-y-4">
@@ -51,8 +70,8 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
             <input
               type="search"
               aria-label="Search company or fee line"
-              value={value.query}
-              onChange={(event) => onChange({ ...value, query: event.target.value })}
+              value={queryDraft}
+              onChange={(event) => setQueryDraft(event.target.value)}
               placeholder="Search company or fee line"
               className="min-h-11 w-full rounded-lg border border-border-primary bg-background-secondary py-2 pl-9 pr-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 sm:min-h-9"
             />

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BillingOccurrenceDto } from '@/services/billing';
 
@@ -120,6 +120,8 @@ describe('BillingWorkspace', () => {
   });
 
   it('initializes filters, date range, sort, and page from URL state and writes changes back without dropping the Billing tab', () => {
+    vi.useFakeTimers();
+    try {
     navigation.searchParams = new URLSearchParams('tab=billing&query=annual&companyQuery=Example&serviceQuery=Return&feeQuery=filing&statuses=BILLED&timing=DUE&familyIds=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa&page=2&from=2026-08-01&to=2026-09-30&sortBy=amount&sortOrder=desc');
     render(<BillingWorkspace />);
 
@@ -141,11 +143,53 @@ describe('BillingWorkspace', () => {
     }));
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search company or fee line' }), { target: { value: 'payroll' } });
+    expect(navigation.replace).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(300); });
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('tab=billing'), { scroll: false });
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('query=payroll'), { scroll: false });
 
     fireEvent.change(screen.getByLabelText('Billing date from'), { target: { value: '2026-08-15' } });
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('from=2026-08-15'), { scroll: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('debounces global and inline text filters while applying date filters immediately', () => {
+    vi.useFakeTimers();
+    try {
+      hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence], total: 1, page: 1, limit: 20, totalPages: 1 }, isLoading: false, isFetching: false, error: null });
+      render(<BillingWorkspace />);
+
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Search company or fee line' }), { target: { value: 'payroll' } });
+      expect(navigation.replace).not.toHaveBeenCalled();
+      act(() => { vi.advanceTimersByTime(299); });
+      expect(navigation.replace).not.toHaveBeenCalled();
+      act(() => { vi.advanceTimersByTime(1); });
+      expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('query=payroll'), { scroll: false });
+
+      const callsAfterGlobal = navigation.replace.mock.calls.length;
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Filter company' }), { target: { value: 'Example' } });
+      expect(navigation.replace).toHaveBeenCalledTimes(callsAfterGlobal);
+      act(() => { vi.advanceTimersByTime(300); });
+      expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('companyQuery=Example'), { scroll: false });
+
+      fireEvent.change(screen.getByLabelText('Billing date from'), { target: { value: '2026-08-15' } });
+      expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('from=2026-08-15'), { scroll: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('hydrates text drafts from a changed URL without writing another URL update', () => {
+    hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence], total: 1, page: 1, limit: 20, totalPages: 1 }, isLoading: false, isFetching: false, error: null });
+    const view = render(<BillingWorkspace />);
+    navigation.searchParams = new URLSearchParams('tab=billing&query=restored&companyQuery=backward');
+    view.rerender(<BillingWorkspace />);
+
+    expect(screen.getByRole('searchbox', { name: 'Search company or fee line' })).toHaveValue('restored');
+    expect(screen.getByRole('searchbox', { name: 'Filter company' })).toHaveValue('backward');
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
   it('keeps the edit dialog open, input intact, and error visible after a failed update', () => {

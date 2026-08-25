@@ -37,12 +37,19 @@ describe('billing schedule backfill migration contract', () => {
     expect(migration.match(/fee_line\."schedule_config"\s+IS\s+NULL/gi)?.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('uses the runtime SHA-256 issue identity fields for migration-derived issues', () => {
+    expect(migration).toContain('CREATE EXTENSION IF NOT EXISTS pgcrypto');
+    expect(migration).toMatch(/digest\([\s\S]*json_build_object\([\s\S]*scheduleKey[\s\S]*'sha256'/i);
+    expect(migration).not.toMatch(/md5\(concat_ws\('\|',[\s\S]*INVALID_CUSTOM_SCHEDULE/i);
+    expect(migration).not.toMatch(/md5\(concat_ws\('\|',[\s\S]*MISSING_START_DATE/i);
+  });
+
   it('creates one pending tenant backfill request per active tenant with a stable dedupe key', () => {
     expect(migration).toContain('"service_schedule_reconciliation_requests"');
     expect(migration).toContain("'TENANT'");
     expect(migration).toContain("'BILLING_BACKFILL'");
     expect(migration).toContain("'PENDING'");
-    expect(migration).toMatch(/md5\([\s\S]*tenant[\s\S]*BILLING_BACKFILL/i);
+    expect(migration).toContain("md5(concat('BILLING_BACKFILL|', tenant.\"id\"))");
     expect(migration).toMatch(/status[^\n]*ACTIVE/i);
     expect(migration).toContain('ON CONFLICT ("dedupe_key") DO NOTHING');
   });

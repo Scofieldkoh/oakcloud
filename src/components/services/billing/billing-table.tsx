@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardDetailItem, CardDetailsGrid, MobileCard } from '@/components/ui/responsive-table';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -134,10 +135,28 @@ function SortableHeader({ column, sortBy, sortOrder, onSort, onResize }: { colum
   );
 }
 
+function DebouncedInlineFilter({ label, value, filterKey, onChange }: { label: string; value: string | undefined; filterKey: keyof BillingInlineFilters; onChange?: BillingTableProps['onInlineFilterChange'] }) {
+  const [draft, setDraft] = useState(value ?? '');
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  useEffect(() => {
+    if (draft === (value ?? '')) return undefined;
+    const timeout = window.setTimeout(() => {
+      onChangeRef.current?.({ [filterKey]: draft || undefined });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [draft, filterKey, value]);
+
+  return <input type="search" aria-label={`Filter ${label}`} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="All" className="h-9 w-full min-w-0 rounded-lg border border-border-primary bg-background-secondary/50 px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20" />;
+}
+
 function InlineFilterRow({ columns, filters, onChange }: { columns: BillingColumnId[]; filters: BillingInlineFilters; onChange?: BillingTableProps['onInlineFilterChange'] }) {
-  const filter = (label: string, value: string | undefined, key: keyof BillingInlineFilters) => (
-    <input type="search" aria-label={`Filter ${label}`} value={value ?? ''} onChange={(event) => onChange?.({ [key]: event.target.value || undefined })} placeholder="All" className="h-9 w-full min-w-0 rounded-lg border border-border-primary bg-background-secondary/50 px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20" />
-  );
+  const filter = (label: string, value: string | undefined, key: keyof BillingInlineFilters) => <DebouncedInlineFilter label={label} value={value} filterKey={key} onChange={onChange} />;
 
   return (
     <tr className="border-b border-border-primary bg-background-secondary/60">

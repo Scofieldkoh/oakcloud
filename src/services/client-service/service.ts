@@ -9,13 +9,14 @@ import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
 import { clientServiceInclude, clientServiceInternalInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
 import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
+import { assertConfiguredBillingState, canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import {
   addMonthsClamped,
   currentDateInSingapore,
   evaluateApplicability,
   evaluateDeadlineRule,
   hashConfiguration,
+  canonicalJson,
   normalizeCompanyRuleSource,
   dateOnlySchema,
   parseDateOnly,
@@ -32,6 +33,72 @@ function parseDate(value: string | null | undefined): Date | null | undefined {
 
 function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+type BillingFeeProjectionInput = {
+  id?: string | null;
+  description: string;
+  amount: unknown;
+  currency: string;
+  billingFrequency: string;
+  customFrequencyLabel?: string | null;
+  billingStartDate?: Date | string | null;
+  scheduleConfig?: unknown;
+  isActive?: boolean;
+  deletedAt?: Date | string | null;
+};
+
+function billingFeeAmount(value: unknown): string {
+  if (value && typeof value === 'object' && 'toFixed' in value && typeof value.toFixed === 'function') {
+    return value.toFixed(2);
+  }
+  return String(value ?? '');
+}
+
+function billingFeeStartDate(value: Date | string | null | undefined): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return dateOnly(value);
+  const candidate = value.slice(0, 10) as DateOnly;
+  try {
+    parseDateOnly(candidate);
+    return candidate;
+  } catch {
+    return null;
+  }
+}
+
+function billingScheduleProjection(fee: BillingFeeProjectionInput): unknown {
+  try {
+    const config = canonicalizeBillingSchedule({
+      billingFrequency: fee.billingFrequency,
+      billingStartDate: fee.billingStartDate ?? null,
+      customFrequencyLabel: fee.customFrequencyLabel ?? null,
+      scheduleConfig: fee.scheduleConfig,
+    });
+    if (!config) return null;
+    return {
+      ...config,
+      scheduleEntries: [...config.scheduleEntries].sort((left, right) => left.key.localeCompare(right.key)),
+    };
+  } catch {
+    return fee.scheduleConfig ?? null;
+  }
+}
+
+function canonicalBillingFeeProjection(fees: readonly BillingFeeProjectionInput[]): unknown[] {
+  return fees
+    .filter((fee) => fee.isActive !== false && fee.deletedAt == null)
+    .map((fee) => ({
+      id: fee.id ?? null,
+      description: fee.description,
+      amount: billingFeeAmount(fee.amount),
+      currency: fee.currency,
+      billingFrequency: fee.billingFrequency,
+      customFrequencyLabel: fee.customFrequencyLabel ?? null,
+      billingStartDate: billingFeeStartDate(fee.billingStartDate),
+      scheduleConfig: billingScheduleProjection(fee),
+    }))
+    .sort((left, right) => String(left.id).localeCompare(String(right.id)));
 }
 
 function billingScheduleConfigForFee(
@@ -946,13 +1013,15 @@ export async function updateClientService(id: string, input: UpdateClientService
           ?? (fee.id ? current.feeLines.find((storedFee) => storedFee.id === fee.id)?.sourceAgreementFeeLineId ?? null : null),
       };
     });
+    assertConfiguredBillingState({
+      billingDisposition,
+      feeLines: preparedIncomingFeeLines ?? activeCurrentFeeLines,
+    });
     const feeSummaryAfter = billingDisposition === 'NOT_REQUIRED'
       ? summarizeClientServiceFees([])
       : preparedIncomingFeeLines ? summarizeClientServiceFees(preparedIncomingFeeLines) : feeSummaryBefore;
-    const feesChanged = input.feeLines !== undefined && !sameJson(
-      activeCurrentFeeLines.map((fee) => ({ id: fee.id, description: fee.description, amount: fee.amount.toFixed(2), currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: dateOnly(fee.billingStartDate), scheduleConfig: fee.scheduleConfig ?? null, displayOrder: fee.displayOrder })),
-      (preparedIncomingFeeLines ?? []).map((fee) => ({ ...fee, isActive: true })),
-    );
+    const feesChanged = input.feeLines !== undefined && canonicalJson(canonicalBillingFeeProjection(activeCurrentFeeLines))
+      !== canonicalJson(canonicalBillingFeeProjection(preparedIncomingFeeLines ?? []));
     const effectiveFeesChanged = feesChanged || shouldArchiveBillingFees;
     if (Object.keys(scalarChanges).length === 0 && !fieldValuesChanged && !effectiveFeesChanged && !billingConfigurationChanged && !deadlineRulesChanged) return current;
 

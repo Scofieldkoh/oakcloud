@@ -164,6 +164,43 @@ describe('reconcileClientServiceBilling', () => {
     expect(mocks.billingOccurrence.updateMany).not.toHaveBeenCalled();
   });
 
+  it('preserves a future occurrence produced by a relative offset from an earlier cycle', async () => {
+    const generation = `billing-v1-${hashConfiguration({ feeLineId: 'fee-1' })}`;
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      feeLines: [feeLine({
+        scheduleConfig: {
+          schemaVersion: 1,
+          cadence: 'MONTHLY',
+          startDate: '2026-01-01',
+          customInterval: { unit: 'MONTH', count: 1 },
+          scheduleEntries: [{
+            key: 'relative-start',
+            label: 'Relative start',
+            expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: 90, unit: 'CALENDAR_DAY' },
+            businessDayAdjustment: 'NONE',
+          }],
+        },
+      })],
+    }));
+    mocks.billingOccurrence.findMany.mockResolvedValue([occurrence({
+      billingPeriodKey: '2026-06',
+      scheduleEntryKey: 'relative-start',
+      generationKey: generation,
+      calculatedExpectedDate: new Date('2026-08-30T00:00:00.000Z'),
+      operativeExpectedDate: new Date('2026-08-30T00:00:00.000Z'),
+    })]);
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      today: '2026-08-01',
+      horizonEnd: '2026-08-31',
+    });
+
+    expect(result.cancelled).toBe(0);
+    expect(mocks.billingOccurrence.updateMany).not.toHaveBeenCalled();
+    expect(mocks.billingOccurrence.createMany).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['PAUSED', null],
     ['ENDED', null],
@@ -195,6 +232,24 @@ describe('reconcileClientServiceBilling', () => {
         cancellationReconciliationRequestId: 'request-1',
         cancelledAt: expect.any(Date),
         cancellationReason: expect.any(String),
+      }),
+    }));
+  });
+
+  it.each([
+    ['ENDED', { status: 'ENDED' }],
+    ['elapsed end date', { endDate: new Date('2026-08-17') }],
+  ] as const)('uses an ended-service cancellation reason for %s', async (_label, serviceChanges) => {
+    mocks.clientService.findFirst.mockResolvedValue(service(serviceChanges));
+    mocks.billingOccurrence.findMany.mockResolvedValue([occurrence({ billingPeriodKey: '2026-09' })]);
+
+    const result = await reconcileClientServiceBilling(input);
+
+    expect(result.cancelled).toBe(1);
+    expect(mocks.billingOccurrence.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'CANCELLED',
+        cancellationReason: 'Client service ended or expired',
       }),
     }));
   });

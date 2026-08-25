@@ -703,6 +703,8 @@ export async function reconcileClientServiceBilling(
     if (isFutureOpenEligible(occurrence, input.today) && (shouldCancelUnmatched || disposition === 'CONFIGURED')) {
       const cancellationReason = serviceDeleted
         ? 'Client service archived or deleted'
+        : serviceEnded
+          ? 'Client service ended or expired'
         : disposition === 'NOT_REQUIRED'
           ? 'Billing marked not required'
           : 'Fee-line schedule removed or replaced';

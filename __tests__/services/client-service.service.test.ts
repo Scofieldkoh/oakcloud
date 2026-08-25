@@ -197,6 +197,29 @@ describe('client service service', () => {
     expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
   });
 
+  it('treats a UI-shaped fee save with unchanged canonical values as a no-op', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue(record);
+
+    await updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      feeLines: [{
+        id: 'fee-1',
+        description: 'Annual fee',
+        amount: '500.00',
+        currency: 'SGD',
+        billingFrequency: 'ANNUALLY',
+        billingStartDate: '2026-07-30',
+        displayOrder: 0,
+      }],
+    }, actor);
+
+    expect(prismaMock.clientService.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.clientServiceFeeLine.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.clientServiceFeeLine.createMany).not.toHaveBeenCalled();
+    expect(auditMock.createAuditLog).not.toHaveBeenCalled();
+    expect(prismaMock.serviceScheduleReconciliationRequest.upsert).not.toHaveBeenCalled();
+  });
+
   it('enqueues fee-only reconciliation in the same transaction without a deadline preview', async () => {
     prismaMock.clientService.findFirst
       .mockResolvedValueOnce(record)
@@ -264,6 +287,20 @@ describe('client service service', () => {
         }),
       }),
     }), prismaMock);
+  });
+
+  it('rejects a disposition-only CONFIGURED update when persisted legacy fees are not materializable', async () => {
+    const invalidLegacyRecord = {
+      ...record,
+      feeLines: [{ ...record.feeLines[0], billingStartDate: null, scheduleConfig: null }],
+    };
+    prismaMock.clientService.findFirst.mockResolvedValue(invalidLegacyRecord);
+
+    await expect(updateClientService(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      billingDisposition: 'CONFIGURED',
+    }, actor)).rejects.toThrow(/configured billing requires a valid start date/i);
+    expect(prismaMock.clientService.updateMany).not.toHaveBeenCalled();
   });
 
   it('rejects conflicting structured cadence before replacing an existing fee line', async () => {

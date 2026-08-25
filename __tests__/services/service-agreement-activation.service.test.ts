@@ -96,6 +96,23 @@ describe('service agreement activation', () => {
     }), prismaMock);
   });
 
+  it('keeps activated legacy fee data UNREVIEWED when it cannot materialize a schedule', async () => {
+    prismaMock.serviceAgreement.findFirst.mockResolvedValue({
+      ...agreement,
+      items: [{
+        ...agreement.items[0],
+        startDate: null,
+        feeLines: [{ ...agreement.items[0].feeLines[0], billingStartDate: null }],
+      }],
+    });
+
+    await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
+
+    expect(prismaMock.clientService.create.mock.calls[0]?.[0].data).toEqual(expect.objectContaining({
+      billingDisposition: 'UNREVIEWED',
+    }));
+  });
+
   it('attaches enabled catalog defaults to each activated service before enqueueing reconciliation', async () => {
     prismaMock.serviceAgreement.findFirst.mockResolvedValue(agreement);
     prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([

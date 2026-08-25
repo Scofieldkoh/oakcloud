@@ -98,6 +98,88 @@ describe('legacy billing schedule conversion', () => {
 });
 
 describe('billing schedule evaluation', () => {
+  it('looks back beyond one cadence for a positive relative cycle-start offset', () => {
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'relative-start',
+          label: 'Relative start',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: 90, unit: 'CALENDAR_DAY' },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
+      feeLine: { id: 'fee-relative-start', amount: '10', currency: 'SGD' },
+      calendar,
+      from: '2026-08-01',
+      to: '2026-08-31',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2026-06',
+      calculatedExpectedDate: '2026-08-30',
+    }));
+  });
+
+  it('looks ahead beyond one cadence for a negative relative cycle-end offset', () => {
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'relative-end',
+          label: 'Relative end',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_END' }, offset: -90, unit: 'CALENDAR_DAY' },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
+      feeLine: { id: 'fee-relative-end', amount: '10', currency: 'SGD' },
+      calendar,
+      from: '2026-07-01',
+      to: '2026-07-31',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2026-09',
+      calculatedExpectedDate: '2026-07-02',
+    }));
+  });
+
+  it('uses distant business-day relative offsets across the requested boundary', () => {
+    const occurrences = evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2026-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'relative-business-start',
+          label: 'Relative business start',
+          expression: { kind: 'RELATIVE_TO_SOURCE', source: { kind: 'CYCLE_START' }, offset: 45, unit: 'BUSINESS_DAY' },
+          businessDayAdjustment: 'NEXT',
+        }],
+      },
+      feeLine: { id: 'fee-relative-business-start', amount: '10', currency: 'SGD' },
+      calendar,
+      from: '2026-08-01',
+      to: '2026-08-31',
+      generationKey: 'rolling-v1',
+    });
+
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      billingPeriodKey: '2026-06',
+      calculatedExpectedDate: '2026-08-03',
+      operativeExpectedDate: '2026-08-03',
+    }));
+  });
+
   it('clamps month dates and applies Singapore business-day adjustments at cadence boundaries', () => {
     const config: BillingScheduleConfigV1 = {
       schemaVersion: 1,

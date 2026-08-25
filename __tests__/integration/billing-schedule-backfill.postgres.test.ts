@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Pool, type PoolClient } from 'pg';
+import { billingCoverageIssueKey } from '@/services/billing/coverage';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const migrationRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../prisma/migrations');
@@ -128,14 +129,36 @@ describePostgres('billing schedule backfill PostgreSQL integration', () => {
       await applyMigration(client, schemaName, billingBackfillMigration);
 
       const initialIssues = await client.query(`
-        SELECT fee_line_id, issue_type, resolved_at
+        SELECT fee_line_id, issue_type, issue_key, resolved_at
         FROM ${table('billing_coverage_issues')}
         ORDER BY fee_line_id
       `);
       expect(initialIssues.rows).toEqual([
-        { fee_line_id: 'fee-custom', issue_type: 'INVALID_CUSTOM_SCHEDULE', resolved_at: null },
-        { fee_line_id: 'fee-missing', issue_type: 'MISSING_START_DATE', resolved_at: null },
+        {
+          fee_line_id: 'fee-custom', issue_type: 'INVALID_CUSTOM_SCHEDULE',
+          issue_key: billingCoverageIssueKey({ tenantId: 'tenant-a', clientServiceId: 'service-a', feeLineId: 'fee-custom', type: 'INVALID_CUSTOM_SCHEDULE', scheduleKey: 'schedule' }),
+          resolved_at: null,
+        },
+        {
+          fee_line_id: 'fee-missing', issue_type: 'MISSING_START_DATE',
+          issue_key: billingCoverageIssueKey({ tenantId: 'tenant-a', clientServiceId: 'service-a', feeLineId: 'fee-missing', type: 'MISSING_START_DATE', scheduleKey: 'schedule' }),
+          resolved_at: null,
+        },
       ]);
+
+      // APPLY must refresh the migration-created row by the same runtime key;
+      // opening a second issue would make coverage counts drift.
+      const runtimeIssueKey = billingCoverageIssueKey({ tenantId: 'tenant-a', clientServiceId: 'service-a', feeLineId: 'fee-custom', type: 'INVALID_CUSTOM_SCHEDULE', scheduleKey: 'schedule' });
+      const refresh = await client.query(`
+        INSERT INTO ${table('billing_coverage_issues')}
+          (id, tenant_id, company_id, client_service_id, fee_line_id, issue_key, issue_type, severity, details, updated_at)
+        VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'tenant-a', 'company-a', 'service-a', 'fee-custom', $1, 'INVALID_CUSTOM_SCHEDULE', 'ERROR', '{}'::jsonb, TIMESTAMP '2026-08-18 00:00:00')
+        ON CONFLICT (tenant_id, issue_key) WHERE (resolved_at IS NULL) DO UPDATE SET details = EXCLUDED.details, updated_at = EXCLUDED.updated_at
+        RETURNING (xmax = 0) AS inserted
+      `, [runtimeIssueKey]);
+      expect(refresh.rows).toEqual([{ inserted: false }]);
+      const openCount = await client.query(`SELECT count(*)::int AS count FROM ${table('billing_coverage_issues')} WHERE resolved_at IS NULL`);
+      expect(openCount.rows[0]?.count).toBe(2);
 
       // Simulate a user/reconciliation update between migration applications.
       // The rerun must preserve these structured schedules and must not insert

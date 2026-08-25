@@ -10,7 +10,7 @@ import type { MarkServiceAgreementEffectiveInput } from '@/lib/validations/clien
 import { Prisma } from '@/generated/prisma';
 import type { ServiceAgreementActivationDto } from '@/services/client-service';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
+import { canonicalizeBillingSchedule, isMaterializableBillingSchedule } from '@/services/billing/schedule';
 import { snapshotClientServiceFees } from '@/services/client-service/fee-summary';
 
 const log = createLogger('service-agreement-activation');
@@ -196,7 +196,6 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           let service = await tx.clientService.findUnique({ where: { agreementItemId_companyId: { agreementItemId: item.id, companyId } } });
           const created = !service;
           const fees = item.feeLines.filter((fee) => fee.agreementEntityId === link.agreementEntityId);
-          const activationBillingDisposition = fees.length > 0 ? 'CONFIGURED' : 'UNREVIEWED';
           const activationFees = fees.map((fee) => {
             const billingStartDate = fee.billingStartDate ?? item.startDate;
             const scheduleConfig = canonicalizeBillingSchedule({
@@ -210,6 +209,10 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
               scheduleConfig,
             };
           });
+          const activationBillingDisposition = fees.length > 0
+            && activationFees.every((fee) => isMaterializableBillingSchedule(fee))
+            ? 'CONFIGURED'
+            : 'UNREVIEWED';
           if (!service) {
             service = await tx.clientService.create({ data: { tenantId: agreement.tenantId, companyId, source: 'AGREEMENT', agreementId: agreement.id, agreementItemId: item.id, serviceVariantId: item.serviceVariantId, familyName: item.familyNameSnapshot, serviceName: item.variantNameSnapshot, serviceCadence: item.serviceCadence, customCadenceLabel: item.customCadenceLabel, startDate: item.startDate, endDate: item.endDate, fieldValues: item.fieldValues as Prisma.InputJsonValue, billingDisposition: activationBillingDisposition, billingNotRequiredReason: null } });
           }

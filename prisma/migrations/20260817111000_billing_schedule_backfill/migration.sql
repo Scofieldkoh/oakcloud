@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Label-only CUSTOM values cannot be converted into a valid structured
 -- interval. Keep schedule_config NULL and open one stable issue per fee line.
 WITH issue_rows AS (
@@ -8,7 +10,13 @@ WITH issue_rows AS (
     fee_line."id" AS "fee_line_id",
     'INVALID_CUSTOM_SCHEDULE'::"BillingCoverageIssueType" AS "issue_type",
     'ERROR'::"BillingCoverageIssueSeverity" AS "severity",
-    md5(concat_ws('|', fee_line."tenant_id", fee_line."client_service_id", fee_line."id", 'INVALID_CUSTOM_SCHEDULE')) AS "issue_key",
+    encode(digest(replace(replace(replace(json_build_object(
+      'clientServiceId', fee_line."client_service_id",
+      'feeLineId', fee_line."id",
+      'scheduleKey', 'schedule',
+      'tenantId', fee_line."tenant_id",
+      'type', 'INVALID_CUSTOM_SCHEDULE'
+    )::text, ' : ', ':'), ': ', ':'), ', ', ','), 'sha256'), 'hex') AS "issue_key",
     jsonb_build_object('billingFrequency', fee_line."billing_frequency"::text, 'customFrequencyLabel', fee_line."custom_frequency_label") AS "details"
   FROM "client_service_fee_lines" AS fee_line
   JOIN "client_services" AS service
@@ -26,7 +34,13 @@ WITH issue_rows AS (
     fee_line."id" AS "fee_line_id",
     'MISSING_START_DATE'::"BillingCoverageIssueType" AS "issue_type",
     'ERROR'::"BillingCoverageIssueSeverity" AS "severity",
-    md5(concat_ws('|', fee_line."tenant_id", fee_line."client_service_id", fee_line."id", 'MISSING_START_DATE')) AS "issue_key",
+    encode(digest(replace(replace(replace(json_build_object(
+      'clientServiceId', fee_line."client_service_id",
+      'feeLineId', fee_line."id",
+      'scheduleKey', 'schedule',
+      'tenantId', fee_line."tenant_id",
+      'type', 'MISSING_START_DATE'
+    )::text, ' : ', ':'), ': ', ':'), ', ', ','), 'sha256'), 'hex') AS "issue_key",
     jsonb_build_object('billingFrequency', fee_line."billing_frequency"::text) AS "details"
   FROM "client_service_fee_lines" AS fee_line
   JOIN "client_services" AS service

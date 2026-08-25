@@ -11,7 +11,7 @@ import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './
 import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
-import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
+import { assertConfiguredBillingState, canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import { canonicalDeadlineRuleAudit, persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
 
 const parseDateOnly = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
@@ -76,6 +76,10 @@ export async function createManualClientService(
       billingStartDate: fee.billingStartDate ?? scheduleConfig?.startDate ?? null,
       scheduleConfig,
     };
+  });
+  assertConfiguredBillingState({
+    billingDisposition: input.billingDisposition,
+    feeLines: preparedFees,
   });
   try {
     return await runSerializableTransaction(prisma, async (tx) => {

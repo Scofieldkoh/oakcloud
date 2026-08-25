@@ -185,6 +185,15 @@ describe('manual client service creation', () => {
     }));
   });
 
+  it('rejects an explicitly configured fee without an effective materializable schedule', async () => {
+    await expect(createManualClientService('company-1', {
+      ...input,
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{ ...input.feeLines[0], billingStartDate: null, scheduleConfig: undefined }],
+    }, params)).rejects.toThrow(/configured billing requires a valid start date/i);
+    expect(prismaMock.clientService.create).not.toHaveBeenCalled();
+  });
+
   it('rejects not-required fee rows and caller-controlled inactive rows at the service boundary', async () => {
     await expect(createManualClientService('company-1', {
       ...input,
