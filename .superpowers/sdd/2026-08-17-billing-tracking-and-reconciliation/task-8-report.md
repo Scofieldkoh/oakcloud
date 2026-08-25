@@ -20,6 +20,12 @@ expired services receive an explicit cancellation reason; and billing text
 filters use local drafts with a 300 ms debounce while non-text filters remain
 immediate.
 
+The final shared business-day hot-path correction is `76658574` (`test: verify
+billing tracking acceptance`). Schedule evaluation now snapshots and validates
+the immutable calendar once per evaluation, then reuses O(1) weekend/holiday
+membership during period traversal. Public date-engine helpers retain their
+per-call validation/error behavior.
+
 The `ONE_TIME` contract is explicit: every stable repeatable entry materializes
 exactly once, in stable-key order. It does not silently select the lexical-first
 entry.
@@ -58,6 +64,12 @@ entry.
   weekend days, and adjustments, capped at `MAX_SEARCH_DAYS`) and canonical
   fee projection now pass the compatibility run (`7 files / 148 tests`, no
   skips).
+- The final hot-path RED used the accepted maximum calendar shape (500
+  holidays, six weekend days, and a one-business-day relative entry). The old
+  implementation exceeded a deterministic 20,000 holiday-iteration budget and
+  took 64.86 seconds for the focused test. GREEN completes the same evaluation
+  in 23 ms of test execution with exactly 500 holiday iterations (one calendar
+  snapshot), eliminating repeated `validateCalendar`/holiday traversal.
 - Tenant acceptance now seeds two companies in each tenant. An actor scoped to
   company one cannot list, read, mutate, or receive coverage rows for the
   same-tenant company two; the allowed company and tenant-two negatives remain
@@ -79,6 +91,7 @@ entry.
 | Billing preflight focused suite | PASS; `1 file / 4 tests`, no skips; missing required variables exits `1` for both package scripts |
 | Billing browser smoke | PASS; `1 file / 2 tests`, no skips |
 | Final schedule/reconciler/client-service compatibility run | PASS; `7 files / 148 tests`, no skips |
+| Final business-day/schedule/reconciler/deadline compatibility run | PASS; `13 files / 210 tests`, no skips |
 | `npx.cmd prisma migrate status` on disposable database | PASS; `54 migrations found`, database schema up to date |
 | `npx.cmd prisma generate` / `npx.cmd prisma validate` | PASS with the disposable database URL |
 | `npx.cmd tsc --noEmit` | FAIL only at pre-existing generated route validation: `.next/types/app/api/services/settings/route.ts:38`; no changed-file errors |
@@ -87,14 +100,18 @@ entry.
 | Final repository-wide Vitest baseline | `344 passed / 8 failed / 19 skipped` files; `2,895 passed / 33 failed / 54 skipped` tests; failures remain the unrelated schema/provider/role fixtures, with no billing failures |
 | `git diff --check` | PASS; no findings |
 
-The final baseline was rerun after the rereview corrections. Compared with the
-prior `343 / 2,866` passing-file/test evidence, it now records the added
-focused coverage as `344 / 2,895` while preserving the same `8` failing files,
-`33` failing tests, `19` skipped files, and `54` skipped tests. The failures are
-unrelated existing schema expectations and missing UI test providers/roles; no
-billing acceptance test was weakened or removed. The skipped suites remain
-environment-gated optional tests. The dedicated billing PostgreSQL,
-performance, and browser gates above were enabled and had no skips.
+The final baseline was rerun after the rereview corrections and before this
+isolated in-memory helper optimization. Compared with the prior `343 / 2,866`
+passing-file/test evidence, it records the added focused coverage as `344 /
+2,895` while preserving the same `8` failing files, `33` failing tests, `19`
+skipped files, and `54` skipped tests. The failures are unrelated existing
+schema expectations and missing UI test providers/roles; no billing acceptance
+test was weakened or removed. This helper-only correction changes no SQL,
+migration, UI, or repository-wide test paths, so the repository-wide baseline
+was not rerun; the changed shared helper was covered by the 13-file
+compatibility matrix above. The skipped suites remain environment-gated
+optional tests. The dedicated billing PostgreSQL, performance, and browser
+gates above were enabled and had no skips.
 
 Prior Task 8 evidence also remains valid for the Plan 3 focused matrix (`16
 files / 158 tests`), worker/schedule regression matrix (`4 files / 57 tests`),
@@ -134,10 +151,13 @@ The performance fixture seeded 1,000 companies, 10,000 client services,
 issues, then ran `ANALYZE` before reads. Schedule-evaluator changes do not alter
 the measured list/coverage query paths; the performance gate was nevertheless
 rerun and remained green. The rereview changes only adjust in-memory schedule
-lookaround and fee comparison, so the live PostgreSQL acceptance and
-performance suites were not rerun in this final pass; their no-skip evidence
-from the preceding commit remains applicable, and no migration/query shape
-changed.
+lookaround, fee comparison, and business-day calendar traversal, so the live
+PostgreSQL acceptance and performance suites were not rerun in this final
+helper-only pass; their no-skip evidence from the preceding commit remains
+applicable, and no migration/query shape changed. The focused 13-file matrix
+and deterministic maximum-shape timing cover the changed execution path and
+show the reconciler-scale lease risk is removed without changing database
+behavior.
 
 The EXPLAIN harness captures Prisma query events emitted by the actual
 `listBillingOccurrences` and `listBillingCoverage` production services,
