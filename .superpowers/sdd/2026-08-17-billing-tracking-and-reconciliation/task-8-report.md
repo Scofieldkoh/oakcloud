@@ -51,6 +51,13 @@ entry.
   ended/elapsed cancellation expectations, and immediate text-filter
   assertions. The final focused run was `8 files / 123 tests passed`, with no
   skips.
+- The final rereview RED reproduced dense holiday positive/negative movement,
+  dense `NEXT`/`PREVIOUS` adjustment lookaround, reconciler preservation,
+  formatting-equivalent Decimal/string amounts, and display-order-only fee
+  changes. The 7x blocker bound (required business days, finite holidays,
+  weekend days, and adjustments, capped at `MAX_SEARCH_DAYS`) and canonical
+  fee projection now pass the compatibility run (`7 files / 148 tests`, no
+  skips).
 - Tenant acceptance now seeds two companies in each tenant. An actor scoped to
   company one cannot list, read, mutate, or receive coverage rows for the
   same-tenant company two; the allowed company and tenant-two negatives remain
@@ -71,20 +78,21 @@ entry.
 | `npm.cmd run test:billing:performance` with `TEST_DATABASE_URL` and `RUN_PERFORMANCE_TESTS=true` | PASS; `1 file / 2 tests`, no skips |
 | Billing preflight focused suite | PASS; `1 file / 4 tests`, no skips; missing required variables exits `1` for both package scripts |
 | Billing browser smoke | PASS; `1 file / 2 tests`, no skips |
+| Final schedule/reconciler/client-service compatibility run | PASS; `7 files / 148 tests`, no skips |
 | `npx.cmd prisma migrate status` on disposable database | PASS; `54 migrations found`, database schema up to date |
 | `npx.cmd prisma generate` / `npx.cmd prisma validate` | PASS with the disposable database URL |
 | `npx.cmd tsc --noEmit` | FAIL only at pre-existing generated route validation: `.next/types/app/api/services/settings/route.ts:38`; no changed-file errors |
 | `npm.cmd run lint` (`eslint src`) | PASS; 0 errors, 4 existing warnings |
 | `npm.cmd run build` | Compiled successfully; then failed at the same pre-existing generated route type error above |
-| Final repository-wide Vitest baseline | `344 passed / 8 failed / 19 skipped` files; `2,886 passed / 33 failed / 54 skipped` tests; failures remain the unrelated schema/provider/role fixtures, with no billing failures |
+| Final repository-wide Vitest baseline | `344 passed / 8 failed / 19 skipped` files; `2,895 passed / 33 failed / 54 skipped` tests; failures remain the unrelated schema/provider/role fixtures, with no billing failures |
 | `git diff --check` | PASS; no findings |
 
-The final baseline was rerun after production changes. Compared with the prior
-`343 / 2,866` passing-file/test evidence, it has the expected additional
-focused coverage while preserving the same `8` failing files, `33` failing
-tests, `19` skipped files, and `54` skipped tests. The failures are unrelated
-existing schema expectations and missing UI test providers/roles; no billing
-acceptance test was weakened or removed. The skipped suites remain
+The final baseline was rerun after the rereview corrections. Compared with the
+prior `343 / 2,866` passing-file/test evidence, it now records the added
+focused coverage as `344 / 2,895` while preserving the same `8` failing files,
+`33` failing tests, `19` skipped files, and `54` skipped tests. The failures are
+unrelated existing schema expectations and missing UI test providers/roles; no
+billing acceptance test was weakened or removed. The skipped suites remain
 environment-gated optional tests. The dedicated billing PostgreSQL,
 performance, and browser gates above were enabled and had no skips.
 
@@ -125,7 +133,11 @@ The performance fixture seeded 1,000 companies, 10,000 client services,
 10,000 fee lines, 100,000 billing occurrences, and 1,000 unresolved coverage
 issues, then ran `ANALYZE` before reads. Schedule-evaluator changes do not alter
 the measured list/coverage query paths; the performance gate was nevertheless
-rerun and remained green.
+rerun and remained green. The rereview changes only adjust in-memory schedule
+lookaround and fee comparison, so the live PostgreSQL acceptance and
+performance suites were not rerun in this final pass; their no-skip evidence
+from the preceding commit remains applicable, and no migration/query shape
+changed.
 
 The EXPLAIN harness captures Prisma query events emitted by the actual
 `listBillingOccurrences` and `listBillingCoverage` production services,
