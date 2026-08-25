@@ -26,6 +26,12 @@ the immutable calendar once per evaluation, then reuses O(1) weekend/holiday
 membership during period traversal. Public date-engine helpers retain their
 per-call validation/error behavior.
 
+The round-3 calendar-validation correction is `7fdf84c8` (`test: verify
+billing tracking acceptance`). Nonempty schedule evaluations now construct the
+validated engine unconditionally, so plain calendar-day entries fail closed on
+malformed id, revision, weekend-day, and holiday snapshots; empty or
+missing-start schedules retain their existing empty-result behavior.
+
 The `ONE_TIME` contract is explicit: every stable repeatable entry materializes
 exactly once, in stable-key order. It does not silently select the lexical-first
 entry.
@@ -68,8 +74,12 @@ entry.
   holidays, six weekend days, and a one-business-day relative entry). The old
   implementation exceeded a deterministic 20,000 holiday-iteration budget and
   took 64.86 seconds for the focused test. GREEN completes the same evaluation
-  in 23 ms of test execution with exactly 500 holiday iterations (one calendar
+  in 12 ms of test execution with exactly 500 holiday iterations (one calendar
   snapshot), eliminating repeated `validateCalendar`/holiday traversal.
+- The round-3 RED reproduced four malformed-calendar bypasses for plain
+  `DAY_OF_MONTH` entries. GREEN covers those four validation errors plus
+  empty/missing-start preservation, reconciler `INVALID_SCHEDULE` handling
+  without occurrence writes, and coverage `INVALID_CUSTOM_SCHEDULE` handling.
 - Tenant acceptance now seeds two companies in each tenant. An actor scoped to
   company one cannot list, read, mutate, or receive coverage rows for the
   same-tenant company two; the allowed company and tenant-two negatives remain
@@ -92,6 +102,7 @@ entry.
 | Billing browser smoke | PASS; `1 file / 2 tests`, no skips |
 | Final schedule/reconciler/client-service compatibility run | PASS; `7 files / 148 tests`, no skips |
 | Final business-day/schedule/reconciler/deadline compatibility run | PASS; `13 files / 210 tests`, no skips |
+| Round-3 malformed-calendar compatibility run | PASS; `6 files / 156 tests`, no skips |
 | `npx.cmd prisma migrate status` on disposable database | PASS; `54 migrations found`, database schema up to date |
 | `npx.cmd prisma generate` / `npx.cmd prisma validate` | PASS with the disposable database URL |
 | `npx.cmd tsc --noEmit` | FAIL only at pre-existing generated route validation: `.next/types/app/api/services/settings/route.ts:38`; no changed-file errors |
