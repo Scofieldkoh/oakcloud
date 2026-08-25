@@ -8,11 +8,12 @@ const hooks = vi.hoisted(() => ({
   useBillingOccurrences: vi.fn(),
   useUpdateBillingOccurrence: vi.fn(),
   useResetBillingOverride: vi.fn(),
-  useServiceRosterFamilies: vi.fn(),
   useBillingCoverage: vi.fn(),
   useUserPreference: vi.fn(),
   useUpsertUserPreference: vi.fn(),
   useServicesWorkspaceSettings: vi.fn(),
+  useServiceRoster: vi.fn(),
+  useServiceRosterFamilies: vi.fn(),
 }));
 
 const navigation = vi.hoisted(() => ({
@@ -38,6 +39,9 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: hooks.useUpsertUserPreference,
 }));
 vi.mock('@/hooks/use-services-workspace-settings', () => ({ useServicesWorkspaceSettings: hooks.useServicesWorkspaceSettings }));
+vi.mock('@/hooks/use-service-roster', () => ({ useServiceRoster: hooks.useServiceRoster }));
+vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: hooks.useServiceRosterFamilies }));
+vi.mock('@/components/services/roster/add-client-service-dialog', () => ({ AddClientServiceDialog: () => null }));
 
 import { ServicesWorkspace } from '@/components/services/services-workspace';
 
@@ -114,6 +118,7 @@ function setup({ withIssues = true, totalPages = 2 } = {}) {
   hooks.useUserPreference.mockReturnValue({ data: { value: null }, isLoading: false });
   hooks.useUpsertUserPreference.mockReturnValue({ mutate: vi.fn(), isPending: false });
   hooks.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: false }, isLoading: false, error: null });
+  hooks.useServiceRoster.mockReturnValue({ data: { items: [], total: 0, page: 1, limit: 20, totalPages: 0 }, isLoading: false, isFetching: false, error: null, refetch: vi.fn() });
   if (totalPages > 1) {
     hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence], total: 41, page: 1, limit: 20, totalPages }, isLoading: false, isFetching: false, error: null });
   }
@@ -147,6 +152,9 @@ describe('Services billing responsive browser surface', () => {
       .toBeGreaterThanOrEqual(32);
     expect(screen.getByRole('tab', { name: 'Billing' }).getBoundingClientRect().height)
       .toBeLessThanOrEqual(40);
+    const resetFilters = screen.getByRole('button', { name: 'Reset filters' });
+    expect(resetFilters.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
+    expect(resetFilters.getBoundingClientRect().height).toBeLessThanOrEqual(40);
     const billingTable = screen.getByRole('table', { name: 'Billing occurrences table' });
     await expect.element(within(billingTable).getByText('Fieldstone')).toBeVisible();
     const reconciliation = screen.getByRole('button', { name: /Billing reconciliation · 1 issue · 1 error/ });
@@ -201,6 +209,25 @@ describe('Services billing responsive browser surface', () => {
     for (const tab of screen.getAllByRole('tab')) {
       expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
     }
+    expect(screen.getByRole('button', { name: 'Reset filters' }).getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
     expect(screen.getByRole('button', { name: /Billing reconciliation/ })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps the Add service action touch-safe on mobile and compact on desktop', async () => {
+    setup();
+    navigation.searchParams = new URLSearchParams('tab=services');
+
+    await page.viewport(1440, 900);
+    render(<ServicesWorkspace />);
+
+    const addService = screen.getByRole('button', { name: 'Add service' });
+    expect(addService.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
+    expect(addService.getBoundingClientRect().height).toBeLessThanOrEqual(40);
+
+    await page.viewport(390, 844);
+    document.body.replaceChildren();
+    render(<ServicesWorkspace />);
+
+    expect(screen.getByRole('button', { name: 'Add service' }).getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
   });
 });

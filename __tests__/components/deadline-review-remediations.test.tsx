@@ -278,7 +278,9 @@ describe('Task 12 review remediations', () => {
     render(<DeadlineWorkspace />);
     fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
     const chooser = screen.getByRole('dialog', { name: 'Customize columns' });
-    expect(within(chooser).getByRole('checkbox', { name: 'Show Milestone column' })).toBeVisible();
+    const milestoneCheckbox = within(chooser).getByRole('checkbox', { name: 'Show Milestone column' });
+    expect(milestoneCheckbox).toBeVisible();
+    expect(milestoneCheckbox.closest('label')?.parentElement).toHaveClass('min-h-11', 'sm:min-h-8');
     fireEvent.click(within(chooser).getByRole('checkbox', { name: 'Show Milestone column' }));
     expect(hooks.preferenceMutation).toHaveBeenCalledWith(expect.objectContaining({
       value: expect.objectContaining({ tableColumnVisibility: expect.objectContaining({ milestone: false }) }),

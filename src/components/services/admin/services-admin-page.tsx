@@ -2,6 +2,7 @@
 
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import { Button } from '@/components/ui/button';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { ServiceCatalogPanel } from './catalog/service-catalog-panel';
@@ -101,9 +102,9 @@ export function ServicesAdminPage() {
       <main className="p-4 sm:p-6">
         <div role="alert" className="space-y-3 rounded-lg border border-status-error/30 bg-status-error/5 p-6 text-sm text-status-error">
           <p>Unable to load Services administration settings.</p>
-          <button type="button" className="min-h-[44px] rounded-lg border border-status-error/40 px-4 text-sm font-medium text-status-error focus:outline-none focus-visible:ring-2 focus-visible:ring-status-error/30" onClick={() => void settings.refetch()}>
+          <Button type="button" size="sm" variant="danger" className="min-h-11 sm:min-h-8" onClick={() => void settings.refetch()}>
             Retry
-          </button>
+          </Button>
         </div>
       </main>
     );

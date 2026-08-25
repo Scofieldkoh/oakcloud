@@ -404,7 +404,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           >
             Customize columns
           </button>
-          {canCreate ? <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setAddOpen(true)}>Add service</Button> : null}
+          {canCreate ? <Button className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setAddOpen(true)}>Add service</Button> : null}
         </div>
       </div>
 

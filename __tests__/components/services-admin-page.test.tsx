@@ -77,6 +77,29 @@ describe('ServicesAdminPage', () => {
     );
   });
 
+  it('keeps settings-error retry touch-safe and refetches from the accessible alert', () => {
+    const refetch = vi.fn();
+    mocks.useSession.mockReturnValue({
+      data: { isSuperAdmin: false, isWorkspaceAdmin: true },
+      isLoading: false,
+    });
+    mocks.useServicesWorkspaceSettings.mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: new Error('settings unavailable'),
+      refetch,
+    });
+
+    render(<ServicesAdminPage />);
+
+    const alert = screen.getByRole('alert');
+    const retry = screen.getByRole('button', { name: 'Retry' });
+    expect(alert).toHaveTextContent('Unable to load Services administration settings.');
+    expect(retry).toHaveClass('min-h-11', 'sm:min-h-8');
+    fireEvent.click(retry);
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('does not render catalog controls for non-admin users', () => {
     mocks.useSession.mockReturnValue({
       data: { isSuperAdmin: false, isWorkspaceAdmin: false },

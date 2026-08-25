@@ -118,7 +118,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
             />
           </label>
           {hasFilters ? (
-            <Button type="button" size="sm" variant="ghost" onClick={onReset} leftIcon={<X className="h-4 w-4" />}>
+            <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-8" onClick={onReset} leftIcon={<X className="h-4 w-4" />}>
               Reset filters
             </Button>
           ) : null}
