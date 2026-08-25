@@ -10,6 +10,16 @@ The review hardening is `1f081801` (`test: verify billing tracking
 acceptance`). The final review coverage is `d0e7a018` (`test: cover permanent
 reconciliation failure event`); this report is committed separately.
 
+The final whole-branch review corrections are included in the follow-up
+implementation commit recorded with this report: schedule evaluation derives
+a finite lookaround from cadence, relative offsets, and business-day
+adjustments; CONFIGURED is rejected unless every active fee is materially
+scheduleable; no-op fee saves compare canonical projections; migration and
+runtime coverage issue identities use the same SHA-256 contract; ended or
+expired services receive an explicit cancellation reason; and billing text
+filters use local drafts with a 300 ms debounce while non-text filters remain
+immediate.
+
 The `ONE_TIME` contract is explicit: every stable repeatable entry materializes
 exactly once, in stable-key order. It does not silently select the lexical-first
 entry.
@@ -35,6 +45,12 @@ entry.
   a bounded allowlisted warning and safe error, and never emits the original
   customer/free text. The permanent lease-handoff path remains separately
   covered as lease loss.
+- Final-review RED/GREEN coverage included three distant-offset schedule
+  failures before the lookaround fix, invalid CONFIGURED legacy/create/update
+  cases, a UI-shaped no-op save that previously wrote/archive/audited, two
+  ended/elapsed cancellation expectations, and immediate text-filter
+  assertions. The final focused run was `8 files / 123 tests passed`, with no
+  skips.
 - Tenant acceptance now seeds two companies in each tenant. An actor scoped to
   company one cannot list, read, mutate, or receive coverage rows for the
   same-tenant company two; the allowed company and tenant-two negatives remain
@@ -53,20 +69,24 @@ entry.
 | Live tenant/company isolation suite | PASS; `1 file / 2 tests`, no skips |
 | `npm.cmd run test:billing:postgres` with isolated `TEST_DATABASE_URL` | PASS; `5 files / 9 tests`, no skips |
 | `npm.cmd run test:billing:performance` with `TEST_DATABASE_URL` and `RUN_PERFORMANCE_TESTS=true` | PASS; `1 file / 2 tests`, no skips |
+| Billing preflight focused suite | PASS; `1 file / 4 tests`, no skips; missing required variables exits `1` for both package scripts |
+| Billing browser smoke | PASS; `1 file / 2 tests`, no skips |
 | `npx.cmd prisma migrate status` on disposable database | PASS; `54 migrations found`, database schema up to date |
+| `npx.cmd prisma generate` / `npx.cmd prisma validate` | PASS with the disposable database URL |
 | `npx.cmd tsc --noEmit` | FAIL only at pre-existing generated route validation: `.next/types/app/api/services/settings/route.ts:38`; no changed-file errors |
 | `npm.cmd run lint` (`eslint src`) | PASS; 0 errors, 4 existing warnings |
 | `npm.cmd run build` | Compiled successfully; then failed at the same pre-existing generated route type error above |
+| Final repository-wide Vitest baseline | `344 passed / 8 failed / 19 skipped` files; `2,886 passed / 33 failed / 54 skipped` tests; failures remain the unrelated schema/provider/role fixtures, with no billing failures |
 | `git diff --check` | PASS; no findings |
 
-The earlier repository-wide baseline is preserved as evidence rather than
-rerun after these scoped acceptance-harness/observability changes: `343
-passed / 8 failed / 19 skipped` files and `2,866 passed / 33 failed / 54
-skipped` tests. Its failures were unrelated existing schema expectations and
-missing UI test providers/roles; no billing acceptance test was weakened or
-removed. The 19 skipped files / 54 skipped tests are environment-gated
-optional suites. The dedicated billing PostgreSQL and performance gates above
-were enabled and had no skips.
+The final baseline was rerun after production changes. Compared with the prior
+`343 / 2,866` passing-file/test evidence, it has the expected additional
+focused coverage while preserving the same `8` failing files, `33` failing
+tests, `19` skipped files, and `54` skipped tests. The failures are unrelated
+existing schema expectations and missing UI test providers/roles; no billing
+acceptance test was weakened or removed. The skipped suites remain
+environment-gated optional tests. The dedicated billing PostgreSQL,
+performance, and browser gates above were enabled and had no skips.
 
 Prior Task 8 evidence also remains valid for the Plan 3 focused matrix (`16
 files / 158 tests`), worker/schedule regression matrix (`4 files / 57 tests`),
@@ -87,7 +107,9 @@ The cluster received the complete Prisma migration chain (`54 migrations
 found`; `Database schema is up to date`). The live package matrix and
 performance suite ran against this database, cleaned their tenant fixtures,
 and the cluster was stopped and its disposable data directory removed after
-verification.
+verification. The backfill APPLY regression used the migration-produced
+SHA-256 key and verified an existing row was refreshed (`xmax=false`/inserted
+false) rather than opening a duplicate; unresolved counts remained truthful.
 
 The live billing index inspection showed PostgreSQL's 63-character physical
 names, including:
@@ -101,7 +123,9 @@ names, including:
 
 The performance fixture seeded 1,000 companies, 10,000 client services,
 10,000 fee lines, 100,000 billing occurrences, and 1,000 unresolved coverage
-issues, then ran `ANALYZE` before reads.
+issues, then ran `ANALYZE` before reads. Schedule-evaluator changes do not alter
+the measured list/coverage query paths; the performance gate was nevertheless
+rerun and remained green.
 
 The EXPLAIN harness captures Prisma query events emitted by the actual
 `listBillingOccurrences` and `listBillingCoverage` production services,
