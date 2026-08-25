@@ -34,6 +34,36 @@ function consecutiveWeekdayHolidays(start: DateOnly, count: number): Set<DateOnl
   return holidays;
 }
 
+class CountingHolidaySet extends Set<DateOnly> {
+  iterationCount = 0;
+
+  constructor(values: Iterable<DateOnly>) {
+    super(values);
+    const originalIterator = this[Symbol.iterator].bind(this);
+    Object.defineProperty(this, Symbol.iterator, {
+      value: () => {
+        const iterator = originalIterator();
+        const countIteration = () => {
+          this.iterationCount += 1;
+          if (this.iterationCount > 20_000) {
+            throw new Error('holiday iteration budget exceeded');
+          }
+        };
+        return {
+          next() {
+            const result = iterator.next();
+            if (!result.done) countIteration();
+            return result;
+          },
+          [Symbol.iterator]() {
+            return this;
+          },
+        } as SetIterator<DateOnly>;
+      },
+    });
+  }
+}
+
 describe('legacy billing schedule conversion', () => {
   it.each([
     ['MONTHLY', 1],
@@ -353,6 +383,41 @@ describe('billing schedule evaluation', () => {
 
   it('preserves the shared deterministic cap for business-day movement', () => {
     expect(() => addBusinessDays('2025-01-01', MAX_SEARCH_DAYS + 1, calendar)).toThrow(/cannot exceed 100000 days/i);
+  });
+
+  it('keeps maximum-shape business-day evaluation within one calendar validation budget', () => {
+    const holidays = new CountingHolidaySet(consecutiveWeekdayHolidays('2025-01-02', 500));
+
+    expect(() => evaluateBillingSchedule({
+      config: {
+        schemaVersion: 1,
+        cadence: 'MONTHLY',
+        startDate: '2025-01-01',
+        customInterval: { unit: 'MONTH', count: 1 },
+        scheduleEntries: [{
+          key: 'maximum-shape',
+          label: 'Maximum shape',
+          expression: {
+            kind: 'RELATIVE_TO_SOURCE',
+            source: { kind: 'CYCLE_START' },
+            offset: 1,
+            unit: 'BUSINESS_DAY',
+          },
+          businessDayAdjustment: 'NONE',
+        }],
+      },
+      feeLine: { id: 'fee-maximum-shape', amount: '10', currency: 'SGD' },
+      calendar: {
+        ...calendar,
+        weekendDays: new Set([0, 1, 2, 3, 4, 5]),
+        holidays,
+      },
+      from: '2025-01-01',
+      to: '2025-01-01',
+      generationKey: 'maximum-shape-v1',
+    })).not.toThrow();
+
+    expect(holidays.iterationCount).toBe(500);
   });
 
   it('clamps month dates and applies Singapore business-day adjustments at cadence boundaries', () => {

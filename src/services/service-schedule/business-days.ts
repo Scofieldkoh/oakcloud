@@ -5,7 +5,20 @@ import type { BusinessCalendarSnapshot, BusinessDayAdjustment, DateOnly } from '
 const MAX_PERIOD_DAYS = 3660;
 const MAX_SEARCH_DAYS = 100_000;
 
-function validateCalendar(calendar: BusinessCalendarSnapshot): void {
+type NormalizedCalendar = Readonly<{
+  weekendDays: ReadonlySet<number>;
+  holidays: ReadonlySet<DateOnly>;
+}>;
+
+export type BusinessDayEngine = Readonly<{
+  isBusinessDay(value: DateOnly): boolean;
+  addBusinessDays(value: DateOnly, amount: number): DateOnly;
+  businessDayFromStart(periodStart: DateOnly, periodEnd: DateOnly, ordinal: number): DateOnly;
+  businessDayFromEnd(periodStart: DateOnly, periodEnd: DateOnly, ordinal: number): DateOnly;
+  adjustBusinessDay(value: DateOnly, adjustment: BusinessDayAdjustment): DateOnly;
+}>;
+
+function validateCalendar(calendar: BusinessCalendarSnapshot): NormalizedCalendar {
   if (!calendar || typeof calendar !== 'object') {
     throw new ValidationError('A business calendar snapshot is required');
   }
@@ -31,7 +44,12 @@ function validateCalendar(calendar: BusinessCalendarSnapshot): void {
   if (!calendar.holidays || typeof calendar.holidays.has !== 'function' || typeof calendar.holidays[Symbol.iterator] !== 'function') {
     throw new ValidationError('Business calendar holidays must be a Set');
   }
-  for (const holiday of calendar.holidays) parseDateOnly(holiday);
+  const holidays = new Set<DateOnly>();
+  for (const holiday of calendar.holidays) {
+    parseDateOnly(holiday);
+    holidays.add(holiday);
+  }
+  return { weekendDays: new Set(weekendDays), holidays };
 }
 
 function assertDateRange(periodStart: DateOnly, periodEnd: DateOnly): { start: Date; end: Date } {
@@ -62,15 +80,20 @@ function assertAmount(amount: number): void {
   }
 }
 
+function isBusinessDayWithCalendar(value: DateOnly, calendar: NormalizedCalendar): boolean {
+  const parsed = parseDateOnly(value);
+  return !calendar.weekendDays.has(parsed.getUTCDay()) && !calendar.holidays.has(value);
+}
+
 function searchForBusinessDay(
   value: DateOnly,
   direction: 1 | -1,
-  calendar: BusinessCalendarSnapshot,
+  calendar: NormalizedCalendar,
 ): DateOnly {
   let candidate = value;
   for (let steps = 0; steps < MAX_SEARCH_DAYS; steps += 1) {
     candidate = addCalendarDays(candidate, direction);
-    if (isBusinessDay(candidate, calendar)) return candidate;
+    if (isBusinessDayWithCalendar(candidate, calendar)) return candidate;
   }
   throw new ValidationError('Unable to find a business day within the deterministic search bound', {
     value,
@@ -78,14 +101,7 @@ function searchForBusinessDay(
   });
 }
 
-export function isBusinessDay(value: DateOnly, calendar: BusinessCalendarSnapshot): boolean {
-  validateCalendar(calendar);
-  const parsed = parseDateOnly(value);
-  return !calendar.weekendDays.has(parsed.getUTCDay()) && !calendar.holidays.has(value);
-}
-
-export function addBusinessDays(value: DateOnly, amount: number, calendar: BusinessCalendarSnapshot): DateOnly {
-  validateCalendar(calendar);
+function addBusinessDaysWithCalendar(value: DateOnly, amount: number, calendar: NormalizedCalendar): DateOnly {
   parseDateOnly(value);
   assertAmount(amount);
   if (amount === 0) return value;
@@ -103,18 +119,17 @@ export function addBusinessDays(value: DateOnly, amount: number, calendar: Busin
     }
     candidate = addCalendarDays(candidate, direction);
     steps += 1;
-    if (isBusinessDay(candidate, calendar)) remaining -= 1;
+    if (isBusinessDayWithCalendar(candidate, calendar)) remaining -= 1;
   }
   return candidate;
 }
 
-export function businessDayFromStart(
+function businessDayFromStartWithCalendar(
   periodStart: DateOnly,
   periodEnd: DateOnly,
   ordinal: number,
-  calendar: BusinessCalendarSnapshot,
+  calendar: NormalizedCalendar,
 ): DateOnly {
-  validateCalendar(calendar);
   assertOrdinal(ordinal);
   assertDateRange(periodStart, periodEnd);
 
@@ -122,7 +137,7 @@ export function businessDayFromStart(
   let found = 0;
   const span = Math.floor((parseDateOnly(periodEnd).getTime() - parseDateOnly(periodStart).getTime()) / 86_400_000);
   for (let offset = 0; offset <= span; offset += 1) {
-    if (isBusinessDay(candidate, calendar)) {
+    if (isBusinessDayWithCalendar(candidate, calendar)) {
       found += 1;
       if (found === ordinal) return candidate;
     }
@@ -136,13 +151,12 @@ export function businessDayFromStart(
   });
 }
 
-export function businessDayFromEnd(
+function businessDayFromEndWithCalendar(
   periodStart: DateOnly,
   periodEnd: DateOnly,
   ordinal: number,
-  calendar: BusinessCalendarSnapshot,
+  calendar: NormalizedCalendar,
 ): DateOnly {
-  validateCalendar(calendar);
   assertOrdinal(ordinal);
   assertDateRange(periodStart, periodEnd);
 
@@ -150,7 +164,7 @@ export function businessDayFromEnd(
   let found = 0;
   const span = Math.floor((parseDateOnly(periodEnd).getTime() - parseDateOnly(periodStart).getTime()) / 86_400_000);
   for (let offset = 0; offset <= span; offset += 1) {
-    if (isBusinessDay(candidate, calendar)) {
+    if (isBusinessDayWithCalendar(candidate, calendar)) {
       found += 1;
       if (found === ordinal) return candidate;
     }
@@ -164,19 +178,78 @@ export function businessDayFromEnd(
   });
 }
 
-export function adjustBusinessDay(
+function adjustBusinessDayWithCalendar(
   value: DateOnly,
   adjustment: BusinessDayAdjustment,
-  calendar: BusinessCalendarSnapshot,
+  calendar: NormalizedCalendar,
 ): DateOnly {
-  validateCalendar(calendar);
   parseDateOnly(value);
   if (adjustment === 'NONE') return value;
   if (adjustment !== 'PREVIOUS' && adjustment !== 'NEXT') {
     throw new ValidationError('Unknown business-day adjustment', { adjustment });
   }
-  if (isBusinessDay(value, calendar)) return value;
+  if (isBusinessDayWithCalendar(value, calendar)) return value;
   return searchForBusinessDay(value, adjustment === 'NEXT' ? 1 : -1, calendar);
+}
+
+/**
+ * Validate and snapshot a calendar for one immutable evaluation operation.
+ * The public helpers below retain their validation behavior, while callers
+ * traversing many candidate dates can reuse the O(1) weekend/holiday sets.
+ */
+export function createBusinessDayEngine(calendar: BusinessCalendarSnapshot): BusinessDayEngine {
+  const normalized = validateCalendar(calendar);
+  return {
+    isBusinessDay: (value) => isBusinessDayWithCalendar(value, normalized),
+    addBusinessDays: (value, amount) => addBusinessDaysWithCalendar(value, amount, normalized),
+    businessDayFromStart: (periodStart, periodEnd, ordinal) => businessDayFromStartWithCalendar(
+      periodStart,
+      periodEnd,
+      ordinal,
+      normalized,
+    ),
+    businessDayFromEnd: (periodStart, periodEnd, ordinal) => businessDayFromEndWithCalendar(
+      periodStart,
+      periodEnd,
+      ordinal,
+      normalized,
+    ),
+    adjustBusinessDay: (value, adjustment) => adjustBusinessDayWithCalendar(value, adjustment, normalized),
+  };
+}
+
+export function isBusinessDay(value: DateOnly, calendar: BusinessCalendarSnapshot): boolean {
+  return createBusinessDayEngine(calendar).isBusinessDay(value);
+}
+
+export function addBusinessDays(value: DateOnly, amount: number, calendar: BusinessCalendarSnapshot): DateOnly {
+  return createBusinessDayEngine(calendar).addBusinessDays(value, amount);
+}
+
+export function businessDayFromStart(
+  periodStart: DateOnly,
+  periodEnd: DateOnly,
+  ordinal: number,
+  calendar: BusinessCalendarSnapshot,
+): DateOnly {
+  return createBusinessDayEngine(calendar).businessDayFromStart(periodStart, periodEnd, ordinal);
+}
+
+export function businessDayFromEnd(
+  periodStart: DateOnly,
+  periodEnd: DateOnly,
+  ordinal: number,
+  calendar: BusinessCalendarSnapshot,
+): DateOnly {
+  return createBusinessDayEngine(calendar).businessDayFromEnd(periodStart, periodEnd, ordinal);
+}
+
+export function adjustBusinessDay(
+  value: DateOnly,
+  adjustment: BusinessDayAdjustment,
+  calendar: BusinessCalendarSnapshot,
+): DateOnly {
+  return createBusinessDayEngine(calendar).adjustBusinessDay(value, adjustment);
 }
 
 export { MAX_PERIOD_DAYS, MAX_SEARCH_DAYS };

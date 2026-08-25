@@ -1,19 +1,16 @@
 import { ValidationError } from '@/lib/errors';
 import { billingScheduleConfigSchema } from '@/lib/validations/billing';
 import {
-  addBusinessDays,
   addCalendarDays,
   addMonthsClamped,
-  adjustBusinessDay,
-  businessDayFromEnd,
-  businessDayFromStart,
   compareDateOnly,
+  createBusinessDayEngine,
   dayOfMonth,
   formatDateOnly,
   MAX_SEARCH_DAYS,
   parseDateOnly,
 } from '@/services/service-schedule';
-import type { DateOnly, DateSource, ScheduleEntry } from '@/services/service-schedule';
+import type { BusinessDayEngine, DateOnly, DateSource, ScheduleEntry } from '@/services/service-schedule';
 import type {
   BillingCadence,
   BillingScheduleConfigV1,
@@ -160,11 +157,16 @@ function sourceDate(
   }
 }
 
+function requireBusinessDayEngine(engine: BusinessDayEngine | undefined): BusinessDayEngine {
+  if (!engine) throw new ValidationError('Business-day schedule requires a business calendar');
+  return engine;
+}
+
 function resolveEntryDate(
   entry: ScheduleEntry,
   periodStart: DateOnly,
   periodEnd: DateOnly,
-  calendar: BillingScheduleEvaluationInput['calendar'],
+  businessDayEngine: BusinessDayEngine | undefined,
 ): { calculated: DateOnly; operative: DateOnly } {
   const expression = entry.expression;
   let calculated: DateOnly;
@@ -173,10 +175,12 @@ function resolveEntryDate(
       calculated = dayOfMonth(periodStart, expression.day);
       break;
     case 'BUSINESS_DAY_FROM_START':
-      calculated = businessDayFromStart(periodStart, periodEnd, expression.ordinal, calendar);
+      calculated = requireBusinessDayEngine(businessDayEngine)
+        .businessDayFromStart(periodStart, periodEnd, expression.ordinal);
       break;
     case 'BUSINESS_DAY_FROM_END':
-      calculated = businessDayFromEnd(periodStart, periodEnd, expression.ordinal, calendar);
+      calculated = requireBusinessDayEngine(businessDayEngine)
+        .businessDayFromEnd(periodStart, periodEnd, expression.ordinal);
       break;
     case 'RELATIVE_TO_SOURCE': {
       const source = sourceDate(expression.source, periodStart, periodEnd);
@@ -184,7 +188,7 @@ function resolveEntryDate(
         throw new ValidationError('Billing schedule integer parameters require a resolved value');
       }
       calculated = expression.unit === 'BUSINESS_DAY'
-        ? addBusinessDays(source, expression.offset, calendar)
+        ? requireBusinessDayEngine(businessDayEngine).addBusinessDays(source, expression.offset)
         : addCalendarDays(source, expression.offset);
       break;
     }
@@ -192,7 +196,9 @@ function resolveEntryDate(
   }
   return {
     calculated,
-    operative: adjustBusinessDay(calculated, entry.businessDayAdjustment, calendar),
+    operative: entry.businessDayAdjustment === 'NONE'
+      ? calculated
+      : requireBusinessDayEngine(businessDayEngine).adjustBusinessDay(calculated, entry.businessDayAdjustment),
   };
 }
 
@@ -299,6 +305,16 @@ export function evaluateBillingSchedule(input: BillingScheduleEvaluationInput): 
   const startMonth = monthStart(config.startDate);
   const cadenceInterval = Math.max(interval, 1);
   const lookaroundDays = scheduleLookaroundDays(config, interval, input.calendar);
+  const requiresBusinessDayEngine = entries.some((entry) => (
+    entry.businessDayAdjustment !== 'NONE'
+    || entry.expression.kind === 'BUSINESS_DAY_FROM_START'
+    || entry.expression.kind === 'BUSINESS_DAY_FROM_END'
+    || (entry.expression.kind === 'RELATIVE_TO_SOURCE' && entry.expression.unit === 'BUSINESS_DAY')
+  ));
+  // Snapshot and validate the immutable calendar once for the complete
+  // evaluation. Public business-day helpers still validate per invocation;
+  // this engine avoids reparsing all holidays for every candidate date.
+  const businessDayEngine = requiresBusinessDayEngine ? createBusinessDayEngine(input.calendar) : undefined;
   const searchFrom = addCalendarDays(from, -lookaroundDays) as DateOnly;
   const searchTo = addCalendarDays(to, lookaroundDays) as DateOnly;
   const firstOffset = config.cadence === 'ONE_TIME'
@@ -317,7 +333,7 @@ export function evaluateBillingSchedule(input: BillingScheduleEvaluationInput): 
     const cycleEnd = addCalendarDays(nextStart, -1);
     const billingPeriodKey = periodKey(cursor, config.cadence, interval, config.startDate);
     for (const entry of entries) {
-      const resolvedDate = resolveEntryDate(entry, cursor, cycleEnd, input.calendar);
+      const resolvedDate = resolveEntryDate(entry, cursor, cycleEnd, businessDayEngine);
       const { calculated: calculatedExpectedDate, operative: operativeExpectedDate } = resolvedDate;
       if (compareDateOnly(calculatedExpectedDate, config.startDate) < 0
         || compareDateOnly(operativeExpectedDate, config.startDate) < 0) continue;
