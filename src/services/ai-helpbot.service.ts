@@ -820,8 +820,7 @@ export async function respondAssistant(
           status: true,
           financialYearEndDay: true,
           financialYearEndMonth: true,
-          nextArDueDate: true,
-          nextAgmDueDate: true,
+          accountsDueDate: true,
         },
       })
     : null;

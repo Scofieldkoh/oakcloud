@@ -55,8 +55,8 @@ describe('deadline rule starter definitions', () => {
       'SG_FORM_C',
     ]);
     expect(STARTER_DEFINITIONS.map((definition) => hashDeadlineRuleDefinition(definition))).toEqual([
-      '1d35fb5366ca3e0765d99aa3be8a7b1a3419cd72a59010007d2f28c43c125472',
-      '73fd8c37145eec8adea9f1172a6cb7ec2f065fc90cf01b57b291381a3bcead4e',
+      '5064178cfb8a0675bd7a4520c5e91e5e64c0b5f0097b97794d63ebbd52e5380d',
+      'babbb099210ec2afbfaf460482b2200f609ea894dd4fda1b08bc5b6e6116797f',
       '4124dcf4fcc2a1894d4517bc099d5d1c146587b3ad573eae1474cfb8ea134f2b',
       '5f7f8c126d394bcf24e1cb3303e78f9e0508bf39a431b9e049a3ac884fcbe23c',
     ]);
@@ -64,16 +64,20 @@ describe('deadline rule starter definitions', () => {
     const [agm, annualReturn, eci, formC] = STARTER_DEFINITIONS;
     expect(agm).toMatchObject({
       name: 'Singapore AGM Due Date',
-      description: 'Starter statutory AGM rule sourced from Company.nextAgmDueDate',
+      description: 'Starter statutory AGM rule due one month before Company.accountsDueDate',
       parameters: [],
       milestones: [{
         key: 'agm-due',
-        expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+        expression: {
+          kind: 'ADD_MONTHS',
+          source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+          amount: -1,
+        },
       }],
     });
     expect(annualReturn.milestones[0]?.expression).toEqual({
       kind: 'SOURCE',
-      source: { kind: 'COMPANY_FIELD', field: 'nextArDueDate' },
+      source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
     });
     expect(eci.parameters).toEqual([expect.objectContaining({
       key: 'monthsAfterFye',
@@ -132,7 +136,11 @@ describe('deadline rule starter definitions', () => {
         description: null,
         type: 'STATUTORY',
         generationMode: 'ONCE_PER_CYCLE',
-        dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+        dateExpression: {
+          kind: 'ADD_MONTHS',
+          source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+          amount: -1,
+        },
         businessDayAdjustment: 'NONE',
         displayOrder: 0,
         isActive: true,
@@ -144,7 +152,7 @@ describe('deadline rule starter definitions', () => {
         description: null,
         type: 'STATUTORY',
         generationMode: 'ONCE_PER_CYCLE',
-        dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextArDueDate' } },
+        dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
         businessDayAdjustment: 'NONE',
         displayOrder: 0,
         isActive: true,
@@ -182,10 +190,10 @@ describe('deadline rule starter definitions', () => {
         isActive: true,
       },
     ];
-    const migration = readFileSync(
+    const migration = [
       'prisma/migrations/20260817101000_deadline_rule_starter_drafts/migration.sql',
-      'utf8',
-    );
+      'prisma/migrations/20260826171000_remove_duplicate_company_deadline_dates/migration.sql',
+    ].map((path) => readFileSync(path, 'utf8')).join('\n');
 
     expect(migration).toContain(
       '"is_required", "default_value", "validation", "display_order",',
@@ -231,11 +239,8 @@ describe('deadline rule starter definitions', () => {
       expect(actualParameters).toEqual(definition.parameters.length === 0 ? [] : [expectedParameter]);
       expect(actualMilestones).toEqual([expectedMilestones[index]]);
       const expectedMilestone = expectedMilestones[index];
-      expect(migration).toContain(
-        `      '${definition.code}', '${definition.name}', '${definition.description}', '${hashDeadlineRuleDefinition(definition)}',\n`
-          + `      '${expectedMilestone.milestoneKey}', '${expectedMilestone.name}',\n`
-          + `      '${JSON.stringify(expectedMilestone.dateExpression)}'`,
-      );
+      expect(migration).toContain(hashDeadlineRuleDefinition(definition));
+      expect(migration).toContain(JSON.stringify(expectedMilestone.dateExpression));
       for (const row of versionData.parameterDefinitions.create) {
         expect(row.defaultValue).toBe(Prisma.DbNull);
         expect(row.validation).toBe(Prisma.DbNull);
@@ -276,10 +281,10 @@ describe('deadline rule starter definitions', () => {
 
 describe('deadline rule starter migration', () => {
   it('uses the runtime canonical hashes and gates child inserts to exact seeded identities', () => {
-    const migration = readFileSync(
+    const migration = [
       'prisma/migrations/20260817101000_deadline_rule_starter_drafts/migration.sql',
-      'utf8',
-    );
+      'prisma/migrations/20260826171000_remove_duplicate_company_deadline_dates/migration.sql',
+    ].map((path) => readFileSync(path, 'utf8')).join('\n');
     for (const definition of STARTER_DEFINITIONS) {
       expect(migration).toContain(hashDeadlineRuleDefinition(definition));
     }
@@ -287,5 +292,7 @@ describe('deadline rule starter migration', () => {
     expect(migration).toMatch(/NOT EXISTS[\s\S]*SELECT 1\s+FROM\s+"deadline_rule_versions"/);
     expect(migration).toMatch(/r\."archived_at" IS NULL/);
     expect(migration).toContain('v."config_hash" = starter."config_hash"');
+    expect(migration).toContain("'ACCOUNTS_DUE_SOURCE_MIGRATION'");
+    expect(migration).toContain("'TENANT'::\"ScheduleReconciliationScopeType\"");
   });
 });

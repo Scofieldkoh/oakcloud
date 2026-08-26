@@ -79,8 +79,6 @@ function profileScheduleSourceChanged(
   if (section === 'compliance') {
     return next.financialYearEndDay !== current.financialYearEndDay
       || next.financialYearEndMonth !== current.financialYearEndMonth
-      || profileDateKey(next.nextAgmDueDate) !== profileDateKey(current.nextAgmDueDate)
-      || profileDateKey(next.nextArDueDate) !== profileDateKey(current.nextArDueDate)
       || profileDateKey(next.accountsDueDate) !== profileDateKey(current.accountsDueDate);
   }
   return false;
@@ -156,8 +154,6 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
       homeCurrency: company.homeCurrency,
       lastAgmDate: date(company.lastAgmDate),
       lastArFiledDate: date(company.lastArFiledDate),
-      nextAgmDueDate: date(company.nextAgmDueDate),
-      nextArDueDate: date(company.nextArDueDate),
       accountsDueDate: date(company.accountsDueDate),
     };
     case 'capital': return {
@@ -311,8 +307,6 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         homeCurrency: data.homeCurrency,
         lastAgmDate: dateOrNull(data.lastAgmDate),
         lastArFiledDate: dateOrNull(data.lastArFiledDate),
-        nextAgmDueDate: dateOrNull(data.nextAgmDueDate),
-        nextArDueDate: dateOrNull(data.nextArDueDate),
         accountsDueDate: dateOrNull(data.accountsDueDate),
       } });
       break;

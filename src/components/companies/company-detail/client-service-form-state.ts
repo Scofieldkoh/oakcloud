@@ -37,7 +37,7 @@ export interface OperationalDeadlineRuleRow {
   parameterProvenance: Record<string, 'COMPANY' | 'CATALOG_DEFAULT' | 'CLIENT_OVERRIDE'>;
   scheduleEntries: ScheduleEntryInput[];
   parameters: ManualClientServiceCatalogParameterDefinition[];
-  applicabilityState?: 'APPLICABLE' | 'NOT_APPLICABLE' | 'MISSING_INPUT';
+  applicabilityState?: 'PENDING_EVALUATION' | 'APPLICABLE' | 'NOT_APPLICABLE' | 'MISSING_INPUT';
   applicabilityReason?: string | null;
   catalogDerived: boolean;
 }
@@ -225,7 +225,7 @@ function catalogDeadlineRuleRow(rule: ManualClientServiceCatalogDeadlineRule): O
     parameterProvenance: Object.fromEntries(Object.keys(parameterValues).map((key) => [key, 'CATALOG_DEFAULT'])) as OperationalDeadlineRuleRow['parameterProvenance'],
     scheduleEntries: rule.scheduleDefaults.map((entry) => ({ ...entry })),
     parameters: rule.parameters,
-    applicabilityState: 'MISSING_INPUT',
+    applicabilityState: 'PENDING_EVALUATION',
     applicabilityReason: null,
     catalogDerived: true,
   };

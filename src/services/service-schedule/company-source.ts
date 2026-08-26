@@ -28,8 +28,6 @@ export function normalizeCompanyRuleSource(value: unknown, today?: DateOnly): Co
   const result: Record<string, unknown> = {};
   const dateFields = new Set([
     'financialYearEnd',
-    'nextAgmDueDate',
-    'nextArDueDate',
     'accountsDueDate',
     'incorporationDate',
     'registrationDate',

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import type { CompanyWithRelations } from '@/services/company/types';
+import { addMonthsClamped, type DateOnly } from '@/services/service-schedule';
 import { ActiveBadge, OfficerRoleBadge, ShareholderTypeBadge } from './company-profile-badges';
 
 function day(value: Date | string | null | undefined): string {
@@ -45,6 +46,17 @@ function isoDate(value: string | null | undefined): string | null {
   if (!value) return null;
   const candidate = value.slice(0, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(candidate) ? candidate : null;
+}
+
+function previousMonth(value: Date | string | null | undefined): DateOnly | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value.toISOString().slice(0, 10) : isoDate(value);
+  if (!date) return null;
+  try {
+    return addMonthsClamped(date as DateOnly, -1);
+  } catch {
+    return null;
+  }
 }
 
 function acraSourceBadge(
@@ -178,8 +190,7 @@ export function CompanyProfileSections({ company, companyId, onRetrieveAcra, isR
         <div className="grid grid-cols-2 gap-4 p-3 text-sm">
           <div><FieldLabel>Financial year end</FieldLabel><p>{company.financialYearEndDay && company.financialYearEndMonth ? `${company.financialYearEndDay} ${new Date(2000, company.financialYearEndMonth - 1).toLocaleString('en-SG', { month: 'long' })}` : '-'}</p></div>
           <div><FieldLabel>Home currency</FieldLabel><p>{company.homeCurrency ?? '-'}</p></div>
-          <div><FieldLabel>Next AGM due date</FieldLabel><p>{day(company.nextAgmDueDate)}</p></div>
-          <div><FieldLabel>Next Annual Return due date</FieldLabel><p>{day(company.nextArDueDate)}</p></div>
+          <div><FieldLabel>Next AGM due date</FieldLabel><p>{day(previousMonth(company.accountsDueDate))}</p></div>
           <div><FieldLabel>Last annual return</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.lastArFiledDate)}{acraSourceBadge(company, 'annualReturnDate')}</p></div>
           <div><FieldLabel>Accounts due</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.accountsDueDate)}{acraSourceBadge(company, 'accountDueDate')}</p></div>
           <div><FieldLabel>Last AGM</FieldLabel><p>{day(company.lastAgmDate)}</p></div>

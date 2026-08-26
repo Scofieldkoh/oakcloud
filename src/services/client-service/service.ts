@@ -484,8 +484,6 @@ async function loadCompanyRuleSource(
       financialYearEndMonth: true,
       incorporationDate: true,
       registrationDate: true,
-      nextAgmDueDate: true,
-      nextArDueDate: true,
       accountsDueDate: true,
       hasCharges: true,
       currentOfficerCount: true,

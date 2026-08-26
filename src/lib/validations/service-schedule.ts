@@ -65,8 +65,6 @@ const referenceKeySchema = z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$
 
 const companyDateFieldSchema = z.enum([
   'financialYearEnd',
-  'nextAgmDueDate',
-  'nextArDueDate',
   'accountsDueDate',
   'incorporationDate',
 ]);
@@ -88,8 +86,6 @@ export const numericCompanyFieldSchema = z.enum([
 
 export const dateCompanyFieldSchema = z.enum([
   'financialYearEnd',
-  'nextAgmDueDate',
-  'nextArDueDate',
   'accountsDueDate',
   'incorporationDate',
   'registrationDate',

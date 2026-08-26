@@ -14,8 +14,6 @@ export type DateSource =
       kind: 'COMPANY_FIELD';
       field:
         | 'financialYearEnd'
-        | 'nextAgmDueDate'
-        | 'nextArDueDate'
         | 'accountsDueDate'
         | 'incorporationDate';
     }
@@ -106,8 +104,6 @@ export type NumericCompanyField =
 
 export type DateCompanyField =
   | 'financialYearEnd'
-  | 'nextAgmDueDate'
-  | 'nextArDueDate'
   | 'accountsDueDate'
   | 'incorporationDate'
   | 'registrationDate';

@@ -115,8 +115,6 @@ function fieldLabel(field: CompanyField): string {
 function isDateField(field: CompanyField): field is DateCompanyField {
   return [
     'financialYearEnd',
-    'nextAgmDueDate',
-    'nextArDueDate',
     'accountsDueDate',
     'incorporationDate',
     'registrationDate',

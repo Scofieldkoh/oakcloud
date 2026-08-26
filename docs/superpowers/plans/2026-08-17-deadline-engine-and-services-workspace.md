@@ -114,7 +114,7 @@ export type DateOnly = `${number}-${number}-${number}`;
 export type BusinessDayAdjustment = 'NONE' | 'PREVIOUS' | 'NEXT';
 
 export type DateSource =
-  | { kind: 'COMPANY_FIELD'; field: 'financialYearEnd' | 'nextAgmDueDate' | 'nextArDueDate' | 'accountsDueDate' | 'incorporationDate' }
+  | { kind: 'COMPANY_FIELD'; field: 'financialYearEnd' | 'accountsDueDate' | 'incorporationDate' }
   | { kind: 'CYCLE_START' | 'CYCLE_END' }
   | { kind: 'PARAMETER'; key: string }
   | { kind: 'SCHEDULE_ENTRY'; key: string }
@@ -435,7 +435,7 @@ export const scheduleEntriesSchema = z.array(scheduleEntrySchema).max(31).superR
 });
 ```
 
-Company date sources are whitelisted to `financialYearEnd`, `nextAgmDueDate`, `nextArDueDate`, `accountsDueDate`, `incorporationDate`, cycle boundaries, typed parameters, schedule-entry keys, and prior milestone keys.
+Company date sources are whitelisted to `financialYearEnd`, `accountsDueDate`, `incorporationDate`, cycle boundaries, typed parameters, schedule-entry keys, and prior milestone keys.
 
 - [ ] **Step 5: Implement UTC-backed date-only arithmetic**
 
@@ -515,11 +515,11 @@ it('marks XBRL inapplicable to an exempt private company', () => {
 
 it('uses a stored AGM due date before its fallback expression', () => {
   const result = evaluateDeadlineRule(agmInput({
-    company: { nextAgmDueDate: '2027-05-31', financialYearEnd: '2026-12-31' },
+    company: { accountsDueDate: '2027-06-30', financialYearEnd: '2026-12-31' },
   }));
   expect(result.occurrences[0]).toMatchObject({
     calculatedDueDate: '2027-05-31',
-    explanation: expect.arrayContaining([expect.stringContaining('Company.nextAgmDueDate')]),
+    explanation: expect.arrayContaining([expect.stringContaining('Company.accountsDueDate')]),
   });
 });
 ```
@@ -808,8 +808,8 @@ All writes and audit events share a serializable transaction. Published version 
 Create the follow-up seed migration with tenant-scoped stable codes and no variant association:
 
 ```text
-SG_AGM_DUE       — once-per-cycle statutory milestone sourced from Company.nextAgmDueDate, no guessed fallback
-SG_ANNUAL_RETURN — once-per-cycle statutory milestone sourced from Company.nextArDueDate, no guessed fallback
+SG_AGM_DUE       — once-per-cycle statutory milestone one calendar month before Company.accountsDueDate
+SG_ANNUAL_RETURN — once-per-cycle statutory milestone sourced from Company.accountsDueDate
 SG_ECI           — annual FYE source plus required integer parameter monthsAfterFye, with no default
 SG_FORM_C        — annual FYE source plus required integer parameter monthsAfterFye, with no default
 ```
@@ -1094,7 +1094,7 @@ ROLLING_HORIZON
 
 Only Company changes to entity type, FYE, AGM, Annual Return, accounts due, or incorporation date enqueue. Client-service archive also cancels eligible future deadlines during reconciliation. Agreement activation and manual service creation attach enabled default rules before enqueueing.
 
-Expose `nextAgmDueDate` and `nextArDueDate` as optional `YYYY-MM-DD` fields in Company create/update validation, the Compliance profile-section schema, empty create profile, Company profile editor, detail display, section hash, and persistence mapping. Label them `Next AGM due date` and `Next Annual Return due date`. These stored values are the authoritative rule sources; editing either enqueues `COMPANY_SOURCE_CHANGED`.
+Persist `accountsDueDate` as the sole authoritative annual filing date. Do not store duplicate next-AGM or next-annual-return fields. The company detail derives Next AGM as one clamped calendar month before Accounts due, and the statutory Annual Return rule reads Accounts due directly. Editing Accounts due enqueues `COMPANY_SOURCE_CHANGED`.
 
 Add assertions:
 

@@ -29,8 +29,6 @@ export const emptyCompanyProfile: CompanyCreateProfile = {
     homeCurrency: 'SGD',
     lastAgmDate: null,
     lastArFiledDate: null,
-    nextAgmDueDate: null,
-    nextArDueDate: null,
     accountsDueDate: null,
   },
   capital: {

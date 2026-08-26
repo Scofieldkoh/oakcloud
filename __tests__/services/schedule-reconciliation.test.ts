@@ -381,7 +381,7 @@ describe('reconcileClientServiceDeadlines', () => {
           description: null,
           type: 'STATUTORY',
           generationMode: 'ONCE_PER_CYCLE',
-          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
           businessDayAdjustment: 'NONE',
           displayOrder: 0,
           isActive: true,
@@ -413,7 +413,7 @@ describe('reconcileClientServiceDeadlines', () => {
           company: {
             id: 'company-1',
             tenantId: 'tenant-1',
-            nextAgmDueDate: new Date('2026-09-30T00:00:00.000Z'),
+            accountsDueDate: new Date('2026-09-30T00:00:00.000Z'),
             financialYearEndDay: 31,
             financialYearEndMonth: 12,
           },
@@ -550,6 +550,41 @@ describe('reconcileClientServiceDeadlines', () => {
     expect(dbMock.deadlineOccurrence.upsert.mock.calls
       .map((call) => call[0].create.calculatedDueDate.toISOString()))
       .toContain('2026-12-31T00:00:00.000Z');
+  });
+
+  it('materializes a fixed company-date milestone only once across rolling annual periods', async () => {
+    const dbMock = reconciliationDb([], reconciliationRule({
+      currentVersion: {
+        id: 'version-1',
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+        configHash: 'config-1',
+        parameterDefinitions: [],
+        milestoneTemplates: [{
+          milestoneKey: 'accounts-due',
+          name: 'Accounts due',
+          description: null,
+          type: 'STATUTORY',
+          generationMode: 'ONCE_PER_CYCLE',
+          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+          businessDayAdjustment: 'NONE',
+          displayOrder: 0,
+          isActive: true,
+        }],
+      },
+    }));
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1', today: '2026-08-18', horizonEnd: '2027-08-18',
+      writeMode: 'APPLY', reconciliationRequestId: 'req-fixed-company-date',
+    }, dbMock as never);
+
+    expect(result.counts.created).toBe(1);
+    expect(dbMock.serviceCycle.upsert).toHaveBeenCalledTimes(1);
+    expect(dbMock.deadlineOccurrence.upsert).toHaveBeenCalledTimes(1);
+    expect(dbMock.deadlineOccurrence.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ calculatedDueDate: new Date('2026-09-30T00:00:00.000Z') }),
+    }));
   });
 
   it('updates only calculated date and explanation snapshot for overridden occurrences', async () => {

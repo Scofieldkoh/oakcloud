@@ -583,6 +583,7 @@ export async function reconcileClientServiceDeadlines(
       });
     }
 
+    const plannedOccurrenceIdentities = new Set<string>();
     for (const period of periods) {
       await input.assertLease?.();
       let evaluation: ReturnType<typeof evaluateDeadlineRule>;
@@ -625,6 +626,14 @@ export async function reconcileClientServiceDeadlines(
         ));
         continue;
       }
+
+      const proposedDeadlines = evaluation.occurrences.filter((deadline) => {
+        const identity = `${deadline.milestoneKey}|${deadline.scheduleEntryKey}|${deadline.calculatedDueDate}`;
+        if (plannedOccurrenceIdentities.has(identity)) return false;
+        plannedOccurrenceIdentities.add(identity);
+        return true;
+      });
+      if (proposedDeadlines.length === 0) continue;
 
       const cycleKey = `${rule.id}|${period.periodKey}|${ROLLING_PLAN_VERSION}|RULE`;
       let cycle: typeof existingCycles[number] | undefined = cycleByKey.get(cycleKey);
@@ -689,7 +698,7 @@ export async function reconcileClientServiceDeadlines(
 
       const activeEvaluatedOccKeys = new Set<string>();
 
-      for (const proposedDeadline of evaluation.occurrences) {
+      for (const proposedDeadline of proposedDeadlines) {
         const occKey = `${proposedDeadline.milestoneKey}|${proposedDeadline.scheduleEntryKey}`;
         activeEvaluatedOccKeys.add(occKey);
 

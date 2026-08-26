@@ -9745,8 +9745,6 @@ export const CompanyScalarFieldEnum = {
   homeCurrency: 'homeCurrency',
   lastAgmDate: 'lastAgmDate',
   lastArFiledDate: 'lastArFiledDate',
-  nextAgmDueDate: 'nextAgmDueDate',
-  nextArDueDate: 'nextArDueDate',
   accountsDueDate: 'accountsDueDate',
   paidUpCapitalCurrency: 'paidUpCapitalCurrency',
   paidUpCapitalAmount: 'paidUpCapitalAmount',

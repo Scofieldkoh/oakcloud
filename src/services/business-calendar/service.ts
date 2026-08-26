@@ -398,7 +398,7 @@ function normalizeCompanySource(company: Record<string, unknown> | null | undefi
   const supported = [
     'isGstRegistered', 'isRegisteredCharity', 'isIPC', 'hasCharges',
     'currentOfficerCount', 'currentShareholderCount', 'annualReceiptsOrExpenditure',
-    'nextAgmDueDate', 'nextArDueDate', 'accountsDueDate', 'incorporationDate',
+    'accountsDueDate', 'incorporationDate',
     'registrationDate', 'entityType', 'status', 'primarySsicCode', 'secondarySsicCode',
     'uen', 'name', 'financialYearEnd',
   ];
@@ -545,8 +545,6 @@ async function loadImpactData(db: CalendarDb, calendarId: string, tenantId: stri
                 currentOfficerCount: true,
                 currentShareholderCount: true,
                 annualReceiptsOrExpenditure: true,
-                nextAgmDueDate: true,
-                nextArDueDate: true,
                 accountsDueDate: true,
                 incorporationDate: true,
                 registrationDate: true,

@@ -19,8 +19,7 @@ const COMPANY_FIELDS = [
   { value: 'currentOfficerCount', label: 'Officer count', kind: 'number' },
   { value: 'currentShareholderCount', label: 'Shareholder count', kind: 'number' },
   { value: 'financialYearEnd', label: 'Financial year end', kind: 'date' },
-  { value: 'nextAgmDueDate', label: 'Next AGM due date', kind: 'date' },
-  { value: 'nextArDueDate', label: 'Next annual return due date', kind: 'date' },
+  { value: 'accountsDueDate', label: 'Accounts due date', kind: 'date' },
 ] as const;
 
 const EXPRESSION_KINDS = [
@@ -48,11 +47,11 @@ const MILESTONE_TYPES = [
   { value: 'INTERNAL', label: 'Internal' },
 ] as const;
 
-function directSource(field = 'nextArDueDate'): FormNode {
+function directSource(field = 'accountsDueDate'): FormNode {
   return { kind: 'COMPANY_FIELD', field };
 }
 
-function sourceExpression(field = 'nextArDueDate'): FormNode {
+function sourceExpression(field = 'accountsDueDate'): FormNode {
   return { kind: 'SOURCE', source: directSource(field) };
 }
 
@@ -394,13 +393,11 @@ function SourceEditor({
           Company date field
           <select
             className="input input-sm mt-1 min-h-[44px] w-full"
-            value={typeof source.field === 'string' ? source.field : 'nextArDueDate'}
+            value={typeof source.field === 'string' ? source.field : 'accountsDueDate'}
             disabled={disabled}
             onChange={(event) => onChange({ kind: 'COMPANY_FIELD', field: event.target.value })}
           >
             <option value="financialYearEnd">Financial year end</option>
-            <option value="nextAgmDueDate">Next AGM due date</option>
-            <option value="nextArDueDate">Next annual return due date</option>
             <option value="accountsDueDate">Accounts due date</option>
             <option value="incorporationDate">Incorporation date</option>
           </select>

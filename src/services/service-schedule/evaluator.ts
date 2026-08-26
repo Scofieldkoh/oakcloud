@@ -107,8 +107,6 @@ type SourceTracker = {
 
 const DATE_SOURCE_FIELDS = new Set([
   'financialYearEnd',
-  'nextAgmDueDate',
-  'nextArDueDate',
   'accountsDueDate',
   'incorporationDate',
 ]);
@@ -892,8 +890,6 @@ const COMPANY_FIELDS = new Set<CompanyField>([
   'currentShareholderCount',
   'annualReceiptsOrExpenditure',
   'financialYearEnd',
-  'nextAgmDueDate',
-  'nextArDueDate',
   'accountsDueDate',
   'incorporationDate',
   'registrationDate',
@@ -908,8 +904,6 @@ const BOOLEAN_COMPANY_FIELDS = new Set(['isGstRegistered', 'isRegisteredCharity'
 const NUMERIC_COMPANY_FIELDS = new Set(['currentOfficerCount', 'currentShareholderCount', 'annualReceiptsOrExpenditure']);
 const DATE_COMPANY_FIELDS = new Set([
   'financialYearEnd',
-  'nextAgmDueDate',
-  'nextArDueDate',
   'accountsDueDate',
   'incorporationDate',
   'registrationDate',

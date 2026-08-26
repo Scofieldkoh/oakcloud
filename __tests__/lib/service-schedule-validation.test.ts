@@ -31,7 +31,7 @@ const validTypedPredicates: ApplicabilityPredicate[] = [
   { kind: 'FIELD_TRUE', field: 'isGstRegistered' },
   { kind: 'FIELD_EQUALS', field: 'currentOfficerCount', value: 3 },
   { kind: 'FIELD_IN', field: 'entityType', values: ['EXEMPTED_PRIVATE_LIMITED'] },
-  { kind: 'FIELD_COMPARE', field: 'nextAgmDueDate', operator: 'GTE', value: '2026-01-01' },
+  { kind: 'FIELD_COMPARE', field: 'accountsDueDate', operator: 'GTE', value: '2026-01-01' },
 ];
 const validTypedDefinition: ApplicabilityDefinition = {
   schemaVersion: 1,
@@ -136,8 +136,6 @@ describe('generic service schedule validation', () => {
   it('accepts only whitelisted date sources and strict date operations', () => {
     const allowedSources = [
       { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-      { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' },
-      { kind: 'COMPANY_FIELD', field: 'nextArDueDate' },
       { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
       { kind: 'COMPANY_FIELD', field: 'incorporationDate' },
       { kind: 'CYCLE_START' },
@@ -151,6 +149,8 @@ describe('generic service schedule validation', () => {
       expect(dateSourceSchema.parse(source)).toEqual(source);
     }
     expect(() => dateSourceSchema.parse({ kind: 'COMPANY_FIELD', field: 'secretField' })).toThrow();
+    expect(() => dateSourceSchema.parse({ kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' })).toThrow();
+    expect(() => dateSourceSchema.parse({ kind: 'COMPANY_FIELD', field: 'nextArDueDate' })).toThrow();
     expect(() => dateSourceSchema.parse({ kind: 'COMPANY_FIELD', field: 'entityType' })).toThrow();
     expect(() => dateSourceSchema.parse({ kind: 'SCHEDULE_ENTRY', key: 'not valid' })).toThrow();
     expect(() => dateSourceSchema.parse({ kind: 'CYCLE_START', extra: true })).toThrow();
@@ -215,7 +215,7 @@ describe('generic service schedule validation', () => {
       kind: 'ALL',
       conditions: [
         { kind: 'FIELD_EQUALS', field: 'entityType', value: 'EXEMPTED_PRIVATE_LIMITED' },
-        { kind: 'FIELD_PRESENT', field: 'nextAgmDueDate' },
+        { kind: 'FIELD_PRESENT', field: 'accountsDueDate' },
       ],
     };
     expect(applicabilityDefinitionSchema.parse(definition)).toEqual(definition);
@@ -304,7 +304,7 @@ describe('generic service schedule validation', () => {
     expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_COMPARE', field: 'isGstRegistered', operator: 'GT', value: 1 }).success).toBe(false);
     expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_EQUALS', field: 'currentOfficerCount', value: '3' }).success).toBe(false);
     expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_EQUALS', field: 'currentOfficerCount', value: 3 }).success).toBe(true);
-    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_COMPARE', field: 'nextAgmDueDate', operator: 'GTE', value: 'not-a-date' }).success).toBe(false);
+    expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_COMPARE', field: 'accountsDueDate', operator: 'GTE', value: 'not-a-date' }).success).toBe(false);
     expect(applicabilityPredicateSchema.safeParse({ kind: 'FIELD_EQUALS', field: 'entityType', value: 'EXEMPTED_PRIVATE_LIMITED' }).success).toBe(true);
   });
 

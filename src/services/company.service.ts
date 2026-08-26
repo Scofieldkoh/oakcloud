@@ -137,8 +137,6 @@ const TRACKED_FIELDS: (keyof Company)[] = [
   'fyeAsAtLastAr',
   'lastAgmDate',
   'lastArFiledDate',
-  'nextAgmDueDate',
-  'nextArDueDate',
   'accountsDueDate',
   'homeCurrency',
   'paidUpCapitalAmount',
@@ -178,8 +176,6 @@ function scheduleSourceChanged(data: UpdateCompanyInput, existing: Company): boo
   return scalarChanged('entityType')
     || scalarChanged('financialYearEndDay')
     || scalarChanged('financialYearEndMonth')
-    || dateChanged('nextAgmDueDate', 'nextAgmDueDate')
-    || dateChanged('nextArDueDate', 'nextArDueDate')
     || dateChanged('accountsDueDate', 'accountsDueDate')
     || dateChanged('incorporationDate', 'incorporationDate');
 }
@@ -260,8 +256,6 @@ export async function createCompany(
       fyeAsAtLastAr: data.fyeAsAtLastAr ? new Date(data.fyeAsAtLastAr) : null,
       lastAgmDate: data.lastAgmDate ? new Date(data.lastAgmDate) : null,
       lastArFiledDate: data.lastArFiledDate ? new Date(data.lastArFiledDate) : null,
-      nextAgmDueDate: data.nextAgmDueDate ? new Date(data.nextAgmDueDate) : null,
-      nextArDueDate: data.nextArDueDate ? new Date(data.nextArDueDate) : null,
       accountsDueDate: data.accountsDueDate ? new Date(data.accountsDueDate) : null,
       homeCurrency: data.homeCurrency,
       paidUpCapitalCurrency: data.paidUpCapitalCurrency,
@@ -402,10 +396,6 @@ export async function updateCompany(
     updateData.lastAgmDate = data.lastAgmDate ? new Date(data.lastAgmDate) : null;
   if (data.lastArFiledDate !== undefined)
     updateData.lastArFiledDate = data.lastArFiledDate ? new Date(data.lastArFiledDate) : null;
-  if (data.nextAgmDueDate !== undefined)
-    updateData.nextAgmDueDate = data.nextAgmDueDate ? new Date(data.nextAgmDueDate) : null;
-  if (data.nextArDueDate !== undefined)
-    updateData.nextArDueDate = data.nextArDueDate ? new Date(data.nextArDueDate) : null;
   if (data.accountsDueDate !== undefined)
     updateData.accountsDueDate = data.accountsDueDate ? new Date(data.accountsDueDate) : null;
   if (data.homeCurrency !== undefined) updateData.homeCurrency = data.homeCurrency;
@@ -1422,7 +1412,7 @@ export async function getCompanyStats(
       where: {
         ...baseWhere,
         status: 'LIVE',
-        nextArDueDate: {
+        accountsDueDate: {
           lt: new Date(),
         },
       },

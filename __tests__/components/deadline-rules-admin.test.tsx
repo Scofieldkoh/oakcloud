@@ -50,7 +50,7 @@ const rule = {
       description: null,
       type: 'STATUTORY' as const,
       generationMode: 'ONCE_PER_CYCLE' as const,
-      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextArDueDate' } },
+      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
       businessDayAdjustment: 'NONE' as const,
       displayOrder: 0,
       isActive: true,
@@ -78,7 +78,7 @@ const rule = {
       description: null,
       type: 'STATUTORY' as const,
       generationMode: 'ONCE_PER_CYCLE' as const,
-      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextArDueDate' } },
+      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
       businessDayAdjustment: 'NONE' as const,
       displayOrder: 0,
       isActive: true,
@@ -375,7 +375,7 @@ describe('DeadlineRulesPanel', () => {
     const addConditions = screen.getAllByRole('button', { name: 'Add condition' });
     fireEvent.click(addConditions[0]);
     const nestedFields = screen.getAllByLabelText('Company field');
-    fireEvent.change(nestedFields[1], { target: { value: 'nextArDueDate' } });
+    fireEvent.change(nestedFields[1], { target: { value: 'accountsDueDate' } });
     fireEvent.change(screen.getAllByLabelText('Operator')[1], { target: { value: 'FIELD_COMPARE' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 

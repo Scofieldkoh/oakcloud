@@ -74,8 +74,6 @@ export type CompanyMinAggregateOutputType = {
   homeCurrency: string | null
   lastAgmDate: Date | null
   lastArFiledDate: Date | null
-  nextAgmDueDate: Date | null
-  nextArDueDate: Date | null
   accountsDueDate: Date | null
   paidUpCapitalCurrency: string | null
   paidUpCapitalAmount: runtime.Decimal | null
@@ -127,8 +125,6 @@ export type CompanyMaxAggregateOutputType = {
   homeCurrency: string | null
   lastAgmDate: Date | null
   lastArFiledDate: Date | null
-  nextAgmDueDate: Date | null
-  nextArDueDate: Date | null
   accountsDueDate: Date | null
   paidUpCapitalCurrency: string | null
   paidUpCapitalAmount: runtime.Decimal | null
@@ -180,8 +176,6 @@ export type CompanyCountAggregateOutputType = {
   homeCurrency: number
   lastAgmDate: number
   lastArFiledDate: number
-  nextAgmDueDate: number
-  nextArDueDate: number
   accountsDueDate: number
   paidUpCapitalCurrency: number
   paidUpCapitalAmount: number
@@ -260,8 +254,6 @@ export type CompanyMinAggregateInputType = {
   homeCurrency?: true
   lastAgmDate?: true
   lastArFiledDate?: true
-  nextAgmDueDate?: true
-  nextArDueDate?: true
   accountsDueDate?: true
   paidUpCapitalCurrency?: true
   paidUpCapitalAmount?: true
@@ -313,8 +305,6 @@ export type CompanyMaxAggregateInputType = {
   homeCurrency?: true
   lastAgmDate?: true
   lastArFiledDate?: true
-  nextAgmDueDate?: true
-  nextArDueDate?: true
   accountsDueDate?: true
   paidUpCapitalCurrency?: true
   paidUpCapitalAmount?: true
@@ -366,8 +356,6 @@ export type CompanyCountAggregateInputType = {
   homeCurrency?: true
   lastAgmDate?: true
   lastArFiledDate?: true
-  nextAgmDueDate?: true
-  nextArDueDate?: true
   accountsDueDate?: true
   paidUpCapitalCurrency?: true
   paidUpCapitalAmount?: true
@@ -507,8 +495,6 @@ export type CompanyGroupByOutputType = {
   homeCurrency: string | null
   lastAgmDate: Date | null
   lastArFiledDate: Date | null
-  nextAgmDueDate: Date | null
-  nextArDueDate: Date | null
   accountsDueDate: Date | null
   paidUpCapitalCurrency: string | null
   paidUpCapitalAmount: runtime.Decimal | null
@@ -584,8 +570,6 @@ export type CompanyWhereInput = {
   homeCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   lastAgmDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   lastArFiledDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  nextAgmDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  nextArDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   accountsDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   paidUpCapitalCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   paidUpCapitalAmount?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -669,8 +653,6 @@ export type CompanyOrderByWithRelationInput = {
   homeCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
   lastAgmDate?: Prisma.SortOrderInput | Prisma.SortOrder
   lastArFiledDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  nextAgmDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  nextArDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
   accountsDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
   paidUpCapitalCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -759,8 +741,6 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   homeCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   lastAgmDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   lastArFiledDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  nextAgmDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  nextArDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   accountsDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   paidUpCapitalCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   paidUpCapitalAmount?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -844,8 +824,6 @@ export type CompanyOrderByWithAggregationInput = {
   homeCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
   lastAgmDate?: Prisma.SortOrderInput | Prisma.SortOrder
   lastArFiledDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  nextAgmDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  nextArDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
   accountsDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
   paidUpCapitalCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -906,8 +884,6 @@ export type CompanyScalarWhereWithAggregatesInput = {
   homeCurrency?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   lastAgmDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   lastArFiledDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
-  nextAgmDueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
-  nextArDueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   accountsDueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   paidUpCapitalCurrency?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   paidUpCapitalAmount?: Prisma.DecimalNullableWithAggregatesFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -959,8 +935,6 @@ export type CompanyCreateInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1044,8 +1018,6 @@ export type CompanyUncheckedCreateInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1127,8 +1099,6 @@ export type CompanyUpdateInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1212,8 +1182,6 @@ export type CompanyUncheckedUpdateInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1296,8 +1264,6 @@ export type CompanyCreateManyInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1349,8 +1315,6 @@ export type CompanyUpdateManyMutationInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1403,8 +1367,6 @@ export type CompanyUncheckedUpdateManyInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1487,8 +1449,6 @@ export type CompanyCountOrderByAggregateInput = {
   homeCurrency?: Prisma.SortOrder
   lastAgmDate?: Prisma.SortOrder
   lastArFiledDate?: Prisma.SortOrder
-  nextAgmDueDate?: Prisma.SortOrder
-  nextArDueDate?: Prisma.SortOrder
   accountsDueDate?: Prisma.SortOrder
   paidUpCapitalCurrency?: Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrder
@@ -1553,8 +1513,6 @@ export type CompanyMaxOrderByAggregateInput = {
   homeCurrency?: Prisma.SortOrder
   lastAgmDate?: Prisma.SortOrder
   lastArFiledDate?: Prisma.SortOrder
-  nextAgmDueDate?: Prisma.SortOrder
-  nextArDueDate?: Prisma.SortOrder
   accountsDueDate?: Prisma.SortOrder
   paidUpCapitalCurrency?: Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrder
@@ -1606,8 +1564,6 @@ export type CompanyMinOrderByAggregateInput = {
   homeCurrency?: Prisma.SortOrder
   lastAgmDate?: Prisma.SortOrder
   lastArFiledDate?: Prisma.SortOrder
-  nextAgmDueDate?: Prisma.SortOrder
-  nextArDueDate?: Prisma.SortOrder
   accountsDueDate?: Prisma.SortOrder
   paidUpCapitalCurrency?: Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrder
@@ -2182,8 +2138,6 @@ export type CompanyCreateWithoutTenantInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2265,8 +2219,6 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2378,8 +2330,6 @@ export type CompanyScalarWhereInput = {
   homeCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   lastAgmDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   lastArFiledDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  nextAgmDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
-  nextArDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   accountsDueDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   paidUpCapitalCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   paidUpCapitalAmount?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2431,8 +2381,6 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2515,8 +2463,6 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2613,8 +2559,6 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2697,8 +2641,6 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2779,8 +2721,6 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2863,8 +2803,6 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -2961,8 +2899,6 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3045,8 +2981,6 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3127,8 +3061,6 @@ export type CompanyCreateWithoutFormerNamesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3211,8 +3143,6 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3309,8 +3239,6 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3393,8 +3321,6 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3475,8 +3401,6 @@ export type CompanyCreateWithoutAddressesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3559,8 +3483,6 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3657,8 +3579,6 @@ export type CompanyUpdateWithoutAddressesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3741,8 +3661,6 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3823,8 +3741,6 @@ export type CompanyCreateWithoutContactsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -3907,8 +3823,6 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4005,8 +3919,6 @@ export type CompanyUpdateWithoutContactsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4089,8 +4001,6 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4171,8 +4081,6 @@ export type CompanyCreateWithoutContactDetailsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4255,8 +4163,6 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4353,8 +4259,6 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4437,8 +4341,6 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4519,8 +4421,6 @@ export type CompanyCreateWithoutOfficersInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4603,8 +4503,6 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4701,8 +4599,6 @@ export type CompanyUpdateWithoutOfficersInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4785,8 +4681,6 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4867,8 +4761,6 @@ export type CompanyCreateWithoutShareCapitalInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -4951,8 +4843,6 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5049,8 +4939,6 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5133,8 +5021,6 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5215,8 +5101,6 @@ export type CompanyCreateWithoutAuditorInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5299,8 +5183,6 @@ export type CompanyUncheckedCreateWithoutAuditorInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5397,8 +5279,6 @@ export type CompanyUpdateWithoutAuditorInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5481,8 +5361,6 @@ export type CompanyUncheckedUpdateWithoutAuditorInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5563,8 +5441,6 @@ export type CompanyCreateWithoutShareholdersInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5647,8 +5523,6 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5745,8 +5619,6 @@ export type CompanyUpdateWithoutShareholdersInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5829,8 +5701,6 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5911,8 +5781,6 @@ export type CompanyCreateWithoutChargesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -5995,8 +5863,6 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6093,8 +5959,6 @@ export type CompanyUpdateWithoutChargesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6177,8 +6041,6 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6259,8 +6121,6 @@ export type CompanyCreateWithoutDocumentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6343,8 +6203,6 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6441,8 +6299,6 @@ export type CompanyUpdateWithoutDocumentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6525,8 +6381,6 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6607,8 +6461,6 @@ export type CompanyCreateWithoutAuditLogsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6691,8 +6543,6 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6789,8 +6639,6 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6873,8 +6721,6 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -6955,8 +6801,6 @@ export type CompanyCreateWithoutNoteTabsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7039,8 +6883,6 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7137,8 +6979,6 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7221,8 +7061,6 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7303,8 +7141,6 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7387,8 +7223,6 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7485,8 +7319,6 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7569,8 +7401,6 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7651,8 +7481,6 @@ export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7735,8 +7563,6 @@ export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7833,8 +7659,6 @@ export type CompanyUpdateWithoutPrimaryGenerationBatchesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7917,8 +7741,6 @@ export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -7999,8 +7821,6 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8083,8 +7903,6 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8181,8 +7999,6 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8265,8 +8081,6 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8347,8 +8161,6 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8431,8 +8243,6 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8529,8 +8339,6 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8613,8 +8421,6 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8695,8 +8501,6 @@ export type CompanyCreateWithoutClientServicesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8779,8 +8583,6 @@ export type CompanyUncheckedCreateWithoutClientServicesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8877,8 +8679,6 @@ export type CompanyUpdateWithoutClientServicesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -8961,8 +8761,6 @@ export type CompanyUncheckedUpdateWithoutClientServicesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9043,8 +8841,6 @@ export type CompanyCreateWithoutBillingOccurrencesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9127,8 +8923,6 @@ export type CompanyUncheckedCreateWithoutBillingOccurrencesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9225,8 +9019,6 @@ export type CompanyUpdateWithoutBillingOccurrencesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9309,8 +9101,6 @@ export type CompanyUncheckedUpdateWithoutBillingOccurrencesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9391,8 +9181,6 @@ export type CompanyCreateWithoutBillingCoverageIssuesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9475,8 +9263,6 @@ export type CompanyUncheckedCreateWithoutBillingCoverageIssuesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9573,8 +9359,6 @@ export type CompanyUpdateWithoutBillingCoverageIssuesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9657,8 +9441,6 @@ export type CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9739,8 +9521,6 @@ export type CompanyCreateWithoutServiceCyclesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9823,8 +9603,6 @@ export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -9921,8 +9699,6 @@ export type CompanyUpdateWithoutServiceCyclesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10005,8 +9781,6 @@ export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10087,8 +9861,6 @@ export type CompanyCreateWithoutDeadlineOccurrencesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10171,8 +9943,6 @@ export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10269,8 +10039,6 @@ export type CompanyUpdateWithoutDeadlineOccurrencesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10353,8 +10121,6 @@ export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10435,8 +10201,6 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10519,8 +10283,6 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10617,8 +10379,6 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10701,8 +10461,6 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10783,8 +10541,6 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10867,8 +10623,6 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -10965,8 +10719,6 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11049,8 +10801,6 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11131,8 +10881,6 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11215,8 +10963,6 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11313,8 +11059,6 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11397,8 +11141,6 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11479,8 +11221,6 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11563,8 +11303,6 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11661,8 +11399,6 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11745,8 +11481,6 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11827,8 +11561,6 @@ export type CompanyCreateWithoutTasksInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -11911,8 +11643,6 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12009,8 +11739,6 @@ export type CompanyUpdateWithoutTasksInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12093,8 +11821,6 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12175,8 +11901,6 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12259,8 +11983,6 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12357,8 +12079,6 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12441,8 +12161,6 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12523,8 +12241,6 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12607,8 +12323,6 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12705,8 +12419,6 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12789,8 +12501,6 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12871,8 +12581,6 @@ export type CompanyCreateManyTenantInput = {
   homeCurrency?: string | null
   lastAgmDate?: Date | string | null
   lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
   accountsDueDate?: Date | string | null
   paidUpCapitalCurrency?: string | null
   paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -12924,8 +12632,6 @@ export type CompanyUpdateWithoutTenantInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -13007,8 +12713,6 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -13090,8 +12794,6 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
   homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -13427,8 +13129,6 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   homeCurrency?: boolean
   lastAgmDate?: boolean
   lastArFiledDate?: boolean
-  nextAgmDueDate?: boolean
-  nextArDueDate?: boolean
   accountsDueDate?: boolean
   paidUpCapitalCurrency?: boolean
   paidUpCapitalAmount?: boolean
@@ -13513,8 +13213,6 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   homeCurrency?: boolean
   lastAgmDate?: boolean
   lastArFiledDate?: boolean
-  nextAgmDueDate?: boolean
-  nextArDueDate?: boolean
   accountsDueDate?: boolean
   paidUpCapitalCurrency?: boolean
   paidUpCapitalAmount?: boolean
@@ -13568,8 +13266,6 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   homeCurrency?: boolean
   lastAgmDate?: boolean
   lastArFiledDate?: boolean
-  nextAgmDueDate?: boolean
-  nextArDueDate?: boolean
   accountsDueDate?: boolean
   paidUpCapitalCurrency?: boolean
   paidUpCapitalAmount?: boolean
@@ -13623,8 +13319,6 @@ export type CompanySelectScalar = {
   homeCurrency?: boolean
   lastAgmDate?: boolean
   lastArFiledDate?: boolean
-  nextAgmDueDate?: boolean
-  nextArDueDate?: boolean
   accountsDueDate?: boolean
   paidUpCapitalCurrency?: boolean
   paidUpCapitalAmount?: boolean
@@ -13653,7 +13347,7 @@ export type CompanySelectScalar = {
   taskIntegrationContext?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "displayAlias" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "displayAlias" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
@@ -13754,8 +13448,6 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     homeCurrency: string | null
     lastAgmDate: Date | null
     lastArFiledDate: Date | null
-    nextAgmDueDate: Date | null
-    nextArDueDate: Date | null
     accountsDueDate: Date | null
     paidUpCapitalCurrency: string | null
     paidUpCapitalAmount: runtime.Decimal | null
@@ -14259,8 +13951,6 @@ export interface CompanyFieldRefs {
   readonly homeCurrency: Prisma.FieldRef<"Company", 'String'>
   readonly lastAgmDate: Prisma.FieldRef<"Company", 'DateTime'>
   readonly lastArFiledDate: Prisma.FieldRef<"Company", 'DateTime'>
-  readonly nextAgmDueDate: Prisma.FieldRef<"Company", 'DateTime'>
-  readonly nextArDueDate: Prisma.FieldRef<"Company", 'DateTime'>
   readonly accountsDueDate: Prisma.FieldRef<"Company", 'DateTime'>
   readonly paidUpCapitalCurrency: Prisma.FieldRef<"Company", 'String'>
   readonly paidUpCapitalAmount: Prisma.FieldRef<"Company", 'Decimal'>

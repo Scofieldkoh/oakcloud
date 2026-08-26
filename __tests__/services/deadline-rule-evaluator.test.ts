@@ -111,9 +111,9 @@ describe('evaluateApplicability', () => {
         { kind: 'FIELD_NOT_IN', field: 'currentShareholderCount', values: [0] },
         { kind: 'FIELD_TRUE', field: 'isGstRegistered' },
         { kind: 'FIELD_FALSE', field: 'isRegisteredCharity' },
-        { kind: 'FIELD_PRESENT', field: 'nextAgmDueDate' },
+        { kind: 'FIELD_PRESENT', field: 'accountsDueDate' },
         { kind: 'FIELD_COMPARE', field: 'currentOfficerCount', operator: 'GTE', value: 2 },
-        { kind: 'FIELD_COMPARE', field: 'nextAgmDueDate', operator: 'GT', value: '2026-01-01' },
+        { kind: 'FIELD_COMPARE', field: 'accountsDueDate', operator: 'GT', value: '2026-01-01' },
         {
           kind: 'ANY',
           conditions: [
@@ -131,7 +131,7 @@ describe('evaluateApplicability', () => {
       currentShareholderCount: 1,
       isGstRegistered: true,
       isRegisteredCharity: false,
-      nextAgmDueDate: '2027-05-31',
+      accountsDueDate: '2027-05-31',
       primarySsicCode: '62010',
     })).toEqual({ state: 'APPLICABLE', reason: null });
   });
@@ -188,10 +188,10 @@ describe('evaluateApplicability', () => {
 describe('evaluateDeadlineRule', () => {
   it('uses a stored AGM due date before its fallback expression', () => {
     const result = evaluateDeadlineRule(input({
-      company: { nextAgmDueDate: '2027-05-31', financialYearEnd: '2026-12-31' },
+      company: { accountsDueDate: '2027-05-31', financialYearEnd: '2026-12-31' },
       milestones: [milestone('agm-due', {
         kind: 'RELATIVE_TO_SOURCE',
-        source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' },
+        source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
         offset: 0,
         unit: 'CALENDAR_DAY',
       })],
@@ -199,7 +199,7 @@ describe('evaluateDeadlineRule', () => {
 
     expect(result.occurrences[0]).toMatchObject({
       calculatedDueDate: '2027-05-31',
-      explanation: expect.arrayContaining([expect.stringContaining('Company.nextAgmDueDate')]),
+      explanation: expect.arrayContaining([expect.stringContaining('Company.accountsDueDate')]),
     });
   });
 
@@ -337,7 +337,7 @@ describe('evaluateDeadlineRule', () => {
     const expression: RuleDateExpression = {
       kind: 'COALESCE',
       candidates: [
-        { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+        { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
         {
           kind: 'ADD_MONTHS',
           source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
@@ -346,17 +346,17 @@ describe('evaluateDeadlineRule', () => {
       ],
     };
     const result = evaluateDeadlineRule(input({
-      company: { nextAgmDueDate: '2027-05-31', financialYearEnd: '2026-12-31' },
+      company: { accountsDueDate: '2027-05-31', financialYearEnd: '2026-12-31' },
       parameters: { monthsAfterFye: 5 },
       milestones: [milestone('agm-due', expression)],
     }));
 
     expect(result.byKey['agm-due:']?.calculatedDueDate).toBe('2027-05-31');
     expect(result.sourceSnapshot).toEqual(expect.objectContaining({
-      company: { nextAgmDueDate: '2027-05-31' },
+      company: { accountsDueDate: '2027-05-31' },
       parameters: {},
     }));
-    expect(result.occurrences[0]?.explanation.join(' ')).toContain('Company.nextAgmDueDate');
+    expect(result.occurrences[0]?.explanation.join(' ')).toContain('Company.accountsDueDate');
   });
 
   it('uses a configured fallback when the stored company date is absent and records its inputs', () => {
@@ -366,7 +366,7 @@ describe('evaluateDeadlineRule', () => {
       milestones: [milestone('agm-due', {
         kind: 'COALESCE',
         candidates: [
-          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
           {
             kind: 'ADD_MONTHS',
             source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
@@ -389,7 +389,7 @@ describe('evaluateDeadlineRule', () => {
       milestones: [milestone('agm-due', {
         kind: 'COALESCE',
         candidates: [
-          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
           {
             kind: 'ADD_MONTHS',
             source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
@@ -559,11 +559,11 @@ describe('evaluateDeadlineRule', () => {
 
   it('rejects an invalid coalesce candidate even when a stored primary exists', () => {
     expect(() => evaluateDeadlineRule(input({
-      company: { nextAgmDueDate: '2027-05-31' },
+      company: { accountsDueDate: '2027-05-31' },
       milestones: [milestone('invalid-fallback', {
         kind: 'COALESCE',
         candidates: [
-          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'nextAgmDueDate' } },
+          { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
           { kind: 'UNSUPPORTED' },
         ],
       } as never)],

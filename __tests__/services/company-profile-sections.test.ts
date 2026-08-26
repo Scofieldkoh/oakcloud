@@ -7,7 +7,7 @@ const company = {
   statusDate: null, incorporationDate: new Date('2020-01-01'), registrationDate: new Date('2020-01-02'),
   primarySsicCode: null, primarySsicDescription: null, secondarySsicCode: null, secondarySsicDescription: null,
   financialYearEndDay: 31, financialYearEndMonth: 12, fyeAsAtLastAr: null, homeCurrency: 'SGD',
-  lastAgmDate: null, lastArFiledDate: null, nextAgmDueDate: null, nextArDueDate: null, accountsDueDate: null,
+  lastAgmDate: null, lastArFiledDate: null, accountsDueDate: null,
   paidUpCapitalCurrency: 'SGD', paidUpCapitalAmount: 1000,
   issuedCapitalCurrency: 'SGD', issuedCapitalAmount: 1000,
   addresses: [], formerNames: [], officers: [], shareholders: [], shareCapital: [], charges: [], auditor: null,
@@ -102,7 +102,7 @@ describe('company profile section services', () => {
     }));
   });
 
-  it('updates compliance next AGM/AR due dates and enqueues company source reconciliation', async () => {
+  it('updates Accounts due and enqueues company source reconciliation', async () => {
     const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
       '@/services/company/profile-sections'
     );
@@ -121,17 +121,14 @@ describe('company profile section services', () => {
         homeCurrency: 'SGD',
         lastAgmDate: null,
         lastArFiledDate: null,
-        nextAgmDueDate: '2026-06-30',
-        nextArDueDate: '2026-07-31',
-        accountsDueDate: null,
+        accountsDueDate: '2026-07-31',
       },
     });
 
     expect(tx.company.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          nextAgmDueDate: new Date('2026-06-30T00:00:00.000Z'),
-          nextArDueDate: new Date('2026-07-31T00:00:00.000Z'),
+          accountsDueDate: new Date('2026-07-31T00:00:00.000Z'),
         }),
       }),
     );
@@ -165,8 +162,6 @@ describe('company profile section services', () => {
         homeCurrency: 'USD',
         lastAgmDate: '2026-02-01',
         lastArFiledDate: '2026-03-01',
-        nextAgmDueDate: null,
-        nextArDueDate: null,
         accountsDueDate: null,
       },
     });

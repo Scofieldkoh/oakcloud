@@ -169,6 +169,35 @@ describe('ClientServiceCreator', () => {
     expect(screen.getByLabelText('Fee 1 frequency')).toHaveValue('ANNUALLY');
   });
 
+  it('shows inherited deadline rules as awaiting evaluation instead of missing inputs', async () => {
+    hooksMock.useManualClientServiceCatalogOptions.mockReturnValue({
+      data: {
+        variants: [{
+          ...options.variants[0],
+          deadlineRules: [{
+            ruleId: 'rule-agm',
+            code: 'SG_AGM_DUE',
+            name: 'Singapore AGM Due Date',
+            enabledByDefault: true,
+            parameterDefaults: {},
+            scheduleDefaults: [],
+            parameters: [],
+            currentVersionId: 'version-agm',
+          }],
+        }],
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
+    await selectVariant('Corporate Secretarial');
+
+    expect(screen.getByText('Singapore AGM Due Date')).toBeVisible();
+    expect(screen.getByText('Applicability will be evaluated when the service is added.')).toBeVisible();
+    expect(screen.queryByText('Required inputs are missing.')).not.toBeInTheDocument();
+  });
+
   it('materializes a deterministic billing entry when a catalog fee receives its start date', async () => {
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');

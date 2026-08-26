@@ -292,8 +292,6 @@ model Company {
   homeCurrency                String?                      @default("SGD")
   lastAgmDate                 DateTime?
   lastArFiledDate             DateTime?
-  nextAgmDueDate              DateTime?
-  nextArDueDate               DateTime?
   accountsDueDate             DateTime?
   paidUpCapitalCurrency       String?                      @default("SGD")
   paidUpCapitalAmount         Decimal?                     @db.Decimal(18, 2)
@@ -362,8 +360,8 @@ model Company {
   @@index([tenantId, deletedAt])
   @@index([deletedAt])
   @@index([createdAt])
-  @@index([nextArDueDate])
-  @@index([status, nextArDueDate])
+  @@index([accountsDueDate])
+  @@index([status, accountsDueDate])
   @@index([tenantId, status])
   @@index([tenantId, currentOfficerCount])
   @@index([tenantId, currentShareholderCount])
