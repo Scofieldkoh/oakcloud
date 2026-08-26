@@ -381,13 +381,13 @@ describe('service roster service', () => {
     }));
   });
 
-  it('short-circuits an explicitly empty status set', async () => {
-    const result = await listServiceRoster({ ...search, statuses: [] }, scope);
+  it('does not add a status constraint when no status quick filter is active', async () => {
+    await listServiceRoster({ ...search, statuses: [] }, scope);
 
-    expect(result).toEqual({ items: [], total: 0, page: 1, limit: 20, totalPages: 0 });
-    expect(mocks.findMany).not.toHaveBeenCalled();
-    expect(mocks.count).not.toHaveBeenCalled();
-    expect(mocks.queryRaw).not.toHaveBeenCalled();
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.not.objectContaining({ status: expect.anything() }),
+    }));
+    expect(mocks.count).toHaveBeenCalled();
   });
 
   it('returns an empty page without querying when access scope is empty', async () => {
@@ -411,7 +411,7 @@ describe('service roster service', () => {
     expect(mocks.queryRaw).toHaveBeenCalledTimes(1);
   });
 
-  it('includes archived-only families through a grouped tenant and access scoped query', async () => {
+  it('uses the physical legacy company columns in the grouped access-scoped family query', async () => {
     mocks.queryRaw.mockResolvedValue([
       { id: familyId, name: 'Corporate Services', displayColor: '#2F6F5E' },
       { id: '55555555-5555-4555-8555-555555555555', name: 'Archived Advisory', displayColor: '#B85C38' },
@@ -426,6 +426,7 @@ describe('service roster service', () => {
     const query = rawQueryText(mocks.queryRaw.mock.calls[0]?.[0]);
     expect(query).toContain('GROUP BY sf."id", sf."name", sf."display_color"');
     expect(query).not.toContain('cs."deleted_at" IS NULL');
-    expect(query).toContain('c."deleted_at" IS NULL');
+    expect(query).toContain('c."tenantId" =');
+    expect(query).toContain('c."deletedAt" IS NULL');
   });
 });

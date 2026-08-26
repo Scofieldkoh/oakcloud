@@ -22,7 +22,7 @@ export const deadlineSearchSchema = z.object({
   from: dateOnlySchema,
   to: dateOnlySchema,
   mode: deadlineModeSchema.default('TABLE'),
-  types: z.array(deadlineTypeSchema).max(3).default(['STATUTORY', 'CLIENT', 'INTERNAL']),
+  types: z.array(deadlineTypeSchema).max(3).default([]),
   familyIds: z.array(UUID).max(50).default([]),
   companyIds: z.array(UUID).max(100).default([]),
   statuses: z.array(deadlineStatusSchema).max(4).default([]),

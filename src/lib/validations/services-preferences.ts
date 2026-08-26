@@ -102,7 +102,7 @@ export const defaultDeadlineViewPreference: DeadlineViewPreference = {
   version: 1,
   defaultView: 'TABLE',
   monthCount: null,
-  visibleTypes: ['STATUTORY', 'CLIENT', 'INTERNAL'],
+  visibleTypes: [],
   familyIds: [],
   tableColumnWidths: {},
   tableColumnOrder: [],
@@ -144,7 +144,7 @@ export function parseDeadlineViewPreference(value: unknown): DeadlineViewPrefere
   return {
     ...defaultDeadlineViewPreference,
     ...parsed.data,
-    visibleTypes: parsed.data.visibleTypes.length > 0 ? parsed.data.visibleTypes : defaultDeadlineViewPreference.visibleTypes,
+    visibleTypes: parsed.data.visibleTypes,
     tableColumnWidths: widths,
     tableColumnOrder,
     tableColumnVisibility,

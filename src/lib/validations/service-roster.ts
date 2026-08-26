@@ -32,7 +32,7 @@ export const serviceRosterSearchSchema = z.object({
   companyId: uuidSchema.optional(),
   familyIds: z.array(uuidSchema).max(50).default([]),
   variantId: uuidSchema.optional(),
-  statuses: z.array(serviceRosterStatusSchema).max(3).default(['ACTIVE']),
+  statuses: z.array(serviceRosterStatusSchema).max(3).default([]),
   archived: z.boolean().default(false),
   applicability: serviceRosterApplicabilitySchema.optional(),
   sortBy: serviceRosterSortBySchema.default('company'),

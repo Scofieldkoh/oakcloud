@@ -321,12 +321,14 @@ describe('deadline service', () => {
     expect(db.$transaction).toHaveBeenCalledTimes(1);
   });
 
-  it('returns no rows when every deadline type is deselected', async () => {
+  it('does not constrain deadline type when every type is deselected', async () => {
     const result = await listDeadlines({ ...search, types: [] }, actor);
 
-    expect(result).toMatchObject({ mode: 'TABLE', items: [], total: 0, totalPages: 0 });
-    expect(prismaMock.deadlineOccurrence.findMany).not.toHaveBeenCalled();
-    expect(prismaMock.deadlineOccurrence.count).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ mode: 'TABLE', total: 1, totalPages: 1 });
+    expect(prismaMock.deadlineOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.not.objectContaining({ deadlineType: expect.anything() }),
+    }));
+    expect(prismaMock.deadlineOccurrence.count).toHaveBeenCalled();
   });
 
   it('rejects direct transitions between completed and waived', async () => {

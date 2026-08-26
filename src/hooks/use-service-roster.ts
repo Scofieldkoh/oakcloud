@@ -74,7 +74,7 @@ export function normalizeServiceRosterSearch(
     companyId: input.companyId,
     familyIds: unique(input.familyIds),
     variantId: input.variantId,
-    statuses: input.statuses === undefined ? ['ACTIVE'] : uniqueStatuses(input.statuses),
+    statuses: uniqueStatuses(input.statuses),
     archived: input.archived ?? false,
     applicability: input.applicability,
     sortBy: input.sortBy ?? 'company',
@@ -107,10 +107,7 @@ export function serviceRosterSearchParams(search: ServiceRosterSearchInput = {})
   if (normalized.sortBy) params.set('sortBy', normalized.sortBy);
   if (normalized.sortOrder) params.set('sortOrder', normalized.sortOrder);
   if (normalized.serviceQuery) params.set('serviceQuery', normalized.serviceQuery);
-  // An explicit empty value is distinct from an omitted parameter: the route
-  // parser preserves `statuses=` as [], which the service intentionally
-  // short-circuits to an empty result.
-  params.set('statuses', normalized.statuses.join(','));
+  if (normalized.statuses.length > 0) params.set('statuses', normalized.statuses.join(','));
   if (normalized.variantId) params.set('variantId', normalized.variantId);
   params.sort();
   return params.toString();

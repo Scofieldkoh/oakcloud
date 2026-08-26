@@ -107,15 +107,10 @@ function statusLabel(status: ServiceRosterItem['status']): string {
   return status.charAt(0) + status.slice(1).toLowerCase();
 }
 
-function FamilyBadge({ item }: { item: ServiceRosterItem }) {
+function FamilyCell({ item }: { item: ServiceRosterItem }) {
   return (
-    <span
-      className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full border px-2 py-1 text-xs"
-      style={{ borderColor: item.family.displayColor }}
-      title={item.family.name}
-    >
-      <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: item.family.displayColor }} />
-      <span className="truncate text-text-primary">{item.family.name}</span>
+    <span className="block max-w-full truncate text-sm text-text-primary" title={item.family.name}>
+      {item.family.name}
     </span>
   );
 }
@@ -123,8 +118,7 @@ function FamilyBadge({ item }: { item: ServiceRosterItem }) {
 function CompanyCell({ item }: { item: ServiceRosterItem }) {
   return (
     <div className="min-w-0" title={item.company.name}>
-      <span className="block truncate font-medium text-text-primary">{item.company.displayLabel}</span>
-      <span className="block truncate text-xs text-text-secondary">{item.company.name}</span>
+      <span className="block truncate font-medium text-text-primary">{item.company.name}</span>
     </div>
   );
 }
@@ -268,7 +262,7 @@ function InlineFilterRow({ columns, filters, onChange }: { columns: ServiceRoste
 function DesktopCell({ item, column, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; column: ServiceRosterColumnId; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
   switch (column) {
     case 'company': return <td className="max-w-0 px-4 py-3 align-top"><CompanyCell item={item} /></td>;
-    case 'family': return <td className="px-4 py-3 align-top"><FamilyBadge item={item} /></td>;
+    case 'family': return <td className="max-w-0 px-4 py-3 align-top"><FamilyCell item={item} /></td>;
     case 'service': return <td className="max-w-0 px-4 py-3 align-top"><span className="block truncate text-sm text-text-primary" title={item.serviceName}>{item.serviceName}</span></td>;
     case 'status': return <td className="px-4 py-3 align-top"><span className={cn('badge', statusClass(item.status))}>{statusLabel(item.status)}</span></td>;
     case 'cadence': return <td className="px-4 py-3 align-top text-sm text-text-secondary">{formatCadence(item)}</td>;
@@ -297,7 +291,7 @@ function MobileRosterCard({ item, canEdit, onEdit, onTrigger }: { item: ServiceR
       actions={<ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />}
       details={(
         <CardDetailsGrid>
-          <CardDetailItem label="Family" value={<FamilyBadge item={item} />} />
+          <CardDetailItem label="Family" value={<FamilyCell item={item} />} />
           <CardDetailItem label="Cadence" value={formatCadence(item)} />
           <CardDetailItem label="Next deadline" value={formatDate(item.nextDeadline?.operativeDueDate ?? null)} />
           <CardDetailItem label="Start/end" value={`${formatDate(item.startDate)} – ${formatDate(item.endDate)}`} />

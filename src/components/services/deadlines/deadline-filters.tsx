@@ -2,6 +2,9 @@
 
 import { FamilyFilterChips, type ServiceFamilyFilter } from '@/components/services/shared/family-filter-chips';
 import { cn } from '@/lib/utils';
+import { ServiceFilterToolbar, quickFilterClass } from '@/components/services/shared/service-filter-toolbar';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 
 export type DeadlineFilterType = 'STATUTORY' | 'CLIENT' | 'INTERNAL';
 export type DeadlineFilterStatus = 'OPEN' | 'COMPLETED' | 'WAIVED' | 'CANCELLED';
@@ -26,6 +29,11 @@ interface DeadlineFiltersProps {
   onToggleType: (type: DeadlineFilterType) => void;
   onToggleFamily: (familyId: string) => void;
   onToggleOpenOnly: () => void;
+  dateFrom: string;
+  dateTo: string;
+  onDateRangeChange: (from: string, to: string) => void;
+  onAdjustColumns?: () => void;
+  hiddenColumnCount?: number;
   className?: string;
 }
 
@@ -53,6 +61,24 @@ const originLabels: Record<DeadlineFilterOrigin, string> = {
   MANUAL_TRIGGER: 'Manual trigger',
 };
 
+const typeOptions = (Object.keys(typeLabels) as DeadlineFilterType[]).map((type) => ({ value: type, label: typeLabels[type] }));
+const statusOptions = (Object.keys(statusLabels) as DeadlineFilterStatus[]).map((status) => ({ value: status, label: statusLabels[status] }));
+const originOptions = (Object.keys(originLabels) as DeadlineFilterOrigin[]).map((origin) => ({ value: origin, label: originLabels[origin] }));
+
+function toLocalDate(value: string): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function toLocalDateString(value?: Date): string {
+  if (!value || Number.isNaN(value.getTime())) return '';
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 /** Shared, intentionally unlabeled toolbar for table and calendar modes. */
 export function DeadlineFilters({
   families,
@@ -62,14 +88,15 @@ export function DeadlineFilters({
   onToggleType,
   onToggleFamily,
   onToggleOpenOnly,
+  dateFrom,
+  dateTo,
+  onDateRangeChange,
+  onAdjustColumns,
+  hiddenColumnCount,
   className,
 }: DeadlineFiltersProps) {
   return (
-    <div
-      role="group"
-      aria-label="Deadline filters"
-      className={cn('flex flex-wrap items-center gap-2', className)}
-    >
+    <ServiceFilterToolbar label="Deadline filters" onAdjustColumns={onAdjustColumns} hiddenColumnCount={hiddenColumnCount} className={className}>
       {(Object.keys(typeLabels) as DeadlineFilterType[]).map((type) => {
         const selected = selectedTypes.includes(type);
         return (
@@ -77,15 +104,8 @@ export function DeadlineFilters({
             key={type}
             type="button"
             aria-pressed={selected}
-            disabled={selected && selectedTypes.length === 1}
             onClick={() => onToggleType(type)}
-            className={cn(
-              'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors sm:min-h-8',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
-              selected
-                ? 'border-oak-primary bg-oak-primary text-white'
-                : 'border-border-primary bg-background-secondary text-text-secondary hover:border-oak-primary/50 hover:text-text-primary',
-            )}
+            className={quickFilterClass(selected)}
           >
             {typeLabels[type]}
           </button>
@@ -95,13 +115,7 @@ export function DeadlineFilters({
         type="button"
         aria-pressed={openOnly}
         onClick={onToggleOpenOnly}
-        className={cn(
-          'inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors sm:min-h-8',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
-          openOnly
-            ? 'border-oak-primary bg-oak-primary text-white'
-            : 'border-border-primary bg-background-secondary text-text-secondary hover:border-oak-primary/50 hover:text-text-primary',
-        )}
+        className={quickFilterClass(openOnly)}
       >
         Open only
       </button>
@@ -112,7 +126,24 @@ export function DeadlineFilters({
           onToggle={onToggleFamily}
         />
       ) : null}
-    </div>
+      <DatePicker
+        value={dateFrom && dateTo ? { mode: 'range', range: { from: toLocalDate(dateFrom), to: toLocalDate(dateTo) } } : undefined}
+        onChange={(value: DatePickerValue | undefined) => {
+          if (!value) {
+            onDateRangeChange('', '');
+            return;
+          }
+          if (value.mode !== 'range' || !value.range?.from || !value.range.to) return;
+          const from = toLocalDateString(value.range.from);
+          const to = toLocalDateString(value.range.to);
+          if (from && to) onDateRangeChange(from, to);
+        }}
+        placeholder="Date Range"
+        defaultTab="range"
+        size="sm"
+        className="min-w-[160px] text-xs"
+      />
+    </ServiceFilterToolbar>
   );
 }
 
@@ -152,44 +183,39 @@ export function DeadlineInlineFilters({ values, onChange, className }: DeadlineI
         <FilterField label="Company" value={values.companyQuery} onChange={(value) => onChange({ companyQuery: value })} />
         <FilterField label="Service" value={values.serviceQuery} onChange={(value) => onChange({ serviceQuery: value })} />
         <FilterField label="Milestone" value={values.milestoneQuery} onChange={(value) => onChange({ milestoneQuery: value })} />
-        <label className="flex min-w-0 flex-col gap-1 text-xs text-text-secondary">
-          <span>Type</span>
-          <select
-            aria-label="Filter Type"
-            value={values.type}
-            onChange={(event) => onChange({ type: event.target.value as DeadlineFilterType | '' })}
-            className="input input-sm min-h-11 w-full px-3 sm:min-h-8"
-          >
-            <option value="">All types</option>
-            {(Object.keys(typeLabels) as DeadlineFilterType[]).map((type) => <option key={type} value={type}>{typeLabels[type]}</option>)}
-          </select>
-        </label>
-        <FilterField label="Due from" type="date" value={values.from} onChange={(value) => onChange({ from: value })} />
-        <FilterField label="Due to" type="date" value={values.to} onChange={(value) => onChange({ to: value })} />
-        <label className="flex min-w-0 flex-col gap-1 text-xs text-text-secondary">
-          <span>Status</span>
-          <select
-            aria-label="Filter Status"
-            value={values.status}
-            onChange={(event) => onChange({ status: event.target.value as DeadlineFilterStatus | '' })}
-            className="input input-sm min-h-11 w-full px-3 sm:min-h-8"
-          >
-            <option value="">All statuses</option>
-            {(Object.keys(statusLabels) as DeadlineFilterStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
-          </select>
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-xs text-text-secondary">
-          <span>Source</span>
-          <select
-            aria-label="Filter Source"
-            value={values.origin}
-            onChange={(event) => onChange({ origin: event.target.value as DeadlineFilterOrigin | '' })}
-            className="input input-sm min-h-11 w-full px-3 sm:min-h-8"
-          >
-            <option value="">All sources</option>
-            {(Object.keys(originLabels) as DeadlineFilterOrigin[]).map((origin) => <option key={origin} value={origin}>{originLabels[origin]}</option>)}
-          </select>
-        </label>
+        <SearchableSelect
+          variant="table-filter"
+          options={typeOptions}
+          value={values.type}
+          onChange={(value) => onChange({ type: value as DeadlineFilterType | '' })}
+          placeholder="All types"
+          className="text-xs"
+          showChevron={false}
+          showKeyboardHints={false}
+          clearable
+        />
+        <SearchableSelect
+          variant="table-filter"
+          options={statusOptions}
+          value={values.status}
+          onChange={(value) => onChange({ status: value as DeadlineFilterStatus | '' })}
+          placeholder="All statuses"
+          className="text-xs"
+          showChevron={false}
+          showKeyboardHints={false}
+          clearable
+        />
+        <SearchableSelect
+          variant="table-filter"
+          options={originOptions}
+          value={values.origin}
+          onChange={(value) => onChange({ origin: value as DeadlineFilterOrigin | '' })}
+          placeholder="All sources"
+          className="text-xs"
+          showChevron={false}
+          showKeyboardHints={false}
+          clearable
+        />
       </div>
     </div>
   );

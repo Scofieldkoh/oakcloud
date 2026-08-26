@@ -645,7 +645,7 @@ export async function listServiceRoster(
   const scope = normalizeScope(scopeLike);
   const companyIds = visibleCompanyIds(inputResult, scope);
   const today = currentDateInSingapore();
-  if (companyIds?.length === 0 || inputResult.statuses.length === 0) {
+  if (companyIds?.length === 0) {
     return emptyResult(inputResult);
   }
 
@@ -737,8 +737,8 @@ export async function listServiceRosterFamilies(
     FROM "client_services" AS cs
     INNER JOIN "companies" AS c
       ON c."id" = cs."company_id"
-      AND c."tenant_id" = ${scope.tenantId}
-      AND c."deleted_at" IS NULL
+      AND c."tenantId" = ${scope.tenantId}
+      AND c."deletedAt" IS NULL
     INNER JOIN "service_variants" AS sv
       ON sv."id" = cs."service_variant_id"
       AND sv."tenant_id" = ${scope.tenantId}

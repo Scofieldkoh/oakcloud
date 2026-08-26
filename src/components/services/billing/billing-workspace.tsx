@@ -11,16 +11,18 @@ import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-pre
 import type { BillingOccurrenceDto } from '@/services/billing';
 import { addCalendarDays, currentDateInSingapore, type DateOnly } from '@/services/service-schedule';
 import {
+  BILLING_COLUMN_IDS,
   BILLING_TABLE_PREFERENCE_KEY,
   defaultBillingTablePreference,
   parseBillingTablePreference,
   type BillingColumnId,
   type BillingTablePreference,
 } from '@/lib/validations/services-preferences';
+import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
 import { BillingCoveragePanel } from './billing-coverage-panel';
 import { BillingFilters, type BillingFilterState } from './billing-filters';
 import { BillingOccurrenceDialog } from './billing-occurrence-dialog';
-import { BillingTable, type BillingInlineFilters } from './billing-table';
+import { BillingTable, billingColumnLabels, type BillingInlineFilters } from './billing-table';
 
 interface BillingWorkspaceProps {
   workspaceId?: string;
@@ -31,7 +33,7 @@ function initialFilters(): BillingFilterState {
   const from = currentDateInSingapore();
   return {
     query: '',
-    statuses: ['OPEN'],
+    statuses: [],
     timing: [],
     from,
     to: addCalendarDays(from as DateOnly, 30),
@@ -83,7 +85,7 @@ export function parseBillingUrlState(searchKey: string, preference: BillingTable
   return {
     filters: {
       query: readQuery(params.get('query')),
-      statuses: readList(params.get('statuses'), BILLING_STATUSES, ['OPEN']),
+      statuses: readList(params.get('statuses'), BILLING_STATUSES),
       timing: readList(params.get('timing'), BILLING_TIMINGS),
       from: readDate(params.get('from')) ?? today,
       to: readDate(params.get('to')) ?? defaultTo,
@@ -107,6 +109,7 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
   const canonicalSearchKey = searchParams.toString();
   const [optimisticSearchKey, setOptimisticSearchKey] = useState<string | null>(null);
   const [selectedOccurrence, setSelectedOccurrence] = useState<BillingOccurrenceDto | null>(null);
+  const [columnsOpen, setColumnsOpen] = useState(false);
   const [tablePreference, setTablePreference] = useState<BillingTablePreference>(defaultBillingTablePreference);
   const effectiveSearchKey = optimisticSearchKey ?? canonicalSearchKey;
 
@@ -192,7 +195,7 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
       companyQuery: undefined,
       serviceQuery: undefined,
       feeQuery: undefined,
-      statuses: defaults.statuses.join(','),
+      statuses: undefined,
       timing: undefined,
       from: defaults.from,
       to: defaults.to,
@@ -269,12 +272,24 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
       <BillingCoveragePanel />
 
       <div className="space-y-4">
-        <BillingFilters value={filters} families={families} onChange={handleFilterChange} onReset={resetFilters} />
+        <BillingFilters
+          value={filters}
+          families={families}
+          onChange={handleFilterChange}
+          onReset={resetFilters}
+          onAdjustColumns={() => setColumnsOpen(true)}
+          hiddenColumnCount={BILLING_COLUMN_IDS.filter((column) => column !== 'actions' && tablePreference.columnVisibility[column] === false).length}
+        />
 
-        <BillingTableToolbar
-          preference={tablePreference}
-          onToggleColumn={toggleColumn}
-          onMoveColumn={moveColumn}
+        <ServiceColumnModal
+          isOpen={columnsOpen}
+          onClose={() => setColumnsOpen(false)}
+          columns={tablePreference.columnOrder.map((id) => ({ id, label: billingColumnLabels[id], locked: id === 'actions' }))}
+          visibility={tablePreference.columnVisibility as Record<BillingColumnId, boolean>}
+          onToggle={toggleColumn}
+          onMove={moveColumn}
+          onShowAll={() => updatePreference({ columnVisibility: { ...defaultBillingTablePreference.columnVisibility } })}
+          onResetWidths={() => updatePreference({ columnWidths: {} })}
         />
 
         {occurrenceQuery.error ? <Alert variant="error">Unable to load billing tracking rows.</Alert> : null}
@@ -299,37 +314,5 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
 
       <BillingOccurrenceDialog occurrence={selectedOccurrence} isOpen={Boolean(selectedOccurrence)} onClose={closeOccurrence} isSaving={occurrenceMutation.isPending} isResetting={resetMutation.isPending} errorMessage={occurrenceMutation.error?.message ?? resetMutation.error?.message ?? null} onSave={(input) => selectedOccurrence && applyOccurrenceUpdate(selectedOccurrence.id, input)} onReset={(input) => selectedOccurrence && resetOccurrenceOverrides(selectedOccurrence.id, input)} />
     </section>
-  );
-}
-
-interface BillingTableToolbarProps {
-  preference: BillingTablePreference;
-  onToggleColumn: (columnId: BillingColumnId) => void;
-  onMoveColumn: (columnId: BillingColumnId, direction: -1 | 1) => void;
-}
-
-function BillingTableToolbar({ preference, onToggleColumn, onMoveColumn }: BillingTableToolbarProps) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <button type="button" className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs font-medium text-text-secondary transition-colors hover:border-oak-primary hover:text-text-primary sm:min-h-8" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
-        Columns · {Object.values(preference.columnVisibility).filter(Boolean).length}
-      </button>
-      {open ? (
-        <div className="relative z-10 w-full rounded-xl border border-border-primary bg-background-secondary p-3 shadow-elevation-2 sm:w-80">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Customize columns</p>
-          <div className="grid gap-1 sm:grid-cols-2">
-            {preference.columnOrder.map((column) => (
-              <label key={column} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs text-text-secondary hover:bg-background-tertiary sm:min-h-8">
-                <input type="checkbox" checked={preference.columnVisibility[column] !== false} onChange={() => onToggleColumn(column)} />
-                <span className="truncate">{column}</span>
-                <button type="button" aria-label={`Move ${column} column up`} className="ml-auto min-h-11 min-w-11 px-1 text-text-muted hover:text-text-primary sm:min-h-8 sm:min-w-8" onClick={() => onMoveColumn(column, -1)}>↑</button>
-                <button type="button" aria-label={`Move ${column} column down`} className="min-h-11 min-w-11 px-1 text-text-muted hover:text-text-primary sm:min-h-8 sm:min-w-8" onClick={() => onMoveColumn(column, 1)}>↓</button>
-              </label>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
   );
 }

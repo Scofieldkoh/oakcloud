@@ -42,12 +42,14 @@ import {
   type DeadlineTableColumnId,
 } from './deadline-table';
 import { DeadlineCalendar } from './deadline-calendar';
+import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
 
 const VIEW_PREFERENCE_KEY = 'services.deadlines.view.v1';
 const TYPE_VALUES: DeadlineFilterType[] = ['STATUTORY', 'CLIENT', 'INTERNAL'];
 const STATUS_VALUES: DeadlineFilterStatus[] = ['OPEN', 'COMPLETED', 'WAIVED', 'CANCELLED'];
 const SORT_VALUES: DeadlineSortBy[] = ['dueDate', 'company', 'family', 'service', 'type', 'status'];
 const PAGE_SIZE_VALUES = [10, 20, 50, 100] as const;
+const DEADLINE_COLUMN_LABELS: Record<DeadlineTableColumnId, string> = { dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' };
 type DeadlinePageSize = (typeof PAGE_SIZE_VALUES)[number];
 
 export interface DeadlineUrlState {
@@ -181,7 +183,7 @@ export function parseDeadlineUrlState(
     : hasValidRange(candidateFrom, candidateTo) ? { from: candidateFrom, to: candidateTo! } : currentRange(today);
   const hasTypes = params.has('types');
   const hasFamilies = params.has('families');
-  const visibleTypes = preference.visibleTypes.length > 0 ? preference.visibleTypes : TYPE_VALUES;
+  const visibleTypes = preference.visibleTypes;
   const requestedTypes = hasTypes ? readTypes(params.get('types')) : [];
   const familyIds = preference.familyIds.filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id));
   const fallbackPageSize = PAGE_SIZE_VALUES.includes(preference.pageSize as (typeof PAGE_SIZE_VALUES)[number]) ? preference.pageSize : 20;
@@ -189,14 +191,14 @@ export function parseDeadlineUrlState(
     view,
     from: range.from,
     to: range.to,
-    types: requestedTypes.length > 0 ? requestedTypes : visibleTypes,
+    types: hasTypes ? requestedTypes : visibleTypes,
     families: hasFamilies ? readUuidList(params.get('families')) : familyIds,
     companies: readUuidList(params.get('companies')),
     companyQuery: params.get('companyQuery')?.trim().slice(0, 200) ?? '',
     serviceQuery: params.get('serviceQuery')?.trim().slice(0, 200) ?? '',
     milestoneQuery: params.get('milestoneQuery')?.trim().slice(0, 200) ?? '',
     statuses: readStatuses(params.get('statuses')),
-    openOnly: params.has('openOnly') ? params.get('openOnly') === 'true' : false,
+    openOnly: params.has('openOnly') ? params.get('openOnly') === 'true' : true,
     origin: params.get('origin') === 'RULE' || params.get('origin') === 'MANUAL_TRIGGER' ? params.get('origin') as DeadlineFilterOrigin : undefined,
     sortBy: readSortBy(params.get('sortBy'), preference.sortBy),
     sortOrder: readSortOrder(params.get('sortOrder'), preference.sortOrder),
@@ -350,12 +352,11 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   const updateTypes = (type: DeadlineFilterType) => {
     const selected = new Set(urlState.types);
-    if (selected.has(type) && selected.size === 1) return;
     if (selected.has(type)) selected.delete(type);
     else selected.add(type);
     const nextTypes = [...selected].filter((value) => TYPE_VALUES.includes(value));
     setSavedTypes(nextTypes);
-    replaceUrl({ types: nextTypes.join(','), page: '1' });
+    replaceUrl({ types: nextTypes.length > 0 ? nextTypes.join(',') : undefined, page: '1' });
     persistPreference({ visibleTypes: nextTypes });
   };
 
@@ -366,7 +367,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     else selected.add(familyId);
     const next = [...selected].filter((id) => allIds.includes(id));
     setSavedFamilies(next);
-    replaceUrl({ families: next.length === allIds.length ? undefined : next.join(','), page: '1' });
+    replaceUrl({ families: next.length > 0 ? next.join(',') : undefined, page: '1' });
     persistPreference({ familyIds: next });
   };
 
@@ -386,7 +387,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
       page: '1',
     });
     if (next.type !== undefined) {
-      const nextTypes = type ? [type] : TYPE_VALUES;
+      const nextTypes = type ? [type] : [];
       setSavedTypes(nextTypes);
       persistPreference({ visibleTypes: nextTypes });
     }
@@ -433,10 +434,10 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   }, [canWrite, resetDeadline]);
 
   const activeBadges: Array<{ key: string; label: string; onRemove: () => void }> = [];
-  if (urlState.types.length !== TYPE_VALUES.length || !TYPE_VALUES.every((type) => urlState.types.includes(type))) {
-    activeBadges.push({ key: 'types', label: `Type: ${urlState.types.map(formatBadgeValue).join(', ') || 'None'}`, onRemove: () => { setSavedTypes(TYPE_VALUES); replaceUrl({ types: undefined, page: '1' }); persistPreference({ visibleTypes: TYPE_VALUES }); } });
+  for (const type of urlState.types) {
+    activeBadges.push({ key: `type-${type}`, label: `Type: ${formatBadgeValue(type)}`, onRemove: () => updateTypes(type) });
   }
-  if (urlState.openOnly) activeBadges.push({ key: 'openOnly', label: 'Open only', onRemove: () => replaceUrl({ openOnly: undefined, page: '1' }) });
+  if (urlState.openOnly) activeBadges.push({ key: 'openOnly', label: 'Open only', onRemove: () => replaceUrl({ openOnly: 'false', page: '1' }) });
   if (!allFamiliesSelected) {
     for (const family of families.filter((item) => urlState.families.includes(item.id))) activeBadges.push({ key: `family-${family.id}`, label: `Family: ${family.name}`, onRemove: () => updateFamily(family.id) });
   }
@@ -476,7 +477,12 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         openOnly={urlState.openOnly}
         onToggleType={updateTypes}
         onToggleFamily={updateFamily}
-        onToggleOpenOnly={() => replaceUrl({ openOnly: urlState.openOnly ? undefined : 'true', page: '1' })}
+        onToggleOpenOnly={() => replaceUrl({ openOnly: urlState.openOnly ? 'false' : undefined, page: '1' })}
+        dateFrom={urlState.from}
+        dateTo={urlState.to}
+        onDateRangeChange={(from, to) => replaceUrl({ from: from || undefined, to: to || undefined, page: '1' })}
+        onAdjustColumns={urlState.view === 'TABLE' ? () => setColumnsOpen(true) : undefined}
+        hiddenColumnCount={DEADLINE_TABLE_COLUMNS.filter((column) => column !== 'actions' && !columnVisibility[column]).length}
       />
       <DeadlineInlineFilters values={inlineFilters} onChange={updateInlineFilters} />
 
@@ -509,24 +515,16 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
       {urlState.view === 'TABLE' ? (
         <>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="sr-only">Deadline table actions</span>
-            <button type="button" aria-expanded={columnsOpen} onClick={() => setColumnsOpen((open) => !open)} className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary sm:min-h-8">Customize columns</button>
-          </div>
-          {columnsOpen ? (
-            <div role="dialog" aria-label="Customize columns" className="rounded-xl border border-border-primary bg-background-secondary p-3 sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-2"><p className="text-sm font-semibold text-text-primary">Table columns</p><p className="text-xs text-text-muted">Choose visibility and order</p></div>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {columnOrder.map((column, index) => (
-                  <div key={column} className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary px-2 sm:min-h-8">
-                    <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-sm text-text-secondary sm:min-h-8"><input type="checkbox" checked={columnVisibility[column]} disabled={column === 'actions'} aria-label={`Show ${({ dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' } as Record<DeadlineTableColumnId, string>)[column]} column`} onChange={() => { if (column === 'actions') return; const next = { ...columnVisibility, [column]: !columnVisibility[column] }; setColumnVisibility(next); persistPreference({ tableColumnVisibility: next }); }} /><span className="truncate">{({ dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' } as Record<DeadlineTableColumnId, string>)[column]}</span></label>
-                    <button type="button" aria-label={`Move ${column} column up`} disabled={index === 0} onClick={() => { if (index === 0) return; const next = [...columnOrder]; [next[index - 1], next[index]] = [next[index]!, next[index - 1]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↑</button>
-                    <button type="button" aria-label={`Move ${column} column down`} disabled={index === columnOrder.length - 1} onClick={() => { if (index === columnOrder.length - 1) return; const next = [...columnOrder]; [next[index], next[index + 1]] = [next[index + 1]!, next[index]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↓</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
+          <ServiceColumnModal
+            isOpen={columnsOpen}
+            onClose={() => setColumnsOpen(false)}
+            columns={columnOrder.map((id) => ({ id, label: DEADLINE_COLUMN_LABELS[id], locked: id === 'actions' }))}
+            visibility={columnVisibility}
+            onToggle={(column) => { if (column === 'actions') return; const next = { ...columnVisibility, [column]: !columnVisibility[column] }; setColumnVisibility(next); persistPreference({ tableColumnVisibility: next }); }}
+            onMove={(column, direction) => { const index = columnOrder.indexOf(column); const nextIndex = index + direction; if (index < 0 || nextIndex < 0 || nextIndex >= columnOrder.length) return; const next = [...columnOrder]; [next[index], next[nextIndex]] = [next[nextIndex]!, next[index]!]; setColumnOrder(next); persistPreference({ tableColumnOrder: next }); }}
+            onShowAll={() => { const next = Object.fromEntries(DEADLINE_TABLE_COLUMNS.map((column) => [column, true])) as Record<DeadlineTableColumnId, boolean>; setColumnVisibility(next); persistPreference({ tableColumnVisibility: next }); }}
+            onResetWidths={() => { setColumnWidths({}); persistPreference({ tableColumnWidths: {} }); }}
+          />
           {!deadlines.isLoading && !deadlines.error && items.length === 0 ? <div role="status" className="rounded-xl border border-dashed border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">{filtered ? 'No deadlines match the selected filters.' : 'No deadlines found for this date range.'}</div> : null}
           {showTableSurface ? (
             <DeadlineTable

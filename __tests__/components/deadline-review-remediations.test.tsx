@@ -40,6 +40,38 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: hooks.useUpsertUserPreference,
 }));
 vi.mock('@/hooks/use-media-query', () => ({ useIsLargeDesktop: media.isLargeDesktop }));
+vi.mock('@/components/ui/date-picker', () => ({
+  DatePicker: ({
+    placeholder = 'Select date',
+    onChange,
+  }: {
+    placeholder?: string;
+    onChange: (value: unknown) => void;
+  }) => (
+    <div>
+      <button type="button" aria-label={placeholder}>{placeholder}</button>
+      <button
+        type="button"
+        onClick={() => onChange({
+          mode: 'range',
+          range: {
+            from: new Date('2026-08-10T00:00:00'),
+            to: new Date('2026-08-20T00:00:00'),
+          },
+        })}
+      >
+        Apply complete date range
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange({ mode: 'range', range: { from: new Date('2026-08-10T00:00:00') } })}
+      >
+        Apply incomplete date range
+      </button>
+      <button type="button" onClick={() => onChange(undefined)}>Clear date range</button>
+    </div>
+  ),
+}));
 
 import { DeadlineWorkspace } from '@/components/services/deadlines/deadline-workspace';
 
@@ -164,14 +196,12 @@ describe('Task 12 review remediations', () => {
   });
 
   it('renders server-backed inline deadline filters and resets the page', () => {
-    navigation.searchParams = new URLSearchParams('tab=deadlines&page=4');
+    navigation.searchParams = new URLSearchParams('tab=deadlines&page=4&statuses=COMPLETED&origin=MANUAL_TRIGGER');
     render(<DeadlineWorkspace />);
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Filter Company' }), { target: { value: 'Oaktree' } });
     fireEvent.change(screen.getByRole('searchbox', { name: 'Filter Service' }), { target: { value: 'Annual' } });
     fireEvent.change(screen.getByRole('searchbox', { name: 'Filter Milestone' }), { target: { value: 'return' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Filter Status' }), { target: { value: 'COMPLETED' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Filter Source' }), { target: { value: 'MANUAL_TRIGGER' } });
 
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining('page=1'),
@@ -185,6 +215,48 @@ describe('Task 12 review remediations', () => {
       origin: 'MANUAL_TRIGGER',
       page: 1,
     }));
+
+    const clearButtons = screen.getAllByRole('button', { name: 'Clear selection' });
+    expect(clearButtons).toHaveLength(2);
+    fireEvent.click(clearButtons[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ statuses: [], origin: undefined, page: 1 }));
+  });
+
+  it('uses shared clearable selects and a Date Range picker beside Families', () => {
+    navigation.searchParams = new URLSearchParams('tab=deadlines');
+    render(<DeadlineWorkspace />);
+
+    expect(screen.getByRole('combobox', { name: 'All types' })).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'All statuses' })).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'All sources' })).toBeVisible();
+    expect(screen.queryByRole('combobox', { name: 'Filter Type' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Filter Status' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Filter Source' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Date Range' })).toBeVisible();
+  });
+
+  it('maps complete deadline ranges, ignores incomplete ranges, and sends both keys when clearing', () => {
+    navigation.searchParams = new URLSearchParams('tab=deadlines');
+    render(<DeadlineWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply complete date range' }));
+    expect(navigation.replace).toHaveBeenCalledWith(expect.stringContaining('from=2026-08-10'), { scroll: false });
+    expect(navigation.replace).toHaveBeenCalledWith(expect.stringContaining('to=2026-08-20'), { scroll: false });
+
+    const callsAfterComplete = navigation.replace.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Apply incomplete date range' }));
+    expect(navigation.replace).toHaveBeenCalledTimes(callsAfterComplete);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear date range' }));
+    expect(navigation.replace.mock.calls).toContainEqual([
+      expect.not.stringContaining('from='),
+      { scroll: false },
+    ]);
+    expect(navigation.replace.mock.calls).toContainEqual([
+      expect.not.stringContaining('to='),
+      { scroll: false },
+    ]);
   });
 
   it('keeps calendar navigation, visible-month changes, and Today ranges canonical', () => {
@@ -220,19 +292,20 @@ describe('Task 12 review remediations', () => {
     render(<DeadlineWorkspace />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Internal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Families' }));
     fireEvent.click(screen.getByRole('button', { name: 'Accounting' }));
     fireEvent.change(screen.getByRole('combobox', { name: /per page/i }), { target: { value: '50' } });
 
     const mutations = hooks.preferenceMutation.mock.calls.map(([input]) => input.value);
     expect(mutations).toEqual(expect.arrayContaining([
-      expect.objectContaining({ visibleTypes: expect.not.arrayContaining(['INTERNAL']) }),
+      expect.objectContaining({ visibleTypes: ['INTERNAL'] }),
       expect.objectContaining({ familyIds: [familyId] }),
       expect.objectContaining({ pageSize: 50 }),
     ]));
     await waitFor(() => expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50 })));
   });
 
-  it('requires one selected deadline type and restores explicit URL/preference values', () => {
+  it('allows clearing the last deadline type so the query becomes unfiltered', () => {
     navigation.searchParams = new URLSearchParams('types=CLIENT');
     hooks.useUserPreference.mockReturnValue({
       data: { value: { ...defaultDeadlineViewPreference, visibleTypes: ['STATUTORY'] } },
@@ -242,12 +315,12 @@ describe('Task 12 review remediations', () => {
 
     const client = screen.getByRole('button', { name: 'Client' });
     expect(client).toHaveAttribute('aria-pressed', 'true');
-    expect(client).toBeDisabled();
+    expect(client).not.toBeDisabled();
     navigation.replace.mockReset();
     hooks.preferenceMutation.mockReset();
     fireEvent.click(client);
-    expect(navigation.replace).not.toHaveBeenCalled();
-    expect(hooks.preferenceMutation).not.toHaveBeenCalled();
+    expect(navigation.replace).toHaveBeenCalledWith(expect.not.stringContaining('types='), { scroll: false });
+    expect(hooks.preferenceMutation).toHaveBeenCalledWith(expect.objectContaining({ value: expect.objectContaining({ visibleTypes: [] }) }));
   });
 
   it('shows actionable company-id and due-range deviation badges', () => {
@@ -276,11 +349,11 @@ describe('Task 12 review remediations', () => {
 
   it('exposes a saved table column chooser', () => {
     render(<DeadlineWorkspace />);
-    fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
-    const chooser = screen.getByRole('dialog', { name: 'Customize columns' });
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    const chooser = screen.getByRole('dialog', { name: 'Adjust columns' });
     const milestoneCheckbox = within(chooser).getByRole('checkbox', { name: 'Show Milestone column' });
     expect(milestoneCheckbox).toBeVisible();
-    expect(milestoneCheckbox.closest('label')?.parentElement).toHaveClass('min-h-11', 'sm:min-h-8');
+    expect(milestoneCheckbox.closest('label')?.parentElement).toHaveClass('min-h-11', 'sm:min-h-9');
     fireEvent.click(within(chooser).getByRole('checkbox', { name: 'Show Milestone column' }));
     expect(hooks.preferenceMutation).toHaveBeenCalledWith(expect.objectContaining({
       value: expect.objectContaining({ tableColumnVisibility: expect.objectContaining({ milestone: false }) }),

@@ -3,8 +3,10 @@
 import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { FamilyFilterChips, type ServiceFamilyFilter } from '@/components/services/shared/family-filter-chips';
-import { cn } from '@/lib/utils';
+import { ServiceFilterToolbar, quickFilterClass } from '@/components/services/shared/service-filter-toolbar';
 import type { BillingOccurrenceSearch } from '@/lib/validations/billing';
 
 const STATUS_OPTIONS: Array<{ value: BillingOccurrenceSearch['statuses'][number]; label: string }> = [
@@ -18,6 +20,20 @@ const TIMING_OPTIONS: Array<{ value: BillingOccurrenceSearch['timing'][number]; 
   { value: 'DUE', label: 'Due' },
   { value: 'OVERDUE', label: 'Overdue' },
 ];
+
+function toLocalDate(value: string): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function toLocalDateString(value?: Date): string {
+  if (!value || Number.isNaN(value.getTime())) return '';
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export interface BillingFilterState {
   query: string;
@@ -33,13 +49,15 @@ interface BillingFiltersProps {
   families: ServiceFamilyFilter[];
   onChange: (value: BillingFilterState) => void;
   onReset?: () => void;
+  onAdjustColumns?: () => void;
+  hiddenColumnCount?: number;
 }
 
 function toggle<T extends string>(values: readonly T[], value: T): T[] {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
 
-export function BillingFilters({ value, families, onChange, onReset }: BillingFiltersProps) {
+export function BillingFilters({ value, families, onChange, onReset, onAdjustColumns, hiddenColumnCount }: BillingFiltersProps) {
   const [queryDraft, setQueryDraft] = useState(value.query);
   const valueRef = useRef(value);
   const onChangeRef = useRef(onChange);
@@ -58,13 +76,18 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
     return () => window.clearTimeout(timeout);
   }, [queryDraft, value.query]);
 
-  const hasFilters = Boolean(queryDraft || value.timing.length || value.familyIds.length || value.from || value.to);
+  const hasFilters = Boolean(queryDraft || value.statuses.length || value.timing.length || value.familyIds.length);
+  const activeFilters = [
+    ...value.statuses.map((status) => ({ key: `status-${status}`, label: 'Status', value: STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status, onRemove: () => onChange({ ...value, statuses: value.statuses.filter((item) => item !== status) }) })),
+    ...value.timing.map((timing) => ({ key: `timing-${timing}`, label: 'Timing', value: TIMING_OPTIONS.find((option) => option.value === timing)?.label ?? timing, onRemove: () => onChange({ ...value, timing: value.timing.filter((item) => item !== timing) }) })),
+    ...families.filter((family) => value.familyIds.includes(family.id)).map((family) => ({ key: `family-${family.id}`, label: 'Family', value: family.name, onRemove: () => onChange({ ...value, familyIds: value.familyIds.filter((id) => id !== family.id) }) })),
+    ...(queryDraft ? [{ key: 'query', label: 'Search', value: queryDraft, onRemove: () => { setQueryDraft(''); onChange({ ...value, query: '' }); } }] : []),
+  ];
 
   return (
-    <section aria-label="Billing filters" className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <label className="relative min-w-[220px] flex-1 sm:max-w-sm">
+    <section aria-label="Billing filters" className="space-y-3">
+      <ServiceFilterToolbar label="Billing quick filters" onAdjustColumns={onAdjustColumns} hiddenColumnCount={hiddenColumnCount}>
+          <label className="relative min-w-[220px] flex-1">
             <span className="sr-only">Search company or fee line</span>
             <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
             <input
@@ -73,7 +96,7 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
               value={queryDraft}
               onChange={(event) => setQueryDraft(event.target.value)}
               placeholder="Search company or fee line"
-              className="input input-sm min-h-11 w-full py-2 pl-9 pr-3 sm:min-h-8"
+              className="input input-sm min-h-11 w-full bg-background-primary py-2 pl-9 pr-3 sm:min-h-8"
             />
           </label>
           <div role="group" aria-label="Billing status filters" className="flex flex-wrap items-center gap-2">
@@ -85,79 +108,48 @@ export function BillingFilters({ value, families, onChange, onReset }: BillingFi
                   type="button"
                   aria-pressed={selected}
                   onClick={() => onChange({ ...value, statuses: toggle(value.statuses, option.value) })}
-                  className={cn(
-                    'min-h-11 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:min-h-8',
-                    selected ? 'border-oak-primary bg-oak-primary text-white' : 'border-border-primary bg-background-secondary text-text-secondary hover:border-oak-primary hover:text-text-primary',
-                  )}
+                  className={quickFilterClass(selected)}
                 >
                   {option.label}
                 </button>
               );
             })}
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs text-text-secondary sm:min-h-8">
-            <span>From</span>
-            <input
-              type="date"
-              aria-label="Billing date from"
-              value={value.from}
-              onChange={(event) => onChange({ ...value, from: event.target.value })}
-              className="min-w-0 bg-transparent text-text-primary outline-none"
-            />
-          </label>
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-3 text-xs text-text-secondary sm:min-h-8">
-            <span>To</span>
-            <input
-              type="date"
-              aria-label="Billing date to"
-              value={value.to}
-              onChange={(event) => onChange({ ...value, to: event.target.value })}
-              className="min-w-0 bg-transparent text-text-primary outline-none"
-            />
-          </label>
+          <div role="group" aria-label="Billing timing filters" className="flex flex-wrap gap-2">
+            {TIMING_OPTIONS.map((option) => {
+              const selected = value.timing.includes(option.value);
+              return <button key={option.value} type="button" aria-pressed={selected} onClick={() => onChange({ ...value, timing: toggle(value.timing, option.value) })} className={quickFilterClass(selected)}>{option.label}</button>;
+            })}
+          </div>
+          <FamilyFilterChips families={families} selectedIds={value.familyIds} onToggle={(familyId) => onChange({ ...value, familyIds: toggle(value.familyIds, familyId) })} />
+          <DatePicker
+            value={value.from && value.to ? { mode: 'range', range: { from: toLocalDate(value.from), to: toLocalDate(value.to) } } : undefined}
+            onChange={(next: DatePickerValue | undefined) => {
+              if (!next) {
+                onChange({ ...value, from: '', to: '' });
+                return;
+              }
+              if (next.mode !== 'range' || !next.range?.from || !next.range.to) return;
+              const from = toLocalDateString(next.range.from);
+              const to = toLocalDateString(next.range.to);
+              if (from && to) onChange({ ...value, from, to });
+            }}
+            placeholder="Date Range"
+            defaultTab="range"
+            size="sm"
+            className="min-w-[160px] text-xs"
+          />
+      </ServiceFilterToolbar>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
           {hasFilters ? (
             <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-8" onClick={onReset} leftIcon={<X className="h-4 w-4" />}>
               Reset filters
             </Button>
           ) : null}
-        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-text-secondary">Timing</span>
-        <div role="group" aria-label="Billing timing filters" className="flex flex-wrap gap-2">
-          {TIMING_OPTIONS.map((option) => {
-            const selected = value.timing.includes(option.value);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => onChange({ ...value, timing: toggle(value.timing, option.value) })}
-                className={cn(
-                  'min-h-11 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:min-h-8',
-                  selected ? 'border-oak-primary bg-oak-primary/10 text-oak-primary' : 'border-border-primary bg-background-secondary text-text-secondary hover:border-oak-primary hover:text-text-primary',
-                )}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {families.length > 0 ? (
-        <div className="flex flex-wrap items-start gap-3">
-          <span className="pt-2 text-xs font-medium text-text-secondary">Families</span>
-          <FamilyFilterChips
-            families={families}
-            selectedIds={value.familyIds}
-            onToggle={(familyId) => onChange({ ...value, familyIds: toggle(value.familyIds, familyId) })}
-          />
-        </div>
-      ) : null}
+      {activeFilters.length > 0 ? <div aria-label="Active filters" className="flex flex-wrap gap-2">{activeFilters.map((filter) => <FilterChip key={filter.key} label={filter.label} value={filter.value} onRemove={filter.onRemove} />)}</div> : null}
     </section>
   );
 }

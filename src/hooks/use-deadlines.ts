@@ -84,9 +84,7 @@ export function normalizeDeadlineSearch(input: DeadlineSearchInput = {}): Deadli
     from,
     to,
     mode: input.mode ?? 'TABLE',
-    types: input.types === undefined
-      ? ['STATUTORY', 'CLIENT', 'INTERNAL']
-      : uniqueOrdered(input.types, typeOrder),
+    types: uniqueOrdered(input.types, typeOrder),
     familyIds: uniqueStrings(input.familyIds),
     companyIds: uniqueStrings(input.companyIds),
     statuses: uniqueOrdered(input.statuses, statusOrder),
@@ -118,7 +116,7 @@ export function deadlineSearchParams(search: DeadlineSearchInput = {}): string {
   params.set('from', normalized.from);
   params.set('to', normalized.to);
   params.set('mode', normalized.mode);
-  params.set('types', normalized.types.join(','));
+  if (normalized.types.length > 0) params.set('types', normalized.types.join(','));
   params.set('familyIds', normalized.familyIds.join(','));
   params.set('companyIds', normalized.companyIds.join(','));
   params.set('statuses', normalized.statuses.join(','));

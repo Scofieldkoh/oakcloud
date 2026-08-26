@@ -114,14 +114,42 @@ function setup() {
 describe('DeadlineWorkspace', () => {
   beforeEach(setup);
 
-  it('keeps type, open-only, and family filters in one unlabeled toolbar', () => {
+  it('uses a Vault-style toolbar with inactive type defaults and a compact family selector', () => {
     render(<DeadlineWorkspace />);
 
     const toolbar = screen.getByRole('group', { name: 'Deadline filters' });
-    for (const name of ['Statutory', 'Client', 'Internal', 'Open only', 'Accounting']) {
+    expect(toolbar).toHaveClass('border', 'rounded-lg', 'p-4');
+    for (const name of ['Statutory', 'Client', 'Internal', 'Open only', 'Families', 'Columns']) {
       expect(within(toolbar).getByRole('button', { name })).toBeVisible();
     }
-    expect(screen.queryByText('Filter families')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Statutory' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('defaults to Open only and sends the default constraint to the deadline query', () => {
+    render(<DeadlineWorkspace />);
+
+    expect(screen.getByRole('button', { name: 'Open only' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Remove Open only' })).toBeVisible();
+    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ openOnly: true }));
+  });
+
+  it('writes an explicit false value when the default Open only filter is cleared', () => {
+    render(<DeadlineWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open only' }));
+
+    expect(navigation.replace).toHaveBeenCalledWith(expect.stringContaining('openOnly=false'), { scroll: false });
+    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ openOnly: false }));
+  });
+
+  it('renders each selected deadline type as its own removable badge', () => {
+    navigation.searchParams = new URLSearchParams('types=STATUTORY,CLIENT,INTERNAL');
+    render(<DeadlineWorkspace />);
+
+    expect(screen.getByRole('button', { name: 'Remove Type: Statutory' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Type: Client' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Type: Internal' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Remove Type: Statutory, Client, Internal' })).not.toBeInTheDocument();
   });
 
   it('uses the same filters after switching calendar mode', () => {
@@ -129,7 +157,7 @@ describe('DeadlineWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Calendar view' }));
 
-    expect(screen.getByRole('button', { name: 'Statutory' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Statutory' })).toHaveAttribute('aria-pressed', 'false');
     expect(navigation.replace).toHaveBeenCalledWith(
       expect.stringContaining('deadlineView=CALENDAR'),
       { scroll: false },

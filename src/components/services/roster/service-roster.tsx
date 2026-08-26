@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
 import { useClientService } from '@/hooks/use-client-services';
@@ -13,6 +14,8 @@ import { useServiceRosterFamilies } from '@/hooks/use-service-roster-families';
 import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-preferences';
 import type { ServiceRosterItem } from '@/services/service-roster';
 import { FamilyFilterChips, type ServiceFamilyFilter } from '@/components/services/shared/family-filter-chips';
+import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
+import { ServiceFilterToolbar, quickFilterClass } from '@/components/services/shared/service-filter-toolbar';
 import { AddClientServiceDialog } from './add-client-service-dialog';
 import {
   SERVICE_ROSTER_COLUMNS,
@@ -104,7 +107,7 @@ interface ServiceRosterProps {
 }
 
 function readStatuses(value: string | null): ServiceStatus[] {
-  if (value === null) return ['ACTIVE'];
+  if (value === null) return [];
   return value.split(',').filter((status): status is ServiceStatus => STATUS_VALUES.includes(status as ServiceStatus));
 }
 
@@ -142,26 +145,6 @@ function ServiceEditorLauncher({ item, onClose }: { item: ServiceRosterItem; onC
 
 function ManualCycleLauncher({ item, canApply, onClose, onApplied }: { item: ServiceRosterItem; canApply: boolean; onClose: () => void; onApplied: () => void }) {
   return <ManualCycleDialog clientServiceId={item.id} isOpen canApply={canApply} onClose={onClose} onApplied={onApplied} />;
-}
-
-function activeFilterLabel(
-  query: string,
-  filters: ServiceRosterInlineFilters,
-  statuses: ServiceStatus[],
-  familyIds: string[],
-  families: ServiceFamilyFilter[],
-  archived: boolean,
-): string[] {
-  const selectedFamilies = families.filter((family) => familyIds.includes(family.id)).map((family) => family.name);
-  return [
-    statuses.length > 0 ? `Status: ${statuses.map((status) => status.charAt(0) + status.slice(1).toLowerCase()).join(', ')}` : 'Status: None',
-    ...selectedFamilies.map((family) => `Family: ${family}`),
-    archived ? 'Archived' : '',
-    query.trim() ? `Search: ${query.trim()}` : '',
-    filters.company ? `Company: ${filters.company}` : '',
-    filters.family ? `Family: ${filters.family}` : '',
-    filters.service ? `Service: ${filters.service}` : '',
-  ].filter(Boolean);
 }
 
 export function ServiceRoster({ canEdit = true, canCreate = true, families: providedFamilies }: ServiceRosterProps) {
@@ -230,6 +213,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceRosterItem | null>(null);
   const [triggering, setTriggering] = useState<ServiceRosterItem | null>(null);
+  const [queryDraft, setQueryDraft] = useState(query);
 
   const rosterSearch: ServiceRosterSearchInput = {
     query: query.trim() || undefined,
@@ -331,7 +315,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
 
   const toggleStatus = (status: ServiceStatus) => {
     const nextStatuses = statuses.includes(status) ? statuses.filter((value) => value !== status) : [...statuses, status];
-    replaceUrl({ statuses: nextStatuses.join(','), page: '1' });
+    replaceUrl({ statuses: nextStatuses.length > 0 ? nextStatuses.join(',') : undefined, page: '1' });
   };
 
   const toggleFamily = (familyId: string) => {
@@ -339,9 +323,19 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
     replaceUrl({ familyIds: nextFamilyIds.length > 0 ? nextFamilyIds.join(',') : undefined, page: '1' });
   };
 
-  const updateQuery = (value: string) => {
+  const updateQuery = useCallback((value: string) => {
     replaceUrl({ query: value.trim() || undefined, page: '1' });
-  };
+  }, [replaceUrl]);
+
+  useEffect(() => {
+    setQueryDraft(query);
+  }, [query]);
+
+  useEffect(() => {
+    if (queryDraft.trim() === query) return undefined;
+    const timer = window.setTimeout(() => updateQuery(queryDraft), 500);
+    return () => window.clearTimeout(timer);
+  }, [query, queryDraft, updateQuery]);
 
   const updateInlineFilter = (next: Partial<ServiceRosterInlineFilters>) => {
     replaceUrl({
@@ -385,7 +379,15 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
     persistPreference({ columnOrder: nextOrder });
   };
 
-  const filterBadges = activeFilterLabel(query, inlineFilters, statuses, familyIds, families, archived);
+  const filterBadges: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+  if (statuses.length > 0) filterBadges.push({ key: 'status', label: 'Status', value: statuses.map((status) => status.charAt(0) + status.slice(1).toLowerCase()).join(', '), onRemove: () => replaceUrl({ statuses: undefined, page: '1' }) });
+  for (const family of families.filter((item) => familyIds.includes(item.id))) filterBadges.push({ key: `family-${family.id}`, label: 'Family', value: family.name, onRemove: () => toggleFamily(family.id) });
+  if (archived) filterBadges.push({ key: 'archived', label: 'Archive', value: 'Included', onRemove: () => replaceUrl({ archived: undefined, page: '1' }) });
+  if (query.trim()) filterBadges.push({ key: 'query', label: 'Search', value: query.trim(), onRemove: () => updateQuery('') });
+  if (inlineFilters.company) filterBadges.push({ key: 'company', label: 'Company', value: inlineFilters.company, onRemove: () => updateInlineFilter({ company: '' }) });
+  if (inlineFilters.family) filterBadges.push({ key: 'family-query', label: 'Family', value: inlineFilters.family, onRemove: () => updateInlineFilter({ family: '' }) });
+  if (inlineFilters.service) filterBadges.push({ key: 'service', label: 'Service', value: inlineFilters.service, onRemove: () => updateInlineFilter({ service: '' }) });
+  const hiddenColumnCount = SERVICE_ROSTER_COLUMNS.filter((column) => column !== 'actions' && !columnVisibility[column]).length;
   const total = roster.data?.total ?? 0;
   const totalPages = roster.data?.totalPages ?? 0;
 
@@ -396,55 +398,25 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           <h2 id="services-roster-heading" className="text-lg font-semibold text-text-primary">Services roster</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            aria-expanded={columnsOpen}
-            onClick={() => setColumnsOpen((open) => !open)}
-            className="min-h-11 rounded-lg border border-border-primary px-3 text-sm font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary sm:min-h-8"
-          >
-            Customize columns
-          </button>
           {canCreate ? <Button className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setAddOpen(true)}>Add service</Button> : null}
         </div>
       </div>
 
-      {columnsOpen ? (
-        <div role="dialog" aria-label="Customize columns" className="rounded-xl border border-border-primary bg-background-secondary p-3 sm:p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-text-primary">Table columns</p>
-            <p className="text-xs text-text-muted">Choose visibility and order</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {columnOrder.map((column, index) => (
-              <div key={column} className="flex min-h-11 items-center gap-2 rounded-lg border border-border-primary px-2 sm:min-h-8">
-                <label className="flex min-h-11 min-w-0 flex-1 self-stretch items-center gap-2 text-sm text-text-secondary sm:min-h-8">
-                  <input
-                    type="checkbox"
-                    checked={columnVisibility[column]}
-                    disabled={column === 'actions'}
-                    aria-label={`Show ${columnLabels[column]} column`}
-                    onChange={() => toggleColumnVisibility(column)}
-                  />
-                  <span className="truncate">{columnLabels[column]}</span>
-                </label>
-                <button type="button" aria-label={`Move ${columnLabels[column]} column up`} disabled={index === 0} onClick={() => moveColumn(column, -1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↑</button>
-                <button type="button" aria-label={`Move ${columnLabels[column]} column down`} disabled={index === columnOrder.length - 1} onClick={() => moveColumn(column, 1)} className="min-h-11 min-w-11 rounded text-text-muted hover:bg-background-tertiary disabled:opacity-40 sm:min-h-8 sm:min-w-8">↓</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div role="group" aria-label="Service filters" className="space-y-4">
+      <ServiceFilterToolbar label="Service filters" onAdjustColumns={() => setColumnsOpen(true)} hiddenColumnCount={hiddenColumnCount}>
+        <label className="relative flex min-h-11 min-w-[220px] flex-1 items-center rounded-lg border border-border-primary bg-background-primary focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/20 sm:min-h-8">
+          <Search className="ml-3 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
+          <span className="sr-only">Search services</span>
+          <input type="text" role="searchbox" aria-label="Search services" value={queryDraft} onChange={(event) => setQueryDraft(event.target.value)} placeholder="Search companies or services" className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm text-text-primary outline-none placeholder:text-text-muted sm:h-8" />
+          {queryDraft ? <button type="button" aria-label="Clear search" onClick={() => { setQueryDraft(''); if (query) updateQuery(''); }} className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded text-text-muted hover:bg-background-tertiary sm:min-h-8 sm:min-w-8"><X className="h-4 w-4" aria-hidden="true" /></button> : null}
+        </label>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wide text-text-muted">Status</span>
           {STATUS_VALUES.map((status) => (
             <button
               key={status}
               type="button"
               aria-pressed={statuses.includes(status)}
               onClick={() => toggleStatus(status)}
-              className={statuses.includes(status) ? 'min-h-11 rounded-full bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-full border border-border-primary px-3 text-xs font-medium text-text-secondary hover:border-oak-primary/50 hover:text-text-primary sm:min-h-8'}
+              className={quickFilterClass(statuses.includes(status))}
             >
               {status.charAt(0) + status.slice(1).toLowerCase()}
             </button>
@@ -453,41 +425,50 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           <button
             type="button"
             aria-pressed={archived}
-            onClick={() => replaceUrl({ archived: String(!archived), page: '1' })}
-            className={archived ? 'min-h-11 rounded-full bg-background-tertiary px-3 text-xs font-medium text-text-primary sm:min-h-8' : 'min-h-11 rounded-full border border-border-primary px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}
+            onClick={() => replaceUrl({ archived: archived ? undefined : 'true', page: '1' })}
+            className={quickFilterClass(archived)}
           >
             Archived
           </button>
         </div>
-        {!providedFamilies && familyFacets.error ? (
-          <Alert variant="error" title="Family filters unavailable" compact>
-            <div className="flex flex-wrap items-center gap-2">
-              <span>{familyFacets.error instanceof Error ? familyFacets.error.message : 'Unable to load family filters.'}</span>
-              <button
-                type="button"
-                aria-label="Retry family filters"
-                onClick={() => familyFacets.refetch()}
-                className="min-h-11 rounded-md border border-current px-3 text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10 sm:min-h-8"
-              >
-                Retry
-              </button>
-            </div>
-          </Alert>
-        ) : null}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <label className="relative flex min-h-11 min-w-0 flex-1 items-center rounded-lg border border-border-primary bg-background-secondary/50 focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/20 sm:min-h-8">
-            <Search className="ml-3 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
-            <span className="sr-only">Search services</span>
-            <input type="search" aria-label="Search services" value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Search companies or services" className="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm text-text-primary outline-none placeholder:text-text-muted sm:h-8" />
-            {query ? <button type="button" aria-label="Clear search" onClick={() => updateQuery('')} className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded text-text-muted hover:bg-background-tertiary sm:min-h-8 sm:min-w-8"><X className="h-4 w-4" aria-hidden="true" /></button> : null}
-          </label>
-          <span className="text-xs text-text-secondary">{total.toLocaleString()} services</span>
-        </div>
-      </div>
+      </ServiceFilterToolbar>
+      {!providedFamilies && familyFacets.error ? (
+        <Alert variant="error" title="Family filters unavailable" compact>
+          <div className="flex flex-wrap items-center gap-2">
+            <span>{familyFacets.error instanceof Error ? familyFacets.error.message : 'Unable to load family filters.'}</span>
+            <button
+              type="button"
+              aria-label="Retry family filters"
+              onClick={() => familyFacets.refetch()}
+              className="min-h-11 rounded-md border border-current px-3 text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10 sm:min-h-8"
+            >
+              Retry
+            </button>
+          </div>
+        </Alert>
+      ) : null}
+
+      <ServiceColumnModal
+        isOpen={columnsOpen}
+        onClose={() => setColumnsOpen(false)}
+        columns={columnOrder.map((id) => ({ id, label: columnLabels[id], locked: id === 'actions' }))}
+        visibility={columnVisibility}
+        onToggle={toggleColumnVisibility}
+        onMove={moveColumn}
+        onShowAll={() => {
+          const next = { ...defaultColumnVisibility };
+          setColumnVisibility(next);
+          persistPreference({ columnVisibility: next });
+        }}
+        onResetWidths={() => {
+          setColumnWidths({});
+          persistPreference({ columnWidths: {} });
+        }}
+      />
 
       {filterBadges.length > 0 ? (
         <div aria-label="Active filters" className="flex flex-wrap items-center gap-2">
-          {filterBadges.map((label) => <span key={label} className="inline-flex min-h-8 items-center rounded-full bg-oak-primary/10 px-2.5 text-xs text-oak-light">{label}</span>)}
+          {filterBadges.map((badge) => <FilterChip key={badge.key} label={badge.label} value={badge.value} onRemove={badge.onRemove} />)}
         </div>
       ) : null}
 

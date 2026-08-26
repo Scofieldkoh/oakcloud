@@ -74,9 +74,9 @@ describe('useServiceRoster', () => {
     expect(serviceRosterSearchParams(first)).toContain('statuses=ACTIVE%2CPAUSED');
   });
 
-  it('serializes an empty status set explicitly so the server preserves an empty filter', () => {
-    expect(serviceRosterSearchParams({ statuses: [] })).toContain('statuses=');
-    expect(serviceRosterSearchParams({ statuses: [] })).not.toContain('statuses=ACTIVE');
+  it('omits statuses when no status quick filter is active', () => {
+    expect(normalizeServiceRosterSearch({}).statuses).toEqual([]);
+    expect(serviceRosterSearchParams({ statuses: [] })).not.toContain('statuses=');
   });
 
   it('uses exactly the normalized search key and serializes arrays as comma values', async () => {

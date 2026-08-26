@@ -404,7 +404,7 @@ export async function listDeadlines(
 ): Promise<DeadlineListResult> {
   const parsed = deadlineSearchSchema.parse(input);
   const companyIds = requestedDeadlineCompanyIds(parsed, scope);
-  if (companyIds?.length === 0 || parsed.types.length === 0) {
+  if (companyIds?.length === 0) {
     return emptyDeadlineResult(parsed);
   }
 

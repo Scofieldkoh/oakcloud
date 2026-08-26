@@ -1,6 +1,11 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { useState } from 'react';
+import { Layers3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { quickFilterClass } from './service-filter-toolbar';
 import { cn } from '@/lib/utils';
 
 export interface ServiceFamilyFilter {
@@ -27,38 +32,42 @@ export function FamilyFilterChips({
   onToggle,
   className,
 }: FamilyFilterChipsProps) {
+  const [open, setOpen] = useState(false);
   if (families.length === 0) return null;
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      {families.map((family) => {
-        const selected = selectedIds.includes(family.id);
-        const style = { '--family-color': family.displayColor } as CSSProperties;
-
-        return (
-          <button
-            key={family.id}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onToggle(family.id)}
-            style={style}
-            className={cn(
-              'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors sm:min-h-8',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
-              selected
-                ? 'border-[var(--family-color)] bg-[var(--family-color)]/10 text-text-primary'
-                : 'border-border-primary bg-background-secondary text-text-secondary hover:border-[var(--family-color)] hover:text-text-primary',
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className="h-2.5 w-2.5 rounded-full border border-black/10 dark:border-white/20"
-              style={{ backgroundColor: family.displayColor }}
-            />
-            <span>{family.name}</span>
-          </button>
-        );
-      })}
+    <div className={className}>
+      <button type="button" onClick={() => setOpen(true)} className={quickFilterClass(selectedIds.length > 0)}>
+        <Layers3 className="h-4 w-4" aria-hidden="true" />
+        <span>Families</span>
+        {selectedIds.length > 0 ? <span className="min-w-[18px] rounded-full bg-background-tertiary/80 px-1.5 py-0.5 text-center text-2xs">{selectedIds.length}</span> : null}
+      </button>
+      <Modal isOpen={open} onClose={() => setOpen(false)} title="Filter families" description="Select one or more service families." size="sm">
+        <ModalBody className="space-y-2">
+          {families.map((family) => {
+            const selected = selectedIds.includes(family.id);
+            const style = { '--family-color': family.displayColor } as CSSProperties;
+            return (
+              <button
+                key={family.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onToggle(family.id)}
+                style={style}
+                className={cn(
+                  'flex min-h-11 w-full items-center gap-2 rounded-lg border px-3 text-left text-sm transition-colors',
+                  selected ? 'border-[var(--family-color)] bg-[var(--family-color)]/10 text-text-primary' : 'border-border-primary text-text-secondary hover:bg-background-tertiary',
+                )}
+              >
+                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full border border-black/10 dark:border-white/20" style={{ backgroundColor: family.displayColor }} />
+                <span className="flex-1">{family.name}</span>
+                <span aria-hidden="true" className="text-xs">{selected ? '✓' : ''}</span>
+              </button>
+            );
+          })}
+        </ModalBody>
+        <ModalFooter><Button type="button" size="sm" onClick={() => setOpen(false)}>Done</Button></ModalFooter>
+      </Modal>
     </div>
   );
 }

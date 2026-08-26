@@ -194,33 +194,93 @@ describe('ServiceRoster', () => {
     expect(screen.queryByText('Trigger historical cycle')).not.toBeInTheDocument();
   });
 
-  it('places family filters beside Active, Paused, and Ended in one Service filters group', () => {
+  it('uses a Vault-style toolbar with inactive defaults and a compact family selector', () => {
     setup();
     render(<ServiceRoster workspaceId="workspace-1" />);
 
     const toolbar = screen.getByRole('group', { name: 'Service filters' });
-    expect(within(toolbar).getByRole('button', { name: 'Active' })).toBeVisible();
+    expect(toolbar).toHaveClass('border', 'rounded-lg', 'p-4');
+    expect(within(toolbar).getByRole('button', { name: 'Active' })).toHaveAttribute('aria-pressed', 'false');
     expect(within(toolbar).getByRole('button', { name: 'Paused' })).toBeVisible();
     expect(within(toolbar).getByRole('button', { name: 'Ended' })).toBeVisible();
-    expect(within(toolbar).getByRole('button', { name: 'Accounting' })).toBeVisible();
-    expect(screen.queryByText('Filter families')).not.toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'Families' })).toBeVisible();
+    expect(within(toolbar).getByRole('button', { name: 'Columns' })).toBeVisible();
+    expect(screen.queryByLabelText('Active filters')).not.toBeInTheDocument();
   });
 
-  it('uses alternating rows and full company names with display labels', () => {
+  it('does not show a services-count subtext after selecting a family filter', () => {
     setup();
     render(<ServiceRoster workspaceId="workspace-1" />);
 
-    expect(screen.getAllByText('OACS')[0]).toBeVisible();
-    expect(screen.getAllByText('Oaktree Accounting & Corporate Solution Pte. Ltd.')[0]).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Families' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Accounting' }));
+
+    expect(screen.queryByText('1 services')).not.toBeInTheDocument();
+  });
+
+  it('keeps spaces while typing, shows one clear control, and waits 500ms before searching', () => {
+    vi.useFakeTimers();
+    try {
+      setup();
+      render(<ServiceRoster workspaceId="workspace-1" />);
+      const search = screen.getByRole('searchbox', { name: 'Search services' });
+
+      expect(search).toHaveAttribute('type', 'text');
+      fireEvent.change(search, { target: { value: 'Annual return' } });
+
+      expect(search).toHaveValue('Annual return');
+      expect(screen.getAllByRole('button', { name: 'Clear search' })).toHaveLength(1);
+      expect(navigation.replace).not.toHaveBeenCalled();
+
+      act(() => vi.advanceTimersByTime(499));
+      expect(navigation.replace).not.toHaveBeenCalled();
+
+      act(() => vi.advanceTimersByTime(1));
+      expect(navigation.replace).toHaveBeenCalledWith('/services?query=Annual+return&page=1', { scroll: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('removes the status URL key and sends no status constraint after clearing the last status', () => {
+    setup();
+    navigation.searchParams = new URLSearchParams('statuses=ACTIVE');
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+
+    expect(navigation.replace).toHaveBeenCalledWith('/services?page=1', { scroll: false });
+    expect(hooks.useServiceRoster).toHaveBeenLastCalledWith(expect.objectContaining({ statuses: [] }));
+    expect(screen.queryByText('Status: None')).not.toBeInTheDocument();
+  });
+
+  it('uses alternating rows and shows the full company name without its alias', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    expect(within(table).queryByText('OACS')).not.toBeInTheDocument();
+    expect(within(table).getByText('Oaktree Accounting & Corporate Solution Pte. Ltd.')).toBeVisible();
     expect(screen.getAllByRole('row')[2]).toHaveClass('bg-oak-row-alt');
+  });
+
+  it('renders the Family column as plain truncated text on the desktop roster', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    const familyCell = within(table).getByText('Accounting').closest('td');
+    expect(familyCell).not.toBeNull();
+    expect(familyCell?.querySelector('.rounded-full')).toBeNull();
+    expect(familyCell?.querySelector('.truncate')).toHaveTextContent('Accounting');
   });
 
   it('shows text and an accent cue for a selected family chip', () => {
     setup();
     render(<ServiceRoster workspaceId="workspace-1" />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Families' }));
     const familyChip = screen.getByRole('button', { name: 'Accounting' });
-    expect(familyChip).toHaveClass('min-h-11', 'sm:min-h-8');
     expect(familyChip).toHaveAttribute('aria-pressed', 'false');
     expect(familyChip.querySelector('[aria-hidden="true"]')).toBeTruthy();
     expect(familyChip).toHaveStyle({ '--family-color': '#3F6DA8' });
@@ -234,6 +294,7 @@ describe('ServiceRoster', () => {
     setup();
     render(<ServiceRoster workspaceId="workspace-1" />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Families' }));
     expect(screen.getByRole('button', { name: 'Advisory' })).toBeVisible();
   });
 
@@ -297,8 +358,8 @@ describe('ServiceRoster', () => {
     expect(screen.getByRole('combobox', { name: 'Per page:' })).toHaveValue('50');
     expect(screen.queryByRole('option', { name: '200' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add service' })).toHaveClass('min-h-11', 'sm:min-h-8');
-    fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
-    expect(screen.getByRole('button', { name: 'Customize columns' })).toHaveClass('min-h-11', 'sm:min-h-8');
+    fireEvent.click(screen.getByRole('button', { name: /Columns/ }));
+    expect(screen.getByRole('dialog', { name: 'Adjust columns' })).toBeVisible();
     const familyCheckbox = screen.getByRole('checkbox', { name: 'Show Family column' });
     expect(familyCheckbox).not.toBeChecked();
     expect(familyCheckbox.closest('label')).toHaveClass('self-stretch', 'min-h-11');
@@ -337,7 +398,7 @@ describe('ServiceRoster', () => {
       fireEvent.pointerMove(window, { clientX: 180 });
       fireEvent.pointerUp(window, { clientX: 180 });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
+      fireEvent.click(screen.getByRole('button', { name: /Columns/ }));
       fireEvent.click(screen.getByRole('checkbox', { name: 'Show Family column' }));
       fireEvent.click(screen.getByRole('button', { name: 'Move Company column down' }));
       fireEvent.click(screen.getByRole('button', { name: 'Sort by Service' }));
@@ -367,7 +428,7 @@ describe('ServiceRoster', () => {
     hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
     render(<ServiceRoster workspaceId="workspace-1" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Customize columns' }));
+    fireEvent.click(screen.getByRole('button', { name: /Columns/ }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show Family column' }));
     expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
       value: expect.objectContaining({ version: 1, columnVisibility: expect.objectContaining({ family: false }) }),
