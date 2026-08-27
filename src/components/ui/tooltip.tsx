@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
 interface TooltipProps {
@@ -17,21 +18,63 @@ export function Tooltip({
   disabled = false,
 }: TooltipProps) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const tooltipRef = useRef<HTMLSpanElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const tooltipEl = tooltipRef.current;
+    const tooltipHeight = tooltipEl?.offsetHeight ?? 32;
+    const tooltipWidth = tooltipEl?.offsetWidth ?? 200;
+
+    let targetSide = side;
+    if (side === 'top' && rect.top - tooltipHeight - 10 < 8) {
+      targetSide = 'bottom';
+    } else if (side === 'bottom' && rect.bottom + tooltipHeight + 10 > window.innerHeight - 8) {
+      targetSide = 'top';
+    }
+
+    const top = targetSide === 'top' ? rect.top - tooltipHeight - 8 : rect.bottom + 8;
+    let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+
+    const padding = 12;
+    if (left < padding) {
+      left = padding;
+    } else if (left + tooltipWidth > window.innerWidth - padding) {
+      left = window.innerWidth - padding - tooltipWidth;
+    }
+
+    setPosition({ top, left });
+  }, [side]);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [open, updatePosition]);
 
   if (disabled || !content) {
     return <>{children}</>;
   }
 
-  const containerPosition = side === 'top'
-    ? 'bottom-full left-1/2 -translate-x-1/2 mb-2'
-    : 'top-full left-1/2 -translate-x-1/2 mt-2';
-
-  const arrowPosition = side === 'top'
-    ? 'top-full left-1/2 -translate-x-1/2 border-t-slate-900 border-l-transparent border-r-transparent border-b-0'
-    : 'bottom-full left-1/2 -translate-x-1/2 border-b-slate-900 border-l-transparent border-r-transparent border-t-0';
-
   return (
     <span
+      ref={triggerRef}
       className="relative inline-flex"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
@@ -39,22 +82,24 @@ export function Tooltip({
       onBlur={() => setOpen(false)}
     >
       {children}
-      <span
-        role="tooltip"
-        className={cn(
-          'pointer-events-none absolute z-50 w-max max-w-[min(24rem,calc(100vw-2rem))] whitespace-normal break-words rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-elevation-2 transition-all duration-150',
-          containerPosition,
-          open ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-0.5'
+      {open && mounted && typeof document !== 'undefined' &&
+        createPortal(
+          <span
+            ref={tooltipRef}
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              top: `${position.top}px`,
+              left: `${position.left}px`,
+            }}
+            className={cn(
+              'pointer-events-none z-[9999] w-max max-w-[min(24rem,calc(100vw-2rem))] whitespace-normal break-words rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-elevation-2 transition-opacity duration-150 animate-fade-in'
+            )}
+          >
+            {content}
+          </span>,
+          document.body
         )}
-      >
-        {content}
-        <span
-          className={cn(
-            'absolute h-0 w-0 border-[6px]',
-            arrowPosition
-          )}
-        />
-      </span>
     </span>
   );
 }

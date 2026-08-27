@@ -159,6 +159,16 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
 
+  it('removes page-panel controls when the embedding signing surface disallows them', async () => {
+    render(<DocumentPageViewer pdfUrl="/test.pdf" allowPagePanel={false} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('/ 2')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTitle(/page thumbnails/i)).not.toBeInTheDocument();
+  });
+
   it('renders every PDF page in one scrollable surface in continuous mode', async () => {
     render(
       <DocumentPageViewer

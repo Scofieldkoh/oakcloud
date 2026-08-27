@@ -220,6 +220,8 @@ describe('service roster service', () => {
     expect(sql).toMatch(/OFFSET[\s\S]*LIMIT/);
     expect(sql).toMatch(/tenant_id/);
     expect(sql).toMatch(/company_id/);
+    expect(sql).toContain('c."tenantId" =');
+    expect(sql).toContain('c."deletedAt" IS NULL');
   });
 
   it('hydrates raw next-deadline page IDs in SQL order without widening access scope', async () => {

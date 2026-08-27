@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const hooksMock = vi.hoisted(() => ({
-  useClientServices: vi.fn(), useClientService: vi.fn(), useUpdateClientService: vi.fn(), useArchiveClientService: vi.fn(), useRetryServiceAgreementActivation: vi.fn(),
+  useClientServices: vi.fn(), useClientService: vi.fn(), useUpdateClientService: vi.fn(), useArchiveClientService: vi.fn(), useDeleteClientServicePermanently: vi.fn(), useRetryServiceAgreementActivation: vi.fn(),
   useManualClientServiceCatalogOptions: vi.fn(), useCreateManualClientService: vi.fn(),
   isHttpRequestError: vi.fn((error: unknown, status?: number) => Boolean(
     error && typeof error === 'object' && 'status' in error
@@ -74,6 +74,7 @@ describe('CompanyServicesTab', () => {
     hooksMock.useClientService.mockReturnValue({ refetch: vi.fn(), isFetching: false });
     hooksMock.useUpdateClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     hooksMock.useArchiveClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    hooksMock.useDeleteClientServicePermanently.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     hooksMock.useRetryServiceAgreementActivation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     hooksMock.useManualClientServiceCatalogOptions.mockReturnValue({ data: catalogOptions, isLoading: false, error: null });
     hooksMock.useCreateManualClientService.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
@@ -245,8 +246,8 @@ describe('CompanyServicesTab', () => {
     expect(screen.getByLabelText('Fee 1 currency')).toBeVisible();
     expect(screen.getByLabelText('Fee 1 billing start date')).toBeVisible();
     fireEvent.change(screen.getByLabelText('Fee 1 frequency'), { target: { value: 'CUSTOM' } });
-    expect(screen.getByLabelText('Fee 1 custom frequency')).toBeVisible();
-    fireEvent.change(screen.getByLabelText('Fee 1 custom frequency'), { target: { value: 'Every 18 months' } });
+    expect(screen.getByLabelText('Fee 1 custom interval months')).toBeVisible();
+    fireEvent.change(screen.getByLabelText('Fee 1 custom interval months'), { target: { value: '18' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Save rejected'));
     expect(screen.getByRole('dialog')).toBeVisible();
@@ -352,6 +353,32 @@ describe('CompanyServicesTab', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive service' }).at(-1)!);
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Archive rejected'));
     expect(screen.getByText('Archive service?')).toBeVisible();
+  });
+
+  it('places permanent deletion above archive and confirms the related-record cascade', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ id: service.id, deleted: true, deletedCounts: {} });
+    hooksMock.useDeleteClientServicePermanently.mockReturnValue({ mutateAsync, isPending: false });
+    render(<CompanyServicesTab companyId="company-1" canEdit />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit service' }));
+
+    const deleteButton = screen.getByRole('button', { name: 'Delete service permanently' });
+    const archiveButton = screen.getByRole('button', { name: 'Archive service' });
+    expect(deleteButton.compareDocumentPosition(archiveButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(deleteButton);
+    const dialog = screen.getByRole('dialog', { name: 'Permanently delete service?' });
+    expect(dialog).toHaveTextContent('deadlines, billing records, fee lines, and rule configuration');
+    expect(dialog).toHaveTextContent('cannot be undone');
+    fireEvent.change(within(dialog).getByLabelText('Deletion reason'), { target: { value: 'Created against the wrong company' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete permanently' }));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({
+      id: service.id,
+      companyId: service.companyId,
+      expectedUpdatedAt: service.updatedAt,
+      reason: 'Created against the wrong company',
+    }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit service' })).not.toBeInTheDocument());
   });
 
   it('renders company tabs as horizontally scrollable mobile touch targets', () => {

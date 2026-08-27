@@ -10,7 +10,10 @@ import type { BillingDisposition } from '@/generated/prisma';
 import { ClientServiceWriteConflictError, DuplicateClientServiceError } from './errors';
 import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
 import { clientServiceInclude, dateOnly, toClientServiceDto } from './mapper';
-import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import {
+  enqueueScheduleReconciliation,
+  processScheduleReconciliationBatch,
+} from '@/services/schedule-reconciliation';
 import { assertConfiguredBillingState, canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import { canonicalDeadlineRuleAudit, persistClientServiceDeadlineRules, validateClientServiceDeadlineRules } from './service';
 
@@ -60,9 +63,6 @@ export async function createManualClientService(
   if (input.billingDisposition === 'NOT_REQUIRED' && input.feeLines.length > 0) {
     throw new ValidationError('Not-required billing fee lines must be empty');
   }
-  if (input.billingDisposition === 'NOT_REQUIRED' && (input.billingNotRequiredReason ?? '').trim().length < 3) {
-    throw new ValidationError('Explain why billing is not required');
-  }
   if (input.billingDisposition !== 'NOT_REQUIRED' && rawInput.billingNotRequiredReason != null) {
     throw new ValidationError('A not-required reason is only valid when billing is not required');
   }
@@ -82,7 +82,7 @@ export async function createManualClientService(
     feeLines: preparedFees,
   });
   try {
-    return await runSerializableTransaction(prisma, async (tx) => {
+    const createdDto = await runSerializableTransaction(prisma, async (tx) => {
       const company = await tx.company.findFirst({
         where: { id: companyId, tenantId: params.tenantId, deletedAt: null },
         select: {
@@ -320,6 +320,10 @@ export async function createManualClientService(
       if (!created) throw new NotFoundError('Client service not found');
       return toClientServiceDto(created);
     });
+    processScheduleReconciliationBatch().catch((err) => {
+      console.error('Immediate reconciliation batch failed:', err);
+    });
+    return createdDto;
   } catch (error) {
     if (isSerializationConflict(error)) throw new ClientServiceWriteConflictError();
     throw error;

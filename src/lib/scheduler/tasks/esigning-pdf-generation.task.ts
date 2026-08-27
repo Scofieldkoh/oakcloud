@@ -40,6 +40,7 @@ export const esigningPdfGenerationTask: TaskRegistration = {
   id: 'esigning-pdf-generation',
   name: 'E-Signing Completion Processing Queue',
   description: 'Processes signed PDF artifacts, company auto-filing, and completion email delivery',
-  defaultCronPattern: '*/1 * * * *',
+  enabledEnvVar: 'SCHEDULER_ENABLED',
+  defaultCronPattern: '* * * * *',
   execute: executeEsigningPdfGenerationTask,
 };

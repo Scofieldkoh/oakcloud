@@ -592,7 +592,17 @@ function resolveSource(
       if (typeof value !== 'string') throw new ValidationError(`${sourceName(source)} must be a DateOnly string`, { source });
       parseDateOnly(value as DateOnly);
       markProvenance(tracker, sourceName(source), value);
-      return { date: value as DateOnly, explanation: [`Source ${sourceName(source)} = ${value}`] };
+
+      let resolvedDate = value as DateOnly;
+      if ((source.field === 'accountsDueDate' || source.field === 'financialYearEnd') && input.period.start) {
+        const periodYear = Number(input.period.start.slice(0, 4));
+        const baseYear = Number(value.slice(0, 4));
+        const diffYears = periodYear - baseYear;
+        if (diffYears !== 0) {
+          resolvedDate = addMonthsClamped(value as DateOnly, diffYears * 12);
+        }
+      }
+      return { date: resolvedDate, explanation: [`Source ${sourceName(source)} = ${resolvedDate}`] };
     }
     case 'CYCLE_START':
       markProvenance(tracker, sourceName(source), input.period.start);

@@ -2,13 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes } from '@/lib/errors';
 
 const prismaMock = vi.hoisted(() => ({
-  clientService: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  clientService: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
   company: { findFirst: vi.fn() },
   clientServiceFeeLine: { deleteMany: vi.fn(), updateMany: vi.fn(), createMany: vi.fn() },
   clientServiceDeadlineRule: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
+  billingOccurrence: { deleteMany: vi.fn() },
+  billingCoverageIssue: { deleteMany: vi.fn() },
+  deadlineOccurrence: { deleteMany: vi.fn() },
   serviceVariantDeadlineRule: { findMany: vi.fn() },
   deadlineRuleVersion: { findMany: vi.fn() },
-  serviceCycle: { findMany: vi.fn() },
+  serviceCycle: { findMany: vi.fn(), deleteMany: vi.fn() },
   businessCalendar: { findFirst: vi.fn() },
   deadlineRule: { findMany: vi.fn() },
   serviceAgreement: { findMany: vi.fn() },
@@ -20,7 +23,7 @@ const auditMock = vi.hoisted(() => ({ createAuditLog: vi.fn(), computeChanges: v
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/audit', () => auditMock);
 
-import { archiveClientService, getClientService, listCompanyServices, previewClientServiceDeadlineConfiguration, updateClientService, validateClientServiceDeadlineRules } from '@/services/client-service';
+import { archiveClientService, deleteClientServicePermanently, getClientService, listCompanyServices, previewClientServiceDeadlineConfiguration, updateClientService, validateClientServiceDeadlineRules } from '@/services/client-service';
 
 const actor = { tenantId: 'tenant-1', userId: 'user-1' };
 const record = {
@@ -487,6 +490,59 @@ describe('client service service', () => {
       data: expect.objectContaining({ deletedReason: 'Client requested termination' }),
     }));
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'DELETE' }), prismaMock);
+  });
+
+  it('permanently deletes the service and all deadline and billing dependencies', async () => {
+    prismaMock.clientService.findFirst.mockResolvedValue(record);
+    prismaMock.clientService.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.billingOccurrence.deleteMany.mockResolvedValue({ count: 3 });
+    prismaMock.billingCoverageIssue.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.deadlineOccurrence.deleteMany.mockResolvedValue({ count: 4 });
+    prismaMock.serviceCycle.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.clientServiceDeadlineRule.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.clientServiceFeeLine.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.clientService.deleteMany.mockResolvedValue({ count: 1 });
+
+    await expect(deleteClientServicePermanently(record.id, {
+      expectedUpdatedAt: record.updatedAt.toISOString(),
+      reason: 'Created against the wrong company',
+    }, actor)).resolves.toEqual({
+      id: record.id,
+      deleted: true,
+      deletedCounts: {
+        billingOccurrences: 3,
+        billingCoverageIssues: 2,
+        deadlineOccurrences: 4,
+        serviceCycles: 2,
+        deadlineRules: 1,
+        feeLines: 1,
+      },
+    });
+
+    expect(prismaMock.clientService.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: record.id,
+        tenantId: actor.tenantId,
+        deletedAt: null,
+        updatedAt: record.updatedAt,
+      },
+      data: expect.objectContaining({
+        deletedAt: expect.any(Date),
+        deletedReason: 'Created against the wrong company',
+      }),
+    });
+    expect(prismaMock.billingOccurrence.deleteMany).toHaveBeenCalledWith({ where: { tenantId: actor.tenantId, clientServiceId: record.id } });
+    expect(prismaMock.billingCoverageIssue.deleteMany).toHaveBeenCalledWith({ where: { tenantId: actor.tenantId, clientServiceId: record.id } });
+    expect(prismaMock.deadlineOccurrence.deleteMany).toHaveBeenCalledWith({ where: { tenantId: actor.tenantId, clientServiceId: record.id } });
+    expect(prismaMock.serviceCycle.deleteMany).toHaveBeenCalledWith({ where: { tenantId: actor.tenantId, clientServiceId: record.id } });
+    expect(prismaMock.clientServiceDeadlineRule.deleteMany).toHaveBeenCalledWith({ where: { tenantId: actor.tenantId, clientServiceId: record.id } });
+    expect(prismaMock.clientServiceFeeLine.deleteMany).toHaveBeenCalledWith({ where: { tenantId: actor.tenantId, clientServiceId: record.id } });
+    expect(prismaMock.clientService.deleteMany).toHaveBeenCalledWith({ where: { id: record.id, tenantId: actor.tenantId } });
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'DELETE',
+      reason: 'Created against the wrong company',
+      summary: 'Permanently deleted operational service and all related deadline and billing records',
+    }), prismaMock);
   });
 
   it('rejects a service from another tenant', async () => {

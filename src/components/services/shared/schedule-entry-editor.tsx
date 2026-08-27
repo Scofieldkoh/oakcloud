@@ -81,9 +81,20 @@ export interface ScheduleEntryEditorProps {
   onChange: (value: ScheduleEntryInput[]) => void;
   disabled?: boolean;
   capabilities?: ScheduleEntryEditorCapabilities;
+  hideHeader?: boolean;
+  hideAddButton?: boolean;
+  addButtonText?: string;
 }
 
-export function ScheduleEntryEditor({ value, onChange, disabled = false, capabilities }: ScheduleEntryEditorProps) {
+export function ScheduleEntryEditor({
+  value,
+  onChange,
+  disabled = false,
+  capabilities,
+  hideHeader = false,
+  hideAddButton = false,
+  addButtonText = 'Add custom schedule',
+}: ScheduleEntryEditorProps) {
   const addEntry = () => {
     if (value.length >= 31) return;
     const key = `entry-${crypto.randomUUID().slice(0, 8)}`;
@@ -105,25 +116,27 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false, capabil
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h4 className="text-sm font-medium text-text-primary">Schedule entries</h4>
-          <p className="text-xs text-text-secondary">Entries keep their keys when reordered.</p>
+      {!hideHeader && (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Schedule entries</span>
+          {!hideAddButton && (
+            <Button
+              size="xs"
+              variant="secondary"
+              disabled={disabled || value.length >= 31}
+              aria-label="Add schedule entry"
+              onClick={addEntry}
+            >
+              {addButtonText}
+            </Button>
+          )}
         </div>
-        <Button
-          size="sm"
-          variant="secondary"
-          className="min-h-[44px]"
-          disabled={disabled || value.length >= 31}
-          aria-label="Add schedule entry"
-          onClick={addEntry}
-        >
-          Add schedule entry
-        </Button>
-      </div>
-      <p role="status" aria-live="polite" className="text-xs text-text-secondary">
-        {value.length} of 31 schedule entries configured{value.length >= 31 ? ' · Maximum reached' : ''}
-      </p>
+      )}
+
+      {value.length === 0 && !hideHeader && (
+        <p className="text-xs text-text-muted italic">No custom schedule entries configured.</p>
+      )}
+
       <div className="space-y-3">
         {value.map((entry, index) => {
           const expression = normalizeExpression(entry.expression, capabilities) as Record<string, unknown>;
@@ -132,47 +145,82 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false, capabil
             : 'DAY_OF_MONTH';
           const source = expression.source && typeof expression.source === 'object' ? expression.source as Record<string, unknown> : {};
           const allowedSources = capabilities?.allowedRelativeSourceKinds ?? RELATIVE_SOURCE_KINDS;
-          const allowParameterizedOffsets = capabilities?.allowParameterizedOffsets !== false;
           const prefix = `schedule-${entry.key}`;
           const update = (changes: Partial<ScheduleEntryInput>) => onChange(value.map((item) => item.key === entry.key ? { ...item, ...changes } : item));
+
           return (
-            <div key={entry.key} className="space-y-3 rounded-lg border border-border-primary bg-background-primary p-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
+            <div key={entry.key} className="space-y-3 pt-3 first:pt-0 border-t border-border-secondary first:border-0">
+              {/* Row 1: Entry label and Remove button */}
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
                   <label htmlFor={`${prefix}-label`} className="label">Entry label</label>
-                  <input id={`${prefix}-label`} className="input input-sm min-h-[44px]" disabled={disabled} value={entry.label} onChange={(event) => update({ label: event.target.value })} />
-                </div>
-                <div>
-                  <label htmlFor={`${prefix}-kind`} className="label">Expression</label>
-                  <select
-                    id={`${prefix}-kind`}
-                    className="input input-sm min-h-[44px] w-full"
+                  <input
+                    id={`${prefix}-label`}
+                    className="input input-sm h-10 w-full"
                     disabled={disabled}
-                    value={expressionKind}
-                    onChange={(event) => update({ expression: normalizeExpression(expressionFor(event.target.value as ExpressionKind, expression), capabilities) })}
-                  >
-                    {EXPRESSION_KINDS.map((kind) => <option key={kind} value={kind}>{labelForKind(kind)}</option>)}
-                  </select>
+                    value={entry.label}
+                    onChange={(event) => update({ label: event.target.value })}
+                  />
                 </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-10 px-3 text-status-error hover:bg-status-error/10 border-status-error/30 hover:border-status-error/50 shrink-0"
+                  disabled={disabled}
+                  aria-label={`Remove ${entry.label}`}
+                  onClick={() => onChange(value.filter((item) => item.key !== entry.key))}
+                >
+                  Remove
+                </Button>
+              </div>
+
+              {/* Row 2: Day of month / Ordinal / Relative, Expression, and Business-day adjustment */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {expressionKind === 'DAY_OF_MONTH' ? (
                   <div>
                     <label htmlFor={`${prefix}-day`} className="label">Day of month</label>
-                    <input id={`${prefix}-day`} className="input input-sm min-h-[44px]" type="number" min={1} max={31} disabled={disabled} value={typeof expression.day === 'number' ? expression.day : 1} onChange={(event) => update(updateExpression(entry, { day: Number(event.target.value) }, capabilities))} />
+                    <input
+                      id={`${prefix}-day`}
+                      className="input input-sm min-h-[38px]"
+                      type="number"
+                      min={1}
+                      max={31}
+                      disabled={disabled}
+                      value={typeof expression.day === 'number' ? expression.day : ''}
+                      onChange={(event) => {
+                        const val = event.target.value;
+                        update(updateExpression(entry, { day: val === '' ? '' : Number(val) }, capabilities));
+                      }}
+                    />
                   </div>
                 ) : null}
+
                 {expressionKind === 'BUSINESS_DAY_FROM_START' || expressionKind === 'BUSINESS_DAY_FROM_END' ? (
                   <div>
                     <label htmlFor={`${prefix}-ordinal`} className="label">Business-day ordinal</label>
-                    <input id={`${prefix}-ordinal`} className="input input-sm min-h-[44px]" type="number" min={1} max={31} disabled={disabled} value={typeof expression.ordinal === 'number' ? expression.ordinal : 1} onChange={(event) => update(updateExpression(entry, { ordinal: Number(event.target.value) }, capabilities))} />
+                    <input
+                      id={`${prefix}-ordinal`}
+                      className="input input-sm min-h-[38px]"
+                      type="number"
+                      min={1}
+                      max={31}
+                      disabled={disabled}
+                      value={typeof expression.ordinal === 'number' ? expression.ordinal : ''}
+                      onChange={(event) => {
+                        const val = event.target.value;
+                        update(updateExpression(entry, { ordinal: val === '' ? '' : Number(val) }, capabilities));
+                      }}
+                    />
                   </div>
                 ) : null}
+
                 {expressionKind === 'RELATIVE_TO_SOURCE' ? (
                   <>
                     <div>
                       <label htmlFor={`${prefix}-source-kind`} className="label">Relative source</label>
                       <select
                         id={`${prefix}-source-kind`}
-                        className="input input-sm min-h-[44px] w-full"
+                        className="input input-sm min-h-[38px] w-full"
                         disabled={disabled}
                         value={typeof source.kind === 'string' ? source.kind : allowedSources[0] ?? 'CYCLE_START'}
                         onChange={(event) => update(updateExpression(entry, { source: sourceFor(event.target.value) }, capabilities))}
@@ -180,49 +228,88 @@ export function ScheduleEntryEditor({ value, onChange, disabled = false, capabil
                         {allowedSources.map((kind) => <option key={kind} value={kind}>{labelForKind(kind)}</option>)}
                       </select>
                     </div>
-                    {source.kind === 'COMPANY_FIELD' ? <div><label htmlFor={`${prefix}-source-field`} className="label">Company date field</label><select id={`${prefix}-source-field`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={typeof source.field === 'string' ? source.field : 'financialYearEnd'} onChange={(event) => update(updateExpression(entry, { source: { ...source, field: event.target.value } }, capabilities))}><option value="financialYearEnd">Financial year end</option><option value="accountsDueDate">Accounts due date</option><option value="incorporationDate">Incorporation date</option></select></div> : null}
-                    {source.kind === 'PARAMETER' || source.kind === 'SCHEDULE_ENTRY' || source.kind === 'MILESTONE' ? <div><label htmlFor={`${prefix}-source-key`} className="label">Source key</label><input id={`${prefix}-source-key`} className="input input-sm min-h-[44px]" disabled={disabled} value={typeof source.key === 'string' ? source.key : ''} onChange={(event) => update(updateExpression(entry, { source: { ...source, key: event.target.value } }, capabilities))} /></div> : null}
-                    <div>
-                      <label htmlFor={`${prefix}-offset-kind`} className="label">Offset operand</label>
-                      <select id={`${prefix}-offset-kind`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={allowParameterizedOffsets && isIntegerParameter(expression.offset) ? 'INTEGER_PARAMETER' : 'LITERAL'} onChange={(event) => update(updateExpression(entry, { offset: event.target.value === 'INTEGER_PARAMETER' ? { kind: 'INTEGER_PARAMETER', key: isIntegerParameter(expression.offset) ? expression.offset.key : 'integerParameter' } : 0 }, capabilities))}>
-                        <option value="LITERAL">Integer literal</option>
-                        {allowParameterizedOffsets ? <option value="INTEGER_PARAMETER">Integer parameter</option> : null}
-                      </select>
-                    </div>
-                    {allowParameterizedOffsets && isIntegerParameter(expression.offset) ? (
+                    {source.kind === 'COMPANY_FIELD' ? (
                       <div>
-                        <label htmlFor={`${prefix}-offset-parameter-key`} className="label">Offset parameter key</label>
-                        <input id={`${prefix}-offset-parameter-key`} className="input input-sm min-h-[44px]" disabled={disabled} value={expression.offset.key} onChange={(event) => update(updateExpression(entry, { offset: { kind: 'INTEGER_PARAMETER', key: event.target.value } }, capabilities))} />
+                        <label htmlFor={`${prefix}-source-field`} className="label">Company date field</label>
+                        <select
+                          id={`${prefix}-source-field`}
+                          className="input input-sm min-h-[38px] w-full"
+                          disabled={disabled}
+                          value={typeof source.field === 'string' ? source.field : 'financialYearEnd'}
+                          onChange={(event) => update(updateExpression(entry, { source: { ...source, field: event.target.value } }, capabilities))}
+                        >
+                          <option value="financialYearEnd">Financial year end</option>
+                          <option value="accountsDueDate">Accounts due date</option>
+                          <option value="incorporationDate">Incorporation date</option>
+                        </select>
                       </div>
-                    ) : (
+                    ) : null}
+                    {source.kind === 'PARAMETER' || source.kind === 'SCHEDULE_ENTRY' || source.kind === 'MILESTONE' ? (
                       <div>
-                        <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
-                        <input id={`${prefix}-offset`} className="input input-sm min-h-[44px]" type="number" min={-3660} max={3660} disabled={disabled} value={typeof expression.offset === 'number' ? expression.offset : 0} onChange={(event) => update(updateExpression(entry, { offset: Number(event.target.value) }, capabilities))} />
+                        <label htmlFor={`${prefix}-source-key`} className="label">Source key</label>
+                        <input
+                          id={`${prefix}-source-key`}
+                          className="input input-sm min-h-[38px]"
+                          disabled={disabled}
+                          value={typeof source.key === 'string' ? source.key : ''}
+                          onChange={(event) => update(updateExpression(entry, { source: { ...source, key: event.target.value } }, capabilities))}
+                        />
                       </div>
-                    )}
+                    ) : null}
                     <div>
-                      <label htmlFor={`${prefix}-unit`} className="label">Offset unit</label>
-                      <select id={`${prefix}-unit`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'} onChange={(event) => update(updateExpression(entry, { unit: event.target.value }, capabilities))}>
-                        <option value="CALENDAR_DAY">Calendar day</option>
-                        <option value="BUSINESS_DAY">Business day</option>
-                      </select>
+                      <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
+                      <input
+                        id={`${prefix}-offset`}
+                        className="input input-sm min-h-[38px]"
+                        type="number"
+                        min={-3660}
+                        max={3660}
+                        disabled={disabled}
+                        value={typeof expression.offset === 'number' ? expression.offset : ''}
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          update(updateExpression(entry, { offset: val === '' ? '' : Number(val) }, capabilities));
+                        }}
+                      />
                     </div>
                   </>
                 ) : null}
+
+                <div>
+                  <label htmlFor={`${prefix}-kind`} className="label">Expression</label>
+                  <select
+                    id={`${prefix}-kind`}
+                    className="input input-sm min-h-[38px] w-full"
+                    disabled={disabled}
+                    value={expressionKind}
+                    onChange={(event) => update({ expression: normalizeExpression(expressionFor(event.target.value as ExpressionKind, expression), capabilities) })}
+                  >
+                    {EXPRESSION_KINDS.map((kind) => <option key={kind} value={kind}>{labelForKind(kind)}</option>)}
+                  </select>
+                </div>
+
                 <div>
                   <label htmlFor={`${prefix}-adjustment`} className="label">Business-day adjustment</label>
-                  <select id={`${prefix}-adjustment`} className="input input-sm min-h-[44px] w-full" disabled={disabled} value={entry.businessDayAdjustment} onChange={(event) => update({ businessDayAdjustment: event.target.value as ScheduleEntryInput['businessDayAdjustment'] })}>
+                  <select
+                    id={`${prefix}-adjustment`}
+                    className="input input-sm min-h-[38px] w-full"
+                    disabled={disabled}
+                    value={entry.businessDayAdjustment}
+                    onChange={(event) => update({ businessDayAdjustment: event.target.value as ScheduleEntryInput['businessDayAdjustment'] })}
+                  >
                     <option value="NONE">No adjustment</option>
                     <option value="PREVIOUS">Previous business day</option>
                     <option value="NEXT">Next business day</option>
                   </select>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button size="xs" variant="ghost" className="min-h-[44px]" disabled={disabled || index === 0} aria-label={`Move ${entry.label} up`} onClick={() => move(index, -1)}>Move up</Button>
-                <Button size="xs" variant="ghost" className="min-h-[44px]" disabled={disabled || index === value.length - 1} aria-label={`Move ${entry.label} down`} onClick={() => move(index, 1)}>Move down</Button>
-                <Button size="xs" variant="ghost" className="min-h-[44px]" disabled={disabled} aria-label={`Remove ${entry.label}`} onClick={() => onChange(value.filter((item) => item.key !== entry.key))}>Remove</Button>
-              </div>
+
+              {(value.length > 1) && (
+                <div className="flex gap-2 pt-1 border-t border-border-secondary/60">
+                  <Button size="xs" variant="ghost" disabled={disabled || index === 0} aria-label={`Move ${entry.label} up`} onClick={() => move(index, -1)}>Move up</Button>
+                  <Button size="xs" variant="ghost" disabled={disabled || index === value.length - 1} aria-label={`Move ${entry.label} down`} onClick={() => move(index, 1)}>Move down</Button>
+                </div>
+              )}
             </div>
           );
         })}

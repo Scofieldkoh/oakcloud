@@ -6,7 +6,7 @@ const session = { id: 'user-1', tenantId: 'tenant-1', isSuperAdmin: false };
 const authMock = vi.hoisted(() => ({ requireAuth: vi.fn() }));
 const rbacMock = vi.hoisted(() => ({ requirePermission: vi.fn(), hasPermission: vi.fn() }));
 const serviceMock = vi.hoisted(() => ({
-  listCompanyServices: vi.fn(), getClientService: vi.fn(), updateClientService: vi.fn(), archiveClientService: vi.fn(),
+  listCompanyServices: vi.fn(), getClientService: vi.fn(), updateClientService: vi.fn(), archiveClientService: vi.fn(), deleteClientServicePermanently: vi.fn(),
   requestManualServiceAgreementActivation: vi.fn(), retryServiceAgreementActivation: vi.fn(), getServiceAgreementCompanyIds: vi.fn(),
   createManualClientService: vi.fn(),
 }));
@@ -29,6 +29,7 @@ describe('client services routes', () => {
     serviceMock.getClientService.mockResolvedValue({ id: 'service-1', companyId: 'company-1' });
     serviceMock.updateClientService.mockResolvedValue({ id: 'service-1' });
     serviceMock.archiveClientService.mockResolvedValue({ id: 'service-1', archived: true });
+    serviceMock.deleteClientServicePermanently.mockResolvedValue({ id: 'service-1', deleted: true, deletedCounts: {} });
     serviceMock.getServiceAgreementCompanyIds.mockResolvedValue(['company-1', 'company-2']);
     serviceMock.requestManualServiceAgreementActivation.mockResolvedValue({ agreementId: 'agreement-1', activationStatus: 'PENDING' });
     serviceMock.retryServiceAgreementActivation.mockResolvedValue({ agreementId: 'agreement-1', activationStatus: 'PENDING' });
@@ -100,6 +101,29 @@ describe('client services routes', () => {
   it('requires a meaningful archive reason', async () => {
     const request = new NextRequest('http://localhost/api/client-services/service-1', { method: 'DELETE', body: JSON.stringify({ reason: 'short' }), headers: { 'content-type': 'application/json' } });
     expect((await archiveService(request, { params: Promise.resolve({ id: 'service-1' }) })).status).toBe(400);
+  });
+
+  it('permanently deletes through an explicit mode with company update permission', async () => {
+    const request = new NextRequest('http://localhost/api/client-services/service-1', {
+      method: 'DELETE',
+      body: JSON.stringify({
+        deletionMode: 'PERMANENT',
+        expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+        reason: 'Created against the wrong company',
+      }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const response = await archiveService(request, { params: Promise.resolve({ id: 'service-1' }) });
+
+    expect(response.status).toBe(200);
+    expect(rbacMock.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', 'company-1');
+    expect(serviceMock.deleteClientServicePermanently).toHaveBeenCalledWith('service-1', {
+      deletionMode: 'PERMANENT',
+      expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+      reason: 'Created against the wrong company',
+    }, { tenantId: 'tenant-1', userId: 'user-1' });
+    expect(serviceMock.archiveClientService).not.toHaveBeenCalled();
   });
 
   it('requires document update and every company update permission for manual activation', async () => {

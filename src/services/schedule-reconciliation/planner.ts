@@ -60,6 +60,7 @@ export function planRollingPeriods(
   recurrence: RuleRecurrenceDefinition,
   today: DateOnly,
   horizonEnd: DateOnly = addMonthsClamped(today, ROLLING_HORIZON_MONTHS),
+  anchorStart?: DateOnly | null,
 ): RollingPeriod[] {
   parseDateOnly(today);
   parseDateOnly(horizonEnd);
@@ -71,17 +72,19 @@ export function planRollingPeriods(
 
   const step = periodStepMonths(recurrence);
   const periods: RollingPeriod[] = [];
-  let cursor = monthStart(today);
+  const startFrom = anchorStart && compareDateOnly(anchorStart, today) < 0
+    ? monthStart(anchorStart)
+    : monthStart(today);
+
+  let cursor = startFrom;
   while (compareDateOnly(cursor, horizonEnd) <= 0) {
     const next = addMonthsClamped(cursor, step);
     const periodEnd = addCalendarDays(next, -1);
-    if (compareDateOnly(periodEnd, today) >= 0) {
-      periods.push({
-        periodKey: periodKey(cursor, recurrence),
-        start: cursor,
-        end: compareDateOnly(periodEnd, horizonEnd) > 0 ? horizonEnd : periodEnd,
-      });
-    }
+    periods.push({
+      periodKey: periodKey(cursor, recurrence),
+      start: cursor,
+      end: compareDateOnly(periodEnd, horizonEnd) > 0 ? horizonEnd : periodEnd,
+    });
     cursor = next;
   }
   return periods;

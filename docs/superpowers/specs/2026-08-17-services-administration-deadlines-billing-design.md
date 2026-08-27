@@ -286,8 +286,11 @@ The service-family filters sit immediately beside `Active`, `Paused`, and
 `Ended`. Archived is an explicit filter and is not mixed into the default view.
 
 Users with `company:update` may add a service, edit it, pause/resume it, end it,
-archive it, or open its deadline/billing configuration. No bulk actions are in
-the first release.
+archive it, permanently delete it with explicit destructive confirmation, or
+open its deadline/billing configuration. Permanent deletion removes all related
+deadline, billing, fee-line, cycle, coverage, and rule-configuration records in
+one transaction while retaining a standalone audit record. No bulk actions are
+in the first release.
 
 ### 9.4 Shared client-service form
 
@@ -451,7 +454,8 @@ the stated semantics and invariants.
 - `billingDisposition`: `CONFIGURED`, `NOT_REQUIRED`, or `UNREVIEWED`.
 - `billingNotRequiredReason String?`, required only for `NOT_REQUIRED`.
 - Existing status remains `ACTIVE`, `PAUSED`, or `ENDED`; soft deletion remains
-  the archive mechanism.
+  the archive mechanism. A separate permanent-delete action is available when
+  the complete service and its operational history must be removed.
 
 #### ClientServiceFeeLine
 
@@ -658,7 +662,8 @@ Issue types include:
 2. A future rule-generated occurrence may be recalculated only while it is open
    and not individually overridden.
 3. Historical, completed, waived, cancelled, manual, and overridden occurrences
-   are preserved.
+   are preserved during normal lifecycle changes and reconciliation. Explicit
+   permanent deletion of their client service is the audited exception.
 4. An override changes the operative value, not the calculated value.
 5. A removed milestone with an overridden future occurrence is preserved and
    flagged for review rather than silently cancelled.
@@ -952,7 +957,9 @@ requests use Zod validation and optimistic concurrency.
 
 Company-specific POST remains the canonical client-service creation route.
 Schedule-affecting mutations insert reconciliation requests in their database
-transaction. `DELETE` continues to mean audited soft archive.
+transaction. `DELETE` without a mode continues to mean audited soft archive;
+`deletionMode: PERMANENT` requires `expectedUpdatedAt` and a reason, then deletes
+the service and all of its deadline/billing dependencies transactionally.
 
 ### 15.2 Cross-company roster
 

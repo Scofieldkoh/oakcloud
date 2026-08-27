@@ -21,6 +21,16 @@ import {
   type OperationalServiceValues,
 } from './client-service-form-state';
 
+const CADENCE_LABEL_MAP: Record<string, string> = {
+  MONTHLY: 'Monthly',
+  QUARTERLY: 'Quarterly',
+  SEMI_ANNUALLY: 'Semi-annually',
+  ANNUALLY: 'Annually',
+  ONE_TIME: 'One-time',
+  AD_HOC: 'Ad-hoc',
+  CUSTOM: 'Custom',
+};
+
 export function ClientServiceCreator({
   companyId,
   isOpen,
@@ -56,7 +66,7 @@ export function ClientServiceCreator({
     value: variant.id,
     label: variant.name,
     group: variant.family.name,
-    description: variant.customCadenceLabel ?? variant.serviceCadence.replaceAll('_', ' '),
+    description: variant.customCadenceLabel ?? (CADENCE_LABEL_MAP[variant.serviceCadence] ?? variant.serviceCadence),
   })), [catalog.data]);
   const dirty = manualFormIsDirty(selectedVariantId, values);
 
@@ -151,9 +161,29 @@ export function ClientServiceCreator({
     }
   };
 
+  const serviceSelector = (
+    <div>
+      <SearchableSelect
+        label="Service"
+        placeholder="Select service"
+        options={selectOptions}
+        value={selectedVariantId}
+        onChange={requestVariantChange}
+        disabled={pending}
+        loading={catalog.isLoading}
+        groupBy="group"
+        clearable={false}
+        error={selectorError}
+      />
+      {catalog.isLoading ? <p role="status" className="mt-1.5 text-xs text-text-secondary">Loading service catalog…</p> : null}
+      {!catalog.isLoading && catalog.error ? <p className="mt-1.5 text-xs text-status-error">{catalog.error instanceof Error ? catalog.error.message : 'This catalog service is no longer available.'} Choose another catalog service to continue.</p> : null}
+      {!catalog.isLoading && !catalog.error && (catalog.data?.variants.length ?? 0) === 0 ? <p className="mt-1.5 text-xs text-text-secondary">No active services are available in the catalog.</p> : null}
+    </div>
+  );
+
   return <>
-    <Modal isOpen={isOpen} onClose={requestClose} title="Add service" description="Add an operational service from the service catalog." size="2xl" closeOnEscape={!pending} closeOnOverlayClick={!pending}>
-      <ModalBody className="max-h-[70vh] space-y-4 overflow-y-auto">
+    <Modal isOpen={isOpen} onClose={requestClose} title="Add service" description="Add an operational service from the service catalog." size="wide" closeOnEscape={!pending} closeOnOverlayClick={!pending}>
+      <ModalBody className="h-[80vh] min-h-[640px] max-h-[85vh] space-y-4 overflow-y-auto">
         {formError ? <Alert variant="error">{formError}</Alert> : null}
         {duplicates ? (
           <div role="alert" className="rounded-lg border border-status-warning/30 bg-status-warning/5 p-3 text-sm">
@@ -169,24 +199,16 @@ export function ClientServiceCreator({
             </div>
           </div>
         ) : null}
-        <div>
-          <SearchableSelect
-            label="Service"
-            placeholder="Select service"
-            options={selectOptions}
-            value={selectedVariantId}
-            onChange={requestVariantChange}
-            disabled={pending}
-            loading={catalog.isLoading}
-            groupBy="group"
-            clearable={false}
-            error={selectorError}
-          />
-          {catalog.isLoading ? <p role="status" className="mt-1.5 text-xs text-text-secondary">Loading service catalog…</p> : null}
-          {!catalog.isLoading && catalog.error ? <p className="mt-1.5 text-xs text-status-error">{catalog.error instanceof Error ? catalog.error.message : 'This catalog service is no longer available.'} Choose another catalog service to continue.</p> : null}
-          {!catalog.isLoading && !catalog.error && (catalog.data?.variants.length ?? 0) === 0 ? <p className="mt-1.5 text-xs text-text-secondary">No active services are available in the catalog.</p> : null}
-        </div>
-        <OperationalServiceForm values={values} onChange={setValues} errors={errors} disabled={pending} sectionsDisabled={!selectedVariant} />
+        <OperationalServiceForm
+          mode="create"
+          values={values}
+          onChange={setValues}
+          errors={errors}
+          disabled={pending}
+          sectionsDisabled={!selectedVariant}
+          serviceSelector={serviceSelector}
+          companyContext={catalog.data?.companyContext}
+        />
       </ModalBody>
       <ModalFooter>
         <Button variant="secondary" disabled={pending} onClick={requestClose}>Cancel</Button>

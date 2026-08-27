@@ -7,6 +7,7 @@ import {
   HttpRequestError,
   isHttpRequestError,
   useCreateManualClientService,
+  useDeleteClientServicePermanently,
   useManualClientServiceCatalogOptions,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
@@ -129,6 +130,38 @@ describe('client service hook error boundary', () => {
     );
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['client-services', 'company-1'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['client-service', 'service-1'] });
+  });
+
+  it('permanently deletes a service and invalidates every related workspace view', async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 'service-1', deleted: true, deletedCounts: {} }));
+    const { queryClient, wrapper } = createHarness();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    const { result } = renderHook(() => useDeleteClientServicePermanently(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: 'service-1',
+        companyId: 'company-1',
+        expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+        reason: 'Created against the wrong company',
+      });
+    });
+
+    expect(fetch).toHaveBeenCalledWith('/api/client-services/service-1', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        deletionMode: 'PERMANENT',
+        expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+        reason: 'Created against the wrong company',
+      }),
+    });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['client-services', 'company-1'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['client-service', 'service-1'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['service-roster'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['deadlines'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['billing-occurrences'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['billing-coverage'] });
   });
 
   it('preserves duplicate bodies on creation failures', async () => {

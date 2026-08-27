@@ -123,7 +123,7 @@ export function toClientServiceDto(service: ClientServiceRecord): ClientServiceD
         } : null,
       } : null,
     })),
-    agreement: service.agreement ? {
+    agreement: service.agreement && service.agreement.generatedDocument ? {
       title: service.agreement.generatedDocument.title,
       status: service.agreement.status,
       activationStatus: service.agreement.activationStatus,

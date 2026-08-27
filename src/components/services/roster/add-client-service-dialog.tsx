@@ -63,7 +63,7 @@ export function AddClientServiceDialog({ isOpen, onClose, onCreated }: AddClient
         onClose={onClose}
         title="Add service"
         description="Choose an accessible company, then complete the shared service form."
-        size="md"
+        size="4xl"
       >
         <ModalBody className="space-y-4">
             <AsyncSearchSelect

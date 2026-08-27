@@ -69,9 +69,6 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
   if (!values.billingDisposition || values.billingDisposition === 'UNREVIEWED') {
     errors.billingDisposition = 'Select Billing configured or No billing required before saving.';
   }
-  if (values.billingDisposition === 'NOT_REQUIRED' && values.billingNotRequiredReason.trim().length < 3) {
-    errors.billingNotRequiredReason = 'Explain why billing is not required.';
-  }
   const activeFees = values.fees.filter((fee) => fee.description.trim() || fee.amount.trim() || fee.billingFrequency);
   if (values.billingDisposition === 'CONFIGURED' && activeFees.length === 0) {
     errors.feeLines = 'Configured billing requires at least one fee line.';
@@ -82,15 +79,12 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
     if (!/^\d{1,16}(?:\.\d{1,2})?$/.test(fee.amount)) errors[`${prefix}-amount`] = `Fee ${index + 1} amount is invalid.`;
     if (!/^[A-Z]{3}$/.test(fee.currency.trim().toUpperCase())) errors[`${prefix}-currency`] = `Fee ${index + 1} currency must be a three-letter code.`;
     if (!fee.billingFrequency) errors[`${prefix}-frequency`] = `Fee ${index + 1} frequency is required.`;
-    if (fee.billingFrequency === 'CUSTOM' && !fee.customFrequencyLabel.trim()) {
-      errors[`${prefix}-custom-frequency`] = `Fee ${index + 1} custom frequency is required.`;
-    }
     if (fee.billingFrequency) {
       try {
         const schedule = canonicalizeBillingSchedule({
           billingFrequency: fee.billingFrequency,
           billingStartDate: fee.billingStartDate || values.startDate || null,
-          customFrequencyLabel: fee.customFrequencyLabel || null,
+          customFrequencyLabel: fee.customFrequencyLabel || (fee.billingFrequency === 'CUSTOM' ? `Every ${fee.scheduleConfig?.customInterval?.count ?? 1} months` : null),
           scheduleConfig: fee.scheduleConfig,
         });
         if (!schedule?.startDate || schedule.scheduleEntries.length === 0) {
@@ -175,7 +169,9 @@ export function manualCreateFeeLines(values: OperationalServiceValues) {
       amount: fee.amount,
       currency: fee.currency.trim().toUpperCase(),
       billingFrequency: fee.billingFrequency,
-      customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : null,
+      customFrequencyLabel: fee.billingFrequency === 'CUSTOM'
+        ? (fee.customFrequencyLabel?.trim() || `Every ${fee.scheduleConfig?.customInterval?.count ?? 1} months`)
+        : null,
       billingStartDate: fee.billingStartDate || values.startDate || null,
       scheduleConfig: fee.scheduleConfig,
     };
@@ -192,7 +188,9 @@ export function updateFeeLines(values: OperationalServiceValues) {
       amount: fee.amount,
       currency: fee.currency.trim().toUpperCase(),
       billingFrequency: fee.billingFrequency,
-      customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel : null,
+      customFrequencyLabel: fee.billingFrequency === 'CUSTOM'
+        ? (fee.customFrequencyLabel?.trim() || `Every ${fee.scheduleConfig?.customInterval?.count ?? 1} months`)
+        : null,
       billingStartDate: fee.billingStartDate || values.startDate || null,
       scheduleConfig: fee.scheduleConfig,
       displayOrder,

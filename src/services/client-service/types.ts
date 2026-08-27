@@ -76,8 +76,18 @@ export interface ManualClientServiceCatalogDeadlineRule {
   currentVersionId: string;
 }
 
+export interface CompanyComplianceContext {
+  id: string;
+  name?: string | null;
+  accountsDueDate?: string | null;
+  financialYearEndDay?: number | null;
+  financialYearEndMonth?: number | null;
+  incorporationDate?: string | null;
+}
+
 export interface ManualClientServiceCatalogOptionsResponse {
   variants: ManualClientServiceCatalogVariantOption[];
+  companyContext?: CompanyComplianceContext | null;
 }
 
 export interface ClientServiceFeeLineDto {

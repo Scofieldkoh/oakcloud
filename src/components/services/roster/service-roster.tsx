@@ -33,6 +33,7 @@ const TABLE_PREFERENCE_KEY = 'services.roster.table.v1';
 const STATUS_VALUES = ['ACTIVE', 'PAUSED', 'ENDED'] as const;
 type ServiceStatus = (typeof STATUS_VALUES)[number];
 const SERVICE_ROSTER_PAGE_SIZES = [10, 20, 50, 100] as const;
+const SORT_VALUES: ServiceRosterSortBy[] = ['company', 'family', 'service', 'status', 'nextDeadline', 'startDate'];
 
 export interface ServiceRosterPreference {
   version: 1;
@@ -120,8 +121,6 @@ function readLimit(value: string | null): number {
   const limit = Number(value);
   return Number.isSafeInteger(limit) && limit > 0 ? Math.min(limit, 100) : 20;
 }
-
-const SORT_VALUES: ServiceRosterSortBy[] = ['company', 'family', 'service', 'status', 'nextDeadline', 'startDate'];
 
 function readSortBy(value: string | null): ServiceRosterSortBy {
   return value && SORT_VALUES.includes(value as ServiceRosterSortBy) ? value as ServiceRosterSortBy : 'company';

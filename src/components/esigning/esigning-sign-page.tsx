@@ -1262,6 +1262,7 @@ export function EsigningSignPage() {
             focusedHighlightLabel={activeField?.id}
             showHighlights
             viewMode="continuous"
+            allowPagePanel={!isPortraitMobile}
             className="h-[calc(100dvh-10rem)] min-h-96 rounded-2xl border border-border-primary bg-background-primary"
             onRetry={() => setViewerRetryKey((current) => current + 1)}
             renderHighlightContent={(highlight, _pixelRect, _idx) => {

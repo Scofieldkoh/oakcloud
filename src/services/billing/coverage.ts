@@ -652,9 +652,7 @@ export async function reconcileBillingCoverage(
   if (disposition !== 'CONFIGURED' && disposition !== 'NOT_REQUIRED') {
     issues.push(buildIssue(input, 'MISSING_DISPOSITION', null, 'service'));
   } else if (disposition === 'NOT_REQUIRED') {
-    if ((service.billingNotRequiredReason ?? '').trim().length < 3) {
-      issues.push(buildIssue(input, 'MISSING_DISPOSITION', null, 'service'));
-    }
+    // No issues when billing is not required
   } else {
     const activeFeeLines = (service.feeLines ?? []).filter(feeLineIsActive);
     if (activeFeeLines.length === 0) {

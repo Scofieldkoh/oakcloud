@@ -26,6 +26,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       }),
     });
   } catch (error) {
+    console.error('[API /api/client-services/families GET] error:', error);
     if (error instanceof ApiError) return createErrorResponse(error);
     if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden' || error.message.startsWith('Permission denied'))) {
       return createErrorResponse(error);

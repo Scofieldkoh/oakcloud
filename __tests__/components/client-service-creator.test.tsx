@@ -193,8 +193,8 @@ describe('ClientServiceCreator', () => {
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');
 
-    expect(screen.getByText('Singapore AGM Due Date')).toBeVisible();
-    expect(screen.getByText('Applicability will be evaluated when the service is added.')).toBeVisible();
+    expect(screen.getAllByText('Singapore AGM Due Date')[0]).toBeVisible();
+    expect(screen.getByRole('switch', { name: 'Enable Singapore AGM Due Date' })).toBeChecked();
     expect(screen.queryByText('Required inputs are missing.')).not.toBeInTheDocument();
   });
 
@@ -202,7 +202,7 @@ describe('ClientServiceCreator', () => {
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');
     fireEvent.change(screen.getByLabelText('Fee 1 billing start date'), { target: { value: '2026-08-01' } });
-    expect(screen.getByRole('status')).toHaveTextContent('1 of 31 schedule entries configured');
+    expect(screen.getByLabelText('Fee 1 billing start date')).toHaveValue('1 Aug 2026');
   });
 
   it('allows a custom catalog fee to use a non-one-month interval', async () => {
@@ -213,7 +213,7 @@ describe('ClientServiceCreator', () => {
     expect(interval).toHaveValue(18);
   });
 
-  it('requires an explicit billing choice and confirms before hiding active schedules', async () => {
+  it('switches to no billing required without showing the archive warning when adding a new service', async () => {
     const user = userEvent.setup();
     render(<ClientServiceCreator companyId="company-1" isOpen onClose={vi.fn()} onCreated={vi.fn()} />);
     await selectVariant('Corporate Secretarial');
@@ -222,10 +222,8 @@ describe('ClientServiceCreator', () => {
     expect(screen.getByRole('button', { name: 'No billing required' })).toHaveAttribute('aria-pressed', 'false');
     await user.click(screen.getByRole('button', { name: 'No billing required' }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'Hide billing schedules?' });
-    expect(dialog).toHaveTextContent(/active billing schedules/i);
-    await user.click(within(dialog).getByRole('button', { name: 'Hide schedules' }));
-    expect(await screen.findByLabelText('Why is billing not required?')).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'Hide billing schedules?' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'No billing required' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByLabelText('Fee 1 amount')).not.toBeInTheDocument();
   });
 
@@ -271,7 +269,7 @@ describe('ClientServiceCreator', () => {
       fireEvent.click(within(screen.getByRole('dialog', { name: 'Discard catalog changes?' })).getByRole('button', { name: 'Discard changes' }));
     });
     expect(screen.getByLabelText('Status')).toHaveValue('PAUSED');
-    expect(screen.getByLabelText('Start date')).toHaveValue('2026-09-01');
+    expect(screen.getByLabelText('Start date')).toHaveValue('1 Sep 2026');
     expect(screen.getByLabelText('Cadence')).toHaveValue('MONTHLY');
   });
 
@@ -323,7 +321,7 @@ describe('ClientServiceCreator', () => {
 
     expect(screen.getByText(/no longer available/i)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add service' })).toBeDisabled();
-    expect(screen.getByLabelText('Start date')).toHaveValue('2026-08-01');
+    expect(screen.getByLabelText('Start date')).toHaveValue('1 Aug 2026');
   });
 
   it('does not expose a non-functional clear-selection button', async () => {
@@ -395,7 +393,7 @@ describe('ClientServiceCreator', () => {
     expect(amount).toHaveAttribute('aria-invalid', 'true');
     expect(document.getElementById(amount.getAttribute('aria-describedby')!))
       .toHaveTextContent('Enter a non-negative amount with at most two decimals.');
-    expect(screen.getByLabelText('Start date')).toHaveValue('2026-08-01');
+    expect(screen.getByLabelText('Start date')).toHaveValue('1 Aug 2026');
   });
 
   it('keeps the form open and disables repeated submissions while pending', async () => {

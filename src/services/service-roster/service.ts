@@ -279,7 +279,7 @@ function nextDeadlinePageQuery(
     ? Prisma.sql`AND cs."deleted_at" IS NOT NULL`
     : Prisma.sql`AND cs."deleted_at" IS NULL`;
   const statusFilter = input.statuses.length > 0
-    ? Prisma.sql`AND cs."status" IN (${Prisma.join(input.statuses)})`
+    ? Prisma.sql`AND cs."status"::text IN (${Prisma.join(input.statuses)})`
     : Prisma.empty;
   const familyFilter = input.familyIds.length > 0
     ? Prisma.sql`AND sv."family_id" IN (${Prisma.join(input.familyIds)})`
@@ -326,7 +326,7 @@ function nextDeadlinePageQuery(
         WHERE dr."client_service_id" = cs."id"
           AND dr."tenant_id" = ${tenantId}
           AND dr."enabled" = TRUE
-          AND dr."applicability_state" = ${input.applicability}
+          AND dr."applicability_state"::text = ${input.applicability}
       )`
     : Prisma.empty;
   const direction = input.sortOrder === 'desc'
@@ -343,8 +343,8 @@ function nextDeadlinePageQuery(
     FROM "client_services" AS cs
     INNER JOIN "companies" AS c
       ON c."id" = cs."company_id"
-      AND c."tenant_id" = ${tenantId}
-      AND c."deleted_at" IS NULL
+      AND c."tenantId" = ${tenantId}
+      AND c."deletedAt" IS NULL
     INNER JOIN "service_variants" AS sv
       ON sv."id" = cs."service_variant_id"
       AND sv."tenant_id" = ${tenantId}
@@ -495,7 +495,9 @@ function aggregateApplicability(record: RosterRecord): ServiceRosterWarningSumma
 function earliestDeadline(record: RosterRecord): ServiceRosterDeadline | null {
   const open = (record.deadlineOccurrences ?? []).filter((deadline) => deadline.status === 'OPEN');
   const sorted = [...open].sort((left, right) => {
-    const dateResult = dateOnly(left.operativeDueDate)!.localeCompare(dateOnly(right.operativeDueDate)!);
+    const leftDate = dateOnly(left.operativeDueDate) ?? '';
+    const rightDate = dateOnly(right.operativeDueDate) ?? '';
+    const dateResult = leftDate.localeCompare(rightDate);
     return dateResult || left.id.localeCompare(right.id);
   });
   const deadline = sorted[0];
@@ -567,14 +569,15 @@ function toServiceRosterItem(value: unknown): ServiceRosterItem {
     const expectedDate = dateOnly(candidate.operativeExpectedDate);
     return Boolean(expectedDate && expectedDate >= today);
   });
-  const nextBilling = nextBillingOccurrence
+  const nextBillingExpectedDate = nextBillingOccurrence ? dateOnly(nextBillingOccurrence.operativeExpectedDate) : null;
+  const nextBilling = nextBillingOccurrence && nextBillingExpectedDate
     ? {
       status: nextBillingOccurrence.status,
-      expectedDate: dateOnly(nextBillingOccurrence.operativeExpectedDate) ?? '',
+      expectedDate: nextBillingExpectedDate,
       timingState: nextBillingOccurrence.status === 'OPEN'
-        ? (dateOnly(nextBillingOccurrence.operativeExpectedDate)! > today
+        ? (nextBillingExpectedDate > today
           ? 'UPCOMING' as const
-          : dateOnly(nextBillingOccurrence.operativeExpectedDate) === today
+          : nextBillingExpectedDate === today
             ? 'DUE' as const
             : 'OVERDUE' as const)
         : null,

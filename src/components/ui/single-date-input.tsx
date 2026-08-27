@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import 'react-day-picker/style.css';
 
 export interface SingleDateInputProps {
+  /** Optional element ID */
+  id?: string;
   /** The current value as ISO date string (YYYY-MM-DD) or empty string */
   value?: string;
   /** Callback when value changes - returns ISO date string or empty string */
@@ -41,7 +43,7 @@ export interface SingleDateInputProps {
 
 const CALENDAR_START_MONTH = new Date(1900, 0, 1);
 const CALENDAR_END_MONTH = new Date(2100, 11, 31);
-const CALENDAR_POPOVER_WIDTH = 320;
+const CALENDAR_POPOVER_WIDTH = 345;
 const CALENDAR_POPOVER_HEIGHT = 360;
 
 // Custom styles for react-day-picker v9 - using oak design system colors
@@ -61,7 +63,11 @@ const calendarStyles = `
     --rdp-accent-background-color: rgba(41, 77, 68, 0.15);
   }
   .rdp-single .rdp-month {
-    margin: 0;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .rdp-single .rdp-table {
+    width: 100%;
   }
   .rdp-single .rdp-month_caption {
     display: flex;
@@ -452,6 +458,7 @@ function parseUserInput(input: string): Date | undefined {
 }
 
 export function SingleDateInput({
+  id,
   value = '',
   onChange,
   placeholder = 'dd mmm yyyy',
@@ -582,19 +589,21 @@ export function SingleDateInput({
       }
     };
 
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        suppressFocusOpenRef.current = true;
         setIsOpen(false);
-        inputRef.current?.focus();
+      } else if (event.key === 'Tab') {
+        setIsOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleGlobalKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, [isOpen]);
 
@@ -695,6 +704,55 @@ export function SingleDateInput({
     }
   }, [inputValue, maxDateValue, minDateValue, onBlur, onChange, selectedDate]);
 
+  const handleInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Tab' || e.key === 'Escape') {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          suppressFocusOpenRef.current = true;
+        }
+        setIsOpen(false);
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const trimmed = inputValue.trim();
+        if (!trimmed) {
+          setLocalError(null);
+          setCommittedValue('');
+          onChange('');
+          setInputValue('');
+          setIsEditing(false);
+          setIsOpen(false);
+          return;
+        }
+
+        const parsed = parseUserInput(trimmed);
+        if (parsed && isDateWithinRange(parsed, minDateValue, maxDateValue)) {
+          setLocalError(null);
+          const isoValue = formatISODate(parsed);
+          setCommittedValue(isoValue);
+          onChange(isoValue);
+          setInputValue(formatDisplayDate(parsed));
+          setIsEditing(false);
+          setIsOpen(false);
+        } else if (parsed) {
+          setLocalError(getDateRangeError(parsed, minDateValue, maxDateValue));
+          setCommittedValue('');
+          onChange('');
+          setIsOpen(false);
+        } else {
+          setLocalError('Enter a valid date.');
+          setCommittedValue('');
+          onChange('');
+          setIsOpen(false);
+        }
+      }
+    },
+    [inputValue, maxDateValue, minDateValue, onChange]
+  );
+
   const handleCalendarClick = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -706,7 +764,7 @@ export function SingleDateInput({
     [disabled, isOpen]
   );
 
-  const inputId = label?.toLowerCase().replace(/\s+/g, '-');
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
   const displayError = error || localError;
 
@@ -742,14 +800,16 @@ export function SingleDateInput({
           value={inputValue}
           onFocus={handleInputFocus}
           onChange={handleInputChange}
+          onKeyDown={handleInputKeyDown}
           onBlur={handleInputBlur}
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
-          aria-label={ariaLabel}
+          aria-label={ariaLabel || label}
+          aria-invalid={displayError ? 'true' : 'false'}
           aria-describedby={displayError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
-            'flex-1 h-full px-3 bg-transparent text-sm text-text-primary placeholder-text-muted',
+            'flex-1 min-w-0 h-full px-3 bg-transparent text-sm text-text-primary placeholder-text-muted',
             'focus:outline-none',
             disabled && 'cursor-not-allowed'
           )}
@@ -764,12 +824,12 @@ export function SingleDateInput({
           onClick={handleCalendarClick}
           disabled={disabled}
           className={cn(
-            'h-full px-2 flex items-center justify-center',
+            'h-full px-2 flex-shrink-0 flex items-center justify-center',
             'text-text-muted hover:text-text-secondary transition-colors',
             'focus:outline-none',
             disabled && 'cursor-not-allowed'
           )}
-          aria-label="Open calendar"
+          aria-label={label ? `Open calendar for ${label}` : 'Open calendar'}
           tabIndex={-1}
         >
           <Calendar className="w-4 h-4" />
@@ -802,8 +862,8 @@ export function SingleDateInput({
             }}
             data-single-date-popover
             className={cn(
-              'fixed z-[100] w-[320px] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2',
-              'animate-fade-in p-3'
+              'fixed z-[100] w-[345px] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2',
+              'animate-fade-in px-5 py-3.5'
             )}
             style={{ top: position.top, left: position.left }}
           >

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { requirePermission } from '@/lib/rbac';
-import { archiveClientServiceSchema, updateClientServiceSchema } from '@/lib/validations/client-service';
-import { archiveClientService, getClientService, updateClientService } from '@/services/client-service';
+import { deleteClientServiceSchema, updateClientServiceSchema } from '@/lib/validations/client-service';
+import { archiveClientService, deleteClientServicePermanently, getClientService, updateClientService } from '@/services/client-service';
 
 type Context = { params: Promise<{ id: string }> };
 const actor = (session: Awaited<ReturnType<typeof requireAuth>>) => ({ tenantId: requireSessionWorkspaceId(session), userId: session.id });
@@ -36,7 +36,10 @@ export async function DELETE(request: NextRequest, { params }: Context) {
     const paramsActor = actor(session);
     const service = await getClientService(id, paramsActor);
     await requirePermission(session, 'company', 'update', service.companyId);
-    const { reason } = archiveClientServiceSchema.parse(await request.json());
-    return NextResponse.json(await archiveClientService(id, reason, paramsActor));
+    const input = deleteClientServiceSchema.parse(await request.json());
+    if (input.deletionMode === 'PERMANENT') {
+      return NextResponse.json(await deleteClientServicePermanently(id, input, paramsActor));
+    }
+    return NextResponse.json(await archiveClientService(id, input.reason, paramsActor));
   } catch (error) { return createErrorResponse(error); }
 }

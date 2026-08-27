@@ -57,6 +57,29 @@ export async function safelyProcessServiceAgreementActivations(envelopeId: strin
   }
 }
 
+export async function processEsigningCompletionArtifacts(input: {
+  envelopeCompleted: boolean;
+  envelopeId: string;
+}): Promise<void> {
+  if (!input.envelopeCompleted) {
+    return;
+  }
+
+  try {
+    const { generateEsigningEnvelopeArtifactsNow } = await import(
+      '@/services/esigning-pdf.service'
+    );
+    await generateEsigningEnvelopeArtifactsNow({ envelopeId: input.envelopeId });
+  } catch (error) {
+    const correlationId = randomUUID();
+    log.warn('Immediate signed-document generation failed', {
+      envelopeId: input.envelopeId,
+      correlationId,
+      error,
+    });
+  }
+}
+
 export async function finalizeEsigningEnvelopeCompletion(
   tx: Prisma.TransactionClient,
   input: {
@@ -934,6 +957,10 @@ export async function completeEsigningSigningSession(input: {
       remainingSignerCount,
       completedAt: now,
     });
+  });
+  await processEsigningCompletionArtifacts({
+    envelopeCompleted,
+    envelopeId: context.envelope.id,
   });
   if (envelopeCompleted) {
     await safelyProcessServiceAgreementActivations(context.envelope.id);

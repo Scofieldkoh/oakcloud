@@ -519,10 +519,14 @@ export async function reconcileClientServiceDeadlines(
       isActive: m.isActive !== false,
     }));
 
+    const anchorDate = safeDateOnly(companySource.accountsDueDate)
+      ?? safeDateOnly(clientService.startDate);
+
     const periods = planRollingPeriods(
       version.recurrence as never,
       today,
       horizonEnd,
+      anchorDate,
     );
 
     // Evaluate first period to check applicability

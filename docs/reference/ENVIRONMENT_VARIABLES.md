@@ -194,6 +194,7 @@ The in-process scheduler is started by the app and can be configured per task.
 | `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup polling cadence |
 | `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup processing |
 | `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule |
+| `SCHEDULER_ESIGNING_PDF_GENERATION_CRON` | `* * * * *` | E-signing completion recovery cadence; signed PDFs are generated on demand and this task inherits the master scheduler switch |
 | `SCHEDULER_SERVICE_AGREEMENT_ACTIVATION_CRON` | `* * * * *` | Service Agreement activation retry polling cadence; task inherits the master scheduler switch |
 | `SCHEDULER_FORM_AI_REVIEW_ENABLED` | `true` | Enable queued form AI review processing |
 | `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review polling interval |

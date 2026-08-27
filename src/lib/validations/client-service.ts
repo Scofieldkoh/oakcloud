@@ -44,9 +44,6 @@ function validateBillingConfiguration(
   if (value.billingDisposition === 'CONFIGURED' && value.feeLines !== undefined && activeFeeLines.length === 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['feeLines'], message: 'Configured billing requires at least one fee line' });
   }
-  if (value.billingDisposition === 'NOT_REQUIRED' && !value.billingNotRequiredReason?.trim()) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['billingNotRequiredReason'], message: 'Explain why billing is not required' });
-  }
   if (value.billingDisposition === 'NOT_REQUIRED' && (value.feeLines?.length ?? 0) > 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['feeLines'], message: 'Not-required billing must not include fee lines' });
   }
@@ -240,7 +237,21 @@ export const createManualClientServiceSchema = z.object({
 export type CreateManualClientServiceRequest = z.input<typeof createManualClientServiceSchema>;
 export type CreateManualClientServiceInput = z.output<typeof createManualClientServiceSchema>;
 
-export const archiveClientServiceSchema = z.object({ reason: z.string().trim().min(10).max(1000) });
+export const archiveClientServiceSchema = z.object({
+  deletionMode: z.literal('ARCHIVE').optional(),
+  reason: z.string().trim().min(10).max(1000),
+}).strict();
+
+export const permanentDeleteClientServiceSchema = z.object({
+  deletionMode: z.literal('PERMANENT'),
+  expectedUpdatedAt: z.string().datetime(),
+  reason: z.string().trim().min(10).max(1000),
+}).strict();
+
+export const deleteClientServiceSchema = z.union([
+  permanentDeleteClientServiceSchema,
+  archiveClientServiceSchema,
+]);
 export const markServiceAgreementEffectiveSchema = z.object({
   signedAt: z.string().datetime(),
   effectiveDate: z.string().date(),

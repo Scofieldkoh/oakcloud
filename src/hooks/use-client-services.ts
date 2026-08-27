@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, ServiceAgreementActivationDto } from '@/services/client-service';
+import type { ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, PermanentDeleteClientServiceResult, ServiceAgreementActivationDto } from '@/services/client-service';
 import type { CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
 type ClientServicesResult = { services: ClientServiceDto[]; total: number; activations: CompanyServiceActivationDto[] };
@@ -99,6 +99,25 @@ export function useArchiveClientService() {
   return useMutation({
     mutationFn: ({ id, companyId: _companyId, reason }: { id: string; companyId: string; reason: string }) => requestJson<{ id: string; archived: true }>(`/api/client-services/${id}`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ reason }) }),
     onSuccess: (_result, variables) => invalidate(variables.companyId, variables.id),
+  });
+}
+
+export function useDeleteClientServicePermanently() {
+  const queryClient = useQueryClient();
+  const invalidateClientServices = useInvalidateClientServices();
+  return useMutation({
+    mutationFn: ({ id, companyId: _companyId, expectedUpdatedAt, reason }: { id: string; companyId: string; expectedUpdatedAt: string; reason: string }) => requestJson<PermanentDeleteClientServiceResult>(`/api/client-services/${id}`, {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ deletionMode: 'PERMANENT', expectedUpdatedAt, reason }),
+    }),
+    onSuccess: (_result, variables) => Promise.all([
+      invalidateClientServices(variables.companyId, variables.id),
+      queryClient.invalidateQueries({ queryKey: ['service-roster'] }),
+      queryClient.invalidateQueries({ queryKey: ['deadlines'] }),
+      queryClient.invalidateQueries({ queryKey: ['billing-occurrences'] }),
+      queryClient.invalidateQueries({ queryKey: ['billing-coverage'] }),
+    ]),
   });
 }
 

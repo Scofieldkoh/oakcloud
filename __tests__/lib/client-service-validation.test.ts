@@ -52,19 +52,13 @@ describe('client service validation', () => {
     }).success).toBe(false);
   });
 
-  it('requires a reason when billing is not required', () => {
+  it('allows not-required billing without fee lines and optional reason', () => {
     expect(createManualClientServiceSchema.safeParse({
       ...configuredBillingInput,
       billingDisposition: 'NOT_REQUIRED',
       billingNotRequiredReason: null,
       feeLines: [],
-    }).success).toBe(false);
-    expect(createManualClientServiceSchema.safeParse({
-      ...configuredBillingInput,
-      billingDisposition: 'NOT_REQUIRED',
-      billingNotRequiredReason: '  ',
-      feeLines: [],
-    }).success).toBe(false);
+    }).success).toBe(true);
     expect(createManualClientServiceSchema.safeParse({
       ...configuredBillingInput,
       billingDisposition: 'NOT_REQUIRED',

@@ -7,6 +7,7 @@ interface ToggleProps {
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   label?: string;
+  ariaLabel?: string;
   description?: string;
   size?: 'sm' | 'md';
   /** Where the label sits relative to the switch. */
@@ -32,6 +33,7 @@ export function Toggle({
   onChange,
   disabled,
   label,
+  ariaLabel,
   description,
   size = 'md',
   labelPosition = 'side',
@@ -62,7 +64,7 @@ export function Toggle({
         type="button"
         role="switch"
         aria-checked={checked}
-        aria-label={label || description}
+        aria-label={ariaLabel || label || description}
         onClick={() => !disabled && onChange(!checked)}
         disabled={disabled}
         className={cn(

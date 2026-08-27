@@ -11,6 +11,8 @@ import {
   isHttpRequestError,
   useArchiveClientService,
   useClientService,
+  useDeleteClientServicePermanently,
+  useManualClientServiceCatalogOptions,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
 import { OperationalServiceForm } from './operational-service-form';
@@ -44,6 +46,8 @@ export function ClientServiceEditor({
   const [hasConflict, setHasConflict] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveError, setArchiveError] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [previewPending, setPreviewPending] = useState(false);
   const saveLockRef = useRef(false);
   const saveAttemptRef = useRef(0);
@@ -51,8 +55,11 @@ export function ClientServiceEditor({
   const errorId = useId();
   const update = useUpdateClientService();
   const archive = useArchiveClientService();
+  const permanentDelete = useDeleteClientServicePermanently();
   const latestService = useClientService(service.id);
-  const busy = previewPending || update.isPending;
+  const catalog = useManualClientServiceCatalogOptions(service.companyId, isOpen);
+  const busy = previewPending || update.isPending || archive.isPending || permanentDelete.isPending;
+  const companyContext = catalog.data?.companyContext ?? null;
 
   const agreementBacked = service.source === 'AGREEMENT';
   const editDescription = agreementBacked
@@ -209,9 +216,33 @@ export function ClientServiceEditor({
     }
   };
 
+  const deleteService = async (reason?: string) => {
+    setDeleteError('');
+    try {
+      await permanentDelete.mutateAsync({
+        id: service.id,
+        companyId: service.companyId,
+        expectedUpdatedAt: updatedAt,
+        reason: reason ?? '',
+      });
+      setDeleteOpen(false);
+      onClose();
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Unable to permanently delete service.');
+      throw error;
+    }
+  };
+
+  const serviceHeader = (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl border border-border-primary bg-background-primary p-4 shadow-sm">
+      <FormInput id="client-service-name" label="Service name" disabled={busy} value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
+      <FormInput id="client-service-family" label="Service family" disabled={busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
+    </div>
+  );
+
   return <>
-    <Modal isOpen={isOpen} onClose={() => { if (!busy) onClose(); }} closeOnOverlayClick={!busy} closeOnEscape={!busy} showCloseButton={!busy} title="Edit service" description={editDescription} size="2xl">
-      <ModalBody className="max-h-[70vh] space-y-4 overflow-y-auto" aria-describedby={formError ? errorId : undefined}>
+    <Modal isOpen={isOpen} onClose={() => { if (!busy) onClose(); }} closeOnOverlayClick={!busy} closeOnEscape={!busy} showCloseButton={!busy} title="Edit service" description={editDescription} size="wide">
+      <ModalBody className="h-[80vh] min-h-[640px] max-h-[85vh] space-y-4 overflow-y-auto" aria-describedby={formError ? errorId : undefined}>
         {formError ? (
           <div id={errorId}>
             <Alert variant="error">
@@ -222,14 +253,22 @@ export function ClientServiceEditor({
             </Alert>
           </div>
         ) : null}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput id="client-service-name" label="Service name" disabled={busy} value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
-          <FormInput id="client-service-family" label="Service family" disabled={busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
-        </div>
-        <OperationalServiceForm values={values} onChange={setValues} errors={fieldErrors} disabled={busy} />
+        <OperationalServiceForm
+          mode="edit"
+          values={values}
+          onChange={setValues}
+          errors={fieldErrors}
+          disabled={busy}
+          serviceHeader={serviceHeader}
+          companyContext={companyContext}
+        />
         <div className="rounded-lg border border-status-error/30 bg-status-error/5 p-3">
-          <p className="text-sm text-text-secondary">{archiveDescription}</p>
-          <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
+          <p className="text-sm text-text-secondary">Permanent deletion removes this service and all of its deadline and billing history. This cannot be undone.</p>
+          <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setDeleteError(''); setDeleteOpen(true); }}>Delete service permanently</Button>
+          <div className="mt-4 border-t border-status-error/20 pt-3">
+            <p className="text-sm text-text-secondary">{archiveDescription}</p>
+            <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
+          </div>
         </div>
       </ModalBody>
       <ModalFooter>
@@ -237,6 +276,9 @@ export function ClientServiceEditor({
         <Button isLoading={busy} disabled={hasConflict || busy} onClick={save}>Save changes</Button>
       </ModalFooter>
     </Modal>
+    <ConfirmDialog isOpen={deleteOpen} onClose={() => { setDeleteError(''); setDeleteOpen(false); }} onConfirm={deleteService} title="Permanently delete service?" description="This permanently removes the service and all related deadlines, billing records, fee lines, and rule configuration. This cannot be undone." confirmLabel="Delete permanently" requireReason reasonLabel="Deletion reason" reasonPlaceholder="Explain why this service and its history must be deleted" reasonMinLength={10} isLoading={permanentDelete.isPending}>
+      {deleteError ? <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-2 text-sm text-status-error">{deleteError}</div> : null}
+    </ConfirmDialog>
     <ConfirmDialog isOpen={archiveOpen} onClose={() => { setArchiveError(''); setArchiveOpen(false); }} onConfirm={archiveService} title="Archive service?" description="This service will no longer appear in the company Services list." confirmLabel="Archive service" requireReason reasonLabel="Archive reason" reasonPlaceholder="Explain why this service is being archived" reasonMinLength={10} isLoading={archive.isPending}>
       {archiveError ? <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-2 text-sm text-status-error">{archiveError}</div> : null}
     </ConfirmDialog>

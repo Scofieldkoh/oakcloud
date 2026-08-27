@@ -8,7 +8,10 @@ import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
 import { clientServiceInclude, clientServiceInternalInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
 import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
-import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import {
+  enqueueScheduleReconciliation,
+  processScheduleReconciliationBatch,
+} from '@/services/schedule-reconciliation';
 import { assertConfiguredBillingState, canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import {
   addMonthsClamped,
@@ -890,7 +893,7 @@ export async function listCompanyServices(
       orderBy: { updatedAt: 'desc' },
     }),
   ]);
-  return { services: services.map(toClientServiceDto), total, activations: agreements.map((agreement) => ({ agreementId: agreement.id, title: agreement.generatedDocument.title, activationStatus: agreement.activationStatus, activationLastError: agreement.activationLastError, canRetry: false })) };
+  return { services: services.map(toClientServiceDto), total, activations: agreements.map((agreement) => ({ agreementId: agreement.id, title: agreement.generatedDocument?.title ?? 'Service Agreement', activationStatus: agreement.activationStatus, activationLastError: agreement.activationLastError, canRetry: false })) };
 }
 
 export async function getClientService(id: string, params: ClientServiceAccessParams): Promise<ClientServiceDto> {
@@ -985,9 +988,6 @@ export async function updateClientService(id: string, input: UpdateClientService
     const activeIncomingFeeLines = input.feeLines?.filter((fee) => fee.isActive !== false) ?? activeCurrentFeeLines;
     if (billingDisposition === 'CONFIGURED' && activeIncomingFeeLines.length === 0) {
       throw new ValidationError('Configured billing requires at least one fee line');
-    }
-    if (billingDisposition === 'NOT_REQUIRED' && (billingNotRequiredReason ?? '').trim().length < 3) {
-      throw new ValidationError('Explain why billing is not required');
     }
     if (billingDisposition !== 'NOT_REQUIRED' && billingNotRequiredReason !== null) {
       throw new ValidationError('A not-required reason is only valid when billing is not required');
@@ -1144,9 +1144,7 @@ export async function updateClientService(id: string, input: UpdateClientService
     }
 
     const result = await requireService(id, params, tx);
-    const reconciliationCorrelationId = (scheduleConfigurationChanged || effectiveFeesChanged || billingConfigurationChanged)
-      ? `client-service-update-${id}-${Date.now()}`
-      : null;
+    const reconciliationCorrelationId = `client-service-update-${id}-${Date.now()}`;
     const persistedDeadlineRuleRows = ((current as ClientServiceRecord & { deadlineRules?: ClientServiceDeadlineRuleRecord[] }).deadlineRules ?? []);
     const persistedDeadlineRuleVersions = scheduleConfigurationChanged
       ? await loadPersistedDeadlineRuleVersions(tx, params.tenantId, persistedDeadlineRuleRows)
@@ -1222,6 +1220,9 @@ export async function updateClientService(id: string, input: UpdateClientService
     }
     return result;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  processScheduleReconciliationBatch().catch((err) => {
+    console.error('Immediate reconciliation batch failed:', err);
+  });
   return toClientServiceDto(updated);
 }
 
@@ -1244,4 +1245,102 @@ export async function archiveClientService(id: string, reason: string, params: C
     await createAuditLog({ tenantId: params.tenantId, userId: params.userId, companyId: current.companyId, entityType: 'ClientService', entityId: id, entityName: current.serviceName, action: 'DELETE', reason, summary: 'Archived operational service' }, tx);
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   return { id, archived: true };
+}
+
+export interface PermanentDeleteClientServiceInput {
+  expectedUpdatedAt: string;
+  reason: string;
+}
+
+export interface PermanentDeleteClientServiceResult {
+  id: string;
+  deleted: true;
+  deletedCounts: {
+    billingOccurrences: number;
+    billingCoverageIssues: number;
+    deadlineOccurrences: number;
+    serviceCycles: number;
+    deadlineRules: number;
+    feeLines: number;
+  };
+}
+
+export async function deleteClientServicePermanently(
+  id: string,
+  input: PermanentDeleteClientServiceInput,
+  params: ClientServiceAccessParams,
+): Promise<PermanentDeleteClientServiceResult> {
+  return prisma.$transaction(async (tx) => {
+    const current = await requireService(id, params, tx);
+    const markedForDeletion = await tx.clientService.updateMany({
+      where: {
+        id,
+        tenantId: params.tenantId,
+        deletedAt: null,
+        updatedAt: new Date(input.expectedUpdatedAt),
+      },
+      data: { deletedAt: new Date(), deletedReason: input.reason },
+    });
+    if (markedForDeletion.count !== 1) throw new ConflictError('Client service changed while deleting');
+
+    const billingOccurrences = await tx.billingOccurrence.deleteMany({
+      where: { tenantId: params.tenantId, clientServiceId: id },
+    });
+    const billingCoverageIssues = await tx.billingCoverageIssue.deleteMany({
+      where: { tenantId: params.tenantId, clientServiceId: id },
+    });
+    const deadlineOccurrences = await tx.deadlineOccurrence.deleteMany({
+      where: { tenantId: params.tenantId, clientServiceId: id },
+    });
+    const serviceCycles = await tx.serviceCycle.deleteMany({
+      where: { tenantId: params.tenantId, clientServiceId: id },
+    });
+    const deadlineRules = await tx.clientServiceDeadlineRule.deleteMany({
+      where: { tenantId: params.tenantId, clientServiceId: id },
+    });
+    const feeLines = await tx.clientServiceFeeLine.deleteMany({
+      where: { tenantId: params.tenantId, clientServiceId: id },
+    });
+
+    await createAuditLog({
+      tenantId: params.tenantId,
+      userId: params.userId,
+      companyId: current.companyId,
+      entityType: 'ClientService',
+      entityId: id,
+      entityName: current.serviceName,
+      action: 'DELETE',
+      reason: input.reason,
+      summary: 'Permanently deleted operational service and all related deadline and billing records',
+      metadata: {
+        deletionMode: 'PERMANENT',
+        deletedCounts: {
+          billingOccurrences: billingOccurrences.count,
+          billingCoverageIssues: billingCoverageIssues.count,
+          deadlineOccurrences: deadlineOccurrences.count,
+          serviceCycles: serviceCycles.count,
+          deadlineRules: deadlineRules.count,
+          feeLines: feeLines.count,
+        },
+      },
+    }, tx);
+
+    const deleted = await tx.clientService.deleteMany({
+      where: { id, tenantId: params.tenantId },
+    });
+    if (deleted.count !== 1) throw new ConflictError('Client service changed while deleting');
+
+    return {
+      id,
+      deleted: true as const,
+      deletedCounts: {
+        billingOccurrences: billingOccurrences.count,
+        billingCoverageIssues: billingCoverageIssues.count,
+        deadlineOccurrences: deadlineOccurrences.count,
+        serviceCycles: serviceCycles.count,
+        deadlineRules: deadlineRules.count,
+        feeLines: feeLines.count,
+      },
+    };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }

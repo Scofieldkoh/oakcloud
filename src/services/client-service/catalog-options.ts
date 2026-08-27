@@ -32,7 +32,14 @@ export async function getManualClientServiceCatalogOptions(
 ): Promise<ManualClientServiceCatalogOptionsResponse> {
   const company = await prisma.company.findFirst({
     where: { id: companyId, tenantId: params.tenantId, deletedAt: null },
-    select: { id: true },
+    select: {
+      id: true,
+      name: true,
+      accountsDueDate: true,
+      financialYearEndDay: true,
+      financialYearEndMonth: true,
+      incorporationDate: true,
+    },
   });
   if (!company) throw new NotFoundError('Company not found');
 
@@ -156,5 +163,15 @@ export async function getManualClientServiceCatalogOptions(
     };
   });
 
-  return { variants: options };
+  return {
+    variants: options,
+    companyContext: {
+      id: company.id,
+      name: company.name,
+      accountsDueDate: company.accountsDueDate ? company.accountsDueDate.toISOString().slice(0, 10) : null,
+      financialYearEndDay: company.financialYearEndDay,
+      financialYearEndMonth: company.financialYearEndMonth,
+      incorporationDate: company.incorporationDate ? company.incorporationDate.toISOString().slice(0, 10) : null,
+    },
+  };
 }

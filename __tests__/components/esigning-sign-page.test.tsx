@@ -11,6 +11,7 @@ import type {
 const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
+  isMobile: false,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -23,7 +24,7 @@ vi.mock('@/components/ui/toast', () => ({
 }));
 
 vi.mock('@/hooks/use-media-query', () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => mocks.isMobile,
 }));
 
 vi.mock('@/components/processing/document-page-viewer', () => ({
@@ -32,6 +33,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
     highlights,
     initialPage,
     viewMode,
+    allowPagePanel,
   }: {
     renderHighlightContent: (
       highlight: { label: string; pageNumber: number },
@@ -41,6 +43,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
     highlights: Array<{ label: string; pageNumber: number }>;
     initialPage?: number;
     viewMode?: 'single' | 'continuous';
+    allowPagePanel?: boolean;
   }) => {
     const visibleHighlights =
       viewMode === 'continuous'
@@ -48,7 +51,10 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
         : highlights.filter((highlight) => highlight.pageNumber === (initialPage ?? 1));
 
     return (
-      <div data-testid="document-page-viewer">
+      <div
+        data-testid="document-page-viewer"
+        data-page-panel-allowed={String(allowPagePanel ?? true)}
+      >
         {visibleHighlights.map((highlight, index) => (
         <div key={highlight.label}>{renderHighlightContent(highlight, null, index)}</div>
         ))}
@@ -403,6 +409,7 @@ describe('EsigningSignPage autosave and field values', () => {
   beforeEach(() => {
     mocks.toastError.mockClear();
     mocks.toastSuccess.mockClear();
+    mocks.isMobile = false;
     consentHandler = () => jsonResponse(makeSession());
     fieldsHandler = null;
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -431,6 +438,21 @@ describe('EsigningSignPage autosave and field values', () => {
     await new Promise((resolve) => setTimeout(resolve, 650));
 
     expect(fieldSaveRequests).toHaveLength(0);
+  });
+
+  it('hides the page panel while signing on a portrait mobile viewport', async () => {
+    mocks.isMobile = true;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 844 });
+    const session = makeSigningSession(makeField({ type: 'SIGNATURE' }));
+    stubSigningFetch(session);
+
+    render(<EsigningSignPage />);
+
+    const viewer = await screen.findByTestId('document-page-viewer');
+    await waitFor(() => {
+      expect(viewer).toHaveAttribute('data-page-panel-allowed', 'false');
+    });
   });
 
   it.each(['TEXT', 'TITLE'] as const)(

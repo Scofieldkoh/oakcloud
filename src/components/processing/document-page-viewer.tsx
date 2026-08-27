@@ -115,6 +115,8 @@ interface DocumentPageViewerProps {
   onRetry?: () => void;
   /** Render one page at a time (default) or stack every page in a continuous scroll surface. */
   viewMode?: DocumentPageViewMode;
+  /** Whether the embedding surface permits the page-thumbnail panel and its toggle. */
+  allowPagePanel?: boolean;
   /** Optional page-relative content rendered over each PDF canvas. */
   renderPageOverlay?: (context: DocumentPageOverlayContext) => React.ReactNode;
   /**
@@ -455,6 +457,7 @@ export function DocumentPageViewer({
   focusedHighlightLabel,
   onRetry,
   viewMode = 'single',
+  allowPagePanel = true,
   renderPageOverlay,
   keyboardShortcutScope = 'global',
 }: DocumentPageViewerProps) {
@@ -1494,24 +1497,26 @@ export function DocumentPageViewer({
           <div className="w-px h-4 bg-border-primary mx-1" />
 
           {/* Page thumbnails toggle */}
-          <button
-            onClick={() => setShowThumbnails(!showThumbnails)}
-            className={cn(
-              'btn-ghost btn-xs p-1.5 flex items-center gap-1',
-              showThumbnails && 'text-oak-primary'
-            )}
-            title={showThumbnails ? 'Hide page thumbnails' : 'Show page thumbnails'}
-          >
-            <PanelLeft className="w-4 h-4" />
-            <span className="text-xs hidden sm:inline">Pages</span>
-          </button>
+          {allowPagePanel ? (
+            <button
+              onClick={() => setShowThumbnails(!showThumbnails)}
+              className={cn(
+                'btn-ghost btn-xs p-1.5 flex items-center gap-1',
+                showThumbnails && 'text-oak-primary'
+              )}
+              title={showThumbnails ? 'Hide page thumbnails' : 'Show page thumbnails'}
+            >
+              <PanelLeft className="w-4 h-4" />
+              <span className="text-xs hidden sm:inline">Pages</span>
+            </button>
+          ) : null}
         </div>
       </div>
 
       {/* PDF viewer with optional thumbnail sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Page thumbnail sidebar */}
-        {showThumbnails && thumbnailPages.length > 0 && (
+        {allowPagePanel && showThumbnails && thumbnailPages.length > 0 && (
           <PageThumbnailSidebar
             pages={thumbnailPages}
             currentPage={currentPage}

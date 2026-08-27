@@ -19,6 +19,7 @@ import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliat
 import { listServiceRoster } from '@/services/service-roster';
 
 function safeErrorResponse(error: unknown): NextResponse {
+  console.error('[API /api/client-services GET] error:', error);
   if (error instanceof ApiError) return createErrorResponse(error);
   if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden' || error.message.startsWith('Permission denied'))) {
     return createErrorResponse(error);

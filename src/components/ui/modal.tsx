@@ -12,7 +12,7 @@ export interface ModalProps {
   titleBadge?: React.ReactNode;
   description?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | '6xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'wide' | 'full';
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
@@ -32,6 +32,8 @@ const sizeClasses = {
   '4xl': 'max-w-[calc(100vw-2rem)] md:max-w-4xl',  // Mobile: full width - padding, MD+: 896px
   '5xl': 'max-w-[calc(100vw-2rem)] md:max-w-5xl',  // Mobile: full width - padding, MD+: 1024px
   '6xl': 'max-w-[calc(100vw-2rem)] lg:max-w-6xl',  // Mobile: full width - padding, LG+: 1152px
+  '7xl': 'max-w-[calc(100vw-2rem)] xl:max-w-7xl',  // Mobile: full width - padding, XL+: 1280px
+  wide: 'max-w-[calc(100vw-2rem)] xl:max-w-[1550px]', // Mobile: full width - padding, XL+: 1550px (1.5x of 6xl)
   full: 'max-w-[calc(100vw-2rem)] sm:max-w-[90vw]', // Always responsive
 };
 
