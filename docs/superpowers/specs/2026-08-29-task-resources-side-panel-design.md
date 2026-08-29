@@ -15,7 +15,7 @@ In scope:
 - A task-scoped aggregated read endpoint for task metadata, all stages, and linked resources.
 - Company name, UEN, and an internal company link.
 - Generated-document name/status, internal document link, and PDF download link.
-- E-signing envelope status and signer details.
+- E-signing envelope status, attached-document filenames/links, and signer details.
 - A permissioned action to generate and copy an active signer’s manual signing link.
 - Loading, pending, unavailable, and partial-error states as records become available.
 - Responsive two-column modal layout that stacks on small screens.
@@ -82,7 +82,9 @@ The resource projections are:
 
 - `company`: `id`, `name`, `uen`, and `/companies/:id`.
 - `generatedDocument`: `id`, `title`, `status`, `/generated-documents/:id`, and `/api/generated-documents/:id/export/pdf`.
-- `esigningEnvelope`: `id`, `title`, `status`, signature counts, expiry, `/esigning/:id`, and signer summaries containing recipient ID, name, email, signing status, and signing-order information.
+- `esigningEnvelope`: `id`, `title`, `status`, signature counts, expiry, `/esigning/:id`, attached documents containing filename plus original/signed PDF links, and signer summaries containing recipient ID, name, email, signing status, and signing-order information.
+
+Envelope document links use the existing authenticated routes: `/api/esigning/envelopes/:envelopeId/documents/:documentId/pdf` for the original file and `/api/esigning/envelopes/:envelopeId/documents/:documentId/signed-pdf` when the signed artifact exists.
 
 Generated documents do not persist a separate PDF filename. The persisted document title is the panel’s document name. The API will also return `downloadFileName`, calculated by a shared filename helper using the same title/date rules as the existing PDF export route. The panel displays both the document title and the download filename, and the export route uses that same helper so the label and downloaded file stay consistent.
 
@@ -113,7 +115,7 @@ The panel contains:
 
 1. A compact task summary with status, due date, owner, and linked company/UEN.
 2. An ordered stage timeline. Each stage shows status, assignee, timestamps, checklist progress, notes/blockers when present, and its resource cards.
-3. Resource cards with type icon, name, status badge, available links, and pending/unavailable explanations.
+3. Resource cards with type icon, name, status badge, available links, and pending/unavailable explanations. E-signing cards include their attached-document filenames and original/signed PDF actions.
 
 The active stage is visually emphasized. Stage rows are informational and do not change the selected stage; existing footer Previous/Next controls remain the only stage-navigation controls in this modal.
 
@@ -131,12 +133,12 @@ On screens below the large breakpoint, the panel appears below the stage content
 
 Add or update tests for:
 
-- The resources service returning all stages in position order with task, company, document, and envelope projections.
+- The resources service returning all stages in position order with task, company, generated-document, envelope-document, and signer projections.
 - Tenant isolation and task authorization.
 - Partial resource availability and missing/deleted linked records.
 - Permission-based suppression of resource data and signer-link actions.
 - The signer-link action using the existing POST route and rendering copy/open behavior only after success.
-- The modal layout rendering the panel, stage groups, document links, company UEN, signer summaries, pending states, and retry states.
+- The modal layout rendering the panel, stage groups, generated-document links, e-signing document links, company UEN, signer summaries, pending states, and retry states.
 - Query invalidation/refetch behavior after stage transitions and while resources are pending.
 
 Verification should include the focused task component/API tests, TypeScript checking, linting for changed files, and a browser interaction check for the modal at desktop and narrow widths.
@@ -147,7 +149,7 @@ Verification should include the focused task component/API tests, TypeScript che
 - The panel lists every stage in pipeline order, including stage status and available stage information.
 - A linked company shows its name, UEN, and an internal hyperlink.
 - Generated documents show their persisted name/title, current status, an internal document hyperlink, and a PDF download action when readable.
-- E-signing stages show envelope status and signer details as they become available.
+- E-signing stages show envelope status, attached-document filenames and original/signed PDF links, and signer details as they become available.
 - Active signer links can be generated and copied only by authorized users through the existing audited action.
 - New or completed resources appear after refresh/refetch without requiring a full page reload.
 - Missing or unauthorized resources do not blank the rest of the panel.
