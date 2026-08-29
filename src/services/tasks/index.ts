@@ -2,6 +2,7 @@ export * from './action-registry';
 export * from './esigning-preparation.service';
 export * from './integration.service';
 export * from './pipeline.service';
+export * from './resources.service';
 export * from './stage.service';
 export * from './status';
 export * from './task.service';
