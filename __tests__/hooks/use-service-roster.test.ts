@@ -52,16 +52,34 @@ describe('useServiceRoster', () => {
       companyQuery: '  Oaktree  ',
       familyQuery: '  Accounting  ',
       serviceQuery: '  Annual Return  ',
+      statusQuery: '  Active  ',
+      cadenceQuery: '  Monthly  ',
+      nextDeadlineQuery: '  2026-09-01  ',
+      startEndQuery: '  2026-01-01  ',
+      warningQuery: '  Review  ',
+      billingQuery: '  Configured  ',
     };
 
     expect(normalizeServiceRosterSearch(input)).toEqual(expect.objectContaining({
       companyQuery: 'Oaktree',
       familyQuery: 'Accounting',
       serviceQuery: 'Annual Return',
+      statusQuery: 'Active',
+      cadenceQuery: 'Monthly',
+      nextDeadlineQuery: '2026-09-01',
+      startEndQuery: '2026-01-01',
+      warningQuery: 'Review',
+      billingQuery: 'Configured',
     }));
     expect(serviceRosterSearchParams(input)).toContain('companyQuery=Oaktree');
     expect(serviceRosterSearchParams(input)).toContain('familyQuery=Accounting');
     expect(serviceRosterSearchParams(input)).toContain('serviceQuery=Annual+Return');
+    expect(serviceRosterSearchParams(input)).toContain('statusQuery=Active');
+    expect(serviceRosterSearchParams(input)).toContain('cadenceQuery=Monthly');
+    expect(serviceRosterSearchParams(input)).toContain('nextDeadlineQuery=2026-09-01');
+    expect(serviceRosterSearchParams(input)).toContain('startEndQuery=2026-01-01');
+    expect(serviceRosterSearchParams(input)).toContain('warningQuery=Review');
+    expect(serviceRosterSearchParams(input)).toContain('billingQuery=Configured');
   });
 
   it('uses the same key and URL for reordered family and status sets', () => {

@@ -214,14 +214,6 @@ export function GenerationBatchTable({
   const preferenceValue = preferenceMap?.[COLUMN_PREF_KEY]?.value;
   const preferenceValueKey = JSON.stringify(preferenceValue ?? null);
 
-  const tableWidth = useMemo(
-    () => COLUMN_IDS.reduce(
-      (total, columnId) => total + (columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]),
-      0,
-    ),
-    [columnWidths],
-  );
-
   useEffect(() => {
     const restored = JSON.parse(preferenceValueKey) as unknown;
     if (!restored || typeof restored !== 'object' || Array.isArray(restored)) return;
@@ -458,16 +450,17 @@ export function GenerationBatchTable({
       </div>
 
       {/* Desktop table view */}
-      <div className="table-container relative hidden overflow-x-auto md:block">
+      <div className="table-container hidden overflow-x-auto md:block">
         <table
-          className="table table-fixed relative z-[1]"
-          style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}
+          className="table w-full min-w-max"
         >
           <colgroup>
             {COLUMN_IDS.map((columnId) => (
               <col
                 key={columnId}
-                style={{ width: `${columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]}px` }}
+                style={columnId === 'actions'
+                  ? undefined
+                  : { width: `${columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]}px` }}
               />
             ))}
           </colgroup>
@@ -548,15 +541,17 @@ export function GenerationBatchTable({
                   ) : (
                     <span>{COLUMN_LABELS[columnId]}</span>
                   )}
-                  <span
-                    role="separator"
-                    aria-label={`Resize ${COLUMN_LABELS[columnId]} column`}
-                    aria-orientation="vertical"
-                    tabIndex={0}
-                    className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
-                    onPointerDown={(event) => startResize(event, columnId)}
-                    onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
-                  />
+                  {columnId !== 'actions' && (
+                    <span
+                      role="separator"
+                      aria-label={`Resize ${COLUMN_LABELS[columnId]} column`}
+                      aria-orientation="vertical"
+                      tabIndex={0}
+                      className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
+                      onPointerDown={(event) => startResize(event, columnId)}
+                      onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
+                    />
+                  )}
                 </th>
               ))}
             </tr>

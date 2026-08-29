@@ -245,6 +245,35 @@ describe('getTaskResources', () => {
     });
   });
 
+  it('redacts a linked company resource outside the user company scope', async () => {
+    const task = createTask();
+    task.stages[0] = {
+      ...task.stages[0],
+      outcome: {
+        ...task.stages[0].outcome!,
+        companyId: 'company-2',
+        company: {
+          id: 'company-2',
+          name: 'Restricted Pte. Ltd.',
+          uen: '202600002B',
+          deletedAt: null,
+        },
+      },
+    } as never;
+    mocks.canAccessCompany.mockImplementation(async (companyId: string) => companyId === 'company-1');
+    mocks.taskFindFirst.mockResolvedValue(task);
+
+    const result = await getTaskResources(session, 'tenant-a', 'task-1');
+
+    expect(result.stages[0].resources[0]).toMatchObject({
+      kind: 'company',
+      state: 'unavailable',
+      id: null,
+      href: null,
+      reason: 'You do not have permission to view this resource.',
+    });
+  });
+
   it('returns unavailable for a terminal stage whose linked resource is gone', async () => {
     const task = createTask();
     task.stages[1] = {

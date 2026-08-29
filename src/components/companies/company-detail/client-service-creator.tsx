@@ -1,22 +1,31 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { isHttpRequestError, useCreateManualClientService, useManualClientServiceCatalogOptions } from '@/hooks/use-client-services';
+import {
+  isHttpRequestError,
+  previewClientServiceDeadlineDraft,
+  useCreateManualClientService,
+  useManualClientServiceCatalogOptions,
+} from '@/hooks/use-client-services';
 import type { ClientServiceDto, DuplicateClientServiceMatches, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
 import { OperationalServiceForm } from './operational-service-form';
+import { ServiceCompanyContext } from './service-company-context';
 import {
   catalogReplacementForVariant,
   createManualPayload,
+  deadlineDraftPreviewPayload,
   emptyManualOperationalValues,
+  impactWarningsToStrings,
   manualFormIsDirty,
   operationalErrorsFromServer,
   replacementValuesChanged,
   validateOperationalServiceValues,
+  type DeadlinePreviewState,
   type OperationalFieldErrors,
   type OperationalServiceValues,
 } from './client-service-form-state';
@@ -30,6 +39,8 @@ const CADENCE_LABEL_MAP: Record<string, string> = {
   AD_HOC: 'Ad-hoc',
   CUSTOM: 'Custom',
 };
+
+const DRAFT_PREVIEW_DEBOUNCE_MS = 300;
 
 export function ClientServiceCreator({
   companyId,
@@ -52,6 +63,9 @@ export function ClientServiceCreator({
   const [duplicates, setDuplicates] = useState<DuplicateClientServiceMatches | null>(null);
   const [pendingVariantId, setPendingVariantId] = useState<string | null>(null);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [deadlinePreview, setDeadlinePreview] = useState<DeadlinePreviewState>({ state: 'IDLE', items: [], warnings: [] });
+  const previewAbortRef = useRef<AbortController | null>(null);
+  const previewTokenRef = useRef(0);
 
   const pending = createService.isPending;
   const selectedVariant = catalog.data?.variants.find((variant) => variant.id === selectedVariantId) ?? null;
@@ -69,6 +83,62 @@ export function ClientServiceCreator({
     description: variant.customCadenceLabel ?? (CADENCE_LABEL_MAP[variant.serviceCadence] ?? variant.serviceCadence),
   })), [catalog.data]);
   const dirty = manualFormIsDirty(selectedVariantId, values);
+
+  const runDraftPreview = useCallback(async () => {
+    if (!selectedVariant) return;
+    previewAbortRef.current?.abort();
+    const controller = new AbortController();
+    previewAbortRef.current = controller;
+    const token = previewTokenRef.current + 1;
+    previewTokenRef.current = token;
+    setDeadlinePreview((previous) => ({
+      state: 'LOADING',
+      items: 'items' in previous ? previous.items : [],
+      warnings: 'warnings' in previous ? previous.warnings : [],
+    }));
+    try {
+      const result = await previewClientServiceDeadlineDraft(
+        deadlineDraftPreviewPayload(companyId, selectedVariant.id, values),
+        controller.signal,
+      );
+      if (token !== previewTokenRef.current || controller.signal.aborted) return;
+      setDeadlinePreview({
+        state: 'SUCCESS',
+        items: result.projectedDeadlines,
+        warnings: impactWarningsToStrings(result.warnings),
+        fingerprint: '',
+        payloadHash: '',
+      });
+    } catch (error) {
+      if (controller.signal.aborted || token !== previewTokenRef.current) return;
+      setDeadlinePreview({
+        state: 'ERROR',
+        items: [],
+        warnings: [],
+        message: error instanceof Error ? error.message : 'Deadline preview failed.',
+      });
+    }
+  }, [companyId, selectedVariant, values]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedVariant) return;
+    const timeout = setTimeout(() => {
+      void runDraftPreview();
+    }, DRAFT_PREVIEW_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [isOpen, selectedVariant, values, runDraftPreview]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      previewAbortRef.current?.abort();
+      previewTokenRef.current += 1;
+    }
+  }, [isOpen]);
+
+  const abortDraftPreview = () => {
+    previewAbortRef.current?.abort();
+    previewTokenRef.current += 1;
+  };
 
   const applyVariant = (variant: ManualClientServiceCatalogVariantOption) => {
     const next = catalogReplacementForVariant(variant);
@@ -102,6 +172,7 @@ export function ClientServiceCreator({
       setCloseConfirmOpen(true);
       return;
     }
+    abortDraftPreview();
     onClose();
   };
 
@@ -113,6 +184,7 @@ export function ClientServiceCreator({
     setValues(emptyManualOperationalValues());
     setSelectedVariantId('');
     setReplacement(null);
+    abortDraftPreview();
     onClose();
   };
 
@@ -137,6 +209,7 @@ export function ClientServiceCreator({
         companyId,
         data: createManualPayload(selectedVariantId, values, confirmDuplicate),
       });
+      abortDraftPreview();
       onCreated(created);
     } catch (error) {
       if (isHttpRequestError(error, 409) && error.body.duplicates) {
@@ -184,6 +257,10 @@ export function ClientServiceCreator({
   return <>
     <Modal isOpen={isOpen} onClose={requestClose} title="Add service" description="Add an operational service from the service catalog." size="wide" closeOnEscape={!pending} closeOnOverlayClick={!pending}>
       <ModalBody className="h-[80vh] min-h-[640px] max-h-[85vh] space-y-4 overflow-y-auto">
+        <ServiceCompanyContext
+          companyName={catalog.data?.companyContext?.name}
+          uen={catalog.data?.companyContext?.uen}
+        />
         {formError ? <Alert variant="error">{formError}</Alert> : null}
         {duplicates ? (
           <div role="alert" className="rounded-lg border border-status-warning/30 bg-status-warning/5 p-3 text-sm">
@@ -207,7 +284,7 @@ export function ClientServiceCreator({
           disabled={pending}
           sectionsDisabled={!selectedVariant}
           serviceSelector={serviceSelector}
-          companyContext={catalog.data?.companyContext}
+          deadlinePreview={deadlinePreview}
         />
       </ModalBody>
       <ModalFooter>

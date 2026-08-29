@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -9,31 +9,40 @@ import { FormInput } from '@/components/ui/form-input';
 import type { ClientServiceDto } from '@/services/client-service';
 import {
   isHttpRequestError,
+  previewClientServiceDeadlineImpact,
   useArchiveClientService,
   useClientService,
   useDeleteClientServicePermanently,
-  useManualClientServiceCatalogOptions,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
 import { OperationalServiceForm } from './operational-service-form';
+import { ServiceCompanyContext } from './service-company-context';
 import {
+  deadlineImpactPayload,
+  deadlineImpactPayloadHash,
   deadlineRuleInputs,
+  impactWarningsToStrings,
   operationalFieldValues,
   updateFeeLines,
   validateOperationalServiceValues,
   valuesFromClientService,
+  type DeadlinePreviewState,
   type OperationalFieldErrors,
   type OperationalServiceValues,
 } from './client-service-form-state';
+
+const PREVIEW_DEBOUNCE_MS = 300;
 
 export function ClientServiceEditor({
   service,
   isOpen,
   onClose,
+  readOnly = false,
 }: {
   service: ClientServiceDto;
   isOpen: boolean;
   onClose: () => void;
+  readOnly?: boolean;
 }) {
   const initialValues = valuesFromClientService(service);
   const [serviceName, setServiceName] = useState(service.serviceName);
@@ -49,17 +58,19 @@ export function ClientServiceEditor({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [previewPending, setPreviewPending] = useState(false);
+  const [deadlinePreview, setDeadlinePreview] = useState<DeadlinePreviewState>({ state: 'IDLE', items: [], warnings: [] });
   const saveLockRef = useRef(false);
   const saveAttemptRef = useRef(0);
   const previewAbortRef = useRef<AbortController | null>(null);
+  const previewTokenRef = useRef(0);
+  const payloadHashRef = useRef('');
+  const fingerprintRef = useRef<string | null>(null);
   const errorId = useId();
   const update = useUpdateClientService();
   const archive = useArchiveClientService();
   const permanentDelete = useDeleteClientServicePermanently();
   const latestService = useClientService(service.id);
-  const catalog = useManualClientServiceCatalogOptions(service.companyId, isOpen);
   const busy = previewPending || update.isPending || archive.isPending || permanentDelete.isPending;
-  const companyContext = catalog.data?.companyContext ?? null;
 
   const agreementBacked = service.source === 'AGREEMENT';
   const editDescription = agreementBacked
@@ -68,6 +79,70 @@ export function ClientServiceEditor({
   const archiveDescription = agreementBacked
     ? 'Archiving removes this operational service without changing the signed agreement.'
     : 'Archiving removes this manually added service from the active company view.';
+
+  const runDeadlinePreview = useCallback(async (
+    payload: ReturnType<typeof deadlineImpactPayload>,
+    hash: string,
+  ) => {
+    previewAbortRef.current?.abort();
+    const controller = new AbortController();
+    previewAbortRef.current = controller;
+    const token = previewTokenRef.current + 1;
+    previewTokenRef.current = token;
+    payloadHashRef.current = hash;
+    fingerprintRef.current = null;
+    setDeadlinePreview((previous) => ({
+      state: 'LOADING',
+      items: 'items' in previous ? previous.items : [],
+      warnings: 'warnings' in previous ? previous.warnings : [],
+    }));
+    try {
+      const result = await previewClientServiceDeadlineImpact(service.id, payload, controller.signal);
+      if (token !== previewTokenRef.current || controller.signal.aborted) return;
+      if (typeof result.previewFingerprint !== 'string' || !result.previewFingerprint) {
+        throw new Error('Unable to verify the deadline impact preview. Please try again.');
+      }
+      fingerprintRef.current = result.previewFingerprint;
+      setDeadlinePreview({
+        state: 'SUCCESS',
+        items: result.projectedDeadlines,
+        warnings: impactWarningsToStrings(result.warnings),
+        fingerprint: result.previewFingerprint,
+        payloadHash: hash,
+      });
+    } catch (error) {
+      if (controller.signal.aborted || token !== previewTokenRef.current) return;
+      setDeadlinePreview({
+        state: 'ERROR',
+        items: [],
+        warnings: [],
+        message: error instanceof Error ? error.message : 'Deadline preview failed.',
+      });
+    }
+  }, [service.id]);
+
+  useEffect(() => {
+    if (!isOpen || readOnly) return;
+    const payload = deadlineImpactPayload(values, updatedAt);
+    const hash = deadlineImpactPayloadHash(payload);
+    const timeout = setTimeout(() => {
+      void runDeadlinePreview(payload, hash);
+    }, PREVIEW_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [isOpen, readOnly, values, updatedAt, service.id, runDeadlinePreview]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      previewAbortRef.current?.abort();
+      previewTokenRef.current += 1;
+    }
+  }, [isOpen]);
+
+  const closeEditor = () => {
+    previewAbortRef.current?.abort();
+    previewTokenRef.current += 1;
+    onClose();
+  };
 
   const replaceForm = (next: ClientServiceDto) => {
     const nextValues = valuesFromClientService(next);
@@ -131,27 +206,20 @@ export function ClientServiceEditor({
       };
       const scheduleFieldsChanged = JSON.stringify(scheduleSnapshot) !== JSON.stringify(initialScheduleSnapshot);
       const impactRequired = deadlineRulesChanged || scheduleFieldsChanged;
+      const impactPayload = deadlineImpactPayload(submitValues, updatedAt);
+      const submitHash = deadlineImpactPayloadHash(impactPayload);
       let impactFingerprint: string | undefined;
       if (impactRequired) {
-        const response = await fetch(`/api/client-services/${service.id}/deadline-configuration/impact`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expectedUpdatedAt: updatedAt, deadlineRules: nextDeadlineRules, scheduleSnapshot }),
-          signal: abortController.signal,
-        });
-        if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw Object.assign(new Error(typeof payload?.message === 'string' ? payload.message : 'Unable to preview deadline changes.'), {
-            status: response.status,
-            code: payload?.code,
-            body: payload,
-          });
+        if (fingerprintRef.current !== null && payloadHashRef.current === submitHash) {
+          impactFingerprint = fingerprintRef.current;
+        } else {
+          const result = await previewClientServiceDeadlineImpact(service.id, impactPayload, abortController.signal);
+          if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
+          if (typeof result.previewFingerprint !== 'string' || !result.previewFingerprint) {
+            throw new Error('Unable to verify the deadline impact preview. Please try again.');
+          }
+          impactFingerprint = result.previewFingerprint;
         }
-        if (typeof payload?.previewFingerprint !== 'string' || !payload.previewFingerprint) {
-          throw new Error('Unable to verify the deadline impact preview. Please try again.');
-        }
-        impactFingerprint = payload.previewFingerprint;
       }
       if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
       await update.mutateAsync({
@@ -174,7 +242,7 @@ export function ClientServiceEditor({
         },
       });
       if (attempt !== saveAttemptRef.current || abortController.signal.aborted) return;
-      onClose();
+      closeEditor();
     } catch (error) {
       if (abortController.signal.aborted || attempt !== saveAttemptRef.current) return;
       if (isHttpRequestError(error, 409) || (typeof error === 'object' && error !== null && 'status' in error && (error as { status?: unknown }).status === 409)) {
@@ -235,14 +303,15 @@ export function ClientServiceEditor({
 
   const serviceHeader = (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl border border-border-primary bg-background-primary p-4 shadow-sm">
-      <FormInput id="client-service-name" label="Service name" disabled={busy} value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
-      <FormInput id="client-service-family" label="Service family" disabled={busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
+      <FormInput id="client-service-name" label="Service name" disabled={readOnly || busy} value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
+      <FormInput id="client-service-family" label="Service family" disabled={readOnly || busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
     </div>
   );
 
   return <>
-    <Modal isOpen={isOpen} onClose={() => { if (!busy) onClose(); }} closeOnOverlayClick={!busy} closeOnEscape={!busy} showCloseButton={!busy} title="Edit service" description={editDescription} size="wide">
+    <Modal isOpen={isOpen} onClose={() => { if (!busy) closeEditor(); }} closeOnOverlayClick={!busy} closeOnEscape={!busy} showCloseButton={!busy} title={readOnly ? 'View service' : 'Edit service'} description={readOnly ? 'Review service configuration and tracking details.' : editDescription} size="wide">
       <ModalBody className="h-[80vh] min-h-[640px] max-h-[85vh] space-y-4 overflow-y-auto" aria-describedby={formError ? errorId : undefined}>
+        <ServiceCompanyContext companyName={service.company?.name} uen={service.company?.uen} />
         {formError ? (
           <div id={errorId}>
             <Alert variant="error">
@@ -258,22 +327,27 @@ export function ClientServiceEditor({
           values={values}
           onChange={setValues}
           errors={fieldErrors}
-          disabled={busy}
+          disabled={readOnly || busy}
+          readOnly={readOnly}
           serviceHeader={serviceHeader}
-          companyContext={companyContext}
+          deadlinePreview={deadlinePreview}
+          openDeadlineOccurrences={service.openDeadlineOccurrences ?? []}
+          openBillingOccurrences={service.openBillingOccurrences ?? []}
         />
-        <div className="rounded-lg border border-status-error/30 bg-status-error/5 p-3">
-          <p className="text-sm text-text-secondary">Permanent deletion removes this service and all of its deadline and billing history. This cannot be undone.</p>
-          <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setDeleteError(''); setDeleteOpen(true); }}>Delete service permanently</Button>
-          <div className="mt-4 border-t border-status-error/20 pt-3">
-            <p className="text-sm text-text-secondary">{archiveDescription}</p>
-            <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
+        {!readOnly ? (
+          <div className="rounded-lg border border-status-error/30 bg-status-error/5 p-3">
+            <p className="text-sm text-text-secondary">Permanent deletion removes this service and all of its deadline and billing history. This cannot be undone.</p>
+            <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setDeleteError(''); setDeleteOpen(true); }}>Delete service permanently</Button>
+            <div className="mt-4 border-t border-status-error/20 pt-3">
+              <p className="text-sm text-text-secondary">{archiveDescription}</p>
+              <Button className="mt-2" variant="danger" size="sm" disabled={busy} onClick={() => { setArchiveError(''); setArchiveOpen(true); }}>Archive service</Button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </ModalBody>
       <ModalFooter>
-        <Button variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button>
-        <Button isLoading={busy} disabled={hasConflict || busy} onClick={save}>Save changes</Button>
+        <Button variant="secondary" disabled={busy} onClick={closeEditor}>{readOnly ? 'Close' : 'Cancel'}</Button>
+        {!readOnly ? <Button isLoading={busy} disabled={hasConflict || busy} onClick={save}>Save changes</Button> : null}
       </ModalFooter>
     </Modal>
     <ConfirmDialog isOpen={deleteOpen} onClose={() => { setDeleteError(''); setDeleteOpen(false); }} onConfirm={deleteService} title="Permanently delete service?" description="This permanently removes the service and all related deadlines, billing records, fee lines, and rule configuration. This cannot be undone." confirmLabel="Delete permanently" requireReason reasonLabel="Deletion reason" reasonPlaceholder="Explain why this service and its history must be deleted" reasonMinLength={10} isLoading={permanentDelete.isPending}>

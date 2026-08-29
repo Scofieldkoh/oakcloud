@@ -71,6 +71,13 @@ function props(overrides: Partial<BatchItemConfiguratorProps> = {}): BatchItemCo
 }
 
 describe('BatchItemConfigurator', () => {
+  it('does not expose letterhead controls', () => {
+    render(<BatchItemConfigurator {...props()} />);
+
+    expect(screen.queryByText('Output options')).not.toBeInTheDocument();
+    expect(screen.queryByText('Use company letterhead')).not.toBeInTheDocument();
+  });
+
   it('shows effective shared values and records an explicit local override', async () => {
     const user = userEvent.setup();
     const p = props();
@@ -128,5 +135,34 @@ describe('BatchItemConfigurator', () => {
     const { unmount } = render(<BatchItemConfigurator {...p} />);
     expect(screen.getByLabelText('Reference')).toBeInTheDocument();
     unmount();
+  });
+
+  it('shows only the party controls used by the template and defaults director loops to all directors', async () => {
+    const user = userEvent.setup();
+    const p = props({
+      templateContent: '<p>{{#each directors}}{{this.name}}{{/each}}</p>',
+      directors: [
+        { id: 'director-1', contactId: null, name: 'Alice Tan', detail: 'DIRECTOR', email: null, phone: null, address: { full: null, letter: null } },
+        { id: 'director-2', contactId: null, name: 'Ben Lim', detail: 'DIRECTOR', email: null, phone: null, address: { full: null, letter: null } },
+      ],
+      shareholders: [
+        { id: 'shareholder-1', contactId: null, name: 'Shareholder', detail: 'ORDINARY', email: null, phone: null, address: { full: null, letter: null } },
+      ],
+      companyContacts: [{ id: 'contact-1', fullName: 'Company Contact' }],
+    });
+    render(<BatchItemConfigurator {...p} />);
+
+    expect(screen.getByRole('group', { name: /directors/i })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /^director$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /shareholder/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /company contact/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Contacts' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.getAllByRole('checkbox').every((checkbox) => (
+      (checkbox as HTMLInputElement).checked
+    ))).toBe(true);
+
+    await user.click(screen.getByRole('checkbox', { name: /Alice Tan/ }));
+    expect(p.onPatch).toHaveBeenCalledWith({ selectedDirectorIds: ['director-2'] });
   });
 });

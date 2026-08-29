@@ -1288,3 +1288,59 @@ A future session should begin by:
 6. Preserving unrelated user changes.
 7. Treating the generic repeatable schedule as a platform capability, never a
    payroll-only special case.
+
+## 25. Deadline projection repair addendum (2026-08-27)
+
+This addendum records the clarified rolling-horizon and maintenance-repair
+invariants introduced by the 27 August 2026 repair plan
+(\docs/superpowers/plans/2026-08-27-deadline-preview-reconciliation-repair.md\)
+and overrides any earlier acceptance language that permitted weaker behavior.
+
+### 25.1 Canonical projection
+
+- Default automatic deadline projection is bounded to
+  \[current Singapore date, current Singapore date + 12 months]\.
+- \SG_AGM_DUE\ and \SG_ANNUAL_RETURN\ are the only authoritative backlog
+  exceptions. They derive annual cycles from the monthly
+  \Company.accountsDueDate\ source and are resolved from the stable rule
+  codes only — never from rule names, milestone names, UI labels, or
+  expression shape.
+- Authoritative backlog retains the most recent 20 cycles through the future
+  horizon and emits \AUTHORITATIVE_BACKLOG_TRUNCATED\ (with the excluded
+  cycle count and oldest retained year) when older cycles are excluded. The
+  current and future cycles are never dropped in favor of older history.
+- Annual company-date fields (\ccountsDueDate\, \inancialYearEnd\) used
+  by \ANNUALLY\ rules are recurring month/day landmarks aligned to the first
+  anniversary on or after the active period start. \ONE_TIME\ and other
+  recurrence kinds preserve their exact stored dates unless their expression
+  explicitly says otherwise.
+- No other rule, including ECI, Form C, custom annual rules, or rules sourced
+  from \inancialYearEnd\, automatically generates historical backlog. Use
+  manual historical cycles for all non-authoritative historical deadlines.
+
+### 25.2 Preview/apply parity
+
+- The client-service impact preview and the write-mode reconciler both call
+  \projectDeadlineRule\ with the same normalized inputs and must return
+  tuple-identical \(ruleId, periodKey, milestoneKey, scheduleEntryKey,
+  dueDate)\ sets for the same immutable inputs.
+- The Services editor renders dates from the canonical server projection
+  (\projectedDeadlines\) and never recomputes deadlines client-side.
+- \NO_CHANGE\ diffs are counted truthfully and are not reported as
+  preserved lifecycle records.
+
+### 25.3 Maintenance repair
+
+- Normal lifecycle preservation remains strict: Historical, Completed,
+  Waived, Cancelled, Manual Trigger, and date-overridden occurrences are
+  never mutated by reconciliation.
+- The dedicated audited maintenance command
+  (\
+pm run repair:deadlines\) is the only supported bypass, and only for
+  explicitly selected client-service IDs and only for \OPEN\, \RULE\,
+  non-overridden occurrences.
+- Remediation is dry-run by default, requires the exact dry-run fingerprint
+  before \--apply\, writes one audit entry per service, and is
+  repeat-idempotent. Incorrect unmatched occurrences are cancelled with a
+  repair reason; matched incorrect occurrences are recalculated in place.
+  Deadline history is never deleted.

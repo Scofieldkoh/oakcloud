@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   classifyDeadlineChange,
   getServiceWorkspaceFlags,
+  projectDeadlineRule,
   reconcileClientServiceDeadlines,
 } from '@/services/schedule-reconciliation';
 import type {
   StoredDeadline,
   EvaluatedDeadlineForDiff,
+  DeadlineRuleProjectionInput,
 } from '@/services/schedule-reconciliation';
 import type { DateOnly } from '@/services/service-schedule';
 
@@ -367,6 +369,7 @@ describe('reconcileClientServiceDeadlines', () => {
   function reconciliationRule(overrides: Record<string, unknown> = {}) {
     return {
       id: 'rule-1',
+      code: 'DEFAULT_RULE',
       name: 'AGM due date',
       isActive: true,
       currentVersion: {
@@ -391,7 +394,7 @@ describe('reconcileClientServiceDeadlines', () => {
     };
   }
 
-  function reconciliationDb(existingCycles: unknown[] = [], rule = reconciliationRule()) {
+  function reconciliationDb(existingCycles: unknown[] = [], rule: unknown = reconciliationRule(), company: Record<string, unknown> = {}) {
     const cycle = {
       id: 'cycle-1',
       tenantId: 'tenant-1',
@@ -416,6 +419,7 @@ describe('reconcileClientServiceDeadlines', () => {
             accountsDueDate: new Date('2026-09-30T00:00:00.000Z'),
             financialYearEndDay: 31,
             financialYearEndMonth: 12,
+            ...company,
           },
           deadlineRules: [{
             id: 'client-rule-1',
@@ -444,6 +448,138 @@ describe('reconcileClientServiceDeadlines', () => {
       },
     };
   }
+
+  function annualAccountsDueRule() {
+    return reconciliationRule({
+      currentVersion: {
+        id: 'version-1',
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+        configHash: 'config-1',
+        parameterDefinitions: [],
+        milestoneTemplates: [{
+          milestoneKey: 'annual-return-due',
+          name: 'Annual Return due',
+          description: null,
+          type: 'STATUTORY',
+          generationMode: 'ONCE_PER_CYCLE',
+          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+          businessDayAdjustment: 'NONE',
+          displayOrder: 0,
+          isActive: true,
+        }],
+      },
+    });
+  }
+
+  function reconciliationDbWithRules(
+    existingCycles: unknown[] = [],
+    rules: Array<{ id: string; rule: unknown; enabled?: boolean }>,
+    company: Record<string, unknown> = {},
+  ) {
+    const db = reconciliationDb(existingCycles, rules[0]?.rule, company);
+    const originalFindFirst = db.clientService.findFirst;
+    db.clientService.findFirst = vi.fn().mockImplementation(async () => {
+      const base = await originalFindFirst();
+      return {
+        ...base,
+        deadlineRules: rules.map(({ id, rule, enabled }) => ({
+          id: `client-${id}`,
+          enabled: enabled ?? true,
+          parameterValues: {},
+          scheduleEntries: [],
+          rule,
+        })),
+      };
+    });
+    return db;
+  }
+
+  it('materializes the exact authoritative AGM and Annual Return backlog for a 2024 source', async () => {
+    const dbMock = reconciliationDbWithRules([], [
+      {
+        id: 'rule-agm',
+        rule: reconciliationRule({
+          id: 'rule-agm',
+          code: 'SG_AGM_DUE',
+          currentVersion: {
+            id: 'version-agm',
+            recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+            applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+            configHash: 'config-agm',
+            parameterDefinitions: [],
+            milestoneTemplates: [{
+              milestoneKey: 'agm-due',
+              name: 'AGM due',
+              description: null,
+              type: 'STATUTORY',
+              generationMode: 'ONCE_PER_CYCLE',
+              dateExpression: {
+                kind: 'ADD_MONTHS',
+                source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+                amount: -1,
+              },
+              businessDayAdjustment: 'NONE',
+              displayOrder: 0,
+              isActive: true,
+            }],
+          },
+        }),
+      },
+      {
+        id: 'rule-ar',
+        rule: reconciliationRule({
+          id: 'rule-ar',
+          code: 'SG_ANNUAL_RETURN',
+          currentVersion: {
+            id: 'version-ar',
+            recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+            applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+            configHash: 'config-ar',
+            parameterDefinitions: [],
+            milestoneTemplates: [{
+              milestoneKey: 'annual-return-due',
+              name: 'Annual Return due',
+              description: null,
+              type: 'STATUTORY',
+              generationMode: 'ONCE_PER_CYCLE',
+              dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+              businessDayAdjustment: 'NONE',
+              displayOrder: 0,
+              isActive: true,
+            }],
+          },
+        }),
+      },
+    ], { accountsDueDate: '2024-07-31' });
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: 'tenant-1', clientServiceId: 'cs-1',
+      today: '2026-08-27', horizonEnd: '2027-08-27',
+      writeMode: 'APPLY', reconciliationRequestId: 'req-authoritative-backlog',
+    }, dbMock as never);
+
+    expect(result.counts).toMatchObject({ created: 8, recalculated: 0, cancelled: 0, preserved: 0 });
+    const created = dbMock.deadlineOccurrence.upsert.mock.calls
+      .map((call: unknown) => {
+        const payload = (call as Array<{ create: { milestoneKey: string; calculatedDueDate: Date } }>)[0];
+        return {
+          milestoneKey: payload.create.milestoneKey,
+          dueDate: payload.create.calculatedDueDate.toISOString().slice(0, 10),
+        };
+      })
+      .sort((left: { dueDate: string }, right: { dueDate: string }) => left.dueDate.localeCompare(right.dueDate));
+    expect(created).toEqual([
+      { milestoneKey: 'agm-due', dueDate: '2024-06-30' },
+      { milestoneKey: 'annual-return-due', dueDate: '2024-07-31' },
+      { milestoneKey: 'agm-due', dueDate: '2025-06-30' },
+      { milestoneKey: 'annual-return-due', dueDate: '2025-07-31' },
+      { milestoneKey: 'agm-due', dueDate: '2026-06-30' },
+      { milestoneKey: 'annual-return-due', dueDate: '2026-07-31' },
+      { milestoneKey: 'agm-due', dueDate: '2027-06-30' },
+      { milestoneKey: 'annual-return-due', dueDate: '2027-07-31' },
+    ]);
+  });
 
   it('evaluates occurrences, creates stable cycles, and snapshots explanations in APPLY mode', async () => {
     const dbMock = reconciliationDb();
@@ -552,37 +688,26 @@ describe('reconcileClientServiceDeadlines', () => {
       .toContain('2026-12-31T00:00:00.000Z');
   });
 
-  it('materializes a fixed company-date milestone only once across rolling annual periods', async () => {
-    const dbMock = reconciliationDb([], reconciliationRule({
-      currentVersion: {
-        id: 'version-1',
-        recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
-        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
-        configHash: 'config-1',
-        parameterDefinitions: [],
-        milestoneTemplates: [{
-          milestoneKey: 'accounts-due',
-          name: 'Accounts due',
-          description: null,
-          type: 'STATUTORY',
-          generationMode: 'ONCE_PER_CYCLE',
-          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
-          businessDayAdjustment: 'NONE',
-          displayOrder: 0,
-          isActive: true,
-        }],
-      },
-    }));
+  it('materializes one in-window anniversary for an annual company-date source', async () => {
+    const dbMock = reconciliationDb([], annualAccountsDueRule(), { accountsDueDate: '2027-07-31' });
 
     const result = await reconcileClientServiceDeadlines({
-      tenantId: 'tenant-1', clientServiceId: 'cs-1', today: '2026-08-18', horizonEnd: '2027-08-18',
-      writeMode: 'APPLY', reconciliationRequestId: 'req-fixed-company-date',
+      tenantId: 'tenant-1',
+      clientServiceId: 'cs-1',
+      today: '2026-08-27',
+      horizonEnd: '2027-08-27',
+      writeMode: 'APPLY',
+      reconciliationRequestId: 'req-annual-anniversary',
     }, dbMock as never);
 
-    expect(result.counts.created).toBeGreaterThanOrEqual(1);
-    expect(dbMock.deadlineOccurrence.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ calculatedDueDate: new Date('2026-09-30T00:00:00.000Z') }),
+    expect(result.counts).toMatchObject({ created: 1, recalculated: 0 });
+    expect(dbMock.serviceCycle.upsert).toHaveBeenCalledTimes(1);
+    expect(dbMock.serviceCycle.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ periodKey: '2026' }),
     }));
+    expect(dbMock.deadlineOccurrence.upsert).toHaveBeenCalledTimes(1);
+    expect(dbMock.deadlineOccurrence.upsert.mock.calls[0][0].create.calculatedDueDate)
+      .toEqual(new Date('2027-07-31T00:00:00.000Z'));
   });
 
   it('updates only calculated date and explanation snapshot for overridden occurrences', async () => {
@@ -742,5 +867,205 @@ describe('reconcileClientServiceDeadlines', () => {
     expect(result.warnings).toEqual([expect.objectContaining({
       code: 'MISSING_INPUT', ruleId: 'rule-1', permanent: true, missingFields: ['entityType'],
     })]);
+  });
+});
+
+describe('projectDeadlineRule', () => {
+  const common = {
+    today: '2026-08-27' as DateOnly,
+    horizonEnd: '2027-08-27' as DateOnly,
+    accountsDueDate: '2024-07-31' as DateOnly,
+  };
+
+  function projectionInput(overrides: Partial<DeadlineRuleProjectionInput> = {}): DeadlineRuleProjectionInput {
+    return {
+      ruleId: 'annual-return-rule',
+      ruleCode: 'SG_ANNUAL_RETURN',
+      ruleVersionId: 'version-1',
+      recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+      applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+      parameters: {},
+      scheduleEntries: [],
+      milestones: [{
+        key: 'annual-return-due',
+        name: 'Annual Return due',
+        description: null,
+        type: 'STATUTORY',
+        generationMode: 'ONCE_PER_CYCLE',
+        expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+        businessDayAdjustment: 'NONE',
+        displayOrder: 0,
+        isActive: true,
+      }],
+      company: { accountsDueDate: common.accountsDueDate },
+      calendar: {
+        id: 'sg-calendar',
+        timeZone: 'Asia/Singapore',
+        revision: 1,
+        weekendDays: new Set([0, 6]),
+        holidays: new Set<DateOnly>(),
+      },
+      today: common.today,
+      horizonEnd: common.horizonEnd,
+      ...overrides,
+    };
+  }
+
+  function agmInput(ruleId: string): DeadlineRuleProjectionInput {
+    return projectionInput({
+      ruleId,
+      ruleCode: 'SG_AGM_DUE',
+      milestones: [{
+        key: 'agm-due',
+        name: 'AGM due',
+        description: null,
+        type: 'STATUTORY',
+        generationMode: 'ONCE_PER_CYCLE',
+        expression: {
+          kind: 'ADD_MONTHS',
+          source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+          amount: -1,
+        },
+        businessDayAdjustment: 'NONE',
+        displayOrder: 0,
+        isActive: true,
+      }],
+    });
+  }
+
+  it('projects one in-window Annual Return for a future source date', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      company: { accountsDueDate: '2027-07-31' },
+    }));
+
+    expect(projection.materializationPolicy).toBe('AUTHORITATIVE_ANNUAL_BACKLOG');
+    expect(projection.occurrences).toEqual([
+      expect.objectContaining({
+        milestoneKey: 'annual-return-due',
+        calculatedDueDate: '2027-07-31',
+      }),
+    ]);
+  });
+
+  it('projects the exact authoritative AGM and Annual Return backlog for a 2024 source', () => {
+    const occurrences = [
+      ...projectDeadlineRule(agmInput('agm-rule')).occurrences,
+      ...projectDeadlineRule(projectionInput()).occurrences,
+    ].sort((left, right) => left.calculatedDueDate.localeCompare(right.calculatedDueDate));
+
+    expect(occurrences.map(({ milestoneKey, calculatedDueDate }) => ({
+      milestoneKey,
+      calculatedDueDate,
+    }))).toEqual([
+      { milestoneKey: 'agm-due', calculatedDueDate: '2024-06-30' },
+      { milestoneKey: 'annual-return-due', calculatedDueDate: '2024-07-31' },
+      { milestoneKey: 'agm-due', calculatedDueDate: '2025-06-30' },
+      { milestoneKey: 'annual-return-due', calculatedDueDate: '2025-07-31' },
+      { milestoneKey: 'agm-due', calculatedDueDate: '2026-06-30' },
+      { milestoneKey: 'annual-return-due', calculatedDueDate: '2026-07-31' },
+      { milestoneKey: 'agm-due', calculatedDueDate: '2027-06-30' },
+      { milestoneKey: 'annual-return-due', calculatedDueDate: '2027-07-31' },
+    ]);
+    expect(occurrences.every(({ calculatedDueDate }) => calculatedDueDate <= '2027-08-27')).toBe(true);
+  });
+
+  it.each(['SG_ECI', 'SG_FORM_C', 'SG_CUSTOM_ANNUAL'])(
+    'resolves %s to ROLLING_HORIZON even when its expression reads accountsDueDate',
+    (ruleCode) => {
+      const projection = projectDeadlineRule(projectionInput({
+        ruleCode,
+        company: { accountsDueDate: common.accountsDueDate },
+      }));
+
+      expect(projection.materializationPolicy).toBe('ROLLING_HORIZON');
+      expect(projection.occurrences.map(({ calculatedDueDate }) => calculatedDueDate))
+        .toEqual(['2027-07-31']);
+    },
+  );
+
+  it('keeps non-backlog rules inside the rolling window and produces no pre-today occurrences', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      ruleCode: 'SG_ECI',
+      company: { accountsDueDate: '2024-07-31' },
+    }));
+
+    expect(projection.occurrences).toHaveLength(1);
+    expect(projection.occurrences[0]?.calculatedDueDate).toBe('2027-07-31');
+    expect(projection.occurrences.every(({ calculatedDueDate }) => calculatedDueDate >= common.today)).toBe(true);
+  });
+
+  it.each(['sg_agm_due', 'SG_AGM_DUE_CUSTOM', 'Annual General Meeting'])(
+    'does not enable authoritative backlog for near-match code %s',
+    (ruleCode) => {
+      const projection = projectDeadlineRule(projectionInput({
+        ruleCode,
+        company: { accountsDueDate: common.accountsDueDate },
+      }));
+      expect(projection.materializationPolicy).toBe('ROLLING_HORIZON');
+      expect(projection.warnings.every((warning) => warning.code !== 'AUTHORITATIVE_BACKLOG_TRUNCATED')).toBe(true);
+      expect(projection.occurrences.every(({ calculatedDueDate }) => calculatedDueDate >= common.today && calculatedDueDate <= common.horizonEnd)).toBe(true);
+    },
+  );
+
+  it('caps a 28-cycle authoritative range at the most recent 20 cycles with one truncation warning', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      ruleId: 'annual-return-rule',
+      company: { accountsDueDate: '2000-07-31' },
+    }));
+
+    expect(projection.periods).toHaveLength(20);
+    expect(projection.periods[0]?.periodKey).toBe('2008');
+    expect(projection.periods.at(-1)?.periodKey).toBe('2027');
+    expect(projection.occurrences).toHaveLength(20);
+    expect(projection.occurrences.at(-1)?.calculatedDueDate).toBe('2027-07-31');
+    expect(projection.warnings).toContainEqual(expect.objectContaining({
+      code: 'AUTHORITATIVE_BACKLOG_TRUNCATED',
+      ruleId: 'annual-return-rule',
+      excludedCycleCount: 8,
+      oldestRetainedYear: 2008,
+    }));
+  });
+
+  it('never projects an occurrence beyond the horizon for the truncated final period', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      company: { accountsDueDate: '2000-07-31' },
+    }));
+
+    expect(projection.occurrences.every(({ calculatedDueDate }) => calculatedDueDate <= common.horizonEnd)).toBe(true);
+  });
+
+  it('collapses duplicate occurrence tuples from adjacent periods deterministically', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      ruleCode: 'SG_ECI',
+      company: { accountsDueDate: '2027-07-31' },
+    }));
+
+    expect(projection.occurrences.map(({ calculatedDueDate }) => calculatedDueDate)).toEqual(['2027-07-31']);
+  });
+
+  it('returns a missing-input warning and no occurrences for a non-annual authoritative rule', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      recurrence: { schemaVersion: 1, kind: 'ONE_TIME' },
+    }));
+
+    expect(projection.occurrences).toEqual([]);
+    expect(projection.applicability.state).toBe('MISSING_INPUT');
+    expect(projection.warnings).toContainEqual(expect.objectContaining({
+      code: 'MISSING_INPUT',
+      ruleId: 'annual-return-rule',
+    }));
+  });
+
+  it('returns a missing-input warning and no occurrences when accountsDueDate is absent', () => {
+    const projection = projectDeadlineRule(projectionInput({
+      company: {},
+    }));
+
+    expect(projection.occurrences).toEqual([]);
+    expect(projection.applicability.state).toBe('MISSING_INPUT');
+    expect(projection.warnings).toContainEqual(expect.objectContaining({
+      code: 'MISSING_INPUT',
+      missingFields: ['accountsDueDate'],
+    }));
   });
 });

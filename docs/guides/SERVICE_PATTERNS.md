@@ -697,3 +697,113 @@ vi.mock('@/lib/prisma', () => ({
 ---
 
 *Last updated: December 2024*
+
+---
+
+## Deadline Occurrence Repair Runbook
+
+Incorrect deadline occurrences produced before the canonical projection fix
+(see \docs/superpowers/plans/2026-08-27-deadline-preview-reconciliation-repair.md\)
+are corrected with the fingerprint-gated maintenance command
+\
+pm run repair:deadlines\. It is dry-run by default and only bypasses
+Historical preservation for explicitly selected client services on
+\OPEN\, \RULE\, non-overridden occurrences.
+
+### Prerequisites
+
+1. Confirm the deployed application version contains the projection fix
+   before repairing any data.
+2. Take a database backup using the repository's existing backup procedure.
+3. Identify the exact tenant and client-service IDs with read-only queries,
+   e.g.:
+
+\\\sql
+-- Tenant ID for a workspace slug
+SELECT id FROM workspaces WHERE slug = :workspaceSlug;
+
+-- Client services for a company (parameterized)
+SELECT cs.id, cs.service_name, cs.status
+FROM client_services cs
+WHERE cs.tenant_id = :tenantId AND cs.company_id = :companyId;
+\\\
+
+### Dry run
+
+\\\powershell
+npm.cmd run repair:deadlines -- --tenant-id <uuid> --client-service-id <uuid> --client-service-id <uuid> --reason "Correct 2026 annual source alignment"
+\\\
+
+The command prints JSON containing every \CREATE\, \RECALCULATE\,
+\CANCEL\, and \PRESERVE\ action plus the fingerprint. Archive this output
+securely and review every action before applying. A dry run performs no
+writes.
+
+### Apply
+
+\\\powershell
+npm.cmd run repair:deadlines -- --tenant-id <uuid> --client-service-id <uuid> --apply --expected-fingerprint <sha256> --actor-id <uuid> --reason "Correct 2026 annual source alignment"
+\\\
+
+Rules:
+
+- \--tenant-id\, at least one \--client-service-id\, and a reason of at
+  least 10 characters are mandatory.
+- \--apply\ additionally requires \--expected-fingerprint\ (the exact
+  dry-run fingerprint) and \--actor-id\.
+- At most 25 service IDs per invocation; duplicate IDs are rejected.
+- A changed preview aborts the apply with \IMPACT_CHANGED\ before any write.
+- One audit entry per client service records the operator, reason, counts, and
+  occurrence before/after snapshots.
+
+### Verification
+
+1. Query open rule-generated occurrences for the repaired service and confirm
+   one row per canonical identity:
+
+\\\sql
+SELECT sc.period_key, do.milestone_key, do.operative_due_date, do.status
+FROM deadline_occurrences do
+JOIN service_cycles sc ON sc.id = do.cycle_id
+WHERE do.tenant_id = :tenantId
+  AND do.client_service_id = :clientServiceId
+  AND do.origin = 'RULE'
+  AND do.status = 'OPEN'
+ORDER BY do.operative_due_date;
+\\\
+
+2. Confirm protected rows (Completed, Waived, Cancelled, Manual Trigger,
+   overridden) are unchanged.
+3. Confirm audit rows exist for the repair:
+
+\\\sql
+SELECT id, entity_id, action, reason, metadata, created_at
+FROM audit_logs
+WHERE tenant_id = :tenantId AND entity_type = 'ClientService'
+ORDER BY created_at DESC LIMIT 10;
+\\\
+
+4. Rerun the dry run and require zero \CREATE\, \RECALCULATE\, and
+   \CANCEL\ actions (idempotency).
+
+### Rollback
+
+If verification fails, restore the database backup taken before the repair.
+Do not hand-edit protected lifecycle rows.
+
+### Canary rollout order
+
+1. Deploy code with canonical projection and editor preview.
+2. Keep the deadline worker enabled; no data repair yet.
+3. Verify a new/edited test service produces exact preview/apply parity.
+4. Run the remediation dry run for the selected services.
+5. Obtain human review of the dry-run actions.
+6. Apply one service first as a canary.
+7. Verify UI, database tuples, audit, and idempotent second dry run.
+8. Apply the remaining selected services.
+9. Monitor reconciliation errors and unexpected preserve/cancel counts for at
+   least one scheduler interval.
+
+---
+
+*Last updated: December 2024*

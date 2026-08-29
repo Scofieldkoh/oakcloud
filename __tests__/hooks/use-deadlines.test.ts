@@ -54,6 +54,13 @@ describe('use deadlines hooks', () => {
     expect(deadlineSearchParams(search)).toContain('types=STATUTORY%2CINTERNAL');
   });
 
+  it('does not add a date range to a table request when the table filter is cleared', () => {
+    const params = deadlineSearchParams({ mode: 'TABLE', from: undefined, to: undefined });
+
+    expect(params).not.toContain('from=');
+    expect(params).not.toContain('to=');
+  });
+
   it('fetches a normalized deadline list with the stable key', async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ mode: 'TABLE', items: [], total: 0, page: 1, limit: 50, totalPages: 0 }));
     const { queryClient, wrapper } = createHarness();

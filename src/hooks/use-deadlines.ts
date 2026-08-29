@@ -12,8 +12,6 @@ import type {
   UpdateDeadlineOccurrenceInput,
 } from '@/lib/validations/deadline';
 import { deadlineSearchSchema } from '@/lib/validations/deadline';
-import { addCalendarDays, currentDateInSingapore } from '@/services/service-schedule/date-only';
-import type { DateOnly } from '@/services/service-schedule';
 import type { DeadlineListResult, DeadlineOccurrenceDto } from '@/services/deadline';
 
 export type DeadlineSearchInput = Omit<Partial<DeadlineSearch>, 'types' | 'familyIds' | 'companyIds' | 'statuses' | 'timing'> & {
@@ -78,11 +76,9 @@ function uniqueOrdered<T extends string>(
 }
 
 export function normalizeDeadlineSearch(input: DeadlineSearchInput = {}): DeadlineSearch {
-  const from = input.from ?? currentDateInSingapore();
-  const to = input.to ?? addCalendarDays(from as DateOnly, 30);
   return deadlineSearchSchema.parse({
-    from,
-    to,
+    from: input.from,
+    to: input.to,
     mode: input.mode ?? 'TABLE',
     types: uniqueOrdered(input.types, typeOrder),
     familyIds: uniqueStrings(input.familyIds),
@@ -113,8 +109,8 @@ export const deadlineKeys = {
 export function deadlineSearchParams(search: DeadlineSearchInput = {}): string {
   const normalized = normalizeDeadlineSearch(search);
   const params = new URLSearchParams();
-  params.set('from', normalized.from);
-  params.set('to', normalized.to);
+  if (normalized.from) params.set('from', normalized.from);
+  if (normalized.to) params.set('to', normalized.to);
   params.set('mode', normalized.mode);
   if (normalized.types.length > 0) params.set('types', normalized.types.join(','));
   params.set('familyIds', normalized.familyIds.join(','));

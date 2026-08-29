@@ -1499,6 +1499,7 @@ the selected record IDs are also stored under `metadata.selectedParties`:
   "metadata": {
     "selectedParties": {
       "directorId": "66666666-6666-4666-8666-666666666666",
+      "directorIds": ["66666666-6666-4666-8666-666666666666"],
       "shareholderId": "77777777-7777-4777-8777-777777777777",
       "contactId": "88888888-8888-4888-8888-888888888888"
     }
@@ -1507,7 +1508,9 @@ the selected record IDs are also stored under `metadata.selectedParties`:
 ```
 
 `selectedDirector`, `selectedShareholder`, and `selectedContact` are singular
-computed contexts. `selectedContactId` populates only `selectedContact`. The
+computed contexts. The root-level `directors` loop contains all current
+directors unless an explicit `selectedDirectorIds` subset was supplied;
+`selectedContactId` populates only `selectedContact`. The
 backward-compatible `contact`, `contacts`, and `custom.contacts` contexts come
 only from the legacy `contactIds` multi-contact input or an explicit server-side
 context override. The singular selected-contact and legacy multi-contact

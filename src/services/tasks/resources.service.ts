@@ -239,17 +239,24 @@ async function canReadCompanyResource(
   companyId: string,
 ): Promise<boolean> {
   try {
-    return await canAccessCompany(session, companyId);
+    return Boolean(
+      await hasPermission(session.id, 'company', 'read', companyId)
+      && await canAccessCompany(session, companyId),
+    );
   } catch {
     return false;
   }
 }
 
-function serializeCompanyResource(
+async function serializeCompanyResource(
+  session: SessionUser,
   company: NonNullable<TaskResourceStageRecord['outcome']>['company'] | TaskResourcesRecord['company'],
-): TaskResource {
+): Promise<TaskResource> {
   if (!company) return createPlaceholderResource('company', 'unavailable', missingReason());
   if (company.deletedAt) return createPlaceholderResource('company', 'unavailable', missingReason());
+  if (!await canReadCompanyResource(session, company.id)) {
+    return createPlaceholderResource('company', 'unavailable', forbiddenReason());
+  }
   return {
     kind: 'company',
     id: company.id,
@@ -381,7 +388,7 @@ async function serializeResourceStage(input: {
   if (stage.actionType === 'COMPANY_PROFILE') {
     const company = stage.outcome?.company ?? task.company;
     resources = company
-      ? [serializeCompanyResource(company)]
+      ? [await serializeCompanyResource(session, company)]
       : [createPlaceholderResource(
         'company',
         isTerminalStage(stage.status) ? 'unavailable' : 'pending',

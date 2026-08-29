@@ -5,6 +5,7 @@ import { storage, StorageKeys } from '@/lib/storage';
 import { Prisma } from '@/generated/prisma';
 import {
   buildEsigningDeliveryDownloadUrl,
+  buildEsigningVerificationUrl,
   createEsigningDeliveryToken,
   verifyEsigningDeliveryToken,
 } from '@/lib/esigning-session';
@@ -19,7 +20,7 @@ import { recordEsigningEnvelopeEmailDeliveryResults, withEsigningDeliveryTarget 
 
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
 const MAX_EMAIL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-const ESIGNING_ARTIFACT_VERSION = 4;
+const ESIGNING_ARTIFACT_VERSION = 5;
 
 function toPdfBounds(input: {
   pageWidth: number;
@@ -136,27 +137,33 @@ function drawEventIcon(
   }
 }
 
-async function buildCertificatePdf(input: {
+export async function buildCertificatePdf(input: {
   envelope: Awaited<ReturnType<typeof loadEnvelopeForPdf>>;
   document: Awaited<ReturnType<typeof loadEnvelopeForPdf>>['documents'][number];
 }) {
   const certificatePdf = await PDFDocument.create();
   const headingFont = await certificatePdf.embedFont(StandardFonts.HelveticaBold);
   const bodyFont = await certificatePdf.embedFont(StandardFonts.Helvetica);
+  const monoFont = await certificatePdf.embedFont(StandardFonts.Courier);
 
   const PW = 595.28;
   const PH = 841.89;
-  const ML = 44;
-  const MR = 44;
+  const ML = 48;
+  const MR = 48;
   const CW = PW - ML - MR;
+  const FOOTER_LIMIT = 66;
 
   // ── Colour palette ──────────────────────────────────────────────────────────
   const cBrand     = rgb(0.16, 0.30, 0.27);
+  const cBrandSoft = rgb(0.74, 0.82, 0.79);
   const cText      = rgb(0.10, 0.13, 0.17);
   const cTextSec   = rgb(0.36, 0.42, 0.48);
   const cTextMuted = rgb(0.56, 0.62, 0.68);
   const cBorder    = rgb(0.86, 0.89, 0.92);
+  const cSurface   = rgb(0.976, 0.980, 0.984);
+  const cWhite     = rgb(1, 1, 1);
   const cSuccess   = rgb(0.09, 0.54, 0.33);
+  const cWarning   = rgb(0.68, 0.45, 0.02);
   const cError     = rgb(0.77, 0.18, 0.22);
 
   // Recipient palettes: [main, light-background]
@@ -168,6 +175,97 @@ async function buildCertificatePdf(input: {
     [rgb(0.48, 0.14, 0.70), rgb(0.96, 0.91, 0.99)],
     [rgb(0.00, 0.43, 0.73), rgb(0.90, 0.95, 0.99)],
   ];
+
+  // ── Text helpers ────────────────────────────────────────────────────────────
+  // StandardFonts are WinAnsi-encoded and throw on unsupported code points
+  // (CJK names, emoji, ...). Replace anything outside the supported range.
+  function safe(value: string | null | undefined): string {
+    if (!value) return '';
+    return value
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\u2022/g, '\u00B7')
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '?');
+  }
+
+  function widthOf(text: string, font: typeof bodyFont, size: number): number {
+    return font.widthOfTextAtSize(text, size);
+  }
+
+  function truncate(text: string, font: typeof bodyFont, size: number, maxWidth: number): string {
+    const value = safe(text);
+    if (widthOf(value, font, size) <= maxWidth) return value;
+    let low = 0;
+    let high = value.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      if (widthOf(`${value.slice(0, mid)}...`, font, size) <= maxWidth) low = mid;
+      else high = mid - 1;
+    }
+    return `${value.slice(0, low)}...`;
+  }
+
+  function wrap(text: string, font: typeof bodyFont, size: number, maxWidth: number): string[] {
+    const value = safe(text);
+    if (!value) return [];
+    const lines: string[] = [];
+    let current = '';
+
+    const pushToken = (token: string) => {
+      // Break tokens that never fit on their own (hashes, long URLs).
+      let rest = token;
+      while (widthOf(rest, font, size) > maxWidth) {
+        let cut = 1;
+        while (cut < rest.length && widthOf(rest.slice(0, cut + 1), font, size) <= maxWidth) cut += 1;
+        lines.push(rest.slice(0, cut));
+        rest = rest.slice(cut);
+      }
+      current = rest;
+    };
+
+    for (const token of value.split(/\s+/).filter(Boolean)) {
+      const candidate = current ? `${current} ${token}` : token;
+      if (widthOf(candidate, font, size) <= maxWidth) {
+        current = candidate;
+        continue;
+      }
+      if (current) lines.push(current);
+      pushToken(token);
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  function drawRight(
+    p: PDFPage,
+    text: string,
+    xRight: number,
+    y: number,
+    size: number,
+    font: typeof bodyFont,
+    color: ReturnType<typeof rgb>,
+  ) {
+    const value = safe(text);
+    p.drawText(value, { x: xRight - widthOf(value, font, size), y, size, font, color });
+  }
+
+  function drawPill(
+    p: PDFPage,
+    text: string,
+    x: number,
+    y: number,
+    color: ReturnType<typeof rgb>,
+    textColor: ReturnType<typeof rgb>,
+  ): number {
+    const value = safe(text);
+    const size = 7;
+    const w = widthOf(value, headingFont, size) + 14;
+    p.drawRectangle({ x, y: y - 3.5, width: w, height: 14, color });
+    p.drawText(value, { x: x + 7, y, size, font: headingFont, color: textColor });
+    return w;
+  }
 
   // ── Date formatter ──────────────────────────────────────────────────────────
   function formatPdfDate(date: Date): string {
@@ -182,105 +280,203 @@ async function buildCertificatePdf(input: {
     }).format(date);
   }
 
+  // Compact variant for narrow summary cells.
+  function formatPdfDateCompact(date: Date): string {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'UTC',
+    }).format(date);
+  }
+
   // ── Evidence sub-line builder ───────────────────────────────────────────────
   function buildEvidenceSubLine(ip: string | null | undefined, userAgent: string | null | undefined): string | null {
     const device = summarizeEsigningUserAgent(userAgent);
     const parts: string[] = [];
-    if (ip) parts.push(`IP Address: ${ip}`);
+    if (ip) parts.push(`IP ${ip}`);
     if (device) parts.push(device);
-    return parts.length > 0 ? parts.join('  ·  ') : null;
+    return parts.length > 0 ? parts.join('  \u00B7  ') : null;
   }
 
+  const status = input.envelope.status;
+  const statusColor =
+    status === 'COMPLETED' ? cSuccess
+    : ['DECLINED', 'VOIDED', 'EXPIRED'].includes(status) ? cError
+    : cWarning;
+
+  const certificateId = input.envelope.certificateId;
+  const verificationUrl = buildEsigningVerificationUrl(certificateId);
+  const senderName = [input.envelope.createdBy?.firstName, input.envelope.createdBy?.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+
+  // Certificate ID block geometry (top-right of the header band) — needed up
+  // front so the title can be laid out against the remaining width.
+  const ID_SIZE = 9.5;
+  const idValueW = widthOf(certificateId, monoFont, ID_SIZE);
+  const idBlockW = Math.max(idValueW + 16, widthOf('CERTIFICATE ID', headingFont, 6.5));
+  const idBlockX = PW - MR - idBlockW;
+
+  // Title: one line when it fits, otherwise up to two slightly smaller lines.
+  const titleMaxW = idBlockX - ML - 16;
+  let titleSize = 16;
+  let titleLines = wrap(input.envelope.title, headingFont, titleSize, titleMaxW);
+  if (titleLines.length > 1) {
+    titleSize = 13.5;
+    titleLines = wrap(input.envelope.title, headingFont, titleSize, titleMaxW);
+  }
+  if (titleLines.length > 2) {
+    titleLines = [
+      titleLines[0],
+      truncate(titleLines.slice(1).join(' '), headingFont, titleSize, titleMaxW),
+    ];
+  }
+  if (titleLines.length === 0) titleLines = ['Untitled envelope'];
+  const titleLeading = titleSize + 3;
+  const titleBlockH = (titleLines.length - 1) * titleLeading;
+  const HEADER_H = 118 + titleBlockH;
+
+  const pages: PDFPage[] = [];
   let page: PDFPage = null!;
   let cursorY = 0;
-  let pageIndex = 0;
 
   // ── Page helpers ────────────────────────────────────────────────────────────
   function startPage() {
-    pageIndex += 1;
     page = certificatePdf.addPage([PW, PH]);
+    pages.push(page);
 
-    // Thin brand accent bar at top
-    page.drawRectangle({ x: 0, y: PH - 3, width: PW, height: 3, color: cBrand });
+    if (pages.length === 1) {
+      // Full-width brand header band
+      page.drawRectangle({ x: 0, y: PH - HEADER_H, width: PW, height: HEADER_H, color: cBrand });
 
-    if (pageIndex === 1) {
       page.drawText('CERTIFICATE OF COMPLETION', {
-        x: ML, y: PH - 21, size: 7.5, font: headingFont, color: cBrand,
+        x: ML, y: PH - 40, size: 8, font: headingFont, color: cBrandSoft,
       });
 
-      // Certificate ID block (top-right)
-      const certIdValue = input.envelope.certificateId;
-      const idW = bodyFont.widthOfTextAtSize(certIdValue, 8.5);
-      const idLabelW = headingFont.widthOfTextAtSize('CERTIFICATE ID', 6.5);
-      const idBlockX = PW - MR - Math.max(idW, idLabelW);
-      page.drawText('CERTIFICATE ID', {
-        x: idBlockX, y: PH - 21, size: 6.5, font: headingFont, color: cTextMuted,
+      // Certificate ID block (top-right, monospaced for transcription)
+      drawRight(page, 'CERTIFICATE ID', PW - MR, PH - 40, 6.5, headingFont, cBrandSoft);
+      page.drawRectangle({
+        x: idBlockX, y: PH - 62, width: idBlockW, height: 19,
+        borderColor: cBrandSoft, borderWidth: 0.6,
       });
-      page.drawText(certIdValue, {
-        x: idBlockX, y: PH - 31.5, size: 8.5, font: bodyFont, color: cText,
-      });
-
-      // Envelope title
-      page.drawText(input.envelope.title, {
-        x: ML, y: PH - 40, size: 15, font: headingFont, color: cText,
-        maxWidth: idBlockX - ML - 10,
+      page.drawText(certificateId, {
+        x: idBlockX + (idBlockW - idValueW) / 2, y: PH - 56.5,
+        size: ID_SIZE, font: monoFont, color: cWhite,
       });
 
-      // Company only (no tenant)
-      if (input.envelope.company?.name) {
-        page.drawText(input.envelope.company.name, {
-          x: ML, y: PH - 58, size: 8.5, font: bodyFont, color: cTextSec,
+      // Envelope title (one or two lines)
+      titleLines.forEach((line, index) => {
+        page.drawText(line, {
+          x: ML, y: PH - 64 - index * titleLeading,
+          size: titleSize, font: headingFont, color: cWhite,
+        });
+      });
+
+      // Company · sender
+      const originParts = [input.envelope.company?.name, senderName ? `Sent by ${senderName}` : null]
+        .filter(Boolean)
+        .join('  \u00B7  ');
+      if (originParts) {
+        page.drawText(truncate(originParts, bodyFont, 8.5, CW), {
+          x: ML, y: PH - 82 - titleBlockH, size: 8.5, font: bodyFont, color: cBrandSoft,
         });
       }
 
-      // Status · Completed
-      const completedStr = input.envelope.completedAt
-        ? `    Completed: ${formatPdfDate(input.envelope.completedAt)}`
-        : '';
-      const statusLine = `Status: ${input.envelope.status}${completedStr}`;
-      page.drawText(statusLine, {
-        x: ML, y: PH - 70, size: 8, font: bodyFont, color: cTextMuted,
-      });
+      // Status pill + completion timestamp
+      const pillY = PH - 104 - titleBlockH;
+      const pillW = drawPill(page, status.replace(/_/g, ' '), ML, pillY, statusColor, cWhite);
+      if (input.envelope.completedAt) {
+        page.drawText(`Completed ${formatPdfDate(input.envelope.completedAt)}`, {
+          x: ML + pillW + 10, y: pillY, size: 8, font: bodyFont, color: cBrandSoft,
+        });
+      }
 
-      page.drawLine({
-        start: { x: ML, y: PH - 81 }, end: { x: PW - MR, y: PH - 81 },
-        color: cBorder, thickness: 0.5,
-      });
-
-      cursorY = PH - 106;
+      cursorY = PH - HEADER_H - 30;
     } else {
-      page.drawText(input.envelope.certificateId, {
-        x: ML, y: PH - 21, size: 7.5, font: bodyFont, color: cTextMuted,
+      page.drawRectangle({ x: 0, y: PH - 3, width: PW, height: 3, color: cBrand });
+      page.drawText(truncate(`Certificate of Completion  \u00B7  ${input.envelope.title}`, bodyFont, 7.5, CW - 150), {
+        x: ML, y: PH - 24, size: 7.5, font: bodyFont, color: cTextMuted,
       });
+      drawRight(page, certificateId, PW - MR, PH - 24, 7.5, monoFont, cTextMuted);
       page.drawLine({
-        start: { x: ML, y: PH - 29 }, end: { x: PW - MR, y: PH - 29 },
+        start: { x: ML, y: PH - 32 }, end: { x: PW - MR, y: PH - 32 },
         color: cBorder, thickness: 0.4,
       });
-      cursorY = PH - 50;
+      cursorY = PH - 56;
     }
   }
 
   function ensureSpace(pts: number) {
-    if (cursorY - pts < 52) {
+    if (cursorY - pts < FOOTER_LIMIT) {
       startPage();
     }
   }
 
   function sectionTitle(title: string) {
-    ensureSpace(30);
-    page.drawText(title, { x: ML, y: cursorY, size: 10, font: headingFont, color: cBrand });
-    cursorY -= 5;
+    ensureSpace(40);
+    page.drawRectangle({ x: ML, y: cursorY - 1, width: 2.5, height: 9.5, color: cBrand });
+    page.drawText(safe(title).toUpperCase(), {
+      x: ML + 9, y: cursorY, size: 9, font: headingFont, color: cBrand,
+    });
+    cursorY -= 8;
     page.drawLine({
       start: { x: ML, y: cursorY }, end: { x: PW - MR, y: cursorY },
-      color: cBrand, thickness: 0.4,
+      color: cBorder, thickness: 0.5,
     });
-    cursorY -= 15;
+    cursorY -= 17;
   }
 
   // ── Build content ───────────────────────────────────────────────────────────
   startPage();
 
   const recipientById = new Map(input.envelope.recipients.map((r) => [r.id, r]));
+  const sortedEvents = [...input.envelope.events].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+  );
+  const signedCount = input.envelope.recipients.filter((r) => r.signedAt).length;
+
+  // ── SUMMARY CARD ────────────────────────────────────────────────────────────
+  {
+    const cardH = 46;
+    page.drawRectangle({
+      x: ML, y: cursorY - cardH + 12, width: CW, height: cardH,
+      color: cSurface, borderColor: cBorder, borderWidth: 0.6,
+    });
+
+    const cells: Array<[string, string, ReturnType<typeof rgb>]> = [
+      ['STATUS', status.replace(/_/g, ' '), statusColor],
+      [
+        'COMPLETED (UTC)',
+        input.envelope.completedAt ? formatPdfDateCompact(input.envelope.completedAt) : 'Pending',
+        input.envelope.completedAt ? cText : cTextMuted,
+      ],
+      ['RECIPIENTS SIGNED', `${signedCount} of ${input.envelope.recipients.length}`, cText],
+      ['AUDIT EVENTS', String(sortedEvents.length), cText],
+    ];
+
+    const cellW = CW / cells.length;
+    cells.forEach(([label, value, color], index) => {
+      const x = ML + index * cellW + 12;
+      if (index > 0) {
+        page.drawLine({
+          start: { x: ML + index * cellW, y: cursorY - cardH + 20 },
+          end: { x: ML + index * cellW, y: cursorY + 4 },
+          color: cBorder, thickness: 0.5,
+        });
+      }
+      page.drawText(label, { x, y: cursorY - 3, size: 6.2, font: headingFont, color: cTextMuted });
+      page.drawText(truncate(value, headingFont, 9, cellW - 20), {
+        x, y: cursorY - 18, size: 9, font: headingFont, color,
+      });
+    });
+
+    cursorY -= cardH + 20;
+  }
 
   // ── RECIPIENT EVIDENCE ──────────────────────────────────────────────────────
   sectionTitle('Recipient Evidence');
@@ -288,24 +484,6 @@ async function buildCertificatePdf(input: {
   input.envelope.recipients.forEach((rec, ri) => {
     const [rMain, rBg] = RECIPIENT_PALETTES[ri % RECIPIENT_PALETTES.length];
 
-    let blockPts = 18 + 12 * 3;
-    if (rec.consentedAt) blockPts += 10;
-    if (rec.signedAt) blockPts += 10;
-    ensureSpace(blockPts + 12);
-
-    // Name row with tinted background — name + email only (no role/access/sequence)
-    page.drawRectangle({ x: ML, y: cursorY - 3, width: CW, height: 15, color: rBg });
-    page.drawText(rec.name, {
-      x: ML + 6, y: cursorY, size: 9.5, font: headingFont, color: rMain,
-    });
-    const nameW = headingFont.widthOfTextAtSize(rec.name, 9.5);
-    page.drawText(rec.email, {
-      x: ML + 6 + nameW + 7, y: cursorY, size: 8.5, font: bodyFont, color: cTextSec,
-    });
-
-    cursorY -= 18;
-
-    // Evidence rows
     type EvidenceRow = {
       label: string;
       value: string;
@@ -347,45 +525,66 @@ async function buildCertificatePdf(input: {
       },
     ];
 
-    for (const row of evidenceRows) {
-      ensureSpace(row.subLine ? 22 : 13);
+    const rowsH = evidenceRows.reduce((sum, row) => sum + (row.subLine ? 24 : 14), 0);
+    const cardH = 24 + rowsH + 8;
+    ensureSpace(cardH + 12);
 
+    const cardTop = cursorY + 11;
+    const cardBottom = cardTop - cardH;
+
+    // Card shell + recipient accent bar
+    page.drawRectangle({
+      x: ML, y: cardBottom, width: CW, height: cardH,
+      color: cWhite, borderColor: cBorder, borderWidth: 0.6,
+    });
+    page.drawRectangle({ x: ML, y: cardBottom, width: 3, height: cardH, color: rMain });
+    page.drawRectangle({ x: ML + 3, y: cardTop - 22, width: CW - 3, height: 22, color: rBg });
+
+    // Header: name + email (left), signing order (right)
+    const nameText = truncate(rec.name, headingFont, 9.5, CW * 0.45);
+    page.drawText(nameText, { x: ML + 13, y: cursorY, size: 9.5, font: headingFont, color: rMain });
+    const emailX = ML + 13 + widthOf(nameText, headingFont, 9.5) + 8;
+    page.drawText(truncate(rec.email, bodyFont, 8.5, PW - MR - emailX - 70), {
+      x: emailX, y: cursorY, size: 8.5, font: bodyFont, color: cTextSec,
+    });
+    drawRight(page, `#${ri + 1}`, PW - MR - 10, cursorY, 8, headingFont, cTextMuted);
+
+    cursorY -= 24;
+
+    for (const row of evidenceRows) {
       if (row.filled) {
-        page.drawCircle({ x: ML + 8, y: cursorY + 3, size: 2.8, color: row.dotColor });
+        page.drawCircle({ x: ML + 17, y: cursorY + 3, size: 2.8, color: row.dotColor });
       } else {
-        page.drawCircle({ x: ML + 8, y: cursorY + 3, size: 2.8, borderColor: row.dotColor, borderWidth: 0.8 });
+        page.drawCircle({ x: ML + 17, y: cursorY + 3, size: 2.8, borderColor: row.dotColor, borderWidth: 0.8 });
       }
 
-      page.drawText(`${row.label}:`, {
-        x: ML + 16, y: cursorY, size: 8.5, font: headingFont, color: cText,
+      page.drawText(row.label, { x: ML + 26, y: cursorY, size: 8.5, font: headingFont, color: cText });
+      page.drawText(safe(row.value), {
+        x: ML + 26 + 62, y: cursorY, size: 8.5, font: bodyFont, color: row.valueColor,
       });
-      const lw = headingFont.widthOfTextAtSize(`${row.label}:`, 8.5);
-      page.drawText(row.value, {
-        x: ML + 16 + lw + 4, y: cursorY, size: 8.5, font: bodyFont, color: row.valueColor,
-      });
-      cursorY -= 12;
+      cursorY -= 13;
 
       if (row.subLine) {
-        page.drawText(row.subLine, {
-          x: ML + 16, y: cursorY, size: 7.5, font: bodyFont, color: cTextMuted,
+        page.drawText(truncate(row.subLine, bodyFont, 7.5, CW - 100), {
+          x: ML + 26 + 62, y: cursorY, size: 7.5, font: bodyFont, color: cTextMuted,
         });
         cursorY -= 11;
       }
+      cursorY -= 1;
     }
 
-    cursorY -= 10;
+    cursorY = cardBottom - 20;
   });
 
-  cursorY -= 6;
+  cursorY -= 4;
 
   // ── AUDIT TRAIL ─────────────────────────────────────────────────────────────
   sectionTitle('Audit Trail');
 
-  const sortedEvents = [...input.envelope.events].sort(
-    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-  );
+  const timelineX = ML + 11;
+  let previousIconY: number | null = null;
 
-  for (const event of sortedEvents) {
+  sortedEvents.forEach((event, eventIndex) => {
     const recipient = event.recipientId ? recipientById.get(event.recipientId) : null;
     const rIndex = recipient
       ? input.envelope.recipients.findIndex((r) => r.id === recipient.id)
@@ -393,12 +592,11 @@ async function buildCertificatePdf(input: {
 
     const isNegative = ['DECLINED', 'VOIDED', 'EXPIRED', 'PDF_GENERATION_FAILED'].includes(event.action);
     const isCompletion = event.action === 'COMPLETED';
+    const rMain = rIndex >= 0 ? RECIPIENT_PALETTES[rIndex % RECIPIENT_PALETTES.length][0] : null;
     const iconColor =
       isNegative ? cError
       : isCompletion ? cSuccess
-      : rIndex >= 0 ? RECIPIENT_PALETTES[rIndex % RECIPIENT_PALETTES.length][0]
-      : cBrand;
-    const rMain = rIndex >= 0 ? RECIPIENT_PALETTES[rIndex % RECIPIENT_PALETTES.length][0] : null;
+      : rMain ?? cBrand;
 
     // IP + device sub-line for CONSENTED and SIGNED
     let evidenceLine: string | null = null;
@@ -410,82 +608,174 @@ async function buildCertificatePdf(input: {
       }
     }
 
-    ensureSpace(evidenceLine ? 27 : 17);
+    const rowH = evidenceLine ? 28 : 18;
+    const beforePageCount = pages.length;
+    ensureSpace(rowH);
+    if (pages.length !== beforePageCount) previousIconY = null;
 
-    drawEventIcon(page, ML + 7, cursorY + 3, event.action, iconColor);
-
-    // Draw label with recipient name coloured in their palette colour
-    const fullLabel = buildEsigningEventLabel({
-      action: event.action,
-      recipientName: recipient?.name ?? null,
-    });
-    const labelX = ML + 19;
-    const labelMaxW = CW - 130;
-
-    if (recipient?.name && rMain) {
-      const nameIdx = fullLabel.lastIndexOf(recipient.name);
-      if (nameIdx > 0) {
-        const before = fullLabel.slice(0, nameIdx);
-        const after = fullLabel.slice(nameIdx + recipient.name.length);
-        const beforeW = bodyFont.widthOfTextAtSize(before, 8.5);
-        const nameW2 = bodyFont.widthOfTextAtSize(recipient.name, 8.5);
-        page.drawText(before, { x: labelX, y: cursorY, size: 8.5, font: bodyFont, color: cText });
-        page.drawText(recipient.name, { x: labelX + beforeW, y: cursorY, size: 8.5, font: headingFont, color: rMain });
-        if (after) {
-          page.drawText(after, { x: labelX + beforeW + nameW2, y: cursorY, size: 8.5, font: bodyFont, color: cText, maxWidth: labelMaxW - beforeW - nameW2 });
-        }
-      } else {
-        page.drawText(fullLabel, { x: labelX, y: cursorY, size: 8.5, font: bodyFont, color: cText, maxWidth: labelMaxW });
-      }
-    } else {
-      page.drawText(fullLabel, { x: labelX, y: cursorY, size: 8.5, font: bodyFont, color: cText, maxWidth: labelMaxW });
+    const rowTop = cursorY + 10;
+    if (eventIndex % 2 === 1) {
+      page.drawRectangle({ x: ML, y: rowTop - rowH, width: CW, height: rowH, color: cSurface });
     }
 
-    const tsText = formatPdfDate(event.createdAt);
-    const tsW = bodyFont.widthOfTextAtSize(tsText, 7.5);
-    page.drawText(tsText, {
-      x: PW - MR - tsW, y: cursorY, size: 7.5, font: bodyFont, color: cTextMuted,
-    });
+    const iconY = cursorY + 3;
+    if (previousIconY !== null) {
+      page.drawLine({
+        start: { x: timelineX, y: previousIconY - 6 },
+        end: { x: timelineX, y: iconY + 6 },
+        color: cBorder, thickness: 0.9,
+      });
+    }
+    drawEventIcon(page, timelineX, iconY, event.action, iconColor);
+    previousIconY = iconY;
 
+    // Label with the recipient name highlighted in their palette colour
+    const fullLabel = safe(buildEsigningEventLabel({
+      action: event.action,
+      recipientName: recipient?.name ?? null,
+    }));
+    const labelX = timelineX + 14;
+    const tsText = formatPdfDate(event.createdAt);
+    const tsW = widthOf(tsText, monoFont, 7.5);
+    const labelMaxW = PW - MR - labelX - tsW - 16;
+    const safeName = safe(recipient?.name ?? '');
+    const nameIdx = safeName ? fullLabel.lastIndexOf(safeName) : -1;
+
+    if (safeName && rMain && nameIdx > 0) {
+      const before = fullLabel.slice(0, nameIdx);
+      const after = fullLabel.slice(nameIdx + safeName.length);
+      const beforeW = widthOf(before, bodyFont, 8.5);
+      const nameW = widthOf(safeName, headingFont, 8.5);
+      page.drawText(before, { x: labelX, y: cursorY, size: 8.5, font: bodyFont, color: cText });
+      page.drawText(truncate(safeName, headingFont, 8.5, Math.max(20, labelMaxW - beforeW)), {
+        x: labelX + beforeW, y: cursorY, size: 8.5, font: headingFont, color: rMain,
+      });
+      if (after) {
+        page.drawText(truncate(after, bodyFont, 8.5, Math.max(0, labelMaxW - beforeW - nameW)), {
+          x: labelX + beforeW + nameW, y: cursorY, size: 8.5, font: bodyFont, color: cText,
+        });
+      }
+    } else {
+      page.drawText(truncate(fullLabel, bodyFont, 8.5, labelMaxW), {
+        x: labelX, y: cursorY, size: 8.5, font: bodyFont, color: cText,
+      });
+    }
+
+    drawRight(page, tsText, PW - MR - 6, cursorY, 7.5, monoFont, cTextMuted);
     cursorY -= 13;
 
     if (evidenceLine) {
-      page.drawText(evidenceLine, {
-        x: labelX, y: cursorY, size: 7.5, font: bodyFont, color: cTextMuted, maxWidth: labelMaxW,
+      page.drawText(truncate(evidenceLine, bodyFont, 7.5, labelMaxW), {
+        x: labelX, y: cursorY, size: 7.5, font: bodyFont, color: cTextMuted,
       });
-      cursorY -= 12;
+      cursorY -= 11;
     }
 
-    cursorY -= 4;
+    cursorY -= 5;
+  });
+
+  cursorY -= 4;
+
+  // ── DOCUMENT INTEGRITY ──────────────────────────────────────────────────────
+  sectionTitle('Document Integrity');
+
+  {
+    const hashRows: Array<[string, string, boolean]> = [
+      ['Original SHA-256', input.document.originalHash, false],
+      ['Signed SHA-256', input.document.signedHash ?? 'Not generated', !input.document.signedHash],
+    ];
+
+    const hashValueX = ML + 12 + 96;
+    const hashMaxW = PW - MR - 12 - hashValueX;
+    const wrapped = hashRows.map(([label, value, isError]) => ({
+      label,
+      isError,
+      lines: wrap(value, monoFont, 7.5, hashMaxW),
+    }));
+
+    const cardH = 24 + wrapped.reduce((sum, row) => sum + Math.max(1, row.lines.length) * 10 + 6, 0) + 6;
+    ensureSpace(cardH + 10);
+
+    const cardTop = cursorY + 11;
+    page.drawRectangle({
+      x: ML, y: cardTop - cardH, width: CW, height: cardH,
+      color: cSurface, borderColor: cBorder, borderWidth: 0.6,
+    });
+
+    page.drawText('File', { x: ML + 12, y: cursorY, size: 8.5, font: headingFont, color: cTextSec });
+    page.drawText(truncate(input.document.fileName, bodyFont, 8.5, PW - MR - 12 - hashValueX), {
+      x: hashValueX, y: cursorY, size: 8.5, font: bodyFont, color: cText,
+    });
+    cursorY -= 12;
+    page.drawLine({
+      start: { x: ML + 12, y: cursorY }, end: { x: PW - MR - 12, y: cursorY },
+      color: cBorder, thickness: 0.4,
+    });
+    cursorY -= 12;
+
+    for (const row of wrapped) {
+      page.drawText(row.label, { x: ML + 12, y: cursorY, size: 8.5, font: headingFont, color: cTextSec });
+      const lines = row.lines.length > 0 ? row.lines : ['-'];
+      lines.forEach((line, index) => {
+        page.drawText(line, {
+          x: hashValueX, y: cursorY - index * 10, size: 7.5, font: monoFont,
+          color: row.isError ? cError : cText,
+        });
+      });
+      cursorY -= lines.length * 10 + 6;
+    }
+
+    cursorY = cardTop - cardH - 20;
   }
 
-  cursorY -= 6;
+  // ── VERIFICATION NOTICE ─────────────────────────────────────────────────────
+  {
+    const notice =
+      'This certificate is generated automatically as the tamper-evident audit record of the signing '
+      + 'process. All timestamps are recorded in Coordinated Universal Time (UTC). The SHA-256 digests '
+      + 'above can be recomputed from the corresponding files to confirm that neither the original nor '
+      + 'the signed document has been altered.';
+    const lines = wrap(notice, bodyFont, 7.5, CW - 24);
+    const cardH = 26 + lines.length * 10 + 20;
+    ensureSpace(cardH + 6);
 
-  // ── DOCUMENT ────────────────────────────────────────────────────────────────
-  sectionTitle('Document');
+    const cardTop = cursorY + 11;
+    page.drawRectangle({ x: ML, y: cardTop - cardH, width: CW, height: cardH, color: cSurface });
+    page.drawRectangle({ x: ML, y: cardTop - cardH, width: 3, height: cardH, color: cBrand });
 
-  ensureSpace(14);
-  page.drawText('File:', { x: ML, y: cursorY, size: 8.5, font: headingFont, color: cTextSec });
-  page.drawText(input.document.fileName, {
-    x: ML + headingFont.widthOfTextAtSize('File:', 8.5) + 5, y: cursorY,
-    size: 8.5, font: bodyFont, color: cText,
-  });
-  cursorY -= 15;
-
-  for (const [label, value, isError] of [
-    ['Original SHA-256', input.document.originalHash, false],
-    ['Signed SHA-256', input.document.signedHash ?? 'Not generated', !input.document.signedHash],
-  ] as Array<[string, string, boolean]>) {
-    ensureSpace(14);
-    const lblText = `${label}:`;
-    const lblW = headingFont.widthOfTextAtSize(lblText, 8.5);
-    page.drawText(lblText, { x: ML, y: cursorY, size: 8.5, font: headingFont, color: cTextSec });
-    page.drawText(value, {
-      x: ML + lblW + 5, y: cursorY, size: 8.5, font: bodyFont,
-      color: isError ? cError : cTextMuted,
-      maxWidth: CW - lblW - 5,
+    page.drawText('VERIFICATION', { x: ML + 12, y: cursorY, size: 7, font: headingFont, color: cBrand });
+    cursorY -= 13;
+    lines.forEach((line, index) => {
+      page.drawText(line, { x: ML + 12, y: cursorY - index * 10, size: 7.5, font: bodyFont, color: cTextSec });
     });
-    cursorY -= Math.max(1, Math.ceil((value.length * 5.2) / (CW - lblW - 5))) * 12 + 4;
+    cursorY -= lines.length * 10 + 3;
+    page.drawText(truncate(verificationUrl, monoFont, 7.5, CW - 24), {
+      x: ML + 12, y: cursorY, size: 7.5, font: monoFont, color: cBrand,
+    });
+
+    cursorY = cardTop - cardH - 16;
+  }
+
+  // ── FOOTERS (needs the final page count) ────────────────────────────────────
+  pages.forEach((p, index) => {
+    p.drawLine({
+      start: { x: ML, y: 50 }, end: { x: PW - MR, y: 50 },
+      color: cBorder, thickness: 0.5,
+    });
+    p.drawText(truncate(`Verify at ${verificationUrl}`, bodyFont, 7, CW - 90), {
+      x: ML, y: 37, size: 7, font: bodyFont, color: cTextMuted,
+    });
+    drawRight(p, `Page ${index + 1} of ${pages.length}`, PW - MR, 37, 7, bodyFont, cTextMuted);
+  });
+
+  certificatePdf.setTitle(safe(`Certificate of Completion - ${input.envelope.title}`));
+  certificatePdf.setSubject(safe(`Signing audit record for certificate ${certificateId}`));
+  // Producer is always stamped by pdf-lib itself, so only creator is set here.
+  certificatePdf.setCreator('OakCloud e-Sign');
+  certificatePdf.setCreationDate(input.envelope.completedAt ?? new Date());
+  certificatePdf.setModificationDate(input.envelope.completedAt ?? new Date());
+  if (input.envelope.company?.name) {
+    certificatePdf.setAuthor(safe(input.envelope.company.name));
   }
 
   return Buffer.from(await certificatePdf.save());

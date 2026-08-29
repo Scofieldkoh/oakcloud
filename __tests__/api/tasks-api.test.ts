@@ -38,6 +38,7 @@ vi.mock('@/services/tasks', () => ({
   createTaskPipeline: vi.fn(),
   duplicateTaskPipeline: vi.fn(),
   getTask: vi.fn(),
+  getTaskResources: vi.fn(),
   getTaskPipeline: vi.fn(),
   getTaskStageDetail: vi.fn(),
   linkTaskStageOutcome: vi.fn(),
@@ -63,6 +64,7 @@ import {
   createTaskPipeline,
   duplicateTaskPipeline,
   getTask,
+  getTaskResources,
   getTaskPipeline,
   getTaskStageDetail,
   linkTaskStageOutcome,
@@ -92,6 +94,7 @@ import {
   GET as getTaskRoute,
   PATCH as updateTaskRoute,
 } from '@/app/api/tasks/[taskId]/route';
+import { GET as getTaskResourcesRoute } from '@/app/api/tasks/[taskId]/resources/route';
 import { POST as updateTaskStatus } from '@/app/api/tasks/[taskId]/status/route';
 import * as taskStatusRoute from '@/app/api/tasks/[taskId]/status/route';
 import {
@@ -267,6 +270,11 @@ describe('task API routes', () => {
     } as never);
     vi.mocked(createTask).mockResolvedValue({ id: taskId } as never);
     vi.mocked(getTask).mockResolvedValue({ id: taskId } as never);
+    vi.mocked(getTaskResources).mockResolvedValue({
+      task: { id: taskId },
+      stages: [],
+      hasPendingResources: false,
+    } as never);
     vi.mocked(updateTaskMetadata).mockResolvedValue({ id: taskId } as never);
     vi.mocked(archiveTask).mockResolvedValue({ id: taskId } as never);
     vi.mocked(pauseTask).mockResolvedValue({ id: taskId, status: 'PAUSED' } as never);
@@ -365,6 +373,16 @@ describe('task API routes', () => {
       routeParams({ taskId }),
     );
     expect(response.status).toBe(400);
+  });
+
+  it('loads task resources through the authenticated workspace and task access boundary', async () => {
+    const response = await getTaskResourcesRoute(
+      request(`http://localhost/api/tasks/${taskId}/resources`),
+      routeParams({ taskId }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getTaskResources).toHaveBeenCalledWith(session, workspaceId, taskId);
   });
 
   it('requires authenticated workspace context before task access', async () => {

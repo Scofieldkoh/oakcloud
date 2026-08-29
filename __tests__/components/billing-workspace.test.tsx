@@ -6,6 +6,7 @@ const hooks = vi.hoisted(() => ({
   useBillingOccurrences: vi.fn(),
   useUpdateBillingOccurrence: vi.fn(),
   useResetBillingOverride: vi.fn(),
+  useMarkBillingOccurrencesAsBilled: vi.fn(),
   useServiceRosterFamilies: vi.fn(),
   useBillingCoverage: vi.fn(),
   useUserPreference: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock('@/hooks/use-billing-occurrences', () => ({
   useBillingOccurrences: hooks.useBillingOccurrences,
   useUpdateBillingOccurrence: hooks.useUpdateBillingOccurrence,
   useResetBillingOverride: hooks.useResetBillingOverride,
+  useMarkBillingOccurrencesAsBilled: hooks.useMarkBillingOccurrencesAsBilled,
 }));
 vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: hooks.useServiceRosterFamilies }));
 vi.mock('@/hooks/use-billing-coverage', () => ({ useBillingCoverage: hooks.useBillingCoverage }));
@@ -102,21 +104,30 @@ describe('BillingWorkspace', () => {
     hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [], total: 0, page: 1, limit: 20, totalPages: 0 }, isLoading: false, isFetching: false, error: null });
     hooks.useUpdateBillingOccurrence.mockReturnValue({ mutate: vi.fn(), isPending: false, reset: vi.fn() });
     hooks.useResetBillingOverride.mockReturnValue({ mutate: vi.fn(), isPending: false, reset: vi.fn() });
+    hooks.useMarkBillingOccurrencesAsBilled.mockReturnValue({ mutateAsync: vi.fn(), isPending: false, error: null, reset: vi.fn() });
     hooks.useServiceRosterFamilies.mockReturnValue({ data: [], isLoading: false, error: null });
     hooks.useBillingCoverage.mockReturnValue({ data: { openIssueCount: 0, affectedServiceCount: 0, healthyActiveServiceCount: 0, issues: [] }, isLoading: false, error: null });
     hooks.useUserPreference.mockReturnValue({ data: { value: null }, isLoading: false });
     hooks.useUpsertUserPreference.mockReturnValue({ mutate: vi.fn(), isPending: false });
   });
 
-  it('uses manual tracking language and exposes the Billing workspace controls', () => {
+  it('exposes the Billing workspace controls without the former subheader', () => {
     render(<BillingWorkspace />);
 
-    expect(screen.getByText(/manual billing tracking/i)).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Billing workspace' })).toHaveClass('min-w-0', 'max-w-full');
+    expect(screen.queryByText(/manual billing tracking/i)).not.toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search company or fee line' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Open' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Billed' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Waived' })).toBeVisible();
     expect(screen.queryByText(/create invoice|collect payment/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the default date range as an active removable filter', () => {
+    render(<BillingWorkspace />);
+
+    expect(screen.getByRole('button', { name: 'Remove Date filter' })).toBeVisible();
+    expect(screen.getByText('Date:')).toBeVisible();
   });
 
   it('initializes filters, date range, sort, and page from URL state and writes changes back without dropping the Billing tab', () => {
@@ -148,8 +159,15 @@ describe('BillingWorkspace', () => {
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('tab=billing'), { scroll: false });
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('query=payroll'), { scroll: false });
 
-    fireEvent.change(screen.getByLabelText('Billing date from'), { target: { value: '2026-08-15' } });
-    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('from=2026-08-15'), { scroll: false });
+    const removeDate = screen.getByRole('button', { name: 'Remove Date filter' });
+    fireEvent.click(removeDate);
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.not.stringContaining('from='), { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.not.stringContaining('to='), { scroll: false });
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('dateRange=none'), { scroll: false });
+    const latestSearch = hooks.useBillingOccurrences.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(latestSearch).not.toHaveProperty('from');
+    expect(latestSearch).not.toHaveProperty('to');
+    expect(latestSearch).toMatchObject({ page: 1, limit: 20 });
     } finally {
       vi.useRealTimers();
     }
@@ -169,13 +187,14 @@ describe('BillingWorkspace', () => {
       expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('query=payroll'), { scroll: false });
 
       const callsAfterGlobal = navigation.replace.mock.calls.length;
-      fireEvent.change(screen.getByRole('searchbox', { name: 'Filter company' }), { target: { value: 'Example' } });
-      expect(navigation.replace).toHaveBeenCalledTimes(callsAfterGlobal);
-      act(() => { vi.advanceTimersByTime(300); });
-      expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('companyQuery=Example'), { scroll: false });
+      const companyFilter = screen.getByRole('combobox', { name: 'Filter Company' });
+      fireEvent.change(companyFilter, { target: { value: 'Example' } });
+      fireEvent.keyDown(companyFilter, { key: 'ArrowDown' });
+      fireEvent.keyDown(companyFilter, { key: 'Enter' });
+      expect(navigation.replace).toHaveBeenCalledTimes(callsAfterGlobal + 1);
+      expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('companyId=company-1'), { scroll: false });
 
-      fireEvent.change(screen.getByLabelText('Billing date from'), { target: { value: '2026-08-15' } });
-      expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('from=2026-08-15'), { scroll: false });
+      expect(screen.getByRole('button', { name: 'Remove Date filter' })).toBeVisible();
     } finally {
       vi.useRealTimers();
     }
@@ -184,11 +203,11 @@ describe('BillingWorkspace', () => {
   it('hydrates text drafts from a changed URL without writing another URL update', () => {
     hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence], total: 1, page: 1, limit: 20, totalPages: 1 }, isLoading: false, isFetching: false, error: null });
     const view = render(<BillingWorkspace />);
-    navigation.searchParams = new URLSearchParams('tab=billing&query=restored&companyQuery=backward');
+    navigation.searchParams = new URLSearchParams('tab=billing&query=restored&companyId=company-1');
     view.rerender(<BillingWorkspace />);
 
     expect(screen.getByRole('searchbox', { name: 'Search company or fee line' })).toHaveValue('restored');
-    expect(screen.getByRole('searchbox', { name: 'Filter company' })).toHaveValue('backward');
+    expect(screen.getByRole('combobox', { name: 'Filter Company' })).toHaveValue('Example Pte. Ltd.');
     expect(navigation.replace).not.toHaveBeenCalled();
   });
 
@@ -197,7 +216,7 @@ describe('BillingWorkspace', () => {
     hooks.useUpdateBillingOccurrence.mockReturnValue({ mutate: vi.fn(), isPending: false, error: new Error('Unable to update billing tracking') });
     render(<BillingWorkspace />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Example' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Example Pte. Ltd.' })[0]!);
     const notes = screen.getByLabelText('Notes');
     fireEvent.change(notes, { target: { value: 'Keep this after failure' } });
 
@@ -216,7 +235,7 @@ describe('BillingWorkspace', () => {
     hooks.useResetBillingOverride.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null, reset: resetMutation });
     const view = render(<BillingWorkspace />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Example' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Example Pte. Ltd.' })[0]!);
     mutationError = new Error('Unable to update billing tracking');
     view.rerender(<BillingWorkspace />);
     fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Unsaved failed note' } });
@@ -225,7 +244,7 @@ describe('BillingWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(resetMutation).toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Other' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit tracking for Other Pte. Ltd.' })[0]!);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Notes')).toHaveValue('Second row note');
     expect(screen.getByLabelText('External reference')).toHaveValue('REF-2');

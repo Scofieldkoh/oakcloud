@@ -6,17 +6,31 @@ import type { DocumentParty } from '@/lib/document-party';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-export interface DocumentPartyChoiceListProps {
+interface DocumentPartyChoiceListBaseProps {
   id: string;
   label: string;
   options: DocumentParty[];
-  value: string;
-  onChange: (value: string) => void;
   isLoading: boolean;
   error?: string | null;
   onRetry?: () => void;
   required?: boolean;
 }
+
+interface SinglePartyChoiceListProps extends DocumentPartyChoiceListBaseProps {
+  multiple?: false;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+interface MultiplePartyChoiceListProps extends DocumentPartyChoiceListBaseProps {
+  multiple: true;
+  values: string[];
+  onChange: (values: string[]) => void;
+}
+
+export type DocumentPartyChoiceListProps =
+  | SinglePartyChoiceListProps
+  | MultiplePartyChoiceListProps;
 
 function partyMeta(option: DocumentParty): string[] {
   return [option.detail, option.email, option.phone].filter(
@@ -24,17 +38,19 @@ function partyMeta(option: DocumentParty): string[] {
   );
 }
 
-export function DocumentPartyChoiceList({
-  id,
-  label,
-  options,
-  value,
-  onChange,
-  isLoading,
-  error,
-  onRetry,
-  required = false,
-}: DocumentPartyChoiceListProps) {
+export function DocumentPartyChoiceList(props: DocumentPartyChoiceListProps) {
+  const {
+    id,
+    label,
+    options,
+    isLoading,
+    error,
+    onRetry,
+    required = false,
+  } = props;
+  const multiple = props.multiple === true;
+  const selectedValues = multiple ? props.values : [props.value];
+  const selectedValueSet = useMemo(() => new Set(selectedValues), [selectedValues]);
   const [query, setQuery] = useState('');
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const visibleOptions = useMemo(() => {
@@ -44,12 +60,14 @@ export function DocumentPartyChoiceList({
       [option.name, ...partyMeta(option)]
         .some((item) => item.toLocaleLowerCase().includes(normalizedQuery)),
     );
-    const selected = options.find((option) => option.id === value);
+    const selected = options.filter((option) => selectedValueSet.has(option.id));
+    const matchingIds = new Set(matching.map((option) => option.id));
 
-    return selected && !matching.some((option) => option.id === selected.id)
-      ? [selected, ...matching]
-      : matching;
-  }, [normalizedQuery, options, value]);
+    return [
+      ...selected.filter((option) => !matchingIds.has(option.id)),
+      ...matching,
+    ];
+  }, [normalizedQuery, options, selectedValueSet]);
 
   return (
     <fieldset className="space-y-2">
@@ -94,7 +112,7 @@ export function DocumentPartyChoiceList({
 
           <div className="max-h-[360px] overflow-y-auto rounded-lg border border-border-primary bg-background-primary">
             {visibleOptions.map((option) => {
-              const selected = option.id === value;
+              const selected = selectedValueSet.has(option.id);
               const metadata = partyMeta(option);
               return (
                 <label
@@ -106,12 +124,21 @@ export function DocumentPartyChoiceList({
                   )}
                 >
                   <input
-                    type="radio"
+                    type={multiple ? 'checkbox' : 'radio'}
                     name={id}
                     value={option.id}
                     checked={selected}
-                    onChange={() => onChange(option.id)}
-                    required={required}
+                    onChange={() => {
+                      if (!multiple) {
+                        props.onChange(option.id);
+                        return;
+                      }
+                      const next = selected
+                        ? selectedValues.filter((idValue) => idValue !== option.id)
+                        : [...selectedValues, option.id];
+                      props.onChange(next);
+                    }}
+                    required={multiple ? undefined : required}
                     className="mt-1 h-4 w-4 shrink-0 accent-oak-primary"
                   />
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">

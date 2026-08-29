@@ -33,29 +33,32 @@ import {
   type DeadlineFilterOrigin,
   type DeadlineFilterStatus,
   type DeadlineFilterType,
+  type DeadlineInlineFilterColumn,
   type DeadlineInlineFilterValues,
 } from './deadline-filters';
 import {
   DEADLINE_TABLE_COLUMNS,
+  defaultDeadlineColumnWidths,
   DeadlineTable,
   type DeadlineSortBy,
   type DeadlineTableColumnId,
 } from './deadline-table';
 import { DeadlineCalendar } from './deadline-calendar';
+import { DeadlineBulkActions } from './deadline-bulk-actions';
 import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
 
 const VIEW_PREFERENCE_KEY = 'services.deadlines.view.v1';
 const TYPE_VALUES: DeadlineFilterType[] = ['STATUTORY', 'CLIENT', 'INTERNAL'];
-const STATUS_VALUES: DeadlineFilterStatus[] = ['OPEN', 'COMPLETED', 'WAIVED', 'CANCELLED'];
+const STATUS_FILTER_VALUES: DeadlineFilterStatus[] = ['COMPLETED', 'WAIVED', 'CANCELLED'];
 const SORT_VALUES: DeadlineSortBy[] = ['dueDate', 'company', 'family', 'service', 'type', 'status'];
 const PAGE_SIZE_VALUES = [10, 20, 50, 100] as const;
-const DEADLINE_COLUMN_LABELS: Record<DeadlineTableColumnId, string> = { dueDate: 'Operative due date', timing: 'Timing', company: 'Company', familyService: 'Family / service', milestone: 'Milestone', type: 'Type', status: 'Status', cycleOrigin: 'Cycle / origin', actions: 'Actions' };
+const DEADLINE_COLUMN_LABELS: Record<DeadlineTableColumnId, string> = { dueDate: 'Operative due date', timing: 'Timing', company: 'Company', family: 'Family', service: 'Service', milestone: 'Milestone', type: 'Type', status: 'Status', actions: 'Actions' };
 type DeadlinePageSize = (typeof PAGE_SIZE_VALUES)[number];
 
 export interface DeadlineUrlState {
   view: 'TABLE' | 'CALENDAR';
-  from: DateOnly;
-  to: DateOnly;
+  from: DateOnly | null;
+  to: DateOnly | null;
   types: DeadlineFilterType[];
   families: string[];
   companies: string[];
@@ -96,11 +99,12 @@ function readList(value: string | null): string[] {
 }
 
 function readTypes(value: string | null): DeadlineFilterType[] {
-  return readList(value).filter((type): type is DeadlineFilterType => TYPE_VALUES.includes(type as DeadlineFilterType));
+  const type = readList(value).find((candidate): candidate is DeadlineFilterType => TYPE_VALUES.includes(candidate as DeadlineFilterType));
+  return type ? [type] : [];
 }
 
 function readStatuses(value: string | null): DeadlineFilterStatus[] {
-  return readList(value).filter((status): status is DeadlineFilterStatus => STATUS_VALUES.includes(status as DeadlineFilterStatus));
+  return readList(value).filter((status): status is DeadlineFilterStatus => STATUS_FILTER_VALUES.includes(status as DeadlineFilterStatus));
 }
 
 function readPage(value: string | null): number {
@@ -180,10 +184,12 @@ export function parseDeadlineUrlState(
   const focusMonth = dateFromMonth(candidateFrom ?? `${today.slice(0, 7)}-01` as DateOnly);
   const range = view === 'CALENDAR'
     ? safeCalendarRange(focusMonth, monthCount, today)
-    : hasValidRange(candidateFrom, candidateTo) ? { from: candidateFrom, to: candidateTo! } : currentRange(today);
+    : params.get('dateFilter') === 'none'
+      ? { from: null, to: null }
+      : hasValidRange(candidateFrom, candidateTo) ? { from: candidateFrom, to: candidateTo! } : currentRange(today);
   const hasTypes = params.has('types');
   const hasFamilies = params.has('families');
-  const visibleTypes = preference.visibleTypes;
+  const visibleTypes = preference.visibleTypes.slice(0, 1);
   const requestedTypes = hasTypes ? readTypes(params.get('types')) : [];
   const familyIds = preference.familyIds.filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id));
   const fallbackPageSize = PAGE_SIZE_VALUES.includes(preference.pageSize as (typeof PAGE_SIZE_VALUES)[number]) ? preference.pageSize : 20;
@@ -210,7 +216,57 @@ export function parseDeadlineUrlState(
 export { defaultDeadlineViewPreference } from '@/lib/validations/services-preferences';
 
 function formatBadgeValue(value: string): string {
-  return value.charAt(0) + value.slice(1).toLowerCase();
+  const normalized = value.toLowerCase().replaceAll(/[-_]+/g, ' ');
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+export function DeadlineViewToggle() {
+  const isLargeDesktop = useIsLargeDesktop();
+  const preference = useUserPreference<DeadlineViewPreference>(VIEW_PREFERENCE_KEY);
+  const savePreference = useUpsertUserPreference<DeadlineViewPreference>();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const canonicalSearchKey = searchParams.toString();
+  const [optimisticSearchKey, setOptimisticSearchKey] = useState<string | null>(null);
+  const effectiveSearchKey = optimisticSearchKey ?? canonicalSearchKey;
+  const parsedPreference = useMemo(
+    () => parseDeadlineViewPreference(preference.data?.value),
+    [preference.data?.value],
+  );
+  const urlState = useMemo(
+    () => parseDeadlineUrlState(effectiveSearchKey, parsedPreference, isLargeDesktop),
+    [effectiveSearchKey, isLargeDesktop, parsedPreference],
+  );
+  const calendarMonthCount = effectiveCalendarMonthCount(parsedPreference, isLargeDesktop);
+
+  useEffect(() => setOptimisticSearchKey(null), [canonicalSearchKey]);
+
+  const replaceUrl = useCallback((next: Partial<Record<string, string | undefined>>) => {
+    const params = new URLSearchParams(effectiveSearchKey);
+    for (const [key, value] of Object.entries(next)) {
+      if (value === undefined || value === '') params.delete(key);
+      else params.set(key, value);
+    }
+    const nextKey = params.toString();
+    setOptimisticSearchKey(nextKey);
+    router.replace(nextKey ? `${pathname}?${nextKey}` : pathname, { scroll: false });
+  }, [effectiveSearchKey, pathname, router]);
+
+  const switchView = useCallback((view: 'TABLE' | 'CALENDAR') => {
+    const range = view === 'CALENDAR'
+      ? monthRange(dateFromMonth(urlState.from ?? currentDateInSingapore()), calendarMonthCount)
+      : { from: urlState.from, to: urlState.to };
+    replaceUrl({ deadlineView: view, from: range.from ?? undefined, to: range.to ?? undefined, dateFilter: view === 'TABLE' && (!range.from || !range.to) ? 'none' : undefined, page: '1' });
+    savePreference.mutate({ key: VIEW_PREFERENCE_KEY, value: { ...parsedPreference, defaultView: view, version: 1 } });
+  }, [calendarMonthCount, parsedPreference, replaceUrl, savePreference, urlState.from, urlState.to]);
+
+  return (
+    <div role="group" aria-label="Deadline view" className="inline-flex min-h-11 items-center rounded-xl border border-border-primary bg-background-secondary p-1 sm:min-h-8">
+      <button type="button" aria-pressed={urlState.view === 'TABLE'} onClick={() => switchView('TABLE')} className={urlState.view === 'TABLE' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Table view</button>
+      <button type="button" aria-pressed={urlState.view === 'CALENDAR'} onClick={() => switchView('CALENDAR')} className={urlState.view === 'CALENDAR' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Calendar view</button>
+    </div>
+  );
 }
 
 export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = false }: DeadlineWorkspaceProps) {
@@ -240,6 +296,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   const [savedTypes, setSavedTypes] = useState<DeadlineFilterType[]>(defaultDeadlineViewPreference.visibleTypes);
   const [savedFamilies, setSavedFamilies] = useState<string[]>(defaultDeadlineViewPreference.familyIds);
   const [calendarMonthCountOverride, setCalendarMonthCountOverride] = useState<1 | 2 | 3 | null>(null);
+  const [selectedDeadlineIds, setSelectedDeadlineIds] = useState<Set<string>>(new Set());
 
   useEffect(() => setOptimisticSearchKey(null), [canonicalSearchKey]);
   useEffect(() => {
@@ -318,14 +375,16 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   useEffect(() => {
     const calendarRangeChanged = urlState.view === 'CALENDAR' && (paramsForRange.rawFrom !== urlState.from || paramsForRange.rawTo !== urlState.to || paramsForRange.rawPage !== '1');
-    const tableRangeInvalid = urlState.view === 'TABLE' && !hasValidRange(paramsForRange.from, paramsForRange.to);
+    const tableRangeInvalid = urlState.view === 'TABLE'
+      && new URLSearchParams(effectiveSearchKey).get('dateFilter') !== 'none'
+      && !hasValidRange(paramsForRange.from, paramsForRange.to);
     if (!calendarRangeChanged && !tableRangeInvalid) return;
-    replaceUrl({ from: urlState.from, to: urlState.to, page: '1' });
-  }, [paramsForRange.from, paramsForRange.rawFrom, paramsForRange.rawPage, paramsForRange.rawTo, paramsForRange.to, replaceUrl, urlState.from, urlState.to, urlState.view]);
+    replaceUrl({ from: urlState.from ?? undefined, to: urlState.to ?? undefined, dateFilter: urlState.from && urlState.to ? undefined : 'none', page: '1' });
+  }, [effectiveSearchKey, paramsForRange.from, paramsForRange.rawFrom, paramsForRange.rawPage, paramsForRange.rawTo, paramsForRange.to, replaceUrl, urlState.from, urlState.to, urlState.view]);
 
   const query: DeadlineSearchInput = {
-    from: urlState.from,
-    to: urlState.to,
+    from: urlState.from ?? undefined,
+    to: urlState.to ?? undefined,
     mode: urlState.view,
     types: urlState.types,
     familyIds: urlState.families,
@@ -348,13 +407,46 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   const allFamiliesSelected = urlState.families.length === 0;
   const canWrite = canEdit && deadlineWritesEnabled;
   const calendarMonthCount = !isLargeDesktop ? 1 : (calendarMonthCountOverride ?? parsedPreference.monthCount ?? 2);
-  const items = deadlines.data?.items ?? [];
+  const deadlineItems = deadlines.data?.items;
+  const items = useMemo(() => deadlineItems ?? [], [deadlineItems]);
 
-  const updateTypes = (type: DeadlineFilterType) => {
-    const selected = new Set(urlState.types);
-    if (selected.has(type)) selected.delete(type);
-    else selected.add(type);
-    const nextTypes = [...selected].filter((value) => TYPE_VALUES.includes(value));
+  useEffect(() => {
+    const visibleIds = new Set(items.map((occurrence) => occurrence.id));
+    setSelectedDeadlineIds((current) => {
+      const next = new Set([...current].filter((id) => visibleIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [items]);
+
+  const toggleDeadlineSelection = useCallback((occurrence: DeadlineOccurrenceDto) => {
+    setSelectedDeadlineIds((current) => {
+      const next = new Set(current);
+      if (next.has(occurrence.id)) next.delete(occurrence.id);
+      else next.add(occurrence.id);
+      return next;
+    });
+  }, []);
+
+  const toggleAllDeadlineSelection = useCallback(() => {
+    setSelectedDeadlineIds((current) => {
+      const allVisibleSelected = items.length > 0 && items.every((occurrence) => current.has(occurrence.id));
+      const next = new Set(current);
+      for (const occurrence of items) {
+        if (allVisibleSelected) next.delete(occurrence.id);
+        else next.add(occurrence.id);
+      }
+      return next;
+    });
+  }, [items]);
+
+  const clearDeadlineSelection = useCallback(() => setSelectedDeadlineIds(new Set()), []);
+  const selectedDeadlines = useMemo(
+    () => items.filter((occurrence) => selectedDeadlineIds.has(occurrence.id)),
+    [items, selectedDeadlineIds],
+  );
+
+  const updateTypes = (type?: DeadlineFilterType) => {
+    const nextTypes = type && TYPE_VALUES.includes(type) ? [type] : [];
     setSavedTypes(nextTypes);
     replaceUrl({ types: nextTypes.length > 0 ? nextTypes.join(',') : undefined, page: '1' });
     persistPreference({ visibleTypes: nextTypes });
@@ -371,43 +463,69 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     persistPreference({ familyIds: next });
   };
 
-  const updateInlineFilters = (next: Partial<DeadlineInlineFilterValues>) => {
-    const type = next.type === undefined ? (urlState.types.length === 1 ? urlState.types[0] : '') : next.type;
-    const status = next.status === undefined ? (urlState.statuses.length === 1 ? urlState.statuses[0] : '') : next.status;
-    const origin = next.origin === undefined ? (urlState.origin ?? '') : next.origin;
+  const updateInlineFamily = (familyId: string) => {
+    const next = familyId && families.some((family) => family.id === familyId) ? [familyId] : [];
+    setSavedFamilies(next);
+    replaceUrl({ families: next.length > 0 ? next.join(',') : undefined, page: '1' });
+    persistPreference({ familyIds: next });
+  };
+
+  const updateTextFilter = (key: 'companyQuery' | 'serviceQuery' | 'milestoneQuery', value: string) => {
     replaceUrl({
-      companyQuery: next.companyQuery === undefined ? urlState.companyQuery || undefined : next.companyQuery.trim() || undefined,
-      serviceQuery: next.serviceQuery === undefined ? urlState.serviceQuery || undefined : next.serviceQuery.trim() || undefined,
-      milestoneQuery: next.milestoneQuery === undefined ? urlState.milestoneQuery || undefined : next.milestoneQuery.trim() || undefined,
-      from: next.from === undefined ? urlState.from : next.from || undefined,
-      to: next.to === undefined ? urlState.to : next.to || undefined,
-      types: next.type === undefined ? (urlState.types.length > 0 ? urlState.types.join(',') : undefined) : type || undefined,
-      statuses: next.status === undefined ? (urlState.statuses.length > 0 ? urlState.statuses.join(',') : undefined) : status || undefined,
-      origin: next.origin === undefined ? urlState.origin : origin || undefined,
+      [key]: value.trim() || undefined,
       page: '1',
     });
-    if (next.type !== undefined) {
-      const nextTypes = type ? [type] : [];
-      setSavedTypes(nextTypes);
-      persistPreference({ visibleTypes: nextTypes });
-    }
+  };
+
+  const updateStatuses = (nextStatuses: readonly DeadlineFilterStatus[]) => {
+    const statuses = [...new Set(nextStatuses)].filter((status): status is DeadlineFilterStatus => STATUS_FILTER_VALUES.includes(status));
+    replaceUrl({
+      statuses: statuses.length > 0 ? statuses.join(',') : undefined,
+      openOnly: statuses.length > 0 ? 'false' : undefined,
+      page: '1',
+    });
+  };
+
+  const toggleStatus = (status: DeadlineFilterStatus) => {
+    const selected = new Set(urlState.statuses);
+    if (selected.has(status)) selected.delete(status);
+    else selected.add(status);
+    updateStatuses([...selected]);
+  };
+
+  const toggleOrigin = (origin: DeadlineFilterOrigin) => {
+    replaceUrl({ origin: urlState.origin === origin ? undefined : origin, page: '1' });
+  };
+
+  const updateInlineOrigin = (origin?: DeadlineFilterOrigin) => {
+    replaceUrl({ origin: origin || undefined, page: '1' });
+  };
+
+  const updateInlineFilters = (next: Partial<DeadlineInlineFilterValues>) => {
+    if ('companyQuery' in next) updateTextFilter('companyQuery', next.companyQuery ?? '');
+    if ('serviceQuery' in next) updateTextFilter('serviceQuery', next.serviceQuery ?? '');
+    if ('milestoneQuery' in next) updateTextFilter('milestoneQuery', next.milestoneQuery ?? '');
+    if ('familyId' in next) updateInlineFamily(next.familyId ?? '');
+    if ('type' in next) updateTypes(next.type || undefined);
+    if ('status' in next) updateStatuses(next.status ? [next.status] : []);
+    if ('origin' in next) updateInlineOrigin(next.origin || undefined);
   };
 
   const inlineFilters: DeadlineInlineFilterValues = {
     companyQuery: urlState.companyQuery,
     serviceQuery: urlState.serviceQuery,
     milestoneQuery: urlState.milestoneQuery,
-    from: urlState.from,
-    to: urlState.to,
-    type: urlState.types.length === 1 ? urlState.types[0] : '',
-    status: urlState.statuses.length === 1 ? urlState.statuses[0] : '',
+    familyId: urlState.families.length === 1 ? urlState.families[0]! : '',
+    type: urlState.types.length === 1 ? urlState.types[0]! : '',
+    status: urlState.statuses.length === 1 ? urlState.statuses[0] as Exclude<DeadlineFilterStatus, 'OPEN'> : '',
     origin: urlState.origin ?? '',
   };
 
-  const switchView = (view: 'TABLE' | 'CALENDAR') => {
-    const range = view === 'CALENDAR' ? monthRange(dateFromMonth(urlState.from), calendarMonthCount) : { from: urlState.from, to: urlState.to };
-    replaceUrl({ deadlineView: view, from: range.from, to: range.to, page: '1' });
-    persistPreference({ defaultView: view });
+  const toggleOpenOnly = () => {
+    const isOpenShortcutActive = urlState.openOnly && urlState.statuses.length === 0;
+    replaceUrl(isOpenShortcutActive
+      ? { openOnly: 'false', page: '1' }
+      : { openOnly: undefined, statuses: undefined, page: '1' });
   };
 
   const handleCalendarMonthChange = (month: Date) => {
@@ -419,7 +537,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     setCalendarMonthCountOverride(monthCount);
     persistPreference({ monthCount });
     const visibleCount = isLargeDesktop ? monthCount : 1;
-    const range = monthRange(dateFromMonth(urlState.from), visibleCount);
+    const range = monthRange(dateFromMonth(urlState.from ?? currentDateInSingapore()), visibleCount);
     replaceUrl({ from: range.from, to: range.to, page: '1' });
   };
 
@@ -432,60 +550,71 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     const data: ResetDeadlineDateOverrideInput = { expectedUpdatedAt: occurrence.updatedAt, reason };
     resetDeadline.mutate({ id: occurrence.id, data });
   }, [canWrite, resetDeadline]);
+  const bulkUpdate = useCallback((occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => {
+    if (!canWrite) return Promise.reject(new Error('Deadline updates are unavailable'));
+    return updateDeadline.mutateAsync({ id: occurrence.id, data });
+  }, [canWrite, updateDeadline]);
 
   const activeBadges: Array<{ key: string; label: string; onRemove: () => void }> = [];
   for (const type of urlState.types) {
-    activeBadges.push({ key: `type-${type}`, label: `Type: ${formatBadgeValue(type)}`, onRemove: () => updateTypes(type) });
+    activeBadges.push({ key: `type-${type}`, label: `Type: ${formatBadgeValue(type)}`, onRemove: () => updateTypes(undefined) });
   }
-  if (urlState.openOnly) activeBadges.push({ key: 'openOnly', label: 'Open only', onRemove: () => replaceUrl({ openOnly: 'false', page: '1' }) });
+  if (urlState.statuses.length > 0) activeBadges.push({ key: 'statuses', label: `Status: ${urlState.statuses.map(formatBadgeValue).join(', ')}`, onRemove: () => updateStatuses([]) });
+  else if (urlState.openOnly) activeBadges.push({ key: 'openOnly', label: 'Status: Open', onRemove: () => replaceUrl({ openOnly: 'false', page: '1' }) });
   if (!allFamiliesSelected) {
     for (const family of families.filter((item) => urlState.families.includes(item.id))) activeBadges.push({ key: `family-${family.id}`, label: `Family: ${family.name}`, onRemove: () => updateFamily(family.id) });
   }
-  if (urlState.companyQuery) activeBadges.push({ key: 'companyQuery', label: `Company: ${urlState.companyQuery}`, onRemove: () => updateInlineFilters({ companyQuery: '' }) });
-  if (urlState.serviceQuery) activeBadges.push({ key: 'serviceQuery', label: `Service: ${urlState.serviceQuery}`, onRemove: () => updateInlineFilters({ serviceQuery: '' }) });
-  if (urlState.milestoneQuery) activeBadges.push({ key: 'milestoneQuery', label: `Milestone: ${urlState.milestoneQuery}`, onRemove: () => updateInlineFilters({ milestoneQuery: '' }) });
-  if (urlState.statuses.length > 0) activeBadges.push({ key: 'statuses', label: `Status: ${urlState.statuses.map(formatBadgeValue).join(', ')}`, onRemove: () => updateInlineFilters({ status: '' }) });
-  if (urlState.origin) activeBadges.push({ key: 'origin', label: `Source: ${formatBadgeValue(urlState.origin)}`, onRemove: () => updateInlineFilters({ origin: '' }) });
+  if (urlState.companyQuery) activeBadges.push({ key: 'companyQuery', label: `Company: ${urlState.companyQuery}`, onRemove: () => updateTextFilter('companyQuery', '') });
+  if (urlState.serviceQuery) activeBadges.push({ key: 'serviceQuery', label: `Service: ${urlState.serviceQuery}`, onRemove: () => updateTextFilter('serviceQuery', '') });
+  if (urlState.milestoneQuery) activeBadges.push({ key: 'milestoneQuery', label: `Milestone: ${urlState.milestoneQuery}`, onRemove: () => updateTextFilter('milestoneQuery', '') });
+  if (urlState.origin) activeBadges.push({ key: 'origin', label: `Source: ${formatBadgeValue(urlState.origin)}`, onRemove: () => toggleOrigin(urlState.origin!) });
   if (urlState.companies.length > 0) activeBadges.push({ key: 'companies', label: `Companies: ${urlState.companies.length} selected`, onRemove: () => replaceUrl({ companies: undefined, page: '1' }) });
-  const defaultTableRange = currentRange(currentDateInSingapore());
-  const hasDueRangeDeviation = urlState.view === 'TABLE' && (urlState.from !== defaultTableRange.from || urlState.to !== defaultTableRange.to);
-  if (hasDueRangeDeviation) activeBadges.push({ key: 'dueRange', label: `Due: ${urlState.from} – ${urlState.to}`, onRemove: () => replaceUrl({ from: defaultTableRange.from, to: defaultTableRange.to, page: '1' }) });
+  if (urlState.view === 'TABLE' && urlState.from && urlState.to) {
+    activeBadges.push({ key: 'dueRange', label: `Date: ${urlState.from} – ${urlState.to}`, onRemove: () => replaceUrl({ from: undefined, to: undefined, dateFilter: 'none', page: '1' }) });
+  }
 
-  const filtered = activeBadges.length > 0 || urlState.from !== currentDateInSingapore() || urlState.openOnly || urlState.companies.length > 0;
   const total = deadlines.data?.mode === 'TABLE' ? deadlines.data.total : 0;
   const totalPages = deadlines.data?.mode === 'TABLE' ? deadlines.data.totalPages : 0;
-  const visibleColumns = columnOrder.filter((column) => columnVisibility[column]);
+  const visibleColumns = useMemo(() => {
+    const columns = columnOrder.filter((column) => columnVisibility[column]);
+    return columns.length > 0 ? columns : ['actions' as DeadlineTableColumnId];
+  }, [columnOrder, columnVisibility]);
+  const inlineFilterColumns = useMemo<DeadlineInlineFilterColumn[]>(
+    () => [
+      { id: 'selection', width: 48 },
+      ...visibleColumns.map((column) => ({ id: column, width: columnWidths[column] ?? defaultDeadlineColumnWidths[column] })),
+    ],
+    [columnWidths, visibleColumns],
+  );
   const showTableSurface = !deadlines.error && !deadlines.isLoading && deadlines.data?.mode === 'TABLE';
   const showCalendarSurface = !deadlines.error && (!deadlines.isLoading || Boolean(deadlines.data));
 
   return (
     <section aria-label="Deadline workspace" className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">Deadlines</h2>
-        </div>
-        <div role="group" aria-label="Deadline view" className="inline-flex min-h-11 items-center rounded-xl border border-border-primary bg-background-secondary p-1 sm:min-h-8">
-          <button type="button" aria-pressed={urlState.view === 'TABLE'} onClick={() => switchView('TABLE')} className={urlState.view === 'TABLE' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Table view</button>
-          <button type="button" aria-pressed={urlState.view === 'CALENDAR'} onClick={() => switchView('CALENDAR')} className={urlState.view === 'CALENDAR' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Calendar view</button>
-        </div>
-      </div>
-
       <DeadlineFilters
         families={families}
-        selectedTypes={urlState.types}
         selectedFamilyIds={urlState.families}
+        companyQuery={urlState.companyQuery}
+        serviceQuery={urlState.serviceQuery}
+        milestoneQuery={urlState.milestoneQuery}
+        selectedTypes={urlState.types}
+        selectedStatuses={urlState.statuses}
+        selectedOrigin={urlState.origin}
         openOnly={urlState.openOnly}
-        onToggleType={updateTypes}
+        onCompanyQueryChange={(value) => updateTextFilter('companyQuery', value)}
+        onServiceQueryChange={(value) => updateTextFilter('serviceQuery', value)}
+        onMilestoneQueryChange={(value) => updateTextFilter('milestoneQuery', value)}
+        onTypeChange={updateTypes}
+        onToggleStatus={toggleStatus}
+        onToggleOrigin={toggleOrigin}
         onToggleFamily={updateFamily}
-        onToggleOpenOnly={() => replaceUrl({ openOnly: urlState.openOnly ? 'false' : undefined, page: '1' })}
-        dateFrom={urlState.from}
-        dateTo={urlState.to}
-        onDateRangeChange={(from, to) => replaceUrl({ from: from || undefined, to: to || undefined, page: '1' })}
+        onToggleOpenOnly={toggleOpenOnly}
+        dateFrom={urlState.from ?? ''}
+        dateTo={urlState.to ?? ''}
+        onDateRangeChange={(from, to) => replaceUrl({ from: from || undefined, to: to || undefined, dateFilter: from && to ? undefined : 'none', page: '1' })}
         onAdjustColumns={urlState.view === 'TABLE' ? () => setColumnsOpen(true) : undefined}
         hiddenColumnCount={DEADLINE_TABLE_COLUMNS.filter((column) => column !== 'actions' && !columnVisibility[column]).length}
       />
-      <DeadlineInlineFilters values={inlineFilters} onChange={updateInlineFilters} />
-
       {familyFacets.error ? (
         <Alert variant="error" title="Family filters unavailable">
           <div className="flex flex-wrap items-center gap-2">
@@ -525,9 +654,8 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
             onShowAll={() => { const next = Object.fromEntries(DEADLINE_TABLE_COLUMNS.map((column) => [column, true])) as Record<DeadlineTableColumnId, boolean>; setColumnVisibility(next); persistPreference({ tableColumnVisibility: next }); }}
             onResetWidths={() => { setColumnWidths({}); persistPreference({ tableColumnWidths: {} }); }}
           />
-          {!deadlines.isLoading && !deadlines.error && items.length === 0 ? <div role="status" className="rounded-xl border border-dashed border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">{filtered ? 'No deadlines match the selected filters.' : 'No deadlines found for this date range.'}</div> : null}
           {showTableSurface ? (
-            <DeadlineTable
+              <DeadlineTable
               items={items}
               isFetching={deadlines.isFetching}
               page={deadlines.data?.mode === 'TABLE' ? deadlines.data.page : urlState.page}
@@ -537,13 +665,24 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
               sortBy={urlState.sortBy}
               sortOrder={urlState.sortOrder}
               columnWidths={columnWidths}
-              columnOrder={visibleColumns.length > 0 ? columnOrder : ['actions']}
+              columnOrder={visibleColumns}
               columnVisibility={columnVisibility}
               canEdit={canWrite}
               isPending={updateDeadline.isPending || resetDeadline.isPending}
               mutationError={updateDeadline.error ?? resetDeadline.error}
               onUpdate={markUpdate}
               onResetOverride={resetOverride}
+              inlineFilters={(
+                <DeadlineInlineFilters
+                  families={families}
+                  values={inlineFilters}
+                  tableColumns={inlineFilterColumns}
+                  onChange={updateInlineFilters}
+                />
+              )}
+              selectedIds={selectedDeadlineIds}
+              onToggleSelection={toggleDeadlineSelection}
+              onToggleSelectAll={toggleAllDeadlineSelection}
               onSort={(sortBy) => { const sortOrder = urlState.sortBy === sortBy && urlState.sortOrder === 'asc' ? 'desc' : 'asc'; replaceUrl({ sortBy, sortOrder, page: '1' }); persistPreference({ sortBy, sortOrder }); }}
               onPageChange={(page) => replaceUrl({ page: String(page) })}
               onLimitChange={(limit) => { const safeLimit: DeadlinePageSize = PAGE_SIZE_VALUES.includes(limit as DeadlinePageSize) ? limit as DeadlinePageSize : 20; replaceUrl({ limit: String(safeLimit), page: '1' }); persistPreference({ pageSize: safeLimit }); }}
@@ -551,11 +690,12 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
               onColumnResizeEnd={(columnId, width) => { const next = { ...columnWidths, [columnId]: Math.round(width) }; setColumnWidths(next); persistPreference({ tableColumnWidths: next }, true); }}
             />
           ) : null}
+          {canWrite ? <DeadlineBulkActions selected={selectedDeadlines} onClearSelection={clearDeadlineSelection} onUpdate={bulkUpdate} /> : null}
         </>
       ) : showCalendarSurface ? (
         <DeadlineCalendar
           items={undefined}
-          focusMonth={dateFromMonth(urlState.from)}
+          focusMonth={dateFromMonth(urlState.from ?? currentDateInSingapore())}
           monthCount={calendarMonthCount}
           preferenceValue={currentPreference}
           search={query}

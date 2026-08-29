@@ -203,8 +203,69 @@ describe('evaluateDeadlineRule', () => {
     });
   });
 
-  it.each(['PAYROLL', 'ACCOUNTING'])('evaluates four repeatable entries for %s', (familyCode) => {
-    const scheduleEntries = [1, 8, 15, 22].map((day) => entry(`run-${day}`, {
+  it.each([
+    ['2027-07-31', '2026-08-01', '2027-07-31', '2027-07-31'],
+    ['2024-07-31', '2026-08-01', '2027-07-31', '2027-07-31'],
+  ] as const)(
+    'aligns annual company date %s into period %s..%s',
+    (accountsDueDate, start, end, expected) => {
+      const result = evaluateDeadlineRule(input({
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+        company: { accountsDueDate },
+        period: { key: 'annual', start, end },
+        milestones: [milestone('annual-return-due', {
+          kind: 'SOURCE',
+          source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+        })],
+      }));
+
+      expect(result.occurrences[0]?.calculatedDueDate).toBe(expected);
+    },
+  );
+
+  it('aligns an annual FYE landmark to the first anniversary on or after the period start', () => {
+    const result = evaluateDeadlineRule(input({
+      recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+      company: { financialYearEnd: '2024-12-31' },
+      period: { key: '2026', start: '2026-08-01', end: '2027-07-31' },
+      milestones: [milestone('fye', {
+        kind: 'SOURCE',
+        source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+      })],
+    }));
+
+    expect(result.occurrences[0]?.calculatedDueDate).toBe('2026-12-31');
+  });
+
+  it('keeps the exact stored company date for non-annual recurrence kinds', () => {
+    const result = evaluateDeadlineRule(input({
+      recurrence: { schemaVersion: 1, kind: 'MONTHLY', interval: 1 },
+      company: { accountsDueDate: '2027-07-31' },
+      period: { key: '2026-08', start: '2026-08-01', end: '2026-08-31' },
+      milestones: [milestone('due', {
+        kind: 'SOURCE',
+        source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+      })],
+    }));
+
+    expect(result.occurrences[0]?.calculatedDueDate).toBe('2027-07-31');
+  });
+
+  it('keeps the exact stored company date for ONE_TIME recurrence', () => {
+    const result = evaluateDeadlineRule(input({
+      recurrence: { schemaVersion: 1, kind: 'ONE_TIME' },
+      company: { accountsDueDate: '2027-07-31' },
+      period: { key: 'ONE_TIME:2026-08-01', start: '2026-08-01', end: '2027-08-01' },
+      milestones: [milestone('due', {
+        kind: 'SOURCE',
+        source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
+      })],
+    }));
+
+    expect(result.occurrences[0]?.calculatedDueDate).toBe('2027-07-31');
+  });
+
+  it.each(['PAYROLL', 'ACCOUNTING'])('evaluates four repeatable entries for %s', (familyCode) => {    const scheduleEntries = [1, 8, 15, 22].map((day) => entry(`run-${day}`, {
       kind: 'DAY_OF_MONTH', day,
     }));
     const result = evaluateDeadlineRule(input({

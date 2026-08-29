@@ -153,6 +153,36 @@ describe('service roster service', () => {
     }));
   });
 
+  it('applies every data-column inline filter to the roster predicate', async () => {
+    await listServiceRoster({
+      ...search,
+      statuses: [],
+      statusQuery: 'active',
+      cadenceQuery: 'one-time',
+      nextDeadlineQuery: '2026-09-01',
+      startEndQuery: '2026-01-01',
+      warningQuery: 'review',
+      billingQuery: 'configured',
+    }, scope);
+
+    const where = (mocks.count.mock.calls[0]![0] as { where: { AND?: unknown[] } }).where;
+    expect(where.AND).toEqual(expect.arrayContaining([
+      expect.objectContaining({ status: { in: ['ACTIVE'] } }),
+      expect.objectContaining({ OR: expect.arrayContaining([expect.objectContaining({ serviceCadence: { in: ['ONE_TIME'] } })]) }),
+      expect.objectContaining({ AND: expect.arrayContaining([
+        expect.objectContaining({ deadlineOccurrences: expect.anything() }),
+        expect.objectContaining({ NOT: expect.anything() }),
+      ]) }),
+      expect.objectContaining({ OR: expect.arrayContaining([
+        expect.objectContaining({ startDate: expect.anything() }),
+        expect.objectContaining({ endDate: expect.anything() }),
+      ]) }),
+      expect.objectContaining({ deadlineRules: expect.anything() }),
+      expect.objectContaining({ OR: [{ billingDisposition: { in: ['CONFIGURED'] } }] }),
+    ]));
+    expect(where.AND).toHaveLength(6);
+  });
+
   it('scopes the nested open-deadline relation and orders it deterministically', async () => {
     await listServiceRoster(search, scope);
 

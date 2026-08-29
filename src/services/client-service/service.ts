@@ -3,10 +3,10 @@ import { computeChanges, createAuditLog } from '@/lib/audit';
 import { ConflictError, DeadlineApiError, ErrorCodes, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
-import { clientServiceDeadlineImpactSchema, clientServiceDeadlineRulesSchema, type ClientServiceDeadlineRuleInput, type ClientServiceDeadlineScheduleSnapshot, type SearchClientServicesInput, type UpdateClientServiceInput } from '@/lib/validations/client-service';
+import { clientServiceDeadlineDraftPreviewSchema, clientServiceDeadlineImpactSchema, clientServiceDeadlineRulesSchema, type ClientServiceDeadlineRuleInput, type ClientServiceDeadlineScheduleSnapshot, type SearchClientServicesInput, type UpdateClientServiceInput } from '@/lib/validations/client-service';
 import { Prisma } from '@/generated/prisma';
-import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
-import { clientServiceInclude, clientServiceInternalInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
+import type { ClientServiceDto, ClientServiceProjectedDeadlineDto, CompanyServiceActivationDto } from './types';
+import { clientServiceDetailInclude, clientServiceInclude, clientServiceInternalInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
 import { snapshotClientServiceFees, summarizeClientServiceFees } from './fee-summary';
 import {
   enqueueScheduleReconciliation,
@@ -17,7 +17,6 @@ import {
   addMonthsClamped,
   currentDateInSingapore,
   evaluateApplicability,
-  evaluateDeadlineRule,
   hashConfiguration,
   canonicalJson,
   normalizeCompanyRuleSource,
@@ -27,7 +26,14 @@ import {
   type DateOnly,
   type BusinessCalendarSnapshot,
 } from '@/services/service-schedule';
-import { planRollingPeriods, ROLLING_HORIZON_MONTHS, ROLLING_PLAN_VERSION, classifyDeadlineChange, type EvaluatedDeadlineForDiff, type StoredDeadline } from '@/services/schedule-reconciliation';
+import {
+  ROLLING_HORIZON_MONTHS,
+  ROLLING_PLAN_VERSION,
+  classifyDeadlineChange,
+  projectDeadlineRule,
+  type EvaluatedDeadlineForDiff,
+  type StoredDeadline,
+} from '@/services/schedule-reconciliation';
 
 function parseDate(value: string | null | undefined): Date | null | undefined {
   if (value === undefined) return undefined;
@@ -152,6 +158,8 @@ type DeadlineRuleAssociationRecord = {
   rule?: {
     id: string;
     tenantId?: string;
+    code?: string;
+    name?: string;
     isActive?: boolean;
     archivedAt?: Date | null;
     currentVersionId?: string | null;
@@ -526,6 +534,10 @@ async function requireService<T extends Prisma.ClientServiceInclude = typeof cli
 
 export type ClientServiceDeadlineImpactAction = 'CREATE' | 'RECALCULATE' | 'CANCEL' | 'PRESERVE' | 'WARN';
 
+export type ClientServiceDeadlineImpactWarning =
+  | { ruleId: string; state: 'NOT_APPLICABLE' | 'MISSING_INPUT'; reason: string | null }
+  | { ruleId: string; code: string; message: string; excludedCycleCount?: number; oldestRetainedYear?: number };
+
 export type ClientServiceDeadlineImpact = {
   clientServiceId: string;
   expectedUpdatedAt: string;
@@ -537,6 +549,7 @@ export type ClientServiceDeadlineImpact = {
     recalculated: number;
     cancelled: number;
     preserved: number;
+    noChange: number;
     inapplicable: number;
     missingInput: number;
     conflicts: number;
@@ -550,7 +563,8 @@ export type ClientServiceDeadlineImpact = {
     newDate: DateOnly | null;
     reason: string;
   }>;
-  warnings: Array<{ ruleId: string; state: 'NOT_APPLICABLE' | 'MISSING_INPUT'; reason: string | null }>;
+  warnings: ClientServiceDeadlineImpactWarning[];
+  projectedDeadlines: ClientServiceProjectedDeadlineDto[];
 };
 
 type PreviewCycle = {
@@ -626,7 +640,7 @@ function previewCalendar(value: unknown): BusinessCalendarSnapshot {
 }
 
 function emptyImpactCounts(): ClientServiceDeadlineImpact['counts'] {
-  return { created: 0, recalculated: 0, cancelled: 0, preserved: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 };
+  return { created: 0, recalculated: 0, cancelled: 0, preserved: 0, noChange: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 };
 }
 
 function previewStoredDeadline(occurrence: PreviewOccurrence): StoredDeadline | null {
@@ -649,15 +663,16 @@ function previewStoredDeadline(occurrence: PreviewOccurrence): StoredDeadline | 
 }
 
 /**
- * Run the same planner/evaluator/diff contracts used by reconciliation in
- * observe mode. This function has no writes and is also used by PATCH to
- * make a preview fingerprint a true compare-and-swap token.
+ * Run the canonical projection shared with write reconciliation in observe
+ * mode. This function has no writes and is also used by PATCH to make a
+ * preview fingerprint a true compare-and-swap token.
  */
 export async function previewClientServiceDeadlineConfiguration(
   id: string,
   rawInput: { expectedUpdatedAt: string; deadlineRules: ClientServiceDeadlineRuleInput[]; scheduleSnapshot: ClientServiceDeadlineScheduleSnapshot },
   params: ClientServiceAccessParams,
   db: Prisma.TransactionClient | typeof prisma = prisma,
+  options: { today?: DateOnly; horizonEnd?: DateOnly } = {},
 ): Promise<ClientServiceDeadlineImpact> {
   const input = clientServiceDeadlineImpactSchema.parse(rawInput);
   const service = await requireService(id, params, db);
@@ -671,12 +686,14 @@ export async function previewClientServiceDeadlineConfiguration(
     input.deadlineRules,
     company,
   );
-  const today = currentDateInSingapore();
-  const horizonEnd = addMonthsClamped(today, ROLLING_HORIZON_MONTHS);
+  const today = options.today ?? currentDateInSingapore();
+  const horizonEnd = options.horizonEnd ?? addMonthsClamped(today, ROLLING_HORIZON_MONTHS);
   const counts = emptyImpactCounts();
   const samples: ClientServiceDeadlineImpact['samples'] = [];
   const warnings: ClientServiceDeadlineImpact['warnings'] = [];
   const identityStates: Array<Record<string, unknown>> = [];
+  const projectedStates: Array<Record<string, unknown>> = [];
+  const projectedDeadlines: ClientServiceProjectedDeadlineDto[] = [];
 
   const serviceCycleDelegate = (db as unknown as { serviceCycle?: { findMany?: (args: unknown) => Promise<unknown> } }).serviceCycle;
   const rawCycles = serviceCycleDelegate?.findMany
@@ -721,84 +738,109 @@ export async function previewClientServiceDeadlineConfiguration(
       continue;
     }
 
-    let periods;
+    const ruleCode = typeof association.rule.code === 'string' && association.rule.code.length > 0
+      ? association.rule.code
+      : configuration.ruleId;
+    const milestones = previewMilestones(version.milestoneTemplates);
+    let projection;
     try {
-      periods = planRollingPeriods(version.recurrence as never, today, horizonEnd);
+      projection = projectDeadlineRule({
+        ruleId: configuration.ruleId,
+        ruleCode,
+        ruleVersionId: version.id,
+        recurrence: version.recurrence as never,
+        applicability: version.applicability as never,
+        parameters: configuration.parameterValues as Record<string, unknown>,
+        scheduleEntries: configuration.scheduleEntries as never,
+        milestones,
+        company: normalizeCompanyRuleSource(company, today),
+        calendar,
+        today,
+        horizonEnd,
+      });
     } catch (error) {
       counts.warnings += 1;
-      warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: error instanceof Error ? error.message : 'Unable to plan rule periods' });
+      warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: error instanceof Error ? error.message : 'Unable to project rule deadlines' });
       skipCleanupRuleIds.add(configuration.ruleId);
       continue;
     }
-    const evaluatePeriod = (period: typeof periods[number]) => evaluateDeadlineRule({
-      ruleId: configuration.ruleId,
-      ruleVersionId: version.id,
-      recurrence: version.recurrence as never,
-      applicability: version.applicability as never,
-      parameters: configuration.parameterValues as Record<string, unknown>,
-      scheduleEntries: configuration.scheduleEntries as never,
-      milestones: previewMilestones(version.milestoneTemplates),
-      company: normalizeCompanyRuleSource(company, today),
-      period: { key: period.periodKey, start: period.start, end: period.end },
-      calendar,
-    });
-    const firstPeriod = periods[0] ?? { periodKey: 'INITIAL', start: today, end: horizonEnd };
-    try {
-      evaluatePeriod(firstPeriod);
-    } catch (error) {
-      if ((error as { code?: string })?.code !== ErrorCodes.MISSING_RULE_INPUT) throw error;
+
+    if (projection.applicability.state === 'MISSING_INPUT') {
       counts.missingInput += 1;
-      warnings.push({
-        ruleId: configuration.ruleId,
-        state: 'MISSING_INPUT',
-        reason: error instanceof Error ? error.message : 'Rule evaluation requires input',
-      });
+      counts.warnings += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: projection.applicability.reason });
       skipCleanupRuleIds.add(configuration.ruleId);
       continue;
     }
-    for (const period of periods) {
+    if (projection.applicability.state === 'NOT_APPLICABLE') {
+      counts.inapplicable += 1;
+      counts.warnings += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: 'NOT_APPLICABLE', reason: projection.applicability.reason });
+      continue;
+    }
+
+    const milestoneNameByKey = new Map(milestones.map((milestone) => [milestone.key, milestone.name]));
+    for (const warning of projection.warnings) {
+      if (warning.code === 'MISSING_INPUT') continue;
+      warnings.push({
+        ruleId: warning.ruleId ?? configuration.ruleId,
+        code: warning.code,
+        message: warning.message,
+        ...(warning.excludedCycleCount !== undefined ? { excludedCycleCount: warning.excludedCycleCount } : {}),
+        ...(warning.oldestRetainedYear !== undefined ? { oldestRetainedYear: warning.oldestRetainedYear } : {}),
+      });
+    }
+    for (const occurrence of projection.occurrences) {
+      projectedDeadlines.push({
+        ruleId: occurrence.ruleId,
+        ruleCode,
+        ruleName: association.rule.name ?? ruleCode,
+        materializationPolicy: projection.materializationPolicy,
+        periodKey: occurrence.periodKey,
+        milestoneKey: occurrence.milestoneKey,
+        milestoneName: milestoneNameByKey.get(occurrence.milestoneKey) ?? occurrence.milestoneKey,
+        scheduleEntryKey: occurrence.scheduleEntryKey,
+        deadlineType: occurrence.deadlineType,
+        calculatedDueDate: occurrence.calculatedDueDate,
+        explanation: occurrence.explanation,
+      });
+      projectedStates.push({
+        ruleId: occurrence.ruleId,
+        periodKey: occurrence.periodKey,
+        milestoneKey: occurrence.milestoneKey,
+        scheduleEntryKey: occurrence.scheduleEntryKey,
+        dueDate: occurrence.calculatedDueDate,
+      });
+    }
+
+    for (const period of projection.periods) {
       const cycle = cyclesByKey.get(`${configuration.ruleId}|${period.periodKey}`);
       const cycleId = cycle?.id ?? `${id}|${configuration.ruleId}|${period.periodKey}|${ROLLING_PLAN_VERSION}`;
-      let evaluation;
-      try {
-        evaluation = evaluatePeriod(period);
-      } catch (error) {
-        counts.missingInput += 1;
-        counts.warnings += 1;
-        warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: error instanceof Error ? error.message : 'Rule evaluation requires input' });
-        if (cycle) skipCleanupCycleIds.add(cycle.id);
-        continue;
-      }
-      if (evaluation.applicability.state !== 'APPLICABLE') {
-        counts[evaluation.applicability.state === 'MISSING_INPUT' ? 'missingInput' : 'inapplicable'] += 1;
-        counts.warnings += evaluation.applicability.state === 'MISSING_INPUT' ? 1 : 0;
-        warnings.push({ ruleId: configuration.ruleId, state: evaluation.applicability.state, reason: evaluation.applicability.reason });
-        if (evaluation.applicability.state === 'MISSING_INPUT' && cycle) skipCleanupCycleIds.add(cycle.id);
-        continue;
-      }
+      const periodOccurrences = projection.occurrences.filter((occurrence) => occurrence.periodKey === period.periodKey);
+      if (periodOccurrences.length === 0) continue;
       const existingOccurrences = cycle?.occurrences ?? [];
       const byOccurrenceKey = new Map(existingOccurrences.map((occurrence) => [`${occurrence.milestoneKey}|${occurrence.scheduleEntryKey}`, occurrence]));
-      for (const occurrence of evaluation.occurrences) {
+      for (const occurrence of periodOccurrences) {
         const existing = byOccurrenceKey.get(`${occurrence.milestoneKey}|${occurrence.scheduleEntryKey}`);
         const stored = existing ? previewStoredDeadline(existing) : null;
         const proposed: EvaluatedDeadlineForDiff = {
           milestoneKey: occurrence.milestoneKey,
           scheduleEntryKey: occurrence.scheduleEntryKey,
-          deadlineType: occurrence.type,
+          deadlineType: occurrence.deadlineType,
           dueDate: occurrence.calculatedDueDate,
           ruleVersionId: version.id,
           explanation: occurrence.explanation,
         };
         const decision = classifyDeadlineChange(stored, proposed, today);
-        const action: ClientServiceDeadlineImpactAction = decision.action === 'CREATE'
-          ? 'CREATE'
-          : decision.action === 'RECALCULATE'
-            ? 'RECALCULATE'
-            : decision.action === 'PRESERVE' ? 'PRESERVE' : 'PRESERVE';
-        if (action === 'CREATE') counts.created += 1;
-        else if (action === 'RECALCULATE') counts.recalculated += 1;
+        if (decision.action === 'CREATE') counts.created += 1;
+        else if (decision.action === 'RECALCULATE') counts.recalculated += 1;
+        else if (decision.action === 'NO_CHANGE') counts.noChange += 1;
         else counts.preserved += 1;
         if (existing) processedOccurrenceIds.add(existing.id);
+        if (decision.action === 'NO_CHANGE') continue;
+        const action: ClientServiceDeadlineImpactAction = decision.action === 'CREATE'
+          ? 'CREATE'
+          : decision.action === 'RECALCULATE' ? 'RECALCULATE' : 'PRESERVE';
         const sample = {
           ruleId: configuration.ruleId,
           deadlineOccurrenceId: existing?.id ?? null,
@@ -839,13 +881,14 @@ export async function previewClientServiceDeadlineConfiguration(
     }
   }
 
-  counts.warnings = warnings.length;
+  counts.warnings = warnings.filter((warning) => 'state' in warning).length;
   const proposedConfigHash = hashConfiguration(validation.normalized.map((rule, index) => ({
     ...rule,
     versionId: validation.states[index]?.versionId ?? null,
     configHash: validation.states[index]?.configHash ?? null,
   })));
   const sortedStates = identityStates.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  const sortedProjectedStates = projectedStates.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   const previewFingerprint = hashConfiguration({
     tenantId: params.tenantId,
     clientServiceId: id,
@@ -855,6 +898,7 @@ export async function previewClientServiceDeadlineConfiguration(
     rollingPlan: { version: ROLLING_PLAN_VERSION, today, horizonEnd },
     counts,
     states: sortedStates,
+    projected: sortedProjectedStates,
     warnings,
   });
   return {
@@ -866,6 +910,178 @@ export async function previewClientServiceDeadlineConfiguration(
     counts,
     samples: samples.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))).slice(0, 100),
     warnings,
+    projectedDeadlines: projectedDeadlines.sort((left, right) => (
+      left.calculatedDueDate.localeCompare(right.calculatedDueDate)
+      || left.ruleId.localeCompare(right.ruleId)
+      || left.milestoneKey.localeCompare(right.milestoneKey)
+      || left.scheduleEntryKey.localeCompare(right.scheduleEntryKey)
+    )),
+  };
+}
+
+export type ClientServiceDeadlineDraftPreview = {
+  companyId: string;
+  serviceVariantId: string;
+  today: DateOnly;
+  horizonEnd: DateOnly;
+  counts: {
+    applicable: number;
+    disabled: number;
+    inapplicable: number;
+    missingInput: number;
+    warnings: number;
+  };
+  projectedDeadlines: ClientServiceProjectedDeadlineDto[];
+  warnings: ClientServiceDeadlineImpactWarning[];
+};
+
+/**
+ * Canonical draft projection for the add-service flow. It uses the same
+ * projector as the editor impact preview and write reconciliation, so the
+ * dates shown before creation match what materializes on save.
+ */
+export async function previewClientServiceDeadlineDraft(
+  rawInput: {
+    companyId: string;
+    serviceVariantId: string;
+    deadlineRules: ClientServiceDeadlineRuleInput[];
+    scheduleSnapshot: ClientServiceDeadlineScheduleSnapshot;
+  },
+  params: ClientServiceAccessParams,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+  options: { today?: DateOnly; horizonEnd?: DateOnly } = {},
+): Promise<ClientServiceDeadlineDraftPreview> {
+  const input = clientServiceDeadlineDraftPreviewSchema.parse(rawInput);
+  const companyDelegate = (db as unknown as { company?: { findFirst?: (args: unknown) => Promise<unknown> } }).company;
+  if (companyDelegate?.findFirst) {
+    const companyRow = await companyDelegate.findFirst({
+      where: { id: input.companyId, tenantId: params.tenantId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!isRecord(companyRow)) throw new NotFoundError('Company not found');
+  }
+  const company = await loadCompanyRuleSource(db, params.tenantId, input.companyId);
+  const validation = await validateClientServiceDeadlineRules(
+    db,
+    { tenantId: params.tenantId, serviceVariantId: input.serviceVariantId, companyId: input.companyId },
+    input.deadlineRules,
+    company,
+  );
+  const today = options.today ?? currentDateInSingapore();
+  const horizonEnd = options.horizonEnd ?? addMonthsClamped(today, ROLLING_HORIZON_MONTHS);
+  const calendarDelegate = (db as unknown as { businessCalendar?: { findFirst?: (args: unknown) => Promise<unknown> } }).businessCalendar;
+  const calendarRecord = calendarDelegate?.findFirst
+    ? await calendarDelegate.findFirst({
+      where: { tenantId: params.tenantId, isActive: true, archivedAt: null },
+      include: { holidays: { where: { tenantId: params.tenantId, isActive: true } } },
+    })
+    : null;
+  const calendar = previewCalendar(calendarRecord);
+  const counts = { applicable: 0, disabled: 0, inapplicable: 0, missingInput: 0, warnings: 0 };
+  const warnings: ClientServiceDeadlineImpactWarning[] = [];
+  const projectedDeadlines: ClientServiceProjectedDeadlineDto[] = [];
+  const serviceInactive = input.scheduleSnapshot.status === 'ENDED'
+    || (input.scheduleSnapshot.endDate !== null && input.scheduleSnapshot.endDate < today);
+
+  for (const [index, configuration] of validation.normalized.entries()) {
+    if (serviceInactive) continue;
+    const association = validation.associations[index];
+    const version = association?.rule?.currentVersion;
+    const state = validation.states[index];
+    if (!association?.rule || !version || !state) continue;
+    if (!configuration.enabled) {
+      counts.disabled += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: 'NOT_APPLICABLE', reason: 'Rule is disabled for this client service' });
+      continue;
+    }
+    if (state.applicabilityState === 'MISSING_INPUT' || state.applicabilityState === 'NOT_APPLICABLE') {
+      counts[state.applicabilityState === 'MISSING_INPUT' ? 'missingInput' : 'inapplicable'] += 1;
+      counts.warnings += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: state.applicabilityState, reason: state.applicabilityReason });
+      continue;
+    }
+
+    const ruleCode = typeof association.rule.code === 'string' && association.rule.code.length > 0
+      ? association.rule.code
+      : configuration.ruleId;
+    const milestones = previewMilestones(version.milestoneTemplates);
+    let projection;
+    try {
+      projection = projectDeadlineRule({
+        ruleId: configuration.ruleId,
+        ruleCode,
+        ruleVersionId: version.id,
+        recurrence: version.recurrence as never,
+        applicability: version.applicability as never,
+        parameters: configuration.parameterValues as Record<string, unknown>,
+        scheduleEntries: configuration.scheduleEntries as never,
+        milestones,
+        company: normalizeCompanyRuleSource(company, today),
+        calendar,
+        today,
+        horizonEnd,
+      });
+    } catch (error) {
+      counts.warnings += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: error instanceof Error ? error.message : 'Unable to project rule deadlines' });
+      continue;
+    }
+
+    if (projection.applicability.state === 'MISSING_INPUT') {
+      counts.missingInput += 1;
+      counts.warnings += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: 'MISSING_INPUT', reason: projection.applicability.reason });
+      continue;
+    }
+    if (projection.applicability.state === 'NOT_APPLICABLE') {
+      counts.inapplicable += 1;
+      counts.warnings += 1;
+      warnings.push({ ruleId: configuration.ruleId, state: 'NOT_APPLICABLE', reason: projection.applicability.reason });
+      continue;
+    }
+    counts.applicable += 1;
+
+    const milestoneNameByKey = new Map(milestones.map((milestone) => [milestone.key, milestone.name]));
+    for (const warning of projection.warnings) {
+      if (warning.code === 'MISSING_INPUT') continue;
+      warnings.push({
+        ruleId: warning.ruleId ?? configuration.ruleId,
+        code: warning.code,
+        message: warning.message,
+        ...(warning.excludedCycleCount !== undefined ? { excludedCycleCount: warning.excludedCycleCount } : {}),
+        ...(warning.oldestRetainedYear !== undefined ? { oldestRetainedYear: warning.oldestRetainedYear } : {}),
+      });
+    }
+    for (const occurrence of projection.occurrences) {
+      projectedDeadlines.push({
+        ruleId: occurrence.ruleId,
+        ruleCode,
+        ruleName: association.rule.name ?? ruleCode,
+        materializationPolicy: projection.materializationPolicy,
+        periodKey: occurrence.periodKey,
+        milestoneKey: occurrence.milestoneKey,
+        milestoneName: milestoneNameByKey.get(occurrence.milestoneKey) ?? occurrence.milestoneKey,
+        scheduleEntryKey: occurrence.scheduleEntryKey,
+        deadlineType: occurrence.deadlineType,
+        calculatedDueDate: occurrence.calculatedDueDate,
+        explanation: occurrence.explanation,
+      });
+    }
+  }
+
+  return {
+    companyId: input.companyId,
+    serviceVariantId: input.serviceVariantId,
+    today,
+    horizonEnd,
+    counts,
+    warnings,
+    projectedDeadlines: projectedDeadlines.sort((left, right) => (
+      left.calculatedDueDate.localeCompare(right.calculatedDueDate)
+      || left.ruleId.localeCompare(right.ruleId)
+      || left.milestoneKey.localeCompare(right.milestoneKey)
+      || left.scheduleEntryKey.localeCompare(right.scheduleEntryKey)
+    )),
   };
 }
 
@@ -897,7 +1113,7 @@ export async function listCompanyServices(
 }
 
 export async function getClientService(id: string, params: ClientServiceAccessParams): Promise<ClientServiceDto> {
-  return toClientServiceDto(await requireService(id, params));
+  return toClientServiceDto(await requireService(id, params, prisma, clientServiceDetailInclude(params.tenantId)));
 }
 
 export async function updateClientService(id: string, input: UpdateClientServiceInput, params: ClientServiceAccessParams): Promise<ClientServiceDto> {

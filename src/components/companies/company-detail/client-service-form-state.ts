@@ -1,9 +1,15 @@
 import type { BillingFrequency, ClientServiceStatus, ServiceCadence } from '@/generated/prisma';
-import type { ClientServiceDeadlineRuleDto, ClientServiceDto, ManualClientServiceCatalogDeadlineRule, ManualClientServiceCatalogField, ManualClientServiceCatalogParameterDefinition, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
+import type { ClientServiceDeadlineRuleDto, ClientServiceDto, ClientServiceProjectedDeadlineDto, ManualClientServiceCatalogDeadlineRule, ManualClientServiceCatalogField, ManualClientServiceCatalogParameterDefinition, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
+
+export type DeadlinePreviewState =
+  | { state: 'IDLE'; items: ClientServiceProjectedDeadlineDto[]; warnings: string[] }
+  | { state: 'LOADING'; items: ClientServiceProjectedDeadlineDto[]; warnings: string[] }
+  | { state: 'SUCCESS'; items: ClientServiceProjectedDeadlineDto[]; warnings: string[]; fingerprint: string; payloadHash: string }
+  | { state: 'ERROR'; items: []; warnings: []; message: string };
 
 export interface OperationalFieldRow {
   uiId: string;
@@ -206,6 +212,105 @@ export function deadlineRuleInputs(values: OperationalServiceValues): ClientServ
     parameterProvenance: rule.parameterProvenance,
     scheduleEntries: rule.scheduleEntries,
   }));
+}
+
+export type ClientServiceDeadlineImpactPayload = {
+  expectedUpdatedAt: string;
+  deadlineRules: ClientServiceDeadlineRuleInput[];
+  scheduleSnapshot: {
+    status: ClientServiceStatus;
+    serviceCadence: ServiceCadence;
+    customCadenceLabel: string | null;
+    startDate: string;
+    endDate: string | null;
+    fieldValues: Record<string, string>;
+  };
+};
+
+/**
+ * Build the exact immutable request object used by both the editor preview
+ * and the save flow so a matching payload can reuse a preview fingerprint.
+ */
+export function deadlineImpactPayload(
+  values: OperationalServiceValues,
+  expectedUpdatedAt: string,
+): ClientServiceDeadlineImpactPayload {
+  return {
+    expectedUpdatedAt,
+    deadlineRules: deadlineRuleInputs(values),
+    scheduleSnapshot: {
+      status: values.status,
+      serviceCadence: values.serviceCadence,
+      customCadenceLabel: values.serviceCadence === 'CUSTOM' ? values.customCadenceLabel : null,
+      startDate: values.startDate,
+      endDate: values.endDate || null,
+      fieldValues: operationalFieldValues(values),
+    },
+  };
+}
+
+export function deadlineImpactPayloadHash(payload: ClientServiceDeadlineImpactPayload): string {
+  return JSON.stringify(payload);
+}
+
+export type ClientServiceDeadlineDraftPayload = {
+  companyId: string;
+  serviceVariantId: string;
+  deadlineRules: ClientServiceDeadlineRuleInput[];
+  scheduleSnapshot: {
+    status: ClientServiceStatus;
+    serviceCadence: ServiceCadence;
+    customCadenceLabel: string | null;
+    startDate: string;
+    endDate: string | null;
+    fieldValues: Record<string, string>;
+  };
+};
+
+/**
+ * Build the draft projection request used by the add-service flow so the
+ * dialog shows exactly what the deadline engine will materialize on save.
+ */
+export function deadlineDraftPreviewPayload(
+  companyId: string,
+  serviceVariantId: string,
+  values: OperationalServiceValues,
+): ClientServiceDeadlineDraftPayload {
+  return {
+    companyId,
+    serviceVariantId,
+    deadlineRules: deadlineRuleInputs(values),
+    scheduleSnapshot: {
+      status: values.status,
+      serviceCadence: values.serviceCadence,
+      customCadenceLabel: values.serviceCadence === 'CUSTOM' ? values.customCadenceLabel : null,
+      startDate: values.startDate,
+      endDate: values.endDate || null,
+      fieldValues: operationalFieldValues(values),
+    },
+  };
+}
+
+export function impactWarningsToStrings(warnings: Array<{
+  ruleId?: string;
+  state?: string;
+  reason?: string | null;
+  code?: string;
+  message?: string;
+  excludedCycleCount?: number;
+  oldestRetainedYear?: number;
+}>): string[] {
+  return warnings.map((warning) => {
+    if (typeof warning.code === 'string') {
+      if (warning.code === 'AUTHORITATIVE_BACKLOG_TRUNCATED') {
+        const excluded = warning.excludedCycleCount ?? 0;
+        const oldest = warning.oldestRetainedYear ?? 'unknown';
+        return `Annual deadline backlog was truncated: ${excluded} older cycle${excluded === 1 ? '' : 's'} excluded; oldest retained year is ${oldest}.`;
+      }
+      return warning.message ?? warning.code;
+    }
+    return warning.reason ?? warning.state ?? 'Deadline preview warning';
+  });
 }
 
 function catalogDeadlineRuleRow(rule: ManualClientServiceCatalogDeadlineRule): OperationalDeadlineRuleRow {

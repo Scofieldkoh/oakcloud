@@ -105,7 +105,7 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
         isOpen={isOpen && !scopePromptOpen && !resetPromptOpen}
         onClose={onClose}
         title="Edit billing tracking"
-        description={`${occurrence.company.displayLabel} · ${occurrence.service.name}`}
+        description={`${occurrence.company.name} · ${occurrence.service.name}`}
         size="lg"
       >
         <ModalBody>

@@ -15,12 +15,23 @@ import type {
 } from '@/types/document-generation';
 
 export function mapCompanyOption(raw: Record<string, unknown>): Company {
+  const addresses = Array.isArray(raw.addresses)
+    ? raw.addresses.filter(
+        (address): address is Record<string, unknown> => (
+          typeof address === 'object' && address !== null
+        ),
+      )
+    : [];
+  const registeredAddress = typeof raw.registeredAddress === 'string'
+    ? raw.registeredAddress
+    : addresses.find((address) => address.addressType === 'REGISTERED_OFFICE')?.fullAddress
+      ?? addresses[0]?.fullAddress;
   return {
     id: String(raw.id),
     name: String(raw.name ?? ''),
     uen: String(raw.uen ?? ''),
     status: String(raw.status ?? ''),
-    registeredAddress: raw.registeredAddress ? String(raw.registeredAddress) : null,
+    registeredAddress: registeredAddress ? String(registeredAddress) : null,
     incorporationDate: raw.incorporationDate ? String(raw.incorporationDate) : null,
   };
 }

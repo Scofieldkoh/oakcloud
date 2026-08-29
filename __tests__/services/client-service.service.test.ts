@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes } from '@/lib/errors';
-
 const prismaMock = vi.hoisted(() => ({
   clientService: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
   company: { findFirst: vi.fn() },
@@ -23,7 +22,9 @@ const auditMock = vi.hoisted(() => ({ createAuditLog: vi.fn(), computeChanges: v
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/audit', () => auditMock);
 
-import { archiveClientService, deleteClientServicePermanently, getClientService, listCompanyServices, previewClientServiceDeadlineConfiguration, updateClientService, validateClientServiceDeadlineRules } from '@/services/client-service';
+import { archiveClientService, deleteClientServicePermanently, getClientService, listCompanyServices, previewClientServiceDeadlineConfiguration, previewClientServiceDeadlineDraft, updateClientService, validateClientServiceDeadlineRules } from '@/services/client-service';
+import { reconcileClientServiceDeadlines } from '@/services/schedule-reconciliation';
+import type { DateOnly } from '@/services/service-schedule';
 
 const actor = { tenantId: 'tenant-1', userId: 'user-1' };
 const record = {
@@ -32,11 +33,63 @@ const record = {
   serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY',
   customCadenceLabel: null, startDate: new Date('2026-07-30'), endDate: null, fieldValues: {},
   billingDisposition: 'CONFIGURED', billingNotRequiredReason: null,
+  company: { id: 'company-1', name: 'Test Co', uen: '202400001A' },
   createdAt: new Date('2026-07-30T00:00:00Z'), updatedAt: new Date('2026-07-30T00:00:00Z'),
   deletedAt: null, deletedReason: null,
   feeLines: [{ id: 'fee-1', sourceAgreementFeeLineId: 'agreement-fee-1', description: 'Annual fee', amount: { toString: () => '500.00', toFixed: () => '500.00' }, currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: new Date('2026-07-30'), scheduleConfig: null, isActive: true, deletedAt: null, deletedReason: null, displayOrder: 0 }],
   agreement: { status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocument: { id: 'document-1', title: 'Service Agreement' } },
 };
+
+function annualReturnAssociation(ruleId: string, versionId: string, _accountsDueDate: string): {
+  ruleId: string;
+  rule: Record<string, unknown>;
+} {
+  return {
+    ruleId,
+    rule: {
+      id: ruleId,
+      code: 'SG_ANNUAL_RETURN',
+      name: 'Annual Return',
+      isActive: true,
+      archivedAt: null,
+      currentVersionId: versionId,
+      currentVersion: {
+        id: versionId,
+        state: 'PUBLISHED',
+        configHash: 'a'.repeat(64),
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+        parameterDefinitions: [],
+        milestoneTemplates: [{
+          milestoneKey: 'annual-return-due',
+          name: 'Annual Return due',
+          description: null,
+          type: 'STATUTORY',
+          generationMode: 'ONCE_PER_CYCLE',
+          dateExpression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+          businessDayAdjustment: 'NONE',
+          displayOrder: 0,
+          isActive: true,
+        }],
+      },
+    },
+  };
+}
+
+function annualImpactInput(ruleId: string) {
+  return {
+    expectedUpdatedAt: record.updatedAt.toISOString(),
+    deadlineRules: [{ ruleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] }],
+    scheduleSnapshot: {
+      status: 'ACTIVE' as const,
+      serviceCadence: 'ANNUALLY' as const,
+      customCadenceLabel: null,
+      startDate: '2026-07-30',
+      endDate: null,
+      fieldValues: {},
+    },
+  };
+}
 
 describe('client service service', () => {
   beforeEach(() => {
@@ -55,7 +108,90 @@ describe('client service service', () => {
     const result = await listCompanyServices('company-1', { page: 1, limit: 20 }, actor);
     expect(prismaMock.clientService.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ tenantId: actor.tenantId, companyId: 'company-1', deletedAt: null }) }));
     expect(result.services[0].feeLines[0].amount).toBe('500.00');
+    expect(result.services[0].company).toEqual({ name: 'Test Co', uen: '202400001A' });
     expect(JSON.stringify(result.services[0])).not.toContain('partialContent');
+  });
+
+  it('returns every tenant-scoped open deadline and billing occurrence for service details', async () => {
+    const detailRecord = {
+      ...record,
+      deadlineOccurrences: [
+        {
+          id: 'deadline-open-1',
+          tenantId: actor.tenantId,
+          cycle: { ruleId: 'rule-1', periodKey: '2027', rule: { code: 'SG_ANNUAL_RETURN', name: 'Annual Return' } },
+          ruleVersion: { milestoneTemplates: [{ milestoneKey: 'annual-return-due', name: 'Annual Return due' }] },
+          milestoneKey: 'annual-return-due',
+          scheduleEntryKey: 'annual-return',
+          deadlineType: 'STATUTORY',
+          calculatedDueDate: new Date('2027-07-31'),
+          operativeDueDate: new Date('2027-07-31'),
+          origin: 'RULE',
+          status: 'OPEN',
+          notes: null,
+        },
+        {
+          id: 'deadline-open-2',
+          tenantId: actor.tenantId,
+          cycle: { ruleId: 'rule-1', periodKey: '2028', rule: { code: 'SG_ANNUAL_RETURN', name: 'Annual Return' } },
+          ruleVersion: { milestoneTemplates: [{ milestoneKey: 'annual-return-due', name: 'Annual Return due' }] },
+          milestoneKey: 'annual-return-due',
+          scheduleEntryKey: 'annual-return',
+          deadlineType: 'STATUTORY',
+          calculatedDueDate: new Date('2028-07-31'),
+          operativeDueDate: new Date('2028-07-31'),
+          origin: 'RULE',
+          status: 'OPEN',
+          notes: null,
+        },
+      ],
+      billingOccurrences: [
+        {
+          id: 'billing-open-1',
+          tenantId: actor.tenantId,
+          feeLineId: 'fee-1',
+          feeLine: { description: 'Annual fee', billingFrequency: 'ANNUALLY', customFrequencyLabel: null },
+          billingPeriodKey: '2027',
+          scheduleEntryKey: 'annual-billing',
+          calculatedExpectedDate: new Date('2027-07-30'),
+          operativeExpectedDate: new Date('2027-07-30'),
+          baseAmount: { toFixed: () => '500.00' },
+          baseCurrency: 'SGD',
+          operativeAmount: { toFixed: () => '500.00' },
+          operativeCurrency: 'SGD',
+          status: 'OPEN',
+          notes: null,
+        },
+        {
+          id: 'billing-open-2',
+          tenantId: actor.tenantId,
+          feeLineId: 'fee-1',
+          feeLine: { description: 'Annual fee', billingFrequency: 'ANNUALLY', customFrequencyLabel: null },
+          billingPeriodKey: '2028',
+          scheduleEntryKey: 'annual-billing',
+          calculatedExpectedDate: new Date('2028-07-30'),
+          operativeExpectedDate: new Date('2028-07-30'),
+          baseAmount: { toFixed: () => '500.00' },
+          baseCurrency: 'SGD',
+          operativeAmount: { toFixed: () => '500.00' },
+          operativeCurrency: 'SGD',
+          status: 'OPEN',
+          notes: null,
+        },
+      ],
+    };
+    prismaMock.clientService.findFirst.mockResolvedValue(detailRecord);
+
+    const result = await getClientService(record.id, actor);
+
+    expect(prismaMock.clientService.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      include: expect.objectContaining({
+        deadlineOccurrences: expect.objectContaining({ where: { tenantId: actor.tenantId, status: 'OPEN' } }),
+        billingOccurrences: expect.objectContaining({ where: { tenantId: actor.tenantId, status: 'OPEN' } }),
+      }),
+    }));
+    expect(result.openDeadlineOccurrences?.map((item) => item.id)).toEqual(['deadline-open-1', 'deadline-open-2']);
+    expect(result.openBillingOccurrences?.map((item) => item.id)).toEqual(['billing-open-1', 'billing-open-2']);
   });
 
   it('updates operational fees without mutating agreement fees', async () => {
@@ -991,6 +1127,235 @@ describe('client service service', () => {
       impactFingerprint: '0'.repeat(64),
     }, actor)).rejects.toMatchObject({ code: ErrorCodes.IMPACT_CHANGED, statusCode: 409 });
     expect(prismaMock.clientService.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('returns canonical projected deadlines even when the diff action is NO_CHANGE', async () => {
+    const ruleId = '13131313-1313-4131-8131-131313131313';
+    const versionId = '14141414-1414-4141-8141-141414141414';
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([annualReturnAssociation(ruleId, versionId, '2027-07-31')]);
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1', tenantId: actor.tenantId,
+      accountsDueDate: new Date('2027-07-31T00:00:00.000Z'),
+      financialYearEndDay: 31, financialYearEndMonth: 12,
+    });
+    prismaMock.serviceCycle.findMany.mockResolvedValue([{
+      id: 'cycle-2027',
+      ruleId,
+      periodKey: '2027',
+      occurrences: [{
+        id: 'occurrence-2027',
+        cycleId: 'cycle-2027',
+        milestoneKey: 'annual-return-due',
+        scheduleEntryKey: '',
+        deadlineType: 'STATUTORY',
+        calculatedDueDate: new Date('2027-07-31T00:00:00.000Z'),
+        operativeDueDate: new Date('2027-07-31T00:00:00.000Z'),
+        dateOverridden: false,
+        status: 'OPEN',
+        origin: 'RULE',
+        ruleVersionId: versionId,
+      }],
+    }]);
+
+    const impact = await previewClientServiceDeadlineConfiguration(record.id, annualImpactInput(ruleId), actor, undefined, {
+      today: '2026-08-27',
+      horizonEnd: '2027-08-27',
+    });
+
+    expect(impact.counts.noChange).toBe(1);
+    expect(impact.counts.created).toBe(0);
+    expect(impact.projectedDeadlines).toEqual([
+      expect.objectContaining({
+        ruleId,
+        ruleCode: 'SG_ANNUAL_RETURN',
+        materializationPolicy: 'AUTHORITATIVE_ANNUAL_BACKLOG',
+        periodKey: '2027',
+        milestoneKey: 'annual-return-due',
+        calculatedDueDate: '2027-07-31',
+      }),
+    ]);
+  });
+
+  it('keeps the preview fingerprint stable for display-name-only changes and reactive to projected date changes', async () => {
+    const ruleId = '15151515-1515-4151-8151-151515151515';
+    const versionId = '16161616-1616-4161-8161-161616161616';
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([annualReturnAssociation(ruleId, versionId, '2027-07-31')]);
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1', tenantId: actor.tenantId,
+      accountsDueDate: new Date('2027-07-31T00:00:00.000Z'),
+      financialYearEndDay: 31, financialYearEndMonth: 12,
+    });
+    prismaMock.serviceCycle.findMany.mockResolvedValue([]);
+    const horizon = { today: '2026-08-27' as DateOnly, horizonEnd: '2027-08-27' as DateOnly };
+
+    const renamedAssociation = annualReturnAssociation(ruleId, versionId, '2027-07-31');
+    renamedAssociation.rule.name = 'Renamed Annual Return label';
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([renamedAssociation]);
+    const first = await previewClientServiceDeadlineConfiguration(record.id, annualImpactInput(ruleId), actor, undefined, horizon);
+
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1', tenantId: actor.tenantId,
+      accountsDueDate: new Date('2027-06-30T00:00:00.000Z'),
+      financialYearEndDay: 31, financialYearEndMonth: 12,
+    });
+    const shifted = await previewClientServiceDeadlineConfiguration(record.id, annualImpactInput(ruleId), actor, undefined, horizon);
+
+    expect(first.previewFingerprint).toBe(first.previewFingerprint);
+    expect(shifted.previewFingerprint).not.toBe(first.previewFingerprint);
+  });
+
+  it('projects canonical draft deadlines for the add-service flow without writes', async () => {
+    const ruleId = '19191919-1919-4191-8191-191919191919';
+    const versionId = '20202020-2020-4202-8202-202020202020';
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([annualReturnAssociation(ruleId, versionId, '2024-07-31')]);
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1',
+      tenantId: actor.tenantId,
+      accountsDueDate: new Date('2024-07-31T00:00:00.000Z'),
+      financialYearEndDay: 31,
+      financialYearEndMonth: 12,
+    });
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(null);
+
+    const preview = await previewClientServiceDeadlineDraft({
+      companyId: '99999999-9999-4999-8999-999999999999',
+      serviceVariantId: '88888888-8888-4888-8888-888888888888',
+      deadlineRules: [{ ruleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] }],
+      scheduleSnapshot: annualImpactInput(ruleId).scheduleSnapshot,
+    }, actor, undefined, { today: '2026-08-27', horizonEnd: '2027-08-27' });
+
+    expect(preview.projectedDeadlines.map((deadline) => [deadline.milestoneKey, deadline.calculatedDueDate])).toEqual([
+      ['annual-return-due', '2024-07-31'],
+      ['annual-return-due', '2025-07-31'],
+      ['annual-return-due', '2026-07-31'],
+      ['annual-return-due', '2027-07-31'],
+    ]);
+    expect(preview.counts).toMatchObject({ applicable: 1, disabled: 0, inapplicable: 0, missingInput: 0, warnings: 0 });
+    expect(preview.warnings).toEqual([]);
+    expect(prismaMock.clientService.update).not.toHaveBeenCalled();
+  });
+
+  it('projects a future-source draft with the aligned annual anniversary only', async () => {
+    const ruleId = '21212121-2121-4212-8212-212121212121';
+    const versionId = '22222222-2222-4222-8222-222222222222';
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([annualReturnAssociation(ruleId, versionId, '2027-07-31')]);
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1',
+      tenantId: actor.tenantId,
+      accountsDueDate: new Date('2027-07-31T00:00:00.000Z'),
+      financialYearEndDay: 31,
+      financialYearEndMonth: 12,
+    });
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(null);
+
+    const preview = await previewClientServiceDeadlineDraft({
+      companyId: '99999999-9999-4999-8999-999999999999',
+      serviceVariantId: '88888888-8888-4888-8888-888888888888',
+      deadlineRules: [{ ruleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] }],
+      scheduleSnapshot: annualImpactInput(ruleId).scheduleSnapshot,
+    }, actor, undefined, { today: '2026-08-27', horizonEnd: '2027-08-27' });
+
+    expect(preview.projectedDeadlines.map((deadline) => deadline.calculatedDueDate)).toEqual(['2027-07-31']);
+  });
+
+  it('produces preview and apply tuples that are exactly equal for the same immutable inputs', async () => {
+    const ruleId = '17171717-1717-4171-8171-171717171717';
+    const versionId = '18181818-1818-4181-8181-181818181818';
+    const today: DateOnly = '2026-08-27';
+    const horizonEnd: DateOnly = '2027-08-27';
+    const association = annualReturnAssociation(ruleId, versionId, '2024-07-31');
+
+    prismaMock.clientService.findFirst.mockResolvedValue({ ...record, deadlineRules: [] });
+    prismaMock.serviceVariantDeadlineRule.findMany.mockResolvedValue([association]);
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1', tenantId: actor.tenantId,
+      accountsDueDate: new Date('2024-07-31T00:00:00.000Z'),
+      financialYearEndDay: 31, financialYearEndMonth: 12,
+    });
+    prismaMock.serviceCycle.findMany.mockResolvedValue([]);
+    prismaMock.businessCalendar.findFirst.mockResolvedValue(null);
+
+    const impact = await previewClientServiceDeadlineConfiguration(
+      record.id, annualImpactInput(ruleId), actor, undefined, { today, horizonEnd },
+    );
+
+    let currentRuleId: string | null = null;
+    let currentPeriodKey: string | null = null;
+    const appliedTuples: Array<{ ruleId: string; periodKey: string; milestoneKey: string; scheduleEntryKey: string; dueDate: string }> = [];
+    const dbMock = {
+      clientService: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: record.id,
+          tenantId: actor.tenantId,
+          companyId: record.companyId,
+          deletedAt: null,
+          status: 'ACTIVE',
+          startDate: record.startDate,
+          endDate: null,
+          company: {
+            id: 'company-1',
+            tenantId: actor.tenantId,
+            accountsDueDate: new Date('2024-07-31T00:00:00.000Z'),
+            financialYearEndDay: 31,
+            financialYearEndMonth: 12,
+          },
+          deadlineRules: [{
+            id: 'client-rule-1',
+            enabled: true,
+            parameterValues: {},
+            scheduleEntries: [],
+            rule: association.rule,
+          }],
+        }),
+      },
+      serviceCycle: {
+        findMany: vi.fn().mockResolvedValue([]),
+        upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => {
+          currentRuleId = String(create.ruleId);
+          currentPeriodKey = String(create.periodKey);
+          return { id: 'cycle-new', ...create, occurrences: [] };
+        }),
+        update: vi.fn(),
+      },
+      businessCalendar: { findFirst: vi.fn().mockResolvedValue(null) },
+      clientServiceDeadlineRule: { update: vi.fn().mockResolvedValue({}) },
+      deadlineOccurrence: {
+        upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => {
+          appliedTuples.push({
+            ruleId: currentRuleId ?? '',
+            periodKey: currentPeriodKey ?? '',
+            milestoneKey: String(create.milestoneKey),
+            scheduleEntryKey: String(create.scheduleEntryKey ?? ''),
+            dueDate: (create.calculatedDueDate as Date).toISOString().slice(0, 10),
+          });
+          return { id: 'occ-new', ...create };
+        }),
+        create: vi.fn(),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+
+    const result = await reconcileClientServiceDeadlines({
+      tenantId: actor.tenantId,
+      clientServiceId: record.id,
+      today,
+      horizonEnd,
+      writeMode: 'APPLY',
+      reconciliationRequestId: 'req-parity',
+    }, dbMock as never);
+
+    expect(result.counts.created).toBe(4);
+    const comparable = (tuples: Array<{ ruleId: string; periodKey: string; milestoneKey: string; scheduleEntryKey: string; dueDate: string }>) =>
+      tuples.map((tuple) => `${tuple.ruleId}|${tuple.periodKey}|${tuple.milestoneKey}|${tuple.scheduleEntryKey}|${tuple.dueDate}`).sort();
+    expect(comparable(impact.projectedDeadlines.map((deadline) => ({
+      ruleId: deadline.ruleId,
+      periodKey: deadline.periodKey,
+      milestoneKey: deadline.milestoneKey,
+      scheduleEntryKey: deadline.scheduleEntryKey,
+      dueDate: deadline.calculatedDueDate,
+    })))).toEqual(comparable(appliedTuples));
   });
 
   it('adds accessible company IDs to the SQL service predicate before mapping', async () => {

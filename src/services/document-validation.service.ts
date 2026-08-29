@@ -60,6 +60,7 @@ export interface ValidateForGenerationInput {
   companyId?: string;
   contactIds?: string[];
   selectedDirectorId?: string;
+  selectedDirectorIds?: string[];
   selectedShareholderId?: string;
   selectedContactId?: string;
   customData?: Record<string, unknown>;
@@ -652,7 +653,10 @@ export async function validateForGeneration(
     input.selectedContactId && !snapshotRepresentative,
   );
   const hasPartySelection = Boolean(
-    input.selectedDirectorId || input.selectedShareholderId || selectedContactRequiresResolution,
+    input.selectedDirectorIds !== undefined
+      || input.selectedDirectorId
+      || input.selectedShareholderId
+      || selectedContactRequiresResolution,
   );
   if (hasPartySelection && !companyId) {
     membershipErrors.push({
@@ -666,6 +670,9 @@ export async function validateForGeneration(
         companyId,
         tenantId,
         selectedDirectorId: input.selectedDirectorId,
+        ...(input.selectedDirectorIds !== undefined
+          ? { selectedDirectorIds: input.selectedDirectorIds }
+          : {}),
         selectedShareholderId: input.selectedShareholderId,
         selectedContactId: selectedContactRequiresResolution
           ? input.selectedContactId

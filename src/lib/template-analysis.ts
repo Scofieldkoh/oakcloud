@@ -367,6 +367,39 @@ export function getRequiredPartySelections(
   };
 }
 
+export interface TemplatePartyCollections {
+  directors: boolean;
+  shareholders: boolean;
+}
+
+/**
+ * Identifies collection loops that can be narrowed during generation.
+ * Singular selected-party placeholders are intentionally excluded because
+ * they represent one party and remain radio selections.
+ */
+export function getTemplatePartyCollections(
+  content: string,
+  partials: TemplatePartialLike[] = [],
+): TemplatePartyCollections {
+  const byName = new Map(partials.map((partial) => [partial.name, partial]));
+  const names = collectDependencyNames(content, byName);
+  const combined = [
+    content,
+    ...names.map((name) => byName.get(name)?.content ?? ''),
+  ].join('\n');
+  const collections = new Set<string>();
+  const eachRegex = /\{\{#each\s+(directors|shareholders)\s*\}\}/g;
+  let match: RegExpExecArray | null;
+  while ((match = eachRegex.exec(combined)) !== null) {
+    collections.add(match[1]);
+  }
+
+  return {
+    directors: collections.has('directors'),
+    shareholders: collections.has('shareholders'),
+  };
+}
+
 export function getRequiredLegacyContactSelection(
   content: string,
   partials: TemplatePartialLike[] = [],

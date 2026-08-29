@@ -71,6 +71,12 @@ export function normalizeServiceRosterSearch(
     companyQuery: input.companyQuery?.trim() || undefined,
     familyQuery: input.familyQuery?.trim() || undefined,
     serviceQuery: input.serviceQuery?.trim() || undefined,
+    statusQuery: input.statusQuery?.trim() || undefined,
+    cadenceQuery: input.cadenceQuery?.trim() || undefined,
+    nextDeadlineQuery: input.nextDeadlineQuery?.trim() || undefined,
+    startEndQuery: input.startEndQuery?.trim() || undefined,
+    warningQuery: input.warningQuery?.trim() || undefined,
+    billingQuery: input.billingQuery?.trim() || undefined,
     companyId: input.companyId,
     familyIds: unique(input.familyIds),
     variantId: input.variantId,
@@ -107,6 +113,12 @@ export function serviceRosterSearchParams(search: ServiceRosterSearchInput = {})
   if (normalized.sortBy) params.set('sortBy', normalized.sortBy);
   if (normalized.sortOrder) params.set('sortOrder', normalized.sortOrder);
   if (normalized.serviceQuery) params.set('serviceQuery', normalized.serviceQuery);
+  if (normalized.statusQuery) params.set('statusQuery', normalized.statusQuery);
+  if (normalized.cadenceQuery) params.set('cadenceQuery', normalized.cadenceQuery);
+  if (normalized.nextDeadlineQuery) params.set('nextDeadlineQuery', normalized.nextDeadlineQuery);
+  if (normalized.startEndQuery) params.set('startEndQuery', normalized.startEndQuery);
+  if (normalized.warningQuery) params.set('warningQuery', normalized.warningQuery);
+  if (normalized.billingQuery) params.set('billingQuery', normalized.billingQuery);
   if (normalized.statuses.length > 0) params.set('statuses', normalized.statuses.join(','));
   if (normalized.variantId) params.set('variantId', normalized.variantId);
   params.sort();

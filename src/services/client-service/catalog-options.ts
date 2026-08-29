@@ -35,6 +35,7 @@ export async function getManualClientServiceCatalogOptions(
     select: {
       id: true,
       name: true,
+      uen: true,
       accountsDueDate: true,
       financialYearEndDay: true,
       financialYearEndMonth: true,
@@ -168,6 +169,7 @@ export async function getManualClientServiceCatalogOptions(
     companyContext: {
       id: company.id,
       name: company.name,
+      uen: company.uen,
       accountsDueDate: company.accountsDueDate ? company.accountsDueDate.toISOString().slice(0, 10) : null,
       financialYearEndDay: company.financialYearEndDay,
       financialYearEndMonth: company.financialYearEndMonth,

@@ -23,6 +23,7 @@ export const batchItemConfigurationSchema = z.object({
   title: z.string().max(300),
   contactIds: z.array(uuid).max(100),
   selectedDirectorId: nullableUuid,
+  selectedDirectorIds: z.array(uuid).max(100).optional(),
   selectedShareholderId: nullableUuid,
   selectedContactId: nullableUuid,
   itemValues: fieldValues,

@@ -59,6 +59,24 @@ describe('FormBackgroundUploader', () => {
     expect(onUrlChange).toHaveBeenCalledWith(null);
   });
 
+  it('renders a selected image as a decorative bounded preview', () => {
+    const imageUrl = '/api/storage/tenant-1%2Fforms%2Fform-1%2Fbranding%2Fbackground.png';
+    const { container } = render(
+      <FormBackgroundUploader
+        formId="form-1"
+        value={imageUrl}
+        opacity={40}
+        onUrlChange={onUrlChange}
+        onOpacityChange={onOpacityChange}
+      />
+    );
+
+    const preview = container.querySelector('[aria-hidden="true"]') as HTMLElement | null;
+    expect(preview).not.toBeNull();
+    expect(preview?.style.backgroundImage).toBe(`url("${imageUrl}")`);
+    expect(preview).toHaveClass('bg-cover', 'bg-center');
+  });
+
   it('reports opacity slider changes', () => {
     render(
       <FormBackgroundUploader

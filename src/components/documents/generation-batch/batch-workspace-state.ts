@@ -21,6 +21,10 @@ import type {
   DocumentTemplateSummary,
 } from '@/types/document-generation';
 import { masterFieldId } from '@/lib/document-generation-master-fields';
+import {
+  formatDocumentGenerationTitle,
+  isAutoDocumentGenerationTitle,
+} from '@/lib/document-generation-title';
 
 export type BatchStage = 'documents' | 'shared-setup' | 'configure' | 'review-generate';
 
@@ -84,7 +88,7 @@ export type DocumentGenerationBatchAction =
   | { type: 'template/remove'; itemId: string }
   | { type: 'template/reorder'; itemId: string; direction: -1 | 1 }
   | { type: 'template/move'; itemId: string; toIndex: number }
-  | { type: 'shared/company'; companyId: string | null }
+  | { type: 'shared/company'; companyId: string | null; companyName: string | null }
   | { type: 'shared/masterValue'; fieldId: string; value: string }
   | { type: 'item/patch'; itemId: string; patch: Partial<BatchItemConfiguration> }
   | { type: 'items/patch-many'; itemIds: string[]; patch: Partial<BatchItemConfiguration> }
@@ -115,18 +119,19 @@ export const STAGE_LABELS: Record<BatchStage, string> = {
 };
 
 export function defaultItemConfiguration(
-  template: Pick<DocumentTemplateSummary, 'name'>,
+  template: Pick<DocumentTemplateSummary, 'name'> | string,
 ): BatchItemConfiguration {
+  const templateName = typeof template === 'string' ? template : template.name;
   return {
     version: 1,
-    title: `Untitled - ${template.name}`,
+    title: templateName,
     contactIds: [],
     selectedDirectorId: null,
     selectedShareholderId: null,
     selectedContactId: null,
     itemValues: {},
     masterOverrides: {},
-    useLetterhead: true,
+    useLetterhead: false,
     serviceAgreement: null,
   };
 }
@@ -153,7 +158,7 @@ export function itemFromTemplate(template: DocumentTemplateSummary): EditableBat
 export function createInitialBatchWorkspaceState(
   batchOrItems: EditableDocumentGenerationBatch | DocumentTemplateSummary[],
 ): BatchWorkspaceState {
-  const batch: EditableDocumentGenerationBatch = Array.isArray(batchOrItems)
+  const initialBatch: EditableDocumentGenerationBatch = Array.isArray(batchOrItems)
     ? {
         primaryCompanyId: null,
         currentStage: 0,
@@ -163,6 +168,7 @@ export function createInitialBatchWorkspaceState(
         items: batchOrItems.slice(0, 20).map(itemFromTemplate),
       }
     : batchOrItems;
+  const batch = applyCompanyTitleDefaults(initialBatch, initialBatch.company?.name ?? null);
   const capabilities = deriveCapabilities(batch);
   return {
     batch,
@@ -278,6 +284,30 @@ function replaceBatchItems(
   };
 }
 
+function applyCompanyTitleDefaults(
+  batch: EditableDocumentGenerationBatch,
+  companyName: string | null,
+): EditableDocumentGenerationBatch {
+  if (!companyName?.trim()) return batch;
+  let changed = false;
+  const items = batch.items.map((item) => {
+    if (
+      item.status === 'GENERATED'
+      || !isAutoDocumentGenerationTitle(item.configuration.title, item.templateName)
+    ) {
+      return item;
+    }
+    const title = formatDocumentGenerationTitle(item.templateName, companyName);
+    if (title === item.configuration.title) return item;
+    changed = true;
+    return {
+      ...item,
+      configuration: { ...item.configuration, title },
+    };
+  });
+  return changed ? replaceBatchItems(batch, items) : batch;
+}
+
 function itemConsumesMasterField(
   item: EditableBatchItem,
   fieldId: string,
@@ -354,7 +384,25 @@ function reduceBatchState(
     }
     case 'shared/company': {
       if (!state.capabilities.canEditSharedSetup) return state;
-      const batch = { ...state.batch, primaryCompanyId: action.companyId };
+      const nextBatch = { ...state.batch, primaryCompanyId: action.companyId };
+      const items = action.companyName
+        ? nextBatch.items.map((item) => {
+            if (
+              item.status === 'GENERATED'
+              || !isAutoDocumentGenerationTitle(item.configuration.title, item.templateName)
+            ) {
+              return item;
+            }
+            return invalidateItem({
+              ...item,
+              configuration: {
+                ...item.configuration,
+                title: formatDocumentGenerationTitle(item.templateName, action.companyName!),
+              },
+            });
+          })
+        : nextBatch.items;
+      const batch = replaceBatchItems(nextBatch, items);
       return {
         ...state,
         batch,

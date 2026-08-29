@@ -1,8 +1,10 @@
 import { Prisma } from '@/generated/prisma';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
+import type { DateOnly } from '@/services/service-schedule';
 import type { ClientServiceDto } from './types';
 
 export const clientServiceInclude = {
+  company: { select: { name: true, uen: true } },
   feeLines: { orderBy: [{ displayOrder: 'asc' as const }, { createdAt: 'asc' as const }] },
   deadlineRules: {
     orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }],
@@ -40,6 +42,41 @@ export const clientServiceInclude = {
   },
 } satisfies Prisma.ClientServiceInclude;
 
+export function clientServiceDetailInclude(tenantId: string) {
+  return {
+    ...clientServiceInclude,
+    deadlineOccurrences: {
+      where: { tenantId, status: 'OPEN' as const },
+      orderBy: [{ operativeDueDate: 'asc' as const }, { id: 'asc' as const }],
+      include: {
+        cycle: {
+          select: {
+            ruleId: true,
+            periodKey: true,
+            rule: { select: { code: true, name: true } },
+          },
+        },
+        ruleVersion: {
+          select: {
+            milestoneTemplates: {
+              select: { milestoneKey: true, name: true },
+            },
+          },
+        },
+      },
+    },
+    billingOccurrences: {
+      where: { tenantId, status: 'OPEN' as const },
+      orderBy: [{ operativeExpectedDate: 'asc' as const }, { id: 'asc' as const }],
+      include: {
+        feeLine: {
+          select: { description: true, billingFrequency: true, customFrequencyLabel: true },
+        },
+      },
+    },
+  } satisfies Prisma.ClientServiceInclude;
+}
+
 export const clientServiceInternalInclude = {
   // Internal archival/lineage flows intentionally retain archived fee lines;
   // public DTO mapping below filters them from normal service responses.
@@ -50,13 +87,58 @@ export type ClientServiceRecord = Prisma.ClientServiceGetPayload<{
   include: typeof clientServiceInclude;
 }>;
 
+export type ClientServiceDetailRecord = Prisma.ClientServiceGetPayload<{
+  include: ReturnType<typeof clientServiceDetailInclude>;
+}>;
+
 export const dateOnly = (value: Date | null): string | null =>
   value ? value.toISOString().slice(0, 10) : null;
 
-export function toClientServiceDto(service: ClientServiceRecord): ClientServiceDto {
+export function toClientServiceDto(service: ClientServiceRecord | ClientServiceDetailRecord): ClientServiceDto {
+  const openDeadlineOccurrences = 'deadlineOccurrences' in service
+    ? service.deadlineOccurrences.map((occurrence) => {
+      const milestone = occurrence.ruleVersion.milestoneTemplates.find((template) => template.milestoneKey === occurrence.milestoneKey);
+      return {
+        id: occurrence.id,
+        ruleId: occurrence.cycle.ruleId,
+        ruleCode: occurrence.cycle.rule.code,
+        ruleName: occurrence.cycle.rule.name,
+        periodKey: occurrence.cycle.periodKey,
+        milestoneKey: occurrence.milestoneKey,
+        milestoneName: milestone?.name ?? occurrence.milestoneKey,
+        scheduleEntryKey: occurrence.scheduleEntryKey,
+        deadlineType: occurrence.deadlineType,
+        calculatedDueDate: dateOnly(occurrence.calculatedDueDate)! as DateOnly,
+        operativeDueDate: dateOnly(occurrence.operativeDueDate)! as DateOnly,
+        origin: occurrence.origin,
+        notes: occurrence.notes,
+      };
+    })
+    : undefined;
+  const openBillingOccurrences = 'billingOccurrences' in service
+    ? service.billingOccurrences.map((occurrence) => ({
+      id: occurrence.id,
+      feeLineId: occurrence.feeLineId,
+      description: occurrence.feeLine.description,
+      amount: occurrence.operativeAmount.toFixed(2),
+      currency: occurrence.operativeCurrency,
+      billingFrequency: occurrence.feeLine.billingFrequency,
+      customFrequencyLabel: occurrence.feeLine.customFrequencyLabel,
+      billingPeriodKey: occurrence.billingPeriodKey,
+      scheduleEntryKey: occurrence.scheduleEntryKey,
+      calculatedExpectedDate: dateOnly(occurrence.calculatedExpectedDate)! as DateOnly,
+      operativeExpectedDate: dateOnly(occurrence.operativeExpectedDate)! as DateOnly,
+      status: 'OPEN' as const,
+      notes: occurrence.notes,
+    }))
+    : undefined;
   return {
     id: service.id,
     companyId: service.companyId,
+    company: {
+      name: service.company?.name ?? '',
+      uen: service.company?.uen ?? null,
+    },
     source: service.source,
     agreementId: service.agreementId,
     agreementItemId: service.agreementItemId,
@@ -84,6 +166,8 @@ export function toClientServiceDto(service: ClientServiceRecord): ClientServiceD
         scheduleConfig: (fee.scheduleConfig ?? null) as BillingScheduleConfigV1 | null,
         displayOrder: fee.displayOrder,
       })),
+    ...(openDeadlineOccurrences ? { openDeadlineOccurrences } : {}),
+    ...(openBillingOccurrences ? { openBillingOccurrences } : {}),
     deadlineRules: (service.deadlineRules ?? []).map((clientRule) => ({
       id: clientRule.id,
       ruleId: clientRule.ruleId,

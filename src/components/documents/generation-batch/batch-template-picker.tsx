@@ -5,14 +5,17 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
   FileText,
   GripVertical,
   Inbox,
+  MoreVertical,
   Search,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
 import type {
   DocumentTemplateSummary,
 } from '@/types/document-generation';
@@ -30,10 +33,6 @@ export interface BatchTemplatePickerProps {
   onMove?: (itemId: string, toIndex: number) => void;
   disabled?: boolean;
   maxDocuments?: number;
-}
-
-function templateKindLabel(kind: 'STANDARD' | 'SERVICE_AGREEMENT'): string {
-  return kind === 'SERVICE_AGREEMENT' ? 'Service Agreement' : 'Standard';
 }
 
 function hasDraftData(item: EditableBatchItem): boolean {
@@ -120,8 +119,16 @@ export function BatchTemplatePicker({
     onMove(key, target);
   };
 
+  const openTemplate = (templateId: string) => {
+    window.open(
+      `/template-partials/editor?id=${encodeURIComponent(templateId)}&tab=templates`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       {/* Catalogue */}
       <section aria-label="Template catalogue" className="min-w-0 space-y-3">
         <div className="space-y-3">
@@ -176,9 +183,9 @@ export function BatchTemplatePicker({
           )}
         </div>
 
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <ul className="grid gap-2">
           {visible.length === 0 && (
-            <li className="rounded-lg border border-dashed border-border-primary p-6 text-center text-sm text-text-muted sm:col-span-2 lg:col-span-1 xl:col-span-2">
+            <li className="rounded-lg border border-dashed border-border-primary p-6 text-center text-sm text-text-muted">
               No templates match your search.
             </li>
           )}
@@ -187,61 +194,72 @@ export function BatchTemplatePicker({
             const blocked = !isSelected && atLimit;
             return (
               <li key={template.id}>
-                <button
-                  type="button"
-                  onClick={() => toggle(template)}
-                  disabled={disabled || blocked}
-                  aria-pressed={isSelected}
-                  title={blocked ? `Maximum of ${maxDocuments} documents reached` : undefined}
+                <div
                   className={cn(
-                    'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
+                    'flex w-full items-center gap-2 rounded-lg border p-3 transition-colors',
                     isSelected
                       ? 'border-oak-primary bg-oak-primary/5'
                       : 'border-border-primary bg-background-primary hover:border-oak-primary/40 hover:bg-background-tertiary',
-                    (disabled || blocked) && 'cursor-not-allowed opacity-50 hover:border-border-primary hover:bg-background-primary',
                   )}
                 >
-                  <span
-                    aria-hidden="true"
+                  <button
+                    type="button"
+                    onClick={() => toggle(template)}
+                    disabled={disabled || blocked}
+                    aria-pressed={isSelected}
+                    title={blocked ? `Maximum of ${maxDocuments} documents reached` : undefined}
                     className={cn(
-                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                      isSelected
-                        ? 'bg-oak-primary text-white'
-                        : 'bg-oak-primary/10 text-oak-primary',
+                      'flex min-w-0 flex-1 items-center gap-3 text-left',
+                      (disabled || blocked) && 'cursor-not-allowed opacity-50',
                     )}
                   >
-                    {isSelected
-                      ? <Check className="h-4 w-4" />
-                      : <FileText className="h-4 w-4" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-text-primary">
-                      {template.name}
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                        isSelected
+                          ? 'bg-oak-primary text-white'
+                          : 'bg-oak-primary/10 text-oak-primary',
+                      )}
+                    >
+                      {isSelected
+                        ? <Check className="h-4 w-4" />
+                        : <FileText className="h-4 w-4" />}
                     </span>
-                    {template.description && (
-                      <span className="mt-0.5 line-clamp-2 block text-xs text-text-muted">
-                        {template.description}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-text-primary">
+                        {template.name}
                       </span>
-                    )}
-                    <span className="mt-1 block text-xs text-text-muted">
-                      {template.compositionType === 'SERVICE_AGREEMENT'
-                        ? 'Service Agreement'
-                        : template.category}
-                      {' · '}
-                      {template.placeholders.length} field
-                      {template.placeholders.length === 1 ? '' : 's'}
-                      {' · v'}{template.version}
                     </span>
-                  </span>
-                  <span
-                    className={cn(
-                      'shrink-0 text-xs font-medium',
-                      isSelected ? 'text-oak-primary' : 'text-text-muted',
-                    )}
-                  >
-                    {isSelected ? 'Added' : 'Add'}
-                  </span>
-                </button>
+                    <span
+                      className={cn(
+                        'shrink-0 text-xs font-medium',
+                        isSelected ? 'text-oak-primary' : 'text-text-muted',
+                      )}
+                    >
+                      {isSelected ? 'Added' : 'Add'}
+                    </span>
+                  </button>
+
+                  <Dropdown className="shrink-0">
+                    <DropdownTrigger asChild aria-label={`Actions for ${template.name}`}>
+                      <button
+                        type="button"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+                      >
+                        <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </DropdownTrigger>
+                    <DropdownMenu>
+                      <DropdownItem
+                        icon={<ExternalLink className="h-4 w-4" />}
+                        onClick={() => openTemplate(template.id)}
+                      >
+                        Open template
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
               </li>
             );
           })}
@@ -328,9 +346,6 @@ export function BatchTemplatePicker({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-text-primary">
                       {item.templateName}
-                    </span>
-                    <span className="text-xs text-text-muted">
-                      {templateKindLabel(item.templateKind)} · v{item.templateVersion}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center">

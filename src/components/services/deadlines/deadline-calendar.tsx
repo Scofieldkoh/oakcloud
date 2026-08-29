@@ -177,7 +177,7 @@ export function DeadlineCalendar({
               onSelect={handleSelect}
               numberOfMonths={visibleMonthCount}
               weekStartsOn={1}
-              showOutsideDays
+              showOutsideDays={false}
               fixedWeeks
               timeZone="Asia/Singapore"
               noonSafe

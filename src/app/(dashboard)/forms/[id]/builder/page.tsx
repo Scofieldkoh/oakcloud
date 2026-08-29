@@ -502,16 +502,17 @@ export default function FormBuilderPage() {
     const settingsObj = (form.settings && typeof form.settings === 'object' && !Array.isArray(form.settings))
       ? form.settings as Record<string, unknown>
       : {};
-    setHideLogo(settingsObj.hideLogo === true);
-    setHideFooter(settingsObj.hideFooter === true);
-    setBackgroundImageUrl(normalizeFormBackgroundUrl(
+    const normalizedBackgroundImageUrl = normalizeFormBackgroundUrl(
       typeof settingsObj.backgroundImageUrl === 'string' ? settingsObj.backgroundImageUrl : null
-    ));
-    setBackgroundImageOpacity(
+    );
+    const normalizedBackgroundImageOpacity =
       typeof settingsObj.backgroundImageOpacity === 'number' && Number.isFinite(settingsObj.backgroundImageOpacity)
         ? Math.min(100, Math.max(0, Math.round(settingsObj.backgroundImageOpacity)))
-        : 40
-    );
+        : 40;
+    setHideLogo(settingsObj.hideLogo === true);
+    setHideFooter(settingsObj.hideFooter === true);
+    setBackgroundImageUrl(normalizedBackgroundImageUrl);
+    setBackgroundImageOpacity(normalizedBackgroundImageOpacity);
     setFields(mappedFields);
     setSelectedFieldId(null);
 
@@ -534,8 +535,8 @@ export default function FormBuilderPage() {
       i18nTranslations: i18nSettings.translations,
       hideLogo: settingsObj.hideLogo === true,
       hideFooter: settingsObj.hideFooter === true,
-      backgroundImageUrl,
-      backgroundImageOpacity,
+      backgroundImageUrl: normalizedBackgroundImageUrl,
+      backgroundImageOpacity: normalizedBackgroundImageOpacity,
       fields: mappedFields,
     });
   }, [form]);

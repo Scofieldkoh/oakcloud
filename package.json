@@ -32,7 +32,8 @@
     "docker:logs": "docker-compose logs -f",
     "docker:db:up": "docker compose -f oakcloud_db.yml up -d",
     "docker:db:down": "docker compose -f oakcloud_db.yml down",
-    "docker:db:logs": "docker compose -f oakcloud_db.yml logs -f"
+    "docker:db:logs": "docker compose -f oakcloud_db.yml logs -f",
+    "repair:deadlines": "tsx scripts/remediate-deadline-occurrences.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",

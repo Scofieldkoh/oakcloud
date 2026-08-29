@@ -319,11 +319,6 @@ export function TaskList({
     { value: '', label: 'All' },
     ...pipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name })),
   ], [pipelines]);
-  const tableWidth = TASK_COLUMN_IDS.reduce(
-    (total, columnId) => total + (columnWidths[columnId] ?? defaultColumnWidths[columnId]),
-    0,
-  );
-
   useEffect(() => {
     const preferenceValue = JSON.parse(preferenceValueKey) as unknown;
     if (!preferenceValue || typeof preferenceValue !== 'object' || Array.isArray(preferenceValue)) {
@@ -501,27 +496,18 @@ export function TaskList({
 
       <div
         data-testid="task-table-scroll"
-        className="table-container relative hidden overflow-x-auto md:block"
+        className="table-container hidden overflow-x-auto md:block"
       >
-        <div
-          aria-hidden="true"
-          data-testid="task-column-header-band"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[94px] bg-background-tertiary"
-        />
-        <div
-          aria-hidden="true"
-          data-testid="task-filter-row-band"
-          className="pointer-events-none absolute inset-x-0 top-0 h-14 border-b border-border-primary bg-background-secondary/50"
-        />
         <table
-          className="table relative z-[1] table-fixed"
-          style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}
+          className="table w-full min-w-max"
         >
           <colgroup>
             {TASK_COLUMN_IDS.map((columnId) => (
               <col
                 key={columnId}
-                style={{ width: `${columnWidths[columnId] ?? defaultColumnWidths[columnId]}px` }}
+                style={columnId === 'actions'
+                  ? undefined
+                  : { width: `${columnWidths[columnId] ?? defaultColumnWidths[columnId]}px` }}
               />
             ))}
           </colgroup>
@@ -605,15 +591,17 @@ export function TaskList({
               {TASK_COLUMN_IDS.map((columnId) => (
                 <th key={columnId} className="relative">
                   {columnLabels[columnId]}
-                  <span
-                    role="separator"
-                    aria-label={`Resize ${columnLabels[columnId]} column`}
-                    aria-orientation="vertical"
-                    tabIndex={0}
-                    className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
-                    onPointerDown={(event) => startResize(event, columnId)}
-                    onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
-                  />
+                  {columnId !== 'actions' && (
+                    <span
+                      role="separator"
+                      aria-label={`Resize ${columnLabels[columnId]} column`}
+                      aria-orientation="vertical"
+                      tabIndex={0}
+                      className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
+                      onPointerDown={(event) => startResize(event, columnId)}
+                      onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
+                    />
+                  )}
                 </th>
               ))}
             </tr>

@@ -10,6 +10,7 @@ import type { TaskPipeline } from '@/hooks/use-task-pipelines';
 import { getStageActionAdapter } from '@/services/tasks/action-registry';
 import type {
   TaskListItem,
+  TaskResourcesResponse,
   TaskStageDetail,
   TaskStageSummary,
 } from '@/services/tasks/types';
@@ -561,15 +562,19 @@ describe('TaskList', () => {
     );
 
     const table = screen.getByRole('table');
-    expect(table).not.toHaveClass('w-full');
-    expect(table).toHaveStyle({ width: '1422px', minWidth: '1422px' });
+    expect(table).toHaveClass('w-full', 'min-w-max');
+    expect(table).not.toHaveClass('table-fixed');
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
 
     const handle = screen.getByRole('separator', { name: 'Resize Company column' });
     fireEvent.pointerDown(handle, { pointerId: 1, clientX: 100 });
     fireEvent.pointerMove(window, { pointerId: 1, clientX: 160 });
     fireEvent.pointerUp(window, { pointerId: 1, clientX: 160 });
 
-    expect(table).toHaveStyle({ width: '1482px', minWidth: '1482px' });
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '240px' });
     expect(preferenceMocks.save).toHaveBeenCalledWith({
       key: 'tasks:list:columns:v1',
       value: expect.objectContaining({ company: 240 }),
@@ -654,9 +659,79 @@ describe('TaskFormModal', () => {
       pipelineVersionId: 'version-1',
     });
   });
+
+  it('shows the pipeline name without its published version number', () => {
+    render(
+      <TaskFormModal
+        isOpen
+        mode="create"
+        pipelines={[pipeline]}
+        companies={[task.company!]}
+        owners={[task.owner!]}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const pipelineSelect = screen.getByRole('combobox', { name: 'Pipeline' });
+    expect(within(pipelineSelect).getByRole('option', { name: 'Annual review' })).toBeInTheDocument();
+    expect(within(pipelineSelect).queryByRole('option', { name: 'Annual review · v2' })).not.toBeInTheDocument();
+  });
 });
 
 describe('TaskStageModal', () => {
+  it('renders the task resources side panel beside the stage content', () => {
+    const resources: TaskResourcesResponse = {
+      task: {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        dueDate: task.dueDate,
+        company: {
+          id: task.company!.id,
+          name: task.company!.name,
+          uen: '202600001A',
+          href: `/companies/${task.company!.id}`,
+        },
+        owner: { id: task.owner!.id, name: 'Sam Chen', email: task.owner!.email },
+        pipelineName: task.pipelineVersion.pipeline.name,
+      },
+      stages: [0, 1, 2].map((position) => ({
+        id: `resource-stage-${position}`,
+        name: `Resource stage ${position + 1}`,
+        position,
+        actionType: 'MANUAL' as const,
+        status: 'COMPLETED' as const,
+        description: null,
+        notes: null,
+        startedAt: null,
+        completedAt: null,
+        assignee: null,
+        checklist: [],
+        blockers: [],
+        resources: [],
+      })),
+      hasPendingResources: false,
+    };
+
+    render(
+      <TaskStageModal
+        isOpen
+        stage={stageDetail}
+        resources={resources}
+        taskDueDate={task.dueDate}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('pipeline-stage-modal-main')).toBeVisible();
+    expect(screen.getByTestId('task-resources-panel')).toBeVisible();
+    expect(screen.getAllByTestId(/task-resource-stage-/)).toHaveLength(3);
+    expect(screen.getByTestId('pipeline-stage-modal-footer')).toBeVisible();
+  });
+
   it('uses the same pipeline modal shell for document, e-signing, and manual stages', () => {
     const stageVariants: Array<{
       stage: TaskStageDetail;
@@ -704,7 +779,7 @@ describe('TaskStageModal', () => {
       );
 
       const dialog = screen.getByRole('dialog');
-      expect(dialog.firstElementChild).toHaveClass('lg:max-w-6xl', 'border-l-4');
+      expect(dialog.firstElementChild).toHaveClass('sm:max-w-[90vw]', 'border-l-4');
       expect(dialog).toHaveAccessibleDescription(stage.description!);
       expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument();
       expect(screen.getByTestId('pipeline-stage-modal-body')).toHaveClass('p-5', 'sm:p-6');
@@ -758,7 +833,7 @@ describe('TaskStageModal', () => {
     );
 
     const dialogPanel = screen.getByRole('dialog').firstElementChild;
-    expect(dialogPanel).toHaveClass('lg:max-w-6xl');
+    expect(dialogPanel).toHaveClass('sm:max-w-[90vw]');
     expect(dialogPanel).toHaveClass('border-l-4', 'border-l-emerald-500');
     expect(dialogPanel).not.toHaveClass('border-t-4');
 

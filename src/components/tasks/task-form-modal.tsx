@@ -150,7 +150,7 @@ export function TaskFormModal({
               >
                 <option value="">Select a pipeline</option>
                 {publishedPipelines.map(({ pipeline, version }) => (
-                  <option key={version.id} value={version.id}>{pipeline.name} · v{version.version}</option>
+                  <option key={version.id} value={version.id}>{pipeline.name}</option>
                 ))}
               </select>
               {errors.pipeline ? <p className="mt-2 text-xs text-red-400">{errors.pipeline}</p> : null}

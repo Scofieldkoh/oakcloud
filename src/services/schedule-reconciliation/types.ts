@@ -1,6 +1,16 @@
 import type { Prisma } from '@/generated/prisma';
-import type { DateOnly } from '@/services/service-schedule';
+import type {
+  ApplicabilityDefinition,
+  ApplicabilityResult,
+  BusinessCalendarSnapshot,
+  CompanyRuleSource,
+  DateOnly,
+  MilestoneDefinition,
+  RuleRecurrenceDefinition,
+  ScheduleEntry,
+} from '@/services/service-schedule';
 import type { BillingCoverageResult, BillingReconciliationResult } from '@/services/billing';
+import type { RollingPeriod } from './planner';
 
 export type ScheduleReconciliationScopeType =
   | 'TENANT'
@@ -70,6 +80,8 @@ export type DeadlineReconciliationWarning = {
   ruleVersionId?: string;
   missingFields?: string[];
   permanent?: boolean;
+  excludedCycleCount?: number;
+  oldestRetainedYear?: number;
 };
 
 export type DeadlineReconciliationResult = {
@@ -128,3 +140,95 @@ export type ClassifyDeadlineChangeResult =
   | { action: 'RECALCULATE' }
   | { action: 'NO_CHANGE' }
   | { action: 'PRESERVE'; reason: PreserveReason };
+
+export type DeadlineMaterializationPolicy =
+  | 'ROLLING_HORIZON'
+  | 'AUTHORITATIVE_ANNUAL_BACKLOG';
+
+export type ProjectedDeadlineIdentity = {
+  ruleId: string;
+  ruleVersionId: string;
+  periodKey: string;
+  milestoneKey: string;
+  scheduleEntryKey: string;
+};
+
+export type ProjectedDeadline = ProjectedDeadlineIdentity & {
+  deadlineType: 'STATUTORY' | 'CLIENT' | 'INTERNAL';
+  calculatedDueDate: DateOnly;
+  explanation: string[];
+};
+
+export type DeadlineRuleProjectionInput = {
+  ruleId: string;
+  ruleCode: string;
+  ruleVersionId: string;
+  recurrence: RuleRecurrenceDefinition;
+  applicability: ApplicabilityDefinition;
+  parameters: Record<string, unknown>;
+  scheduleEntries: ScheduleEntry[];
+  milestones: MilestoneDefinition[];
+  company: CompanyRuleSource;
+  calendar: BusinessCalendarSnapshot;
+  today: DateOnly;
+  horizonEnd: DateOnly;
+};
+
+export type DeadlineRulePeriodEvaluation = {
+  periodKey: string;
+  sourceSnapshot: Record<string, unknown>;
+  evaluationHash: string;
+};
+
+export type DeadlineRuleProjection = {
+  materializationPolicy: DeadlineMaterializationPolicy;
+  periods: RollingPeriod[];
+  occurrences: ProjectedDeadline[];
+  applicability: ApplicabilityResult;
+  warnings: DeadlineReconciliationWarning[];
+  periodEvaluations: DeadlineRulePeriodEvaluation[];
+};
+
+export type DeadlineOccurrenceRemediationInput = {
+  tenantId: string;
+  clientServiceIds: string[];
+  today: DateOnly;
+  horizonEnd: DateOnly;
+  reason: string;
+};
+
+export type DeadlineOccurrenceRemediationAction =
+  | { action: 'RECALCULATE'; occurrenceId: string; oldDate: DateOnly; newDate: DateOnly }
+  | { action: 'CANCEL'; occurrenceId: string; oldDate: DateOnly; reason: string }
+  | { action: 'CREATE'; identity: ProjectedDeadlineIdentity; newDate: DateOnly }
+  | { action: 'PRESERVE'; occurrenceId: string; reason: PreserveReason | 'NOT_SELECTED' };
+
+export type DeadlineOccurrenceRemediationCounts = Record<
+  DeadlineOccurrenceRemediationAction['action'],
+  number
+>;
+
+export type DeadlineOccurrenceRemediationPreview = {
+  tenantId: string;
+  clientServiceIds: string[];
+  today: DateOnly;
+  horizonEnd: DateOnly;
+  fingerprint: string;
+  counts: DeadlineOccurrenceRemediationCounts;
+  actions: DeadlineOccurrenceRemediationAction[];
+};
+
+export type DeadlineOccurrenceRemediationApplyInput = DeadlineOccurrenceRemediationInput & {
+  expectedFingerprint: string;
+  actorId: string;
+};
+
+export type DeadlineOccurrenceRemediationApplyResult = {
+  tenantId: string;
+  fingerprint: string;
+  results: Array<{
+    clientServiceId: string;
+    fingerprint: string;
+    counts: DeadlineOccurrenceRemediationCounts;
+  }>;
+};

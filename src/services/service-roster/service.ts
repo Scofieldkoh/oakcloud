@@ -126,6 +126,54 @@ function visibleCompanyIds(
   return scope.companyIds;
 }
 
+const ROSTER_STATUS_VALUES = ['ACTIVE', 'PAUSED', 'ENDED'] as const;
+const ROSTER_CADENCE_VALUES = ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY', 'ONE_TIME', 'AD_HOC', 'CUSTOM'] as const;
+const ROSTER_BILLING_VALUES = ['CONFIGURED', 'NOT_REQUIRED', 'UNREVIEWED'] as const;
+type RosterBillingValue = (typeof ROSTER_BILLING_VALUES)[number];
+
+function matchingEnumValues<T extends string>(query: string, values: readonly T[]): T[] {
+  const rawNeedle = query.trim().toLowerCase();
+  const needle = rawNeedle.replace(/[\s-]+/g, '_');
+  return values.filter((value) => value.toLowerCase().includes(needle) || value.replaceAll('_', ' ').toLowerCase().includes(rawNeedle));
+}
+
+function dateFilterValue(value: string | undefined): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  try {
+    return parseDateOnly(value as DateOnly);
+  } catch {
+    return null;
+  }
+}
+
+function includesAny(value: string, needles: readonly string[]): boolean {
+  const normalized = value.trim().toLowerCase();
+  return needles.some((needle) => normalized.includes(needle));
+}
+
+function normalizedSearchText(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_-]+/g, ' ');
+}
+
+function billingQueryIntent(query: string): {
+  dispositions: RosterBillingValue[];
+  hasCoverageIssue: boolean;
+  hasOpenOccurrence: boolean;
+  hasBilledOccurrence: boolean;
+} {
+  const dispositions = new Set<RosterBillingValue>(matchingEnumValues(query, ROSTER_BILLING_VALUES));
+  const normalized = normalizedSearchText(query);
+  if (normalized.includes('configured') || normalized.includes('covered')) dispositions.add('CONFIGURED');
+  if (normalized.includes('not required') || normalized.includes('no billing required')) dispositions.add('NOT_REQUIRED');
+  if (normalized.includes('unreviewed') || normalized.includes('missing disposition')) dispositions.add('UNREVIEWED');
+  return {
+    dispositions: [...dispositions],
+    hasCoverageIssue: includesAny(query, ['issue', 'warning', 'review', 'missing']),
+    hasOpenOccurrence: includesAny(query, ['open', 'upcoming', 'due', 'overdue']),
+    hasBilledOccurrence: includesAny(query, ['billed']),
+  };
+}
+
 function queryWhere(
   input: ServiceRosterSearch,
   tenantId: string,
@@ -187,6 +235,74 @@ function queryWhere(
         },
       ],
     });
+  }
+
+  if (input.statusQuery) {
+    andFilters.push({ status: { in: matchingEnumValues(input.statusQuery, ROSTER_STATUS_VALUES) } });
+  }
+
+  if (input.cadenceQuery) {
+    const cadenceValues = matchingEnumValues(input.cadenceQuery, ROSTER_CADENCE_VALUES);
+    andFilters.push({
+      OR: [
+        ...(cadenceValues.length > 0 ? [{ serviceCadence: { in: cadenceValues } }] : []),
+        { customCadenceLabel: { contains: input.cadenceQuery, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  if (input.nextDeadlineQuery) {
+    const date = dateFilterValue(input.nextDeadlineQuery);
+    andFilters.push(date
+      ? {
+        AND: [
+          { deadlineOccurrences: { some: { tenantId, status: 'OPEN', operativeDueDate: { equals: date } } } },
+          { NOT: { deadlineOccurrences: { some: { tenantId, status: 'OPEN', operativeDueDate: { lt: date } } } } },
+        ],
+      }
+      : { status: { in: [] } });
+  }
+
+  if (input.startEndQuery) {
+    const date = dateFilterValue(input.startEndQuery);
+    andFilters.push(date
+      ? { OR: [{ startDate: { equals: date } }, { endDate: { equals: date } }] }
+      : { status: { in: [] } });
+  }
+
+  if (input.warningQuery) {
+    const warningRule = { tenantId, enabled: true, applicabilityState: 'MISSING_INPUT' as const };
+    if (includesAny(input.warningQuery, ['no', 'none', 'clear', 'false'])) {
+      andFilters.push({ NOT: { deadlineRules: { some: warningRule } } });
+    } else if (includesAny(input.warningQuery, ['yes', 'warning', 'review', 'missing', 'true'])) {
+      andFilters.push({ deadlineRules: { some: warningRule } });
+    } else {
+      andFilters.push({ deadlineRules: { some: {
+        tenantId,
+        enabled: true,
+        OR: [
+          { applicabilityState: 'MISSING_INPUT' },
+          { applicabilityReason: { contains: input.warningQuery, mode: 'insensitive' } },
+        ],
+      } } });
+    }
+  }
+
+  if (input.billingQuery) {
+    const billingIntent = billingQueryIntent(input.billingQuery);
+    const billingFilters: Prisma.ClientServiceWhereInput[] = [];
+    if (billingIntent.dispositions.length > 0) billingFilters.push({ billingDisposition: { in: billingIntent.dispositions } });
+    if (billingIntent.hasCoverageIssue) {
+      billingFilters.push({ billingCoverageIssues: { some: { tenantId, resolvedAt: null } } });
+    }
+    if (billingIntent.hasOpenOccurrence) {
+      billingFilters.push({ billingOccurrences: { some: { tenantId, status: 'OPEN' } } });
+    }
+    if (billingIntent.hasBilledOccurrence) {
+      billingFilters.push({ billingOccurrences: { some: { tenantId, status: 'BILLED' } } });
+    }
+    if (billingFilters.length === 0) billingFilters.push({ billingNotRequiredReason: { contains: input.billingQuery, mode: 'insensitive' } });
+    andFilters.push({ OR: billingFilters });
   }
 
   const where: Prisma.ClientServiceWhereInput = {
@@ -319,6 +435,103 @@ function nextDeadlinePageQuery(
         OR sv."code" ILIKE '%' || ${input.serviceQuery} || '%'
       )`
     : Prisma.empty;
+  const statusQueryFilter = input.statusQuery
+    ? Prisma.sql`AND cs."status"::text ILIKE '%' || ${input.statusQuery} || '%'`
+    : Prisma.empty;
+  const cadenceSearch = input.cadenceQuery ? normalizedSearchText(input.cadenceQuery) : '';
+  const cadenceQueryFilter = input.cadenceQuery
+    ? Prisma.sql`AND (
+        REPLACE(LOWER(cs."service_cadence"::text), '_', ' ') ILIKE '%' || ${cadenceSearch} || '%'
+        OR REPLACE(REPLACE(LOWER(cs."custom_cadence_label"), '_', ' '), '-', ' ') ILIKE '%' || ${cadenceSearch} || '%'
+      )`
+    : Prisma.empty;
+  const nextDeadlineDate = dateFilterValue(input.nextDeadlineQuery);
+  const nextDeadlineFilter = input.nextDeadlineQuery
+    ? nextDeadlineDate
+      ? Prisma.sql`AND (
+          SELECT MIN(d2."operative_due_date")
+          FROM "deadline_occurrences" AS d2
+          WHERE d2."client_service_id" = cs."id"
+            AND d2."tenant_id" = ${tenantId}
+            AND d2."company_id" = cs."company_id"
+            AND d2."status" = 'OPEN'
+        ) = ${nextDeadlineDate}`
+      : Prisma.sql`AND 1 = 0`
+    : Prisma.empty;
+  const startEndDate = dateFilterValue(input.startEndQuery);
+  const startEndFilter = input.startEndQuery
+    ? startEndDate
+      ? Prisma.sql`AND (cs."start_date" = ${startEndDate} OR cs."end_date" = ${startEndDate})`
+      : Prisma.sql`AND 1 = 0`
+    : Prisma.empty;
+  const warningQueryFilter = input.warningQuery
+    ? includesAny(input.warningQuery, ['no', 'none', 'clear', 'false'])
+      ? Prisma.sql`AND NOT EXISTS (
+          SELECT 1 FROM "client_service_deadline_rules" AS dr
+          WHERE dr."client_service_id" = cs."id"
+            AND dr."tenant_id" = ${tenantId}
+            AND dr."enabled" = TRUE
+            AND dr."applicability_state"::text = 'MISSING_INPUT'
+        )`
+      : includesAny(input.warningQuery, ['yes', 'warning', 'review', 'missing', 'true'])
+        ? Prisma.sql`AND EXISTS (
+            SELECT 1 FROM "client_service_deadline_rules" AS dr
+            WHERE dr."client_service_id" = cs."id"
+              AND dr."tenant_id" = ${tenantId}
+              AND dr."enabled" = TRUE
+              AND dr."applicability_state"::text = 'MISSING_INPUT'
+          )`
+        : Prisma.sql`AND EXISTS (
+            SELECT 1 FROM "client_service_deadline_rules" AS dr
+            WHERE dr."client_service_id" = cs."id"
+              AND dr."tenant_id" = ${tenantId}
+              AND dr."enabled" = TRUE
+              AND (
+                dr."applicability_state"::text = 'MISSING_INPUT'
+                OR dr."applicability_reason" ILIKE '%' || ${input.warningQuery} || '%'
+              )
+          )`
+    : Prisma.empty;
+  const billingIntent = input.billingQuery ? billingQueryIntent(input.billingQuery) : null;
+  const billingDispositionFilter = billingIntent && billingIntent.dispositions.length > 0
+    ? Prisma.sql`cs."billing_disposition"::text IN (${Prisma.join(billingIntent.dispositions)})`
+    : Prisma.sql`FALSE`;
+  const billingCoverageIssueFilter = billingIntent?.hasCoverageIssue
+    ? Prisma.sql`EXISTS (
+        SELECT 1 FROM "billing_coverage_issues" AS bci
+        WHERE bci."client_service_id" = cs."id"
+          AND bci."tenant_id" = ${tenantId}
+          AND bci."resolved_at" IS NULL
+      )`
+    : Prisma.sql`FALSE`;
+  const billingOpenOccurrenceFilter = billingIntent?.hasOpenOccurrence
+    ? Prisma.sql`EXISTS (
+        SELECT 1 FROM "billing_occurrences" AS bo
+        WHERE bo."client_service_id" = cs."id"
+          AND bo."tenant_id" = ${tenantId}
+          AND bo."status" = 'OPEN'
+      )`
+    : Prisma.sql`FALSE`;
+  const billingBilledOccurrenceFilter = billingIntent?.hasBilledOccurrence
+    ? Prisma.sql`EXISTS (
+        SELECT 1 FROM "billing_occurrences" AS bo
+        WHERE bo."client_service_id" = cs."id"
+          AND bo."tenant_id" = ${tenantId}
+          AND bo."status" = 'BILLED'
+      )`
+    : Prisma.sql`FALSE`;
+  const billingReasonFilter = billingIntent && billingIntent.dispositions.length === 0 && !billingIntent.hasCoverageIssue && !billingIntent.hasOpenOccurrence && !billingIntent.hasBilledOccurrence
+    ? Prisma.sql`cs."billing_not_required_reason" ILIKE '%' || ${input.billingQuery} || '%'`
+    : Prisma.sql`FALSE`;
+  const billingQueryFilter = input.billingQuery
+    ? Prisma.sql`AND (
+        ${billingDispositionFilter}
+        OR ${billingCoverageIssueFilter}
+        OR ${billingOpenOccurrenceFilter}
+        OR ${billingBilledOccurrenceFilter}
+        OR ${billingReasonFilter}
+      )`
+    : Prisma.empty;
   const applicabilityFilter = input.applicability
     ? Prisma.sql`AND EXISTS (
         SELECT 1
@@ -367,6 +580,12 @@ function nextDeadlinePageQuery(
       ${companyQueryFilter}
       ${familyQueryFilter}
       ${serviceQueryFilter}
+      ${statusQueryFilter}
+      ${cadenceQueryFilter}
+      ${nextDeadlineFilter}
+      ${startEndFilter}
+      ${warningQueryFilter}
+      ${billingQueryFilter}
       ${applicabilityFilter}
     GROUP BY cs."id"
     ORDER BY

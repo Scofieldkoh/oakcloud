@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -7,15 +7,17 @@ const mocks = vi.hoisted(() => ({
   useServiceCatalog: vi.fn(),
   useServiceRosterFamilies: vi.fn(),
   deadlineWorkspace: vi.fn(),
+  billingWorkspace: vi.fn(),
 }));
 
 const navigation = vi.hoisted(() => ({
+  pathname: '/services',
   searchParams: new URLSearchParams(),
   replace: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/services',
+  usePathname: () => navigation.pathname,
   useRouter: () => ({ replace: navigation.replace }),
   useSearchParams: () => navigation.searchParams,
 }));
@@ -37,9 +39,21 @@ vi.mock('@/hooks/use-all-company-options', () => ({
 vi.mock('@/components/companies/company-detail/client-service-creator', () => ({ ClientServiceCreator: () => null }));
 vi.mock('@/components/companies/company-detail/client-service-editor', () => ({ ClientServiceEditor: () => null }));
 vi.mock('@/components/services/deadlines/deadline-workspace', () => ({
+  DeadlineViewToggle: () => (
+    <div role="group" aria-label="Deadline view">
+      <button type="button">Table view</button>
+      <button type="button">Calendar view</button>
+    </div>
+  ),
   DeadlineWorkspace: (props: { deadlineWritesEnabled?: boolean }) => {
     mocks.deadlineWorkspace(props);
     return <div aria-label="Deadline workspace stub" />;
+  },
+}));
+vi.mock('@/components/services/billing/billing-workspace', () => ({
+  BillingWorkspace: () => {
+    mocks.billingWorkspace();
+    return <div aria-label="Billing workspace stub" />;
   },
 }));
 
@@ -47,9 +61,11 @@ import { ServicesWorkspace } from '@/components/services/services-workspace';
 
 describe('ServicesWorkspace', () => {
   beforeEach(() => {
+    navigation.pathname = '/services';
     navigation.searchParams = new URLSearchParams();
     navigation.replace.mockReset();
     mocks.deadlineWorkspace.mockReset();
+    mocks.billingWorkspace.mockReset();
   });
 
   it('renders a compact unavailable state and does not query the roster when disabled', () => {
@@ -65,7 +81,7 @@ describe('ServicesWorkspace', () => {
     expect(mocks.useServiceRoster).not.toHaveBeenCalled();
   });
 
-  it('renders Services roster for an enabled workspace', () => {
+  it('renders the Services page without the former subheader or tab strip', () => {
     mocks.useServicesWorkspaceSettings.mockReturnValue({
       data: { workspaceEnabled: true, deadlineWritesEnabled: false },
       isLoading: false,
@@ -77,13 +93,19 @@ describe('ServicesWorkspace', () => {
 
     render(<ServicesWorkspace />);
 
-    expect(screen.getByRole('heading', { name: 'Services' })).toBeVisible();
-    expect(screen.getByRole('tab', { name: 'Services' })).toHaveAttribute('aria-selected', 'true');
+    const heading = screen.getByRole('heading', { name: 'Services' });
+    const header = heading.closest('header');
+    expect(header).not.toBeNull();
+    expect(header).toHaveClass('flex', 'sm:flex-row', 'sm:justify-between');
+    expect(within(header!).getByRole('button', { name: 'Add service' })).toBeVisible();
+    expect(within(screen.getByRole('region', { name: 'Services' })).queryByRole('button', { name: 'Add service' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tablist', { name: 'Services workspace sections' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Services roster' })).not.toBeInTheDocument();
     expect(mocks.useServiceRoster).toHaveBeenCalled();
   });
 
-  it('preserves unrelated query state when switching to Deadlines and passes the write flag', () => {
-    navigation.searchParams = new URLSearchParams('tab=services&deadlineView=CALENDAR&from=2026-08-01&to=2026-09-30&foo=keep');
+  it('renders the Deadlines page from its standalone route and passes the write flag', () => {
+    navigation.pathname = '/deadlines';
     mocks.useServicesWorkspaceSettings.mockReturnValue({
       data: { workspaceEnabled: true, deadlineWritesEnabled: false },
       isLoading: false,
@@ -93,19 +115,30 @@ describe('ServicesWorkspace', () => {
     mocks.useServiceRosterFamilies.mockReturnValue({ data: [], isLoading: false, error: null });
     mocks.useServiceCatalog.mockReturnValue({ data: { families: [], total: 0 }, isLoading: false });
 
-    const view = render(<ServicesWorkspace />);
-    screen.getByRole('tab', { name: 'Deadlines' }).click();
+    render(<ServicesWorkspace />);
 
-    expect(navigation.replace).toHaveBeenCalledWith(
-      expect.stringContaining('tab=deadlines'),
-      { scroll: false },
-    );
-    const destination = navigation.replace.mock.calls.at(-1)?.[0] as string;
-    expect(destination).toContain('deadlineView=CALENDAR');
-    expect(destination).toContain('from=2026-08-01');
-    expect(destination).toContain('foo=keep');
-    navigation.searchParams = new URLSearchParams(destination.split('?')[1]);
-    view.rerender(<ServicesWorkspace />);
+    const heading = screen.getByRole('heading', { name: 'Deadlines' });
+    const header = heading.closest('header');
+    expect(header).not.toBeNull();
+    expect(within(header!).getByRole('group', { name: 'Deadline view' })).toBeVisible();
+    expect(screen.queryByRole('tablist', { name: 'Services workspace sections' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Deadlines' })).toBeVisible();
     expect(mocks.deadlineWorkspace).toHaveBeenCalledWith({ deadlineWritesEnabled: false, canEdit: true });
+  });
+
+  it('renders the Billing page from its standalone route without the former subheader', () => {
+    navigation.pathname = '/billing';
+    mocks.useServicesWorkspaceSettings.mockReturnValue({
+      data: { workspaceEnabled: true, deadlineWritesEnabled: false },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ServicesWorkspace />);
+
+    expect(screen.getByRole('heading', { name: 'Billing' })).toBeVisible();
+    expect(screen.queryByRole('tablist', { name: 'Services workspace sections' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Manual billing tracking' })).not.toBeInTheDocument();
+    expect(mocks.billingWorkspace).toHaveBeenCalled();
   });
 });

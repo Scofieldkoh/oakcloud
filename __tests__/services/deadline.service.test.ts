@@ -139,6 +139,13 @@ describe('deadline service', () => {
     expect(args.where).not.toHaveProperty('companyId');
   });
 
+  it('omits the due-date predicate for an unbounded table request', async () => {
+    await listDeadlines({ ...search, from: undefined, to: undefined }, { ...actor, companyIds: undefined });
+
+    const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
+    expect(args.where).not.toHaveProperty('operativeDueDate');
+  });
+
   it('intersects requested company IDs with restricted access in SQL', async () => {
     const accessibleCompanyIds = [
       '44444444-4444-4444-8444-444444444444',

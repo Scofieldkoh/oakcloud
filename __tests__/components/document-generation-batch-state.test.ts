@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createInitialBatchWorkspaceState,
+  defaultItemConfiguration,
   documentGenerationBatchReducer,
   selectCanEnterConfigure,
   selectCanRequestPreflight,
@@ -90,6 +91,43 @@ function batch(items: EditableBatchItem[], overrides: Partial<EditableDocumentGe
 }
 
 describe('document generation batch workspace state', () => {
+  it('defaults new items to no letterhead and applies the company-aware title', () => {
+    expect(defaultItemConfiguration('Engagement Letter')).toMatchObject({
+      title: 'Engagement Letter',
+      useLetterhead: false,
+    });
+
+    const state = batch([
+      item('a', {
+        configuration: { title: 'Untitled - Template a' },
+      }),
+    ], {
+      company: { id: 'company-1', name: 'Acme Pte. Ltd.', uen: '202600001A' },
+    });
+
+    expect(state.batch.items[0].configuration.title).toMatch(
+      /^Template a_Acme Pte\. Ltd\._\d{1,2} [A-Z][a-z]{2} \d{4}$/,
+    );
+  });
+
+  it('updates only automatic titles when the shared company changes', () => {
+    const state = batch([
+      item('a', { configuration: { title: 'Untitled - Template a' } }),
+      item('b', { configuration: { title: 'Custom document title' } }),
+    ], { company: null });
+
+    const next = documentGenerationBatchReducer(state, {
+      type: 'shared/company',
+      companyId: 'company-2',
+      companyName: 'New Company Pte. Ltd.',
+    });
+
+    expect(next.batch.items[0].configuration.title).toMatch(
+      /^Template a_New Company Pte\. Ltd\._\d{1,2} [A-Z][a-z]{2} \d{4}$/,
+    );
+    expect(next.batch.items[1].configuration.title).toBe('Custom document title');
+  });
+
   it('invalidates only the changed item after an item override', () => {
     const first = item('a');
     const second = item('b', {

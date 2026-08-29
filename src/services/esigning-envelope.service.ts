@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { PDFDocument } from 'pdf-lib';
 import type { Prisma } from '@/generated/prisma';
 import type { SessionUser } from '@/lib/auth';
+import { canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { hashBlake3, hashPassword } from '@/lib/encryption';
@@ -2289,6 +2290,9 @@ export async function resendEsigningEnvelopeRecipient(
   if (!canMutateEnvelope(scope, session, envelope.createdById) && !scope.canManage) {
     throw new Error('Forbidden');
   }
+  if (envelope.companyId && !(await canAccessCompany(session, envelope.companyId))) {
+    throw new Error('Forbidden');
+  }
 
   const recipient = envelope.recipients.find((entry) => entry.id === recipientId);
   if (!recipient) {
@@ -2404,6 +2408,9 @@ export async function getEsigningEnvelopeRecipientManualLink(
     throw new Error('Signer links are available only after the envelope has been sent');
   }
   if (!canMutateEnvelope(scope, session, envelope.createdById) && !scope.canManage) {
+    throw new Error('Forbidden');
+  }
+  if (envelope.companyId && !(await canAccessCompany(session, envelope.companyId))) {
     throw new Error('Forbidden');
   }
 

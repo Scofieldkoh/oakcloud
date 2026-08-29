@@ -41,6 +41,8 @@ export interface SearchableSelectProps {
   className?: string;
   /** Label for the select */
   label?: string;
+  /** Accessible label when the visible placeholder is intentionally generic */
+  ariaLabel?: string;
   /** Allow clearing the selection */
   clearable?: boolean;
   /** Show keyboard hints footer */
@@ -78,6 +80,7 @@ export function SearchableSelect({
   groupBy,
   containerClassName,
   popoverMinWidth,
+  ariaLabel,
   onBlur,
   error,
 }: SearchableSelectProps) {
@@ -394,8 +397,8 @@ export function SearchableSelect({
           aria-controls={isOpen ? listboxId : undefined}
           aria-activedescendant={isOpen ? activeOptionId : undefined}
           aria-autocomplete="list"
-          aria-labelledby={labelId}
-          aria-label={!label ? placeholder : undefined}
+          aria-labelledby={ariaLabel ? undefined : labelId}
+          aria-label={ariaLabel ?? (!label ? placeholder : undefined)}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? errorId : undefined}
           value={inputValue}

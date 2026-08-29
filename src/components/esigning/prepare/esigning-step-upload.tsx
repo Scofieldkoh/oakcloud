@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, Mail, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, Trash2, Plus, Loader2 } from 'lucide-react';
 import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
@@ -32,6 +32,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useCreateContact } from '@/hooks/use-contacts';
 import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 
@@ -492,7 +493,6 @@ export function EsigningStepUpload({
   const [selectedContactDefaultEmailDetailId, setSelectedContactDefaultEmailDetailId] = useState<string | null>(null);
   const [isSavingContactEmail, setIsSavingContactEmail] = useState(false);
   const [selfSignNotice, setSelfSignNotice] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(true);
   const [pendingSignerGroups, setPendingSignerGroups] = useState<string[][]>([]);
   const usesOrderedSigning = signingOrder !== 'PARALLEL';
 
@@ -630,14 +630,6 @@ export function EsigningStepUpload({
         }
       }
       setSettingsErrors(fieldErrors);
-      if (
-        fieldErrors.reminderFrequencyDays ||
-        fieldErrors.reminderStartDays ||
-        fieldErrors.expiryWarningDays ||
-        fieldErrors.expiresAt
-      ) {
-        setAdvancedOpen(true);
-      }
       setSubmitError('Please correct the highlighted settings before continuing.');
       requestAnimationFrame(() => {
         const firstInvalidField = ['title', 'message', 'reminderFrequencyDays', 'reminderStartDays', 'expiryWarningDays']
@@ -1064,27 +1056,23 @@ async function applyMixedGroupChange(
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-4 space-y-4 sm:p-6 sm:space-y-6">
+    <div className="mx-auto grid w-full max-w-[1550px] grid-cols-1 items-start gap-4 p-4 sm:gap-6 sm:p-6 lg:grid-cols-2">
 
       {/* ——— Section 1: Documents ——— */}
-      <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm space-y-4 sm:rounded-3xl sm:p-6">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-text-primary">
-            {envelope.documents.length > 0
-              ? `Documents (${envelope.documents.length})`
-              : 'Add documents'}
-          </h2>
-          {envelope.documents.length > 0 && envelope.canEdit && (
+      <CompanyAccentSection
+        title={`Documents${envelope.documents.length > 0 ? ` (${envelope.documents.length})` : ''}`}
+        actions={envelope.documents.length > 0 && envelope.canEdit ? (
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border-primary bg-background-primary px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary transition-colors"
+              className="inline-flex items-center gap-1.5 rounded border border-white/50 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/10"
             >
               <Upload className="h-3.5 w-3.5" />
               Add more
             </button>
-          )}
-        </div>
+        ) : undefined}
+      >
+        <div className="space-y-4 p-4 sm:p-5">
 
         {/* Drop zone */}
         <button
@@ -1144,37 +1132,35 @@ async function applyMixedGroupChange(
             ))}
           </div>
         )}
-      </section>
+        </div>
+      </CompanyAccentSection>
 
       {/* ——— Section 2: Recipients ——— */}
-      <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm space-y-4 sm:rounded-3xl sm:p-6">
-        {/* Header row */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-text-primary">
-            {envelope.recipients.length > 0 ? 'Recipients' : 'Add recipients'}
-          </h2>
-          {envelope.canEdit && (
-            <div className="flex flex-col items-start gap-1 sm:items-end sm:text-right">
+      <CompanyAccentSection
+        title="Add recipients"
+        actions={envelope.canEdit ? (
+          <div className="flex flex-col items-end gap-0.5 text-right">
               <button
                 type="button"
                 onClick={handleCycleSigningOrder}
                 title="Click to cycle signing order: Parallel → Sequential → Mixed"
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors hover:opacity-80 active:scale-95',
-                  signingOrder === 'PARALLEL' && 'border-border-primary bg-background-primary text-text-secondary',
-                  signingOrder === 'SEQUENTIAL' && 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary',
-                  signingOrder === 'MIXED' && 'border-amber-300 bg-amber-50 text-amber-700'
+                  'inline-flex items-center gap-1.5 rounded border border-white/50 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/10 active:scale-95',
+                  signingOrder === 'PARALLEL' && 'border-white/50 bg-white/10 text-white',
+                  signingOrder === 'SEQUENTIAL' && 'border-white/50 bg-white/10 text-white',
+                  signingOrder === 'MIXED' && 'border-amber-200/70 bg-amber-400/20 text-white'
                 )}
               >
-                <span className="opacity-60">Order:</span> {SIGNING_ORDER_PILL_LABELS[signingOrder]}
-                <ChevronDown className="h-3 w-3 opacity-50" />
+                <span className="opacity-75">Order:</span> {SIGNING_ORDER_PILL_LABELS[signingOrder]}
+                <ChevronDown className="h-3 w-3 opacity-75" />
               </button>
-              <span className="text-[11px] text-text-muted">
+              <span className="text-[11px] font-normal text-white/75">
                 Click to change signing order
               </span>
             </div>
-          )}
-        </div>
+        ) : undefined}
+      >
+        <div className="space-y-4 p-4 sm:p-5">
 
         {/* Self-sign row — hidden if user is already a signer */}
         {currentUser && envelope.canEdit && !envelope.recipients.some(
@@ -1496,36 +1482,50 @@ async function applyMixedGroupChange(
 
         {/* New recipient inline form */}
         {isAddingRecipient && (
-          <div className="rounded-2xl border border-border-primary bg-background-primary p-4 space-y-3 shadow-sm">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-text-primary">New recipient</h3>
+          <div className="overflow-hidden rounded-2xl border border-border-primary bg-background-primary shadow-sm">
+            <div className="flex min-h-12 items-center justify-between gap-2 bg-oak-primary px-4 py-3 text-white">
+              <h3 className="text-sm font-semibold leading-5">New recipient</h3>
               <button
                 type="button"
                 onClick={() => { setIsAddingRecipient(false); resetRecipientDraft(); }}
-                className="rounded-lg p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                className="rounded-lg p-1 text-white/70 hover:bg-white/10 hover:text-white"
                 aria-label="Cancel"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {newRecipient.type === 'SIGNER' && (
-              <ContactSearchSelect
-                key={`recipient-contact-${selectedContactId || 'empty'}`}
-                label="Select from Contacts (optional)"
-                value={selectedContactId}
-                onChange={handleContactSelect}
-                placeholder="Search contacts for signer..."
-              />
-            )}
+            <div className="space-y-3 p-4">
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FormInput
-                label="Full name"
-                placeholder="e.g. Jane Smith"
-                value={newRecipient.name}
-                onChange={(e) => setNewRecipient((prev) => ({ ...prev, name: e.target.value }))}
-              />
+            <div className="grid gap-3">
+              <div className="flex min-w-0 items-end gap-2">
+                <div className="min-w-0 flex-1">
+                  <FormInput
+                    label="Full name"
+                    placeholder="e.g. Jane Smith"
+                    value={newRecipient.name}
+                    onChange={(e) => setNewRecipient((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                {newRecipient.type === 'SIGNER' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 min-h-0 shrink-0 px-3"
+                    onClick={() => void (selectedContact ? handleSaveContactEmail() : handleQuickAddContact())}
+                    isLoading={selectedContact ? isSavingContactEmail : createContactMutation.isPending}
+                    disabled={selectedContact
+                      ? isSavingContactEmail || !newRecipient.email.trim() || selectedContact.defaultEmail === newRecipient.email.trim()
+                      : createContactMutation.isPending}
+                  >
+                    {selectedContact ? 'Update email' : 'Quick add'}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3" data-testid="recipient-details-row">
               <FormInput
                 label="Email address"
                 type="email"
@@ -1533,9 +1533,6 @@ async function applyMixedGroupChange(
                 value={newRecipient.email}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, email: e.target.value }))}
               />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
                 Role
                 <select
@@ -1570,6 +1567,16 @@ async function applyMixedGroupChange(
               </label>
             </div>
 
+            {newRecipient.type === 'SIGNER' && (
+              <ContactSearchSelect
+                key={`recipient-contact-${selectedContactId || 'empty'}`}
+                label="Select from Contacts (optional)"
+                value={selectedContactId}
+                onChange={handleContactSelect}
+                placeholder="Search contacts for signer..."
+              />
+            )}
+
             {newRecipient.accessMode === 'EMAIL_WITH_CODE' && (
               <FormInput
                 label="Access code"
@@ -1577,53 +1584,6 @@ async function applyMixedGroupChange(
                 value={newRecipient.accessCode}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessCode: e.target.value }))}
               />
-            )}
-
-            {newRecipient.type === 'SIGNER' && !selectedContact && (
-              <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border-primary bg-background-secondary px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-text-primary">Save as a contact?</div>
-                  <p className="mt-1 text-xs text-text-muted">
-                    Quick-add this signer to your contacts using the name and email above.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void handleQuickAddContact()}
-                  isLoading={createContactMutation.isPending}
-                  disabled={createContactMutation.isPending}
-                >
-                  Quick add contact
-                </Button>
-              </div>
-            )}
-
-            {newRecipient.type === 'SIGNER' && selectedContact && (
-              <div className="flex flex-col gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-                    <Mail className="h-4 w-4 text-text-muted" />
-                    <span>Contact email</span>
-                  </div>
-                  <p className="mt-1 text-xs text-text-muted">
-                    {selectedContact.defaultEmail
-                      ? `Saved as ${selectedContact.defaultEmail}`
-                      : 'No default email saved for this contact yet.'}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void handleSaveContactEmail()}
-                  isLoading={isSavingContactEmail}
-                  disabled={isSavingContactEmail || !newRecipient.email.trim() || selectedContact.defaultEmail === newRecipient.email.trim()}
-                >
-                  {selectedContact.defaultEmail ? 'Update email' : 'Save email'}
-                </Button>
-              </div>
             )}
 
             <div className="flex justify-end gap-2 border-t border-border-primary pt-3">
@@ -1644,6 +1604,7 @@ async function applyMixedGroupChange(
                 Add recipient
               </Button>
             </div>
+            </div>
           </div>
         )}
 
@@ -1658,14 +1619,13 @@ async function applyMixedGroupChange(
             Add recipient
           </button>
         )}
-      </section>
+        </div>
+      </CompanyAccentSection>
 
       {/* ——— Section 3: Message ——— */}
-      <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm space-y-4 sm:rounded-3xl sm:p-6">
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">Email subject & message</h2>
+      <CompanyAccentSection title="Email subject & message">
+        <div className="space-y-4 p-4 sm:p-5">
           <p className="mt-0.5 text-xs text-text-muted">Shown in the signing request email sent to recipients.</p>
-        </div>
 
         <FormInput
           label="Subject"
@@ -1697,19 +1657,12 @@ async function applyMixedGroupChange(
             <span className="text-xs text-red-400">{settingsErrors.message}</span>
           ) : null}
         </label>
-      </section>
+        </div>
+      </CompanyAccentSection>
 
       {/* ——— Section 4: Advanced settings ——— */}
-      <section className="rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
-        <details
-          open={advancedOpen}
-          onToggle={(e) => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
-        >
-          <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-text-secondary select-none list-none sm:px-6">
-            Advanced settings
-            {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </summary>
-          <div className="border-t border-border-primary px-4 py-4 space-y-4 sm:px-6">
+      <CompanyAccentSection title="Advanced settings">
+          <div className="space-y-4 p-4 sm:p-5">
             <SingleDateInput
               label="Expiration"
               value={expiresAt}
@@ -1784,16 +1737,15 @@ async function applyMixedGroupChange(
               />
             </div>
           </div>
-        </details>
-      </section>
+      </CompanyAccentSection>
 
       {submitError ? (
-        <Alert variant="error" className="mt-4">
+        <Alert variant="error" className="col-span-full mt-4">
           {submitError}
         </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-2 rounded-2xl border border-border-primary bg-background-secondary px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
+      <div className="col-span-full flex flex-col gap-2 rounded-2xl border border-border-primary bg-background-secondary px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
         <Button variant="secondary" className="w-full sm:w-auto" onClick={onBack}>
           Back
         </Button>

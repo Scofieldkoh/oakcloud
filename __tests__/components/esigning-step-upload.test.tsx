@@ -5,6 +5,7 @@ import { EsigningStepUpload } from '@/components/esigning/prepare/esigning-step-
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
 import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
+import type { SearchableContact } from '@/components/ui/contact-search-select';
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
@@ -29,7 +30,23 @@ vi.mock('@/components/ui/company-searchable-select', () => ({
 }));
 
 vi.mock('@/components/ui/contact-search-select', () => ({
-  ContactSearchSelect: () => <div data-testid="contact-search-select" />,
+  ContactSearchSelect: ({
+    onChange,
+  }: {
+    onChange: (contactId: string, contact: SearchableContact | null) => void;
+  }) => (
+    <button
+      type="button"
+      data-testid="contact-search-select"
+      onClick={() => onChange('contact-1', {
+        id: 'contact-1',
+        fullName: 'Existing Contact',
+        defaultEmail: 'existing@example.com',
+      } as unknown as SearchableContact)}
+    >
+      Select existing contact
+    </button>
+  ),
 }));
 
 vi.mock('@/components/ui/toast', () => ({
@@ -255,6 +272,44 @@ describe('EsigningStepUpload', () => {
   function nextButton() {
     return screen.getByRole('button', { name: /Next/i });
   }
+
+  it('uses the requested two-row panel layout with Companies detail headers', () => {
+    const { container } = renderUpload();
+
+    expect(container.firstElementChild?.className).toContain('lg:grid-cols-2');
+    expect(container.firstElementChild?.className).toContain('w-full');
+    expect(container.firstElementChild?.className).toContain('max-w-[1550px]');
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual([
+      'Documents (1)',
+      'Add recipients',
+      'Email subject & message',
+      'Advanced settings',
+    ]);
+    screen.getAllByRole('heading', { level: 2 }).forEach((heading) => {
+      expect(heading.parentElement?.className).toContain('bg-oak-primary');
+    });
+  });
+
+  it('places the contact action beside the name field and updates it for an existing contact', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ defaultDetails: [] }), { status: 200 }));
+    renderUpload({ recipients: [], recipientCount: 0, signerCount: 0 });
+
+    await user.click(screen.getByRole('button', { name: 'Add recipient' }));
+
+    expect(screen.getByRole('textbox', { name: 'Full name' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quick add' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New recipient' }).parentElement?.className).toContain('bg-oak-primary');
+    expect(screen.getByTestId('recipient-details-row').className).toContain('sm:grid-cols-3');
+    expect(screen.getByTestId('recipient-details-row').compareDocumentPosition(screen.getByTestId('contact-search-select')))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByText('Save as a contact?')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('contact-search-select'));
+
+    expect(screen.getByRole('button', { name: 'Update email' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Quick add' })).not.toBeInTheDocument();
+  });
 
   it('is a keyboard-operable upload control with a 44px mobile target', async () => {
     const user = userEvent.setup();

@@ -53,7 +53,7 @@ const variant = {
 describe('manual client service catalog options', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.company.findFirst.mockResolvedValue({ id: 'company-1' });
+    prismaMock.company.findFirst.mockResolvedValue({ id: 'company-1', name: 'Test Co', uen: '202400001A' });
     prismaMock.serviceVariant.findMany.mockResolvedValue([variant]);
     prismaMock.templatePartial.findMany.mockResolvedValue([rootPartial, nestedPartial]);
   });
@@ -62,6 +62,7 @@ describe('manual client service catalog options', () => {
     const result = await getManualClientServiceCatalogOptions('company-1', params);
 
     expect(result).toEqual({
+      companyContext: { id: 'company-1', name: 'Test Co', uen: '202400001A', accountsDueDate: null, financialYearEndDay: undefined, financialYearEndMonth: undefined, incorporationDate: null },
       variants: [{
         id: 'variant-1',
         name: 'Corporate Secretarial',

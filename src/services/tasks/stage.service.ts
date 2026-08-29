@@ -45,6 +45,21 @@ async function safelyQueueTaskEsigningPreparation(
   }
 }
 
+async function findDocumentGenerationBatchId(
+  tenantId: string,
+  generatedDocumentId: string,
+) {
+  const batchItem = await prisma.documentGenerationBatchItem.findFirst({
+    where: {
+      tenantId,
+      generatedDocumentId,
+      batch: { tenantId, deletedAt: null },
+    },
+    select: { batchId: true },
+  });
+  return batchItem?.batchId ?? null;
+}
+
 const stageDetailInclude = {
   task: {
     select: {
@@ -164,7 +179,25 @@ export async function getTaskStageDetail(
   }
 
   const adapter = getStageActionAdapter(stage.actionType);
-  const adapterContext = { tenantId, stage };
+  const generatedDocumentId = (
+    stage.outcome?.type === TaskStageOutcomeType.GENERATED_DOCUMENT
+      ? stage.outcome.generatedDocumentId
+      : null
+  );
+  const documentGenerationBatchId = (
+    stage.status === TaskStageStatus.IN_PROGRESS && generatedDocumentId
+  )
+    ? await findDocumentGenerationBatchId(tenantId, generatedDocumentId)
+    : null;
+  const adapterContext = {
+    tenantId,
+    stage: {
+      ...stage,
+      outcome: stage.outcome
+        ? { ...stage.outcome, documentGenerationBatchId }
+        : stage.outcome,
+    },
+  };
   let resolvedOutcome: ResolvedStageOutcome | null = null;
   let outcomeUnavailable = false;
 

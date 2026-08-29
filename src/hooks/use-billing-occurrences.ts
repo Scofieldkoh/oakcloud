@@ -2,11 +2,6 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  addCalendarDays,
-  currentDateInSingapore,
-  type DateOnly,
-} from '@/services/service-schedule';
-import {
   billingOccurrenceSearchSchema,
   type BillingOccurrenceSearch,
   type BillingOccurrenceSearchInput,
@@ -57,15 +52,23 @@ const timingOrder: Record<BillingOccurrenceSearch['timing'][number], number> = {
 };
 
 export function normalizeBillingOccurrenceSearch(input: BillingOccurrenceSearchInput = {}): BillingOccurrenceSearch {
-  const from = input.from ?? currentDateInSingapore();
-  const to = input.to ?? addCalendarDays(from as DateOnly, 30);
   return billingOccurrenceSearchSchema.parse({
-    from,
-    to,
+    from: input.from,
+    to: input.to,
+    expectedDate: input.expectedDate,
+    billedDate: input.billedDate,
     query: input.query ?? '',
     companyQuery: input.companyQuery ?? '',
+    companyId: input.companyId,
     serviceQuery: input.serviceQuery ?? '',
+    serviceNameQuery: input.serviceNameQuery ?? '',
     feeQuery: input.feeQuery ?? '',
+    feeLineQuery: input.feeLineQuery ?? '',
+    periodQuery: input.periodQuery ?? '',
+    referenceQuery: input.referenceQuery ?? '',
+    amountMin: input.amountMin ?? '',
+    amountMax: input.amountMax ?? '',
+    familyId: input.familyId,
     companyIds: uniqueStrings(input.companyIds),
     familyIds: uniqueStrings(input.familyIds),
     statuses: uniqueOrdered(input.statuses, statusOrder),
@@ -86,12 +89,22 @@ export const billingOccurrenceKeys = {
 export function billingOccurrenceSearchParams(search: BillingOccurrenceSearchInput = {}): string {
   const normalized = normalizeBillingOccurrenceSearch(search);
   const params = new URLSearchParams();
-  params.set('from', normalized.from);
-  params.set('to', normalized.to);
+  if (normalized.from) params.set('from', normalized.from);
+  if (normalized.to) params.set('to', normalized.to);
+  if (normalized.expectedDate) params.set('expectedDate', normalized.expectedDate);
+  if (normalized.billedDate) params.set('billedDate', normalized.billedDate);
   if (normalized.query) params.set('query', normalized.query);
   if (normalized.companyQuery) params.set('companyQuery', normalized.companyQuery);
+  if (normalized.companyId) params.set('companyId', normalized.companyId);
   if (normalized.serviceQuery) params.set('serviceQuery', normalized.serviceQuery);
+  if (normalized.serviceNameQuery) params.set('serviceNameQuery', normalized.serviceNameQuery);
   if (normalized.feeQuery) params.set('feeQuery', normalized.feeQuery);
+  if (normalized.feeLineQuery) params.set('feeLineQuery', normalized.feeLineQuery);
+  if (normalized.periodQuery) params.set('periodQuery', normalized.periodQuery);
+  if (normalized.referenceQuery) params.set('referenceQuery', normalized.referenceQuery);
+  if (normalized.amountMin) params.set('amountMin', normalized.amountMin);
+  if (normalized.amountMax) params.set('amountMax', normalized.amountMax);
+  if (normalized.familyId) params.set('familyId', normalized.familyId);
   if (normalized.companyIds.length > 0) params.set('companyIds', normalized.companyIds.join(','));
   if (normalized.familyIds.length > 0) params.set('familyIds', normalized.familyIds.join(','));
   if (normalized.statuses.length > 0) params.set('statuses', normalized.statuses.join(','));
@@ -152,6 +165,26 @@ export function useUpdateBillingOccurrence() {
       body: JSON.stringify(data),
     }),
     onSuccess: (occurrence) => invalidate(occurrence),
+  });
+}
+
+export type BillingOccurrenceBulkSelection = Pick<BillingOccurrenceDto, 'id' | 'updatedAt'>;
+
+/** Mark selected open occurrences as billed while leaving billed dates and references untouched. */
+export function useMarkBillingOccurrencesAsBilled() {
+  const invalidate = useInvalidateBillingOccurrenceQueries();
+  return useMutation<BillingOccurrenceDto[], BillingOccurrenceHttpError, BillingOccurrenceBulkSelection[]>({
+    mutationFn: async (occurrences) => Promise.all(occurrences.map((occurrence) => requestJson<BillingOccurrenceDto>(`/api/billing-occurrences/${encodeURIComponent(occurrence.id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        expectedUpdatedAt: occurrence.updatedAt,
+        status: 'BILLED',
+        updateScope: 'THIS_OCCURRENCE',
+        reason: null,
+      }),
+    }))),
+    onSuccess: (occurrences) => Promise.all(occurrences.map((occurrence) => invalidate(occurrence))),
   });
 }
 

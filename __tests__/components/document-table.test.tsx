@@ -118,12 +118,21 @@ describe('DocumentTable', () => {
     );
 
     const table = screen.getByRole('table');
-    expect(table).toHaveStyle({ width: '1150px', minWidth: '1150px' });
+    expect(table).toHaveClass('w-full', 'min-w-max');
+    expect(table).not.toHaveClass('table-fixed');
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect(screen.queryByTestId('document-column-header-band')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('document-filter-row-band')).not.toBeInTheDocument();
+    expect((table.querySelectorAll('colgroup col').item(6) as HTMLElement).style.width).toBe('');
+    expect(screen.queryByRole('separator', { name: 'Resize Actions column' })).not.toBeInTheDocument();
 
     const handle = screen.getByRole('separator', { name: 'Resize Document column' });
     fireEvent.keyDown(handle, { key: 'ArrowRight' });
 
-    expect(table).toHaveStyle({ width: '1160px', minWidth: '1160px' });
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '250px' });
   });
 
   it('uses the Document Vault alternate-row surface', () => {

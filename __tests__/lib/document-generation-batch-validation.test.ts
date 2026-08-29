@@ -88,6 +88,14 @@ describe('document generation batch validation', () => {
     }).success).toBe(false);
   });
 
+  it('accepts an optional multi-director selection for collection loops', () => {
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      selectedDirectorIds: [uuid],
+    }).success).toBe(true);
+    expect(batchItemConfigurationSchema.safeParse(validItemConfiguration()).success).toBe(true);
+  });
+
   it('accepts an empty Service Agreement workspace while still validating entered items', () => {
     const workspace = {
       authorizedContactId: null,

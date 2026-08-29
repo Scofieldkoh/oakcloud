@@ -27,7 +27,7 @@ export interface BatchSharedSetupProps {
   companyError?: string | null;
   masterFields: MasterFieldCatalogue;
   masterFieldValues: Record<string, string>;
-  onCompanyChange: (companyId: string | null) => void;
+  onCompanyChange: (companyId: string | null, company: Company | null) => void;
   onMasterValueChange: (fieldId: string, value: string) => void;
   disabled?: boolean;
   overriddenCountByField?: Record<string, number>;
@@ -111,7 +111,14 @@ export function BatchSharedSetup({
         <div className="mt-3 max-w-xl">
           <AsyncSearchSelect
             value={primaryCompanyId ?? ''}
-            onChange={(id) => onCompanyChange(id || null)}
+            onChange={(id) => {
+              const nextId = id || null;
+              const nextCompany = nextId
+                ? companyOptions.find((company) => company.id === nextId)
+                  ?? (selectedCompany?.id === nextId ? selectedCompany : null)
+                : null;
+              onCompanyChange(nextId, nextCompany);
+            }}
             options={options}
             isLoading={companyLoading}
             searchQuery={companyQuery}

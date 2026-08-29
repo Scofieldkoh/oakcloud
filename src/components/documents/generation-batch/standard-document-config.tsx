@@ -12,6 +12,11 @@ import {
 } from '@/components/documents/document-party-choice-list';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { DocumentParty } from '@/lib/document-party';
+import {
+  getRequiredLegacyContactSelection,
+  getRequiredPartySelections,
+  getTemplatePartyCollections,
+} from '@/lib/template-analysis';
 import type {
   BatchItemConfiguration,
   MasterFieldCatalogue,
@@ -28,6 +33,7 @@ import type { ItemCompleteness } from './batch-completeness';
 export interface StandardDocumentConfigProps {
   item: EditableBatchItem;
   templateFields: CustomPlaceholderDefinition[];
+  templateContent?: string;
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   directors: DocumentParty[];
@@ -58,6 +64,7 @@ function missingCount(completeness: ItemCompleteness | undefined, prefix: string
 export function StandardDocumentConfig({
   item,
   templateFields,
+  templateContent,
   masterFields,
   effectiveMasterValues,
   directors,
@@ -78,6 +85,36 @@ export function StandardDocumentConfig({
   onApplyToOthers,
 }: StandardDocumentConfigProps) {
   const configuration = item.configuration;
+
+  const partySelections = useMemo(
+    () => templateContent === undefined
+      ? { director: true, shareholder: true, contact: true }
+      : getRequiredPartySelections(templateContent),
+    [templateContent],
+  );
+  const partyCollections = useMemo(
+    () => templateContent === undefined
+      ? { directors: false, shareholders: false }
+      : getTemplatePartyCollections(templateContent),
+    [templateContent],
+  );
+  const showContacts = templateContent === undefined
+    ? true
+    : getRequiredLegacyContactSelection(templateContent);
+  const selectedDirectorIds = useMemo(() => {
+    const availableIds = new Set(directors.map((director) => director.id));
+    return configuration.selectedDirectorIds === undefined
+      ? directors.map((director) => director.id)
+      : configuration.selectedDirectorIds.filter((id) => availableIds.has(id));
+  }, [configuration.selectedDirectorIds, directors]);
+  const partyKeys = useMemo<Array<keyof BatchItemConfiguration>>(() => {
+    const keys: Array<keyof BatchItemConfiguration> = [];
+    if (partySelections.director) keys.push('selectedDirectorId');
+    if (partyCollections.directors) keys.push('selectedDirectorIds');
+    if (partySelections.shareholder) keys.push('selectedShareholderId');
+    if (partySelections.contact) keys.push('selectedContactId');
+    return keys;
+  }, [partyCollections.directors, partySelections.contact, partySelections.director, partySelections.shareholder]);
 
   const selectedContacts = useMemo<DocumentContact[]>(() => {
     const pool = new Map<string, DocumentContact>(contactsById ?? []);
@@ -154,78 +191,97 @@ export function StandardDocumentConfig({
         </label>
       </BatchSection>
 
-      <BatchSection
-        title="Parties"
-        description="Officers and the contact addressed by this document."
-        action={applyMenu('parties', [
-          'selectedDirectorId',
-          'selectedShareholderId',
-          'selectedContactId',
-        ])}
-      >
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          <DocumentPartyChoiceList
-            id="selected-director"
-            label="Director"
-            options={directors}
-            value={configuration.selectedDirectorId ?? ''}
-            onChange={(value) => onPatch({ selectedDirectorId: value || null })}
-            isLoading={partyLoading}
-            error={partyError}
-            onRetry={onPartyRetry}
-          />
-          <DocumentPartyChoiceList
-            id="selected-shareholder"
-            label="Shareholder"
-            options={shareholders}
-            value={configuration.selectedShareholderId ?? ''}
-            onChange={(value) => onPatch({ selectedShareholderId: value || null })}
-            isLoading={partyLoading}
-            error={partyError}
-            onRetry={onPartyRetry}
-          />
-          <DocumentPartyChoiceList
-            id="selected-contact"
-            label="Company contact"
-            options={companyContacts.map((contact) => ({
-              id: contact.id,
-              contactId: contact.id,
-              name: contact.fullName,
-              detail: contact.designation ?? null,
-              email: contact.email ?? null,
-              phone: contact.phone ?? null,
-              address: { letter: null, full: null },
-              contactType: 'INDIVIDUAL',
-            }))}
-            value={configuration.selectedContactId ?? ''}
-            onChange={(value) => onPatch({ selectedContactId: value || null })}
-            isLoading={partyLoading}
-            error={partyError}
-            onRetry={onPartyRetry}
-          />
-        </div>
-      </BatchSection>
+      {partyKeys.length > 0 && (
+        <BatchSection
+          title="Parties"
+          description="Officers and the contact addressed by this document."
+          action={applyMenu('parties', partyKeys)}
+        >
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {partySelections.director && (
+              <DocumentPartyChoiceList
+                id="selected-director"
+                label="Director"
+                options={directors}
+                value={configuration.selectedDirectorId ?? ''}
+                onChange={(value) => onPatch({ selectedDirectorId: value || null })}
+                isLoading={partyLoading}
+                error={partyError}
+                onRetry={onPartyRetry}
+              />
+            )}
+            {partyCollections.directors && (
+              <DocumentPartyChoiceList
+                id="selected-directors"
+                label="Directors"
+                options={directors}
+                values={selectedDirectorIds}
+                onChange={(values) => onPatch({ selectedDirectorIds: values })}
+                multiple
+                isLoading={partyLoading}
+                error={partyError}
+                onRetry={onPartyRetry}
+              />
+            )}
+            {partySelections.shareholder && (
+              <DocumentPartyChoiceList
+                id="selected-shareholder"
+                label="Shareholder"
+                options={shareholders}
+                value={configuration.selectedShareholderId ?? ''}
+                onChange={(value) => onPatch({ selectedShareholderId: value || null })}
+                isLoading={partyLoading}
+                error={partyError}
+                onRetry={onPartyRetry}
+              />
+            )}
+            {partySelections.contact && (
+              <DocumentPartyChoiceList
+                id="selected-contact"
+                label="Company contact"
+                options={companyContacts.map((contact) => ({
+                  id: contact.id,
+                  contactId: contact.id,
+                  name: contact.fullName,
+                  detail: contact.designation ?? null,
+                  email: contact.email ?? null,
+                  phone: contact.phone ?? null,
+                  address: { letter: null, full: null },
+                  contactType: 'INDIVIDUAL',
+                }))}
+                value={configuration.selectedContactId ?? ''}
+                onChange={(value) => onPatch({ selectedContactId: value || null })}
+                isLoading={partyLoading}
+                error={partyError}
+                onRetry={onPartyRetry}
+              />
+            )}
+          </div>
+        </BatchSection>
+      )}
 
-      <BatchSection
-        title="Contacts"
-        description="Recipients merged into contact placeholders."
-        status={{
-          complete: true,
-          label: `${configuration.contactIds.length} selected`,
-        }}
-        action={applyMenu('contacts', ['contactIds'])}
-      >
-        <DocumentContactChoiceList
-          contacts={contacts}
-          selected={selectedContacts}
-          onChange={(selected) => onPatch({
-            contactIds: selected.map((contact) => contact.id),
-          })}
-          onSearch={onContactSearch}
-          isLoading={contactsLoading}
-          serverFiltered={Boolean(onContactSearch)}
-        />
-      </BatchSection>
+      {showContacts && (
+        <BatchSection
+          title="Contacts"
+          description="Recipients merged into contact placeholders."
+          status={{
+            complete: true,
+            label: `${configuration.contactIds.length} selected`,
+          }}
+          action={applyMenu('contacts', ['contactIds'])}
+        >
+          <DocumentContactChoiceList
+            contacts={contacts}
+            selected={selectedContacts}
+            onChange={(selected) => onPatch({
+              contactIds: selected.map((contact) => contact.id),
+            })}
+            onSearch={onContactSearch}
+            isLoading={contactsLoading}
+            serverFiltered={Boolean(onContactSearch)}
+          />
+        </BatchSection>
+      )}
 
       {masterFields.fields.length > 0 && (
         <BatchSection
@@ -372,22 +428,6 @@ export function StandardDocumentConfig({
         />
       </BatchSection>
 
-      <BatchSection
-        title="Output options"
-        defaultOpen={false}
-        action={applyMenu('output options', ['useLetterhead'])}
-      >
-        <label className="flex min-h-11 items-center gap-2 text-sm text-text-primary">
-          <input
-            type="checkbox"
-            checked={configuration.useLetterhead}
-            onChange={(event) => onPatch({ useLetterhead: event.target.checked })}
-            disabled={disabled}
-            className="h-4 w-4 rounded accent-oak-primary"
-          />
-          Use company letterhead
-        </label>
-      </BatchSection>
     </div>
   );
 }

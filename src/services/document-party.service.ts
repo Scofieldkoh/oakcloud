@@ -6,6 +6,7 @@ import {
 
 export interface DocumentPartySelections {
   selectedDirector?: DocumentParty;
+  selectedDirectors?: DocumentParty[];
   selectedShareholder?: DocumentParty;
   selectedContact?: DocumentParty;
 }
@@ -226,6 +227,7 @@ export async function resolveDocumentPartySelections(input: {
   companyId: string;
   tenantId: string;
   selectedDirectorId?: string;
+  selectedDirectorIds?: string[];
   selectedShareholderId?: string;
   selectedContactId?: string;
 }): Promise<DocumentPartySelections> {
@@ -233,6 +235,11 @@ export async function resolveDocumentPartySelections(input: {
   const selectedDirector = input.selectedDirectorId
     ? options.directors.find((party) => party.id === input.selectedDirectorId)
     : undefined;
+  const selectedDirectors = input.selectedDirectorIds === undefined
+    ? undefined
+    : input.selectedDirectorIds.map((id) =>
+        options.directors.find((party) => party.id === id),
+      );
   const selectedShareholder = input.selectedShareholderId
     ? options.shareholders.find(
         (party) => party.id === input.selectedShareholderId,
@@ -247,6 +254,14 @@ export async function resolveDocumentPartySelections(input: {
       'Selected director is not a current director of this company',
     );
   }
+  if (selectedDirectors?.some((party) => !party)) {
+    throw new Error(
+      'Selected director is not a current director of this company',
+    );
+  }
+  const validSelectedDirectors = selectedDirectors?.filter(
+    (party): party is DocumentParty => Boolean(party),
+  );
   if (input.selectedShareholderId && !selectedShareholder) {
     throw new Error(
       'Selected shareholder is not a current shareholder of this company',
@@ -256,5 +271,10 @@ export async function resolveDocumentPartySelections(input: {
     throw new Error('Selected contact is not linked to this company');
   }
 
-  return { selectedDirector, selectedShareholder, selectedContact };
+  return {
+    selectedDirector,
+    ...(validSelectedDirectors ? { selectedDirectors: validSelectedDirectors } : {}),
+    selectedShareholder,
+    selectedContact,
+  };
 }

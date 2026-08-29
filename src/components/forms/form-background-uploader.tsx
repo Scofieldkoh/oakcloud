@@ -70,7 +70,11 @@ export function FormBackgroundUploader({
           )}
         >
           {value ? (
-            <img src={value} alt="" className="h-full w-full object-cover" />
+            <div
+              aria-hidden="true"
+              className="h-full w-full bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url("${value}")` }}
+            />
           ) : (
             <UploadCloud className="h-6 w-6 text-text-muted" />
           )}

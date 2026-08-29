@@ -188,6 +188,13 @@ export const clientServiceDeadlineImpactSchema = z.object({
   scheduleSnapshot: clientServiceDeadlineScheduleSnapshotSchema,
 }).strict();
 
+export const clientServiceDeadlineDraftPreviewSchema = z.object({
+  companyId: z.string().uuid(),
+  serviceVariantId: z.string().uuid(),
+  deadlineRules: clientServiceDeadlineRulesSchema,
+  scheduleSnapshot: clientServiceDeadlineScheduleSnapshotSchema,
+}).strict();
+
 const manualFeeLineSchema = z.object({
   description: z.string().trim().min(1).max(500),
   amount: z.string().regex(/^\d{1,16}(?:\.\d{1,2})?$/, 'Enter a non-negative amount with at most two decimals.'),
@@ -267,6 +274,7 @@ export const searchClientServicesSchema = z.object({
 export type UpdateClientServiceInput = z.output<typeof updateClientServiceSchema>;
 export type UpdateClientServiceRequest = z.input<typeof updateClientServiceSchema>;
 export type ClientServiceDeadlineImpactInput = z.infer<typeof clientServiceDeadlineImpactSchema>;
+export type ClientServiceDeadlineDraftPreviewInput = z.infer<typeof clientServiceDeadlineDraftPreviewSchema>;
 export type ClientServiceDeadlineScheduleSnapshot = z.infer<typeof clientServiceDeadlineScheduleSnapshotSchema>;
 export type SearchClientServicesInput = z.infer<typeof searchClientServicesSchema>;
 export type MarkServiceAgreementEffectiveInput = z.infer<typeof markServiceAgreementEffectiveSchema>;

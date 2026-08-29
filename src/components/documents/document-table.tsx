@@ -418,14 +418,6 @@ export function DocumentTable({
   const preferenceValue = preferenceMap?.[COLUMN_PREF_KEY]?.value;
   const preferenceValueKey = JSON.stringify(preferenceValue ?? null);
 
-  const tableWidth = useMemo(
-    () => (selectable ? CHECKBOX_COLUMN_WIDTH : 0) + COLUMN_IDS.reduce(
-      (total, columnId) => total + (columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]),
-      0,
-    ),
-    [columnWidths, selectable],
-  );
-
   useEffect(() => {
     const restored = JSON.parse(preferenceValueKey) as unknown;
     if (!restored || typeof restored !== 'object' || Array.isArray(restored)) return;
@@ -711,27 +703,18 @@ export function DocumentTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block table-container relative overflow-x-auto">
-        <div
-          aria-hidden="true"
-          data-testid="document-column-header-band"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[94px] bg-background-tertiary"
-        />
-        <div
-          aria-hidden="true"
-          data-testid="document-filter-row-band"
-          className="pointer-events-none absolute inset-x-0 top-0 h-14 border-b border-border-primary bg-background-secondary/50"
-        />
+      <div className="hidden md:block table-container overflow-x-auto">
         <table
-          className="table relative z-[1] table-fixed"
-          style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}
+          className="table w-full min-w-max"
         >
           <colgroup>
             {selectable && <col style={{ width: `${CHECKBOX_COLUMN_WIDTH}px` }} />}
             {COLUMN_IDS.map((columnId) => (
               <col
                 key={columnId}
-                style={{ width: `${columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]}px` }}
+                style={columnId === 'actions'
+                  ? undefined
+                  : { width: `${columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]}px` }}
               />
             ))}
           </colgroup>
@@ -853,15 +836,17 @@ export function DocumentTable({
                   ) : (
                     <span>{COLUMN_LABELS[columnId]}</span>
                   )}
-                  <span
-                    role="separator"
-                    aria-label={`Resize ${COLUMN_LABELS[columnId]} column`}
-                    aria-orientation="vertical"
-                    tabIndex={0}
-                    className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
-                    onPointerDown={(event) => startResize(event, columnId)}
-                    onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
-                  />
+                  {columnId !== 'actions' && (
+                    <span
+                      role="separator"
+                      aria-label={`Resize ${COLUMN_LABELS[columnId]} column`}
+                      aria-orientation="vertical"
+                      tabIndex={0}
+                      className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
+                      onPointerDown={(event) => startResize(event, columnId)}
+                      onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
+                    />
+                  )}
                 </th>
               ))}
             </tr>

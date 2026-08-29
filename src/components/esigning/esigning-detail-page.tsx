@@ -779,7 +779,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
             <div className="hidden items-center gap-2 sm:flex">
               {envelope.canDelete ? (
                 <Button
-                  variant="secondary"
+                  variant="danger"
                   size="sm"
                   leftIcon={<Trash2 className="h-4 w-4" />}
                   onClick={() => setIsDeleteEnvelopeOpen(true)}
@@ -787,7 +787,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   Delete draft
                 </Button>
               ) : null}
-              <span className="max-w-48 truncate text-sm text-text-secondary">{envelope.title}</span>
             </div>
           </div>
         </div>

@@ -270,6 +270,9 @@ describe('E-signing detail hydration', () => {
       expect(recoverableErrors).toHaveLength(0);
     });
     expect(container.textContent).toContain('Upload documents');
+    const deleteDraftButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Delete draft'));
+    expect(deleteDraftButton?.className).toContain('bg-red-600');
+    expect(container.textContent).not.toContain('NDA');
   });
 
   it('hydrates a completed envelope detail without server/client divergence', async () => {

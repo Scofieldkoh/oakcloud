@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TaskResourcesResponse } from '@/services/tasks/types';
 
@@ -92,11 +92,11 @@ function createData(): TaskResourcesResponse {
         position: 2,
         actionType: 'ESIGNING',
         status: 'IN_PROGRESS',
-        description: null,
-        notes: null,
-        startedAt: null,
+        description: 'Collect signatures from the client.',
+        notes: 'Follow up after two business days.',
+        startedAt: '2026-08-29T08:00:00.000Z',
         completedAt: null,
-        assignee: null,
+        assignee: { id: 'user-2', name: 'Maya Goh', email: 'maya@example.com' },
         checklist: [],
         blockers: [],
         resources: [{
@@ -161,7 +161,14 @@ describe('TaskResourcesPanel', () => {
       '/api/esigning/envelopes/envelope-1/documents/esign-doc-1/pdf',
     );
     expect(screen.getByText('Alex Lim')).toBeVisible();
-    expect(screen.getByTestId('task-resource-stage-stage-sign')).toHaveAttribute('data-active', 'true');
+    const activeStage = screen.getByTestId('task-resource-stage-stage-sign');
+    expect(activeStage).toHaveAttribute('data-active', 'true');
+    expect(within(activeStage).queryByText('Collect signatures from the client.')).not.toBeInTheDocument();
+    expect(within(activeStage).queryByText('Follow up after two business days.')).not.toBeInTheDocument();
+    expect(within(activeStage).queryByText('Maya Goh')).not.toBeInTheDocument();
+    expect(within(activeStage).queryByText('Started')).not.toBeInTheDocument();
+    expect(within(activeStage).queryByText('Assignee')).not.toBeInTheDocument();
+    expect(activeStage.querySelector('dl')).toBeNull();
   });
 
   it('shows loading, retryable errors, pending, unavailable, and empty-stage states', () => {

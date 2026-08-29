@@ -11,6 +11,9 @@ const companyOption = {
   label: 'Acme Pte. Ltd.',
   description: '202600001A',
   uen: '202600001A',
+  status: 'LIVE',
+  registeredAddress: '1 Main Street, Singapore 123456',
+  incorporationDate: '2026-07-29T00:00:00.000Z',
 };
 
 vi.mock('@/hooks/use-company-search', () => ({
@@ -77,7 +80,14 @@ const templates: DocumentTemplateSummary[] = [
 ];
 
 const companies = [
-  { id: 'company-1', name: 'Acme Pte. Ltd.', uen: '202600001A', status: 'LIVE' },
+  {
+    id: 'company-1',
+    name: 'Acme Pte. Ltd.',
+    uen: '202600001A',
+    status: 'LIVE',
+    registeredAddress: '1 Main Street, Singapore 123456',
+    incorporationDate: '2026-07-29T00:00:00.000Z',
+  },
 ];
 const contacts: Array<{ id: string; fullName: string }> = [];
 
@@ -200,6 +210,30 @@ describe('DocumentGenerationBatchWorkspace', () => {
       ]);
       unmount();
     }
+  });
+
+  it('renders the selected company metadata in Shared setup', () => {
+    const initialBatch = batch([
+      { key: 'item-a', templateId: 'template-a', templateName: 'Engagement Letter', kind: 'STANDARD' },
+    ], { currentStage: 1 });
+
+    render(<DocumentGenerationBatchWorkspace {...props({ initialBatch })} />);
+
+    expect(screen.getByText('LIVE')).toBeInTheDocument();
+    expect(screen.getByText('1 Main Street, Singapore 123456')).toBeInTheDocument();
+    expect(screen.getByText('Jul 29, 2026')).toBeInTheDocument();
+  });
+
+  it('gives the review stage a viewport-height layout contract', () => {
+    const initialBatch = batch([
+      { key: 'item-a', templateId: 'template-a', templateName: 'Engagement Letter', kind: 'STANDARD' },
+    ]);
+
+    render(<DocumentGenerationBatchWorkspace {...props({ initialBatch })} />);
+
+    expect(screen.getByTestId('document-generation-batch-workspace'))
+      .toHaveClass('lg:h-dvh');
+    expect(screen.getByRole('main')).toHaveClass('min-h-0');
   });
 
   it('freezes Documents and Shared setup for partial batches', () => {

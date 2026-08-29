@@ -31,6 +31,7 @@ export interface BatchItemConfiguratorProps {
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   templateFields?: CustomPlaceholderDefinition[];
+  templateContent?: string;
   onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
   completeness?: ItemCompleteness;
@@ -89,6 +90,7 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
       <StandardDocumentConfig
         item={item}
         templateFields={itemOnlyFields}
+        templateContent={props.templateContent}
         masterFields={masterFields}
         effectiveMasterValues={effectiveMasterValues}
         directors={props.directors}

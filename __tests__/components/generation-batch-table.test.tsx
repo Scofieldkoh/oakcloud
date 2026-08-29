@@ -118,12 +118,19 @@ describe('GenerationBatchTable', () => {
   it('resizes columns with the same resize handles as the documents table', () => {
     render(<GenerationBatchTable batches={[batchFixture()]} onDiscard={vi.fn()} />);
     const table = screen.getByRole('table');
-    expect(table).toHaveStyle({ minWidth: '1100px' });
+    expect(table).toHaveClass('w-full', 'min-w-max');
+    expect(table).not.toHaveClass('table-fixed');
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect((table.querySelectorAll('colgroup col').item(5) as HTMLElement).style.width).toBe('');
+    expect(screen.queryByRole('separator', { name: 'Resize Actions column' })).not.toBeInTheDocument();
 
     const handle = screen.getByRole('separator', { name: 'Resize Company column' });
     fireEvent.keyDown(handle, { key: 'ArrowRight' });
 
-    expect(table).toHaveStyle({ minWidth: '1110px' });
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '250px' });
   });
 
   it('sorts rows by a column header', () => {

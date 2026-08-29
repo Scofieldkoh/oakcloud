@@ -258,9 +258,12 @@ describe('PublicFormPage', () => {
 
     await screen.findByRole('heading', { name: 'Annual Return Declaration' });
 
-    const img = container.querySelector('img[src="/api/storage/tenant-1%2Fforms%2Fform-1%2Fbranding%2Fbackground.png"]') as HTMLImageElement | null;
-    expect(img).not.toBeNull();
-    expect(img?.style.opacity).toBe('0.55');
+    const backgroundLayer = container.querySelector('.fixed[aria-hidden="true"]') as HTMLElement | null;
+    expect(backgroundLayer).not.toBeNull();
+    expect(backgroundLayer?.style.backgroundImage).toBe(
+      'url("/api/storage/tenant-1%2Fforms%2Fform-1%2Fbranding%2Fbackground.png")'
+    );
+    expect(backgroundLayer?.style.opacity).toBe('0.55');
     expect(container.firstElementChild).toHaveClass('bg-gradient-to-b');
   });
 
@@ -269,7 +272,7 @@ describe('PublicFormPage', () => {
 
     await screen.findByRole('heading', { name: 'Annual Return Declaration' });
 
-    expect(container.querySelector('img[src^="/api/storage/"]')).toBeNull();
+    expect(container.querySelector('.fixed[aria-hidden="true"]')).toBeNull();
     expect(container.firstElementChild).toHaveClass('bg-gradient-to-b');
   });
 
@@ -280,7 +283,7 @@ describe('PublicFormPage', () => {
 
     await screen.findByRole('button', { name: 'Send declaration' });
 
-    expect(container.querySelector('img[src^="/api/storage/"]')).toBeNull();
+    expect(container.querySelector('.fixed[aria-hidden="true"]')).toBeNull();
   });
 
   it('lets respondents check company name availability', async () => {

@@ -73,7 +73,7 @@ export function defaultItemConfiguration(templateName: string): BatchItemConfigu
     selectedContactId: null,
     itemValues: {},
     masterOverrides: {},
-    useLetterhead: true,
+    useLetterhead: false,
     serviceAgreement: null,
   };
 }
@@ -239,7 +239,7 @@ export async function createDocumentGenerationBatch(
           title: `Untitled - ${template.name}`,
           content: '',
           status: 'DRAFT',
-          useLetterhead: true,
+          useLetterhead: false,
           createdById: userId,
           metadata: {
             batchItem: true,
@@ -565,7 +565,7 @@ export async function updateDocumentGenerationBatch(
               || `Untitled - ${template.name}`,
             content: '',
             status: 'DRAFT',
-            useLetterhead: submitted.configuration?.useLetterhead ?? true,
+            useLetterhead: submitted.configuration?.useLetterhead ?? false,
             createdById: params.userId,
             metadata: {
               batchItem: true,

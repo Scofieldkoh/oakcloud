@@ -43,6 +43,8 @@ export interface BatchItemConfiguration {
   title: string;
   contactIds: string[];
   selectedDirectorId: string | null;
+  /** Explicit director subset for `{{#each directors}}`; absent means all. */
+  selectedDirectorIds?: string[];
   selectedShareholderId: string | null;
   selectedContactId: string | null;
   itemValues: Record<string, string>;

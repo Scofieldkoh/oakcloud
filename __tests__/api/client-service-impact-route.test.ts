@@ -45,9 +45,22 @@ describe('client-service impact route', () => {
       expectedUpdatedAt: body.expectedUpdatedAt,
       proposedConfigHash: 'a'.repeat(64),
       previewFingerprint: 'f'.repeat(64),
-      counts: { created: 0, recalculated: 0, cancelled: 0, preserved: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+      counts: { created: 0, recalculated: 0, cancelled: 0, preserved: 0, noChange: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
       samples: [],
       warnings: [],
+      projectedDeadlines: [{
+        ruleId: 'rule-1',
+        ruleCode: 'SG_ANNUAL_RETURN',
+        ruleName: 'Annual Return',
+        materializationPolicy: 'AUTHORITATIVE_ANNUAL_BACKLOG',
+        periodKey: '2027',
+        milestoneKey: 'annual-return-due',
+        milestoneName: 'Annual Return due',
+        scheduleEntryKey: '',
+        deadlineType: 'STATUTORY',
+        calculatedDueDate: '2027-07-31',
+        explanation: [],
+      }],
     });
   });
 
@@ -65,9 +78,10 @@ describe('client-service impact route', () => {
       expectedUpdatedAt: body.expectedUpdatedAt,
       proposedConfigHash: 'a'.repeat(64),
       previewFingerprint: '',
-      counts: { created: 0, recalculated: 0, cancelled: 0, preserved: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+      counts: { created: 0, recalculated: 0, cancelled: 0, preserved: 0, noChange: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
       samples: [],
       warnings: [],
+      projectedDeadlines: [],
     });
     const response = await POST(new NextRequest(`http://localhost/api/client-services/${serviceId}/deadline-configuration/impact`, { method: 'POST', body: JSON.stringify(body) }), { params: Promise.resolve({ id: serviceId }) });
     expect(response.status).toBe(400);
@@ -83,5 +97,17 @@ describe('client-service impact route', () => {
       allCompaniesAccess: false,
     });
     expect(rbacMock.requirePermission).toHaveBeenCalledWith(session, 'company', 'update', 'company-1');
+  });
+
+  it('returns the canonical projected deadlines from the impact payload', async () => {
+    const response = await POST(new NextRequest(`http://localhost/api/client-services/${serviceId}/deadline-configuration/impact`, { method: 'POST', body: JSON.stringify(body) }), { params: Promise.resolve({ id: serviceId }) });
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.projectedDeadlines).toEqual([
+      expect.objectContaining({
+        ruleCode: 'SG_ANNUAL_RETURN',
+        calculatedDueDate: '2027-07-31',
+      }),
+    ]);
   });
 });

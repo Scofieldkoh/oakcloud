@@ -60,11 +60,15 @@ describe('useTaskResources', () => {
     const { wrapper } = createHarness();
     renderHook(() => useTaskResources('task-1', true), { wrapper });
 
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);
     });
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);
     });

@@ -153,7 +153,7 @@ function WorkspaceSkeleton() {
           <div key={index} className="h-14 rounded-lg bg-background-tertiary" />
         ))}
       </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-2">
           <div className="h-11 rounded-lg bg-background-tertiary" />
           <div className="grid gap-2 sm:grid-cols-2">
@@ -278,7 +278,7 @@ function GenerateDocumentContent() {
                 selectedContactId: null,
                 itemValues: {},
                 masterOverrides: {},
-                useLetterhead: true,
+                useLetterhead: false,
                 serviceAgreement: null,
               },
               previewContent: null,

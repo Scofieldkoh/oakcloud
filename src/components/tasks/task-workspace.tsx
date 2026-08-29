@@ -25,6 +25,7 @@ import {
   type TaskListParams,
   type TaskStatusAction,
 } from '@/hooks/use-tasks';
+import { useTaskResources } from '@/hooks/use-task-resources';
 import type {
   TaskCreatePayload,
   TaskListItem,
@@ -47,6 +48,19 @@ interface SelectedStage {
 interface PendingConfirmation {
   task: TaskListItem;
   type: 'cancel' | 'archive';
+}
+
+function returnedStageToOpen(task: TaskListItem, returnedStageId: string) {
+  const orderedStages = [...task.stages].sort((left, right) => left.position - right.position);
+  const returnedStageIndex = orderedStages.findIndex((stage) => stage.id === returnedStageId);
+  const returnedStage = returnedStageIndex >= 0 ? orderedStages[returnedStageIndex] : undefined;
+
+  if (!returnedStage || returnedStage.status !== 'COMPLETED') return returnedStage;
+
+  return orderedStages
+    .slice(returnedStageIndex + 1)
+    .find((stage) => stage.status !== 'COMPLETED' && stage.status !== 'SKIPPED')
+    ?? returnedStage;
 }
 
 export function TaskWorkspace() {
@@ -72,6 +86,10 @@ export function TaskWorkspace() {
   const stageQuery = useTaskStage(
     selectedStage?.task.id ?? '',
     selectedStage?.stage.id ?? '',
+  );
+  const resourcesQuery = useTaskResources(
+    selectedStage?.task.id ?? '',
+    Boolean(selectedStage),
   );
   const updateStage = useUpdateTaskStage();
   const transitionStage = useTaskStageTransition();
@@ -215,17 +233,20 @@ export function TaskWorkspace() {
 
   useEffect(() => {
     if (!returnedTaskId || !returnedStageId) return;
+    if (taskQuery.isFetching) return;
     const restoredStageKey = `${returnedTaskId}:${returnedStageId}`;
     if (restoredStageKeyRef.current === restoredStageKey) return;
 
     const returnedTask = tasks.find((task) => task.id === returnedTaskId);
-    const returnedStage = returnedTask?.stages.find((stage) => stage.id === returnedStageId);
-    if (!returnedTask || !returnedStage) return;
+    const stageToOpen = returnedTask
+      ? returnedStageToOpen(returnedTask, returnedStageId)
+      : undefined;
+    if (!returnedTask || !stageToOpen) return;
 
     restoredStageKeyRef.current = restoredStageKey;
-    setSelectedStage({ task: returnedTask, stage: returnedStage });
+    setSelectedStage({ task: returnedTask, stage: stageToOpen });
     router.replace('/tasks', { scroll: false });
-  }, [returnedStageId, returnedTaskId, router, tasks]);
+  }, [returnedStageId, returnedTaskId, router, taskQuery.isFetching, tasks]);
 
   const closeForm = () => {
     if (createTask.isPending || updateTask.isPending) return;
@@ -402,6 +423,10 @@ export function TaskWorkspace() {
         stage={stageQuery.data}
         isLoading={stageQuery.isLoading}
         error={stageQuery.error ?? updateStage.error ?? transitionStage.error ?? null}
+        resources={resourcesQuery.data}
+        isResourcesLoading={resourcesQuery.isLoading}
+        resourcesError={resourcesQuery.error}
+        onRetryResources={() => void resourcesQuery.refetch()}
         onClose={() => {
           updateStage.reset();
           transitionStage.reset();
@@ -469,6 +494,8 @@ export function TaskWorkspace() {
           if (typeof body?.documentId !== 'string') {
             throw new Error('The BizFile upload did not return a document ID.');
           }
+
+          await resourcesQuery.refetch();
 
           const reviewHref = withTaskLaunchContext(
             `/companies/upload?documentId=${encodeURIComponent(body.documentId)}&fileName=${encodeURIComponent(file.name)}`,

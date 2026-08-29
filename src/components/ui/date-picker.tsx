@@ -20,6 +20,7 @@ import {
 import { Calendar, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
+import { SingleDateInput } from './single-date-input';
 
 // Import react-day-picker styles
 import 'react-day-picker/style.css';
@@ -32,6 +33,15 @@ export interface DatePickerValue {
   date?: Date;
   range?: DateRange;
 }
+
+type DatePickerDraftValue = {
+  mode: 'single' | 'range';
+  date?: Date;
+  range?: {
+    from?: Date;
+    to?: Date;
+  };
+};
 
 export interface DatePickerProps {
   /** The current value */
@@ -57,8 +67,12 @@ function formatDisplayDate(date: Date): string {
   return format(date, 'd MMM yyyy');
 }
 
+function formatISODate(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
+}
+
 // Get display value for the input
-function getDisplayValue(value?: DatePickerValue): string {
+function getDisplayValue(value?: DatePickerValue | DatePickerDraftValue): string {
   if (!value) return '';
 
   if (value.mode === 'single' && value.date) {
@@ -76,6 +90,12 @@ function getDisplayValue(value?: DatePickerValue): string {
   }
 
   return '';
+}
+
+function toLocalDate(value: string): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 // Preset configurations
@@ -281,9 +301,10 @@ export function DatePicker({
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('presets');
-  const [tempValue, setTempValue] = useState<DatePickerValue | undefined>(value);
+  const [tempValue, setTempValue] = useState<DatePickerDraftValue | undefined>(value);
   const [month, setMonth] = useState<Date>(new Date());
   const [selectionPhase, setSelectionPhase] = useState<'start' | 'end'>('start');
+  const [rangeError, setRangeError] = useState<string | null>(null);
 
   // Custom preset inputs
   const [customDays, setCustomDays] = useState('');
@@ -314,6 +335,7 @@ export function DatePicker({
       }
       // Use defaultTab prop instead of auto-detecting from value mode
       setActiveTab(defaultTab);
+      setRangeError(null);
     }
   }, [isOpen, value, defaultTab]);
 
@@ -418,11 +440,32 @@ export function DatePicker({
   }, [isOpen]);
 
   const handleApply = useCallback(() => {
-    onChange(tempValue);
+    const range = tempValue?.mode === 'range' ? tempValue.range : undefined;
+    if (activeTab === 'range') {
+      if (!range?.from || !range.to) {
+        setRangeError('Enter both a From and To date.');
+        return;
+      }
+      if (range.from > range.to) {
+        setRangeError('From date must be on or before To date.');
+        return;
+      }
+    }
+
+    setRangeError(null);
+    const nextValue: DatePickerValue | undefined = tempValue?.mode === 'range'
+      ? range?.from && range.to
+        ? { mode: 'range', range: { from: range.from, to: range.to } }
+        : undefined
+      : tempValue
+        ? { mode: 'single', date: tempValue.date }
+        : undefined;
+    onChange(nextValue);
     setIsOpen(false);
-  }, [tempValue, onChange]);
+  }, [activeTab, tempValue, onChange]);
 
   const handleClear = useCallback(() => {
+    setRangeError(null);
     setTempValue(undefined);
     onChange(undefined);
     setIsOpen(false);
@@ -463,6 +506,7 @@ export function DatePicker({
 
   const handleRangeSelect = useCallback((range: DateRange | undefined) => {
     if (!range) return;
+    setRangeError(null);
 
     // Determine which date was clicked by comparing with previous state
     // react-day-picker modifies the range internally, so we need to find the new date
@@ -505,8 +549,25 @@ export function DatePicker({
     }
   }, [selectionPhase, tempValue]);
 
+  const handleRangeInputChange = useCallback((side: 'from' | 'to', value: string) => {
+    setRangeError(null);
+    setTempValue((current) => {
+      const currentRange = current?.mode === 'range' ? current.range : undefined;
+      return {
+        mode: 'range',
+        range: {
+          ...currentRange,
+          [side]: toLocalDate(value),
+        },
+      };
+    });
+  }, []);
+
   const displayValue = getDisplayValue(value);
   const tempDisplayValue = getDisplayValue(tempValue);
+  const calendarRange = tempValue?.mode === 'range' && tempValue.range?.from
+    ? { from: tempValue.range.from, to: tempValue.range.to }
+    : undefined;
 
   const sizeClasses = {
     sm: 'h-9 text-sm px-3',
@@ -580,7 +641,10 @@ export function DatePicker({
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setRangeError(null);
+                }}
                 className={cn(
                   'flex-1 px-4 py-3 text-sm font-medium transition-colors',
                   activeTab === tab.key
@@ -614,7 +678,7 @@ export function DatePicker({
               <div className={cn('px-2', useSingleMonthForRange ? 'w-[320px]' : 'min-w-[540px]')}>
                 <DayPicker
                   mode="range"
-                  selected={tempValue?.mode === 'range' ? tempValue.range : undefined}
+                  selected={calendarRange}
                   onSelect={handleRangeSelect}
                   numberOfMonths={useSingleMonthForRange ? 1 : 2}
                   month={month}
@@ -780,8 +844,26 @@ export function DatePicker({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end px-4 py-3 border-t border-border-primary bg-background-secondary rounded-b-xl">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-3 border-t border-border-primary bg-background-secondary rounded-b-xl">
+            {activeTab === 'range' ? (
+              <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+                <SingleDateInput
+                  label="From"
+                  value={tempValue?.mode === 'range' && tempValue.range?.from ? formatISODate(tempValue.range.from) : ''}
+                  onChange={(value) => handleRangeInputChange('from', value)}
+                  showCalendar={false}
+                  className="min-w-0"
+                />
+                <SingleDateInput
+                  label="To"
+                  value={tempValue?.mode === 'range' && tempValue.range?.to ? formatISODate(tempValue.range.to) : ''}
+                  onChange={(value) => handleRangeInputChange('to', value)}
+                  showCalendar={false}
+                  className="min-w-0"
+                />
+              </div>
+            ) : <div />}
+            <div className="flex shrink-0 items-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleClear}>
                 Clear
               </Button>
@@ -789,6 +871,7 @@ export function DatePicker({
                 Apply
               </Button>
             </div>
+            {activeTab === 'range' && rangeError ? <p role="alert" className="basis-full text-xs text-status-error">{rangeError}</p> : null}
           </div>
         </div>,
         document.body

@@ -102,6 +102,7 @@ interface PipelineStageModalFrameProps {
   onClose: () => void;
   isMutating: boolean;
   children: ReactNode;
+  aside?: ReactNode;
   footer?: ReactNode;
 }
 
@@ -111,6 +112,7 @@ export function PipelineStageModalFrame({
   onClose,
   isMutating,
   children,
+  aside,
   footer,
 }: PipelineStageModalFrameProps) {
   return (
@@ -130,7 +132,7 @@ export function PipelineStageModalFrame({
         </span>
       ) : undefined}
       description={stage ? stageDescription(stage) : undefined}
-      size="6xl"
+      size="full"
       className={cn(
         'max-h-[calc(100vh-2rem)] overflow-y-auto border-l-4 [&>div:first-child]:px-6 [&>div:first-child]:py-4',
         stage ? stageStatusAccent[stage.status] : 'border-l-slate-400',
@@ -140,9 +142,19 @@ export function PipelineStageModalFrame({
     >
       <ModalBody
         data-testid="pipeline-stage-modal-body"
-        className="space-y-4 p-5 sm:p-6"
+        className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem]"
       >
-        {children}
+        <div data-testid="pipeline-stage-modal-main" className="min-w-0 space-y-4">
+          {children}
+        </div>
+        {aside ? (
+          <aside
+            className="max-h-[50dvh] min-w-0 overflow-y-auto border-t border-border-primary pt-4 lg:max-h-[calc(100dvh-12rem)] lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0"
+            aria-label="Task resources"
+          >
+            {aside}
+          </aside>
+        ) : null}
       </ModalBody>
       {footer}
     </Modal>

@@ -96,6 +96,21 @@ describe('Sidebar task workspace destinations', () => {
 
     render(<Sidebar />);
 
-    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/services?tab=services');
+    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/services');
+  });
+
+  it('keeps operational destinations together in the requested order before Document Vault', () => {
+    servicesSettings.data.workspaceEnabled = true;
+
+    render(<Sidebar />);
+
+    const menu = screen.getByRole('navigation', { name: 'Main menu' });
+    const links = [...menu.querySelectorAll('a')].map((link) => link.textContent?.trim());
+    expect(links).toEqual(expect.arrayContaining(['Tasks', 'Services', 'Deadlines', 'Billing', 'Document Vault']));
+    const requestedOrder = ['Tasks', 'Services', 'Deadlines', 'Billing', 'Document Vault'];
+    const indexes = requestedOrder.map((name) => links.indexOf(name));
+    expect(indexes).toEqual([...indexes].sort((left, right) => left - right));
+    expect(screen.getByRole('link', { name: 'Deadlines' })).toHaveAttribute('href', '/deadlines');
+    expect(screen.getByRole('link', { name: 'Billing' })).toHaveAttribute('href', '/billing');
   });
 });

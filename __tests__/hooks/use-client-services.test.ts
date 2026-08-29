@@ -6,6 +6,8 @@ import { waitFor } from '@testing-library/react';
 import {
   HttpRequestError,
   isHttpRequestError,
+  previewClientServiceDeadlineDraft,
+  previewClientServiceDeadlineImpact,
   useCreateManualClientService,
   useDeleteClientServicePermanently,
   useManualClientServiceCatalogOptions,
@@ -183,5 +185,64 @@ describe('client service hook error boundary', () => {
     });
 
     expect(caught).toMatchObject({ status: 409, code: 'DUPLICATE_CLIENT_SERVICE', body: { duplicates: { total: 1 } } });
+  });
+
+  it('previews deadline impact without a query-cache write and forwards an abort signal', async () => {
+    const impact = {
+      clientServiceId: 'service-1',
+      expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+      proposedConfigHash: 'a'.repeat(64),
+      previewFingerprint: 'f'.repeat(64),
+      counts: { created: 0, recalculated: 0, cancelled: 0, preserved: 0, noChange: 0, inapplicable: 0, missingInput: 0, conflicts: 0, warnings: 0 },
+      samples: [],
+      warnings: [],
+      projectedDeadlines: [],
+    };
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(impact));
+    const { queryClient } = createHarness();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    const controller = new AbortController();
+
+    const result = await previewClientServiceDeadlineImpact('service-1', {
+      expectedUpdatedAt: '2026-07-30T00:00:00.000Z',
+      deadlineRules: [],
+      scheduleSnapshot: { status: 'ACTIVE', serviceCadence: 'MONTHLY', customCadenceLabel: null, startDate: '2026-08-01', endDate: null, fieldValues: {} },
+    }, controller.signal);
+
+    expect(result.previewFingerprint).toBe('f'.repeat(64));
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/client-services/service-1/deadline-configuration/impact',
+      expect.objectContaining({
+        method: 'POST',
+        signal: controller.signal,
+      }),
+    );
+    expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  it('previews a draft deadline projection before the service exists', async () => {
+    const draft = {
+      companyId: 'company-1',
+      serviceVariantId: 'variant-1',
+      today: '2026-08-27',
+      horizonEnd: '2027-08-27',
+      counts: { applicable: 1, disabled: 0, inapplicable: 0, missingInput: 0, warnings: 0 },
+      warnings: [],
+      projectedDeadlines: [],
+    };
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(draft));
+
+    const result = await previewClientServiceDeadlineDraft({
+      companyId: 'company-1',
+      serviceVariantId: 'variant-1',
+      deadlineRules: [],
+      scheduleSnapshot: { status: 'ACTIVE', serviceCadence: 'ANNUALLY', customCadenceLabel: null, startDate: '2026-08-01', endDate: null, fieldValues: {} },
+    });
+
+    expect(result.counts.applicable).toBe(1);
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/client-services/deadline-configuration/preview',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });

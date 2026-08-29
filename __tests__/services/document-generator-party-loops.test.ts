@@ -122,4 +122,36 @@ describe('document generator party loops', () => {
       }),
     }));
   });
+
+  it('renders only the selected directors for a directors collection loop', async () => {
+    vi.mocked(getCompanyById).mockResolvedValue({
+      id: 'company-1',
+      name: 'Sample',
+      uen: '202600001A',
+      officers: [
+        { id: 'officer-1', name: 'Alice', role: 'DIRECTOR', address: null, isCurrent: true },
+        { id: 'officer-2', name: 'Ben', role: 'DIRECTOR', address: null, isCurrent: true },
+      ],
+      shareholders: [],
+    } as never);
+    vi.mocked(prisma.company.findFirst).mockResolvedValue({
+      id: 'company-1',
+      officers: [
+        { id: 'officer-1', contactId: null, name: 'Alice', role: 'DIRECTOR', nationality: null, identificationNumber: null, address: null, appointmentDate: null },
+        { id: 'officer-2', contactId: null, name: 'Ben', role: 'DIRECTOR', nationality: null, identificationNumber: null, address: null, appointmentDate: null },
+      ],
+      shareholders: [],
+      contacts: [],
+    } as never);
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([]);
+
+    const result = await renderTemplateForGeneration({
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      selectedDirectorIds: ['officer-2'],
+      templateContent: '{{#each directors}}{{this.name}}{{/each}}',
+    });
+
+    expect(result.rawResolvedContent).toBe('Ben');
+  });
 });

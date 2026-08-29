@@ -98,6 +98,35 @@ export function addMonthsClamped(value: DateOnly, amount: number): DateOnly {
   return formatDateOnly(createUtcDate(targetYear, targetMonthIndex, targetDay));
 }
 
+/**
+ * Rebuild a validated date with the same month/day in a different year,
+ * clamping the day to the target year's calendar (leap-safe).
+ */
+export function dateOnlyWithYearClamped(value: DateOnly, year: number): DateOnly {
+  assertInteger(year, 'year');
+  if (year < MIN_YEAR || year > MAX_YEAR) {
+    throw new ValidationError('Year is outside the supported range', { value, year });
+  }
+  const { month, day } = parseComponents(value);
+  const targetDay = Math.min(day, daysInMonth(year, month));
+  return formatDateOnly(createUtcDate(year, month - 1, targetDay));
+}
+
+/**
+ * Align an annual company landmark (month/day) to the first anniversary on
+ * or after the period start. The source year is a data artifact; annual
+ * rules treat the stored month/day as a recurring landmark.
+ */
+export function alignAnnualLandmarkToPeriod(
+  sourceDate: DateOnly,
+  periodStart: DateOnly,
+): DateOnly {
+  const candidate = dateOnlyWithYearClamped(sourceDate, Number(periodStart.slice(0, 4)));
+  return compareDateOnly(candidate, periodStart) < 0
+    ? addMonthsClamped(candidate, 12)
+    : candidate;
+}
+
 export function dayOfMonth(periodMonth: DateOnly, day: number): DateOnly {
   assertInteger(day, 'day');
   if (day < 1 || day > 31) {

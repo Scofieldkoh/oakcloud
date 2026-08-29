@@ -17,6 +17,12 @@ vi.mock('@/hooks/use-user-preferences', () => ({
   useUpsertUserPreference: () => ({ mutate: vi.fn() }),
 }));
 
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: ({ placeholder }: { placeholder?: string }) => (
+    <input aria-label="All companies" placeholder={placeholder} readOnly />
+  ),
+}));
+
 const pipeline: TaskPipeline = {
   id: 'pipeline-1',
   name: 'Client onboarding',
@@ -71,32 +77,18 @@ describe('TaskList desktop columns', () => {
     const rows = within(table).getAllByRole('row');
     expect(within(rows[1]).getAllByRole('columnheader').map((header) => header.textContent))
       .toEqual(['Company', 'Task', 'Status', 'Pipeline', 'Stages', 'Owner', 'Due', 'Actions']);
-    expect(table).not.toHaveClass('w-full');
-    expect(table).toHaveStyle({ width: '1422px', minWidth: '1422px' });
-    expect(table).toHaveClass('relative', 'z-[1]');
+    expect(table).toHaveClass('w-full', 'min-w-max');
+    expect(table).not.toHaveClass('table-fixed');
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
 
     const scrollContainer = screen.getByTestId('task-table-scroll');
-    expect(scrollContainer).toHaveClass('relative');
-    const headerBaseBand = screen.getByTestId('task-column-header-band');
-    const filterRowBand = screen.getByTestId('task-filter-row-band');
-    expect(headerBaseBand).toHaveClass(
-      'pointer-events-none',
-      'absolute',
-      'inset-x-0',
-      'top-0',
-      'h-[94px]',
-      'bg-background-tertiary',
-    );
-    expect(filterRowBand).toHaveClass(
-      'pointer-events-none',
-      'absolute',
-      'inset-x-0',
-      'top-0',
-      'h-14',
-      'bg-background-secondary/50',
-    );
-    expect(headerBaseBand.compareDocumentPosition(filterRowBand))
-      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(scrollContainer).not.toHaveClass('relative');
+    expect(screen.queryByTestId('task-column-header-band')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('task-filter-row-band')).not.toBeInTheDocument();
+    const columns = table.querySelectorAll('colgroup col');
+    expect((columns.item(columns.length - 1) as HTMLElement).style.width).toBe('');
+    expect(screen.queryByRole('separator', { name: 'Resize Actions column' })).not.toBeInTheDocument();
     expect(rows[0]).toHaveClass('h-14');
     expect(rows[1]).toHaveClass('h-[38px]');
 

@@ -79,6 +79,20 @@ describe('billing occurrence routes', () => {
     });
   });
 
+  it('allows the billing list to be requested without a date range', async () => {
+    const response = await listGET(new NextRequest('http://localhost/api/billing-occurrences?page=2&limit=20'));
+
+    expect(response.status).toBe(200);
+    const search = mocks.listBillingOccurrences.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(search).toMatchObject({ page: 2, limit: 20 });
+    expect(search).not.toHaveProperty('from');
+    expect(search).not.toHaveProperty('to');
+    expect(mocks.listBillingOccurrences).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 20 }), {
+      tenantId,
+      companyIds: [companyId],
+    });
+  });
+
   it('rejects unknown and duplicate list query keys before service access', async () => {
     const unknown = await listGET(new NextRequest('http://localhost/api/billing-occurrences?from=2026-08-01&to=2026-08-31&bad=value'));
     expect(unknown.status).toBe(400);

@@ -3,9 +3,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperationalServiceForm } from '@/components/companies/company-detail/operational-service-form';
 import {
+  type DeadlinePreviewState,
   type OperationalServiceValues,
   validateOperationalServiceValues,
 } from '@/components/companies/company-detail/client-service-form-state';
+import type { ClientServiceProjectedDeadlineDto } from '@/services/client-service';
+import type { DateOnly } from '@/services/service-schedule';
 
 const uuid = () => crypto.randomUUID();
 
@@ -50,6 +53,50 @@ function Harness({ initial, errors }: { initial: OperationalServiceValues; error
   const [values, setValues] = useState(initial);
   useEffect(() => { setValues(initial); }, [initial]);
   return <OperationalServiceForm values={values} onChange={setValues} errors={errors ?? {}} />;
+}
+
+function PreviewHarness({ initial, deadlinePreview }: { initial: OperationalServiceValues; deadlinePreview?: DeadlinePreviewState }) {
+  const [values, setValues] = useState(initial);
+  return <OperationalServiceForm values={values} onChange={setValues} errors={{}} deadlinePreview={deadlinePreview} />;
+}
+
+function projected(
+  milestoneKey: string,
+  milestoneName: string,
+  calculatedDueDate: string,
+  policy: 'ROLLING_HORIZON' | 'AUTHORITATIVE_ANNUAL_BACKLOG' = 'ROLLING_HORIZON',
+): ClientServiceProjectedDeadlineDto {
+  return {
+    ruleId: 'rule-1',
+    ruleCode: policy === 'AUTHORITATIVE_ANNUAL_BACKLOG' ? 'SG_ANNUAL_RETURN' : 'SG_ECI',
+    ruleName: 'Rule name',
+    materializationPolicy: policy,
+    periodKey: '2027',
+    milestoneKey,
+    milestoneName,
+    scheduleEntryKey: '',
+    deadlineType: 'STATUTORY',
+    calculatedDueDate: calculatedDueDate as DateOnly,
+    explanation: [`Source Company.accountsDueDate = ${calculatedDueDate}`],
+  };
+}
+
+function enabledRulesValues(): OperationalServiceValues {
+  return {
+    ...baseValues(),
+    deadlineRules: [{
+      uiId: 'rule-test',
+      ruleId: 'r-1',
+      code: 'TEST_RULE',
+      name: 'Test Rule',
+      enabled: true,
+      parameterValues: {},
+      parameterProvenance: {},
+      scheduleEntries: [],
+      parameters: [],
+      catalogDerived: true,
+    }],
+  };
 }
 
 describe('OperationalServiceForm', () => {
@@ -389,174 +436,101 @@ describe('OperationalServiceForm', () => {
     expect(screen.getByLabelText('Entry label')).toBeVisible();
   });
 
-  it('sources actual deadline preview dates directly from company accountsDueDate regardless of start date year', () => {
-    const valuesWithRules: OperationalServiceValues = {
-      ...baseValues(),
-      startDate: '2020-01-01',
-      deadlineRules: [
-        {
-          uiId: 'rule-ar',
-          ruleId: 'r-ar',
-          code: 'SG_ANNUAL_RETURN',
-          name: 'Singapore Annual Return',
-          enabled: true,
-          parameterValues: {},
-          parameterProvenance: {},
-          scheduleEntries: [],
-          parameters: [],
-          catalogDerived: true,
-        },
-        {
-          uiId: 'rule-agm',
-          ruleId: 'r-agm',
-          code: 'SG_AGM',
-          name: 'Annual General Meeting (AGM)',
-          enabled: true,
-          parameterValues: {},
-          parameterProvenance: {},
-          scheduleEntries: [],
-          parameters: [],
-          catalogDerived: true,
-        },
+  it('renders canonical server-projected deadline dates verbatim without local recomputation', () => {
+    render(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'SUCCESS',
+      items: [
+        projected('agm-due', 'AGM due', '2027-06-30'),
+        projected('annual-return-due', 'Annual Return', '2027-07-31'),
       ],
-    };
+      warnings: [],
+      fingerprint: 'f'.repeat(64),
+      payloadHash: 'payload',
+    }} />);
 
-    function ContextHarness() {
-      const [values, setValues] = useState(valuesWithRules);
-      return (
-        <OperationalServiceForm
-          values={values}
-          onChange={setValues}
-          errors={{}}
-          companyContext={{
-            id: 'c-1',
-            name: 'Acme Pte Ltd',
-            accountsDueDate: '2027-07-31',
-          }}
-        />
-      );
-    }
-
-    render(<ContextHarness />);
-    expect(screen.getByText('Deadlines Preview')).toBeVisible();
-    expect(screen.getByText('31 Jul 2027')).toBeVisible();
+    expect(screen.getByText('Canonical deadline preview')).toBeVisible();
     expect(screen.getByText('30 Jun 2027')).toBeVisible();
-    expect(screen.getByText('Sourced from Company accounts due date (2027-07-31)')).toBeVisible();
-    expect(screen.getByText('1 month before Company accounts due date (2027-06-30)')).toBeVisible();
-  });
-
-  it('renders overdue statutory backlog in red with distinct alert indicator for past accountsDueDate', () => {
-    const valuesWithRules: OperationalServiceValues = {
-      ...baseValues(),
-      startDate: '2026-01-01',
-      deadlineRules: [
-        {
-          uiId: 'rule-ar-overdue',
-          ruleId: 'r-ar',
-          code: 'SG_ANNUAL_RETURN',
-          name: 'Singapore Annual Return',
-          enabled: true,
-          parameterValues: {},
-          parameterProvenance: {},
-          scheduleEntries: [],
-          parameters: [],
-          catalogDerived: true,
-        },
-      ],
-    };
-
-    function OverdueHarness() {
-      const [values, setValues] = useState(valuesWithRules);
-      return (
-        <OperationalServiceForm
-          values={values}
-          onChange={setValues}
-          errors={{}}
-          companyContext={{
-            id: 'c-1',
-            name: 'Overdue Pte Ltd',
-            accountsDueDate: '2024-07-31',
-          }}
-        />
-      );
-    }
-
-    render(<OverdueHarness />);
-    expect(screen.getByText('31 Jul 2024')).toBeVisible();
-    expect(screen.getByText('31 Jul 2025')).toBeVisible();
-    expect(screen.getByText('31 Jul 2026')).toBeVisible();
     expect(screen.getByText('31 Jul 2027')).toBeVisible();
-    expect(screen.getAllByText('Overdue Backlog').length).toBe(3);
-    expect(screen.getByText('Sourced from Company accounts due date (2027-07-31)')).toBeVisible();
+    expect(screen.getByText('2 scheduled milestones')).toBeVisible();
   });
 
-  it('populates 12 monthly deadline occurrences across the horizon for monthly service cadence', () => {
-    const valuesWithMonthlyRule: OperationalServiceValues = {
-      ...baseValues(),
-      serviceCadence: 'MONTHLY',
-      startDate: '2026-08-01',
-      deadlineRules: [
-        {
-          uiId: 'rule-monthly-gst',
-          ruleId: 'r-gst',
-          code: 'SG_GST_F5',
-          name: 'Monthly GST F5 Filing',
-          enabled: true,
-          parameterValues: {},
-          parameterProvenance: {},
-          scheduleEntries: [],
-          parameters: [],
-          catalogDerived: true,
-        },
+  it('sorts supplied canonical items chronologically and renders server explanations', () => {
+    render(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'SUCCESS',
+      items: [
+        projected('annual-return-due', 'Annual Return', '2027-07-31'),
+        projected('agm-due', 'AGM due', '2027-06-30'),
       ],
-    };
+      warnings: [],
+      fingerprint: 'f'.repeat(64),
+      payloadHash: 'payload',
+    }} />);
 
-    render(<Harness initial={valuesWithMonthlyRule} />);
-    expect(screen.getByText('12 scheduled milestones')).toBeVisible();
-    expect(screen.getByText('15 Aug 2026')).toBeVisible();
-    expect(screen.getByText('15 Jul 2027')).toBeVisible();
-    expect(screen.getByText('Month 1 of 12')).toBeVisible();
-    expect(screen.getByText('Month 12 of 12')).toBeVisible();
+    const dates = screen.getAllByText(/2027$/);
+    expect(dates.map((node) => node.textContent)).toEqual(['30 Jun 2027', '31 Jul 2027']);
+    expect(screen.getAllByText(/Source Company\.accountsDueDate/).length).toBe(2);
   });
 
-  it('displays actual calculated deadline dates in the preview panel sorted chronologically', () => {
-    const valuesWithRules: OperationalServiceValues = {
-      ...baseValues(),
-      startDate: '2026-08-01',
-      deadlineRules: [
-        {
-          uiId: 'rule-ar',
-          ruleId: 'r-ar',
-          code: 'SG_ANNUAL_RETURN',
-          name: 'Singapore Annual Return',
-          enabled: true,
-          parameterValues: {},
-          parameterProvenance: {},
-          scheduleEntries: [],
-          parameters: [],
-          catalogDerived: true,
-        },
-        {
-          uiId: 'rule-agm',
-          ruleId: 'r-agm',
-          code: 'SG_AGM',
-          name: 'Annual General Meeting (AGM)',
-          enabled: true,
-          parameterValues: {},
-          parameterProvenance: {},
-          scheduleEntries: [],
-          parameters: [],
-          catalogDerived: true,
-        },
+  it('renders an authoritative backlog badge only for pre-today authoritative items', () => {
+    render(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'SUCCESS',
+      items: [
+        projected('agm-due', 'AGM due', '2024-06-30', 'AUTHORITATIVE_ANNUAL_BACKLOG'),
+        projected('annual-return-due', 'Annual Return', '2027-07-31', 'AUTHORITATIVE_ANNUAL_BACKLOG'),
+        projected('eci-due', 'ECI due', '2027-03-31', 'ROLLING_HORIZON'),
       ],
-    };
+      warnings: [],
+      fingerprint: 'f'.repeat(64),
+      payloadHash: 'payload',
+    }} />);
 
-    render(<Harness initial={valuesWithRules} />);
-    expect(screen.getByText('Deadlines Preview')).toBeVisible();
-    expect(screen.getByText('31 Jul 2027')).toBeVisible();
+    expect(screen.getAllByText('Authoritative backlog')).toHaveLength(1);
+    expect(screen.getByText('30 Jun 2024')).toBeVisible();
+    expect(screen.getAllByText('Scheduled').length).toBe(2);
+  });
+
+  it('renders loading, empty, and error states without guessing local dates', () => {
+    const { rerender } = render(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'LOADING',
+      items: [projected('agm-due', 'AGM due', '2027-06-30')],
+      warnings: [],
+    }} />);
+    expect(screen.getByText(/Refreshing deadline preview/)).toBeVisible();
     expect(screen.getByText('30 Jun 2027')).toBeVisible();
-    expect(screen.getByText('7 months after FYE (31 Dec 2026)')).toBeVisible();
-    expect(screen.getByText('6 months after FYE (31 Dec 2026)')).toBeVisible();
+
+    rerender(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'IDLE',
+      items: [],
+      warnings: [],
+    }} />);
+    expect(screen.getByText('No canonical deadlines projected for the active rules.')).toBeVisible();
+
+    rerender(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'ERROR',
+      items: [],
+      warnings: [],
+      message: 'Preview request failed',
+    }} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Deadline preview is unavailable: Preview request failed');
+  });
+
+  it('never renders a guessed schedule count in create mode without a server preview', () => {
+    render(<OperationalServiceForm mode="create" values={enabledRulesValues()} onChange={vi.fn()} errors={{}} />);
+    expect(screen.queryByText('Canonical deadline preview')).not.toBeInTheDocument();
+    expect(screen.queryByText(/scheduled milestone/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Deadlines are generated by the deadline engine when this service is saved/)).toBeVisible();
+  });
+
+  it('renders truncation warnings prominently instead of hiding them', () => {
+    render(<PreviewHarness initial={enabledRulesValues()} deadlinePreview={{
+      state: 'SUCCESS',
+      items: [projected('annual-return-due', 'Annual Return', '2027-07-31', 'AUTHORITATIVE_ANNUAL_BACKLOG')],
+      warnings: ['Annual deadline backlog was truncated: 8 older cycles excluded; oldest retained year is 2008.'],
+      fingerprint: 'f'.repeat(64),
+      payloadHash: 'payload',
+    }} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('8 older cycles excluded');
   });
 
   it('renders a billing preview panel with calculated billing dates and amounts', () => {

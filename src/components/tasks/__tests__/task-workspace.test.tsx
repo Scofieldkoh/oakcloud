@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskWorkspace } from '@/components/tasks/task-workspace';
 import type { TaskPipeline } from '@/hooks/use-task-pipelines';
-import type { TaskListItem, TaskStageDetail } from '@/services/tasks/types';
+import type { TaskListItem, TaskResourcesResponse, TaskStageDetail } from '@/services/tasks/types';
 
 const hookMocks = vi.hoisted(() => ({
   archive: vi.fn(),
@@ -18,6 +18,7 @@ const hookMocks = vi.hoisted(() => ({
   useCurrentWorkspaceUsers: vi.fn(),
   useTaskPipelines: vi.fn(),
   useTaskStage: vi.fn(),
+  useTaskResources: vi.fn(),
   useTaskStageTransition: vi.fn(),
   useTaskStatusMutation: vi.fn(),
   useTasks: vi.fn(),
@@ -41,11 +42,15 @@ vi.mock('@/hooks/use-tasks', () => ({
   useArchiveTask: hookMocks.useArchiveTask,
   useCreateTask: hookMocks.useCreateTask,
   useTaskStage: hookMocks.useTaskStage,
+  useTaskResources: hookMocks.useTaskResources,
   useTaskStageTransition: hookMocks.useTaskStageTransition,
   useTaskStatusMutation: hookMocks.useTaskStatusMutation,
   useTasks: hookMocks.useTasks,
   useUpdateTask: hookMocks.useUpdateTask,
   useUpdateTaskStage: hookMocks.useUpdateTaskStage,
+}));
+vi.mock('@/hooks/use-task-resources', () => ({
+  useTaskResources: hookMocks.useTaskResources,
 }));
 vi.mock('@/hooks/use-task-pipelines', () => ({
   useTaskPipelines: hookMocks.useTaskPipelines,
@@ -61,6 +66,18 @@ vi.mock('@/hooks/use-auth', () => ({
 }));
 vi.mock('@/components/ui/workspace-selector', () => ({
   useActiveWorkspaceId: () => 'tenant-1',
+}));
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: ({ placeholder }: { placeholder?: string }) => (
+    <input
+      aria-label="All companies"
+      aria-controls="company-select-options"
+      aria-expanded="false"
+      placeholder={placeholder}
+      readOnly
+      role="combobox"
+    />
+  ),
 }));
 vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreferences: () => ({
@@ -121,6 +138,38 @@ const stage: TaskStageDetail = {
   launch: { href: null, context: { taskId: task.id, taskStageId: 'stage-1' } },
   outcomeSummary: null,
 };
+const resources: TaskResourcesResponse = {
+  task: {
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    dueDate: null,
+    company: {
+      id: task.company!.id,
+      name: task.company!.name,
+      uen: '202600001A',
+      href: `/companies/${task.company!.id}`,
+    },
+    owner: { id: task.owner!.id, name: 'Sam Chen', email: task.owner!.email },
+    pipelineName: task.pipelineVersion.pipeline.name,
+  },
+  stages: [{
+    id: stage.id,
+    name: stage.name,
+    position: stage.position,
+    actionType: stage.actionType,
+    status: stage.status,
+    description: stage.description,
+    notes: stage.notes,
+    startedAt: stage.startedAt,
+    completedAt: stage.completedAt,
+    assignee: null,
+    checklist: [],
+    blockers: [],
+    resources: [],
+  }],
+  hasPendingResources: false,
+};
 
 function useMutationMock(mutation: (variables: unknown) => Promise<unknown>) {
   const [error, setError] = useState<Error | null>(null);
@@ -169,6 +218,12 @@ beforeEach(() => {
   hookMocks.useCompanies.mockReturnValue({ data: { companies: [task.company] }, error: null, isLoading: false });
   hookMocks.useCurrentWorkspaceUsers.mockReturnValue({ data: { users: [task.owner] }, error: null, isLoading: false });
   hookMocks.useTaskStage.mockReturnValue({ data: stage, error: null, isLoading: false });
+  hookMocks.useTaskResources.mockReturnValue({
+    data: resources,
+    error: null,
+    isLoading: false,
+    refetch: vi.fn(),
+  });
   hookMocks.archive.mockResolvedValue(task);
   hookMocks.create.mockResolvedValue(task);
   hookMocks.stageTransition.mockResolvedValue(task);
@@ -335,7 +390,25 @@ describe('TaskWorkspace', () => {
     render(<TaskWorkspace />);
     fireEvent.click(screen.getAllByRole('button', { name: /Review stage/i })[0]);
     await waitFor(() => expect(hookMocks.useTaskStage).toHaveBeenLastCalledWith(task.id, 'stage-1'));
+    expect(hookMocks.useTaskResources).toHaveBeenLastCalledWith(task.id, true);
     expect(screen.getByRole('dialog')).toHaveTextContent('Review records.');
+    expect(screen.getByTestId('task-resources-panel')).toHaveTextContent('202600001A');
+  });
+
+  it('keeps the stage form visible when task resources fail to load', async () => {
+    hookMocks.useTaskResources.mockReturnValue({
+      data: undefined,
+      error: new Error('Resources unavailable'),
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    render(<TaskWorkspace />);
+    fireEvent.click(screen.getAllByRole('button', { name: /Review stage/i })[0]);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Resources unavailable');
+    expect(within(dialog).getByRole('button', { name: 'Complete stage' })).toBeVisible();
   });
 
   it('reopens a returned task stage and provides direct navigation to the next stage', async () => {
@@ -379,6 +452,141 @@ describe('TaskWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next stage' }));
     expect(await screen.findByRole('heading', { name: 'Prepare documents' })).toBeVisible();
     expect(navigationMocks.replace).toHaveBeenCalledWith('/tasks', { scroll: false });
+  });
+
+  it('opens the next actionable stage when returning from a completed stage', async () => {
+    const completedStage = {
+      ...task.stages[0],
+      status: 'COMPLETED' as const,
+    };
+    const nextStage = {
+      id: 'stage-2',
+      name: 'Prepare documents',
+      position: 1,
+      actionType: 'DOCUMENT_GENERATION' as const,
+      icon: 'FileText',
+      isRequired: true,
+      status: 'NOT_STARTED' as const,
+    };
+    const returnedTask = { ...task, stages: [completedStage, nextStage] };
+    navigationMocks.searchParams = new URLSearchParams(
+      'taskId=task-1&taskStageId=stage-1&returnTo=%2Ftasks',
+    );
+    hookMocks.useTasks.mockReturnValue({
+      data: { tasks: [returnedTask], total: 1, page: 1, limit: 20, totalPages: 1 },
+      error: null,
+      isLoading: false,
+    });
+    hookMocks.useTaskStage.mockImplementation((_taskId: string, stageId: string) => ({
+      data: stageId === nextStage.id
+        ? {
+            ...stage,
+            ...nextStage,
+            description: 'Prepare the engagement documents.',
+            launch: {
+              href: '/generated-documents/generate',
+              context: { taskId: task.id, taskStageId: nextStage.id },
+            },
+          }
+        : {
+            ...stage,
+            ...completedStage,
+            completedAt: '2026-07-26T00:00:00.000Z',
+          },
+      error: null,
+      isLoading: false,
+    }));
+
+    render(<TaskWorkspace />);
+
+    expect(await screen.findByRole('heading', { name: 'Prepare documents' })).toBeVisible();
+    expect(hookMocks.useTaskStage).toHaveBeenLastCalledWith(task.id, nextStage.id);
+    expect(navigationMocks.replace).toHaveBeenCalledWith('/tasks', { scroll: false });
+  });
+
+  it('opens the returned completed stage when it is the final stage', async () => {
+    const completedStage = {
+      ...task.stages[0],
+      status: 'COMPLETED' as const,
+    };
+    const returnedTask = { ...task, stages: [completedStage] };
+    navigationMocks.searchParams = new URLSearchParams(
+      'taskId=task-1&taskStageId=stage-1&returnTo=%2Ftasks',
+    );
+    hookMocks.useTasks.mockReturnValue({
+      data: { tasks: [returnedTask], total: 1, page: 1, limit: 20, totalPages: 1 },
+      error: null,
+      isLoading: false,
+      isFetching: false,
+    });
+    hookMocks.useTaskStage.mockReturnValue({
+      data: {
+        ...stage,
+        ...completedStage,
+        completedAt: '2026-07-26T00:00:00.000Z',
+      },
+      error: null,
+      isLoading: false,
+    });
+
+    render(<TaskWorkspace />);
+
+    expect(await screen.findByRole('heading', { name: 'Review' })).toBeVisible();
+    expect(hookMocks.useTaskStage).toHaveBeenLastCalledWith(task.id, completedStage.id);
+    expect(navigationMocks.replace).toHaveBeenCalledWith('/tasks', { scroll: false });
+  });
+
+  it('waits for refreshed task data before advancing a returned stage', async () => {
+    const completedStage = {
+      ...task.stages[0],
+      status: 'COMPLETED' as const,
+    };
+    const nextStage = {
+      id: 'stage-2',
+      name: 'Prepare documents',
+      position: 1,
+      actionType: 'DOCUMENT_GENERATION' as const,
+      icon: 'FileText',
+      isRequired: true,
+      status: 'NOT_STARTED' as const,
+    };
+    const staleTask = { ...task, stages: [task.stages[0], nextStage] };
+    const refreshedTask = { ...task, stages: [completedStage, nextStage] };
+    let currentTask = staleTask;
+    let isFetching = true;
+    navigationMocks.searchParams = new URLSearchParams(
+      'taskId=task-1&taskStageId=stage-1&returnTo=%2Ftasks',
+    );
+    hookMocks.useTasks.mockImplementation(() => ({
+      data: { tasks: [currentTask], total: 1, page: 1, limit: 20, totalPages: 1 },
+      error: null,
+      isLoading: false,
+      isFetching,
+    }));
+    hookMocks.useTaskStage.mockImplementation((_taskId: string, stageId: string) => ({
+      data: stageId === nextStage.id
+        ? {
+            ...stage,
+            ...nextStage,
+            description: 'Prepare the engagement documents.',
+            launch: {
+              href: '/generated-documents/generate',
+              context: { taskId: task.id, taskStageId: nextStage.id },
+            },
+          }
+        : stage,
+      error: null,
+      isLoading: false,
+    }));
+
+    const view = render(<TaskWorkspace />);
+    expect(screen.queryByRole('heading', { name: 'Review' })).not.toBeInTheDocument();
+
+    currentTask = refreshedTask;
+    isFetching = false;
+    view.rerender(<TaskWorkspace />);
+
+    expect(await screen.findByRole('heading', { name: 'Prepare documents' })).toBeVisible();
   });
 
   it('keeps a failed stage transition visible in the modal and retries it', async () => {

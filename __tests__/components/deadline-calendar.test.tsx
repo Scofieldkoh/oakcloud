@@ -91,7 +91,8 @@ describe('DeadlineCalendar', () => {
     render(<DeadlineCalendar items={[occurrence]} onMonthCountChange={monthCountChange} />);
 
     expect(screen.getAllByRole('grid', { name: /calendar/i })).toHaveLength(2);
-    expect(screen.getAllByRole('gridcell')[0]?.querySelector('button')).toHaveClass('min-h-11');
+    const firstVisibleGridCell = screen.getAllByRole('gridcell').find((cell) => cell.querySelector('button'))!;
+    expect(firstVisibleGridCell.querySelector('button')).toHaveClass('min-h-11');
     fireEvent.change(screen.getByLabelText('Visible months'), { target: { value: '3' } });
     expect(monthCountChange).toHaveBeenCalledWith(3);
   });
@@ -125,6 +126,94 @@ describe('DeadlineCalendar', () => {
     expect(eventButton).toBeVisible();
     fireEvent.click(eventButton);
     expect(screen.getByText('Oaktree Accounting & Corporate Solution Pte. Ltd.')).toBeVisible();
+  });
+
+  it('renders the deadline table with plain company, family, and service columns', () => {
+    render(<DeadlineTable items={[occurrence]} page={1} total={1} totalPages={1} limit={20} />);
+
+    const table = screen.getByRole('table', { name: 'Deadline occurrences table' });
+    expect(within(table).getByRole('columnheader', { name: /Company/ })).toBeVisible();
+    expect(within(table).getByRole('columnheader', { name: /Family/ })).toBeVisible();
+    expect(within(table).getByRole('columnheader', { name: /Service/ })).toBeVisible();
+    expect(within(table).queryByRole('columnheader', { name: /Family \/ service/ })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('columnheader', { name: /Cycle \/ origin/ })).not.toBeInTheDocument();
+    expect(within(table).getByText(occurrence.company.name)).toBeVisible();
+    expect(within(table).queryByText('OACS')).not.toBeInTheDocument();
+    expect(within(table).getByText('Accounting')).not.toHaveClass('badge');
+    expect(within(table).getAllByText('Annual Return').some((element) => !element.classList.contains('badge'))).toBe(true);
+  });
+
+  it('opens the action modal when a table row is clicked', () => {
+    render(<DeadlineTable items={[occurrence]} page={1} total={1} totalPages={1} limit={20} />);
+
+    const table = screen.getByRole('table', { name: 'Deadline occurrences table' });
+    const row = within(table).getAllByRole('row')[1]!;
+    expect(row).not.toHaveClass('border-l-4');
+    expect(row).not.toHaveStyle({ borderLeftColor: occurrence.family.displayColor });
+    fireEvent.click(within(row).getByText(occurrence.company.name), { clientX: 240, clientY: 200 });
+
+    const actionDialog = screen.getByRole('dialog', { name: 'Deadline actions' });
+    expect(actionDialog).toBeVisible();
+    expect(actionDialog).toHaveStyle({ left: '240px', top: '208px' });
+  });
+
+  it('renders row checkboxes and a visible-page select-all checkbox', () => {
+    const onToggleSelection = vi.fn();
+    const onToggleSelectAll = vi.fn();
+    render(
+      <DeadlineTable
+        items={[occurrence]}
+        page={1}
+        total={1}
+        totalPages={1}
+        limit={20}
+        selectedIds={new Set()}
+        onToggleSelection={onToggleSelection}
+        onToggleSelectAll={onToggleSelectAll}
+      />,
+    );
+
+    const selectAll = screen.getByRole('checkbox', { name: 'Select all visible deadlines' });
+    const rowCheckbox = screen.getByRole('checkbox', { name: /Select deadline/ });
+    fireEvent.click(rowCheckbox);
+    expect(screen.queryByRole('dialog', { name: 'Deadline actions' })).not.toBeInTheDocument();
+    fireEvent.click(selectAll);
+
+    expect(onToggleSelection).toHaveBeenCalledWith(occurrence);
+    expect(onToggleSelectAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('centers the header and row checkboxes in the same selection column', () => {
+    render(
+      <DeadlineTable
+        items={[occurrence]}
+        page={1}
+        total={1}
+        totalPages={1}
+        limit={20}
+        selectedIds={new Set()}
+        onToggleSelection={vi.fn()}
+        onToggleSelectAll={vi.fn()}
+      />,
+    );
+
+    const table = screen.getByRole('table', { name: 'Deadline occurrences table' });
+    const headerCell = screen.getByRole('checkbox', { name: 'Select all visible deadlines' }).closest('th');
+    const rowCell = screen.getByRole('checkbox', { name: /Select deadline/ }).closest('td');
+
+    expect(headerCell).toHaveClass('w-12', 'px-2', 'text-center');
+    expect(rowCell).toHaveClass('w-12', 'px-2', 'text-center', 'align-middle');
+    expect(headerCell?.querySelector('div.flex.justify-center')).toBeInTheDocument();
+    expect(rowCell?.querySelector('div.flex.justify-center')).toBeInTheDocument();
+    expect(table.querySelectorAll('th.w-12, td.w-12')).toHaveLength(2);
+  });
+
+  it('does not render dates from adjacent months in a calendar month view', () => {
+    render(<DeadlineCalendar items={[]} focusMonth={new Date(2026, 7, 1)} monthCount={1} />);
+
+    const grid = screen.getByRole('grid', { name: /August 2026/i });
+    expect(grid.querySelector('[data-calendar-day^="2026-07"] button')).not.toBeInTheDocument();
+    expect(grid.querySelector('[data-calendar-day^="2026-09"] button')).not.toBeInTheDocument();
   });
 
   it('supports lifecycle actions with required reasons and date inputs', () => {
@@ -204,20 +293,20 @@ describe('DeadlineCalendar', () => {
       />,
     );
 
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Resize Operative due date column' }), { clientX: 100 });
+    fireEvent.pointerDown(screen.getByRole('separator', { name: 'Resize Operative due date column' }), { clientX: 100 });
     fireEvent.pointerMove(window, { clientX: 130 });
     fireEvent.pointerUp(window, { clientX: 130 });
 
     expect(onLiveResize).toHaveBeenCalledWith('dueDate', 180);
     expect(onResizeEnd).toHaveBeenCalledWith('dueDate', 180);
     expect(screen.getAllByRole('columnheader')[0]).toHaveAttribute('aria-sort', 'ascending');
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
-    expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 166);
-    expect(onResizeEnd).toHaveBeenLastCalledWith('dueDate', 166);
+    fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
+    expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 160);
+    expect(onResizeEnd).toHaveBeenLastCalledWith('dueDate', 160);
 
     onLiveResize.mockClear();
     onResizeEnd.mockClear();
-    const resizeHandle = screen.getByRole('button', { name: 'Resize Operative due date column' });
+    const resizeHandle = screen.getByRole('separator', { name: 'Resize Operative due date column' });
     fireEvent.pointerDown(resizeHandle, { clientX: 100 });
     fireEvent.pointerMove(window, { clientX: 1_000 });
     expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 800);
@@ -237,13 +326,13 @@ describe('DeadlineCalendar', () => {
         onColumnResizeEnd={boundedResizeEnd}
       />,
     );
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
+    fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
     expect(boundedLiveResize).toHaveBeenLastCalledWith('dueDate', 800);
     expect(boundedResizeEnd).toHaveBeenLastCalledWith('dueDate', 800);
 
     const unmountLiveResize = vi.fn();
     const activeView = render(<DeadlineTable items={[occurrence]} onColumnWidthChange={unmountLiveResize} />);
-    fireEvent.pointerDown(within(activeView.container).getByRole('button', { name: 'Resize Operative due date column' }), { clientX: 100 });
+    fireEvent.pointerDown(within(activeView.container).getByRole('separator', { name: 'Resize Operative due date column' }), { clientX: 100 });
     activeView.unmount();
     fireEvent.pointerMove(window, { clientX: 300 });
     expect(unmountLiveResize).not.toHaveBeenCalled();

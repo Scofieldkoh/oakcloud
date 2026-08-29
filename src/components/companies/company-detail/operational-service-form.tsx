@@ -12,8 +12,9 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import { cn } from '@/lib/utils';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
-import type { CompanyComplianceContext } from '@/services/client-service/types';
-import type { OperationalServiceValues } from './client-service-form-state';
+import { currentDateInSingapore } from '@/services/service-schedule';
+import type { ClientServiceOpenBillingOccurrenceDto, ClientServiceOpenDeadlineOccurrenceDto, ClientServiceProjectedDeadlineDto } from '@/services/client-service';
+import type { OperationalServiceValues, DeadlinePreviewState } from './client-service-form-state';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 
@@ -47,321 +48,13 @@ const BILLING_INTERVALS: Record<string, number | null> = {
   CUSTOM: null,
 };
 
-export interface ProjectedDeadlineItem {
-  key: string;
-  ruleUiId: string;
-  label: string;
-  targetDate: string;
-  isoDate: string;
-  timingExplanation: string;
-  isOverdue?: boolean;
-}
-
-function addMonthsSafe(date: Date, months: number): Date {
-  const target = new Date(date);
-  const targetDay = target.getDate();
-  target.setDate(1);
-  target.setMonth(target.getMonth() + months);
-  const maxDays = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
-  target.setDate(Math.min(targetDay, maxDays));
-  return target;
-}
-
-export function calculateActualDeadlinesPreview(
-  rule: OperationalServiceValues['deadlineRules'][number],
-  startDateString: string,
-  serviceCadence: OperationalServiceValues['serviceCadence'],
-  companyContext?: CompanyComplianceContext | null,
-): ProjectedDeadlineItem[] {
-  const now = new Date();
-  const horizonEnd = addMonthsSafe(now, 12);
-  const start = startDateString ? new Date(startDateString) : now;
-  const startYear = !Number.isNaN(start.getFullYear()) ? start.getFullYear() : now.getFullYear();
-  const startMonth = !Number.isNaN(start.getMonth()) ? start.getMonth() : now.getMonth();
-  const currentYear = now.getFullYear();
-
-  const results: ProjectedDeadlineItem[] = [];
-
-  // 1. If custom schedule entries are configured
-  if (rule.scheduleEntries.length > 0) {
-    for (const [idx, entry] of rule.scheduleEntries.entries()) {
-      const expr = entry.expression as Record<string, unknown>;
-
-      if (expr.kind === 'DAY_OF_MONTH') {
-        const day = typeof expr.day === 'number' ? expr.day : 1;
-        if (serviceCadence === 'MONTHLY') {
-          for (let i = 0; i < 12; i++) {
-            const occDate = new Date(startYear, startMonth + i, day);
-            const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-            const isPast = occDate < now;
-            results.push({
-              key: `${rule.uiId}-${entry.key || idx}-m-${i}`,
-              ruleUiId: rule.uiId,
-              label: entry.label || rule.name,
-              targetDate: formatted,
-              isoDate: occDate.toISOString().slice(0, 10),
-              timingExplanation: `Monthly on Day ${day} (Month ${i + 1} of 12)`,
-              isOverdue: isPast,
-            });
-          }
-        } else if (serviceCadence === 'QUARTERLY') {
-          for (let i = 0; i < 4; i++) {
-            const occDate = new Date(startYear, startMonth + i * 3, day);
-            const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-            const isPast = occDate < now;
-            results.push({
-              key: `${rule.uiId}-${entry.key || idx}-q-${i}`,
-              ruleUiId: rule.uiId,
-              label: entry.label || rule.name,
-              targetDate: formatted,
-              isoDate: occDate.toISOString().slice(0, 10),
-              timingExplanation: `Quarterly on Day ${day} (Quarter ${i + 1} of 4)`,
-              isOverdue: isPast,
-            });
-          }
-        } else if (serviceCadence === 'SEMI_ANNUALLY') {
-          for (let i = 0; i < 2; i++) {
-            const occDate = new Date(startYear, startMonth + i * 6, day);
-            const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-            const isPast = occDate < now;
-            results.push({
-              key: `${rule.uiId}-${entry.key || idx}-s-${i}`,
-              ruleUiId: rule.uiId,
-              label: entry.label || rule.name,
-              targetDate: formatted,
-              isoDate: occDate.toISOString().slice(0, 10),
-              timingExplanation: `Semi-annual on Day ${day} (#${i + 1})`,
-              isOverdue: isPast,
-            });
-          }
-        } else {
-          const occDate = new Date(startYear + 1, startMonth, day);
-          const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-          results.push({
-            key: `${rule.uiId}-${entry.key || idx}`,
-            ruleUiId: rule.uiId,
-            label: entry.label || rule.name,
-            targetDate: formatted,
-            isoDate: occDate.toISOString().slice(0, 10),
-            timingExplanation: `Annual cycle on Day ${day}`,
-            isOverdue: occDate < now,
-          });
-        }
-      } else if (expr.kind === 'RELATIVE_TO_SOURCE') {
-        const source = expr.source && typeof expr.source === 'object' ? (expr.source as Record<string, unknown>) : {};
-        const offset = typeof expr.offset === 'number' ? expr.offset : 0;
-        const unit = expr.unit === 'BUSINESS_DAY' ? 'business days' : 'days';
-        let targetDate: Date;
-        let explanation = '';
-
-        if (source.kind === 'COMPANY_FIELD') {
-          const field = String(source.field ?? 'financialYearEnd');
-          if (field === 'accountsDueDate' && companyContext?.accountsDueDate) {
-            targetDate = new Date(companyContext.accountsDueDate);
-            if (offset !== 0) {
-              targetDate = addMonthsSafe(targetDate, offset);
-            }
-            explanation = offset < 0 ? `${Math.abs(offset)} month${Math.abs(offset) === 1 ? '' : 's'} before accounts due date` : `Sourced from accounts due date (${companyContext.accountsDueDate})`;
-          } else if (field === 'financialYearEnd') {
-            const fyeMonth = companyContext?.financialYearEndMonth ? companyContext.financialYearEndMonth - 1 : 11;
-            const fyeDay = companyContext?.financialYearEndDay ?? 31;
-            const refYear = startYear >= currentYear ? startYear : currentYear;
-            const fye = new Date(refYear, fyeMonth, fyeDay);
-            targetDate = addMonthsSafe(fye, offset || 7);
-            explanation = `Relative to FYE (+${offset || 7} months)`;
-          } else {
-            targetDate = new Date(startYear + 1, startMonth, 1);
-            explanation = `Relative to company ${field}`;
-          }
-        } else if (source.kind === 'CYCLE_END') {
-          targetDate = new Date(startYear, 11, 31);
-          targetDate.setDate(targetDate.getDate() + offset);
-          explanation = `Cycle End + ${offset} ${unit}`;
-        } else {
-          targetDate = new Date(start);
-          targetDate.setDate(targetDate.getDate() + (offset || 30));
-          explanation = `Cycle Start + ${offset} ${unit}`;
-        }
-
-        const isPast = targetDate < now;
-        const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(targetDate);
-        results.push({
-          key: `${rule.uiId}-${entry.key || idx}`,
-          ruleUiId: rule.uiId,
-          label: entry.label || rule.name,
-          targetDate: formatted,
-          isoDate: targetDate.toISOString().slice(0, 10),
-          timingExplanation: isPast ? `${explanation} (Overdue Backlog)` : explanation,
-          isOverdue: isPast,
-        });
-      } else {
-        const occDate = new Date(startYear + 1, startMonth, 1);
-        const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-        results.push({
-          key: `${rule.uiId}-${entry.key || idx}`,
-          ruleUiId: rule.uiId,
-          label: entry.label || rule.name,
-          targetDate: formatted,
-          isoDate: occDate.toISOString().slice(0, 10),
-          timingExplanation: 'Standard milestone schedule',
-          isOverdue: occDate < now,
-        });
-      }
-    }
-    return results;
-  }
-
-  // 2. Statutory / Default Rules without custom entries
-  const nameLower = rule.name.toLowerCase();
-
-  if (serviceCadence === 'MONTHLY' || nameLower.includes('monthly')) {
-    for (let i = 0; i < 12; i++) {
-      const occDate = new Date(startYear, startMonth + i, 15);
-      const isPast = occDate < now;
-      const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-      results.push({
-        key: `${rule.uiId}-m-${i}`,
-        ruleUiId: rule.uiId,
-        label: rule.name,
-        targetDate: formatted,
-        isoDate: occDate.toISOString().slice(0, 10),
-        timingExplanation: `Month ${i + 1} of 12`,
-        isOverdue: isPast,
-      });
-    }
-    return results;
-  }
-
-  if (serviceCadence === 'QUARTERLY' || nameLower.includes('quarterly') || nameLower.includes('gst') || nameLower.includes('f5')) {
-    for (let i = 0; i < 4; i++) {
-      const occDate = new Date(startYear, startMonth + (i + 1) * 3, 0);
-      const isPast = occDate < now;
-      const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-      results.push({
-        key: `${rule.uiId}-q-${i}`,
-        ruleUiId: rule.uiId,
-        label: rule.name,
-        targetDate: formatted,
-        isoDate: occDate.toISOString().slice(0, 10),
-        timingExplanation: `Quarter ${i + 1} of 4`,
-        isOverdue: isPast,
-      });
-    }
-    return results;
-  }
-
-  if (nameLower.includes('annual return') || nameLower.includes('ar filing')) {
-    if (companyContext?.accountsDueDate) {
-      let occDate = new Date(companyContext.accountsDueDate);
-      let cycleIdx = 0;
-      while (occDate <= horizonEnd && cycleIdx < 10) {
-        const isPast = occDate < now;
-        const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-        results.push({
-          key: `auto-${rule.uiId}-ar-${cycleIdx}`,
-          ruleUiId: rule.uiId,
-          label: rule.name,
-          targetDate: formatted,
-          isoDate: occDate.toISOString().slice(0, 10),
-          timingExplanation: isPast
-            ? `Sourced from accounts due date (Overdue Backlog: ${occDate.toISOString().slice(0, 10)})`
-            : `Sourced from Company accounts due date (${occDate.toISOString().slice(0, 10)})`,
-          isOverdue: isPast,
-        });
-        occDate = addMonthsSafe(occDate, 12);
-        cycleIdx++;
-      }
-    } else {
-      const fyeMonth = companyContext?.financialYearEndMonth ? companyContext.financialYearEndMonth - 1 : 11;
-      const fyeDay = companyContext?.financialYearEndDay ?? 31;
-      const fye = new Date(startYear, fyeMonth, fyeDay);
-      let occDate = addMonthsSafe(fye, 7);
-      let cycleIdx = 0;
-      while (occDate <= horizonEnd && cycleIdx < 10) {
-        const isPast = occDate < now;
-        const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-        const fyeFormatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(addMonthsSafe(fye, cycleIdx * 12));
-        results.push({
-          key: `auto-${rule.uiId}-ar-fye-${cycleIdx}`,
-          ruleUiId: rule.uiId,
-          label: rule.name,
-          targetDate: formatted,
-          isoDate: occDate.toISOString().slice(0, 10),
-          timingExplanation: isPast ? `7 months after FYE (${fyeFormatted}) (Overdue Backlog)` : `7 months after FYE (${fyeFormatted})`,
-          isOverdue: isPast,
-        });
-        occDate = addMonthsSafe(occDate, 12);
-        cycleIdx++;
-      }
-    }
-    return results;
-  }
-
-  if (nameLower.includes('agm') || nameLower.includes('general meeting')) {
-    if (companyContext?.accountsDueDate) {
-      let occDate = addMonthsSafe(new Date(companyContext.accountsDueDate), -1);
-      let cycleIdx = 0;
-      while (occDate <= horizonEnd && cycleIdx < 10) {
-        const isPast = occDate < now;
-        const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-        results.push({
-          key: `auto-${rule.uiId}-agm-${cycleIdx}`,
-          ruleUiId: rule.uiId,
-          label: rule.name,
-          targetDate: formatted,
-          isoDate: occDate.toISOString().slice(0, 10),
-          timingExplanation: isPast
-            ? `1 month before accounts due date (Overdue Backlog: ${occDate.toISOString().slice(0, 10)})`
-            : `1 month before Company accounts due date (${occDate.toISOString().slice(0, 10)})`,
-          isOverdue: isPast,
-        });
-        occDate = addMonthsSafe(occDate, 12);
-        cycleIdx++;
-      }
-    } else {
-      const fyeMonth = companyContext?.financialYearEndMonth ? companyContext.financialYearEndMonth - 1 : 11;
-      const fyeDay = companyContext?.financialYearEndDay ?? 31;
-      const fye = new Date(startYear, fyeMonth, fyeDay);
-      let occDate = addMonthsSafe(fye, 6);
-      let cycleIdx = 0;
-      while (occDate <= horizonEnd && cycleIdx < 10) {
-        const isPast = occDate < now;
-        const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-        const fyeFormatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(addMonthsSafe(fye, cycleIdx * 12));
-        results.push({
-          key: `auto-${rule.uiId}-agm-fye-${cycleIdx}`,
-          ruleUiId: rule.uiId,
-          label: rule.name,
-          targetDate: formatted,
-          isoDate: occDate.toISOString().slice(0, 10),
-          timingExplanation: isPast ? `6 months after FYE (${fyeFormatted}) (Overdue Backlog)` : `6 months after FYE (${fyeFormatted})`,
-          isOverdue: isPast,
-        });
-        occDate = addMonthsSafe(occDate, 12);
-        cycleIdx++;
-      }
-    }
-    return results;
-  }
-
-  // General annual fallback (e.g. Tax / ECI / others)
-  let occDate = new Date(startYear + 1, startMonth, 1);
-  let cycleIdx = 0;
-  while (occDate <= horizonEnd && cycleIdx < 10) {
-    const formatted = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(occDate);
-    results.push({
-      key: `auto-${rule.uiId}-fallback-${cycleIdx}`,
-      ruleUiId: rule.uiId,
-      label: rule.name,
-      targetDate: formatted,
-      isoDate: occDate.toISOString().slice(0, 10),
-      timingExplanation: `Annual cycle due date (${occDate.getFullYear()})`,
-      isOverdue: occDate < now,
-    });
-    occDate = addMonthsSafe(occDate, 12);
-    cycleIdx++;
-  }
-  return results;
+function formatProjectedDate(dateOnly: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOnly);
+  if (!match) return dateOnly;
+  const [, year, month, day] = match;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthName = monthNames[Number(month) - 1] ?? month;
+  return `${Number(day)} ${monthName} ${year}`;
 }
 
 export interface ProjectedBillingItem {
@@ -374,6 +67,68 @@ export interface ProjectedBillingItem {
   billingDate: string;
   isoDate: string;
   timingExplanation: string;
+}
+
+interface DeadlineDisplayItem {
+  key: string;
+  ruleId: string;
+  periodKey: string;
+  milestoneKey: string;
+  scheduleEntryKey: string;
+  milestoneName: string;
+  ruleName: string;
+  calculatedDueDate: string;
+  explanation: string;
+  isAuthoritativeBacklog: boolean;
+}
+
+function billingFrequencyLabel(frequency: ClientServiceOpenBillingOccurrenceDto['billingFrequency'], customFrequencyLabel: string | null): string {
+  return customFrequencyLabel?.trim()
+    || FEE_FREQUENCY_OPTIONS.find((option) => option.value === frequency)?.label
+    || frequency;
+}
+
+function BillingPreviewPanel({ items, readOnly = false }: { items: ProjectedBillingItem[]; readOnly?: boolean }) {
+  return (
+    <div className="space-y-3 rounded-xl border border-blue-200/80 bg-blue-50/50 p-4 shadow-sm dark:border-blue-900/40 dark:bg-blue-950/20">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+          <h4 className="text-sm font-semibold text-text-primary">{readOnly ? 'Open billing items' : 'Billing Preview'}</h4>
+        </div>
+        <span className="rounded-full border border-blue-200 bg-blue-100/80 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+          {items.length} {readOnly ? `open billing item${items.length === 1 ? '' : 's'}` : `billing item${items.length === 1 ? '' : 's'}`}
+        </span>
+      </div>
+      <p className="text-xs text-text-secondary">
+        {readOnly ? 'All billing occurrences currently open for this service:' : 'Projected billing occurrences and schedule cycles:'}
+      </p>
+      {items.length === 0 ? (
+        <p className="text-xs text-text-muted italic">{readOnly ? 'No open billing items for this service.' : 'No active fee schedules configured to preview.'}</p>
+      ) : (
+        <div className="divide-y divide-blue-100/80 rounded-lg border border-blue-200/70 overflow-hidden bg-background-primary/80 dark:divide-blue-900/30 dark:border-blue-900/40 dark:bg-background-secondary/60">
+          {items.map((item) => (
+            <div key={item.key} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 transition-colors">
+              <div className="flex flex-col min-w-[180px] flex-1">
+                <span className="font-semibold text-xs text-text-primary">{item.description}</span>
+                <span className="text-[11px] text-text-muted">{item.timingExplanation} · {item.currency} {item.amount}</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-background-elevated dark:text-blue-300 shadow-2xs">
+                  <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                  {item.billingDate}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                  {item.frequency}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function calculateActualBillingPreview(
@@ -714,10 +469,13 @@ export interface OperationalServiceFormProps {
   onChange: Dispatch<SetStateAction<OperationalServiceValues>>;
   errors: Record<string, string | undefined>;
   disabled?: boolean;
+  readOnly?: boolean;
   sectionsDisabled?: boolean;
   serviceSelector?: ReactNode;
   serviceHeader?: ReactNode;
-  companyContext?: CompanyComplianceContext | null;
+  deadlinePreview?: DeadlinePreviewState;
+  openDeadlineOccurrences?: ClientServiceOpenDeadlineOccurrenceDto[];
+  openBillingOccurrences?: ClientServiceOpenBillingOccurrenceDto[];
 }
 
 export function OperationalServiceForm({
@@ -726,10 +484,13 @@ export function OperationalServiceForm({
   onChange,
   errors,
   disabled = false,
+  readOnly = false,
   sectionsDisabled = false,
   serviceSelector,
   serviceHeader,
-  companyContext,
+  deadlinePreview,
+  openDeadlineOccurrences,
+  openBillingOccurrences,
 }: OperationalServiceFormProps) {
   const [billingHideConfirmationOpen, setBillingHideConfirmationOpen] = useState(false);
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
@@ -739,15 +500,15 @@ export function OperationalServiceForm({
   const activeFeesCount = values.billingDisposition === 'NOT_REQUIRED' ? 0 : values.fees.length;
   const activeTab = userSelectedTab ?? (values.deadlineRules.length > 0 ? 'deadlines' : 'billing');
 
-  // Projected deadlines sorted chronologically by date using company compliance context (accountsDueDate, FYE)
-  const projectedDeadlines = values.deadlineRules
-    .filter((r) => r.enabled)
-    .flatMap((r) => calculateActualDeadlinesPreview(r, values.startDate, values.serviceCadence, companyContext))
-    .sort((a, b) => {
-      if (!a.isoDate) return 1;
-      if (!b.isoDate) return -1;
-      return a.isoDate.localeCompare(b.isoDate);
-    });
+  const today = currentDateInSingapore();
+  const projectedDeadlines: ClientServiceProjectedDeadlineDto[] = (deadlinePreview?.items ?? [])
+    .map((item) => ({ ...item }))
+    .sort((a, b) => (
+      a.calculatedDueDate.localeCompare(b.calculatedDueDate)
+      || a.ruleId.localeCompare(b.ruleId)
+      || a.milestoneKey.localeCompare(b.milestoneKey)
+      || a.scheduleEntryKey.localeCompare(b.scheduleEntryKey)
+    ));
 
   // Projected billing items sorted chronologically by date
   const projectedBillingItems = calculateActualBillingPreview(values.fees, values.startDate).sort((a, b) => {
@@ -755,6 +516,50 @@ export function OperationalServiceForm({
     if (!b.isoDate) return -1;
     return a.isoDate.localeCompare(b.isoDate);
   });
+
+  const deadlineItems: DeadlineDisplayItem[] = readOnly
+    ? (openDeadlineOccurrences ?? []).map((item) => ({
+      key: item.id,
+      ruleId: item.ruleId,
+      periodKey: item.periodKey,
+      milestoneKey: item.milestoneKey,
+      scheduleEntryKey: item.scheduleEntryKey,
+      milestoneName: item.milestoneName,
+      ruleName: item.ruleName,
+      calculatedDueDate: item.operativeDueDate,
+      explanation: item.notes?.trim() || 'Open stored deadline',
+      isAuthoritativeBacklog: false,
+    }))
+    : projectedDeadlines.map((item) => ({
+      key: `${item.ruleId}|${item.periodKey}|${item.milestoneKey}|${item.scheduleEntryKey}`,
+      ruleId: item.ruleId,
+      periodKey: item.periodKey,
+      milestoneKey: item.milestoneKey,
+      scheduleEntryKey: item.scheduleEntryKey,
+      milestoneName: item.milestoneName,
+      ruleName: item.ruleName,
+      calculatedDueDate: item.calculatedDueDate,
+      explanation: item.explanation.length > 0 ? item.explanation[item.explanation.length - 1] : 'Scheduled by the deadline rule',
+      isAuthoritativeBacklog: item.materializationPolicy === 'AUTHORITATIVE_ANNUAL_BACKLOG' && item.calculatedDueDate < today,
+    }));
+
+  const billingItems: ProjectedBillingItem[] = readOnly
+    ? (openBillingOccurrences ?? []).map((item) => ({
+      key: item.id,
+      feeUiId: item.feeLineId,
+      description: item.description,
+      amount: item.amount,
+      currency: item.currency,
+      frequency: billingFrequencyLabel(item.billingFrequency, item.customFrequencyLabel),
+      billingDate: formatProjectedDate(item.operativeExpectedDate),
+      isoDate: item.operativeExpectedDate,
+      timingExplanation: `Open · ${item.billingPeriodKey}`,
+    }))
+    : projectedBillingItems;
+
+  const showDeadlinePanel = readOnly
+    ? openDeadlineOccurrences !== undefined
+    : values.deadlineRules.some((rule) => rule.enabled);
 
   const toggleExpandRule = (uiId: string) => {
     setExpandedRuleIds((prev) => {
@@ -1124,77 +929,98 @@ export function OperationalServiceForm({
                 })}
               </div>
 
-              {/* Bottom Section: Actual Calculated Deadlines Preview (Sorted Chronologically in subtle blue) */}
-              {values.deadlineRules.some((r) => r.enabled) ? (
+              {/* Bottom Section: Canonical server-projected deadline preview */}
+              {showDeadlinePanel ? (readOnly || deadlinePreview ? (
                 <div className="space-y-3 rounded-xl border border-blue-200/80 bg-blue-50/50 p-4 shadow-sm dark:border-blue-900/40 dark:bg-blue-950/20">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-                      <h4 className="text-sm font-semibold text-text-primary">Deadlines Preview</h4>
+                      <h4 className="text-sm font-semibold text-text-primary">{readOnly ? 'Open deadline items' : 'Canonical deadline preview'}</h4>
                     </div>
                     <span className="rounded-full border border-blue-200 bg-blue-100/80 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                      {projectedDeadlines.length} scheduled milestone{projectedDeadlines.length === 1 ? '' : 's'}
+                      {deadlineItems.length} {readOnly ? `open item${deadlineItems.length === 1 ? '' : 's'}` : `scheduled milestone${deadlineItems.length === 1 ? '' : 's'}`}
                     </span>
                   </div>
                   <p className="text-xs text-text-secondary">
-                    Projected statutory deadlines and filing milestones based on start date ({values.startDate ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(values.startDate)) : 'not set'}):
+                    {readOnly ? 'All deadline occurrences currently open for this service:' : 'Projected statutory deadlines and filing milestones computed by the deadline engine:'}
                   </p>
-                  {projectedDeadlines.length === 0 ? (
-                    <p className="text-xs text-text-muted italic">No active deadline rules enabled to preview.</p>
+                  {!readOnly && deadlinePreview?.state === 'LOADING' ? (
+                    <p role="status" className="text-xs text-text-muted italic">Refreshing deadline preview…</p>
+                  ) : null}
+                  {!readOnly && deadlinePreview?.state === 'ERROR' ? (
+                    <Alert variant="error" compact>
+                      <span>Deadline preview is unavailable{deadlinePreview.message ? `: ${deadlinePreview.message}` : '.'}</span>
+                    </Alert>
+                  ) : null}
+                  {!readOnly && (deadlinePreview?.warnings ?? []).length > 0 ? (
+                    <div className="space-y-1.5">
+                      {deadlinePreview?.warnings.map((warning, index) => (
+                        <Alert key={`${warning}-${index}`} variant="warning" compact>
+                          <span role="status">{warning}</span>
+                        </Alert>
+                      ))}
+                    </div>
+                  ) : null}
+                  {deadlineItems.length === 0 && (readOnly || deadlinePreview?.state !== 'LOADING') ? (
+                    <p className="text-xs text-text-muted italic">{readOnly ? 'No open deadline items for this service.' : 'No canonical deadlines projected for the active rules.'}</p>
                   ) : (
                     <div className="divide-y divide-blue-100/80 rounded-lg border border-blue-200/70 overflow-hidden bg-background-primary/80 dark:divide-blue-900/30 dark:border-blue-900/40 dark:bg-background-secondary/60">
-                      {projectedDeadlines.map((item) => (
-                        <div
-                          key={item.key}
-                          className={cn(
-                            'flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 transition-colors',
-                            item.isOverdue
-                              ? 'bg-red-50/90 border-l-4 border-l-red-500 border-b border-red-100 hover:bg-red-100/80 dark:bg-red-950/30 dark:border-red-900/40 dark:border-l-red-500'
-                              : 'hover:bg-blue-50/70 dark:hover:bg-blue-950/40'
-                          )}
-                        >
-                          <div className="flex flex-col min-w-[200px] flex-1">
-                            <span className={cn('font-semibold text-xs', item.isOverdue ? 'text-red-900 dark:text-red-200' : 'text-text-primary')}>
-                              {item.label}
-                            </span>
-                            <span className={cn('text-[11px]', item.isOverdue ? 'text-red-700 font-medium dark:text-red-300' : 'text-text-muted')}>
-                              {item.timingExplanation}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-2xs',
-                                item.isOverdue
-                                  ? 'border-red-300 bg-red-100/90 text-red-800 dark:border-red-800 dark:bg-red-950/80 dark:text-red-300'
-                                  : 'border-blue-200 bg-white text-blue-800 dark:border-blue-800 dark:bg-background-elevated dark:text-blue-300'
-                              )}
-                            >
-                              {item.isOverdue ? (
-                                <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                              ) : (
-                                <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                              )}
-                              {item.targetDate}
-                            </span>
-                            {item.isOverdue ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-red-100/90 border border-red-200 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-900/40 dark:border-red-800 dark:text-red-300">
-                                <AlertCircle className="h-3 w-3 text-red-500" />
-                                Overdue Backlog
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                Active
-                              </span>
+                      {deadlineItems.map((item) => {
+                        const isAuthoritativeBacklog = item.isAuthoritativeBacklog;
+                        const explanation = item.explanation;
+                        return (
+                          <div
+                            key={item.key}
+                            className={cn(
+                              'flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 transition-colors',
+                              isAuthoritativeBacklog
+                                ? 'bg-amber-50/90 border-l-4 border-l-amber-500 border-b border-amber-100 hover:bg-amber-100/80 dark:bg-amber-950/30 dark:border-amber-900/40 dark:border-l-amber-500'
+                                : 'hover:bg-blue-50/70 dark:hover:bg-blue-950/40'
                             )}
+                          >
+                            <div className="flex flex-col min-w-[200px] flex-1">
+                              <span className={cn('font-semibold text-xs', isAuthoritativeBacklog ? 'text-amber-900 dark:text-amber-200' : 'text-text-primary')}>
+                                {item.milestoneName}
+                              </span>
+                              <span className={cn('text-[11px]', isAuthoritativeBacklog ? 'text-amber-700 font-medium dark:text-amber-300' : 'text-text-muted')}>
+                                {item.ruleName} · {explanation}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-2xs',
+                                  isAuthoritativeBacklog
+                                    ? 'border-amber-300 bg-amber-100/90 text-amber-800 dark:border-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                                    : 'border-blue-200 bg-white text-blue-800 dark:border-blue-800 dark:bg-background-elevated dark:text-blue-300'
+                                )}
+                              >
+                                <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                {formatProjectedDate(item.calculatedDueDate)}
+                              </span>
+                              {isAuthoritativeBacklog ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100/90 border border-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:border-amber-800 dark:text-amber-300">
+                                  <AlertCircle className="h-3 w-3 text-amber-500" />
+                                  Authoritative backlog
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                  Scheduled
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-              ) : null}
+              ) : mode === 'create' ? (
+                <div className="rounded-xl border border-dashed border-blue-200/80 bg-blue-50/50 p-4 text-xs text-text-secondary dark:border-blue-900/40 dark:bg-blue-950/20">
+                  Deadlines are generated by the deadline engine when this service is saved. You can review them in the service editor afterwards.
+                </div>
+              ) : null) : null}
             </div>
           ) : null}
 
@@ -1202,7 +1028,9 @@ export function OperationalServiceForm({
           {activeTab === 'billing' ? (
             <div id="panel-billing" role="tabpanel" aria-labelledby="tab-billing" className="space-y-4">
               {errors.feeLines ? <p role="alert" className="text-xs text-status-error">{errors.feeLines}</p> : null}
-              {values.billingDisposition === 'NOT_REQUIRED' ? (
+              {readOnly ? (
+                <BillingPreviewPanel items={billingItems} readOnly />
+              ) : values.billingDisposition === 'NOT_REQUIRED' ? (
                 <div className="rounded-xl border border-dashed border-border-primary p-8 text-center text-text-secondary">
                   <p className="font-medium text-text-primary">No billing required</p>
                   <p className="mt-1 text-xs text-text-secondary">Billing tracking is set to not required for this service. Active billing schedules are hidden.</p>
@@ -1351,45 +1179,7 @@ export function OperationalServiceForm({
                     })}
                   </div>
 
-                  {/* Bottom Section: Billing Preview (in subtle blue) */}
-                  <div className="space-y-3 rounded-xl border border-blue-200/80 bg-blue-50/50 p-4 shadow-sm dark:border-blue-900/40 dark:bg-blue-950/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-                        <h4 className="text-sm font-semibold text-text-primary">Billing Preview</h4>
-                      </div>
-                      <span className="rounded-full border border-blue-200 bg-blue-100/80 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                        {projectedBillingItems.length} billing item{projectedBillingItems.length === 1 ? '' : 's'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-secondary">
-                      Projected billing occurrences and schedule cycles:
-                    </p>
-                    {projectedBillingItems.length === 0 ? (
-                      <p className="text-xs text-text-muted italic">No active fee schedules configured to preview.</p>
-                    ) : (
-                      <div className="divide-y divide-blue-100/80 rounded-lg border border-blue-200/70 overflow-hidden bg-background-primary/80 dark:divide-blue-900/30 dark:border-blue-900/40 dark:bg-background-secondary/60">
-                        {projectedBillingItems.map((item) => (
-                          <div key={item.key} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 transition-colors">
-                            <div className="flex flex-col min-w-[180px] flex-1">
-                              <span className="font-semibold text-xs text-text-primary">{item.description}</span>
-                              <span className="text-[11px] text-text-muted">{item.timingExplanation} · {item.currency} {item.amount}</span>
-                            </div>
-                            <div className="flex items-center gap-2.5">
-                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-background-elevated dark:text-blue-300 shadow-2xs">
-                                <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                {item.billingDate}
-                              </span>
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                {item.frequency}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <BillingPreviewPanel items={billingItems} />
                 </div>
               )}
             </div>

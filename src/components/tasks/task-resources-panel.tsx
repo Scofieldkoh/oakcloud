@@ -389,12 +389,15 @@ function TaskResourceStageSection({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-text-primary">{stage.name}</h3>
-          {stage.description ? <p className="mt-0.5 text-xs text-text-secondary">{stage.description}</p> : null}
+          <h3
+            aria-label={`Resources for ${stage.name}`}
+            className="text-sm font-semibold text-text-primary"
+          >
+            {stage.name}
+          </h3>
         </div>
         <span className="shrink-0 text-xs font-medium text-text-secondary">{statusLabel(stage.status)}</span>
       </div>
-      {stage.notes ? <p className="mt-2 text-xs text-text-secondary">{stage.notes}</p> : null}
       {stage.blockers.length > 0 ? (
         <div className="mt-2 space-y-1">
           {stage.blockers.map((blocker) => (

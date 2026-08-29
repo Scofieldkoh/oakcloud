@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
+import '@/app/globals.css';
 
 const hooks = vi.hoisted(() => ({
   useDeadlines: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock('@/hooks/use-user-preferences', () => ({
 }));
 
 import { DeadlineCalendar } from '@/components/services/deadlines/deadline-calendar';
+import { DeadlineTable } from '@/components/services/deadlines/deadline-table';
 
 const occurrence: DeadlineOccurrenceDto = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -91,7 +93,7 @@ describe('Services deadlines responsive browser surface', () => {
 
   it('keeps the desktop calendar readable with two months and visible event identity', async () => {
     setup();
-    await page.viewport(1440, 900);
+    await page.viewport(2200, 900);
     render(<DeadlineCalendar />);
 
     await expect.element(screen.getByRole('region', { name: /selected day agenda/i })).toBeVisible();
@@ -108,5 +110,25 @@ describe('Services deadlines responsive browser surface', () => {
     await page.viewport(390, 844);
     expect(screen.getAllByRole('grid', { name: /calendar/i })).toHaveLength(1);
     await expect.element(screen.getByRole('region', { name: /selected day agenda/i })).toBeVisible();
+  });
+
+  it('renders the empty state inside the desktop deadline table body', async () => {
+    await page.viewport(1440, 900);
+    render(<DeadlineTable items={[]} inlineFilters={<div>Deadline filters</div>} />);
+
+    const table = screen.getByRole('table', { name: 'Deadline occurrences table' });
+    const emptyMessage = within(table).getByText('No deadlines found');
+    const scrollContainer = table.parentElement;
+    if (!scrollContainer) throw new Error('Deadline table scroll container missing');
+    await expect.element(within(table).getByRole('columnheader', { name: /Company/ })).toBeVisible();
+    expect(emptyMessage.closest('tbody')).not.toBeNull();
+    expect(getComputedStyle(emptyMessage.closest('td')!).textAlign).toBe('center');
+    expect(getComputedStyle(table).tableLayout).toBe('auto');
+    const companyHeader = within(table).getByRole('columnheader', { name: /Company/ });
+    const actionsHeader = within(table).getByRole('columnheader', { name: 'Actions' });
+    expect(Math.abs(companyHeader.getBoundingClientRect().width - 220)).toBeLessThanOrEqual(1);
+    expect(actionsHeader.getBoundingClientRect().width).toBeGreaterThan(90);
+    expect(Math.abs(table.getBoundingClientRect().width - scrollContainer.getBoundingClientRect().width))
+      .toBeLessThanOrEqual(1);
   });
 });

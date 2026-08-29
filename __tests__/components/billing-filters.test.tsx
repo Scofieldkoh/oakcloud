@@ -51,6 +51,7 @@ describe('BillingFilters', () => {
         value={filteredValue}
         families={[{ id: 'family-1', name: 'Accounting', displayColor: '#3F6DA8' }]}
         onChange={vi.fn()}
+        dateRangeActive
       />,
     );
 
@@ -63,7 +64,7 @@ describe('BillingFilters', () => {
 
   it('maps complete ranges, ignores incomplete ranges, and clears both date values', () => {
     const onChange = vi.fn();
-    render(<BillingFilters value={filteredValue} families={[]} onChange={onChange} />);
+    render(<BillingFilters value={filteredValue} families={[]} onChange={onChange} dateRangeActive />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply complete date range' }));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ from: '2026-08-10', to: '2026-08-20' }));
@@ -76,8 +77,21 @@ describe('BillingFilters', () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ from: '', to: '' }));
   });
 
+  it('shows a removable date filter badge and clears the selected range when removed', () => {
+    const onChange = vi.fn();
+    render(<BillingFilters value={filteredValue} families={[]} onChange={onChange} dateRangeActive />);
+
+    expect(screen.getByText('Date:')).toBeVisible();
+    const removeDate = screen.getByRole('button', { name: 'Remove Date filter' });
+    expect(removeDate).toBeVisible();
+
+    fireEvent.click(removeDate);
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ from: '', to: '' }));
+  });
+
   it('matches the Vault toolbar and keeps zero selected statuses unfiltered', () => {
-    render(<BillingFilters value={{ ...filteredValue, from: '', to: '' }} families={[]} onChange={vi.fn()} />);
+    render(<BillingFilters value={{ ...filteredValue, from: '', to: '' }} families={[]} onChange={vi.fn()} dateRangeActive={false} />);
 
     const toolbar = screen.getByRole('group', { name: 'Billing quick filters' });
     expect(toolbar).toHaveClass('border', 'rounded-lg', 'p-4');
@@ -85,21 +99,16 @@ describe('BillingFilters', () => {
     expect(screen.queryByLabelText('Active filters')).not.toBeInTheDocument();
   });
 
-  it('keeps the reset action touch-safe on mobile and compact on desktop', () => {
-    const onReset = vi.fn();
-
+  it('does not render a Reset filters action', () => {
     render(
       <BillingFilters
         value={{ ...filteredValue, statuses: ['OPEN'] }}
         families={[]}
         onChange={vi.fn()}
-        onReset={onReset}
+        dateRangeActive
       />,
     );
 
-    const reset = screen.getByRole('button', { name: 'Reset filters' });
-    expect(reset).toHaveClass('min-h-11', 'sm:min-h-8');
-    fireEvent.click(reset);
-    expect(onReset).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Reset filters' })).not.toBeInTheDocument();
   });
 });

@@ -332,4 +332,268 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
       .toMatchObject({ status: 'COMPLETED', leaseOwner: null, leaseExpiresAt: null });
     expect(await prisma.deadlineOccurrence.count({ where: { tenantId, clientServiceId } })).toBe(1);
   });
+
+  async function seedRuleFixture(code: string, milestones: Array<{ key: string; name: string; expression: Record<string, unknown> }>) {
+    const ruleId = randomUUID();
+    const versionId = randomUUID();
+    await prisma.deadlineRule.create({
+      data: {
+        id: ruleId,
+        tenantId,
+        code,
+        name: code,
+        currentVersionId: versionId,
+        versions: {
+          create: {
+            id: versionId,
+            tenantId,
+            version: 1,
+            state: 'PUBLISHED',
+            schemaVersion: 1,
+            configHash: randomUUID().padEnd(64, '0'),
+            draftRevision: 1,
+            recurrence: { schemaVersion: 1, kind: 'ANNUALLY', interval: 1 },
+            applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
+            milestoneTemplates: {
+              create: milestones.map((milestone, index) => ({
+                tenantId,
+                milestoneKey: milestone.key,
+                name: milestone.name,
+                type: 'STATUTORY',
+                generationMode: 'ONCE_PER_CYCLE',
+                dateExpression: milestone.expression as never,
+                businessDayAdjustment: 'NONE',
+                displayOrder: index,
+              })),
+            },
+          },
+        },
+      } as never,
+    });
+    await prisma.serviceVariantDeadlineRule.create({
+      data: { tenantId, serviceVariantId: variantId, ruleId },
+    });
+    return ruleId;
+  }
+
+  async function seedFixtureService(accountsDueDate: string, rules: string[]) {
+    const fixtureCompanyId = randomUUID();
+    const fixtureServiceId = randomUUID();
+    await prisma.company.create({
+      data: {
+        id: fixtureCompanyId,
+        tenantId,
+        uen: `T${randomUUID().slice(0, 8).toUpperCase()}`,
+        name: `Fixture Co ${fixtureCompanyId}`,
+        entityType: 'PRIVATE_LIMITED',
+        status: 'LIVE',
+        financialYearEndDay: 31,
+        financialYearEndMonth: 12,
+        accountsDueDate: new Date(`${accountsDueDate}T00:00:00.000Z`),
+        incorporationDate: new Date('2022-01-01T00:00:00.000Z'),
+      },
+    });
+    await prisma.clientService.create({
+      data: {
+        id: fixtureServiceId,
+        tenantId,
+        companyId: fixtureCompanyId,
+        serviceVariantId: variantId,
+        familyName: 'Corporate Secretarial',
+        serviceName: `Fixture Service ${fixtureServiceId}`,
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        startDate: new Date('2026-08-27T00:00:00.000Z'),
+        deadlineRules: {
+          create: rules.map((ruleId) => ({ tenantId, ruleId, enabled: true })),
+        },
+      },
+    });
+    return { fixtureCompanyId, fixtureServiceId };
+  }
+
+  it('reconciles the future-source fixture with exact preview/apply parity', async () => {
+    const { previewClientServiceDeadlineConfiguration } = await import('@/services/client-service');
+    const { reconcileClientServiceDeadlines } = await import('@/services/schedule-reconciliation');
+
+    const agmRuleId = await seedRuleFixture('SG_AGM_DUE', [{
+      key: 'agm-due',
+      name: 'AGM Due',
+      expression: { kind: 'ADD_MONTHS', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' }, amount: -1 },
+    }]);
+    const arRuleId = await seedRuleFixture('SG_ANNUAL_RETURN', [{
+      key: 'annual-return-due',
+      name: 'Annual Return Due',
+      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+    }]);
+    const { fixtureServiceId } = await seedFixtureService('2027-07-31', [agmRuleId, arRuleId]);
+
+    const today = '2026-08-27' as const;
+    const horizonEnd = '2027-08-27' as const;
+    const service = await prisma.clientService.findUniqueOrThrow({ where: { id: fixtureServiceId } });
+    const impact = await previewClientServiceDeadlineConfiguration(fixtureServiceId, {
+      expectedUpdatedAt: service.updatedAt.toISOString(),
+      deadlineRules: [
+        { ruleId: agmRuleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+        { ruleId: arRuleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] },
+      ],
+      scheduleSnapshot: {
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: null,
+        startDate: '2026-08-27',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, { tenantId, userId, allCompaniesAccess: true }, prisma, { today, horizonEnd });
+
+    const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({
+      tenantId,
+      clientServiceId: fixtureServiceId,
+      today,
+      horizonEnd,
+      writeMode: 'APPLY',
+      reconciliationRequestId: randomUUID(),
+    }, tx));
+    expect(result.counts.created).toBe(2);
+
+    const occurrences = await prisma.deadlineOccurrence.findMany({
+      where: { tenantId, clientServiceId: fixtureServiceId, status: 'OPEN', origin: 'RULE' },
+    });
+    const reconciledTuples = occurrences
+      .map((occurrence) => [occurrence.milestoneKey, occurrence.scheduleEntryKey, occurrence.operativeDueDate.toISOString().slice(0, 10)])
+      .sort((left, right) => String(left[2]).localeCompare(String(right[2])));
+    const previewTuples = impact.projectedDeadlines
+      .map((deadline) => [deadline.milestoneKey, deadline.scheduleEntryKey, deadline.calculatedDueDate])
+      .sort((left, right) => String(left[2]).localeCompare(String(right[2])));
+
+    expect(reconciledTuples).toEqual([
+      ['agm-due', '', '2027-06-30'],
+      ['annual-return-due', '', '2027-07-31'],
+    ]);
+    expect(previewTuples).toEqual(reconciledTuples);
+  });
+
+  it('materializes the exact authoritative backlog with a rolling-only control rule', async () => {
+    const { previewClientServiceDeadlineConfiguration } = await import('@/services/client-service');
+    const { reconcileClientServiceDeadlines } = await import('@/services/schedule-reconciliation');
+
+    const agmRuleId = await seedRuleFixture('SG_AGM_DUE', [{
+      key: 'agm-due',
+      name: 'AGM Due',
+      expression: { kind: 'ADD_MONTHS', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' }, amount: -1 },
+    }]);
+    const arRuleId = await seedRuleFixture('SG_ANNUAL_RETURN', [{
+      key: 'annual-return-due',
+      name: 'Annual Return Due',
+      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+    }]);
+    const eciRuleId = await seedRuleFixture('SG_ECI', [{
+      key: 'eci-due',
+      name: 'ECI Due',
+      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+    }]);
+    const { fixtureServiceId } = await seedFixtureService('2024-07-31', [agmRuleId, arRuleId, eciRuleId]);
+
+    const today = '2026-08-27' as const;
+    const horizonEnd = '2027-08-27' as const;
+    const service = await prisma.clientService.findUniqueOrThrow({ where: { id: fixtureServiceId } });
+    const impact = await previewClientServiceDeadlineConfiguration(fixtureServiceId, {
+      expectedUpdatedAt: service.updatedAt.toISOString(),
+      deadlineRules: [agmRuleId, arRuleId, eciRuleId].map((ruleId) => ({
+        ruleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [],
+      })),
+      scheduleSnapshot: {
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: null,
+        startDate: '2026-08-27',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, { tenantId, userId, allCompaniesAccess: true }, prisma, { today, horizonEnd });
+
+    const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({
+      tenantId,
+      clientServiceId: fixtureServiceId,
+      today,
+      horizonEnd,
+      writeMode: 'APPLY',
+      reconciliationRequestId: randomUUID(),
+    }, tx));
+    expect(result.counts.created).toBe(9);
+
+    const occurrences = await prisma.deadlineOccurrence.findMany({
+      where: { tenantId, clientServiceId: fixtureServiceId, status: 'OPEN', origin: 'RULE' },
+    });
+    const reconciledTuples = occurrences
+      .map((occurrence) => [occurrence.milestoneKey, occurrence.operativeDueDate.toISOString().slice(0, 10)])
+      .sort((left, right) => String(left[1]).localeCompare(String(right[1])));
+    expect(reconciledTuples).toEqual([
+      ['agm-due', '2024-06-30'],
+      ['annual-return-due', '2024-07-31'],
+      ['agm-due', '2025-06-30'],
+      ['annual-return-due', '2025-07-31'],
+      ['agm-due', '2026-06-30'],
+      ['annual-return-due', '2026-07-31'],
+      ['agm-due', '2027-06-30'],
+      ['annual-return-due', '2027-07-31'],
+      ['eci-due', '2027-07-31'],
+    ]);
+    const previewTuples = impact.projectedDeadlines
+      .map((deadline) => [deadline.milestoneKey, deadline.calculatedDueDate])
+      .sort((left, right) => String(left[1]).localeCompare(String(right[1])));
+    expect(previewTuples).toEqual(reconciledTuples);
+    expect(reconciledTuples.filter(([milestone]) => milestone === 'eci-due'))
+      .toEqual([['eci-due', '2027-07-31']]);
+  });
+
+  it('caps a 28-cycle authoritative source at the most recent 20 cycles with one truncation warning', async () => {
+    const { previewClientServiceDeadlineConfiguration } = await import('@/services/client-service');
+    const { reconcileClientServiceDeadlines } = await import('@/services/schedule-reconciliation');
+
+    const arRuleId = await seedRuleFixture('SG_ANNUAL_RETURN', [{
+      key: 'annual-return-due',
+      name: 'Annual Return Due',
+      expression: { kind: 'SOURCE', source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' } },
+    }]);
+    const { fixtureServiceId } = await seedFixtureService('2000-07-31', [arRuleId]);
+
+    const today = '2026-08-27' as const;
+    const horizonEnd = '2027-08-27' as const;
+    const service = await prisma.clientService.findUniqueOrThrow({ where: { id: fixtureServiceId } });
+    const impact = await previewClientServiceDeadlineConfiguration(fixtureServiceId, {
+      expectedUpdatedAt: service.updatedAt.toISOString(),
+      deadlineRules: [{ ruleId: arRuleId, enabled: true, parameterValues: {}, parameterProvenance: {}, scheduleEntries: [] }],
+      scheduleSnapshot: {
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        customCadenceLabel: null,
+        startDate: '2026-08-27',
+        endDate: null,
+        fieldValues: {},
+      },
+    }, { tenantId, userId, allCompaniesAccess: true }, prisma, { today, horizonEnd });
+
+    expect(impact.projectedDeadlines).toHaveLength(20);
+    expect(impact.projectedDeadlines[0]?.calculatedDueDate).toBe('2008-07-31');
+    expect(impact.projectedDeadlines.at(-1)?.calculatedDueDate).toBe('2027-07-31');
+    expect(impact.warnings).toContainEqual(expect.objectContaining({
+      code: 'AUTHORITATIVE_BACKLOG_TRUNCATED',
+      excludedCycleCount: 8,
+      oldestRetainedYear: 2008,
+    }));
+
+    const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({
+      tenantId,
+      clientServiceId: fixtureServiceId,
+      today,
+      horizonEnd,
+      writeMode: 'APPLY',
+      reconciliationRequestId: randomUUID(),
+    }, tx));
+    expect(result.counts.created).toBe(20);
+    const cycles = await prisma.serviceCycle.findMany({ where: { tenantId, clientServiceId: fixtureServiceId } });
+    expect(cycles.map((cycle) => cycle.periodKey).sort()).toEqual(Array.from({ length: 20 }, (_, index) => String(2008 + index)));
+  });
 });

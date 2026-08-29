@@ -80,6 +80,35 @@ describe('document party service', () => {
     );
   });
 
+  it('resolves a selected director collection and rejects stale members', async () => {
+    vi.mocked(prisma.company.findFirst).mockResolvedValue({
+      id: 'company-1',
+      officers: [
+        { id: 'officer-1', name: 'Alice', role: 'DIRECTOR', contact: null },
+        { id: 'officer-2', name: 'Ben', role: 'DIRECTOR', contact: null },
+      ],
+      shareholders: [],
+      contacts: [],
+    } as never);
+
+    const result = await resolveDocumentPartySelections({
+      companyId: 'company-1',
+      tenantId: 'tenant-1',
+      selectedDirectorIds: ['officer-2', 'officer-1'],
+    });
+
+    expect(result.selectedDirectors?.map((party) => party.id)).toEqual([
+      'officer-2',
+      'officer-1',
+    ]);
+
+    await expect(resolveDocumentPartySelections({
+      companyId: 'company-1',
+      tenantId: 'tenant-1',
+      selectedDirectorIds: ['officer-stale'],
+    })).rejects.toThrow('Selected director is not a current director of this company');
+  });
+
   it('rejects a stale shareholder selection', async () => {
     vi.mocked(prisma.company.findFirst).mockResolvedValue({
       id: 'company-1',

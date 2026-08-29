@@ -141,6 +141,18 @@ describe('Task 12 review remediations', () => {
     expect(partial.page).toBe(4);
   });
 
+  it('normalizes deadline type to one selection and keeps Open exclusive to the shortcut', () => {
+    const parsed = parseDeadlineUrlState(
+      'types=CLIENT,INTERNAL&statuses=OPEN,COMPLETED',
+      defaultDeadlineViewPreference,
+      true,
+      '2026-08-19',
+    );
+
+    expect(parsed.types).toEqual(['CLIENT']);
+    expect(parsed.statuses).toEqual(['COMPLETED']);
+  });
+
   it('validates inline transport filters and repairs malformed saved columns', () => {
     expect(parseDeadlineSearchParams(new URLSearchParams({
       from: '2026-08-01',
@@ -163,7 +175,7 @@ describe('Task 12 review remediations', () => {
       sortOrder: 'asc',
       pageSize: 20,
     });
-    expect(parsed.tableColumnOrder).toEqual(['actions', 'company', 'dueDate', 'timing', 'familyService', 'milestone', 'type', 'status', 'cycleOrigin']);
+    expect(parsed.tableColumnOrder).toEqual(['actions', 'company', 'dueDate', 'timing', 'family', 'service', 'milestone', 'type', 'status']);
     expect(parsed.tableColumnWidths).toEqual({ dueDate: 96, company: 800 });
     expect(parsed.tableColumnVisibility).toEqual(expect.objectContaining({ actions: true, company: false }));
     expect(parsed.tableColumnVisibility).not.toHaveProperty('unknown');
@@ -215,25 +227,54 @@ describe('Task 12 review remediations', () => {
       origin: 'MANUAL_TRIGGER',
       page: 1,
     }));
+    expect(screen.getByRole('button', { name: 'Remove Company: Oaktree' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Service: Annual' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Milestone: return' })).toBeVisible();
 
-    const clearButtons = screen.getAllByRole('button', { name: 'Clear selection' });
-    expect(clearButtons).toHaveLength(2);
-    fireEvent.click(clearButtons[0]!);
-    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
-    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ statuses: [], origin: undefined, page: 1 }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Deadline filters' })).getByRole('button', { name: 'Status' }));
+    const statusDialog = screen.getByRole('dialog', { name: 'Filter statuses' });
+    expect(within(statusDialog).getByRole('button', { name: 'Completed' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(screen.getByRole('group', { name: 'Deadline filters' })).getByRole('button', { name: 'Source' }));
+    const sourceDialog = screen.getByRole('dialog', { name: 'Filter source' });
+    expect(within(sourceDialog).getByRole('button', { name: 'Manual trigger' })).toHaveAttribute('aria-pressed', 'true');
+    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ statuses: ['COMPLETED'], origin: 'MANUAL_TRIGGER', page: 1 }));
   });
 
-  it('uses shared clearable selects and a Date Range picker beside Families', () => {
+  it('uses synchronized quick buttons and a Date Range picker beside Families', () => {
     navigation.searchParams = new URLSearchParams('tab=deadlines');
     render(<DeadlineWorkspace />);
 
-    expect(screen.getByRole('combobox', { name: 'All types' })).toBeVisible();
-    expect(screen.getByRole('combobox', { name: 'All statuses' })).toBeVisible();
-    expect(screen.getByRole('combobox', { name: 'All sources' })).toBeVisible();
-    expect(screen.queryByRole('combobox', { name: 'Filter Type' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Filter Status' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Filter Source' })).not.toBeInTheDocument();
+    const quickFilters = screen.getByRole('group', { name: 'Deadline filters' });
+    expect(within(quickFilters).getByRole('button', { name: 'Deadline type' })).toBeVisible();
+    expect(within(quickFilters).getByRole('button', { name: 'Status' })).toBeVisible();
+    expect(within(quickFilters).getByRole('button', { name: 'Source' })).toBeVisible();
+    expect(screen.getByRole('searchbox', { name: 'Filter Company' })).toBeVisible();
+    expect(screen.getByRole('searchbox', { name: 'Filter Service' })).toBeVisible();
+    expect(screen.getByRole('searchbox', { name: 'Filter Milestone' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Date Range' })).toBeVisible();
+  });
+
+  it('keeps native inline controls and shares their filter badges with the quick row', () => {
+    navigation.searchParams = new URLSearchParams(`tab=deadlines&dateFilter=none&families=${familyId}&types=CLIENT&statuses=COMPLETED&origin=MANUAL_TRIGGER`);
+    render(<DeadlineWorkspace />);
+
+    const inlineFilters = screen.getByRole('group', { name: 'Deadline inline filters' });
+    expect(within(inlineFilters).getByRole('searchbox', { name: 'Filter Company' })).toHaveValue('');
+    expect(within(inlineFilters).getByRole('searchbox', { name: 'Filter Service' })).toHaveValue('');
+    expect(within(inlineFilters).getByRole('searchbox', { name: 'Filter Milestone' })).toHaveValue('');
+    expect(within(inlineFilters).getByRole('combobox', { name: 'Family' })).toHaveValue('Accounting');
+    expect(within(inlineFilters).getByRole('combobox', { name: 'Deadline type' })).toHaveValue('Client');
+    expect(within(inlineFilters).getByRole('combobox', { name: 'Status' })).toHaveValue('Completed');
+    expect(within(inlineFilters).queryByRole('button', { name: 'Deadline type' })).not.toBeInTheDocument();
+
+    const quickFilters = screen.getByRole('group', { name: 'Deadline filters' });
+    expect(within(quickFilters).getByRole('button', { name: 'Deadline type' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(quickFilters).getByRole('button', { name: 'Status' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(quickFilters).getByRole('button', { name: 'Source' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Remove Type: Client' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Status: Completed' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Family: Accounting' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remove Source: Manual trigger' })).toBeVisible();
   });
 
   it('maps complete deadline ranges, ignores incomplete ranges, and sends both keys when clearing', () => {
@@ -291,8 +332,9 @@ describe('Task 12 review remediations', () => {
   it('persists visible type/family defaults and selected page size', async () => {
     render(<DeadlineWorkspace />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Internal' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Families' }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Deadline filters' })).getByRole('button', { name: 'Deadline type' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Filter deadline types' })).getByRole('button', { name: 'Internal' }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Deadline filters' })).getByRole('button', { name: 'Families' }));
     fireEvent.click(screen.getByRole('button', { name: 'Accounting' }));
     fireEvent.change(screen.getByRole('combobox', { name: /per page/i }), { target: { value: '50' } });
 
@@ -313,9 +355,10 @@ describe('Task 12 review remediations', () => {
     });
     render(<DeadlineWorkspace />);
 
-    const client = screen.getByRole('button', { name: 'Client' });
+    fireEvent.click(within(screen.getByRole('group', { name: 'Deadline filters' })).getByRole('button', { name: 'Deadline type' }));
+    const typeDialog = screen.getByRole('dialog', { name: 'Filter deadline types' });
+    const client = within(typeDialog).getByRole('button', { name: 'Client' });
     expect(client).toHaveAttribute('aria-pressed', 'true');
-    expect(client).not.toBeDisabled();
     navigation.replace.mockReset();
     hooks.preferenceMutation.mockReset();
     fireEvent.click(client);
@@ -328,23 +371,14 @@ describe('Task 12 review remediations', () => {
     const view = render(<DeadlineWorkspace />);
 
     expect(screen.getByRole('button', { name: /Remove Companies:/ })).toBeVisible();
-    expect(screen.getByRole('button', { name: /Remove Due:/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Remove Date:/ })).toBeVisible();
 
-    const today = currentDateInSingapore();
-    const defaultTo = addCalendarDays(today, 30);
-    fireEvent.click(screen.getByRole('button', { name: /Remove Due:/ }));
-    expect(navigation.replace).toHaveBeenLastCalledWith(
-      expect.stringContaining(`from=${today}`),
-      { scroll: false },
-    );
-    expect(navigation.replace).toHaveBeenLastCalledWith(
-      expect.stringContaining(`to=${defaultTo}`),
-      { scroll: false },
-    );
+    fireEvent.click(screen.getByRole('button', { name: /Remove Date:/ }));
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('dateFilter=none'), { scroll: false });
 
-    navigation.searchParams = new URLSearchParams(`from=${today}&to=${defaultTo}`);
+    navigation.searchParams = new URLSearchParams('dateFilter=none');
     view.rerender(<DeadlineWorkspace />);
-    expect(screen.queryByRole('button', { name: /Remove Due:/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remove Date:/ })).not.toBeInTheDocument();
   });
 
   it('exposes a saved table column chooser', () => {

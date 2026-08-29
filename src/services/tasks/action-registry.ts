@@ -121,12 +121,19 @@ const documentAdapter: StageActionAdapter = {
         ? context.stage.outcome.generatedDocumentId
         : null
     );
+    const documentGenerationBatchId = (
+      context.stage.outcome?.type === TaskStageOutcomeType.GENERATED_DOCUMENT
+        ? context.stage.outcome.documentGenerationBatchId
+        : null
+    );
     if (generatedDocumentId && context.stage.status === TaskStageStatus.COMPLETED) {
       return launch(`/generated-documents/${generatedDocumentId}`, context);
     }
     if (generatedDocumentId && context.stage.status === TaskStageStatus.IN_PROGRESS) {
       return launch(configQuery('/generated-documents/generate', {
-        draft: generatedDocumentId,
+        ...(documentGenerationBatchId
+          ? { batch: documentGenerationBatchId }
+          : { draft: generatedDocumentId }),
       }), context);
     }
     const config = documentConfigSchema.parse(context.stage.actionConfig ?? {});

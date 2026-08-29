@@ -41,6 +41,7 @@ export interface PreviewFingerprintInput {
   primaryCompanyId: string | null;
   contactIds: string[];
   selectedDirectorId: string | null;
+  selectedDirectorIds?: string[];
   selectedShareholderId: string | null;
   selectedContactId: string | null;
   effectiveCustomData: Record<string, string>;

@@ -165,6 +165,14 @@ describe('billing occurrence service', () => {
     }));
   });
 
+  it('omits the date predicate when no date range is supplied', async () => {
+    await listBillingOccurrences({ ...search, from: undefined, to: undefined }, actor, prismaMock as never, { today: '2026-08-17' });
+
+    expect(prismaMock.billingOccurrence.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.not.objectContaining({ operativeExpectedDate: expect.anything() }),
+    }));
+  });
+
   it('applies company, service, fee, and general search predicates before pagination', async () => {
     await listBillingOccurrences({
       ...search,
@@ -200,6 +208,46 @@ describe('billing occurrence service', () => {
         ]),
       }),
       expect.objectContaining({ OR: expect.arrayContaining([expect.objectContaining({ feeLine: expect.any(Object) })]) }),
+    ]));
+  });
+
+  it('applies split-column filters and an exact company selection', async () => {
+    const companyId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const familyId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    await listBillingOccurrences({
+      ...search,
+      from: undefined,
+      to: undefined,
+      companyId,
+      familyId,
+      serviceNameQuery: 'Payroll',
+      feeLineQuery: 'Monthly fee',
+      periodQuery: '2026-08',
+      expectedDate: '2026-08-31',
+      billedDate: '2026-08-31',
+      amountMin: '100.00',
+      amountMax: '500.00',
+      referenceQuery: 'REF-1',
+    }, { ...actor, companyIds: undefined }, prismaMock as never, { today: '2026-08-17' });
+
+    const call = prismaMock.billingOccurrence.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+    expect(call.where).toEqual(expect.objectContaining({
+      companyId: { in: [companyId] },
+      operativeExpectedDate: new Date('2026-08-31T00:00:00.000Z'),
+      billedDate: new Date('2026-08-31T00:00:00.000Z'),
+      operativeAmount: { gte: '100.00', lte: '500.00' },
+      externalReference: { contains: 'REF-1', mode: 'insensitive' },
+    }));
+    expect(call.where.clientService).toEqual(expect.objectContaining({
+      companyId: { in: [companyId] },
+      serviceVariant: expect.objectContaining({ family: expect.objectContaining({ id: { in: [familyId] } }) }),
+      OR: [{ serviceName: { contains: 'Payroll', mode: 'insensitive' } }],
+    }));
+    expect(call.where.feeLine).toEqual(expect.objectContaining({ description: { contains: 'Monthly fee', mode: 'insensitive' } }));
+    expect(call.where.AND).toEqual(expect.arrayContaining([
+      { feeLine: { description: { contains: 'Monthly fee', mode: 'insensitive' } } },
+      { billingPeriodKey: { contains: '2026-08', mode: 'insensitive' } },
+      { externalReference: { contains: 'REF-1', mode: 'insensitive' } },
     ]));
   });
 

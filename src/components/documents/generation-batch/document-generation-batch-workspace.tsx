@@ -70,14 +70,14 @@ const CONTACT_ENDPOINT = '/api/contacts/options';
 
 const getContactId = (contact: DocumentContact) => contact.id;
 
-function companySearchOptionToCompany(option: CompanySearchOption): Company {
+export function companySearchOptionToCompany(option: CompanySearchOption): Company {
   return {
     id: option.id,
     name: option.name,
     uen: option.uen ?? '',
-    status: '',
-    registeredAddress: null,
-    incorporationDate: null,
+    status: option.status ?? '',
+    registeredAddress: option.registeredAddress ?? null,
+    incorporationDate: option.incorporationDate ?? null,
   };
 }
 
@@ -92,7 +92,7 @@ function formatClockTime(value: number | null): string | null {
 export function DocumentGenerationBatchWorkspace({
   initialBatch = null,
   templates,
-  companies: _companies,
+  companies,
   contacts,
   backHref = '/generated-documents',
 }: DocumentGenerationBatchWorkspaceProps) {
@@ -130,6 +130,9 @@ export function DocumentGenerationBatchWorkspace({
   /* --------------------------------------------------------------------- */
 
   const pinnedCompanies = useMemo<Company[]>(() => {
+    const selectedId = state.batch.primaryCompanyId;
+    const seededCompany = companies.find((company) => company.id === selectedId);
+    if (seededCompany) return [seededCompany];
     const dtoCompany = state.batch.company;
     if (!dtoCompany) return [];
     return [{
@@ -140,7 +143,7 @@ export function DocumentGenerationBatchWorkspace({
       registeredAddress: null,
       incorporationDate: null,
     }];
-  }, [state.batch.company]);
+  }, [companies, state.batch.company, state.batch.primaryCompanyId]);
 
   const companySearch = useCompanySearch({
     minChars: 0,
@@ -152,6 +155,9 @@ export function DocumentGenerationBatchWorkspace({
       label: company.name,
       description: company.uen || '',
       uen: company.uen,
+      status: company.status,
+      registeredAddress: company.registeredAddress,
+      incorporationDate: company.incorporationDate,
     })),
   });
 
@@ -185,7 +191,7 @@ export function DocumentGenerationBatchWorkspace({
     let cancelled = false;
     void (async () => {
       try {
-        const response = await fetch(`/api/companies/${encodeURIComponent(id)}`);
+        const response = await fetch(`/api/companies/${encodeURIComponent(id)}?full=true`);
         if (!response.ok) return;
         const payload = await response.json() as Record<string, unknown>;
         if (!cancelled) setResolvedCompany(mapCompanyOption(payload));
@@ -280,6 +286,7 @@ export function DocumentGenerationBatchWorkspace({
 
   const stageIndex = BATCH_STAGES.indexOf(state.stage);
   const reachableIndex = selectHighestReachableStageIndex(gates, BATCH_STAGES);
+  const isReviewStage = state.stage === 'review-generate';
 
   const activeTemplate = useMemo(
     () => templates.find((template) => template.id === activeItem?.templateId) ?? null,
@@ -483,7 +490,10 @@ export function DocumentGenerationBatchWorkspace({
   return (
     <div
       data-testid="document-generation-batch-workspace"
-      className="mx-auto flex w-full max-w-[2200px] flex-col p-3 sm:p-5"
+      className={cn(
+        'mx-auto flex w-full max-w-[2200px] flex-col p-3 sm:p-5',
+        isReviewStage && 'h-[calc(100dvh-3rem)] overflow-hidden lg:h-dvh',
+      )}
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-secondary pb-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -673,7 +683,7 @@ export function DocumentGenerationBatchWorkspace({
         </ol>
       </nav>
 
-      <main className="mt-4 flex-1">
+      <main className={cn('mt-4 flex-1', isReviewStage && 'flex min-h-0 flex-col')}>
         {state.stage === 'documents' && (
           <BatchTemplatePicker
             templates={templates}
@@ -705,9 +715,10 @@ export function DocumentGenerationBatchWorkspace({
             companyError={companySearch.error}
             masterFields={state.batch.masterFields}
             masterFieldValues={masterFieldValues}
-            onCompanyChange={(companyId) => dispatch({
+            onCompanyChange={(companyId, company) => dispatch({
               type: 'shared/company',
               companyId,
+              companyName: company?.name ?? null,
             })}
             onMasterValueChange={(fieldId, value) => dispatch({
               type: 'shared/masterValue',
@@ -775,6 +786,7 @@ export function DocumentGenerationBatchWorkspace({
                     masterFields={state.batch.masterFields}
                     effectiveMasterValues={effectiveValues}
                     templateFields={activeTemplate?.placeholders ?? []}
+                    templateContent={activeTemplate?.content}
                     onPatch={(patch) => dispatch({
                       type: 'item/patch',
                       itemId: activeItem.key,
@@ -903,12 +915,6 @@ export function DocumentGenerationBatchWorkspace({
             <dt className="text-text-secondary">Approved</dt>
             <dd className="font-medium text-text-primary">
               {readyCount} of {state.batch.items.length}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-text-secondary">With letterhead</dt>
-            <dd className="font-medium text-text-primary">
-              {state.batch.items.filter((item) => item.configuration.useLetterhead).length}
             </dd>
           </div>
         </dl>

@@ -1897,3 +1897,31 @@ Before starting Plan 3, verify:
 - Manual historical cycles create no billing occurrence or billing reconciliation request.
 - Admin rule/calendar views, isolation, audit, migration, test, lint, and build gates pass.
 - Plan 3 can import `src/services/service-schedule` and `src/services/schedule-reconciliation` without changing their public contracts.
+
+## Repair addendum (2026-08-27)
+
+The 27 August 2026 investigation found that deadline preview and write-mode
+reconciliation diverged: an annual company-date source inside a rolling period
+could be shifted into the wrong year, the editor used a handwritten local
+calculator, and several services persisted incorrect historical occurrences.
+
+The dated repair plan
+[\docs/superpowers/plans/2026-08-27-deadline-preview-reconciliation-repair.md\](../plans/2026-08-27-deadline-preview-reconciliation-repair.md)
+supersedes the weak "one or more" fixed-date acceptance language above with
+exact occurrence identity and date requirements:
+
+- For \	oday = 2026-08-27\, \horizonEnd = 2027-08-27\, and
+  \ccountsDueDate = 2027-07-31\, \SG_ANNUAL_RETURN\ contains exactly one
+  occurrence on \2027-07-31\ and AGM exactly one on \2027-06-30\ — never
+  \2026-07-31\.
+- Authoritative backlog (codes \SG_AGM_DUE\/\SG_ANNUAL_RETURN\ only)
+  generates annual cycles from \Company.accountsDueDate\ through the rolling
+  horizon, capped at the most recent 20 cycles with an
+  \AUTHORITATIVE_BACKLOG_TRUNCATED\ warning. No other rule gains historical
+  backlog.
+- Client-service impact preview and write reconciliation produce identical
+  normalized tuples; the editor renders the server projection only.
+- Normal reconciliation still preserves every protected lifecycle category.
+- Incorrect existing occurrences are repaired only through the audited,
+  dry-run-first, fingerprint-gated \
+pm run repair:deadlines\ command.

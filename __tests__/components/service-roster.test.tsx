@@ -4,10 +4,18 @@ import type { ServiceRosterItem } from '@/services/service-roster';
 
 const hooks = vi.hoisted(() => ({
   useServiceRoster: vi.fn(),
+  useArchiveClientService: vi.fn(),
+  useDeleteClientServicePermanently: vi.fn(),
   useUserPreference: vi.fn(),
   useUpsertUserPreference: vi.fn(),
   useServiceCatalog: vi.fn(),
   useServiceRosterFamilies: vi.fn(),
+  useClientService: vi.fn(),
+}));
+const mutations = vi.hoisted(() => ({
+  archive: vi.fn(),
+  permanentDelete: vi.fn(),
+  refetch: vi.fn(),
 }));
 const servicesSettingsMock = vi.hoisted(() => ({ useServicesWorkspaceSettings: vi.fn() }));
 
@@ -23,6 +31,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/use-service-roster', () => ({ useServiceRoster: hooks.useServiceRoster }));
+vi.mock('@/hooks/use-client-services', () => ({
+  useArchiveClientService: hooks.useArchiveClientService,
+  useDeleteClientServicePermanently: hooks.useDeleteClientServicePermanently,
+  useClientService: hooks.useClientService,
+}));
 vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreference: hooks.useUserPreference,
   useUpsertUserPreference: hooks.useUpsertUserPreference,
@@ -38,7 +51,7 @@ vi.mock('@/components/companies/company-detail/client-service-creator', () => ({
   ClientServiceCreator: () => null,
 }));
 vi.mock('@/components/companies/company-detail/client-service-editor', () => ({
-  ClientServiceEditor: () => null,
+  ClientServiceEditor: (props: { readOnly?: boolean }) => <div role="dialog" aria-label={props.readOnly ? 'View service' : 'Edit service'} />,
 }));
 
 import { ServiceRoster } from '@/components/services/roster/service-roster';
@@ -149,19 +162,29 @@ const advisoryFamily = {
   displayColor: '#B85C38',
 };
 
-function setup() {
+function setup(items: ServiceRosterItem[] = [rosterItem]) {
   navigation.searchParams = new URLSearchParams();
   navigation.replace.mockReset();
+  hooks.useServiceRoster.mockReset();
+  mutations.archive.mockReset();
+  mutations.archive.mockResolvedValue({ id: rosterItem.id, archived: true });
+  mutations.permanentDelete.mockReset();
+  mutations.permanentDelete.mockResolvedValue({ id: rosterItem.id, deleted: true, deletedCounts: {} });
+  mutations.refetch.mockReset();
   hooks.useServiceRoster.mockReturnValue({
-    data: { items: [rosterItem], total: 1, page: 1, limit: 20, totalPages: 1 },
+    data: { items, total: items.length, page: 1, limit: 20, totalPages: items.length > 0 ? 1 : 0 },
     isLoading: false,
     isFetching: false,
     error: null,
+    refetch: mutations.refetch,
   });
   hooks.useUserPreference.mockReturnValue({ data: { value: null }, isLoading: false });
   hooks.useUpsertUserPreference.mockReturnValue({ mutate: vi.fn(), isPending: false });
   hooks.useServiceCatalog.mockReturnValue({ data: { families: [{ ...family, variants: [] }], total: 1 }, isLoading: false });
   hooks.useServiceRosterFamilies.mockReturnValue({ data: [family, advisoryFamily], isLoading: false, error: null });
+  hooks.useClientService.mockReturnValue({ data: { id: rosterItem.id }, isLoading: false, error: null });
+  hooks.useArchiveClientService.mockReturnValue({ mutateAsync: mutations.archive, isPending: false });
+  hooks.useDeleteClientServicePermanently.mockReturnValue({ mutateAsync: mutations.permanentDelete, isPending: false });
   servicesSettingsMock.useServicesWorkspaceSettings.mockReturnValue({ data: { workspaceEnabled: true, deadlineWritesEnabled: true }, isLoading: false, error: null });
 }
 
@@ -175,8 +198,8 @@ describe('ServiceRoster', () => {
     const rows = within(table).getAllByRole('row');
     const cells = rows.at(-1)?.querySelectorAll('td');
     expect(cells).toBeDefined();
-    expect(cells?.[7]).not.toHaveTextContent('Configured');
-    expect(cells?.[8]).toHaveTextContent('Open · Upcoming');
+    expect(cells?.[8]).not.toHaveTextContent('Configured');
+    expect(cells?.[9]).toHaveTextContent('Open · Upcoming');
   });
 
   it('hides the historical trigger when workspace writes are disabled', () => {
@@ -275,6 +298,144 @@ describe('ServiceRoster', () => {
     expect(familyCell?.querySelector('.truncate')).toHaveTextContent('Accounting');
   });
 
+  it('vertically centers every visible body cell', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    const bodyCells = within(table).getAllByRole('row').at(-1)?.querySelectorAll('td');
+    expect(bodyCells).toHaveLength(11);
+    bodyCells?.forEach((cell) => expect(cell).toHaveClass('align-middle'));
+  });
+
+  it('keeps the table columns visible when no services are found', () => {
+    setup([]);
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    expect(within(table).getByRole('columnheader', { name: 'Company' })).toBeVisible();
+    const emptyMessage = within(table).getByText('No services found');
+    expect(emptyMessage.closest('tbody')).not.toBeNull();
+    expect(emptyMessage.closest('td')).toHaveAttribute('colspan', '11');
+    expect(screen.queryByText('No services match the selected filters.')).not.toBeInTheDocument();
+  });
+
+  it('selects a service row and shows the bulk action toolbar with selected-row styling', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    const row = within(table).getAllByRole('row').at(-1);
+    if (!row) throw new Error('Roster data row missing');
+    const checkbox = within(row).getByRole('checkbox', { name: 'Select Monthly accounting for Oaktree Accounting & Corporate Solution Pte. Ltd.' });
+
+    fireEvent.click(checkbox);
+
+    expect(checkbox).toBeChecked();
+    expect(row).toHaveClass('bg-oak-row-selected');
+    expect(screen.getByRole('toolbar', { name: 'Selected service actions' })).toHaveTextContent('1 selected');
+    expect(screen.getByRole('button', { name: 'Archive' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeVisible();
+  });
+
+  it('selects all visible services and removes the selection when toggled again', () => {
+    const secondItem: ServiceRosterItem = {
+      ...rosterItem,
+      id: '77777777-7777-4777-8777-777777777777',
+      serviceName: 'Annual return',
+      service: { ...rosterItem.service, id: '77777777-7777-4777-8777-777777777777', name: 'Annual return' },
+      updatedAt: '2026-08-19T00:00:00.000Z',
+    };
+    setup([rosterItem, secondItem]);
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    const selectAll = within(table).getByRole('checkbox', { name: 'Select all services' });
+    fireEvent.click(selectAll);
+
+    expect(selectAll).toBeChecked();
+    expect(screen.getByRole('toolbar', { name: 'Selected service actions' })).toHaveTextContent('2 selected');
+
+    fireEvent.click(selectAll);
+
+    expect(selectAll).not.toBeChecked();
+    expect(screen.queryByRole('toolbar', { name: 'Selected service actions' })).not.toBeInTheDocument();
+  });
+
+  it('archives selected services with one required reason and clears the selection after success', async () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    fireEvent.click(within(table).getByRole('checkbox', { name: 'Select Monthly accounting for Oaktree Accounting & Corporate Solution Pte. Ltd.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
+
+    expect(screen.getByRole('dialog', { name: 'Archive selected service?' })).toBeVisible();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Archive reason' }), { target: { value: 'No longer offered by the firm' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Archive service' }));
+
+    await waitFor(() => expect(mutations.archive).toHaveBeenCalledWith({
+      id: rosterItem.id,
+      companyId: rosterItem.companyId,
+      reason: 'No longer offered by the firm',
+    }));
+    expect(mutations.refetch).toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('toolbar', { name: 'Selected service actions' })).not.toBeInTheDocument());
+  });
+
+  it('permanently deletes selected services with their roster version and required reason', async () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    fireEvent.click(within(table).getByRole('checkbox', { name: 'Select Monthly accounting for Oaktree Accounting & Corporate Solution Pte. Ltd.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }));
+
+    expect(screen.getByRole('dialog', { name: 'Permanently delete selected service?' })).toBeVisible();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Deletion reason' }), { target: { value: 'Remove obsolete service history' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete service permanently' }));
+
+    await waitFor(() => expect(mutations.permanentDelete).toHaveBeenCalledWith({
+      id: rosterItem.id,
+      companyId: rosterItem.companyId,
+      expectedUpdatedAt: rosterItem.updatedAt,
+      reason: 'Remove obsolete service history',
+    }));
+    expect(mutations.refetch).toHaveBeenCalled();
+  });
+
+  it('renders an inline filter for every data column', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    for (const label of ['Company', 'Family', 'Service', 'Status', 'Cadence', 'Next deadline', 'Start/end', 'Warnings', 'Billing']) {
+      expect(screen.getByRole('searchbox', { name: `Filter ${label}` })).toBeVisible();
+    }
+    expect(screen.queryByRole('searchbox', { name: 'Filter Actions' })).not.toBeInTheDocument();
+  });
+
+  it('places inline filters above the sortable column headers', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    const headerRows = within(table).getAllByRole('row').slice(0, 2);
+
+    expect(within(headerRows[0]).getByRole('searchbox', { name: 'Filter Company' })).toBeVisible();
+    expect(within(headerRows[1]).getByRole('columnheader', { name: 'Company' })).toBeVisible();
+  });
+
+  it('opens a read-only view when a roster row is clicked', () => {
+    setup();
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const dataRow = within(screen.getByRole('table', { name: 'Services roster table' })).getAllByRole('row').at(-1);
+    if (!dataRow) throw new Error('Roster data row missing');
+    fireEvent.click(dataRow);
+
+    expect(screen.getByRole('dialog', { name: 'View service' })).toBeVisible();
+  });
+
   it('shows text and an accent cue for a selected family chip', () => {
     setup();
     render(<ServiceRoster workspaceId="workspace-1" />);
@@ -315,7 +476,7 @@ describe('ServiceRoster', () => {
     navigation.searchParams = new URLSearchParams('page=3');
     render(<ServiceRoster workspaceId="workspace-1" />);
 
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter company' }), { target: { value: 'Oaktree' } });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter Company' }), { target: { value: 'Oaktree' } });
 
     expect(hooks.useServiceRoster).toHaveBeenLastCalledWith(expect.objectContaining({
       companyQuery: 'Oaktree',
@@ -357,7 +518,7 @@ describe('ServiceRoster', () => {
 
     expect(screen.getByRole('combobox', { name: 'Per page:' })).toHaveValue('50');
     expect(screen.queryByRole('option', { name: '200' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add service' })).toHaveClass('min-h-11', 'sm:min-h-8');
+    expect(screen.queryByRole('button', { name: 'Add service' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Columns/ }));
     expect(screen.getByRole('dialog', { name: 'Adjust columns' })).toBeVisible();
     const familyCheckbox = screen.getByRole('checkbox', { name: 'Show Family column' });
@@ -373,7 +534,7 @@ describe('ServiceRoster', () => {
     hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
     render(<ServiceRoster workspaceId="workspace-1" />);
 
-    const resize = screen.getByRole('button', { name: 'Resize Company column' });
+    const resize = screen.getByRole('separator', { name: 'Resize Company column' });
     fireEvent.pointerDown(resize, { clientX: 100 });
     fireEvent.pointerMove(window, { clientX: 180 });
     expect(mutate).not.toHaveBeenCalled();
@@ -385,6 +546,35 @@ describe('ServiceRoster', () => {
     })));
   });
 
+  it('uses a Vault-style separator handle with keyboard resizing and a width-driven table', async () => {
+    setup();
+    const mutate = vi.fn();
+    hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
+    render(<ServiceRoster workspaceId="workspace-1" />);
+
+    const table = screen.getByRole('table', { name: 'Services roster table' });
+    expect(table).toHaveClass('w-full', 'min-w-max');
+    expect(table).not.toHaveClass('table-fixed');
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '48px' });
+    expect((table.querySelectorAll('colgroup col').item(10) as HTMLElement).style.width).toBe('');
+    expect(screen.queryByRole('separator', { name: 'Resize Actions column' })).not.toBeInTheDocument();
+
+    const resize = screen.getByRole('separator', { name: 'Resize Company column' });
+    expect(resize).toHaveAttribute('aria-orientation', 'vertical');
+    expect(resize).toHaveAttribute('tabindex', '0');
+    fireEvent.keyDown(resize, { key: 'ArrowRight' });
+
+    expect(table.style.width).toBe('');
+    expect(table.style.minWidth).toBe('');
+    expect(table.querySelectorAll('colgroup col')[1]).toHaveStyle({ width: '240px' });
+    await waitFor(() => expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
+      key: 'services.roster.table.v1',
+      value: expect.objectContaining({ columnWidths: expect.objectContaining({ company: 240 }) }),
+    })));
+  });
+
   it('merges newer table actions into a pending resize save', () => {
     vi.useFakeTimers();
     try {
@@ -393,7 +583,7 @@ describe('ServiceRoster', () => {
       hooks.useUpsertUserPreference.mockReturnValue({ mutate, isPending: false });
       render(<ServiceRoster workspaceId="workspace-1" />);
 
-      const resize = screen.getByRole('button', { name: 'Resize Company column' });
+      const resize = screen.getByRole('separator', { name: 'Resize Company column' });
       fireEvent.pointerDown(resize, { clientX: 100 });
       fireEvent.pointerMove(window, { clientX: 180 });
       fireEvent.pointerUp(window, { clientX: 180 });

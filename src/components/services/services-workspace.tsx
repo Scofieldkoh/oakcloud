@@ -1,12 +1,30 @@
 'use client';
 
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { ServiceRoster } from '@/components/services/roster/service-roster';
-import { DeadlineWorkspace } from '@/components/services/deadlines/deadline-workspace';
+import { DeadlineViewToggle, DeadlineWorkspace } from '@/components/services/deadlines/deadline-workspace';
 import { BillingWorkspace } from '@/components/services/billing/billing-workspace';
 
-type ServicesWorkspaceTab = 'services' | 'deadlines' | 'billing';
+type ServicesWorkspaceSection = 'services' | 'deadlines' | 'billing';
+
+const pageContent: Record<ServicesWorkspaceSection, { title: string; description: string }> = {
+  services: {
+    title: 'Services',
+    description: 'Manage active client services across your workspace.',
+  },
+  deadlines: {
+    title: 'Deadlines',
+    description: 'Monitor and update service deadlines across your workspace.',
+  },
+  billing: {
+    title: 'Billing',
+    description: 'Review billing occurrences and mark them as billed.',
+  },
+};
 
 interface ServicesWorkspaceProps {
   workspaceId?: string;
@@ -14,16 +32,18 @@ interface ServicesWorkspaceProps {
   canCreate?: boolean;
 }
 
-function activeTab(value: string | null): ServicesWorkspaceTab {
-  return value === 'deadlines' || value === 'billing' ? value : 'services';
+function sectionFromPathname(pathname: string): ServicesWorkspaceSection {
+  if (pathname === '/deadlines' || pathname.startsWith('/deadlines/')) return 'deadlines';
+  if (pathname === '/billing' || pathname.startsWith('/billing/')) return 'billing';
+  return 'services';
 }
 
 export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = true }: ServicesWorkspaceProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const settings = useServicesWorkspaceSettings();
-  const tab = activeTab(searchParams.get('tab'));
+  const section = sectionFromPathname(pathname);
+  const content = pageContent[section];
+  const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
 
   if (settings.isLoading) {
     return <div role="status" className="p-4 text-sm text-text-secondary sm:p-6">Loading Services workspace…</div>;
@@ -41,37 +61,32 @@ export function ServicesWorkspace({ workspaceId, canEdit = true, canCreate = tru
     );
   }
 
-  const selectTab = (nextTab: ServicesWorkspaceTab) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', nextTab);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
   return (
     <main className="p-4 sm:p-6">
-      <header className="mb-6">
-        <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">Services</h1>
-        <p className="mt-1 text-sm text-text-secondary">Manage cross-company services, deadlines, and billing tracking.</p>
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{content.title}</h1>
+          <p className="mt-1 text-sm text-text-secondary">{content.description}</p>
+        </div>
+        {section === 'services' && canCreate ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setAddServiceDialogOpen(true)}>Add service</Button>
+          </div>
+        ) : section === 'deadlines' ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <DeadlineViewToggle />
+          </div>
+        ) : null}
       </header>
 
-      <div role="tablist" aria-label="Services workspace sections" className="mb-6 flex items-center overflow-x-auto border-b border-border-primary">
-        {(['services', 'deadlines', 'billing'] as const).map((tabId) => (
-          <button
-            key={tabId}
-            type="button"
-            role="tab"
-            aria-selected={tab === tabId}
-            onClick={() => selectTab(tabId)}
-            className={`min-h-11 shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors sm:min-h-8 ${tab === tabId ? 'border-oak-primary text-text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-          >
-            {tabId.charAt(0).toUpperCase() + tabId.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'services' ? (
-        <ServiceRoster workspaceId={workspaceId} canEdit={canEdit} canCreate={canCreate} />
-      ) : tab === 'deadlines' ? (
+      {section === 'services' ? (
+        <ServiceRoster
+          workspaceId={workspaceId}
+          canEdit={canEdit}
+          addServiceDialogOpen={addServiceDialogOpen}
+          onAddServiceDialogOpenChange={setAddServiceDialogOpen}
+        />
+      ) : section === 'deadlines' ? (
         <DeadlineWorkspace workspaceId={workspaceId} canEdit={canEdit} deadlineWritesEnabled={settings.data.deadlineWritesEnabled} />
       ) : (
         <BillingWorkspace workspaceId={workspaceId} canEdit={canEdit} />

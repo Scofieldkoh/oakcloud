@@ -8,6 +8,7 @@ import {
   normalizeBillingOccurrenceSearch,
   useBillingOccurrence,
   useBillingOccurrences,
+  useMarkBillingOccurrencesAsBilled,
   useResetBillingOverride,
   useUpdateBillingOccurrence,
 } from '@/hooks/use-billing-occurrences';
@@ -63,6 +64,43 @@ describe('use billing occurrences hooks', () => {
     expect(params).toContain('feeQuery=filing');
   });
 
+  it('serializes split column filters for dates, amount range, status, and reference', () => {
+    const params = billingOccurrenceSearchParams({
+      ...search,
+      companyId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+      familyId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      serviceNameQuery: 'Payroll',
+      feeLineQuery: 'Monthly fee',
+      periodQuery: '2026-08',
+      expectedDate: '2026-08-31',
+      billedDate: '2026-08-31',
+      amountMin: '100.00',
+      amountMax: '500.00',
+      referenceQuery: 'REF-1',
+    });
+
+    expect(params).toEqual(expect.stringContaining('companyId=eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'));
+    expect(params).toEqual(expect.stringContaining('familyId=dddddddd-dddd-4ddd-8ddd-dddddddddddd'));
+    expect(params).toEqual(expect.stringContaining('serviceNameQuery=Payroll'));
+    expect(params).toEqual(expect.stringContaining('feeLineQuery=Monthly+fee'));
+    expect(params).toEqual(expect.stringContaining('periodQuery=2026-08'));
+    expect(params).toEqual(expect.stringContaining('expectedDate=2026-08-31'));
+    expect(params).toEqual(expect.stringContaining('billedDate=2026-08-31'));
+    expect(params).toEqual(expect.stringContaining('amountMin=100.00'));
+    expect(params).toEqual(expect.stringContaining('amountMax=500.00'));
+    expect(params).toEqual(expect.stringContaining('referenceQuery=REF-1'));
+  });
+
+  it('preserves an unbounded search when the date range is removed', () => {
+    const normalized = normalizeBillingOccurrenceSearch({ ...search, from: undefined, to: undefined });
+    const params = billingOccurrenceSearchParams({ ...search, from: undefined, to: undefined });
+
+    expect(normalized.from).toBeUndefined();
+    expect(normalized.to).toBeUndefined();
+    expect(params).not.toContain('from=');
+    expect(params).not.toContain('to=');
+  });
+
   it('fetches a normalized list and forwards an AbortSignal', async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ mode: 'TABLE', items: [], total: 0, page: 1, limit: 50, totalPages: 0 }));
     const { queryClient, wrapper } = createHarness();
@@ -114,5 +152,36 @@ describe('use billing occurrences hooks', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['billing-coverage'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['service-roster'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['client-service', 'service-1'] });
+  });
+
+  it('marks multiple billing occurrences as billed without changing other fields', async () => {
+    vi.mocked(fetch).mockImplementation(async (url, init) => jsonResponse({
+      id: String(url).split('/').at(-1),
+      clientServiceId: 'service-1',
+      ...(JSON.parse(String(init?.body)) as Record<string, unknown>),
+    }));
+    const { wrapper } = createHarness();
+    const { result } = renderHook(() => useMarkBillingOccurrencesAsBilled(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync([
+        { id: 'occurrence-1', updatedAt: '2026-08-10T00:00:00.000Z' },
+        { id: 'occurrence-2', updatedAt: '2026-08-11T00:00:00.000Z' },
+      ]);
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    for (const call of vi.mocked(fetch).mock.calls) {
+      const body = JSON.parse(String(call[1]?.body)) as Record<string, unknown>;
+      expect(call[1]).toEqual(expect.objectContaining({ method: 'PATCH' }));
+      expect(body).toEqual(expect.objectContaining({
+        expectedUpdatedAt: expect.any(String),
+        status: 'BILLED',
+        updateScope: 'THIS_OCCURRENCE',
+        reason: null,
+      }));
+      expect(body).not.toHaveProperty('billedDate');
+      expect(body).not.toHaveProperty('externalReference');
+    }
   });
 });

@@ -1,8 +1,7 @@
 'use client';
 
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { FamilyFilterChips, type ServiceFamilyFilter } from '@/components/services/shared/family-filter-chips';
@@ -48,7 +47,7 @@ interface BillingFiltersProps {
   value: BillingFilterState;
   families: ServiceFamilyFilter[];
   onChange: (value: BillingFilterState) => void;
-  onReset?: () => void;
+  dateRangeActive: boolean;
   onAdjustColumns?: () => void;
   hiddenColumnCount?: number;
 }
@@ -57,7 +56,7 @@ function toggle<T extends string>(values: readonly T[], value: T): T[] {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
 
-export function BillingFilters({ value, families, onChange, onReset, onAdjustColumns, hiddenColumnCount }: BillingFiltersProps) {
+export function BillingFilters({ value, families, onChange, dateRangeActive, onAdjustColumns, hiddenColumnCount }: BillingFiltersProps) {
   const [queryDraft, setQueryDraft] = useState(value.query);
   const valueRef = useRef(value);
   const onChangeRef = useRef(onChange);
@@ -76,12 +75,12 @@ export function BillingFilters({ value, families, onChange, onReset, onAdjustCol
     return () => window.clearTimeout(timeout);
   }, [queryDraft, value.query]);
 
-  const hasFilters = Boolean(queryDraft || value.statuses.length || value.timing.length || value.familyIds.length);
   const activeFilters = [
     ...value.statuses.map((status) => ({ key: `status-${status}`, label: 'Status', value: STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status, onRemove: () => onChange({ ...value, statuses: value.statuses.filter((item) => item !== status) }) })),
     ...value.timing.map((timing) => ({ key: `timing-${timing}`, label: 'Timing', value: TIMING_OPTIONS.find((option) => option.value === timing)?.label ?? timing, onRemove: () => onChange({ ...value, timing: value.timing.filter((item) => item !== timing) }) })),
     ...families.filter((family) => value.familyIds.includes(family.id)).map((family) => ({ key: `family-${family.id}`, label: 'Family', value: family.name, onRemove: () => onChange({ ...value, familyIds: value.familyIds.filter((id) => id !== family.id) }) })),
     ...(queryDraft ? [{ key: 'query', label: 'Search', value: queryDraft, onRemove: () => { setQueryDraft(''); onChange({ ...value, query: '' }); } }] : []),
+    ...(dateRangeActive && value.from && value.to ? [{ key: 'date-range', label: 'Date', value: `${value.from} – ${value.to}`, onRemove: () => onChange({ ...value, from: '', to: '' }) }] : []),
   ];
 
   return (
@@ -140,14 +139,6 @@ export function BillingFilters({ value, families, onChange, onReset, onAdjustCol
             className="min-w-[160px] text-xs"
           />
       </ServiceFilterToolbar>
-
-      <div className="flex flex-wrap items-center justify-end gap-2">
-          {hasFilters ? (
-            <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-8" onClick={onReset} leftIcon={<X className="h-4 w-4" />}>
-              Reset filters
-            </Button>
-          ) : null}
-      </div>
 
       {activeFilters.length > 0 ? <div aria-label="Active filters" className="flex flex-wrap gap-2">{activeFilters.map((filter) => <FilterChip key={filter.key} label={filter.label} value={filter.value} onRemove={filter.onRemove} />)}</div> : null}
     </section>

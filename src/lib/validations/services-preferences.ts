@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const UUID = z.string().uuid();
-const DEADLINE_COLUMN_IDS = ['dueDate', 'timing', 'company', 'familyService', 'milestone', 'type', 'status', 'cycleOrigin', 'actions'] as const;
+const DEADLINE_COLUMN_IDS = ['dueDate', 'timing', 'company', 'family', 'service', 'milestone', 'type', 'status', 'actions'] as const;
 export const DEADLINE_COLUMN_WIDTH_MIN = 96;
 export const DEADLINE_COLUMN_WIDTH_MAX = 800;
 
@@ -10,8 +10,10 @@ export const BILLING_COLUMN_IDS = [
   'expectedDate',
   'timing',
   'company',
-  'familyService',
-  'feeLinePeriod',
+  'family',
+  'service',
+  'feeLine',
+  'period',
   'status',
   'amount',
   'billedDate',
@@ -64,14 +66,32 @@ export function parseBillingTablePreference(value: unknown): BillingTablePrefere
   });
   if (!parsed.success) return defaultBillingTablePreference;
 
+  const legacyColumnMap: Record<string, BillingColumnId[]> = {
+    familyService: ['family', 'service'],
+    feeLinePeriod: ['feeLine', 'period'],
+  };
+  const legacyWidth = (column: BillingColumnId): number | undefined => {
+    if (typeof rawWidths[column] === 'number') return rawWidths[column] as number;
+    const legacy = Object.entries(legacyColumnMap).find(([, columns]) => columns.includes(column))?.[0];
+    return legacy && typeof rawWidths[legacy] === 'number' ? rawWidths[legacy] as number : undefined;
+  };
   const widths = Object.fromEntries(
     BILLING_COLUMN_IDS
-      .filter((column) => typeof rawWidths[column] === 'number' && Number.isFinite(rawWidths[column]))
-      .map((column) => [column, Math.min(BILLING_COLUMN_WIDTH_MAX, Math.max(BILLING_COLUMN_WIDTH_MIN, Math.round(rawWidths[column] as number)))]),
+      .filter((column) => typeof legacyWidth(column) === 'number' && Number.isFinite(legacyWidth(column)))
+      .map((column) => [column, Math.min(BILLING_COLUMN_WIDTH_MAX, Math.max(BILLING_COLUMN_WIDTH_MIN, Math.round(legacyWidth(column)!)))]),
   );
-  const knownOrder = rawOrder.filter((column): column is BillingColumnId => typeof column === 'string' && BILLING_COLUMN_IDS.includes(column as BillingColumnId));
+  const knownOrder = rawOrder.flatMap((column) => {
+    if (typeof column !== 'string') return [];
+    if (BILLING_COLUMN_IDS.includes(column as BillingColumnId)) return [column as BillingColumnId];
+    return legacyColumnMap[column] ?? [];
+  });
   const columnOrder = [...new Set([...knownOrder, ...BILLING_COLUMN_IDS])];
-  const columnVisibility = Object.fromEntries(BILLING_COLUMN_IDS.map((column) => [column, column === 'actions' ? true : rawVisibility[column] !== false]));
+  const columnVisibility = Object.fromEntries(BILLING_COLUMN_IDS.map((column) => {
+    if (column === 'actions') return [column, true];
+    if (typeof rawVisibility[column] === 'boolean') return [column, rawVisibility[column]];
+    const legacy = Object.entries(legacyColumnMap).find(([, columns]) => columns.includes(column))?.[0];
+    return [column, legacy && rawVisibility[legacy] === false ? false : true];
+  }));
 
   return {
     ...defaultBillingTablePreference,

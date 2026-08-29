@@ -72,6 +72,7 @@ export interface StageOutcomeReference {
   type: PrismaTaskStageOutcomeType;
   companyId?: string | null;
   generatedDocumentId?: string | null;
+  documentGenerationBatchId?: string | null;
   esigningEnvelopeId?: string | null;
 }
 

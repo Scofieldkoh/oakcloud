@@ -194,11 +194,12 @@ export function toBillingOccurrenceDto(
   };
 }
 
-function requestedCompanyIds(input: Pick<BillingOccurrenceSearch, 'companyIds'>, actor: BillingOccurrenceActor): string[] | undefined {
-  if (actor.companyIds === undefined) return input.companyIds.length > 0 ? [...input.companyIds] : undefined;
-  if (input.companyIds.length === 0) return [...actor.companyIds];
+function requestedCompanyIds(input: Pick<BillingOccurrenceSearch, 'companyIds' | 'companyId'>, actor: BillingOccurrenceActor): string[] | undefined {
+  const requested = input.companyId ? [input.companyId] : input.companyIds;
+  if (actor.companyIds === undefined) return requested.length > 0 ? [...requested] : undefined;
+  if (requested.length === 0) return [...actor.companyIds];
   const accessible = new Set(actor.companyIds);
-  return input.companyIds.filter((companyId) => accessible.has(companyId));
+  return requested.filter((companyId) => accessible.has(companyId));
 }
 
 function timingWhere(
@@ -223,6 +224,17 @@ export function billingOccurrenceWhereForSearch(
   today: DateOnly = currentDateInSingapore(),
 ): Prisma.BillingOccurrenceWhereInput {
   const companyIds = requestedCompanyIds(input, actor);
+  const familyIds = input.familyId ? [input.familyId] : input.familyIds;
+  const servicePredicates: Prisma.ClientServiceWhereInput[] = [];
+  if (input.serviceQuery) {
+    servicePredicates.push(
+      { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } },
+      { familyName: { contains: input.serviceQuery, mode: 'insensitive' } },
+      { serviceVariant: { name: { contains: input.serviceQuery, mode: 'insensitive' } } },
+      { serviceVariant: { family: { name: { contains: input.serviceQuery, mode: 'insensitive' } } } },
+    );
+  }
+  if (input.serviceNameQuery) servicePredicates.push({ serviceName: { contains: input.serviceNameQuery, mode: 'insensitive' } });
   const companyWhere: Prisma.CompanyWhereInput = {
     tenantId: actor.tenantId,
     deletedAt: null,
@@ -242,32 +254,34 @@ export function billingOccurrenceWhereForSearch(
       tenantId: actor.tenantId,
       family: {
         tenantId: actor.tenantId,
-        ...(input.familyIds.length > 0 ? { id: { in: input.familyIds } } : {}),
+        ...(familyIds.length > 0 ? { id: { in: familyIds } } : {}),
       },
     },
-    ...(input.serviceQuery ? {
-      OR: [
-        { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } },
-        { familyName: { contains: input.serviceQuery, mode: 'insensitive' } },
-        { serviceVariant: { name: { contains: input.serviceQuery, mode: 'insensitive' } } },
-        { serviceVariant: { family: { name: { contains: input.serviceQuery, mode: 'insensitive' } } } },
-      ],
-    } : {}),
+    ...(servicePredicates.length > 0 ? { OR: servicePredicates } : {}),
   };
   const feeLineWhere: Prisma.ClientServiceFeeLineWhereInput = {
     tenantId: actor.tenantId,
     clientService: { tenantId: actor.tenantId },
-    ...(input.feeQuery ? { description: { contains: input.feeQuery, mode: 'insensitive' } } : {}),
+    ...((input.feeQuery || input.feeLineQuery) ? { description: { contains: input.feeLineQuery || input.feeQuery, mode: 'insensitive' } } : {}),
   };
+  const expectedDate = input.expectedDate ? parseDateOnly(input.expectedDate as DateOnly) : null;
+  const dateWhere: Prisma.BillingOccurrenceWhereInput = expectedDate
+    ? { operativeExpectedDate: expectedDate }
+    : input.from && input.to
+      ? { operativeExpectedDate: { gte: parseDateOnly(input.from as DateOnly), lte: parseDateOnly(input.to as DateOnly) } }
+      : {};
+  const amountWhere: Prisma.BillingOccurrenceWhereInput = input.amountMin || input.amountMax
+    ? { operativeAmount: { ...(input.amountMin ? { gte: input.amountMin } : {}), ...(input.amountMax ? { lte: input.amountMax } : {}) } }
+    : {};
   const where: Prisma.BillingOccurrenceWhereInput = {
     tenantId: actor.tenantId,
     company: companyWhere,
     clientService: clientServiceWhere,
     feeLine: feeLineWhere,
-    operativeExpectedDate: {
-      gte: parseDateOnly(input.from as DateOnly),
-      lte: parseDateOnly(input.to as DateOnly),
-    },
+    ...dateWhere,
+    ...amountWhere,
+    ...(input.billedDate ? { billedDate: parseDateOnly(input.billedDate as DateOnly) } : {}),
+    ...(input.referenceQuery ? { externalReference: { contains: input.referenceQuery, mode: 'insensitive' } } : {}),
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.statuses.length > 0 ? { status: { in: input.statuses } } : {}),
   };
@@ -291,6 +305,15 @@ export function billingOccurrenceWhereForSearch(
         { billingPeriodKey: { contains: input.feeQuery, mode: 'insensitive' } },
       ],
     });
+  }
+  if (input.feeLineQuery) {
+    and.push({ feeLine: { description: { contains: input.feeLineQuery, mode: 'insensitive' } } });
+  }
+  if (input.periodQuery) {
+    and.push({ billingPeriodKey: { contains: input.periodQuery, mode: 'insensitive' } });
+  }
+  if (input.referenceQuery) {
+    and.push({ externalReference: { contains: input.referenceQuery, mode: 'insensitive' } });
   }
   const timing = timingWhere(input, today);
   if (timing) and.push(timing);

@@ -42,6 +42,29 @@ describe('DocumentPartyChoiceList', () => {
     expect(onChange).toHaveBeenCalledWith('one');
   });
 
+  it('selects multiple parties through checkbox semantics', () => {
+    const onChange = vi.fn();
+    render(
+      <DocumentPartyChoiceList
+        id="directors"
+        label="Directors"
+        options={options}
+        values={['one', 'two']}
+        onChange={onChange}
+        multiple
+        isLoading={false}
+      />,
+    );
+
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.getAllByRole('checkbox').every((checkbox) => (
+      (checkbox as HTMLInputElement).checked
+    ))).toBe(true);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Alice Tan/ }));
+    expect(onChange).toHaveBeenCalledWith(['two']);
+  });
+
   it('filters rows while retaining the selected party', () => {
     render(
       <DocumentPartyChoiceList

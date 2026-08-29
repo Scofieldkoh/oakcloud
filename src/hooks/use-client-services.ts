@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, PermanentDeleteClientServiceResult, ServiceAgreementActivationDto } from '@/services/client-service';
-import type { CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
+import type { ClientServiceDeadlineDraftPreview, ClientServiceDeadlineImpact, ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, PermanentDeleteClientServiceResult, ServiceAgreementActivationDto } from '@/services/client-service';
+import type { ClientServiceDeadlineDraftPreviewInput, ClientServiceDeadlineImpactInput, CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
 type ClientServicesResult = { services: ClientServiceDto[]; total: number; activations: CompanyServiceActivationDto[] };
 
@@ -53,6 +53,39 @@ export function useClientServices(companyId: string, filters: Partial<SearchClie
 
 export function useClientService(serviceId: string | null) {
   return useQuery({ queryKey: ['client-service', serviceId], queryFn: () => requestJson<ClientServiceDto>(`/api/client-services/${serviceId}`), enabled: Boolean(serviceId) });
+}
+
+/**
+ * No-write deadline impact preview. This intentionally bypasses the query
+ * cache so debounced editor requests never invalidate workspace views.
+ */
+export async function previewClientServiceDeadlineImpact(
+  id: string,
+  input: ClientServiceDeadlineImpactInput,
+  signal?: AbortSignal,
+): Promise<ClientServiceDeadlineImpact> {
+  return requestJson<ClientServiceDeadlineImpact>(`/api/client-services/${id}/deadline-configuration/impact`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+    ...(signal ? { signal } : {}),
+  });
+}
+
+/**
+ * No-write draft deadline projection for the add-service flow. The service
+ * does not exist yet, so the request is scoped by company and variant.
+ */
+export async function previewClientServiceDeadlineDraft(
+  input: ClientServiceDeadlineDraftPreviewInput,
+  signal?: AbortSignal,
+): Promise<ClientServiceDeadlineDraftPreview> {
+  return requestJson<ClientServiceDeadlineDraftPreview>('/api/client-services/deadline-configuration/preview', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+    ...(signal ? { signal } : {}),
+  });
 }
 
 function useInvalidateClientServices() {

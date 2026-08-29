@@ -5,6 +5,7 @@ import {
   addCalendarDays,
   addMonthsClamped,
   adjustBusinessDay,
+  alignAnnualLandmarkToPeriod,
   businessDayFromEnd,
   businessDayFromStart,
   compareDateOnly,
@@ -64,6 +65,21 @@ describe('date-only engine', () => {
     expect(compareDateOnly('2026-01-01', '2026-01-01')).toBe(0);
     expect(compareDateOnly('2026-01-01', '2026-01-02')).toBe(-1);
     expect(compareDateOnly('2026-01-02', '2026-01-01')).toBe(1);
+  });
+});
+
+describe('alignAnnualLandmarkToPeriod', () => {
+  it.each([
+    ['2027-07-31', '2026-08-01', '2027-07-31'],
+    ['2024-07-31', '2026-08-01', '2027-07-31'],
+    ['2024-12-31', '2026-08-01', '2026-12-31'],
+    ['2024-02-29', '2025-03-01', '2026-02-28'],
+  ] as const)('%s from %s becomes %s', (source, periodStart, expected) => {
+    expect(alignAnnualLandmarkToPeriod(source, periodStart)).toBe(expected);
+  });
+
+  it('keeps a landmark already inside the period year unchanged', () => {
+    expect(alignAnnualLandmarkToPeriod('2024-07-31', '2024-01-01')).toBe('2024-07-31');
   });
 });
 

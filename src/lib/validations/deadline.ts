@@ -19,8 +19,8 @@ const deadlineQueryTextSchema = z.string().trim().max(200).default('');
  * silently discarded.
  */
 export const deadlineSearchSchema = z.object({
-  from: dateOnlySchema,
-  to: dateOnlySchema,
+  from: dateOnlySchema.optional(),
+  to: dateOnlySchema.optional(),
   mode: deadlineModeSchema.default('TABLE'),
   types: z.array(deadlineTypeSchema).max(3).default([]),
   familyIds: z.array(UUID).max(50).default([]),
@@ -37,6 +37,15 @@ export const deadlineSearchSchema = z.object({
   sortBy: deadlineSortBySchema.default('dueDate'),
   sortOrder: deadlineSortOrderSchema.default('asc'),
 }).strict().superRefine((value, ctx) => {
+  if ((value.from && !value.to) || (!value.from && value.to)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['to'], message: 'Date range requires both a start and end date' });
+    return;
+  }
+  if (value.mode === 'CALENDAR' && (!value.from || !value.to)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['from'], message: 'Calendar requests require a date range' });
+    return;
+  }
+  if (!value.from || !value.to) return;
   const from = Date.parse(`${value.from}T00:00:00.000Z`);
   const to = Date.parse(`${value.to}T00:00:00.000Z`);
   const range = (to - from) / 86_400_000;

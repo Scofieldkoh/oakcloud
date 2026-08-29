@@ -281,4 +281,33 @@ describePostgres('deadline tenant isolation and idempotency PostgreSQL integrati
     expect(occurrences).toHaveLength(1);
     expect(new Set(occurrences.map((occurrence) => `${occurrence.cycleId}|${occurrence.milestoneKey}|${occurrence.scheduleEntryKey}`)).size).toBe(1);
   });
+
+  it('rejects impact projection for a service belonging to another tenant', async () => {
+    const tenantOne = await seedTenant('PreviewTenantOne');
+    const tenantTwo = await seedTenant('PreviewTenantTwo');
+    const { previewClientServiceDeadlineConfiguration } = await import('@/services/client-service');
+
+    const service = await prisma.clientService.findFirstOrThrow({ where: { id: tenantTwo.clientServiceId } });
+    const error = await previewClientServiceDeadlineConfiguration(
+      tenantTwo.clientServiceId,
+      {
+        expectedUpdatedAt: service.updatedAt.toISOString(),
+        deadlineRules: [],
+        scheduleSnapshot: {
+          status: 'ACTIVE',
+          serviceCadence: 'ONE_TIME',
+          customCadenceLabel: null,
+          startDate: '2026-08-01',
+          endDate: null,
+          fieldValues: {},
+        },
+      },
+      { tenantId: tenantOne.tenantId, userId: tenantOne.userId, allCompaniesAccess: true },
+      prisma,
+      { today: '2026-08-18', horizonEnd: '2027-08-18' },
+    ).then(() => null, (caught: unknown) => caught);
+
+    expect(error).toMatchObject({ statusCode: 404 });
+    expect(JSON.stringify(error)).not.toContain(tenantTwo.tenantId);
+  });
 });

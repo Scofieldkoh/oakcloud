@@ -2,6 +2,38 @@ import type { BillingFrequency, ClientServiceSource, ClientServiceStatus, Servic
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
+import type { DateOnly } from '@/services/service-schedule';
+import type { DeadlineMaterializationPolicy } from '@/services/schedule-reconciliation';
+
+export type ClientServiceProjectedDeadlineDto = {
+  ruleId: string;
+  ruleCode: string;
+  ruleName: string;
+  materializationPolicy: DeadlineMaterializationPolicy;
+  periodKey: string;
+  milestoneKey: string;
+  milestoneName: string;
+  scheduleEntryKey: string;
+  deadlineType: 'STATUTORY' | 'CLIENT' | 'INTERNAL';
+  calculatedDueDate: DateOnly;
+  explanation: string[];
+};
+
+export interface ClientServiceOpenDeadlineOccurrenceDto {
+  id: string;
+  ruleId: string;
+  ruleCode: string;
+  ruleName: string;
+  periodKey: string;
+  milestoneKey: string;
+  milestoneName: string;
+  scheduleEntryKey: string;
+  deadlineType: 'STATUTORY' | 'CLIENT' | 'INTERNAL';
+  calculatedDueDate: DateOnly;
+  operativeDueDate: DateOnly;
+  origin: 'RULE' | 'MANUAL_TRIGGER';
+  notes: string | null;
+}
 
 export interface AgreementSummary {
   title: string;
@@ -79,6 +111,7 @@ export interface ManualClientServiceCatalogDeadlineRule {
 export interface CompanyComplianceContext {
   id: string;
   name?: string | null;
+  uen?: string | null;
   accountsDueDate?: string | null;
   financialYearEndDay?: number | null;
   financialYearEndMonth?: number | null;
@@ -100,6 +133,22 @@ export interface ClientServiceFeeLineDto {
   billingStartDate: string | null;
   scheduleConfig: BillingScheduleConfigV1 | null;
   displayOrder: number;
+}
+
+export interface ClientServiceOpenBillingOccurrenceDto {
+  id: string;
+  feeLineId: string;
+  description: string;
+  amount: string;
+  currency: string;
+  billingFrequency: BillingFrequency;
+  customFrequencyLabel: string | null;
+  billingPeriodKey: string;
+  scheduleEntryKey: string;
+  calculatedExpectedDate: DateOnly;
+  operativeExpectedDate: DateOnly;
+  status: 'OPEN';
+  notes: string | null;
 }
 
 export interface ClientServiceDeadlineRuleDto extends Omit<ClientServiceDeadlineRuleInput, 'parameterValues'> {
@@ -131,6 +180,10 @@ export interface ClientServiceDeadlineRuleDto extends Omit<ClientServiceDeadline
 export interface ClientServiceDto {
   id: string;
   companyId: string;
+  company: {
+    name: string;
+    uen: string | null;
+  };
   source: ClientServiceSource;
   agreementId: string | null;
   agreementItemId: string | null;
@@ -146,6 +199,8 @@ export interface ClientServiceDto {
   billingNotRequiredReason: string | null;
   fieldValues: Record<string, string>;
   feeLines: ClientServiceFeeLineDto[];
+  openDeadlineOccurrences?: ClientServiceOpenDeadlineOccurrenceDto[];
+  openBillingOccurrences?: ClientServiceOpenBillingOccurrenceDto[];
   deadlineRules: ClientServiceDeadlineRuleDto[];
   agreement: AgreementSummary | null;
   createdAt: string;

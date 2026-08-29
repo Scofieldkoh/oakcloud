@@ -11,4 +11,15 @@ describe('deadline transport validation', () => {
     expect(() => parseDeadlineSearchParams(new URLSearchParams({ from: '2026-01-01', to: '2027-01-03' }))).toThrow();
   });
 
+  it('accepts a table request without a date range', () => {
+    const parsed = parseDeadlineSearchParams(new URLSearchParams({ mode: 'TABLE' }));
+    expect(parsed.mode).toBe('TABLE');
+    expect(parsed).not.toHaveProperty('from');
+    expect(parsed).not.toHaveProperty('to');
+  });
+
+  it('requires a date range for calendar requests', () => {
+    expect(() => parseDeadlineSearchParams(new URLSearchParams({ mode: 'CALENDAR' }))).toThrow();
+  });
+
 });

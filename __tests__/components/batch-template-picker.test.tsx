@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   BatchTemplatePicker,
@@ -31,6 +31,8 @@ const engagement = template('template-a', 'Engagement Letter', { category: 'LETT
 const serviceAgreement = template('template-b', 'Service Agreement', {
   category: 'CONTRACT',
   compositionType: 'SERVICE_AGREEMENT',
+  description: 'Service Agreement Template',
+  version: 33,
 });
 const kyc = template('template-c', 'KYC Checklist');
 
@@ -80,6 +82,43 @@ function catalogueCard(name: string) {
 }
 
 describe('BatchTemplatePicker', () => {
+  it('shows names only in a single-column 60/40 picker layout', () => {
+    const { container } = render(<BatchTemplatePicker {...pickerProps({
+      selected: [item(serviceAgreement)],
+    })} />);
+
+    const catalogue = screen.getByRole('region', { name: 'Template catalogue' });
+    const layout = catalogue.parentElement;
+    const catalogueList = within(catalogue).getByRole('list');
+
+    expect(layout).toHaveClass('lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]');
+    expect(catalogueList).toHaveClass('grid', 'gap-2');
+    expect(catalogueList).not.toHaveClass('sm:grid-cols-2', 'xl:grid-cols-2');
+    expect(screen.getAllByText('Service Agreement')).toHaveLength(2);
+    expect(screen.queryByText('Service Agreement Template')).not.toBeInTheDocument();
+    expect(screen.queryByText('Service Agreement · 0 fields · v33')).not.toBeInTheDocument();
+    expect(container.querySelector('section[aria-label="Documents in this batch"]')).toBeInTheDocument();
+  });
+
+  it('opens the selected template editor from the far-right actions menu', async () => {
+    const user = userEvent.setup();
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<BatchTemplatePicker {...pickerProps({ templates: [engagement] })} />);
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Engagement Letter' }));
+    expect(screen.getByRole('menuitem', { name: 'Open template' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('menuitem', { name: 'Open template' }));
+    expect(openSpy).toHaveBeenCalledWith(
+      '/template-partials/editor?id=template-a&tab=templates',
+      '_blank',
+      'noopener,noreferrer',
+    );
+
+    openSpy.mockRestore();
+  });
+
   it('toggles a template from its whole card and marks the selection', async () => {
     const user = userEvent.setup();
     const props = pickerProps();

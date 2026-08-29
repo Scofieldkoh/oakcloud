@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search, X } from 'lucide-react';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
@@ -28,6 +27,7 @@ import {
 } from './service-roster-table';
 import { ClientServiceEditor } from '@/components/companies/company-detail/client-service-editor';
 import { ManualCycleDialog } from '@/components/services/deadlines/manual-cycle-dialog';
+import { ServiceBulkActionsToolbar, type ServiceBulkNotice } from './service-bulk-actions-toolbar';
 
 const TABLE_PREFERENCE_KEY = 'services.roster.table.v1';
 const STATUS_VALUES = ['ACTIVE', 'PAUSED', 'ENDED'] as const;
@@ -103,8 +103,9 @@ export function parseServiceRosterPreference(value: unknown): ServiceRosterPrefe
 interface ServiceRosterProps {
   workspaceId?: string;
   canEdit?: boolean;
-  canCreate?: boolean;
   families?: ServiceFamilyFilter[];
+  addServiceDialogOpen?: boolean;
+  onAddServiceDialogOpenChange?: (open: boolean) => void;
 }
 
 function readStatuses(value: string | null): ServiceStatus[] {
@@ -134,19 +135,19 @@ function readIds(value: string | null): string[] {
   return [...new Set((value ?? '').split(',').map((part) => part.trim()).filter(Boolean))];
 }
 
-function ServiceEditorLauncher({ item, onClose }: { item: ServiceRosterItem; onClose: () => void }) {
+function ServiceEditorLauncher({ item, onClose, readOnly = false }: { item: ServiceRosterItem; onClose: () => void; readOnly?: boolean }) {
   const service = useClientService(item.id);
   if (!service.data) {
     return service.isLoading ? <p role="status" className="sr-only">Loading service editor…</p> : null;
   }
-  return <ClientServiceEditor service={service.data} isOpen onClose={onClose} />;
+  return <ClientServiceEditor service={service.data} isOpen onClose={onClose} readOnly={readOnly} />;
 }
 
 function ManualCycleLauncher({ item, canApply, onClose, onApplied }: { item: ServiceRosterItem; canApply: boolean; onClose: () => void; onApplied: () => void }) {
   return <ManualCycleDialog clientServiceId={item.id} isOpen canApply={canApply} onClose={onClose} onApplied={onApplied} />;
 }
 
-export function ServiceRoster({ canEdit = true, canCreate = true, families: providedFamilies }: ServiceRosterProps) {
+export function ServiceRoster({ workspaceId, canEdit = true, families: providedFamilies, addServiceDialogOpen, onAddServiceDialogOpenChange }: ServiceRosterProps) {
   const workspaceSettings = useServicesWorkspaceSettings();
   const canTrigger = canEdit
     && workspaceSettings.data?.workspaceEnabled === true
@@ -180,6 +181,12 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
       companyQuery: readQuery(params.get('companyQuery')),
       familyQuery: readQuery(params.get('familyQuery')),
       serviceQuery: readQuery(params.get('serviceQuery')),
+      statusQuery: readQuery(params.get('statusQuery')),
+      cadenceQuery: readQuery(params.get('cadenceQuery')),
+      nextDeadlineQuery: readQuery(params.get('nextDeadlineQuery')),
+      startEndQuery: readQuery(params.get('startEndQuery')),
+      warningQuery: readQuery(params.get('warningQuery')),
+      billingQuery: readQuery(params.get('billingQuery')),
       statuses: readStatuses(params.get('statuses')),
       familyIds: readIds(params.get('familyIds')),
       archived: params.get('archived') === 'true',
@@ -196,6 +203,12 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
     companyQuery,
     familyQuery,
     serviceQuery,
+    statusQuery,
+    cadenceQuery,
+    nextDeadlineQuery,
+    startEndQuery,
+    warningQuery,
+    billingQuery,
     statuses,
     familyIds,
     archived,
@@ -208,17 +221,38 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
     company: companyQuery || undefined,
     family: familyQuery || undefined,
     service: serviceQuery || undefined,
+    status: statusQuery || undefined,
+    cadence: cadenceQuery || undefined,
+    nextDeadline: nextDeadlineQuery || undefined,
+    startEnd: startEndQuery || undefined,
+    warnings: warningQuery || undefined,
+    billing: billingQuery || undefined,
   };
-  const [addOpen, setAddOpen] = useState(false);
+  const [uncontrolledAddOpen, setUncontrolledAddOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceRosterItem | null>(null);
+  const [viewing, setViewing] = useState<ServiceRosterItem | null>(null);
   const [triggering, setTriggering] = useState<ServiceRosterItem | null>(null);
   const [queryDraft, setQueryDraft] = useState(query);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedServices, setSelectedServices] = useState<Record<string, ServiceRosterItem>>({});
+  const [bulkNotice, setBulkNotice] = useState<ServiceBulkNotice | null>(null);
+  const addOpen = addServiceDialogOpen ?? uncontrolledAddOpen;
+  const setAddOpen = useCallback((open: boolean) => {
+    if (onAddServiceDialogOpenChange) onAddServiceDialogOpenChange(open);
+    else setUncontrolledAddOpen(open);
+  }, [onAddServiceDialogOpenChange]);
 
   const rosterSearch: ServiceRosterSearchInput = {
     query: query.trim() || undefined,
     companyQuery: companyQuery || undefined,
     familyQuery: familyQuery || undefined,
     serviceQuery: serviceQuery || undefined,
+    statusQuery: statusQuery || undefined,
+    cadenceQuery: cadenceQuery || undefined,
+    nextDeadlineQuery: nextDeadlineQuery || undefined,
+    startEndQuery: startEndQuery || undefined,
+    warningQuery: warningQuery || undefined,
+    billingQuery: billingQuery || undefined,
     statuses,
     familyIds,
     archived,
@@ -239,10 +273,111 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
   }, [preference.data?.value, preference.isLoading]);
 
   const items = useMemo(() => roster.data?.items ?? [], [roster.data?.items]);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectionState = useMemo((): 'none' | 'partial' | 'all' => {
+    const selectedVisibleCount = items.reduce((count, item) => count + (selectedIdSet.has(item.id) ? 1 : 0), 0);
+    if (items.length > 0 && selectedVisibleCount === items.length) return 'all';
+    return selectedVisibleCount > 0 ? 'partial' : 'none';
+  }, [items, selectedIdSet]);
+  const selectedItems = useMemo(
+    () => selectedIds.map((id) => selectedServices[id]).filter((item): item is ServiceRosterItem => Boolean(item)),
+    [selectedIds, selectedServices],
+  );
   const families = useMemo(
     () => providedFamilies ?? familyFacets.data ?? [],
     [familyFacets.data, providedFamilies],
   );
+  const selectionScopeKey = useMemo(() => JSON.stringify({
+    workspaceId,
+    canEdit,
+    query,
+    companyQuery,
+    familyQuery,
+    serviceQuery,
+    statusQuery,
+    cadenceQuery,
+    nextDeadlineQuery,
+    startEndQuery,
+    warningQuery,
+    billingQuery,
+    statuses,
+    familyIds,
+    archived,
+  }), [
+    archived,
+    billingQuery,
+    canEdit,
+    cadenceQuery,
+    companyQuery,
+    familyIds,
+    familyQuery,
+    nextDeadlineQuery,
+    query,
+    serviceQuery,
+    startEndQuery,
+    statusQuery,
+    statuses,
+    warningQuery,
+    workspaceId,
+  ]);
+  const previousSelectionScopeKey = useRef(selectionScopeKey);
+
+  useEffect(() => {
+    if (previousSelectionScopeKey.current === selectionScopeKey) return;
+    previousSelectionScopeKey.current = selectionScopeKey;
+    setSelectedIds([]);
+    setSelectedServices({});
+    setBulkNotice(null);
+  }, [selectionScopeKey]);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    setSelectedServices((current) => {
+      let next = current;
+      for (const item of items) {
+        if (!selectedIdSet.has(item.id) || current[item.id] === item) continue;
+        if (next === current) next = { ...current };
+        next[item.id] = item;
+      }
+      return next;
+    });
+  }, [items, selectedIdSet]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+    setSelectedServices({});
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (items.length === 0) return;
+    const visibleIds = new Set(items.map((item) => item.id));
+    const allSelected = items.every((item) => selectedIdSet.has(item.id));
+    setSelectedIds((current) => allSelected
+      ? current.filter((id) => !visibleIds.has(id))
+      : [...new Set([...current, ...items.map((item) => item.id)])]);
+    setSelectedServices((current) => {
+      const next = { ...current };
+      if (allSelected) {
+        for (const id of visibleIds) delete next[id];
+      } else {
+        for (const item of items) next[item.id] = item;
+      }
+      return next;
+    });
+  }, [items, selectedIdSet]);
+
+  const toggleSelect = useCallback((item: ServiceRosterItem) => {
+    const selected = selectedIdSet.has(item.id);
+    setSelectedIds((current) => selected ? current.filter((id) => id !== item.id) : [...current, item.id]);
+    setSelectedServices((current) => {
+      if (selected) {
+        const next = { ...current };
+        delete next[item.id];
+        return next;
+      }
+      return { ...current, [item.id]: item };
+    });
+  }, [selectedIdSet]);
 
   const replaceUrl = useCallback((next: Partial<Record<string, string | undefined>>) => {
     const params = new URLSearchParams(effectiveSearchKey);
@@ -341,6 +476,12 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
       companyQuery: next.company === undefined ? companyQuery || undefined : next.company.trim() || undefined,
       familyQuery: next.family === undefined ? familyQuery || undefined : next.family.trim() || undefined,
       serviceQuery: next.service === undefined ? serviceQuery || undefined : next.service.trim() || undefined,
+      statusQuery: next.status === undefined ? statusQuery || undefined : next.status.trim() || undefined,
+      cadenceQuery: next.cadence === undefined ? cadenceQuery || undefined : next.cadence.trim() || undefined,
+      nextDeadlineQuery: next.nextDeadline === undefined ? nextDeadlineQuery || undefined : next.nextDeadline.trim() || undefined,
+      startEndQuery: next.startEnd === undefined ? startEndQuery || undefined : next.startEnd.trim() || undefined,
+      warningQuery: next.warnings === undefined ? warningQuery || undefined : next.warnings.trim() || undefined,
+      billingQuery: next.billing === undefined ? billingQuery || undefined : next.billing.trim() || undefined,
       page: '1',
     });
   };
@@ -383,24 +524,27 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
   for (const family of families.filter((item) => familyIds.includes(item.id))) filterBadges.push({ key: `family-${family.id}`, label: 'Family', value: family.name, onRemove: () => toggleFamily(family.id) });
   if (archived) filterBadges.push({ key: 'archived', label: 'Archive', value: 'Included', onRemove: () => replaceUrl({ archived: undefined, page: '1' }) });
   if (query.trim()) filterBadges.push({ key: 'query', label: 'Search', value: query.trim(), onRemove: () => updateQuery('') });
-  if (inlineFilters.company) filterBadges.push({ key: 'company', label: 'Company', value: inlineFilters.company, onRemove: () => updateInlineFilter({ company: '' }) });
-  if (inlineFilters.family) filterBadges.push({ key: 'family-query', label: 'Family', value: inlineFilters.family, onRemove: () => updateInlineFilter({ family: '' }) });
-  if (inlineFilters.service) filterBadges.push({ key: 'service', label: 'Service', value: inlineFilters.service, onRemove: () => updateInlineFilter({ service: '' }) });
+  const inlineFilterBadges: Array<[keyof ServiceRosterInlineFilters, string]> = [
+    ['company', 'Company'],
+    ['family', 'Family'],
+    ['service', 'Service'],
+    ['status', 'Status'],
+    ['cadence', 'Cadence'],
+    ['nextDeadline', 'Next deadline'],
+    ['startEnd', 'Start/end'],
+    ['warnings', 'Warnings'],
+    ['billing', 'Billing'],
+  ];
+  for (const [key, label] of inlineFilterBadges) {
+    const value = inlineFilters[key];
+    if (value) filterBadges.push({ key: `inline-${key}`, label, value, onRemove: () => updateInlineFilter({ [key]: '' }) });
+  }
   const hiddenColumnCount = SERVICE_ROSTER_COLUMNS.filter((column) => column !== 'actions' && !columnVisibility[column]).length;
   const total = roster.data?.total ?? 0;
   const totalPages = roster.data?.totalPages ?? 0;
 
   return (
-    <section aria-labelledby="services-roster-heading" className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 id="services-roster-heading" className="text-lg font-semibold text-text-primary">Services roster</h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {canCreate ? <Button className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setAddOpen(true)}>Add service</Button> : null}
-        </div>
-      </div>
-
+    <section aria-label="Services" className="space-y-4">
       <ServiceFilterToolbar label="Service filters" onAdjustColumns={() => setColumnsOpen(true)} hiddenColumnCount={hiddenColumnCount}>
         <label className="relative flex min-h-11 min-w-[220px] flex-1 items-center rounded-lg border border-border-primary bg-background-primary focus-within:border-oak-primary focus-within:ring-2 focus-within:ring-oak-primary/20 sm:min-h-8">
           <Search className="ml-3 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
@@ -471,13 +615,23 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
         </div>
       ) : null}
 
+      {bulkNotice ? (
+        <Alert variant={bulkNotice.variant} title={bulkNotice.title} onClose={() => setBulkNotice(null)}>
+          {bulkNotice.details}
+        </Alert>
+      ) : null}
+
       {roster.error ? <Alert variant="error">Unable to load services. {roster.error instanceof Error ? roster.error.message : ''}</Alert> : null}
       {roster.isLoading && !roster.data ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">Loading services…</div> : null}
-      {!roster.isLoading && !roster.error && items.length === 0 ? <div className="rounded-xl border border-dashed border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">No services match the selected filters.</div> : null}
-      {items.length > 0 ? (
+      {roster.data && !roster.error ? (
         <ServiceRosterTable
           items={items}
           canEdit={canEdit}
+          canSelect={canEdit}
+          selectedIds={selectedIdSet}
+          selectionState={selectionState}
+          onToggleSelectAll={toggleSelectAll}
+          onToggleSelect={toggleSelect}
           isFetching={roster.isFetching}
           sortBy={sortBy}
           sortOrder={sortOrder}
@@ -490,6 +644,7 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
           onColumnWidthChange={updateColumns}
           onColumnResizeEnd={finishColumnResize}
           onEdit={setEditing}
+          onOpen={setViewing}
           onTrigger={canTrigger ? setTriggering : undefined}
         />
       ) : null}
@@ -510,8 +665,22 @@ export function ServiceRoster({ canEdit = true, canCreate = true, families: prov
         }}
       />
 
+      {selectedItems.length > 0 ? (
+        <ServiceBulkActionsToolbar
+          selectedServices={selectedItems}
+          onSelectionChange={(nextItems) => {
+            setSelectedIds(nextItems.map((item) => item.id));
+            setSelectedServices(Object.fromEntries(nextItems.map((item) => [item.id, item])));
+          }}
+          onRefresh={roster.refetch}
+          onNotice={setBulkNotice}
+          onClearSelection={clearSelection}
+        />
+      ) : null}
+
       <AddClientServiceDialog isOpen={addOpen} onClose={() => setAddOpen(false)} onCreated={() => roster.refetch?.()} />
       {editing ? <ServiceEditorLauncher item={editing} onClose={() => { setEditing(null); roster.refetch?.(); }} /> : null}
+      {viewing ? <ServiceEditorLauncher item={viewing} onClose={() => setViewing(null)} readOnly /> : null}
       {canTrigger && triggering ? <ManualCycleLauncher item={triggering} canApply={canTrigger} onClose={() => setTriggering(null)} onApplied={() => { setTriggering(null); roster.refetch?.(); }} /> : null}
     </section>
   );

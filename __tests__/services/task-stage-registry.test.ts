@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   outcomeDeleteMany: vi.fn(),
   companyFindFirst: vi.fn(),
   documentFindFirst: vi.fn(),
+  batchItemFindFirst: vi.fn(),
   envelopeFindFirst: vi.fn(),
   recoveryFindFirst: vi.fn(),
   recoveryUpsert: vi.fn(),
@@ -55,6 +56,7 @@ const tx = {
   },
   company: { findFirst: mocks.companyFindFirst },
   generatedDocument: { findFirst: mocks.documentFindFirst },
+  documentGenerationBatchItem: { findFirst: mocks.batchItemFindFirst },
   esigningEnvelope: { findFirst: mocks.envelopeFindFirst },
   user: { findFirst: mocks.userFindFirst },
   taskStageChecklistItem: {
@@ -103,6 +105,7 @@ vi.mock('@/lib/prisma', () => ({
     $transaction: mocks.transaction,
     taskStage: { findFirst: mocks.stageFindFirst },
     generatedDocument: { findFirst: mocks.documentFindFirst },
+    documentGenerationBatchItem: { findFirst: mocks.batchItemFindFirst },
     company: { findFirst: mocks.companyFindFirst },
     taskCompanyRecoveryContext: { findFirst: mocks.recoveryFindFirst },
   },
@@ -231,16 +234,19 @@ describe('stage action registry', () => {
     {
       status: TaskStageStatus.IN_PROGRESS,
       expectedHref:
-        '/generated-documents/generate?draft=33333333-3333-4333-8333-333333333333',
+        '/generated-documents/generate?batch=44444444-4444-4444-8444-444444444444',
+      documentGenerationBatchId: '44444444-4444-4444-8444-444444444444',
     },
     {
       status: TaskStageStatus.COMPLETED,
       expectedHref:
         '/generated-documents/33333333-3333-4333-8333-333333333333',
+      documentGenerationBatchId: undefined,
     },
-  ])('opens the linked document when a generation stage is $status', ({
+  ])('opens the linked document workspace when a generation stage is $status', ({
     status,
     expectedHref,
+    documentGenerationBatchId,
   }) => {
     const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
 
@@ -256,6 +262,7 @@ describe('stage action registry', () => {
         outcome: {
           type: 'GENERATED_DOCUMENT',
           generatedDocumentId: '33333333-3333-4333-8333-333333333333',
+          documentGenerationBatchId,
         },
       },
     })).toEqual({
@@ -350,6 +357,71 @@ describe('stage action registry', () => {
     expect(adapter.deriveStatus(envelope('DECLINED', 1))).toBe(TaskStageStatus.FAILED);
     expect(adapter.deriveStatus(envelope('EXPIRED', 0))).toBe(TaskStageStatus.FAILED);
     expect(adapter.deriveStatus(envelope('VOIDED', 0))).toBe(TaskStageStatus.FAILED);
+  });
+
+  it('loads the batch id for a migrated in-progress document stage', async () => {
+    const batchId = '44444444-4444-4444-8444-444444444444';
+    const documentId = '33333333-3333-4333-8333-333333333333';
+    const stage = {
+      id: 'stage-2',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Generate resolution',
+      description: null,
+      notes: null,
+      skipReason: null,
+      position: 0,
+      actionType: TaskStageActionType.DOCUMENT_GENERATION,
+      icon: 'FileText',
+      isRequired: true,
+      actionConfig: {},
+      status: TaskStageStatus.IN_PROGRESS,
+      startedAt: new Date('2026-08-29T00:00:00.000Z'),
+      completedAt: null,
+      assigneeId: null,
+      task: { id: 'task-1', status: TaskStatus.IN_PROGRESS, companyId: null, deletedAt: null },
+      assignee: null,
+      checklistItems: [],
+      outcome: {
+        id: 'outcome-1',
+        type: 'GENERATED_DOCUMENT',
+        companyId: null,
+        generatedDocumentId: documentId,
+        esigningEnvelopeId: null,
+      },
+    };
+    mocks.stageFindFirst.mockImplementation(({ select }: { select?: unknown }) => (
+      Promise.resolve(select ? { taskId: stage.taskId } : stage)
+    ));
+    mocks.rawQuery.mockResolvedValue([{
+      id: stage.taskId,
+      tenantId: 'tenant-a',
+      status: TaskStatus.IN_PROGRESS,
+      title: 'Annual return',
+      companyId: null,
+    }]);
+    mocks.documentFindFirst.mockResolvedValue({
+      id: documentId,
+      title: 'Resolution',
+      status: 'DRAFT',
+    });
+    mocks.stageFindMany.mockResolvedValue([{ status: TaskStageStatus.IN_PROGRESS }]);
+    mocks.batchItemFindFirst.mockResolvedValue({ batchId });
+
+    const detail = await getTaskStageDetail('tenant-a', stage.taskId, stage.id);
+
+    expect(detail.launch).toEqual({
+      href: `/generated-documents/generate?batch=${batchId}`,
+      context: { taskId: stage.taskId, taskStageId: stage.id },
+    });
+    expect(mocks.batchItemFindFirst).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-a',
+        generatedDocumentId: documentId,
+        batch: { tenantId: 'tenant-a', deletedAt: null },
+      },
+      select: { batchId: true },
+    });
   });
 });
 

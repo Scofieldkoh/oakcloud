@@ -8,6 +8,7 @@ const hooks = vi.hoisted(() => ({
   useBillingOccurrences: vi.fn(),
   useUpdateBillingOccurrence: vi.fn(),
   useResetBillingOverride: vi.fn(),
+  useMarkBillingOccurrencesAsBilled: vi.fn(),
   useBillingCoverage: vi.fn(),
   useUserPreference: vi.fn(),
   useUpsertUserPreference: vi.fn(),
@@ -17,12 +18,13 @@ const hooks = vi.hoisted(() => ({
 }));
 
 const navigation = vi.hoisted(() => ({
-  searchParams: new URLSearchParams('tab=billing&from=2026-08-01&to=2026-09-30'),
+  pathname: '/billing',
+  searchParams: new URLSearchParams('from=2026-08-01&to=2026-09-30'),
   replace: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/services',
+  usePathname: () => navigation.pathname,
   useRouter: () => ({ replace: navigation.replace }),
   useSearchParams: () => navigation.searchParams,
 }));
@@ -31,6 +33,7 @@ vi.mock('@/hooks/use-billing-occurrences', () => ({
   useBillingOccurrences: hooks.useBillingOccurrences,
   useUpdateBillingOccurrence: hooks.useUpdateBillingOccurrence,
   useResetBillingOverride: hooks.useResetBillingOverride,
+  useMarkBillingOccurrencesAsBilled: hooks.useMarkBillingOccurrencesAsBilled,
 }));
 vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies: hooks.useServiceRosterFamilies }));
 vi.mock('@/hooks/use-billing-coverage', () => ({ useBillingCoverage: hooks.useBillingCoverage }));
@@ -107,12 +110,15 @@ const issueRows = [{
 }];
 
 function setup({ withIssues = true, totalPages = 2 } = {}) {
-  navigation.searchParams = new URLSearchParams('tab=billing&from=2026-08-01&to=2026-09-30');
+  navigation.pathname = '/billing';
+  navigation.searchParams = new URLSearchParams('from=2026-08-01&to=2026-09-30');
   navigation.replace.mockReset();
   hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence], total: 1, page: 1, limit: 20, totalPages: 1 }, isLoading: false, isFetching: false, error: null });
   const update = vi.fn();
   hooks.useUpdateBillingOccurrence.mockReturnValue({ mutate: update, isPending: false, error: null });
   hooks.useResetBillingOverride.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  const bulk = vi.fn().mockResolvedValue([]);
+  hooks.useMarkBillingOccurrencesAsBilled.mockReturnValue({ mutateAsync: bulk, isPending: false, error: null });
   hooks.useServiceRosterFamilies.mockReturnValue({ data: [{ id: occurrence.family.id!, name: 'Payroll', displayColor: '#715DA8' }], isLoading: false, error: null });
   hooks.useBillingCoverage.mockReturnValue({ data: { openIssueCount: withIssues ? 1 : 0, affectedServiceCount: withIssues ? 1 : 0, healthyActiveServiceCount: withIssues ? 0 : 1, issues: withIssues ? issueRows : [] }, isLoading: false, error: null });
   hooks.useUserPreference.mockReturnValue({ data: { value: null }, isLoading: false });
@@ -122,7 +128,7 @@ function setup({ withIssues = true, totalPages = 2 } = {}) {
   if (totalPages > 1) {
     hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [occurrence], total: 41, page: 1, limit: 20, totalPages }, isLoading: false, isFetching: false, error: null });
   }
-  return { update };
+  return { update, bulk };
 }
 
 describe('Services billing responsive browser surface', () => {
@@ -132,31 +138,58 @@ describe('Services billing responsive browser surface', () => {
   });
 
   it('covers the Services Billing route, collapsed issues, filters, sort, resize, pagination, and scope dialog on desktop', async () => {
-    setup();
+    const { bulk } = setup();
     await page.viewport(1440, 900);
     render(<ServicesWorkspace />);
 
-    await expect.element(screen.getByRole('tab', { name: 'Billing' })).toHaveAttribute('aria-selected', 'true');
-    await expect.element(screen.getByRole('heading', { name: 'Manual billing tracking' })).toBeVisible();
+    await expect.element(screen.getByRole('heading', { name: 'Billing' })).toBeVisible();
+    expect(screen.queryByRole('tablist', { name: 'Services workspace sections' })).not.toBeInTheDocument();
     await expect.element(screen.getByRole('table', { name: 'Billing occurrences table' })).toBeVisible();
     const main = screen.getByRole('main');
-    const header = screen.getByRole('heading', { name: 'Services' }).closest('header');
-    const tablist = screen.getByRole('tablist', { name: 'Services workspace sections' });
+    const header = screen.getByRole('heading', { name: 'Billing' }).closest('header');
     if (!header) throw new Error('Services header missing');
     const mainRect = main.getBoundingClientRect();
     const headerRect = header.getBoundingClientRect();
-    const tablistRect = tablist.getBoundingClientRect();
     expect(Math.round(headerRect.left - mainRect.left)).toBe(24);
-    expect(Math.round(tablistRect.top - headerRect.bottom)).toBe(24);
-    expect(screen.getByRole('tab', { name: 'Billing' }).getBoundingClientRect().height)
-      .toBeGreaterThanOrEqual(32);
-    expect(screen.getByRole('tab', { name: 'Billing' }).getBoundingClientRect().height)
-      .toBeLessThanOrEqual(40);
-    const resetFilters = screen.getByRole('button', { name: 'Reset filters' });
-    expect(resetFilters.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
-    expect(resetFilters.getBoundingClientRect().height).toBeLessThanOrEqual(40);
+    expect(screen.getByRole('button', { name: 'Remove Date filter' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Reset filters' })).not.toBeInTheDocument();
     const billingTable = screen.getByRole('table', { name: 'Billing occurrences table' });
-    await expect.element(within(billingTable).getByText('Fieldstone')).toBeVisible();
+    const tableScroller = billingTable.parentElement;
+    if (!tableScroller) throw new Error('Billing table scroller missing');
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
+    expect(tableScroller.scrollWidth).toBeGreaterThan(tableScroller.clientWidth);
+    const serviceFilterRect = screen.getByRole('searchbox', { name: 'Filter Service' }).getBoundingClientRect();
+    const feeLineFilterRect = screen.getByRole('searchbox', { name: 'Filter Fee line' }).getBoundingClientRect();
+    expect(Math.round(feeLineFilterRect.left - serviceFilterRect.right)).toBeGreaterThanOrEqual(16);
+    const inlineFilterInputs = [
+      within(billingTable).getByRole('textbox', { name: 'Filter Expected date' }),
+      within(billingTable).getByRole('combobox', { name: 'Filter Timing' }),
+      within(billingTable).getByRole('combobox', { name: 'Filter Company' }),
+      within(billingTable).getByRole('combobox', { name: 'Filter Family' }),
+      within(billingTable).getByRole('searchbox', { name: 'Filter Service' }),
+      within(billingTable).getByRole('searchbox', { name: 'Filter Fee line' }),
+      within(billingTable).getByRole('searchbox', { name: 'Filter Period' }),
+      within(billingTable).getByRole('combobox', { name: 'Filter Status' }),
+      within(billingTable).getByRole('spinbutton', { name: 'Filter Minimum amount' }),
+      within(billingTable).getByRole('spinbutton', { name: 'Filter Maximum amount' }),
+      within(billingTable).getByRole('textbox', { name: 'Filter Billed date' }),
+      within(billingTable).getByRole('searchbox', { name: 'Filter Reference' }),
+    ];
+    const placeholderColors = inlineFilterInputs.map((input) => getComputedStyle(input, '::placeholder').color);
+    expect(new Set(placeholderColors)).toEqual(new Set([placeholderColors[0]!]));
+    for (const cell of billingTable.querySelectorAll('tbody td')) expect(getComputedStyle(cell).verticalAlign).toBe('middle');
+    const selectAllRect = within(billingTable).getByRole('button', { name: 'Select all billing occurrences' }).getBoundingClientRect();
+    const selectRowRect = within(billingTable).getByRole('button', { name: 'Select billing occurrence for Fieldstone Consulting Pte. Ltd.' }).getBoundingClientRect();
+    expect(Math.abs((selectAllRect.left + selectAllRect.width / 2) - (selectRowRect.left + selectRowRect.width / 2))).toBeLessThanOrEqual(1);
+    await expect.element(within(billingTable).getByText('Fieldstone Consulting Pte. Ltd.')).toBeVisible();
+    const billingRow = billingTable.querySelector('tbody tr');
+    if (!billingRow) throw new Error('Billing row missing');
+    fireEvent.click(billingRow);
+    await expect.element(screen.getByRole('dialog', { name: 'Edit billing tracking' })).toBeVisible();
+    await screen.getByRole('button', { name: 'Cancel' }).click();
+    await screen.getAllByRole('button', { name: 'Select billing occurrence for Fieldstone Consulting Pte. Ltd.' })[0]!.click();
+    await screen.getByRole('button', { name: 'Mark as billed' }).click();
+    expect(bulk).toHaveBeenCalledWith([expect.objectContaining({ id: occurrence.id, updatedAt: occurrence.updatedAt })]);
     const reconciliation = screen.getByRole('button', { name: /Billing reconciliation · 1 issue · 1 error/ });
     expect(reconciliation).toHaveAttribute('aria-expanded', 'false');
     await reconciliation.click();
@@ -169,13 +202,13 @@ describe('Services billing responsive browser surface', () => {
     const sort = screen.getByRole('button', { name: /Sort by Expected date/ });
     await sort.click();
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('sortBy=expectedDate'), { scroll: false });
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Resize Company column' }), { clientX: 100 });
+    fireEvent.pointerDown(screen.getByRole('separator', { name: 'Resize Company column' }), { clientX: 100, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 150 });
     fireEvent.pointerUp(window, { clientX: 150 });
     await screen.getByRole('button', { name: 'Next page' }).click();
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining('page=2'), { scroll: false });
 
-    await screen.getAllByRole('button', { name: 'Edit tracking for Fieldstone' })[0]!.click();
+    await screen.getAllByRole('button', { name: 'Edit tracking for Fieldstone Consulting Pte. Ltd.' })[0]!.click();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '550.00' } });
     fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Updated tracking amount' } });
     await screen.getByRole('button', { name: 'Save tracking update' }).click();
@@ -185,7 +218,8 @@ describe('Services billing responsive browser surface', () => {
 
   it('keeps the Billing cards readable at tablet and mobile widths and preserves URL filter state', async () => {
     setup();
-    navigation.searchParams = new URLSearchParams('tab=billing&query=payroll&statuses=BILLED&from=2026-08-01&to=2026-09-30&page=2');
+    navigation.pathname = '/billing';
+    navigation.searchParams = new URLSearchParams('query=payroll&statuses=BILLED&from=2026-08-01&to=2026-09-30&page=2');
     await page.viewport(768, 900);
     render(<ServicesWorkspace />);
 
@@ -203,19 +237,40 @@ describe('Services billing responsive browser surface', () => {
     const billingCards = screen.getByRole('region', { name: 'Billing occurrence cards' });
     await expect.element(within(billingCards).getByText(/Monthly payroll fee/)).toBeVisible();
     const mobileMain = screen.getByRole('main');
-    const mobileHeader = screen.getByRole('heading', { name: 'Services' }).closest('header');
+    const mobileHeader = screen.getByRole('heading', { name: 'Billing' }).closest('header');
     if (!mobileHeader) throw new Error('Services mobile header missing');
     expect(Math.round(mobileHeader.getBoundingClientRect().left - mobileMain.getBoundingClientRect().left)).toBe(16);
-    for (const tab of screen.getAllByRole('tab')) {
-      expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
-    }
-    expect(screen.getByRole('button', { name: 'Reset filters' }).getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    expect(screen.getByRole('button', { name: 'Remove Date filter' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Reset filters' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Billing reconciliation/ })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('renders the empty state inside the desktop billing table body', async () => {
+    setup({ totalPages: 1 });
+    hooks.useBillingOccurrences.mockReturnValue({ data: { mode: 'TABLE', items: [], total: 0, page: 1, limit: 20, totalPages: 0 }, isLoading: false, isFetching: false, error: null });
+    await page.viewport(2560, 900);
+    render(<ServicesWorkspace />);
+
+    const table = screen.getByRole('table', { name: 'Billing occurrences table' });
+    const emptyMessage = within(table).getByText('No billing occurrences found');
+    const scrollContainer = table.parentElement;
+    if (!scrollContainer) throw new Error('Billing table scroll container missing');
+    await expect.element(within(table).getByRole('columnheader', { name: /^Company$/ })).toBeVisible();
+    expect(emptyMessage.closest('tbody')).not.toBeNull();
+    expect(getComputedStyle(emptyMessage.closest('td')!).textAlign).toBe('center');
+    expect(getComputedStyle(table).tableLayout).toBe('auto');
+    const companyHeader = within(table).getByRole('columnheader', { name: /^Company$/ });
+    const actionsHeader = within(table).getByRole('columnheader', { name: 'Actions' });
+    expect(Math.abs(companyHeader.getBoundingClientRect().width - 200)).toBeLessThanOrEqual(1);
+    expect(actionsHeader.getBoundingClientRect().width).toBeGreaterThan(500);
+    expect(Math.abs(table.getBoundingClientRect().width - scrollContainer.getBoundingClientRect().width))
+      .toBeLessThanOrEqual(1);
   });
 
   it('keeps the Add service action touch-safe on mobile and compact on desktop', async () => {
     setup();
-    navigation.searchParams = new URLSearchParams('tab=services');
+    navigation.pathname = '/services';
+    navigation.searchParams = new URLSearchParams();
 
     await page.viewport(1440, 900);
     render(<ServicesWorkspace />);

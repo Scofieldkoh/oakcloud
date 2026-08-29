@@ -1,5 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   afterAll,
   afterEach,
@@ -136,6 +137,7 @@ function batchDto(items: any[], status = 'DRAFT'): any {
 describe('document generation batch browser workflow', () => {
   let host: HTMLDivElement;
   let root: Root;
+  let queryClient: QueryClient;
   const actEnvironment = globalThis as typeof globalThis & {
     IS_REACT_ACT_ENVIRONMENT?: boolean;
   };
@@ -169,10 +171,17 @@ describe('document generation batch browser workflow', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    queryClient.clear();
     host.remove();
     vi.unstubAllGlobals();
   });
@@ -246,17 +255,19 @@ describe('document generation batch browser workflow', () => {
 
     await act(async () => {
       root.render(
-        <DocumentGenerationBatchWorkspace
-          templates={[]}
-          companies={[{
-            id: 'company-1',
-            name: 'Acme Pte. Ltd.',
-            uen: '202600001A',
-            status: 'ACTIVE',
-          }]}
-          contacts={[]}
-          initialBatch={draft}
-        />,
+        <QueryClientProvider client={queryClient}>
+          <DocumentGenerationBatchWorkspace
+            templates={[]}
+            companies={[{
+              id: 'company-1',
+              name: 'Acme Pte. Ltd.',
+              uen: '202600001A',
+              status: 'ACTIVE',
+            }]}
+            contacts={[]}
+            initialBatch={draft}
+          />
+        </QueryClientProvider>,
       );
     });
 

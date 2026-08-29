@@ -257,7 +257,9 @@ describe('e-signing completion worker', () => {
       tenantId: 'tenant-1',
       status: 'COMPLETED',
       pdfGenerationStatus: 'PENDING',
-      metadata: { artifactVersion: 4 },
+      // Must match ESIGNING_ARTIFACT_VERSION so the repair path treats the
+      // artifacts as current instead of regenerating them.
+      metadata: { artifactVersion: 5 },
       documents: [
         {
           id: 'document-1',

@@ -21,6 +21,9 @@ export interface CompanySearchOption extends AsyncSearchSelectOption {
   label: string;
   description: string;
   uen: string | null;
+  status?: string | null;
+  registeredAddress?: string | null;
+  incorporationDate?: string | null;
   primarySsicDescription?: string | null;
   homeCurrency?: string | null;
 }
@@ -30,6 +33,9 @@ interface CompanySearchResult {
     id: string;
     name: string;
     uen: string | null;
+    status?: string | null;
+    registeredAddress?: string | null;
+    incorporationDate?: string | null;
     primarySsicDescription?: string | null;
     homeCurrency?: string | null;
   }>;
@@ -161,6 +167,9 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
       label: company.name,
       description: company.uen || company.primarySsicDescription || '',
       uen: company.uen,
+      status: company.status,
+      registeredAddress: company.registeredAddress,
+      incorporationDate: company.incorporationDate,
       primarySsicDescription: company.primarySsicDescription,
       homeCurrency: company.homeCurrency,
     }));

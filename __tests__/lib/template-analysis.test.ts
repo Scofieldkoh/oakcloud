@@ -5,6 +5,7 @@ import {
   extractTemplatePlaceholderKeys,
   getRequiredLegacyContactSelection,
   getRequiredPartySelections,
+  getTemplatePartyCollections,
   isCustomPlaceholder,
 } from '@/lib/template-analysis';
 
@@ -66,6 +67,16 @@ describe('template-analysis', () => {
       { name: 'outer', content: '{{> inner}}' },
       { name: 'inner', content: '{{contact.email}}' },
     ])).toBe(true);
+  });
+
+  it('detects director and shareholder collection loops separately from singular party selections', () => {
+    expect(getTemplatePartyCollections(
+      '{{#each directors}}{{this.name}}{{/each}}{{#each shareholders}}{{this.name}}{{/each}}',
+    )).toEqual({ directors: true, shareholders: true });
+    expect(getTemplatePartyCollections('{{selectedDirector.name}}')).toEqual({
+      directors: false,
+      shareholders: false,
+    });
   });
 
   describe('isCustomPlaceholder', () => {

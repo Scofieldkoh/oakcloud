@@ -1649,6 +1649,12 @@ selected party must be eligible for the supplied company. Templates that use
 `selectedDirector.*`, `selectedShareholder.*`, or `selectedContact.*` require
 the corresponding singular selection.
 
+`selectedDirectorIds` is an optional UUID array for templates that use a
+`{{#each directors}}` loop, including director signature blocks. When omitted,
+all current directors are rendered. The generation workspace initially shows
+all current directors checked and persists an explicit subset when the user
+changes the checkboxes; an explicit empty array renders no directors.
+
 `selectedContactId` resolves only the singular `selectedContact.*` namespace.
 The backward-compatible `contact`, `contacts`, and `custom.contacts` contexts
 are built independently from the legacy `contactIds` array (or an explicit
@@ -1683,18 +1689,18 @@ Get generated document statistics.
 ---
 
 ### POST /api/generated-documents/validate
-Validate data before generation. Accepts the optional `selectedDirectorId`,
-`selectedShareholderId`, and `selectedContactId` request fields documented in
-the create example above. Availability of `system.preparerName` and its
+Validate data before generation. Accepts the optional `selectedDirectorIds`,
+`selectedDirectorId`, `selectedShareholderId`, and `selectedContactId` request
+fields documented above. Availability of `system.preparerName` and its
 `system.generatedBy` alias is determined only from the authenticated session's
 non-empty user name; custom request data cannot supply preparer identity.
 
 ---
 
 ### POST /api/generated-documents/preview
-Preview document without saving. Accepts the optional `selectedDirectorId`,
-`selectedShareholderId`, and `selectedContactId` request fields documented in
-the create example above.
+Preview document without saving. Accepts the optional `selectedDirectorIds`,
+`selectedDirectorId`, `selectedShareholderId`, and `selectedContactId` request
+fields documented above.
 
 ---
 

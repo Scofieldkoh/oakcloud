@@ -116,6 +116,7 @@ export interface RenderTemplateForGenerationParams {
   companyId?: string | null;
   contactIds?: string[];
   selectedDirectorId?: string;
+  selectedDirectorIds?: string[];
   selectedShareholderId?: string;
   selectedContactId?: string;
   customData?: Record<string, unknown>;
@@ -290,6 +291,7 @@ export async function renderTemplateForGeneration(
     companyId,
     contactIds = [],
     selectedDirectorId,
+    selectedDirectorIds,
     selectedShareholderId,
     selectedContactId,
     customData = {},
@@ -436,7 +438,12 @@ export async function renderTemplateForGeneration(
   // selectedContactId for session compatibility, but never resolve it from the
   // current company/contact graph: the snapshot below is the authority.
   const selectedContactRequiresResolution = Boolean(selectedContactId && !agreement);
-  if (selectedDirectorId || selectedShareholderId || selectedContactRequiresResolution) {
+  if (
+    selectedDirectorIds !== undefined
+    || selectedDirectorId
+    || selectedShareholderId
+    || selectedContactRequiresResolution
+  ) {
     if (!companyId) {
       throw new Error('Company selection is required for selected parties');
     }
@@ -444,6 +451,7 @@ export async function renderTemplateForGeneration(
       companyId,
       tenantId,
       selectedDirectorId,
+      ...(selectedDirectorIds !== undefined ? { selectedDirectorIds } : {}),
       selectedShareholderId,
       selectedContactId: selectedContactRequiresResolution
         ? selectedContactId
@@ -453,6 +461,12 @@ export async function renderTemplateForGeneration(
       ...context,
       ...selections,
     };
+    if (selectedDirectorIds !== undefined) {
+      const selectedDirectorIdSet = new Set(selectedDirectorIds);
+      context.directors = (context.directors ?? []).filter(
+        (director) => director.id && selectedDirectorIdSet.has(director.id),
+      );
+    }
   }
   if (agreement) {
     const representative = agreement.authorizedRepresentativeSnapshot;
@@ -697,6 +711,9 @@ export async function materializeDocumentFromTemplate(
     companyId: data.companyId,
     contactIds,
     selectedDirectorId: data.selectedDirectorId,
+    ...(data.selectedDirectorIds !== undefined
+      ? { selectedDirectorIds: data.selectedDirectorIds }
+      : {}),
     selectedShareholderId: data.selectedShareholderId,
     selectedContactId: data.selectedContactId,
     customData: data.customData,
@@ -713,6 +730,9 @@ export async function materializeDocumentFromTemplate(
 
   const selectedParties = {
     ...(data.selectedDirectorId ? { directorId: data.selectedDirectorId } : {}),
+    ...(data.selectedDirectorIds !== undefined
+      ? { directorIds: data.selectedDirectorIds }
+      : {}),
     ...(data.selectedShareholderId ? { shareholderId: data.selectedShareholderId } : {}),
     ...(data.selectedContactId ? { contactId: data.selectedContactId } : {}),
   };

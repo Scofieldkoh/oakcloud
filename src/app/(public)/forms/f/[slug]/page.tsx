@@ -4731,13 +4731,14 @@ export default function PublicFormPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8 flex items-center justify-center">
         {!isEmbed && backgroundSettings.url && (
-          <div aria-hidden="true" className="pointer-events-none fixed inset-0">
-            <img
-              src={backgroundSettings.url}
-              alt=""
-              className="h-full w-full object-cover mix-blend-multiply"
-              style={{ opacity: backgroundSettings.opacity / 100 }}
-            />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 bg-cover bg-center bg-no-repeat mix-blend-multiply"
+            style={{
+              backgroundImage: `url("${backgroundSettings.url}")`,
+              opacity: backgroundSettings.opacity / 100,
+            }}
+          >
           </div>
         )}
         <div className="w-full max-w-xl rounded-xl bg-white p-6 sm:p-8 shadow-sm">
@@ -4805,13 +4806,14 @@ export default function PublicFormPage() {
   return (
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8')}>
       {!isEmbed && backgroundSettings.url && (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0">
-          <img
-            src={backgroundSettings.url}
-            alt=""
-            className="h-full w-full object-cover mix-blend-multiply"
-            style={{ opacity: backgroundSettings.opacity / 100 }}
-          />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 bg-cover bg-center bg-no-repeat mix-blend-multiply"
+          style={{
+            backgroundImage: `url("${backgroundSettings.url}")`,
+            opacity: backgroundSettings.opacity / 100,
+          }}
+        >
         </div>
       )}
       <div ref={formTopRef} className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>

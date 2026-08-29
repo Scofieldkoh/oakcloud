@@ -65,8 +65,12 @@ const primaryNavigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Tasks', href: '/tasks', icon: ListTodo },
-  { name: 'Services', href: '/services?tab=services', icon: BriefcaseBusiness },
+  { name: 'Services', href: '/services', icon: BriefcaseBusiness },
+  { name: 'Deadlines', href: '/deadlines', icon: ClipboardList },
+  { name: 'Billing', href: '/billing', icon: DollarSign },
 ];
+
+const operationalServicesRoutes = new Set(['/services', '/deadlines', '/billing']);
 
 const secondaryNavigation: NavItem[] = [
   { name: 'Document Vault', href: '/processing', icon: ScanText },
@@ -366,7 +370,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   );
 
   const visiblePrimaryNavigation = primaryNavigation.filter((item) => {
-    if (item.name === 'Services') {
+    if (operationalServicesRoutes.has(item.href.split('?')[0] ?? item.href)) {
       // Hide the destination until the session-scoped feature flag is known to
       // be enabled. This avoids advertising a workspace-disabled surface.
       return servicesSettings.data?.workspaceEnabled === true;

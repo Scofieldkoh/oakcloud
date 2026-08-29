@@ -17,7 +17,8 @@ import { CompanySearchableSelect } from '@/components/ui/company-searchable-sele
 import { cn } from '@/lib/utils';
 import { withTaskLaunchContext } from '@/lib/task-launch-context';
 import type { TaskStageTransition } from '@/hooks/use-tasks';
-import type { TaskStageDetail } from '@/services/tasks/types';
+import type { TaskResourcesResponse, TaskStageDetail } from '@/services/tasks/types';
+import { TaskResourcesPanel } from './task-resources-panel';
 import {
   PipelineStageLinkedOutcome,
   PipelineStageMetadata,
@@ -43,6 +44,10 @@ interface TaskStageModalProps {
   onNavigateStage?: (direction: 'previous' | 'next') => void;
   hasPreviousStage?: boolean;
   hasNextStage?: boolean;
+  resources?: TaskResourcesResponse;
+  isResourcesLoading?: boolean;
+  resourcesError?: Error | null;
+  onRetryResources?: () => void;
 }
 
 function launchHref(stage: TaskStageDetail) {
@@ -82,6 +87,10 @@ export function TaskStageModal({
   onNavigateStage,
   hasPreviousStage = false,
   hasNextStage = false,
+  resources,
+  isResourcesLoading = false,
+  resourcesError,
+  onRetryResources,
 }: TaskStageModalProps) {
   const [notes, setNotes] = useState('');
   const [notesSaveStatus, setNotesSaveStatus] = useState<StageNotesSaveStatus>('idle');
@@ -301,6 +310,15 @@ export function TaskStageModal({
       stage={stage}
       onClose={onClose}
       isMutating={isMutating}
+      aside={(
+        <TaskResourcesPanel
+          data={resources}
+          activeStageId={stage?.id}
+          isLoading={isResourcesLoading}
+          error={resourcesError}
+          onRetry={onRetryResources ?? (() => undefined)}
+        />
+      )}
       footer={stage ? (
         <PipelineStageModalFooter
           isRequired={stage.isRequired}

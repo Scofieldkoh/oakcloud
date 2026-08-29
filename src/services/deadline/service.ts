@@ -24,6 +24,7 @@ import {
   formatDateOnly,
   parseDateOnly,
 } from '@/services/service-schedule/date-only';
+import type { DateOnly } from '@/services/service-schedule';
 import type {
   DeadlineActor,
   DeadlineCalendarResult,
@@ -318,10 +319,12 @@ export function deadlineWhereForSearch(
         ],
       } : {}),
     },
-    operativeDueDate: {
-      gte: toDateInput(input.from as `${number}-${number}-${number}`),
-      lte: toDateInput(input.to as `${number}-${number}-${number}`),
-    },
+    ...(input.from && input.to ? {
+      operativeDueDate: {
+        gte: toDateInput(input.from as DateOnly),
+        lte: toDateInput(input.to as DateOnly),
+      },
+    } : {}),
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
     ...(input.milestoneQuery ? { milestoneKey: { contains: normalizeMilestoneQuery(input.milestoneQuery), mode: 'insensitive' } } : {}),
