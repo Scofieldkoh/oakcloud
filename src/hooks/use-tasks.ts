@@ -76,6 +76,7 @@ export const taskKeys = {
   list: (params: TaskListParams) => [...taskKeys.lists(), params] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
+  resources: (taskId: string) => [...taskKeys.detail(taskId), 'resources'] as const,
   stages: (taskId: string) => [...taskKeys.detail(taskId), 'stage'] as const,
   stage: (taskId: string, stageId: string) => (
     [...taskKeys.stages(taskId), stageId] as const
@@ -174,6 +175,7 @@ export function useUpdateTask() {
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: taskKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: taskKeys.stages(task.id) }),
+        queryClient.invalidateQueries({ queryKey: taskKeys.resources(task.id) }),
       ]);
     },
   });
@@ -237,7 +239,10 @@ export function useUpdateTaskStage() {
     ),
     onSuccess: (stage, { taskId, stageId }) => {
       queryClient.setQueryData(taskKeys.stage(taskId, stageId), stage);
-      return queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) }),
+        queryClient.invalidateQueries({ queryKey: taskKeys.resources(taskId) }),
+      ]);
     },
   });
 }
@@ -263,6 +268,9 @@ export function useTaskStageTransition() {
         }),
         queryClient.invalidateQueries({
           queryKey: taskKeys.lists(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: taskKeys.resources(taskId),
         }),
       ]);
     },
@@ -297,6 +305,9 @@ export function useEnsureTaskEsigningPreparation() {
         taskKeys.esigningPreparation(taskId, stageId),
         preparation,
       );
+      return queryClient.invalidateQueries({
+        queryKey: taskKeys.resources(taskId),
+      });
     },
   });
 }
@@ -315,6 +326,9 @@ export function useRetryTaskEsigningPreparation() {
         taskKeys.esigningPreparation(taskId, stageId),
         preparation,
       );
+      return queryClient.invalidateQueries({
+        queryKey: taskKeys.resources(taskId),
+      });
     },
   });
 }

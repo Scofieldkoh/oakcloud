@@ -154,6 +154,9 @@ describe('task query hooks', () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: taskKeys.lists(),
     });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: taskKeys.resources('task-1'),
+    });
   });
 
   it('invalidates task stage detail prefixes when task metadata changes', async () => {
@@ -172,6 +175,9 @@ describe('task query hooks', () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: taskKeys.stages('task-1'),
     });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: taskKeys.resources('task-1'),
+    });
   });
 
   it('caches refreshed stage detail after stage metadata update', async () => {
@@ -189,6 +195,7 @@ describe('task query hooks', () => {
     };
     vi.mocked(fetch).mockResolvedValue(jsonResponse(detail));
     const { queryClient, wrapper } = createHarness();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     const { result } = renderHook(() => useUpdateTaskStage(), { wrapper });
 
     await act(async () => {
@@ -200,6 +207,9 @@ describe('task query hooks', () => {
     });
 
     expect(queryClient.getQueryData(taskKeys.stage('task-1', 'stage-1'))).toEqual(detail);
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: taskKeys.resources('task-1'),
+    });
   });
 
   it('returns a minimal task archive result without writing partial detail data', async () => {
@@ -239,6 +249,7 @@ describe('task query hooks', () => {
     };
     vi.mocked(fetch).mockResolvedValue(jsonResponse(preparation));
     const { queryClient, wrapper } = createHarness();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     const { result } = renderHook(() => useEnsureTaskEsigningPreparation(), { wrapper });
 
     await act(async () => {
@@ -252,5 +263,8 @@ describe('task query hooks', () => {
     expect(queryClient.getQueryData(
       taskKeys.esigningPreparation('task-1', 'stage-1'),
     )).toEqual(preparation);
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: taskKeys.resources('task-1'),
+    });
   });
 });
