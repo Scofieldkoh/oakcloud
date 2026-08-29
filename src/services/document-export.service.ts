@@ -23,6 +23,7 @@ import { buildA4PageContentStyles } from '@/components/documents/a4-pagination/a
 import { buildA4FontFaceCssDataUris } from '@/components/documents/a4-pagination/a4-font-faces-server';
 import { A4_PAGINATION_BUNDLE } from '@/components/documents/a4-pagination/pagination-bundle.generated';
 import { buildA4PrintCss, PAGE_NUMBER_STRIP_MM } from '@/components/documents/a4-print-styles';
+import { generatedDocumentPdfFileName } from '@/lib/generated-document-filename';
 export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
@@ -153,7 +154,7 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
   });
 
   // Generate filename
-  const exportFilename = filename || generateFilename(document.title, 'pdf');
+  const exportFilename = filename || generatedDocumentPdfFileName(document.title);
 
   return {
     buffer: pdfBuffer,
@@ -601,20 +602,6 @@ function parseMargins(margins: unknown): PageMargins {
     };
   }
   return DEFAULT_MARGINS;
-}
-
-/**
- * Generate filename for export
- */
-function generateFilename(title: string, extension: string): string {
-  const sanitizedTitle = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 50);
-
-  const timestamp = new Date().toISOString().split('T')[0];
-  return `${sanitizedTitle}-${timestamp}.${extension}`;
 }
 
 /**

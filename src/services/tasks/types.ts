@@ -236,3 +236,95 @@ export interface TaskStageDetail extends TaskStageSummary {
   launch: StageActionLaunch;
   outcomeSummary: StageOutcomeSummary;
 }
+
+export type TaskResourceState = 'available' | 'pending' | 'unavailable';
+
+interface TaskResourceBase {
+  id: string | null;
+  state: TaskResourceState;
+  label: string;
+  reason: string | null;
+}
+
+export interface TaskCompanyResource extends TaskResourceBase {
+  kind: 'company';
+  name: string | null;
+  uen: string | null;
+  href: string | null;
+}
+
+export interface TaskGeneratedDocumentResource extends TaskResourceBase {
+  kind: 'generatedDocument';
+  title: string | null;
+  status: string | null;
+  downloadFileName: string | null;
+  href: string | null;
+  pdfHref: string | null;
+}
+
+export interface TaskEsigningDocumentResource {
+  id: string;
+  fileName: string;
+  originalPdfHref: string;
+  signedPdfHref: string | null;
+}
+
+export type TaskSignerLinkState = 'available' | 'waiting' | 'finished';
+
+export interface TaskEsigningSignerResource {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  signingOrder: number | null;
+  linkState: TaskSignerLinkState;
+}
+
+export interface TaskEsigningEnvelopeResource extends TaskResourceBase {
+  kind: 'esigningEnvelope';
+  title: string | null;
+  status: string | null;
+  pdfGenerationStatus: string | null;
+  expiresAt: string | null;
+  completedSignatures: number;
+  requiredSignatures: number;
+  href: string | null;
+  canGenerateSignerLink: boolean;
+  documents: TaskEsigningDocumentResource[];
+  signers: TaskEsigningSignerResource[];
+}
+
+export type TaskResource =
+  | TaskCompanyResource
+  | TaskGeneratedDocumentResource
+  | TaskEsigningEnvelopeResource;
+
+export interface TaskResourceStage {
+  id: string;
+  name: string;
+  position: number;
+  actionType: TaskStageActionType;
+  status: TaskStageStatus;
+  description: string | null;
+  notes: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  assignee: { id: string; name: string; email: string } | null;
+  checklist: Array<{ id: string; label: string; isCompleted: boolean }>;
+  blockers: StageActionBlocker[];
+  resources: TaskResource[];
+}
+
+export interface TaskResourcesResponse {
+  task: {
+    id: string;
+    title: string;
+    status: TaskStatus;
+    dueDate: string | null;
+    company: { id: string; name: string; uen: string; href: string } | null;
+    owner: { id: string; name: string; email: string } | null;
+    pipelineName: string;
+  };
+  stages: TaskResourceStage[];
+  hasPendingResources: boolean;
+}
