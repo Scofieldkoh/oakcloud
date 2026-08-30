@@ -15,6 +15,7 @@ import type {
   BatchStatus,
   DocumentGenerationBatchDto,
   MasterFieldCatalogue,
+  ServiceAgreementWorkspaceState,
 } from '@/types/document-generation-batch';
 import type { ServiceAgreementDraftDto } from '@/services/service-agreement/types';
 import type {
@@ -284,6 +285,51 @@ function replaceBatchItems(
   };
 }
 
+function remapCompanyIds(
+  ids: string[],
+  previousPrimaryCompanyId: string | null,
+  nextPrimaryCompanyId: string | null,
+  ensureNextPrimary = false,
+): string[] {
+  const mapped = ids
+    .map((id) => id === previousPrimaryCompanyId ? nextPrimaryCompanyId : id)
+    .filter((id): id is string => Boolean(id));
+  if (ensureNextPrimary && nextPrimaryCompanyId && !mapped.includes(nextPrimaryCompanyId)) {
+    mapped.unshift(nextPrimaryCompanyId);
+  }
+  return [...new Set(mapped)];
+}
+
+export function syncServiceAgreementPrimaryCompany(
+  workspace: ServiceAgreementWorkspaceState,
+  previousPrimaryCompanyId: string | null,
+  nextPrimaryCompanyId: string | null,
+): ServiceAgreementWorkspaceState {
+  return {
+    ...workspace,
+    entityIds: remapCompanyIds(
+      workspace.entityIds,
+      previousPrimaryCompanyId,
+      nextPrimaryCompanyId,
+      true,
+    ),
+    items: workspace.items.map((item) => ({
+      ...item,
+      entityIds: remapCompanyIds(
+        item.entityIds,
+        previousPrimaryCompanyId,
+        nextPrimaryCompanyId,
+      ),
+      feeLines: item.feeLines.map((fee) => ({
+        ...fee,
+        companyId: fee.companyId === previousPrimaryCompanyId
+          ? nextPrimaryCompanyId ?? fee.companyId
+          : fee.companyId,
+      })),
+    })),
+  };
+}
+
 function applyCompanyTitleDefaults(
   batch: EditableDocumentGenerationBatch,
   companyName: string | null,
@@ -384,6 +430,7 @@ function reduceBatchState(
     }
     case 'shared/company': {
       if (!state.capabilities.canEditSharedSetup) return state;
+      const previousPrimaryCompanyId = state.batch.primaryCompanyId;
       const nextBatch = { ...state.batch, primaryCompanyId: action.companyId };
       const items = action.companyName
         ? nextBatch.items.map((item) => {
@@ -402,7 +449,27 @@ function reduceBatchState(
             });
           })
         : nextBatch.items;
-      const batch = replaceBatchItems(nextBatch, items);
+      const synchronizedItems = items.map((item) => {
+        if (
+          item.status === 'GENERATED'
+          || item.templateKind !== 'SERVICE_AGREEMENT'
+          || !item.configuration.serviceAgreement
+        ) {
+          return item;
+        }
+        return {
+          ...item,
+          configuration: {
+            ...item.configuration,
+            serviceAgreement: syncServiceAgreementPrimaryCompany(
+              item.configuration.serviceAgreement,
+              previousPrimaryCompanyId,
+              action.companyId,
+            ),
+          },
+        };
+      });
+      const batch = replaceBatchItems(nextBatch, synchronizedItems);
       return {
         ...state,
         batch,

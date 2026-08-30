@@ -128,6 +128,85 @@ describe('document generation batch workspace state', () => {
     expect(next.batch.items[1].configuration.title).toBe('Custom document title');
   });
 
+  it('remaps service agreement entities, service assignments, and fees when the shared company changes', () => {
+    const state = batch([
+      item('agreement', {
+        templateKind: 'SERVICE_AGREEMENT',
+        configuration: {
+          serviceAgreement: {
+            authorizedContactId: 'contact-1',
+            entityIds: ['company-1', 'company-3'],
+            agreementDate: '2026-08-12',
+            effectiveDate: null,
+            termMonths: 12,
+            items: [{
+              clientKey: 'service-1',
+              variantId: 'variant-1',
+              entityIds: ['company-1', 'company-3'],
+              startDate: '2026-08-12',
+              endDate: null,
+              fieldValues: {},
+              displayOrder: 0,
+              feeLines: [
+                {
+                  clientKey: 'fee-1',
+                  companyId: 'company-1',
+                  description: 'Primary fee',
+                  amount: '500.00',
+                  currency: 'SGD',
+                  billingFrequency: 'ANNUALLY',
+                  customFrequencyLabel: null,
+                  billingStartDate: '2026-08-12',
+                  displayOrder: 0,
+                },
+                {
+                  clientKey: 'fee-2',
+                  companyId: 'company-3',
+                  description: 'Additional fee',
+                  amount: '60.00',
+                  currency: 'SGD',
+                  billingFrequency: 'ANNUALLY',
+                  customFrequencyLabel: null,
+                  billingStartDate: '2026-08-12',
+                  displayOrder: 1,
+                },
+              ],
+            }],
+          },
+        },
+      }),
+    ]);
+
+    const next = documentGenerationBatchReducer(state, {
+      type: 'shared/company',
+      companyId: 'company-2',
+      companyName: 'Replacement Company',
+    });
+
+    expect(next.batch.items[0].configuration.serviceAgreement).toMatchObject({
+      entityIds: ['company-2', 'company-3'],
+      items: [{
+        entityIds: ['company-2', 'company-3'],
+        feeLines: [
+          { companyId: 'company-2' },
+          { companyId: 'company-3' },
+        ],
+      }],
+    });
+  });
+
+  it('does not create Service Agreement workspace state for standard items when the shared company changes', () => {
+    const state = batch([item('standard')]);
+
+    const next = documentGenerationBatchReducer(state, {
+      type: 'shared/company',
+      companyId: 'company-2',
+      companyName: 'Replacement Company',
+    });
+
+    expect(next.batch.items[0].configuration.serviceAgreement).toBeNull();
+  });
+
   it('invalidates only the changed item after an item override', () => {
     const first = item('a');
     const second = item('b', {
