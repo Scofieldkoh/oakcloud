@@ -140,6 +140,7 @@ export function StandardDocumentConfig({
         otherCount={otherItemCount}
         incompleteCount={otherIncompleteCount}
         disabled={disabled}
+        header
         onApply={(scope) => {
           const patch: Partial<BatchItemConfiguration> = {};
           for (const key of keys) {

@@ -63,6 +63,10 @@ describe('ServiceAgreementConfig', () => {
     expect(screen.getByRole('heading', { name: /services and fees/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /entities and representative/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /agreement details/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^details$/i }).closest('header')).toHaveClass('bg-oak-primary');
+    expect(screen.getByRole('heading', { name: /entities and representative/i }).closest('header')).toHaveClass('bg-oak-primary');
+    expect(screen.getByRole('heading', { name: /services and fees/i }).closest('header')).toHaveClass('bg-oak-primary');
+    expect(screen.getByRole('heading', { name: /agreement details/i }).closest('header')).toHaveClass('bg-oak-primary');
     expect(screen.queryByRole('heading', { name: /setup/i })).not.toBeInTheDocument();
     unmount();
   });

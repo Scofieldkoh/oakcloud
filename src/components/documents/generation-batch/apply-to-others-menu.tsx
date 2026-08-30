@@ -16,6 +16,7 @@ export interface ApplyToOthersMenuProps {
   incompleteCount: number;
   onApply: (scope: ApplyScope) => void;
   disabled?: boolean;
+  header?: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ export function ApplyToOthersMenu({
   incompleteCount,
   onApply,
   disabled = false,
+  header = false,
 }: ApplyToOthersMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useClickOutside<HTMLDivElement>(() => setOpen(false), open);
@@ -49,7 +51,10 @@ export function ApplyToOthersMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
-          'inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-primary px-2.5 text-xs font-medium text-oak-primary transition-colors hover:bg-oak-primary/5',
+          'inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+          header
+            ? 'border-white/50 text-white hover:bg-white/10'
+            : 'border-border-primary text-oak-primary hover:bg-oak-primary/5',
           disabled && 'cursor-not-allowed opacity-40',
         )}
       >

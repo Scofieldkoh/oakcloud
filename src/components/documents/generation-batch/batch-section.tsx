@@ -36,9 +36,9 @@ export function BatchSection({
   return (
     <section
       aria-labelledby={headingId}
-      className="rounded-lg border border-border-primary bg-background-primary"
+      className="overflow-hidden rounded-lg border border-border-primary bg-background-primary"
     >
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+      <header className="flex min-h-12 flex-wrap items-center gap-2 bg-oak-primary px-3 py-2.5 text-white">
         {collapsible ? (
           <h3 id={headingId} className="min-w-0 flex-1">
             <button
@@ -49,16 +49,16 @@ export function BatchSection({
               className="flex min-h-9 w-full min-w-0 items-center gap-2 text-left"
             >
               <span className="min-w-0">
-                <span className="block text-sm font-medium text-text-primary">
+                <span className="block text-sm font-medium text-white">
                   {title}
                 </span>
                 {description && (
-                  <span className="block text-xs font-normal text-text-muted">
+                  <span className="block text-xs font-normal text-white/70">
                     {description}
                   </span>
                 )}
               </span>
-              <span className="ml-auto shrink-0 text-text-muted">
+              <span className="ml-auto shrink-0 text-white/70">
                 {expanded
                   ? <ChevronUp className="h-4 w-4" aria-hidden="true" />
                   : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
@@ -67,8 +67,8 @@ export function BatchSection({
           </h3>
         ) : (
           <div className="min-w-0 flex-1">
-            <h3 id={headingId} className="text-sm font-medium text-text-primary">{title}</h3>
-            {description && <p className="text-xs text-text-muted">{description}</p>}
+            <h3 id={headingId} className="text-sm font-medium text-white">{title}</h3>
+            {description && <p className="text-xs text-white/70">{description}</p>}
           </div>
         )}
 
@@ -77,8 +77,8 @@ export function BatchSection({
             className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
               status.complete
-                ? 'bg-status-success/10 text-status-success'
-                : 'bg-status-warning/10 text-status-warning',
+                ? 'bg-white/15 text-white'
+                : 'bg-status-warning/20 text-white',
             )}
           >
             {status.complete
@@ -89,7 +89,7 @@ export function BatchSection({
         )}
 
         {action && <div className="shrink-0">{action}</div>}
-      </div>
+      </header>
 
       {expanded && (
         <div id={contentId} className="border-t border-border-secondary p-3">

@@ -71,6 +71,16 @@ function props(overrides: Partial<BatchItemConfiguratorProps> = {}): BatchItemCo
 }
 
 describe('BatchItemConfigurator', () => {
+  it('uses the Companies-style header for every standard Configure section', () => {
+    render(<BatchItemConfigurator {...props()} />);
+
+    const headers = document.querySelectorAll('section > header');
+    expect(headers.length).toBeGreaterThan(1);
+    for (const header of headers) {
+      expect(header).toHaveClass('bg-oak-primary');
+    }
+  });
+
   it('does not expose letterhead controls', () => {
     render(<BatchItemConfigurator {...props()} />);
 
