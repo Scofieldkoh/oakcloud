@@ -1,9 +1,10 @@
 import 'dotenv/config';
-import { PrismaClient } from '@/generated/prisma';
+import { Prisma, PrismaClient } from '@/generated/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { v5 as uuidv5 } from 'uuid';
+import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktree-service-agreement-v1';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -14,38 +15,335 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const CLIENT_ONBOARDING_STAGES = [
-  {
-    name: 'Company Profile',
-    description: 'Link or create the authoritative Company profile for this client.',
-    position: 0,
-    actionType: 'COMPANY_PROFILE',
-    icon: 'Building2',
-    isRequired: true,
-    actionConfig: { allowCreate: true },
-  },
-  {
-    name: 'Generate Contract',
-    description: 'Create and finalize the client contract in Document Generation.',
-    position: 1,
-    actionType: 'DOCUMENT_GENERATION',
-    icon: 'FileText',
-    isRequired: true,
-    actionConfig: {},
-  },
-  {
-    name: 'E-signing',
-    description: 'Send the finalized contract and collect every required signature.',
-    position: 2,
-    actionType: 'ESIGNING',
-    icon: 'PenLine',
-    isRequired: true,
-    actionConfig: {
-      signingOrder: 'PARALLEL',
-      expiresInDays: 30,
+type ClientOnboardingTemplateIds = {
+  contract: string | null;
+  resolution: string | null;
+};
+
+type SeedDocumentTemplate = {
+  name: string;
+  description: string;
+  category: 'CONTRACT' | 'RESOLUTION';
+  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
+  content: string;
+  placeholders: Prisma.InputJsonValue;
+};
+
+const CLIENT_ONBOARDING_RESOLUTION_TEMPLATE: SeedDocumentTemplate = {
+  name: 'DR_Appointment of Corp Sec',
+  description: 'Directors’ resolution for appointment of company secretary and corporate service provider.',
+  category: 'RESOLUTION',
+  compositionType: 'STANDARD',
+  content: `<p style="text-align: center;"><b><span style="font-size: 11pt;">{{company.name}}
+</span></b><span style="font-size: 11pt;">(Registration Number {{company.uen}})
+(Incorporated in the Republic of Singapore)
+</span><b style="font-size: 12pt;"><span style="font-size: 11pt;">(“Company”)</span></b></p><p><br></p><p><br></p><p><b><span style="font-size: 11pt;">DIRECTORS’ RESOLUTIONS IN WRITING PURSUANT TO ARTICLE 90 OF THE COMPANY’S ARTICLES OF ASSOCIATION</span></b></p><p>______________________________________________________________________________________</p><p><span style="font-size: 10pt;"></span></p><p><br></p><p>We, the undersigned, being all the directors of the Company (“Directors”) for the time being entitled to make any decision that may be made in a meeting of the Board of Directors, hereby unanimously consent to the adoption and approval of the following resolutions:</p><p><br></p><p><b>1.\tAPPOINTMENT OF SECRETARY </b></p><p><br></p><p>RESOLVED that the appointment of Tan Wei Jie (S9101817I) as Secretary of the Company be hereby approved with effect from his date of consent to act.</p><p><br></p><p><b>2.\tCORPORATE SERVICE PROVIDER</b></p><p><br></p><p>RESOLVED that Oaktree Accounting &amp; Corporate Solutions Pte. Ltd. (UEN: 202437906H) be hereby appointed as corporate secretarial agent of the Company with immediate effect.</p><p><br></p><p><b>3.\tNOTIFICATION AND LODGEMENT</b></p><p><br></p><p>RESOLVED that all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority. </p><p><br></p><p><br></p><p><br></p><p> </p><p><br></p><p>Dated this {{custom.resolution_date}}</p><p><br></p><div>{{#each directors}}</div><div data-flow-keep-together="true"><p><br></p><p><br></p><p><br></p><p>________________________</p><p>{{this.name}}</p><p>{{DESIGNATION({{this.role}})}}</p><p><span style="font-size: 10pt;">{{/each}}</span></p></div><p><span style="font-size: 10pt;"></span></p>`,
+  placeholders: [
+    {
+      key: 'custom.resolution_date',
+      path: 'custom.resolution_date',
+      type: 'date',
+      label: 'Resolution date',
+      source: 'custom',
+      category: 'custom',
+      required: true,
     },
+  ],
+};
+
+const CLIENT_ONBOARDING_DOCUMENT_TEMPLATES: SeedDocumentTemplate[] = [
+  {
+    ...OAKTREE_SERVICE_AGREEMENT_V1.template,
+    description: 'Service Agreement template',
+    placeholders: OAKTREE_SERVICE_AGREEMENT_V1.template.placeholders as unknown as Prisma.InputJsonValue,
   },
-] as const;
+  CLIENT_ONBOARDING_RESOLUTION_TEMPLATE,
+];
+
+const LEGACY_SERVICE_AGREEMENT_TEMPLATE_NAMES = [
+  'Oaktree Local Master Services Agreement v1',
+  'Service agreement',
+];
+
+async function ensureSeededDocumentTemplate(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  createdById: string,
+  definition: SeedDocumentTemplate,
+) {
+  const activeTemplate = await tx.documentTemplate.findFirst({
+    where: {
+      tenantId,
+      name: definition.name,
+      isActive: true,
+      deletedAt: null,
+    },
+    orderBy: [{ version: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+  });
+  if (activeTemplate) return activeTemplate;
+
+  const existingTemplate = await tx.documentTemplate.findFirst({
+    where: { tenantId, name: definition.name, deletedAt: null },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  const materialChanged = Boolean(
+    existingTemplate
+    && (
+      existingTemplate.content !== definition.content
+      || JSON.stringify(existingTemplate.placeholders) !== JSON.stringify(definition.placeholders)
+    )
+  );
+  const templateData = {
+    name: definition.name,
+    description: definition.description,
+    category: definition.category,
+    compositionType: definition.compositionType,
+    content: definition.content,
+    placeholders: definition.placeholders,
+    isActive: true,
+    deletedAt: null,
+  };
+
+  return existingTemplate
+    ? tx.documentTemplate.update({
+      where: { id: existingTemplate.id },
+      data: {
+        ...templateData,
+        ...(materialChanged ? { version: { increment: 1 } } : {}),
+      },
+    })
+    : tx.documentTemplate.create({
+      data: {
+        tenantId,
+        createdById,
+        ...templateData,
+      },
+    });
+}
+
+async function seedClientOnboardingDocumentTemplates(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  createdById: string,
+) {
+  await tx.documentTemplate.updateMany({
+    where: {
+      tenantId,
+      category: 'CONTRACT',
+      name: { in: LEGACY_SERVICE_AGREEMENT_TEMPLATE_NAMES },
+      isActive: false,
+      deletedAt: null,
+    },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+    },
+  });
+
+  for (const definition of CLIENT_ONBOARDING_DOCUMENT_TEMPLATES) {
+    await ensureSeededDocumentTemplate(tx, tenantId, createdById, definition);
+  }
+}
+
+function clientOnboardingStages(templateIds: ClientOnboardingTemplateIds) {
+  return [
+    {
+      name: 'Company Profile',
+      description: 'Link or create the authoritative Company profile for this client.',
+      actionType: 'COMPANY_PROFILE' as const,
+      icon: 'Building2',
+      isRequired: true,
+      actionConfig: { allowCreate: true },
+    },
+    ...(templateIds.resolution ? [{
+      name: 'Generate Resolution',
+      description: 'Create and finalize the client resolution in Document Generation.',
+      actionType: 'DOCUMENT_GENERATION' as const,
+      icon: 'FileText',
+      isRequired: true,
+      actionConfig: { templateId: templateIds.resolution },
+    }] : []),
+    {
+      name: 'Generate Contract',
+      description: 'Create and finalize the client contract in Document Generation.',
+      actionType: 'DOCUMENT_GENERATION' as const,
+      icon: 'FileText',
+      isRequired: true,
+      actionConfig: templateIds.contract
+        ? { templateId: templateIds.contract }
+        : {},
+    },
+    {
+      name: 'E-signing',
+      description: 'Send the finalized contract and collect every required signature.',
+      actionType: 'ESIGNING' as const,
+      icon: 'PenLine',
+      isRequired: true,
+      actionConfig: {
+        signingOrder: 'PARALLEL',
+        expiresInDays: 30,
+      },
+    },
+  ].map((stage, position) => ({ ...stage, position }));
+}
+
+function actionConfigValue(config: unknown, key: string) {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return undefined;
+  return (config as Record<string, unknown>)[key];
+}
+
+function isCurrentClientOnboardingVersion(
+  stages: Array<{ name: string; actionType: string; actionConfig: unknown }>,
+  templateIds: ClientOnboardingTemplateIds,
+) {
+  const expectedStages = clientOnboardingStages(templateIds);
+
+  return stages.length === expectedStages.length
+    && stages.every((stage, index) => {
+      const expected = expectedStages[index];
+      if (stage.name !== expected.name || stage.actionType !== expected.actionType) return false;
+
+      if (expected.actionType === 'DOCUMENT_GENERATION') {
+        return actionConfigValue(stage.actionConfig, 'templateId')
+          === actionConfigValue(expected.actionConfig, 'templateId');
+      }
+
+      return Object.entries(expected.actionConfig).every(([key, value]) => (
+        actionConfigValue(stage.actionConfig, key) === value
+      ));
+    });
+}
+
+async function seedClientOnboardingPipelines(createdById: string) {
+  const workspaces = await prisma.workspace.findMany({
+    where: { deletedAt: null },
+    select: { id: true },
+  });
+
+  for (const workspace of workspaces) {
+    const pipelineId = uuidv5(`oakcloud:client-onboarding:${workspace.id}:pipeline`, uuidv5.URL);
+
+    await prisma.$transaction(async (tx) => {
+      await seedClientOnboardingDocumentTemplates(tx, workspace.id, createdById);
+
+      const templates = await tx.documentTemplate.findMany({
+        where: {
+          tenantId: workspace.id,
+          category: { in: ['CONTRACT', 'RESOLUTION'] },
+          isActive: true,
+          deletedAt: null,
+        },
+        select: { id: true, category: true },
+        orderBy: [
+          { category: 'asc' },
+          { createdAt: 'asc' },
+          { id: 'asc' },
+        ],
+      });
+      const templateIds = {
+        contract: templates.find((template) => template.category === 'CONTRACT')?.id ?? null,
+        resolution: templates.find((template) => template.category === 'RESOLUTION')?.id ?? null,
+      };
+
+      await tx.taskPipeline.upsert({
+        where: { id: pipelineId },
+        update: {
+          name: 'Client Onboarding',
+          description: 'Create the company profile, generate the resolution and contract, and complete E-signing.',
+          deletedAt: null,
+          deletedReason: null,
+        },
+        create: {
+          id: pipelineId,
+          tenantId: workspace.id,
+          name: 'Client Onboarding',
+          description: 'Create the company profile, generate the resolution and contract, and complete E-signing.',
+        },
+      });
+
+      const existingVersion = await tx.taskPipelineVersion.findFirst({
+        where: { pipelineId, publishedAt: { not: null } },
+        orderBy: { version: 'desc' },
+        include: {
+          stages: {
+            orderBy: { position: 'asc' },
+            select: { name: true, actionType: true, actionConfig: true },
+          },
+        },
+      });
+
+      if (
+        existingVersion
+        && isCurrentClientOnboardingVersion(existingVersion.stages, templateIds)
+      ) return;
+
+      const versionNumber = existingVersion ? existingVersion.version + 1 : 1;
+      const versionId = uuidv5(
+        `oakcloud:client-onboarding:${workspace.id}:version:${versionNumber}`,
+        uuidv5.URL,
+      );
+      const stages = clientOnboardingStages(templateIds);
+
+      await tx.taskPipelineVersion.create({
+        data: {
+          id: versionId,
+          tenantId: workspace.id,
+          pipelineId,
+          version: versionNumber,
+          publishedAt: null,
+        },
+      });
+
+      await tx.taskPipelineStage.createMany({
+        data: stages.map((stage) => ({
+          id: uuidv5(
+            `oakcloud:client-onboarding:${workspace.id}:version:${versionNumber}:stage:${stage.position}`,
+            uuidv5.URL,
+          ),
+          tenantId: workspace.id,
+          versionId,
+          ...stage,
+        })),
+      });
+
+      await tx.taskPipelineVersion.update({
+        where: { id: versionId },
+        data: { publishedAt: new Date() },
+      });
+    });
+  }
+
+  return workspaces.length;
+}
+
+async function seedClientOnboardingOnly() {
+  const templateCreator = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: 'admin@oaktreesolutions.com.sg' },
+        { email: 'admin@oakcloud.local' },
+      ],
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true },
+  }) ?? await prisma.user.findFirst({
+    where: {
+      tenantId: { not: null },
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+
+  if (!templateCreator) {
+    throw new Error('An active user is required to seed document templates');
+  }
+
+  const workspaceCount = await seedClientOnboardingPipelines(templateCreator.id);
+  console.log(`Seeded active Client Onboarding templates and pipelines for ${workspaceCount} tenants`);
+}
 
 /**
  * Database seed script for Oakcloud (Minimal Setup)
@@ -54,11 +352,18 @@ const CLIENT_ONBOARDING_STAGES = [
  * Creates only the essential data:
  * - A SUPER_ADMIN user with global role
  * - Core permissions for the RBAC system
+ * - Active Client Onboarding document templates and pipeline versions
  *
  * Usage: npm run db:seed
+ * Targeted usage: npm run db:seed -- --client-onboarding-only
  */
 
 async function main() {
+  if (process.argv.includes('--client-onboarding-only')) {
+    await seedClientOnboardingOnly();
+    return;
+  }
+
   console.log('Seeding database (minimal setup)...\n');
 
   // =========================================================================
@@ -583,74 +888,8 @@ async function main() {
   // =========================================================================
   console.log('Step 6: Seeding Client Onboarding pipelines...');
 
-  const workspaces = await prisma.workspace.findMany({
-    where: { deletedAt: null },
-    select: { id: true },
-  });
-
-  for (const workspace of workspaces) {
-    const pipelineId = uuidv5(`oakcloud:client-onboarding:${workspace.id}:pipeline`, uuidv5.URL);
-    const versionId = uuidv5(`oakcloud:client-onboarding:${workspace.id}:version:1`, uuidv5.URL);
-
-    await prisma.$transaction(async (tx) => {
-      await tx.taskPipeline.upsert({
-        where: { id: pipelineId },
-        update: {
-          name: 'Client Onboarding',
-          description: 'Create the company profile, generate the contract, and complete E-signing.',
-          deletedAt: null,
-          deletedReason: null,
-        },
-        create: {
-          id: pipelineId,
-          tenantId: workspace.id,
-          name: 'Client Onboarding',
-          description: 'Create the company profile, generate the contract, and complete E-signing.',
-        },
-      });
-
-      const existingVersion = await tx.taskPipelineVersion.findUnique({
-        where: {
-          pipelineId_version: {
-            pipelineId,
-            version: 1,
-          },
-        },
-        select: { id: true },
-      });
-
-      if (existingVersion) return;
-
-      await tx.taskPipelineVersion.create({
-        data: {
-          id: versionId,
-          tenantId: workspace.id,
-          pipelineId,
-          version: 1,
-          publishedAt: null,
-        },
-      });
-
-      await tx.taskPipelineStage.createMany({
-        data: CLIENT_ONBOARDING_STAGES.map((stage) => ({
-          id: uuidv5(
-            `oakcloud:client-onboarding:${workspace.id}:version:1:stage:${stage.position}`,
-            uuidv5.URL,
-          ),
-          tenantId: workspace.id,
-          versionId,
-          ...stage,
-        })),
-      });
-
-      await tx.taskPipelineVersion.update({
-        where: { id: versionId },
-        data: { publishedAt: new Date() },
-      });
-    });
-  }
-
-  console.log(`  Created/verified Client Onboarding pipelines for ${workspaces.length} tenants\n`);
+  const workspaceCount = await seedClientOnboardingPipelines(superAdmin.id);
+  console.log(`  Created/verified Client Onboarding pipelines for ${workspaceCount} tenants\n`);
 
   // =========================================================================
   // Summary

@@ -4,7 +4,7 @@ import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktre
 import { seedServiceAgreementBundle } from '../../scripts/seed-service-agreement-template';
 
 describe('initial Service Agreement content bundle', () => {
-  it('contains one inactive agreement template and exactly two supplied services', () => {
+  it('contains one active agreement template and exactly two supplied services', () => {
     expect(OAKTREE_SERVICE_AGREEMENT_V1.template.compositionType).toBe(
       'SERVICE_AGREEMENT',
     );
@@ -27,7 +27,7 @@ describe('initial Service Agreement content bundle', () => {
     expect(OAKTREE_SERVICE_AGREEMENT_V1.variants.every((variant) => !variant.isActive)).toBe(
       true,
     );
-    expect(OAKTREE_SERVICE_AGREEMENT_V1.template.isActive).toBe(false);
+    expect(OAKTREE_SERVICE_AGREEMENT_V1.template.isActive).toBe(true);
   });
 
   it('retains the controlled clause fingerprints and saved agreement date', () => {
@@ -116,6 +116,7 @@ describe('initial Service Agreement content bundle', () => {
         },
       },
       documentTemplate: {
+        updateMany: async () => ({ count: 0 }),
         findFirst: async () => template,
         create: async ({ data }: any) => {
           template = { id: `template-${++sequence}`, version: 1, ...data };

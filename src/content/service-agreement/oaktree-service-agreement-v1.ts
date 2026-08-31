@@ -252,8 +252,8 @@ export const OAKTREE_SERVICE_AGREEMENT_V1 = {
     },
   ],
   template: {
-    name: 'Oaktree Local Master Services Agreement v1',
-    description: 'Inactive controlled-source Service Agreement template pending legal review.',
+    name: 'Oaktree Master Services Agreement',
+    description: 'Service Agreement template',
     category: 'CONTRACT' as const,
     compositionType: 'SERVICE_AGREEMENT' as const,
     content: masterTemplate,
@@ -286,6 +286,6 @@ export const OAKTREE_SERVICE_AGREEMENT_V1 = {
         required: false,
       },
     ],
-    isActive: false,
+    isActive: true,
   },
 } as const;

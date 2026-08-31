@@ -383,7 +383,7 @@ Preparation jobs are claimed in bounded batches with PostgreSQL `FOR UPDATE SKIP
 
 Task status is derived from all live stages as `NOT_STARTED`, `IN_PROGRESS`, or `COMPLETED`: every required stage must be completed, and every optional stage must be completed or explicitly skipped. `PAUSED` and `CANCELLED` are explicit task overrides. Optional stages may be skipped with a reason; required stages cannot be skipped. A skipped integrated stage remains a durable user override until it is reopened. Stage status includes `NOT_STARTED`, `IN_PROGRESS`, `WAITING`, `COMPLETED`, `SKIPPED`, and `FAILED`. The UI assigns fixed semantic surfaces and non-colour markers; pipelines store curated Lucide icon names but no user-defined colours.
 
-The default tenant-aware seed publishes Client Onboarding v1 with three required stages: Company Profile, Generate Contract, and E-signing. Deterministic IDs and a transaction make the seed repeatable without creating extra versions.
+The default tenant-aware seed creates or preserves the active `DR_Appointment of Corp Sec` Resolution and `Oaktree Master Services Agreement` Contract templates, soft-deletes legacy inactive Service Agreement names, and publishes Client Onboarding with Company Profile, Generate Resolution, Generate Contract, and E-signing stages. Generate Resolution precedes Generate Contract so E-signing continues to target the contract. New installations publish version 1; an older three-stage version is upgraded to a new immutable version when it does not match the seeded stages. Deterministic IDs and a transaction keep reruns repeatable. The `--client-onboarding-only` flag applies only this template and pipeline seed without running unrelated setup steps.
 
 ### Legacy Module Reset
 

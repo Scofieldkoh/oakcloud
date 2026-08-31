@@ -70,7 +70,7 @@ Oakcloud is built around a few core principles:
 | Pipelines | Reusable, versioned stage templates; published versions are immutable and edits affect future tasks only |
 | E-signing | Envelope preparation, delivery, signer lifecycle, and certificate-backed completion |
 
-The seed creates a **Client Onboarding** pipeline for every non-deleted tenant. Its required stages are Company Profile, Generate Contract, and E-signing. Stage icons are curated Lucide outlines, while status surfaces are system-controlled rather than saved as user-defined colours.
+The seed creates or preserves the active `DR_Appointment of Corp Sec` Resolution and `Oaktree Master Services Agreement` Contract templates for every non-deleted tenant, retires legacy inactive Service Agreement names, and publishes a **Client Onboarding** pipeline with Company Profile, Generate Resolution, Generate Contract, and E-signing stages. Stage icons are curated Lucide outlines, while status surfaces are system-controlled rather than saved as user-defined colours. Use `npm run db:seed -- --client-onboarding-only` to apply only these template and pipeline changes without resetting unrelated seed data.
 
 ## Planned Modules
 

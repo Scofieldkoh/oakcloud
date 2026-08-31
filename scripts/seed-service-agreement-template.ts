@@ -172,6 +172,20 @@ export async function seedServiceAgreementBundle(
       variantIds.push(saved.id);
     }
 
+    await tx.documentTemplate.updateMany({
+      where: {
+        tenantId,
+        category: 'CONTRACT',
+        name: { in: ['Oaktree Local Master Services Agreement v1', 'Service agreement'] },
+        isActive: false,
+        deletedAt: null,
+      },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    });
+
     const currentTemplate = await tx.documentTemplate.findFirst({
       where: {
         tenantId,
@@ -185,7 +199,7 @@ export async function seedServiceAgreementBundle(
       },
     });
     const {
-      isActive: _initialTemplateActive,
+      isActive: sourceTemplateActive,
       ...controlledTemplate
     } = OAKTREE_SERVICE_AGREEMENT_V1.template;
     const templateData = {
@@ -204,7 +218,7 @@ export async function seedServiceAgreementBundle(
                 !== stableSerialize(templateData.placeholders)
               ? { version: { increment: 1 } }
               : {}),
-            ...(deactivate ? { isActive: false } : {}),
+            isActive: deactivate ? false : sourceTemplateActive,
           },
         })
       : await tx.documentTemplate.create({
@@ -212,7 +226,7 @@ export async function seedServiceAgreementBundle(
             tenantId,
             createdById: userId,
             ...templateData,
-            isActive: false,
+            isActive: deactivate ? false : sourceTemplateActive,
           },
         });
 
