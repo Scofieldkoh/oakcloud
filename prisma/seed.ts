@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { v5 as uuidv5 } from 'uuid';
 import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktree-service-agreement-v1';
+import { ensureWorkspaceSeedFoundation } from './seed-workspace-foundation';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -624,9 +625,20 @@ async function main() {
   console.log(`  Assigned Super Admin role to: ${superAdmin.email}\n`);
 
   // =========================================================================
-  // STEP 5: Seed Chart of Accounts (System-level defaults)
+  // STEP 5: Ensure workspace foundations
   // =========================================================================
-  console.log('Step 5: Seeding Chart of Accounts...');
+  console.info('Step 5: Ensuring workspace foundations...');
+
+  const workspaceFoundation = await ensureWorkspaceSeedFoundation(prisma);
+  if (workspaceFoundation.createdWorkspaceId) {
+    console.info('  Created active default workspace: Oakcloud');
+  }
+  console.info(`  Verified scheduling and RBAC foundations for ${workspaceFoundation.workspaceIds.length} workspace(s)\n`);
+
+  // =========================================================================
+  // STEP 6: Seed Chart of Accounts (System-level defaults)
+  // =========================================================================
+  console.log('Step 6: Seeding Chart of Accounts...');
 
   // Standard Singapore Chart of Accounts aligned with SFRS
   // isHeader: true for parent/category accounts that shouldn't be selectable in dropdowns
@@ -884,9 +896,9 @@ async function main() {
   console.log(`  Created/updated ${CHART_OF_ACCOUNTS_SEED.length} chart of accounts entries\n`);
 
   // =========================================================================
-  // STEP 6: Seed the default tenant-aware Client Onboarding pipeline
+  // STEP 7: Seed the default tenant-aware Client Onboarding pipeline
   // =========================================================================
-  console.log('Step 6: Seeding Client Onboarding pipelines...');
+  console.log('Step 7: Seeding Client Onboarding pipelines...');
 
   const workspaceCount = await seedClientOnboardingPipelines(superAdmin.id);
   console.log(`  Created/verified Client Onboarding pipelines for ${workspaceCount} tenants\n`);
@@ -902,8 +914,8 @@ async function main() {
   console.log('    Email: admin@oaktreesolutions.com.sg');
   console.log('    Password: Preparefortrouble!');
   console.log('\nNote: Change this password in production!');
-  console.log('\nTo create tenants, users, and companies, use the');
-  console.log('Super Admin account to access the Admin dashboard.\n');
+  console.log('\nDefault workspace: Oakcloud');
+  console.log('Use the Super Admin account to create users, companies, and reviewed service catalog entries.\n');
 }
 
 main()

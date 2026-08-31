@@ -113,10 +113,20 @@ npm run docker:down
 | `npm run db:generate` | Generate Prisma client and deterministically normalize generated TypeScript whitespace |
 | `npm run db:push` | Push schema to the database |
 | `npm run db:migrate` | Create and run a development migration |
-| `npm run db:seed` | Seed local sample data |
+| `npm run db:seed` | Bootstrap the default workspace and required system foundations |
 | `npm run db:studio` | Open Prisma Studio |
 
-The seed script is idempotent and can be run multiple times safely.
+The seed script is idempotent and can be run multiple times safely. On an empty
+database it creates an active `Oakcloud` workspace with the Services workspace
+and deadline/billing materialization enabled. For every non-deleted workspace it
+ensures system roles, default custom roles, the Singapore business calendar,
+starter deadline-rule drafts, active Client Onboarding document templates, and
+the published Client Onboarding task pipeline.
+
+The seed deliberately does not create companies, tasks, client services,
+billing occurrences, deadline occurrences, uploads, or other business records.
+Existing workspace status and settings are preserved. Service catalog entries
+remain subject to administrator review and activation.
 
 ## Development Commands
 

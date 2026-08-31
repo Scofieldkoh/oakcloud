@@ -68,9 +68,14 @@ Oakcloud is built around a few core principles:
 | Chart Of Accounts | Hierarchical accounts and external mapping |
 | Tasks | Tenant-scoped work tracked through Company-first desktop tables, responsive mobile cards, and stage detail modals |
 | Pipelines | Reusable, versioned stage templates; published versions are immutable and edits affect future tasks only |
+| Services | Tenant-wide operational service roster backed by a reviewed service catalog |
+| Deadlines | Rule-driven service deadlines with calendar and table workflows |
+| Billing | Scheduled billing occurrences, coverage checks, and billing status workflows |
 | E-signing | Envelope preparation, delivery, signer lifecycle, and certificate-backed completion |
 
-The seed creates or preserves the active `DR_Appointment of Corp Sec` Resolution and `Oaktree Master Services Agreement` Contract templates for every non-deleted tenant, retires legacy inactive Service Agreement names, and publishes a **Client Onboarding** pipeline with Company Profile, Generate Resolution, Generate Contract, and E-signing stages. Stage icons are curated Lucide outlines, while status surfaces are system-controlled rather than saved as user-defined colours. Use `npm run db:seed -- --client-onboarding-only` to apply only these template and pipeline changes without resetting unrelated seed data.
+On an empty database, the seed creates an active `Oakcloud` workspace with the operational Services workspace and deadline/billing materialization enabled. For every non-deleted workspace it ensures RBAC roles, the Singapore business calendar, starter deadline-rule drafts, active `DR_Appointment of Corp Sec` Resolution and `Oaktree Master Services Agreement` Contract templates, and a published **Client Onboarding** pipeline with Company Profile, Generate Resolution, Generate Contract, and E-signing stages. Existing workspace status and settings are preserved.
+
+The seed does not create companies, tasks, client services, billing or deadline occurrences, uploads, or other business records. Service catalog entries remain subject to administrator review and activation. Use `npm run db:seed -- --client-onboarding-only` to apply only the controlled template and pipeline changes.
 
 ## Planned Modules
 
