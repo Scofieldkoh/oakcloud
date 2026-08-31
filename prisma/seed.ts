@@ -4,8 +4,11 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { v5 as uuidv5 } from 'uuid';
-import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktree-service-agreement-v1';
 import { ensureWorkspaceSeedFoundation } from './seed-workspace-foundation';
+import {
+  CLIENT_ONBOARDING_DOCUMENT_TEMPLATES,
+  ensureSeededDocumentTemplate,
+} from './seed-document-templates';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -21,106 +24,10 @@ type ClientOnboardingTemplateIds = {
   resolution: string | null;
 };
 
-type SeedDocumentTemplate = {
-  name: string;
-  description: string;
-  category: 'CONTRACT' | 'RESOLUTION';
-  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
-  content: string;
-  placeholders: Prisma.InputJsonValue;
-};
-
-const CLIENT_ONBOARDING_RESOLUTION_TEMPLATE: SeedDocumentTemplate = {
-  name: 'DR_Appointment of Corp Sec',
-  description: 'Directors’ resolution for appointment of company secretary and corporate service provider.',
-  category: 'RESOLUTION',
-  compositionType: 'STANDARD',
-  content: `<p style="text-align: center;"><b><span style="font-size: 11pt;">{{company.name}}
-</span></b><span style="font-size: 11pt;">(Registration Number {{company.uen}})
-(Incorporated in the Republic of Singapore)
-</span><b style="font-size: 12pt;"><span style="font-size: 11pt;">(“Company”)</span></b></p><p><br></p><p><br></p><p><b><span style="font-size: 11pt;">DIRECTORS’ RESOLUTIONS IN WRITING PURSUANT TO ARTICLE 90 OF THE COMPANY’S ARTICLES OF ASSOCIATION</span></b></p><p>______________________________________________________________________________________</p><p><span style="font-size: 10pt;"></span></p><p><br></p><p>We, the undersigned, being all the directors of the Company (“Directors”) for the time being entitled to make any decision that may be made in a meeting of the Board of Directors, hereby unanimously consent to the adoption and approval of the following resolutions:</p><p><br></p><p><b>1.\tAPPOINTMENT OF SECRETARY </b></p><p><br></p><p>RESOLVED that the appointment of Tan Wei Jie (S9101817I) as Secretary of the Company be hereby approved with effect from his date of consent to act.</p><p><br></p><p><b>2.\tCORPORATE SERVICE PROVIDER</b></p><p><br></p><p>RESOLVED that Oaktree Accounting &amp; Corporate Solutions Pte. Ltd. (UEN: 202437906H) be hereby appointed as corporate secretarial agent of the Company with immediate effect.</p><p><br></p><p><b>3.\tNOTIFICATION AND LODGEMENT</b></p><p><br></p><p>RESOLVED that all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority. </p><p><br></p><p><br></p><p><br></p><p> </p><p><br></p><p>Dated this {{custom.resolution_date}}</p><p><br></p><div>{{#each directors}}</div><div data-flow-keep-together="true"><p><br></p><p><br></p><p><br></p><p>________________________</p><p>{{this.name}}</p><p>{{DESIGNATION({{this.role}})}}</p><p><span style="font-size: 10pt;">{{/each}}</span></p></div><p><span style="font-size: 10pt;"></span></p>`,
-  placeholders: [
-    {
-      key: 'custom.resolution_date',
-      path: 'custom.resolution_date',
-      type: 'date',
-      label: 'Resolution date',
-      source: 'custom',
-      category: 'custom',
-      required: true,
-    },
-  ],
-};
-
-const CLIENT_ONBOARDING_DOCUMENT_TEMPLATES: SeedDocumentTemplate[] = [
-  {
-    ...OAKTREE_SERVICE_AGREEMENT_V1.template,
-    description: 'Service Agreement template',
-    placeholders: OAKTREE_SERVICE_AGREEMENT_V1.template.placeholders as unknown as Prisma.InputJsonValue,
-  },
-  CLIENT_ONBOARDING_RESOLUTION_TEMPLATE,
-];
-
 const LEGACY_SERVICE_AGREEMENT_TEMPLATE_NAMES = [
   'Oaktree Local Master Services Agreement v1',
   'Service agreement',
 ];
-
-async function ensureSeededDocumentTemplate(
-  tx: Prisma.TransactionClient,
-  tenantId: string,
-  createdById: string,
-  definition: SeedDocumentTemplate,
-) {
-  const activeTemplate = await tx.documentTemplate.findFirst({
-    where: {
-      tenantId,
-      name: definition.name,
-      isActive: true,
-      deletedAt: null,
-    },
-    orderBy: [{ version: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
-  });
-  if (activeTemplate) return activeTemplate;
-
-  const existingTemplate = await tx.documentTemplate.findFirst({
-    where: { tenantId, name: definition.name, deletedAt: null },
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-  });
-  const materialChanged = Boolean(
-    existingTemplate
-    && (
-      existingTemplate.content !== definition.content
-      || JSON.stringify(existingTemplate.placeholders) !== JSON.stringify(definition.placeholders)
-    )
-  );
-  const templateData = {
-    name: definition.name,
-    description: definition.description,
-    category: definition.category,
-    compositionType: definition.compositionType,
-    content: definition.content,
-    placeholders: definition.placeholders,
-    isActive: true,
-    deletedAt: null,
-  };
-
-  return existingTemplate
-    ? tx.documentTemplate.update({
-      where: { id: existingTemplate.id },
-      data: {
-        ...templateData,
-        ...(materialChanged ? { version: { increment: 1 } } : {}),
-      },
-    })
-    : tx.documentTemplate.create({
-      data: {
-        tenantId,
-        createdById,
-        ...templateData,
-      },
-    });
-}
 
 async function seedClientOnboardingDocumentTemplates(
   tx: Prisma.TransactionClient,

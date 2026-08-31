@@ -46,10 +46,9 @@ describe('default Client Onboarding pipeline seed', () => {
     expect(seed).toContain('deletedAt: null');
   });
 
-  it('seeds the active contract and resolution records and retires the legacy agreement', () => {
-    expect(seed).toContain('OAKTREE_SERVICE_AGREEMENT_V1.template');
-    expect(seed).toContain("name: 'DR_Appointment of Corp Sec'");
-    expect(seed).toContain('documentTemplate.create');
+  it('wires canonical contract and resolution records and retires the legacy agreement', () => {
+    expect(seed).toContain('CLIENT_ONBOARDING_DOCUMENT_TEMPLATES');
+    expect(seed).toContain('ensureSeededDocumentTemplate(tx, tenantId, createdById, definition)');
     expect(seed).toContain('seedClientOnboardingDocumentTemplates(tx, workspace.id, createdById)');
     expect(seed).toContain("'Oaktree Local Master Services Agreement v1'");
     expect(seed).toContain('documentTemplate.updateMany');
