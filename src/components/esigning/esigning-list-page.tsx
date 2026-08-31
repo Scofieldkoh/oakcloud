@@ -237,7 +237,7 @@ export function EnvelopeActionsDropdown({
             icon={<Trash2 className="h-4 w-4" />}
             onClick={() => onDelete(envelope)}
           >
-            Delete draft
+            {envelope.status === 'COMPLETED' ? 'Delete envelope' : 'Delete draft'}
           </DropdownItem>
         ) : null}
       </DropdownMenu>
@@ -955,19 +955,35 @@ export function EsigningListPage() {
 
           try {
             await deleteEnvelope.mutateAsync(deleteTarget.id);
-            toast.success('Draft deleted');
+            toast.success(
+              deleteTarget.status === 'COMPLETED'
+                ? 'Envelope permanently deleted'
+                : 'Draft deleted'
+            );
             setDeleteTarget(null);
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to delete draft');
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : deleteTarget.status === 'COMPLETED'
+                  ? 'Failed to delete envelope'
+                  : 'Failed to delete draft'
+            );
           }
         }}
-        title="Delete draft envelope?"
+        title={
+          deleteTarget?.status === 'COMPLETED'
+            ? 'Delete completed envelope?'
+            : 'Delete draft envelope?'
+        }
         description={
           deleteTarget
-            ? `This permanently removes "${deleteTarget.title}" and its uploaded source files.`
+            ? deleteTarget.status === 'COMPLETED'
+              ? `This permanently removes "${deleteTarget.title}", its signed documents, certificates, and download access.`
+              : `This permanently removes "${deleteTarget.title}" and its uploaded source files.`
             : undefined
         }
-        confirmLabel="Delete draft"
+        confirmLabel={deleteTarget?.status === 'COMPLETED' ? 'Delete envelope' : 'Delete draft'}
         isLoading={deleteEnvelope.isPending}
       />
 
@@ -1014,26 +1030,36 @@ export function EsigningListPage() {
           {manualLinks.map((link) => (
             <div
               key={link.recipientId}
-              className="rounded-2xl border border-border-primary bg-background-primary p-4"
+              className="min-w-0 rounded-2xl border border-border-primary bg-background-primary p-4"
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <div className="min-w-0">
                   <div className="font-medium text-text-primary">{link.recipientName}</div>
                   <div className="break-all text-sm text-text-secondary">{link.recipientEmail}</div>
-                  <div className="mt-2 break-all text-xs text-text-muted">{link.signingUrl}</div>
+                  <div className="mt-2 flex min-w-0 items-center gap-2">
+                    <a
+                      href={link.signingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={link.signingUrl}
+                      className="min-w-0 flex-1 truncate rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-xs text-text-secondary hover:border-oak-primary/40 hover:text-text-primary"
+                    >
+                      {link.signingUrl}
+                    </a>
+                    <Button
+                      className="shrink-0"
+                      variant="secondary"
+                      onClick={() =>
+                        void navigator.clipboard
+                          .writeText(link.signingUrl)
+                          .then(() => toast.success('Manual link copied'))
+                          .catch(() => toast.error('Clipboard access failed'))
+                      }
+                    >
+                      Copy
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  className="w-full sm:w-auto"
-                  variant="secondary"
-                  onClick={() =>
-                    void navigator.clipboard
-                      .writeText(link.signingUrl)
-                      .then(() => toast.success('Manual link copied'))
-                      .catch(() => toast.error('Clipboard access failed'))
-                  }
-                >
-                  Copy
-                </Button>
               </div>
             </div>
           ))}

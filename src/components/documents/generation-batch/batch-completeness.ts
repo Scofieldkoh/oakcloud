@@ -121,7 +121,12 @@ export function selectItemCompleteness({
     requirements.push({
       id: 'sa:representative',
       label: 'Authorised representative',
-      filled: Boolean(agreement?.authorizedContactId),
+      filled: (agreement?.authorizedContactIds.length ?? 0) > 0,
+    });
+    requirements.push({
+      id: 'sa:signer',
+      label: 'At least one signer',
+      filled: (agreement?.signerContactIds.length ?? 0) > 0,
     });
     requirements.push({
       id: 'sa:entities',

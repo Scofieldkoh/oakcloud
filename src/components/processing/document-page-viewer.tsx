@@ -135,7 +135,10 @@ interface DocumentPageViewerProps {
 const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const DEFAULT_ZOOM_INDEX = 6; // 150%
 const MOBILE_DEFAULT_ZOOM_INDEX = 4; // 100%
-const PINCH_ZOOM_STEP_PX = 40; // Pinch distance (px) required to move one zoom level
+const MIN_ZOOM_LEVEL = ZOOM_LEVELS[0];
+const MAX_ZOOM_LEVEL = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+const MOBILE_ZOOM_STEP = 0.01;
+const PINCH_ZOOM_STEP_PX = 40; // Pinch distance (px) required to move one percent
 export const DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS = [...ZOOM_LEVELS] as const;
 
 // Fixed padding for bounding boxes (normalized 0-1 coordinates)
@@ -158,6 +161,10 @@ function getClosestZoomIndex(zoomLevel: number): number {
     const closestDistance = Math.abs(ZOOM_LEVELS[closestIndex] - zoomLevel);
     return currentDistance < closestDistance ? candidateIndex : closestIndex;
   }, DEFAULT_ZOOM_INDEX);
+}
+
+function clampZoomLevel(zoomLevel: number): number {
+  return Math.min(MAX_ZOOM_LEVEL, Math.max(MIN_ZOOM_LEVEL, Math.round(zoomLevel * 100) / 100));
 }
 
 // =============================================================================
@@ -477,6 +484,7 @@ export function DocumentPageViewer({
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageCount, setPageCount] = useState(0);
   const [zoomIndexInternal, setZoomIndexInternal] = useState(DEFAULT_ZOOM_INDEX);
+  const [zoomLevelInternal, setZoomLevelInternal] = useState(ZOOM_LEVELS[DEFAULT_ZOOM_INDEX]);
   const [rotation, setRotation] = useState(initialRotation); // 0, 90, 180, 270 degrees
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(true);
@@ -499,7 +507,11 @@ export function DocumentPageViewer({
   const isZoomControlled = typeof zoomLevel === 'number';
   const zoomIndex = isZoomControlled ? getClosestZoomIndex(zoomLevel) : zoomIndexInternal;
   const showHighlights = showHighlightsProp ?? showHighlightsInternal;
-  const zoom = ZOOM_LEVELS[zoomIndex];
+  const zoom = isMobile
+    ? clampZoomLevel(
+        isZoomControlled ? zoomLevel ?? ZOOM_LEVELS[MOBILE_DEFAULT_ZOOM_INDEX] : zoomLevelInternal
+      )
+    : ZOOM_LEVELS[zoomIndex];
   const thumbnailPages = useMemo<PageInfo[]>(() => {
     if (data?.pages?.length) {
       return data.pages;
@@ -525,9 +537,9 @@ export function DocumentPageViewer({
   const continuousCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const continuousRenderTasksRef = useRef<Map<number, { cancel: () => void }>>(new Map());
   const scrollFrameRef = useRef<number | null>(null);
-  const zoomIndexRef = useRef(zoomIndex);
+  const zoomRef = useRef(zoom);
   const pinchStartDistanceRef = useRef<number | null>(null);
-  const pinchStartZoomIndexRef = useRef(zoomIndex);
+  const pinchStartZoomRef = useRef(zoom);
   const panStateRef = useRef<{
     pointerId: number;
     startClientX: number;
@@ -560,6 +572,24 @@ export function DocumentPageViewer({
       onZoomLevelChange?.(ZOOM_LEVELS[nextZoomIndex]);
     },
     [isZoomControlled, onZoomLevelChange, zoomIndexInternal, zoomLevel]
+  );
+
+  const setResolvedMobileZoom = useCallback(
+    (nextZoomOrUpdater: number | ((current: number) => number)) => {
+      const currentZoom = zoom;
+      const nextZoomRaw =
+        typeof nextZoomOrUpdater === 'function'
+          ? nextZoomOrUpdater(currentZoom)
+          : nextZoomOrUpdater;
+      const nextZoom = clampZoomLevel(nextZoomRaw);
+
+      if (!isZoomControlled) {
+        setZoomLevelInternal(nextZoom);
+      }
+
+      onZoomLevelChange?.(nextZoom);
+    },
+    [isZoomControlled, onZoomLevelChange, zoom]
   );
 
   const handleToggleHighlights = useCallback(() => {
@@ -609,12 +639,22 @@ export function DocumentPageViewer({
   }, [currentPage, navigateToPage]);
 
   const handleZoomIn = useCallback(() => {
+    if (isMobile) {
+      setResolvedMobileZoom((prev) => prev + MOBILE_ZOOM_STEP);
+      return;
+    }
+
     setResolvedZoomIndex((prev) => prev + 1);
-  }, [setResolvedZoomIndex]);
+  }, [isMobile, setResolvedMobileZoom, setResolvedZoomIndex]);
 
   const handleZoomOut = useCallback(() => {
+    if (isMobile) {
+      setResolvedMobileZoom((prev) => prev - MOBILE_ZOOM_STEP);
+      return;
+    }
+
     setResolvedZoomIndex((prev) => prev - 1);
-  }, [setResolvedZoomIndex]);
+  }, [isMobile, setResolvedMobileZoom, setResolvedZoomIndex]);
 
   const handleScrollContainerPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -809,8 +849,10 @@ export function DocumentPageViewer({
   // On mobile, default initial zoom to 100% instead of 150%.
   useEffect(() => {
     if (!isMobile || isZoomControlled) return;
-    setResolvedZoomIndex((prev) => (prev === DEFAULT_ZOOM_INDEX ? MOBILE_DEFAULT_ZOOM_INDEX : prev));
-  }, [isMobile, isZoomControlled, setResolvedZoomIndex]);
+    setZoomLevelInternal((prev) =>
+      prev === ZOOM_LEVELS[DEFAULT_ZOOM_INDEX] ? ZOOM_LEVELS[MOBILE_DEFAULT_ZOOM_INDEX] : prev
+    );
+  }, [isMobile, isZoomControlled]);
 
   // Load PDF when URL is available
   useEffect(() => {
@@ -1068,10 +1110,10 @@ export function DocumentPageViewer({
     []
   );
 
-  // Keep latest zoom index for gesture handlers without re-binding event listeners.
+  // Keep latest zoom level for gesture handlers without re-binding event listeners.
   useEffect(() => {
-    zoomIndexRef.current = zoomIndex;
-  }, [zoomIndex]);
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   // Notify parent of page changes
   useEffect(() => {
@@ -1280,7 +1322,7 @@ export function DocumentPageViewer({
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 2) return;
       pinchStartDistanceRef.current = getTouchDistance(e.touches[0], e.touches[1]);
-      pinchStartZoomIndexRef.current = zoomIndexRef.current;
+      pinchStartZoomRef.current = zoomRef.current;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -1291,19 +1333,16 @@ export function DocumentPageViewer({
 
       const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
       const pinchDelta = currentDistance - pinchStartDistanceRef.current;
-      const zoomDelta = Math.round(pinchDelta / PINCH_ZOOM_STEP_PX);
-      const nextZoomIndex = Math.max(
-        0,
-        Math.min(ZOOM_LEVELS.length - 1, pinchStartZoomIndexRef.current + zoomDelta)
-      );
+      const zoomDelta = Math.round(pinchDelta / PINCH_ZOOM_STEP_PX) * MOBILE_ZOOM_STEP;
+      const nextZoom = clampZoomLevel(pinchStartZoomRef.current + zoomDelta);
 
-      setResolvedZoomIndex((prev) => (prev === nextZoomIndex ? prev : nextZoomIndex));
+      setResolvedMobileZoom((prev) => (prev === nextZoom ? prev : nextZoom));
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         pinchStartDistanceRef.current = getTouchDistance(e.touches[0], e.touches[1]);
-        pinchStartZoomIndexRef.current = zoomIndexRef.current;
+        pinchStartZoomRef.current = zoomRef.current;
         return;
       }
       pinchStartDistanceRef.current = null;
@@ -1324,7 +1363,7 @@ export function DocumentPageViewer({
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchCancel);
     };
-  }, [isMobile, setResolvedZoomIndex]);
+  }, [isMobile, setResolvedMobileZoom]);
 
   // ==========================================================================
   // Computed values
@@ -1377,6 +1416,7 @@ export function DocumentPageViewer({
   return (
     <div
       ref={containerRef}
+      style={isFullscreen ? { height: '100dvh' } : undefined}
       className={cn(
         'flex flex-col bg-background-secondary overflow-hidden',
         isFullscreen && 'fixed inset-0 z-50',
@@ -1423,7 +1463,7 @@ export function DocumentPageViewer({
         <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
           <button
             onClick={handleZoomOut}
-            disabled={zoomIndex === 0}
+            disabled={isMobile ? zoom <= MIN_ZOOM_LEVEL : zoomIndex === 0}
             className="btn-ghost btn-xs p-1.5"
             title="Zoom out (-)"
           >
@@ -1436,7 +1476,7 @@ export function DocumentPageViewer({
 
           <button
             onClick={handleZoomIn}
-            disabled={zoomIndex === ZOOM_LEVELS.length - 1}
+            disabled={isMobile ? zoom >= MAX_ZOOM_LEVEL : zoomIndex === ZOOM_LEVELS.length - 1}
             className="btn-ghost btn-xs p-1.5"
             title="Zoom in (+)"
           >
@@ -1514,7 +1554,7 @@ export function DocumentPageViewer({
       </div>
 
       {/* PDF viewer with optional thumbnail sidebar */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Page thumbnail sidebar */}
         {allowPagePanel && showThumbnails && thumbnailPages.length > 0 && (
           <PageThumbnailSidebar
@@ -1530,7 +1570,7 @@ export function DocumentPageViewer({
         )}
 
         {/* Main viewer area with navigation bars */}
-        <div className="flex-1 flex overflow-hidden relative">
+        <div className="flex-1 flex min-h-0 overflow-hidden relative">
           {/* Left navigation bar - sticky full height */}
           {currentPage > 1 && (
             <button
@@ -1565,7 +1605,7 @@ export function DocumentPageViewer({
             tabIndex={0}
           >
             {viewMode === 'continuous' ? (
-              <div className="flex min-w-full flex-col items-center gap-4">
+              <div className="flex min-w-full flex-col items-start gap-4 sm:items-center">
                 {pageCount === 0 ? (
                   <div className="flex min-h-96 items-center justify-center text-text-secondary">
                     <RefreshCw className="h-6 w-6 animate-spin text-text-muted" />

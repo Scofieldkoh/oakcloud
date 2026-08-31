@@ -12,6 +12,7 @@ import type { EsigningEnvelopeListItem } from '@/types/esigning';
 const mocks = vi.hoisted(() => ({
   createEnvelope: vi.fn(() => new Promise(() => undefined)),
   deleteEnvelope: vi.fn(),
+  resendEnvelope: vi.fn(),
   uploadDocument: vi.fn(),
   locationSpy: vi.fn(),
   lastListParams: null as Partial<import('@/lib/validations/esigning').EsigningListQueryInput> | null,
@@ -101,7 +102,7 @@ vi.mock('@/hooks/use-esigning', () => ({
     mocks.lastListParams = params;
     return { data: mocks.listData, isLoading: false };
   },
-  useResendEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
+  useResendEsigningEnvelope: () => ({ mutateAsync: mocks.resendEnvelope }),
   useRetryEsigningEnvelopeProcessing: () => ({ mutateAsync: vi.fn() }),
   uploadEsigningDocumentRequest: mocks.uploadDocument,
   useVoidEsigningEnvelope: () => ({ mutateAsync: vi.fn() }),
@@ -189,6 +190,27 @@ describe('EnvelopeActionsDropdown', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Duplicate envelope' })).toBeInTheDocument();
+  });
+
+  it('shows the permanent delete action for a completed envelope when permitted', async () => {
+    const onDelete = vi.fn();
+    const completedEnvelope = envelope({ canDelete: true });
+
+    render(
+      <EnvelopeActionsDropdown
+        envelope={completedEnvelope}
+        onDuplicate={vi.fn()}
+        onResend={vi.fn()}
+        onDelete={onDelete}
+        onVoid={vi.fn()}
+        onRetryPdf={vi.fn()}
+        onDownload={vi.fn()}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete envelope' }));
+
+    expect(onDelete).toHaveBeenCalledWith(completedEnvelope);
   });
 
   it('keeps an unrelated request failure visible after a successful reminder', () => {
@@ -371,5 +393,44 @@ describe('EsigningListPage company filter query', () => {
 
     await waitFor(() => expect(mocks.lastListParams?.companyId).toBe('company-2'));
     expect(mocks.lastListParams?.page).toBe(1);
+  });
+});
+
+describe('EsigningListPage manual signing links', () => {
+  it('constrains long signing URLs inside a shrinkable link field', async () => {
+    const signingUrl = `https://staging.oakcloud.app/esigning/sign/${'a'.repeat(160)}`;
+    mocks.listData = {
+      envelopes: [envelope({
+        canResend: true,
+        resendableRecipientCount: 1,
+      })],
+      companyOptions: [],
+      total: 1,
+      statusCounts: {
+        DRAFT: 0,
+        SENT: 0,
+        IN_PROGRESS: 1,
+        COMPLETED: 0,
+        VOIDED: 0,
+        DECLINED: 0,
+        EXPIRED: 0,
+      },
+    };
+    mocks.resendEnvelope.mockResolvedValue({
+      manualLinks: [{
+        recipientId: 'recipient-1',
+        recipientName: 'Koh Zhi Yong',
+        recipientEmail: 'zhiyong.koh@oakcloudresolutions.com.sg',
+        signingUrl,
+      }],
+    });
+
+    render(<EsigningListPage />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Resend active requests' }));
+
+    const link = await screen.findByRole('link', { name: signingUrl });
+    expect(link).toHaveClass('min-w-0', 'flex-1', 'truncate');
+    expect(link.parentElement).toHaveClass('min-w-0');
   });
 });

@@ -27,9 +27,9 @@ describe('client service activation schema', () => {
 
   it('adds an immutable client service source with nullable agreement lineage', () => {
     expect(schema).toContain('enum ClientServiceSource');
-    expect(schema).toContain('source               ClientServiceSource  @default(AGREEMENT)');
-    expect(schema).toContain('agreementId          String?');
-    expect(schema).toContain('agreementItemId      String?');
+    expect(schema).toMatch(/^\s*source\s+ClientServiceSource\s+@default\(AGREEMENT\)(?:\s+@map\("[^"]+"\))?\s*$/m);
+    expect(schema).toMatch(/^\s*agreementId\s+String\?(?:\s+@map\("[^"]+"\))?\s*$/m);
+    expect(schema).toMatch(/^\s*agreementItemId\s+String\?(?:\s+@map\("[^"]+"\))?\s*$/m);
     expect(schema).toContain('@@index([tenantId, companyId, serviceVariantId, startDate, deletedAt])');
   });
 

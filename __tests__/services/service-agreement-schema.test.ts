@@ -6,6 +6,7 @@ describe('service agreement draft schema', () => {
   const schema = readFileSync(resolve(process.cwd(), 'prisma/schema.prisma'), 'utf8');
 
   it('stores normalized draft selections beside generated documents', () => {
+    const serviceAgreement = schema.match(/model ServiceAgreement\s+\{[\s\S]*?\n\}/)?.[0] ?? '';
     for (const model of [
       'ServiceAgreement',
       'ServiceAgreementEntity',
@@ -15,7 +16,7 @@ describe('service agreement draft schema', () => {
     ]) {
       expect(schema).toContain(`model ${model}`);
     }
-    expect(schema).toContain('generatedDocumentId String @unique');
+    expect(serviceAgreement).toMatch(/^\s*generatedDocumentId\s+String\s+@unique(?:\s+@map\("[^"]+"\))?\s*$/m);
     expect(schema).toContain('@@unique([itemId, agreementEntityId])');
   });
 });

@@ -15,6 +15,11 @@ describe('initial Service Agreement content bundle', () => {
       /OpenSign|DocumentId/,
     );
     expect(OAKTREE_SERVICE_AGREEMENT_V1.template.content).not.toContain('<img');
+    expect(OAKTREE_SERVICE_AGREEMENT_V1.template.placeholders.map((placeholder) => placeholder.key)).toEqual([
+      'custom.agreementDate',
+      'custom.effectiveDate',
+      'custom.termMonths',
+    ]);
     expect(OAKTREE_SERVICE_AGREEMENT_V1.variants).toHaveLength(2);
     expect(OAKTREE_SERVICE_AGREEMENT_V1.families.every((family) => !family.isActive)).toBe(
       true,

@@ -10,6 +10,7 @@ import { storage } from '@/lib/storage';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
 import { prisma } from '@/lib/prisma';
 import { ensureEsigningEnvelopeArtifacts } from '@/services/esigning-pdf.service';
+import { getEsigningDocumentVariantFileName } from '@/lib/esigning-document-filename';
 
 interface RouteParams {
   params: Promise<{ id: string; docId: string }>;
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
       select: {
         fileName: true,
+        originalFileName: true,
         signedStoragePath: true,
       },
     });
@@ -53,9 +55,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const buffer = await storage.download(stored.signedStoragePath);
     const disposition = searchParams.get('download') === 'true' ? 'attachment' : 'inline';
-    const fileName = stored.fileName.toLowerCase().endsWith('.pdf')
-      ? stored.fileName.replace(/\.pdf$/i, '-signed.pdf')
-      : `${stored.fileName}-signed.pdf`;
+    const fileName = getEsigningDocumentVariantFileName(stored, 'signed');
 
     return new Response(new Uint8Array(buffer), {
       headers: {

@@ -61,6 +61,55 @@ describe('document party service', () => {
     expect(result.contacts.map((party) => party.id)).toEqual(['contact-1']);
   });
 
+  it('aggregates and authority-ranks every appointment for one company contact', async () => {
+    vi.mocked(prisma.company.findFirst).mockResolvedValue({
+      id: 'company-1',
+      officers: [
+        { id: 'officer-director', contactId: 'contact-1', name: 'Alex', role: 'DIRECTOR' },
+        { id: 'officer-ceo', contactId: 'contact-1', name: 'Alex', role: 'CEO' },
+      ],
+      shareholders: [
+        {
+          id: 'shareholder-1',
+          contactId: 'contact-1',
+          name: 'Alex',
+          shareClass: 'ORDINARY',
+        },
+      ],
+      contacts: [
+        { contactId: 'contact-1', relationship: 'COO' },
+        { contactId: 'contact-1', relationship: 'Managing Director' },
+        { contactId: 'contact-1', relationship: 'Advisor' },
+      ],
+    } as never);
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([
+      {
+        id: 'contact-1',
+        fullName: 'Alex',
+        contactType: 'INDIVIDUAL',
+        fullAddress: null,
+        contactDetails: [],
+      },
+    ] as never);
+
+    const result = await getDocumentPartyOptions('company-1', 'tenant-1');
+
+    expect(result.directors.map((party) => party.id)).toEqual(['officer-director']);
+    expect(result.contacts).toHaveLength(1);
+    expect(result.contacts[0]).toMatchObject({
+      id: 'contact-1',
+      detail: 'Director',
+      appointments: [
+        'Director',
+        'Managing Director',
+        'CEO',
+        'COO',
+        'Advisor',
+        'Shareholder',
+      ],
+    });
+  });
+
   it('rejects a director outside the selected company', async () => {
     vi.mocked(prisma.company.findFirst).mockResolvedValue({
       id: 'company-1',

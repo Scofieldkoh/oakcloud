@@ -82,9 +82,8 @@ function sessionToEditableItem(
       useLetterhead: state.useLetterhead,
       serviceAgreement: envelope.agreement
         ? {
-            authorizedContactId:
-              envelope.agreement.authorizedContactId
-              ?? envelope.agreement.authorizedRepresentativeSnapshot.id,
+            authorizedContactIds: envelope.agreement.authorizedContactIds,
+            signerContactIds: envelope.agreement.signerContactIds,
             entityIds: envelope.agreement.entities.map((entity) => entity.companyId),
             agreementDate: envelope.agreement.agreementDate,
             effectiveDate: envelope.agreement.effectiveDate,

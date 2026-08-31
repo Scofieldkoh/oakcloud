@@ -28,6 +28,10 @@ export interface BatchItemConfiguratorProps {
   onPartyRetry?: () => void;
   onContactSearch?: (query: string) => void;
   contactsLoading?: boolean;
+  companySearchQuery?: string;
+  onCompanySearch?: (query: string) => void;
+  companySearchLoading?: boolean;
+  onPrimaryCompanyChange?: (companyId: string | null, company: Company | null) => void;
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   templateFields?: CustomPlaceholderDefinition[];
@@ -78,12 +82,14 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
         primaryCompany={props.primaryCompany}
         companies={props.companies}
         contacts={companyContacts}
+        companySearchQuery={props.companySearchQuery}
+        onCompanySearch={props.onCompanySearch}
+        companySearchLoading={props.companySearchLoading}
+        onPrimaryCompanyChange={props.onPrimaryCompanyChange}
         masterFields={masterFields}
         effectiveMasterValues={effectiveMasterValues}
-        templateFields={itemOnlyFields}
         onPatch={onPatch}
         disabled={disabled}
-        completeness={props.completeness}
       />
     )
     : (

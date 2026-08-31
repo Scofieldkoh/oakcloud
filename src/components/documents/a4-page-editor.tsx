@@ -167,6 +167,7 @@ function sanitizeHtml(html: string): string {
       'data-flow-continuation-item',
       'data-flow-oversized',
       'data-flow-keep-together',
+      'data-template-each',
     ],
     ALLOWED_URI_REGEXP:
       /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,

@@ -28,6 +28,8 @@ export interface DocumentContact {
   email?: string | null;
   phone?: string | null;
   designation?: string | null;
+  /** Authority-ranked appointments currently held by this contact. */
+  appointments?: string[];
 }
 
 export interface TemplatePartial {

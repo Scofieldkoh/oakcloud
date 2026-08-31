@@ -10,7 +10,10 @@ const hooksMock = vi.hoisted(() => ({
   )),
 }));
 const servicesSettingsMock = vi.hoisted(() => ({ useServicesWorkspaceSettings: vi.fn() }));
-vi.mock('@/hooks/use-client-services', () => hooksMock);
+vi.mock('@/hooks/use-client-services', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/hooks/use-client-services')>(),
+  ...hooksMock,
+}));
 vi.mock('@/hooks/use-services-workspace-settings', () => servicesSettingsMock);
 
 import { CompanyServicesTab } from '@/components/companies/company-detail/company-services-tab';

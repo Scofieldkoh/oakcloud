@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const prismaMock = vi.hoisted(() => ({
   generatedDocument: { findFirst: vi.fn() },
   company: { findMany: vi.fn() },
-  companyContact: { findFirst: vi.fn() },
+  companyContact: { findFirst: vi.fn(), findMany: vi.fn() },
+  companyOfficer: { findMany: vi.fn() },
+  companyShareholder: { findMany: vi.fn() },
   serviceVariant: { findFirst: vi.fn() },
   templatePartial: { findMany: vi.fn() },
   serviceAgreementEntity: { create: vi.fn(), deleteMany: vi.fn() },
@@ -61,6 +63,8 @@ describe('service agreement draft persistence', () => {
     vi.clearAllMocks();
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
     prismaMock.serviceAgreement.findFirst.mockResolvedValue(null);
+    prismaMock.companyOfficer.findMany.mockResolvedValue([]);
+    prismaMock.companyShareholder.findMany.mockResolvedValue([]);
     companyAccessMock.checkUserCompanyAccess.mockResolvedValue(true);
   });
 
@@ -145,6 +149,7 @@ describe('service agreement draft persistence', () => {
   it('updates a persisted item in place when its variant changes', async () => {
     const companyId = '11111111-1111-4111-8111-111111111111';
     const contactId = '22222222-2222-4222-8222-222222222222';
+    const secondContactId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const documentId = '33333333-3333-4333-8333-333333333333';
     const agreementId = '44444444-4444-4444-8444-444444444444';
     const itemId = '55555555-5555-4555-8555-555555555555';
@@ -158,14 +163,31 @@ describe('service agreement draft persistence', () => {
       { id: companyId, name: 'Alpha Pte. Ltd.', uen: '11111111A' },
     ]);
     companyAccessMock.checkUserCompanyAccess.mockResolvedValue(true);
-    prismaMock.companyContact.findFirst.mockResolvedValue({
-      relationship: 'Director',
+    prismaMock.companyContact.findMany.mockResolvedValue([
+      {
+        relationship: 'Director',
+        contact: {
+          id: contactId,
+          fullName: 'Alex Tan',
+          contactDetails: [],
+        },
+      },
+      {
+        relationship: 'Manager',
+        contact: {
+          id: secondContactId,
+          fullName: 'Bea Lim',
+          contactDetails: [],
+        },
+      },
+    ]);
+    prismaMock.companyShareholder.findMany.mockResolvedValue([{
       contact: {
         id: contactId,
         fullName: 'Alex Tan',
         contactDetails: [],
       },
-    });
+    }]);
     prismaMock.serviceAgreement.findUnique
       .mockResolvedValueOnce({
         id: agreementId,
@@ -177,14 +199,11 @@ describe('service agreement draft persistence', () => {
         id: agreementId,
         generatedDocumentId: documentId,
         primaryCompanyId: companyId,
-        authorizedContactId: contactId,
-        authorizedRepresentativeSnapshot: {
-          id: contactId,
-          name: 'Alex Tan',
-          role: 'Director',
-          email: null,
-          phone: null,
-        },
+        authorizedRepresentativeSnapshots: [
+          { id: contactId, name: 'Alex Tan', role: 'Director', email: null, phone: null },
+          { id: secondContactId, name: 'Bea Lim', role: 'Manager', email: null, phone: null },
+        ],
+        signerContactIds: [contactId, secondContactId],
         agreementDate: now,
         effectiveDate: now,
         termMonths: 12,
@@ -229,7 +248,12 @@ describe('service agreement draft persistence', () => {
       documentId,
       {
         primaryCompanyId: companyId,
-        authorizedContactId: contactId,
+        authorizedContactIds: [contactId, secondContactId],
+        authorizedRepresentativeRoles: {
+          [contactId]: 'Shareholder',
+          [secondContactId]: 'Manager',
+        },
+        signerContactIds: [contactId, secondContactId],
         entityIds: [companyId],
         agreementDate: '2026-07-30',
         effectiveDate: '2026-07-30',
@@ -262,6 +286,19 @@ describe('service agreement draft persistence', () => {
     );
 
     expect(prismaMock.serviceAgreementItem.create).not.toHaveBeenCalled();
+    expect(prismaMock.serviceAgreement.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        signerContactIds: [contactId, secondContactId],
+        authorizedRepresentativeSnapshots: [
+          expect.objectContaining({
+            id: contactId,
+            name: 'Alex Tan',
+            role: 'Shareholder',
+          }),
+          expect.objectContaining({ id: secondContactId, name: 'Bea Lim' }),
+        ],
+      }),
+    }));
     expect(prismaMock.serviceAgreementItem.update).toHaveBeenCalledWith({
       where: { id: itemId },
       data: expect.objectContaining({
@@ -298,8 +335,8 @@ describe('service agreement draft persistence', () => {
         id: agreementId,
         status: 'DRAFT',
         primaryCompanyId: companyId,
-        authorizedContactId: null,
-        authorizedRepresentativeSnapshot: pinnedRepresentative,
+        authorizedRepresentativeSnapshots: [pinnedRepresentative],
+        signerContactIds: [contactId],
         items: [{
           id: itemId,
           serviceVariantId: variantId,
@@ -311,8 +348,8 @@ describe('service agreement draft persistence', () => {
         id: agreementId,
         generatedDocumentId: documentId,
         primaryCompanyId: companyId,
-        authorizedContactId: null,
-        authorizedRepresentativeSnapshot: pinnedRepresentative,
+        authorizedRepresentativeSnapshots: [pinnedRepresentative],
+        signerContactIds: [contactId],
         agreementDate: now,
         effectiveDate: now,
         termMonths: 12,
@@ -336,7 +373,8 @@ describe('service agreement draft persistence', () => {
       documentId,
       {
         primaryCompanyId: companyId,
-        authorizedContactId: contactId,
+        authorizedContactIds: [contactId],
+        signerContactIds: [contactId],
         entityIds: [companyId],
         agreementDate: '2026-07-30',
         effectiveDate: '2026-07-30',
@@ -364,11 +402,83 @@ describe('service agreement draft persistence', () => {
       actor,
     );
 
-    expect(prismaMock.companyContact.findFirst).not.toHaveBeenCalled();
-    expect(saved.authorizedRepresentativeSnapshot).toEqual(pinnedRepresentative);
+    expect(prismaMock.companyContact.findMany).not.toHaveBeenCalled();
+    expect(saved.authorizedRepresentativeSnapshots).toEqual([pinnedRepresentative]);
     expect(prismaMock.serviceAgreement.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      update: expect.objectContaining({ authorizedContactId: null }),
+      update: expect.objectContaining({
+        authorizedRepresentativeSnapshots: [pinnedRepresentative],
+        signerContactIds: [contactId],
+      }),
     }));
+  });
+
+  it('rejects a changed role on a saved representative when it is not current', async () => {
+    const companyId = '11111111-1111-4111-8111-111111111111';
+    const contactId = '22222222-2222-4222-8222-222222222222';
+    const documentId = '33333333-3333-4333-8333-333333333333';
+    const itemId = '55555555-5555-4555-8555-555555555555';
+    const variantId = '66666666-6666-4666-8666-666666666666';
+    const pinnedRepresentative = {
+      id: contactId,
+      name: 'Pinned Representative',
+      role: 'Director',
+      email: 'pinned@example.com',
+      phone: '+65 6000 0000',
+    };
+    prismaMock.generatedDocument.findFirst.mockResolvedValue({ id: documentId });
+    prismaMock.company.findMany.mockResolvedValue([
+      { id: companyId, name: 'Alpha Pte. Ltd.', uen: '11111111A' },
+    ]);
+    prismaMock.serviceAgreement.findUnique.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+      primaryCompanyId: companyId,
+      authorizedRepresentativeSnapshots: [pinnedRepresentative],
+      items: [{
+        id: itemId,
+        serviceVariantId: variantId,
+        partialPlaceholdersSnapshot: [],
+      }],
+      entities: [],
+    });
+    prismaMock.companyContact.findMany.mockResolvedValue([{
+      relationship: 'Director',
+      contact: {
+        id: contactId,
+        fullName: 'Pinned Representative',
+        contactDetails: [],
+      },
+    }]);
+
+    await expect(upsertServiceAgreementDraft(documentId, {
+      primaryCompanyId: companyId,
+      authorizedContactIds: [contactId],
+      authorizedRepresentativeRoles: { [contactId]: 'CEO' },
+      signerContactIds: [contactId],
+      entityIds: [companyId],
+      agreementDate: '2026-07-30',
+      effectiveDate: '2026-07-30',
+      termMonths: 12,
+      items: [{
+        id: itemId,
+        clientKey: itemId,
+        variantId,
+        entityIds: [companyId],
+        startDate: '2026-07-30',
+        endDate: null,
+        fieldValues: {},
+        displayOrder: 0,
+        feeLines: [{
+          clientKey: 'fee-1',
+          companyId,
+          description: 'Annual fee',
+          amount: '500.00',
+          currency: 'SGD',
+          billingFrequency: 'ANNUALLY',
+          displayOrder: 0,
+        }],
+      }],
+    }, actor)).rejects.toThrow('CEO is not a current appointment');
   });
 
   it('rechecks access to every agreement entity when a draft is read', async () => {
@@ -377,14 +487,14 @@ describe('service agreement draft persistence', () => {
       id: 'agreement-1',
       generatedDocumentId: 'document-1',
       primaryCompanyId: 'company-1',
-      authorizedContactId: 'contact-1',
-      authorizedRepresentativeSnapshot: {
+      authorizedRepresentativeSnapshots: [{
         id: 'contact-1',
         name: 'Alex Tan',
         role: 'Director',
         email: null,
         phone: null,
-      },
+      }],
+      signerContactIds: ['contact-1'],
       agreementDate: now,
       effectiveDate: now,
       termMonths: 12,

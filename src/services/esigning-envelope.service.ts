@@ -224,6 +224,7 @@ async function deliverPreparedNotifications(input: {
   tenantId: string;
   senderName: string;
   envelopeTitle: string;
+  emailSubject?: string | null;
   message?: string | null;
   expiresAt?: Date | null;
   notifications: PreparedRecipientNotification[];
@@ -241,6 +242,7 @@ async function deliverPreparedNotifications(input: {
       recipientName: notification.recipientName,
       senderName: input.senderName,
       envelopeTitle: input.envelopeTitle,
+      emailSubject: input.emailSubject,
       message: input.message,
       signingUrl: notification.signingUrl,
       accessMode: notification.accessMode,
@@ -523,7 +525,9 @@ export async function listEsigningEnvelopes(
       companyName: envelope.company?.name ?? null,
       createdById: envelope.createdById,
       createdByName: formatUserName(envelope.createdBy.firstName, envelope.createdBy.lastName, envelope.createdBy.email),
-      canDelete: envelope.status === 'DRAFT' && canDeleteEnvelope(scope, session, envelope.createdById),
+      canDelete:
+        ['DRAFT', 'COMPLETED'].includes(envelope.status) &&
+        canDeleteEnvelope(scope, session, envelope.createdById),
       canVoid:
         ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
         (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
@@ -622,6 +626,7 @@ export async function createEsigningEnvelope(
       tenantId,
       createdById: session.id,
       title: input.title,
+      emailSubject: input.emailSubject?.trim() || input.title,
       message: input.message ?? null,
       signingOrder: input.signingOrder,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
@@ -682,6 +687,7 @@ export async function createTaskPreparedEsigningEnvelope(input: {
       tenantId: input.tenantId,
       createdById: input.createdById,
       title: input.title,
+      emailSubject: input.title,
       status: 'DRAFT',
       signingOrder: input.signingOrder ?? 'PARALLEL',
       expiresAt: input.expiresAt ?? null,
@@ -745,6 +751,7 @@ export async function updateDraftEsigningEnvelope(
       where: { id: envelopeId },
       data: {
         title: input.title,
+        emailSubject: input.emailSubject,
         message: input.message,
         companyId: input.companyId,
         signingOrder: input.signingOrder,
@@ -861,6 +868,7 @@ export async function duplicateEsigningEnvelope(
         id: duplicatedDocumentId,
         storagePath,
         fileName: document.fileName,
+        originalFileName: document.originalFileName ?? document.fileName,
         fileSize: document.fileSize,
         pageCount: document.pageCount,
         originalHash: document.originalHash,
@@ -898,6 +906,7 @@ export async function duplicateEsigningEnvelope(
           tenantId,
           createdById: session.id,
           title: buildDuplicateEnvelopeTitle(sourceEnvelope.title),
+          emailSubject: sourceEnvelope.emailSubject ?? sourceEnvelope.title,
           message: sourceEnvelope.message,
           signingOrder: sourceEnvelope.signingOrder,
           expiresAt: sourceEnvelope.expiresAt,
@@ -916,6 +925,7 @@ export async function duplicateEsigningEnvelope(
             tenantId,
             envelopeId: duplicatedEnvelopeId,
             fileName: document.fileName,
+            originalFileName: document.originalFileName ?? document.fileName,
             storagePath: document.storagePath,
             fileSize: document.fileSize,
             pageCount: document.pageCount,
@@ -1032,8 +1042,8 @@ export async function deleteDraftEsigningEnvelope(
   if (!envelope) {
     throw new Error('Envelope not found');
   }
-  if (envelope.status !== 'DRAFT') {
-    throw new Error('Only draft envelopes can be deleted');
+  if (!['DRAFT', 'COMPLETED'].includes(envelope.status)) {
+    throw new Error('Only draft or completed envelopes can be deleted');
   }
   if (!canDeleteEnvelope(scope, session, envelope.createdById)) {
     throw new Error('Forbidden');
@@ -1055,7 +1065,7 @@ export async function deleteDraftEsigningEnvelope(
   try {
     await storage.deletePrefix(StorageKeys.esigningEnvelopePrefix(tenantId, envelopeId));
   } catch (error) {
-    log.warn('Failed to delete draft envelope storage prefix', { envelopeId, error });
+    log.warn('Failed to delete envelope storage prefix', { envelopeId, error });
   }
 
   await createAuditLog({
@@ -1066,7 +1076,7 @@ export async function deleteDraftEsigningEnvelope(
     entityType: 'EsigningEnvelope',
     entityId: envelopeId,
     entityName: envelope.title,
-    summary: `Deleted draft e-signing envelope "${envelope.title}"`,
+    summary: `Deleted ${envelope.status.toLowerCase()} e-signing envelope "${envelope.title}"`,
   });
 }
 
@@ -1337,6 +1347,7 @@ export async function updateEsigningEnvelopeRecipient(
       tenantId: envelope.tenantId,
       senderName,
       envelopeTitle: envelope.title,
+      emailSubject: envelope.emailSubject ?? envelope.title,
       message: envelope.message,
       expiresAt: envelope.expiresAt,
       notifications,
@@ -1437,7 +1448,8 @@ export async function uploadEsigningEnvelopeDocument(
   session: SessionUser,
   tenantId: string,
   envelopeId: string,
-  file: File
+  file: File,
+  options?: { originalFileName?: string },
 ): Promise<EsigningEnvelopeDetailDto> {
   const scope = await resolveEsigningActorScope(session, tenantId);
   const envelope = await prisma.esigningEnvelope.findFirst({
@@ -1485,6 +1497,7 @@ export async function uploadEsigningEnvelopeDocument(
           fileName: file.name,
           mimeType: file.type,
         });
+  const originalFileName = options?.originalFileName ?? file.name;
   const storedFileName = documentType === 'pdf' ? file.name : getPdfFileNameForUpload(file.name);
 
   let pdfDoc: PDFDocument;
@@ -1520,7 +1533,7 @@ export async function uploadEsigningEnvelopeDocument(
       tenantId,
       envelopeId,
       documentId,
-      originalFileName: file.name,
+      originalFileName,
       originalContentType: file.type,
       sourceFormat: documentType,
     },
@@ -1532,6 +1545,7 @@ export async function uploadEsigningEnvelopeDocument(
       tenantId,
       envelopeId,
       fileName: storedFileName,
+      originalFileName,
       storagePath,
       originalHash: hashBlake3(pdfBuffer),
       pageCount,
@@ -1554,7 +1568,7 @@ export async function uploadEsigningEnvelopeDocument(
       pageCount,
       fileSize: pdfBuffer.length,
       originalFileSize: file.size,
-      originalFileName: file.name,
+      originalFileName,
       sourceFormat: documentType,
       convertedToPdf: documentType !== 'pdf',
     },
@@ -1598,6 +1612,7 @@ export async function uploadGeneratedDocumentToEsigningEnvelope(
     tenantId,
     envelopeId,
     file,
+    { originalFileName: document.title },
   );
 }
 
@@ -1703,6 +1718,7 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
       envelopeId: input.envelopeId,
       documentId: envelopeDocumentId,
       generatedDocumentId: generatedDocument.id,
+      originalFileName: generatedDocument.title,
       sourceFormat: 'generated-document',
     },
   });
@@ -1716,6 +1732,7 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
           envelopeId: input.envelopeId,
           generatedDocumentId: generatedDocument.id,
           fileName: exported.filename || `${generatedDocument.title}.pdf`,
+          originalFileName: generatedDocument.title,
           storagePath,
           originalHash: hashBlake3(pdfBuffer),
           pageCount,
@@ -2226,6 +2243,7 @@ export async function sendEsigningEnvelope(
     tenantId: envelope.tenantId,
     senderName,
     envelopeTitle: envelope.title,
+    emailSubject: envelope.emailSubject ?? envelope.title,
     message: envelope.message,
     expiresAt: envelope.expiresAt,
     notifications: preparedNotifications.updates,
@@ -2356,6 +2374,7 @@ export async function resendEsigningEnvelopeRecipient(
       tenantId: envelope.tenantId,
       senderName,
       envelopeTitle: envelope.title,
+      emailSubject: envelope.emailSubject ?? envelope.title,
       message: envelope.message,
       expiresAt: envelope.expiresAt,
       notifications,
@@ -2549,6 +2568,7 @@ export async function resendEsigningEnvelopeActiveRecipients(
     tenantId: envelope.tenantId,
     senderName,
     envelopeTitle: envelope.title,
+    emailSubject: envelope.emailSubject ?? envelope.title,
     message: envelope.message,
     expiresAt: envelope.expiresAt,
     notifications: preparedNotifications.updates,
@@ -3106,6 +3126,7 @@ export async function processEsigningReminderNotifications(input?: {
       tenantId: envelope.tenantId,
       senderName,
       envelopeTitle: envelope.title,
+      emailSubject: envelope.emailSubject ?? envelope.title,
       message: envelope.message,
       expiresAt: envelope.expiresAt,
       notifications: prepared,
@@ -3290,6 +3311,7 @@ export async function activateNextQueuedEsigningRecipients(
     tenantId: envelope.tenantId,
     senderName,
     envelopeTitle: envelope.title,
+    emailSubject: envelope.emailSubject ?? envelope.title,
     message: envelope.message,
     expiresAt: envelope.expiresAt,
     notifications: preparedNotifications.updates,

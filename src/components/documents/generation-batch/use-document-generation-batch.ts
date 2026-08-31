@@ -50,6 +50,8 @@ export interface DocumentGenerationBatchCommands {
   reload: () => Promise<EditableDocumentGenerationBatch>;
   /** Re-saves local edits on top of the newer server revision. */
   overwriteConflict: () => Promise<EditableDocumentGenerationBatch>;
+  /** Navigates after a successful workflow action without reopening the guard. */
+  navigateAway: (destination: string) => void;
   requestNavigation: (destination: string) => void;
   dialog: React.ReactNode;
 }
@@ -104,6 +106,10 @@ export function useDocumentGenerationBatch(
   const { disarm, requestNavigation, dialog } = useUnsavedNavigationGuard(
     state.dirty,
   );
+  const navigateAway = useCallback((destination: string) => {
+    disarm();
+    requestNavigation(destination);
+  }, [disarm, requestNavigation]);
 
   const commit = useCallback((saved: DocumentGenerationBatchDto) => {
     const normalized = editableBatchFromDto(saved);
@@ -378,6 +384,7 @@ export function useDocumentGenerationBatch(
     retry,
     reload,
     overwriteConflict,
+    navigateAway,
     requestNavigation,
     dialog,
   };

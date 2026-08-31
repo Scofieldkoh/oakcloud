@@ -99,7 +99,14 @@ export const serviceAgreementItemSchema = z
 export const serviceAgreementDraftSchema = z
   .object({
     primaryCompanyId: uuid,
-    authorizedContactId: uuid,
+    authorizedContactIds: z.array(uuid).min(1).max(100),
+    authorizedRepresentativeRoles: z
+      .record(uuid, z.string().trim().min(1).max(200))
+      .refine((value) => Object.keys(value).length <= 100, {
+        message: 'At most 100 representative appointments are allowed',
+      })
+      .optional(),
+    signerContactIds: z.array(uuid).min(1).max(100),
     entityIds: z.array(uuid).min(1).max(100),
     agreementDate: dateString,
     effectiveDate: nullableDate,
@@ -107,6 +114,37 @@ export const serviceAgreementDraftSchema = z
     items: z.array(serviceAgreementItemSchema).min(1).max(50),
   })
   .superRefine((value, context) => {
+    uniqueValues(
+      value.authorizedContactIds,
+      context,
+      ['authorizedContactIds'],
+      'Authorised representatives must be unique',
+    );
+    uniqueValues(
+      value.signerContactIds,
+      context,
+      ['signerContactIds'],
+      'Signers must be unique',
+    );
+    const representativeIds = new Set(value.authorizedContactIds);
+    for (const contactId of Object.keys(value.authorizedRepresentativeRoles ?? {})) {
+      if (!representativeIds.has(contactId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['authorizedRepresentativeRoles', contactId],
+          message: 'Appointments may only be selected for authorised representatives',
+        });
+      }
+    }
+    value.signerContactIds.forEach((contactId, index) => {
+      if (!representativeIds.has(contactId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['signerContactIds', index],
+          message: 'Every signer must be an authorised representative',
+        });
+      }
+    });
     uniqueValues(value.entityIds, context, ['entityIds'], 'Agreement entities must be unique');
     if (!value.entityIds.includes(value.primaryCompanyId)) {
       context.addIssue({

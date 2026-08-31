@@ -178,6 +178,7 @@ describe('task-prepared E-signing envelopes', () => {
         envelopeId: 'envelope-1',
         generatedDocumentId: 'document-1',
         fileName: 'Engagement letter.pdf',
+        originalFileName: 'Engagement letter',
         pageCount: 1,
       }),
     });

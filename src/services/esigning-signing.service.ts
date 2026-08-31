@@ -20,6 +20,11 @@ import type {
 } from '@/types/esigning';
 import type { EsigningEnvelopeStatus, Prisma } from '@/generated/prisma';
 import { storage } from '@/lib/storage';
+import {
+  getEsigningDocumentOriginalFileName,
+  getEsigningDocumentPdfFileName,
+  getEsigningDocumentVariantFileName,
+} from '@/lib/esigning-document-filename';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
 import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelope.service';
@@ -354,7 +359,8 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
     },
     documents: context.envelope.documents.map((document) => ({
       id: document.id,
-      fileName: document.fileName,
+      fileName: getEsigningDocumentOriginalFileName(document),
+      originalFileName: getEsigningDocumentOriginalFileName(document),
       pageCount: document.pageCount,
       sortOrder: document.sortOrder,
       fileSize: document.fileSize,
@@ -1110,8 +1116,8 @@ export async function downloadEsigningSessionDocument(input: {
   const buffer = await storage.download(storagePath);
   const fileName =
     input.variant === 'signed'
-      ? document.fileName.replace(/\.pdf$/i, '-signed.pdf')
-      : document.fileName;
+      ? getEsigningDocumentVariantFileName(document, 'signed')
+      : getEsigningDocumentPdfFileName(document);
 
   return { buffer, fileName };
 }

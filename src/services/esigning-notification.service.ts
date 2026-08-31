@@ -185,6 +185,7 @@ export async function sendEsigningRequestEmail(input: {
   recipientName: string;
   senderName: string;
   envelopeTitle: string;
+  emailSubject?: string | null;
   message?: string | null;
   signingUrl: string;
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
@@ -253,9 +254,10 @@ export async function sendEsigningRequestEmail(input: {
     ${fallbackLink(input.signingUrl)}
     ${signature()}`;
 
+  const subjectLabel = input.emailSubject?.trim() || input.envelopeTitle;
   const emailSubject = isReminder
-    ? subject(`Reminder: "${input.envelopeTitle}" awaits your signature`)
-    : subject(`"${input.envelopeTitle}" — signature requested by ${input.senderName}`);
+    ? subject(`Reminder: "${subjectLabel}" awaits your signature`)
+    : subject(`"${subjectLabel}" — signature requested by ${input.senderName}`);
 
   return safeSendEmail(isReminder ? 'reminder' : 'request', {
     to: input.to,
@@ -469,6 +471,7 @@ export async function sendEsigningReminderEmail(input: {
   recipientName: string;
   senderName: string;
   envelopeTitle: string;
+  emailSubject?: string | null;
   message?: string | null;
   signingUrl: string;
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';

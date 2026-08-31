@@ -133,6 +133,10 @@ export function ScheduleEntryEditor({
         </div>
       )}
 
+      <p role="status" aria-live="polite" className="text-xs text-text-secondary">
+        {value.length} of 31 schedule entries configured
+      </p>
+
       {value.length === 0 && !hideHeader && (
         <p className="text-xs text-text-muted italic">No custom schedule entries configured.</p>
       )}
@@ -145,6 +149,9 @@ export function ScheduleEntryEditor({
             : 'DAY_OF_MONTH';
           const source = expression.source && typeof expression.source === 'object' ? expression.source as Record<string, unknown> : {};
           const allowedSources = capabilities?.allowedRelativeSourceKinds ?? RELATIVE_SOURCE_KINDS;
+          const integerParameterOffset = isIntegerParameter(expression.offset) ? expression.offset : null;
+          const parameterizedOffset = integerParameterOffset !== null;
+          const allowParameterizedOffsets = capabilities?.allowParameterizedOffsets !== false;
           const prefix = `schedule-${entry.key}`;
           const update = (changes: Partial<ScheduleEntryInput>) => onChange(value.map((item) => item.key === entry.key ? { ...item, ...changes } : item));
 
@@ -156,7 +163,7 @@ export function ScheduleEntryEditor({
                   <label htmlFor={`${prefix}-label`} className="label">Entry label</label>
                   <input
                     id={`${prefix}-label`}
-                    className="input input-sm h-10 w-full"
+                    className="input input-sm min-h-[44px] w-full"
                     disabled={disabled}
                     value={entry.label}
                     onChange={(event) => update({ label: event.target.value })}
@@ -257,20 +264,65 @@ export function ScheduleEntryEditor({
                       </div>
                     ) : null}
                     <div>
-                      <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
-                      <input
-                        id={`${prefix}-offset`}
-                        className="input input-sm min-h-[38px]"
-                        type="number"
-                        min={-3660}
-                        max={3660}
+                      <label htmlFor={`${prefix}-offset-operand`} className="label">Offset operand</label>
+                      <select
+                        id={`${prefix}-offset-operand`}
+                        className="input input-sm min-h-[44px] w-full"
                         disabled={disabled}
-                        value={typeof expression.offset === 'number' ? expression.offset : ''}
-                        onChange={(event) => {
-                          const val = event.target.value;
-                          update(updateExpression(entry, { offset: val === '' ? '' : Number(val) }, capabilities));
-                        }}
-                      />
+                        value={parameterizedOffset ? 'INTEGER_PARAMETER' : 'LITERAL'}
+                        onChange={(event) => update(updateExpression(entry, {
+                          offset: event.target.value === 'INTEGER_PARAMETER'
+                            ? { kind: 'INTEGER_PARAMETER', key: integerParameterOffset?.key ?? 'parameter' }
+                            : 0,
+                        }, capabilities))}
+                      >
+                        <option value="LITERAL">Literal</option>
+                        {allowParameterizedOffsets ? <option value="INTEGER_PARAMETER">Integer parameter</option> : null}
+                      </select>
+                    </div>
+                    {integerParameterOffset ? (
+                      <div>
+                        <label htmlFor={`${prefix}-offset-parameter-key`} className="label">Offset parameter key</label>
+                        <input
+                          id={`${prefix}-offset-parameter-key`}
+                          className="input input-sm min-h-[44px]"
+                          disabled={disabled}
+                          value={integerParameterOffset.key}
+                          onChange={(event) => update(updateExpression(entry, {
+                            offset: { kind: 'INTEGER_PARAMETER', key: event.target.value },
+                          }, capabilities))}
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label htmlFor={`${prefix}-offset`} className="label">Offset</label>
+                        <input
+                          id={`${prefix}-offset`}
+                          className="input input-sm min-h-[44px]"
+                          type="number"
+                          min={-3660}
+                          max={3660}
+                          disabled={disabled}
+                          value={typeof expression.offset === 'number' ? expression.offset : ''}
+                          onChange={(event) => {
+                            const val = event.target.value;
+                            update(updateExpression(entry, { offset: val === '' ? '' : Number(val) }, capabilities));
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label htmlFor={`${prefix}-offset-unit`} className="label">Offset unit</label>
+                      <select
+                        id={`${prefix}-offset-unit`}
+                        className="input input-sm min-h-[44px] w-full"
+                        disabled={disabled}
+                        value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'}
+                        onChange={(event) => update(updateExpression(entry, { unit: event.target.value }, capabilities))}
+                      >
+                        <option value="CALENDAR_DAY">Calendar day</option>
+                        <option value="BUSINESS_DAY">Business day</option>
+                      </select>
                     </div>
                   </>
                 ) : null}

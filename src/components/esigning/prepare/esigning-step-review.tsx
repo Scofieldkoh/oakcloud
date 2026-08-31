@@ -97,8 +97,17 @@ export function EsigningStepReview({
   const isReady = blockingIssues.length === 0;
 
   return (
-    <div className="pb-6 sm:pb-20">
-      <div className="max-w-4xl mx-auto p-4 space-y-4 sm:p-6 sm:space-y-6" id="review-summary">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        data-testid="esigning-review-layout"
+        className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[25%_75%]"
+      >
+        <div
+          data-testid="esigning-review-info-panel"
+          id="review-summary"
+          className="min-h-0 overflow-y-auto border-b border-border-primary p-4 sm:p-6 lg:border-b-0 lg:border-r"
+        >
+          <div className="space-y-4 sm:space-y-6">
         {/* Validation panel — shown at top so issues are immediately visible */}
         {!isReady && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
@@ -302,11 +311,15 @@ export function EsigningStepReview({
           </section>
         )}
 
-      </div>
+          </div>
+        </div>
 
-      {signerRecipients.length > 0 && envelope.documents.length > 0 ? (
-        <section className="px-4 pt-0 pb-2 sm:px-6">
-          <div className="rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl overflow-hidden">
+        <section
+          data-testid="esigning-review-viewer-panel"
+          className="flex min-h-[32rem] min-w-0 flex-col overflow-hidden bg-background-secondary lg:min-h-0"
+        >
+          {signerRecipients.length > 0 && envelope.documents.length > 0 ? (
+            <>
             <div className="flex flex-col gap-4 px-4 pt-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:pt-5">
               <div>
                 <h2 className="text-base font-semibold text-text-primary">Preview as signer</h2>
@@ -319,7 +332,7 @@ export function EsigningStepReview({
                 <select
                   value={activePreviewRecipientId}
                   onChange={(event) => setPreviewRecipientId(event.target.value)}
-                  className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary sm:min-w-52"
+                   className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary sm:min-w-52"
                 >
                   <option value="ALL">All Signers</option>
                   {signerRecipients.map((recipient) => (
@@ -330,7 +343,7 @@ export function EsigningStepReview({
                 </select>
               </label>
             </div>
-            <div className="mt-4 border-t border-border-primary">
+            <div className="min-h-0 flex-1 overflow-hidden border-t border-border-primary">
               <EsigningFieldCanvas
                 documents={envelope.documents}
                 selectedDocumentId={previewDocumentId}
@@ -350,9 +363,14 @@ export function EsigningStepReview({
                 canEdit={false}
               />
             </div>
-          </div>
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-text-secondary">
+              Add at least one signer and document to preview the envelope.
+            </div>
+          )}
         </section>
-      ) : null}
+      </div>
 
       {/* Sticky footer */}
       <div className="sticky bottom-0 bg-background-secondary border-t border-border-primary px-3 py-2 flex flex-wrap items-center justify-between gap-2 sm:px-6 sm:py-3 sm:gap-4">

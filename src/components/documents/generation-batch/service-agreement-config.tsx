@@ -1,22 +1,23 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { useEffect, useMemo } from 'react';
+import { Building2 } from 'lucide-react';
+import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
 import type { Company, DocumentContact } from '@/types/document-generation';
 import type {
   BatchItemConfiguration,
   MasterFieldCatalogue,
   ServiceAgreementWorkspaceState,
 } from '@/types/document-generation-batch';
-import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { ServiceAgreementSetup } from '@/components/documents/service-agreement/service-agreement-setup';
 import { ServiceSelectionStep } from '@/components/documents/service-agreement/service-selection-step';
 import type {
   EditableBatchItem,
 } from './batch-workspace-state';
-import { BatchCustomFieldForm } from './batch-custom-field-form';
 import { BatchSection } from './batch-section';
-import type { ItemCompleteness } from './batch-completeness';
+import { rankAppointments } from '@/lib/representative-authority';
 
 export interface ServiceAgreementConfigProps {
   item: EditableBatchItem;
@@ -25,15 +26,19 @@ export interface ServiceAgreementConfigProps {
   contacts: DocumentContact[];
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
-  templateFields?: CustomPlaceholderDefinition[];
   onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
-  completeness?: ItemCompleteness;
+  companySearchQuery?: string;
+  onCompanySearch?: (query: string) => void;
+  companySearchLoading?: boolean;
+  onPrimaryCompanyChange?: (companyId: string | null, company: Company | null) => void;
 }
 
 function emptyWorkspace(primaryCompanyId: string | null): ServiceAgreementWorkspaceState {
   return {
-    authorizedContactId: null,
+    authorizedContactIds: [],
+    authorizedRepresentativeRoles: {},
+    signerContactIds: [],
     entityIds: primaryCompanyId ? [primaryCompanyId] : [],
     agreementDate: new Date().toISOString().slice(0, 10),
     effectiveDate: null,
@@ -49,13 +54,43 @@ export function ServiceAgreementConfig({
   contacts,
   masterFields,
   effectiveMasterValues,
-  templateFields = [],
   onPatch,
   disabled = false,
-  completeness,
+  companySearchQuery = '',
+  onCompanySearch = () => undefined,
+  companySearchLoading = false,
+  onPrimaryCompanyChange,
 }: ServiceAgreementConfigProps) {
   const workspace = item.configuration.serviceAgreement
     ?? emptyWorkspace(primaryCompany?.id ?? null);
+  const inferredRepresentativeRoles = useMemo(() => {
+    const roles = { ...(workspace.authorizedRepresentativeRoles ?? {}) };
+    const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
+    let changed = false;
+    for (const contactId of workspace.authorizedContactIds) {
+      if (roles[contactId]?.trim()) continue;
+      const contact = contactById.get(contactId);
+      if (!contact) continue;
+      const defaultRole = rankAppointments(
+        contact.appointments?.length
+          ? contact.appointments
+          : contact.designation ? [contact.designation] : [],
+      )[0];
+      if (!defaultRole) continue;
+      roles[contactId] = defaultRole;
+      changed = true;
+    }
+    return changed ? roles : null;
+  }, [contacts, workspace.authorizedContactIds, workspace.authorizedRepresentativeRoles]);
+  useEffect(() => {
+    if (!inferredRepresentativeRoles) return;
+    onPatch({
+      serviceAgreement: {
+        ...workspace,
+        authorizedRepresentativeRoles: inferredRepresentativeRoles,
+      },
+    });
+  }, [inferredRepresentativeRoles, onPatch, workspace]);
   const updateWorkspace = (patch: Partial<ServiceAgreementWorkspaceState>) => {
     onPatch({
       serviceAgreement: { ...workspace, ...patch },
@@ -65,13 +100,44 @@ export function ServiceAgreementConfig({
     workspace.entityIds.includes(company.id));
 
   const titleMissing = item.configuration.title.trim().length === 0;
-  const fieldMissing = completeness
-    ? completeness.missing.filter((entry) => entry.id.startsWith('field:')).length
-    : 0;
-  const requiredTemplateFields = templateFields.filter((field) => field.required).length;
-  const partiesComplete = Boolean(workspace.authorizedContactId)
+  const partiesComplete = workspace.authorizedContactIds.length > 0
+    && workspace.signerContactIds.length > 0
     && workspace.entityIds.length > 0;
   const servicesComplete = workspace.items.length > 0;
+  const requiredSharedFields = masterFields.fields.filter(
+    (field) => field.requiredTemplateIds.includes(item.templateId),
+  );
+  const sharedMissing = requiredSharedFields.filter(
+    (field) => !(effectiveMasterValues[field.key] ?? '').trim(),
+  ).length;
+  const companyOptions = useMemo<Array<AsyncSearchSelectOption & { company: Company }>>(() => {
+    const byId = new Map<string, AsyncSearchSelectOption & { company: Company }>();
+    for (const company of [primaryCompany, ...companies]) {
+      if (!company || byId.has(company.id)) continue;
+      byId.set(company.id, {
+        id: company.id,
+        label: company.name,
+        description: company.uen || undefined,
+        company,
+      });
+    }
+    return [...byId.values()];
+  }, [companies, primaryCompany]);
+  const representativeContacts = useMemo(() => {
+    const byId = new Map(contacts.map((contact) => [contact.id, contact]));
+    for (const snapshot of item.serviceAgreement?.authorizedRepresentativeSnapshots ?? []) {
+      if (byId.has(snapshot.id) || !workspace.authorizedContactIds.includes(snapshot.id)) continue;
+      byId.set(snapshot.id, {
+        id: snapshot.id,
+        fullName: snapshot.name,
+        email: snapshot.email,
+        phone: snapshot.phone,
+        designation: snapshot.role,
+        appointments: snapshot.role ? [snapshot.role] : [],
+      });
+    }
+    return [...byId.values()];
+  }, [contacts, item.serviceAgreement?.authorizedRepresentativeSnapshots, workspace.authorizedContactIds]);
 
   return (
     <div className="space-y-3">
@@ -104,6 +170,46 @@ export function ServiceAgreementConfig({
         </label>
       </BatchSection>
 
+      <BatchSection title="Agreement details">
+        <div className="grid max-w-full gap-4 sm:grid-cols-[11rem_minmax(22rem,44rem)]">
+          <div className="block">
+            <label htmlFor="agreement-date" className="mb-1.5 block text-sm font-medium text-text-primary">
+              Agreement date
+            </label>
+            <SingleDateInput
+              id="agreement-date"
+              value={workspace.agreementDate}
+              onChange={(next) => updateWorkspace({ agreementDate: next })}
+              disabled={disabled}
+              ariaLabel="Agreement date"
+              className="w-44 max-w-full"
+              controlClassName="h-11"
+            />
+          </div>
+          <div className="block">
+            <AsyncSearchSelect
+              label="Primary company"
+              value={primaryCompany?.id ?? ''}
+              options={companyOptions}
+              isLoading={companySearchLoading}
+              searchQuery={companySearchQuery}
+              onSearchChange={onCompanySearch}
+              onChange={(companyId, option) => {
+                onPrimaryCompanyChange?.(companyId || null, option?.company ?? null);
+              }}
+              placeholder="Search primary company..."
+              className="w-full max-w-none"
+              allowReselect
+              icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
+              emptySearchText="Start typing to search companies"
+              noResultsText="No companies match that search"
+              disabled={disabled}
+              controlClassName=""
+            />
+          </div>
+        </div>
+      </BatchSection>
+
       <BatchSection
         title="Entities and representative"
         description="Every entity covered by this agreement, plus who signs for them."
@@ -111,20 +217,40 @@ export function ServiceAgreementConfig({
           complete: partiesComplete,
           label: partiesComplete
             ? 'Complete'
-            : !workspace.authorizedContactId
+            : workspace.authorizedContactIds.length === 0
               ? 'Representative required'
+              : workspace.signerContactIds.length === 0
+                ? 'Signer required'
               : 'Entity required',
         }}
       >
         <ServiceAgreementSetup
           primaryCompany={primaryCompany}
           companies={companies}
-          contacts={contacts}
+          contacts={representativeContacts}
+          companySearchQuery={companySearchQuery}
+          onSearchCompanies={onCompanySearch}
+          companySearchLoading={companySearchLoading}
           entityIds={workspace.entityIds}
-          authorizedContactId={workspace.authorizedContactId ?? ''}
+          authorizedContactIds={workspace.authorizedContactIds}
+          authorizedRepresentativeRoles={workspace.authorizedRepresentativeRoles ?? {}}
+          signerContactIds={workspace.signerContactIds}
           onEntityIdsChange={(entityIds) => updateWorkspace({ entityIds })}
-          onAuthorizedContactIdChange={(authorizedContactId) =>
-            updateWorkspace({ authorizedContactId: authorizedContactId || null })}
+          onRepresentativesChange={(authorizedContactIds, authorizedRepresentativeRoles) => {
+            const currentSignerIds = new Set(workspace.signerContactIds);
+            const retainedSignerIds = authorizedContactIds.filter((id) =>
+              currentSignerIds.has(id));
+            updateWorkspace({
+              authorizedContactIds,
+              authorizedRepresentativeRoles,
+              signerContactIds: authorizedContactIds.length === 1
+                ? [authorizedContactIds[0]]
+                : retainedSignerIds,
+            });
+          }}
+          onSignerContactIdsChange={(signerContactIds) =>
+            updateWorkspace({ signerContactIds })}
+          disabled={disabled}
         />
       </BatchSection>
 
@@ -144,67 +270,17 @@ export function ServiceAgreementConfig({
         />
       </BatchSection>
 
-      <BatchSection title="Agreement details">
-        <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-          <div className="block">
-            <span className="text-sm font-medium text-text-primary">Agreement date</span>
-            <SingleDateInput
-              value={workspace.agreementDate}
-              onChange={(next) => updateWorkspace({ agreementDate: next })}
-              disabled={disabled}
-              ariaLabel="Agreement date"
-              className="mt-1"
-            />
-          </div>
-          <div className="block">
-            <span className="text-sm font-medium text-text-primary">Effective date</span>
-            <SingleDateInput
-              value={workspace.effectiveDate ?? ''}
-              onChange={(next) => updateWorkspace({ effectiveDate: next || null })}
-              disabled={disabled}
-              ariaLabel="Effective date"
-              className="mt-1"
-            />
-          </div>
-          <label className="block">
-            <span className="text-sm font-medium text-text-primary">Term (months)</span>
-            <input
-              type="number"
-              min={1}
-              value={workspace.termMonths}
-              onChange={(event) => updateWorkspace({
-                termMonths: Math.max(1, Number(event.target.value) || 1),
-              })}
-              disabled={disabled}
-              aria-label="Term months"
-              className="mt-1 min-h-11 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-10"
-            />
-          </label>
-        </div>
-      </BatchSection>
-
-      <BatchSection
-        title="Document fields"
-        status={requiredTemplateFields > 0
-          ? {
-              complete: fieldMissing === 0,
-              label: fieldMissing === 0 ? 'Complete' : `${fieldMissing} missing`,
-            }
-          : null}
-      >
-        <BatchCustomFieldForm
-          item={item}
-          fields={templateFields}
-          onPatch={onPatch}
-          disabled={disabled}
-        />
-      </BatchSection>
-
       {masterFields.fields.length > 0 && (
         <BatchSection
           title="Shared values"
           description="Effective shared values for this document."
           defaultOpen={false}
+          status={requiredSharedFields.length > 0
+            ? {
+                complete: sharedMissing === 0,
+                label: sharedMissing === 0 ? 'Complete' : `${sharedMissing} missing`,
+              }
+            : null}
         >
           <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {masterFields.fields.map((field) => (

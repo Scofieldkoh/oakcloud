@@ -96,6 +96,7 @@ export type EsigningEnvelopeStatusCounts = Record<EsigningEnvelopeStatus, number
 export interface EsigningEnvelopeDocumentDto {
   id: string;
   fileName: string;
+  originalFileName?: string;
   pageCount: number;
   sortOrder: number;
   fileSize: number;
@@ -174,6 +175,8 @@ export interface EsigningEnvelopeDetailDto {
   id: string;
   tenantId: string;
   title: string;
+  /** Nullable for responses produced before the email-subject migration. */
+  emailSubject?: string | null;
   message: string | null;
   status: EsigningEnvelopeStatus;
   signingOrder: EsigningSigningOrder;

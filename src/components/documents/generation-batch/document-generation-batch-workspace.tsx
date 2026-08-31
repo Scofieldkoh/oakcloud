@@ -34,6 +34,10 @@ import {
   mapCompanyOption,
   mapContactOption,
 } from '@/lib/document-generation-option-mappers';
+import {
+  taskLaunchContextSchema,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import {
   BATCH_STAGES,
@@ -109,6 +113,7 @@ export function DocumentGenerationBatchWorkspace({
     retry,
     reload,
     overwriteConflict,
+    navigateAway,
     requestNavigation,
     dialog,
   } = useDocumentGenerationBatch({ initialBatch });
@@ -223,6 +228,7 @@ export function DocumentGenerationBatchWorkspace({
       email: party.email,
       phone: party.phone,
       designation: party.detail,
+      appointments: party.appointments,
     })),
     [partyOptions.contacts],
   );
@@ -409,6 +415,9 @@ export function DocumentGenerationBatchWorkspace({
       success(result.batchStatus === 'COMPLETED'
         ? 'All documents generated'
         : 'Generation finished with some failures');
+      if (result.batchStatus === 'COMPLETED' && taskCompletionHref) {
+        navigateAway(taskCompletionHref);
+      }
     } catch (caught) {
       toastError(caught instanceof Error ? caught.message : 'Generation failed');
     }
@@ -416,8 +425,11 @@ export function DocumentGenerationBatchWorkspace({
 
   const handleRetry = async (itemId: string) => {
     try {
-      await retry(itemId);
+      const updated = await retry(itemId);
       success('Document generated after retry');
+      if (updated.status === 'COMPLETED' && taskCompletionHref) {
+        navigateAway(taskCompletionHref);
+      }
     } catch (caught) {
       toastError(caught instanceof Error ? caught.message : 'Retry failed');
     }
@@ -428,8 +440,12 @@ export function DocumentGenerationBatchWorkspace({
     let recovered = 0;
     for (const item of failed) {
       try {
-        await retry(item.key);
+        const updated = await retry(item.key);
         recovered += 1;
+        if (updated.status === 'COMPLETED' && taskCompletionHref) {
+          navigateAway(taskCompletionHref);
+          return;
+        }
       } catch (caught) {
         toastError(caught instanceof Error ? caught.message : 'Retry failed');
       }
@@ -465,6 +481,13 @@ export function DocumentGenerationBatchWorkspace({
     || state.batch.items.some((item) =>
       item.status === 'GENERATED' || item.status === 'FAILED')
   );
+
+  const taskCompletionHref = useMemo(() => {
+    const parsed = taskLaunchContextSchema.safeParse(state.batch.taskContext);
+    if (!parsed.success) return null;
+    const returnTo = parsed.data.returnTo ?? '/tasks';
+    return withTaskLaunchContext(returnTo, { ...parsed.data, returnTo });
+  }, [state.batch.taskContext]);
 
   const stageHints: Record<BatchStage, string> = {
     documents: state.batch.items.length > 0
@@ -783,6 +806,9 @@ export function DocumentGenerationBatchWorkspace({
                     onPartyRetry={partyOptions.reload}
                     onContactSearch={contactSearch.setQuery}
                     contactsLoading={contactSearch.isLoading}
+                    companySearchQuery={companySearch.searchQuery}
+                    onCompanySearch={companySearch.setSearchQuery}
+                    companySearchLoading={companySearch.isLoading}
                     masterFields={state.batch.masterFields}
                     effectiveMasterValues={effectiveValues}
                     templateFields={activeTemplate?.placeholders ?? []}
@@ -791,6 +817,11 @@ export function DocumentGenerationBatchWorkspace({
                       type: 'item/patch',
                       itemId: activeItem.key,
                       patch,
+                    })}
+                    onPrimaryCompanyChange={(companyId, company) => dispatch({
+                      type: 'shared/company',
+                      companyId,
+                      companyName: company?.name ?? null,
                     })}
                     disabled={!state.capabilities.canEditItems}
                     completeness={completenessFor(completeness, activeItem.key)}

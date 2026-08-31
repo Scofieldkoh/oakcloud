@@ -402,6 +402,17 @@ function RecipientRow({
       <span className="flex-shrink-0 rounded-full border border-border-primary px-2 py-0.5 text-[10px] text-text-muted">
         {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
       </span>
+      <span
+        data-testid={`recipient-access-method-badge-${recipient.id}`}
+        className={cn(
+          'flex-shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+          recipient.accessMode === 'MANUAL_LINK'
+            ? 'border-border-primary bg-background-secondary text-text-muted'
+            : 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary'
+        )}
+      >
+        {ESIGNING_ACCESS_MODE_LABELS[recipient.accessMode]}
+      </span>
       {canEdit && (
         <>
           <button
@@ -432,7 +443,7 @@ const DEFAULT_RECIPIENT_FORM = {
   name: '',
   email: '',
   type: 'SIGNER' as EsigningRecipientType,
-  accessMode: 'EMAIL_LINK' as EsigningRecipientAccessMode,
+  accessMode: 'MANUAL_LINK' as EsigningRecipientAccessMode,
   accessCode: '',
 };
 
@@ -469,6 +480,7 @@ export function EsigningStepUpload({
 
   // Settings form local state
   const [title, setTitle] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
   const [message, setMessage] = useState('');
   const [signingOrder, setSigningOrder] = useState<EsigningSigningOrder>('PARALLEL');
   const [expiresAt, setExpiresAt] = useState('');
@@ -481,6 +493,7 @@ export function EsigningStepUpload({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const emailSubjectRef = useRef<HTMLInputElement>(null);
   const reminderFrequencyRef = useRef<HTMLInputElement>(null);
   const reminderStartRef = useRef<HTMLInputElement>(null);
   const expiryWarningRef = useRef<HTMLInputElement>(null);
@@ -495,6 +508,9 @@ export function EsigningStepUpload({
   const [selfSignNotice, setSelfSignNotice] = useState(false);
   const [pendingSignerGroups, setPendingSignerGroups] = useState<string[][]>([]);
   const usesOrderedSigning = signingOrder !== 'PARALLEL';
+  const hasSelectedContactEmailChanges = Boolean(
+    selectedContact && normalizeEmail(newRecipient.email) !== normalizeEmail(selectedContact.defaultEmail ?? '')
+  );
 
   // Initialize from envelope
   useEffect(() => {
@@ -504,6 +520,7 @@ export function EsigningStepUpload({
     }
 
     setTitle(envelope.title);
+    setEmailSubject(envelope.emailSubject || envelope.title);
     setMessage(envelope.message ?? '');
     setSigningOrder(envelope.signingOrder);
     setExpiresAt(toDateInputValue(envelope.expiresAt));
@@ -560,6 +577,12 @@ export function EsigningStepUpload({
     () => envelope.recipients.filter((recipient) => recipient.type === 'CC'),
     [envelope.recipients]
   );
+  const hasEmailRecipients = useMemo(
+    () => envelope.recipients.some((recipient) => (
+      recipient.accessMode === 'EMAIL_LINK' || recipient.accessMode === 'EMAIL_WITH_CODE'
+    )),
+    [envelope.recipients]
+  );
   const hasSigner = signerRecipients.length > 0;
   const hasDocument = envelope.documents.length > 0;
   const canProceed = hasDocument && hasSigner;
@@ -611,6 +634,7 @@ export function EsigningStepUpload({
   async function handleNext() {
     const payload: UpdateEsigningEnvelopeInput = {
       title: title.trim(),
+      emailSubject: emailSubject.trim(),
       message: message.trim() || null,
       companyId: companyId || null,
       signingOrder,
@@ -632,10 +656,12 @@ export function EsigningStepUpload({
       setSettingsErrors(fieldErrors);
       setSubmitError('Please correct the highlighted settings before continuing.');
       requestAnimationFrame(() => {
-        const firstInvalidField = ['title', 'message', 'reminderFrequencyDays', 'reminderStartDays', 'expiryWarningDays']
+        const firstInvalidField = ['title', 'emailSubject', 'message', 'reminderFrequencyDays', 'reminderStartDays', 'expiryWarningDays']
           .find((key) => fieldErrors[key]);
         if (firstInvalidField === 'title') {
           titleRef.current?.focus();
+        } else if (firstInvalidField === 'emailSubject') {
+          emailSubjectRef.current?.focus();
         } else if (firstInvalidField === 'message') {
           messageRef.current?.focus();
         } else if (firstInvalidField === 'reminderFrequencyDays') {
@@ -1305,6 +1331,17 @@ async function applyMixedGroupChange(
                                   <span className="flex-shrink-0 rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] text-oak-primary">
                                     {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
                                   </span>
+                                  <span
+                                    data-testid={`recipient-access-method-badge-${recipient.id}`}
+                                    className={cn(
+                                      'flex-shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                                      recipient.accessMode === 'MANUAL_LINK'
+                                        ? 'border-border-primary bg-background-secondary text-text-muted'
+                                        : 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary'
+                                    )}
+                                  >
+                                    {ESIGNING_ACCESS_MODE_LABELS[recipient.accessMode]}
+                                  </span>
                                   {envelope.canEdit && (
                                     <div className="flex flex-shrink-0 items-center gap-1">
                                       <button
@@ -1408,6 +1445,17 @@ async function applyMixedGroupChange(
                           <span className="flex-shrink-0 rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] text-oak-primary">
                             {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
                           </span>
+                          <span
+                            data-testid={`recipient-access-method-badge-${recipient.id}`}
+                            className={cn(
+                              'flex-shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                              recipient.accessMode === 'MANUAL_LINK'
+                                ? 'border-border-primary bg-background-secondary text-text-muted'
+                                : 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary'
+                            )}
+                          >
+                            {ESIGNING_ACCESS_MODE_LABELS[recipient.accessMode]}
+                          </span>
                           {envelope.canEdit && signingOrder === 'SEQUENTIAL' && orderedSignerRecipients.length > 1 && (
                             <div className="inline-flex overflow-hidden rounded-lg border border-border-primary flex-shrink-0">
                               <button
@@ -1489,7 +1537,7 @@ async function applyMixedGroupChange(
                 type="button"
                 onClick={() => { setIsAddingRecipient(false); resetRecipientDraft(); }}
                 className="rounded-lg p-1 text-white/70 hover:bg-white/10 hover:text-white"
-                aria-label="Cancel"
+                aria-label="Close new recipient form"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1497,37 +1545,33 @@ async function applyMixedGroupChange(
 
             <div className="space-y-3 p-4">
 
-            <div className="grid gap-3">
-              <div className="flex min-w-0 items-end gap-2">
-                <div className="min-w-0 flex-1">
-                  <FormInput
-                    label="Full name"
-                    placeholder="e.g. Jane Smith"
-                    value={newRecipient.name}
-                    onChange={(e) => setNewRecipient((prev) => ({ ...prev, name: e.target.value }))}
-                  />
-                </div>
-                {newRecipient.type === 'SIGNER' && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 min-h-0 shrink-0 px-3"
-                    onClick={() => void (selectedContact ? handleSaveContactEmail() : handleQuickAddContact())}
-                    isLoading={selectedContact ? isSavingContactEmail : createContactMutation.isPending}
-                    disabled={selectedContact
-                      ? isSavingContactEmail || !newRecipient.email.trim() || selectedContact.defaultEmail === newRecipient.email.trim()
-                      : createContactMutation.isPending}
-                  >
-                    {selectedContact ? 'Update email' : 'Quick add'}
-                  </Button>
-                )}
+            {newRecipient.type === 'SIGNER' && (
+              <ContactSearchSelect
+                key={`recipient-contact-${selectedContactId || 'empty'}`}
+                label="Select from Contacts (optional)"
+                value={selectedContactId}
+                onChange={handleContactSelect}
+                placeholder="Search contacts for signer..."
+                controlClassName="!h-10 !min-h-0"
+              />
+            )}
+
+            <div className="flex min-w-0 items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <FormInput
+                  label="Full name"
+                  inputSize="lg"
+                  placeholder="e.g. Jane Smith"
+                  value={newRecipient.name}
+                  onChange={(e) => setNewRecipient((prev) => ({ ...prev, name: e.target.value }))}
+                />
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3" data-testid="recipient-details-row">
               <FormInput
                 label="Email address"
+                inputSize="lg"
                 type="email"
                 placeholder="e.g. jane@example.com"
                 value={newRecipient.email}
@@ -1546,7 +1590,7 @@ async function applyMixedGroupChange(
                       setSelectedContactDefaultEmailDetailId(null);
                     }
                   }}
-                  className="h-9 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                  className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
                 >
                   {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -1558,7 +1602,7 @@ async function applyMixedGroupChange(
                 <select
                   value={newRecipient.accessMode}
                   onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessMode: e.target.value as EsigningRecipientAccessMode }))}
-                  className="h-9 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                  className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
                 >
                   {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -1567,26 +1611,17 @@ async function applyMixedGroupChange(
               </label>
             </div>
 
-            {newRecipient.type === 'SIGNER' && (
-              <ContactSearchSelect
-                key={`recipient-contact-${selectedContactId || 'empty'}`}
-                label="Select from Contacts (optional)"
-                value={selectedContactId}
-                onChange={handleContactSelect}
-                placeholder="Search contacts for signer..."
-              />
-            )}
-
             {newRecipient.accessMode === 'EMAIL_WITH_CODE' && (
               <FormInput
                 label="Access code"
+                inputSize="lg"
                 placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`}
                 value={newRecipient.accessCode}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessCode: e.target.value }))}
               />
             )}
 
-            <div className="flex justify-end gap-2 border-t border-border-primary pt-3">
+            <div className="flex justify-end gap-2 border-t border-border-primary pt-3" data-testid="recipient-actions">
               <Button
                 type="button"
                 variant="secondary"
@@ -1595,6 +1630,30 @@ async function applyMixedGroupChange(
               >
                 Cancel
               </Button>
+              {newRecipient.type === 'SIGNER' && !selectedContact && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void handleQuickAddContact()}
+                  isLoading={createContactMutation.isPending}
+                  disabled={createContactMutation.isPending}
+                >
+                  Quick add
+                </Button>
+              )}
+              {newRecipient.type === 'SIGNER' && selectedContact && hasSelectedContactEmailChanges && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void handleSaveContactEmail()}
+                  isLoading={isSavingContactEmail}
+                  disabled={isSavingContactEmail || !newRecipient.email.trim()}
+                >
+                  Update contact
+                </Button>
+              )}
               <Button
                 type="button"
                 size="sm"
@@ -1624,59 +1683,98 @@ async function applyMixedGroupChange(
 
       {/* ——— Section 3: Message ——— */}
       <CompanyAccentSection title="Email subject & message">
-        <div className="space-y-4 p-4 sm:p-5">
-          <p className="mt-0.5 text-xs text-text-muted">Shown in the signing request email sent to recipients.</p>
+        <fieldset
+          disabled={!envelope.canEdit || !hasEmailRecipients}
+          className={cn('space-y-4 p-4 sm:p-5', !hasEmailRecipients && 'opacity-50')}
+        >
+          <legend className="sr-only">Email subject and message</legend>
+          <p className="mt-0.5 text-xs text-text-muted">
+            {hasEmailRecipients
+              ? 'Shown in the signing request email sent to email recipients.'
+              : 'Add an email recipient to customize the signing request email.'}
+          </p>
 
-        <FormInput
-          label="Subject"
-          value={title}
-          ref={titleRef}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setIsSettingsDirty(true);
-          }}
-          disabled={!envelope.canEdit}
-          error={settingsErrors.title}
-        />
-
-        <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
-          <span>Message</span>
-          <textarea
-            ref={messageRef}
-            value={message}
+          <FormInput
+            label="Email subject"
+            inputSize="lg"
+            value={emailSubject}
+            ref={emailSubjectRef}
             onChange={(e) => {
-              setMessage(e.target.value);
+              setEmailSubject(e.target.value);
+              setIsSettingsDirty(true);
+            }}
+            disabled={!envelope.canEdit || !hasEmailRecipients}
+            error={settingsErrors.emailSubject}
+          />
+
+          <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
+            <span>Message</span>
+            <textarea
+              ref={messageRef}
+              value={message}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                setIsSettingsDirty(true);
+              }}
+              disabled={!envelope.canEdit || !hasEmailRecipients}
+              rows={4}
+              aria-invalid={settingsErrors.message ? 'true' : 'false'}
+              className="rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            {settingsErrors.message ? (
+              <span className="text-xs text-red-400">{settingsErrors.message}</span>
+            ) : null}
+          </label>
+        </fieldset>
+      </CompanyAccentSection>
+
+      {/* ——— Section 4: Settings ——— */}
+      <CompanyAccentSection title="Settings">
+        <div className="space-y-4 p-4 sm:p-5">
+          <FormInput
+            label="Envelope name"
+            inputSize="lg"
+            value={title}
+            ref={titleRef}
+            onChange={(e) => {
+              setTitle(e.target.value);
               setIsSettingsDirty(true);
             }}
             disabled={!envelope.canEdit}
-            rows={4}
-            aria-invalid={settingsErrors.message ? 'true' : 'false'}
-            className="rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 disabled:opacity-60"
+            error={settingsErrors.title}
           />
-          {settingsErrors.message ? (
-            <span className="text-xs text-red-400">{settingsErrors.message}</span>
-          ) : null}
-        </label>
-        </div>
-      </CompanyAccentSection>
 
-      {/* ——— Section 4: Advanced settings ——— */}
-      <CompanyAccentSection title="Advanced settings">
-          <div className="space-y-4 p-4 sm:p-5">
-            <SingleDateInput
-              label="Expiration"
-              value={expiresAt}
-              onChange={(value) => {
-                setExpiresAt(value);
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-text-secondary">Linked company</span>
+            <CompanySearchableSelect
+              companies={companies}
+              value={companyId}
+              onChange={(nextCompanyId) => {
+                setCompanyId(nextCompanyId);
                 setIsSettingsDirty(true);
               }}
+              loading={companiesLoading}
               disabled={!envelope.canEdit}
-              placeholder="dd mmm yyyy"
+              placeholder="Optional company link"
+              size="lg"
             />
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+          <SingleDateInput
+            label="Expiration"
+            value={expiresAt}
+            onChange={(value) => {
+              setExpiresAt(value);
+              setIsSettingsDirty(true);
+            }}
+            disabled={!envelope.canEdit}
+            placeholder="dd mmm yyyy"
+          />
+
+          <div className="grid gap-4 sm:grid-cols-3">
               <FormInput
                 label="Reminder every"
+                inputSize="lg"
                 type="number"
                 ref={reminderFrequencyRef}
                 min={1}
@@ -1692,6 +1790,7 @@ async function applyMixedGroupChange(
               />
               <FormInput
                 label="Start reminders after"
+                inputSize="lg"
                 type="number"
                 ref={reminderStartRef}
                 min={0}
@@ -1707,6 +1806,7 @@ async function applyMixedGroupChange(
               />
               <FormInput
                 label="Warn before expiry"
+                inputSize="lg"
                 type="number"
                 ref={expiryWarningRef}
                 min={0}
@@ -1720,23 +1820,8 @@ async function applyMixedGroupChange(
                 hint="Days before expiry to notify the sender."
                 error={settingsErrors.expiryWarningDays}
               />
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-xs font-medium text-text-secondary">Linked company</span>
-              <CompanySearchableSelect
-                companies={companies}
-                value={companyId}
-                onChange={(nextCompanyId) => {
-                  setCompanyId(nextCompanyId);
-                  setIsSettingsDirty(true);
-                }}
-                loading={companiesLoading}
-                disabled={!envelope.canEdit}
-                placeholder="Optional company link"
-              />
-            </div>
           </div>
+        </div>
       </CompanyAccentSection>
 
       {submitError ? (

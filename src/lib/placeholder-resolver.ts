@@ -13,6 +13,7 @@ import {
   buildPartyContactFields,
   formatLetterAddress,
   type ContactDetailInput,
+  type DocumentParty,
   type PartyAddress,
 } from '@/lib/document-party';
 import type { DocumentPartySelections } from '@/services/document-party.service';
@@ -39,6 +40,8 @@ export interface PlaceholderContext extends DocumentPartySelections {
   secretaries?: OfficerData[];
   shareholders?: ShareholderData[];
   contacts?: ContactData[];
+  authorizedRepresentatives?: DocumentParty[];
+  signers?: DocumentParty[];
   service?: ServicePlaceholderData;
 }
 
@@ -342,6 +345,11 @@ export function resolvePlaceholders(
     // 'keep' option leaves them as-is
   }
 
+  // Expand loops attached to valid HTML containers (e.g. table row groups)
+  // before processing ordinary Handlebars-style loops. This keeps loop
+  // metadata intact when the visual editor sanitizes pasted HTML.
+  resolved = expandAttributeEachBlocks(resolved);
+
   // Process #each loops first (most complex)
   resolved = processEachBlocks(resolved, fullContext, opts, missing);
 
@@ -358,6 +366,28 @@ export function resolvePlaceholders(
   resolved = processSimplePlaceholders(resolved, fullContext, opts, missing);
 
   return { resolved, missing: [...new Set(missing)], missingPartials: [...new Set(missingPartials)] };
+}
+
+function expandAttributeEachBlocks(content: string): string {
+  const attributeEachRegex =
+    /<(tbody|div)(?=[^>]*\bdata-template-each\s*=\s*["'][a-zA-Z_][a-zA-Z0-9_.]*["'])\s*([^>]*)>([\s\S]*?)<\/\1>/gi;
+
+  return content.replace(
+    attributeEachRegex,
+    (_match, tag: string, attributes: string, body: string) => {
+      const pathMatch = attributes.match(
+        /\bdata-template-each\s*=\s*(["'])([a-zA-Z_][a-zA-Z0-9_.]*)\1/i,
+      );
+      if (!pathMatch) return _match;
+      const path = pathMatch[2];
+      const cleanAttributes = attributes
+        .replace(pathMatch[0], '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      const openingTag = cleanAttributes ? `<${tag} ${cleanAttributes}>` : `<${tag}>`;
+      return `{{#each ${path}}}${openingTag}${body}</${tag}>{{/each}}`;
+    },
+  );
 }
 
 // ============================================================================
@@ -413,6 +443,19 @@ function processEachBlocks(
           if (!modifierFn) return _;
           const value = item[prop];
           const formatted = formatValue(value, options);
+          if (formatted === null) return '';
+          return modifierFn(formatted);
+        });
+
+        // Replace modifier helpers that use the natural in-placeholder form:
+        // {{DESIGNATION(this.role)}}. These must resolve against the current
+        // loop item before the root-level placeholder pass runs.
+        const modThisRegex =
+          /\{\{([A-Z_]+)\(this\.([a-zA-Z_][a-zA-Z0-9_]*)\)\}\}/g;
+        itemContent = itemContent.replace(modThisRegex, (_: string, modifier: string, prop: string) => {
+          const modifierFn = VALUE_MODIFIERS[modifier];
+          if (!modifierFn) return _;
+          const formatted = formatValue(item[prop], options);
           if (formatted === null) return '';
           return modifierFn(formatted);
         });

@@ -134,7 +134,8 @@ describe('document generation batch workspace state', () => {
         templateKind: 'SERVICE_AGREEMENT',
         configuration: {
           serviceAgreement: {
-            authorizedContactId: 'contact-1',
+            authorizedContactIds: ['contact-1'],
+            signerContactIds: ['contact-1'],
             entityIds: ['company-1', 'company-3'],
             agreementDate: '2026-08-12',
             effectiveDate: null,

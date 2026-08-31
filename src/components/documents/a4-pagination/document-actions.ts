@@ -102,6 +102,7 @@ export function sanitizeReplacementHtml(html: string): string {
       'data-flow-continuation',
       'data-flow-oversized',
       'data-flow-keep-together',
+      'data-template-each',
     ],
   });
 

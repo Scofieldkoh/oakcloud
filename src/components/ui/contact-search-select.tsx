@@ -23,6 +23,7 @@ interface ContactSearchSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  controlClassName?: string;
 }
 
 export function ContactSearchSelect({
@@ -32,6 +33,7 @@ export function ContactSearchSelect({
   placeholder = 'Search contacts...',
   disabled = false,
   className,
+  controlClassName,
 }: ContactSearchSelectProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -72,6 +74,7 @@ export function ContactSearchSelect({
       placeholder={placeholder}
       disabled={disabled}
       className={className}
+      controlClassName={controlClassName}
       options={options}
       isLoading={isLoading}
       searchQuery={searchQuery}

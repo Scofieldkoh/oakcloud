@@ -98,7 +98,9 @@ describe('document generation batch validation', () => {
 
   it('accepts an empty Service Agreement workspace while still validating entered items', () => {
     const workspace = {
-      authorizedContactId: null,
+      authorizedContactIds: [],
+      authorizedRepresentativeRoles: {},
+      signerContactIds: [],
       entityIds: [],
       agreementDate: '2026-08-12',
       effectiveDate: null,
@@ -123,6 +125,47 @@ describe('document generation batch validation', () => {
           displayOrder: 0,
           feeLines: [],
         }],
+      },
+    }).success).toBe(false);
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      serviceAgreement: {
+        ...workspace,
+        authorizedContactIds: [uuid, uuid],
+      },
+    }).success).toBe(false);
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      serviceAgreement: {
+        ...workspace,
+        signerContactIds: [templateA],
+      },
+    }).success).toBe(false);
+  });
+
+  it('keeps Service Agreement appointment selections scoped to selected representatives', () => {
+    const workspace = {
+      authorizedContactIds: [uuid],
+      authorizedRepresentativeRoles: { [uuid]: 'Director' },
+      signerContactIds: [uuid],
+      entityIds: [],
+      agreementDate: '2026-08-12',
+      effectiveDate: null,
+      termMonths: 12,
+      items: [],
+    };
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      serviceAgreement: workspace,
+    }).success).toBe(true);
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      serviceAgreement: {
+        ...workspace,
+        authorizedRepresentativeRoles: {
+          ...workspace.authorizedRepresentativeRoles,
+          [templateA]: 'CEO',
+        },
       },
     }).success).toBe(false);
   });

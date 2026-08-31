@@ -137,7 +137,7 @@ ${pageBreak}
 <h2>Confirmation of Acceptance</h2>
 <p>I have read the terms set out in this Agreement and accept the terms and represent that I am authorised for and on behalf of the entities listed in Appendix 3 to do so.</p>
 <p>Signed for and on behalf of Client</p>
-<p><span data-signature-placeholder="client-acceptance">[Signature]</span><br>{{selectedContact.name}}<br>{{selectedContact.detail}}<br>{{custom.agreementDate}}</p>
+<div data-flow-keep-together="true" data-template-each="signers"><p><span data-signature-placeholder="client-acceptance">[Signature]</span><br>{{this.name}}<br>{{this.role}}<br>{{custom.agreementDate}}</p></div>
 ${pageBreak}
 ${termsOfBusiness}
 ${pageBreak}
@@ -157,7 +157,7 @@ ${SERVICE_AGREEMENT_SLOTS.feeTable}
 ${pageBreak}
 <h1>Instructions</h1>
 <p>All instructions under this Statement of Work shall be given to us (through the email address(es) listed below) by your authorised representative set out below:</p>
-<table data-authorised-representative="true"><thead><tr><th>Name</th><th>Position</th><th>Email address / Mobile</th><th>Signature(s)</th></tr></thead><tbody><tr><td>{{selectedContact.name}}</td><td>{{selectedContact.detail}}</td><td>{{selectedContact.email}} / {{selectedContact.phone}}</td><td data-specimen-signature="true"><span data-signature-placeholder="authorised-representative-specimen">[Specimen signature]</span></td></tr></tbody></table>
+<table data-authorised-representative="true"><thead><tr><th>Name</th><th>Position</th><th>Email address / Mobile</th><th>Signature(s)</th></tr></thead><tbody data-template-each="authorizedRepresentatives"><tr data-flow-keep-together="true"><td>{{this.name}}</td><td>{{this.role}}</td><td>{{this.email}} / {{this.phone}}</td><td data-specimen-signature="true"><span data-signature-placeholder="authorised-representative-specimen">[Specimen signature]</span></td></tr></tbody></table>
 <p>Please provide us with the specimen signatures of the authorised representative(s) for our records.</p>
 <p>Any changes to the authorised representatives shall be in writing.</p>
 <h2>Variations to this Statement of Work</h2>
@@ -167,7 +167,7 @@ ${pageBreak}
 <p>Signed for and on behalf of<br>Oaktree Accounting and Corporate Solutions Pte Ltd</p>
 <p><span data-signature-placeholder="oaktree-sow">[Signature]</span><br>Koh Zhi Yong<br>Director</p>
 <p>Signed for and on behalf of Client</p>
-<p><span data-signature-placeholder="client-sow">[Signature]</span><br>{{selectedContact.name}}<br>{{selectedContact.detail}}</p>
+<div data-flow-keep-together="true" data-template-each="signers"><p><span data-signature-placeholder="client-sow">[Signature]</span><br>{{this.name}}<br>{{this.role}}</p></div>
 ${pageBreak}
 <h1>Appendix 3 - List of Client entities within this Agreement</h1>
 ${SERVICE_AGREEMENT_SLOTS.entityAppendix}
@@ -257,7 +257,35 @@ export const OAKTREE_SERVICE_AGREEMENT_V1 = {
     category: 'CONTRACT' as const,
     compositionType: 'SERVICE_AGREEMENT' as const,
     content: masterTemplate,
-    placeholders: [],
+    placeholders: [
+      {
+        key: 'custom.agreementDate',
+        path: 'custom.agreementDate',
+        type: 'text' as const,
+        label: 'Agreement Date',
+        source: 'custom' as const,
+        category: 'custom',
+        required: false,
+      },
+      {
+        key: 'custom.effectiveDate',
+        path: 'custom.effectiveDate',
+        type: 'text' as const,
+        label: 'Effective Date',
+        source: 'custom' as const,
+        category: 'custom',
+        required: false,
+      },
+      {
+        key: 'custom.termMonths',
+        path: 'custom.termMonths',
+        type: 'text' as const,
+        label: 'Term Months',
+        source: 'custom' as const,
+        category: 'custom',
+        required: false,
+      },
+    ],
     isActive: false,
   },
 } as const;

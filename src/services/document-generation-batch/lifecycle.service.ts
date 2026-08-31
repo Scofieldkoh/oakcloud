@@ -32,6 +32,7 @@ import type {
 } from '@/types/document-generation-batch';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
+import { safelyLinkGeneratedDocumentTaskOutcome } from '@/services/tasks/integration.service';
 import {
   batchInclude,
   batchItemInclude,
@@ -61,6 +62,21 @@ function taskIntegrationContextForMetadata(
 ): Record<string, unknown> | undefined {
   const json = taskLaunchContextToJson(taskContext);
   return json ? { taskIntegrationContext: json } : undefined;
+}
+
+async function safelyLinkBatchOutcome(
+  batch: { items: Array<{ generatedDocumentId: string }> },
+  params: TenantAwareParams,
+  taskContext?: TaskLaunchContext,
+) {
+  const generatedDocumentId = batch.items[0]?.generatedDocumentId;
+  if (!taskContext || !generatedDocumentId) return;
+  await safelyLinkGeneratedDocumentTaskOutcome({
+    tenantId: params.tenantId,
+    context: taskContext,
+    authoritativeId: generatedDocumentId,
+    userId: params.userId,
+  });
 }
 
 export function defaultItemConfiguration(templateName: string): BatchItemConfiguration {
@@ -283,6 +299,7 @@ export async function createDocumentGenerationBatch(
     changeSource: 'MANUAL',
   });
 
+  await safelyLinkBatchOutcome(batch, params, taskContext);
   const catalogue = await catalogueForBatch(batch);
   return mapBatchToDto(batch, catalogue);
 }
@@ -374,7 +391,12 @@ async function syncServiceAgreementForItem(
   primaryCompanyId: string | null,
 ) {
   const workspace = configuration.serviceAgreement;
-  if (!workspace || !primaryCompanyId || !workspace.authorizedContactId) {
+  if (
+    !workspace
+    || !primaryCompanyId
+    || workspace.authorizedContactIds.length === 0
+    || workspace.signerContactIds.length === 0
+  ) {
     return { synced: false, agreement: null as ServiceAgreementDraftDto | null };
   }
   const parsed = serviceAgreementDraftSchema.safeParse({
@@ -797,7 +819,9 @@ export async function adoptLegacyGenerationSession(
     select: { batchId: true },
   });
   if (existingItem) {
-    return getDocumentGenerationBatch(existingItem.batchId, params);
+    const existingBatch = await getDocumentGenerationBatch(existingItem.batchId, params);
+    await safelyLinkBatchOutcome(existingBatch, params, taskContext);
+    return existingBatch;
   }
 
   const templateId = state.templateId ?? input.items[0].templateId;
@@ -888,6 +912,7 @@ export async function adoptLegacyGenerationSession(
     metadata: { legacyDraftId: draftId },
   });
 
+  await safelyLinkBatchOutcome(batch, params, taskContext);
   const catalogue = await catalogueForBatch(batch);
   return mapBatchToDto(batch, catalogue);
 }

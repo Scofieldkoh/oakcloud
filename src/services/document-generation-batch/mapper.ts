@@ -126,8 +126,12 @@ export function serviceAgreementWorkspaceFromDto(
   saved: ServiceAgreementDraftDto,
 ): ServiceAgreementWorkspaceState {
   return {
-    authorizedContactId:
-      saved.authorizedContactId ?? saved.authorizedRepresentativeSnapshot.id,
+    authorizedContactIds: saved.authorizedContactIds,
+    authorizedRepresentativeRoles: Object.fromEntries(
+      saved.authorizedRepresentativeSnapshots.flatMap((representative) =>
+        representative.role ? [[representative.id, representative.role]] : []),
+    ),
+    signerContactIds: saved.signerContactIds,
     entityIds: saved.entities.map((entity) => entity.companyId),
     agreementDate: saved.agreementDate,
     effectiveDate: saved.effectiveDate,

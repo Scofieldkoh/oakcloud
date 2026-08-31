@@ -18,7 +18,7 @@ interface CompanySearchableSelectProps {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   clearable?: boolean;
 }
 

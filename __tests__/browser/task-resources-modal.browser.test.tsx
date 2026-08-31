@@ -89,13 +89,17 @@ describe('Task resources modal browser surface', () => {
 
     const main = screen.getByTestId('pipeline-stage-modal-main');
     const panel = screen.getByTestId('task-resources-panel');
+    const resourcesAside = screen.getByRole('complementary', { name: 'Task resources' });
+    const body = screen.getByTestId('pipeline-stage-modal-body');
     const mainRect = main.getBoundingClientRect();
-    const panelRect = panel.getBoundingClientRect();
+    const panelRect = resourcesAside.getBoundingClientRect();
 
     expect(panel).toBeVisible();
     expect(screen.getByRole('dialog').firstElementChild).toHaveClass('sm:max-w-[90vw]');
+    expect(body).toHaveClass('lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]');
     expect(screen.getByText('202600001A')).toBeVisible();
     expect(panelRect.left).toBeGreaterThanOrEqual(mainRect.right);
+    expect(panelRect.width / (mainRect.width + panelRect.width)).toBeCloseTo(0.3, 2);
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Complete stage' }));
     expect(onTransition).toHaveBeenCalledWith({ action: 'complete' });

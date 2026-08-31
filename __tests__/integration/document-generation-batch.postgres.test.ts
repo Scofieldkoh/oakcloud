@@ -223,7 +223,8 @@ describePostgres('document generation batch postgres integration', () => {
       item.generatedDocumentId,
       {
         primaryCompanyId: actor.tenantId,
-        authorizedContactId: randomUUID(),
+        authorizedContactIds: [actor.userId],
+        signerContactIds: [actor.userId],
         entityIds: [actor.tenantId],
         agreementDate: '2026-08-12',
         effectiveDate: null,

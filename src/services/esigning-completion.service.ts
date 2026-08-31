@@ -3,6 +3,7 @@ import { v5 as uuidv5 } from 'uuid';
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
+import { getEsigningDocumentOriginalFileName } from '@/lib/esigning-document-filename';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
 import type {
@@ -405,6 +406,7 @@ export async function processEsigningAutoFileJob(
           select: {
             id: true,
             fileName: true,
+            originalFileName: true,
             signedStoragePath: true,
           },
         },
@@ -454,7 +456,9 @@ export async function processEsigningAutoFileJob(
         AUTO_FILE_NAMESPACE
       );
       const fileName = `${companyDocumentId}.pdf`;
-      const originalFileName = buildSignedPackageFileName(document.fileName);
+      const originalFileName = buildSignedPackageFileName(
+        getEsigningDocumentOriginalFileName(document),
+      );
       const storageKey = StorageKeys.documentOriginal(
         envelope.tenantId,
         envelope.companyId,
@@ -812,6 +816,7 @@ export async function processEsigningCompletionDelivery(
               select: {
                 id: true,
                 fileName: true,
+                originalFileName: true,
                 signedStoragePath: true,
               },
             },
@@ -834,6 +839,7 @@ export async function processEsigningCompletionDelivery(
       delivery.envelope.documents.map(async (document) => ({
         id: document.id,
         fileName: document.fileName,
+        originalFileName: document.originalFileName,
         signedBuffer: await storage.download(document.signedStoragePath as string),
       }))
     );
@@ -848,6 +854,7 @@ export async function processEsigningCompletionDelivery(
       documents: delivery.envelope.documents.map((document) => ({
         id: document.id,
         fileName: document.fileName,
+        originalFileName: document.originalFileName,
       })),
     });
     const recipientName =

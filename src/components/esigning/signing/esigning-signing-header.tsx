@@ -140,7 +140,7 @@ export function EsigningSigningHeader({
                       <div>
                         <span className="font-medium text-text-primary">Name:</span> {recipientName}
                       </div>
-                      <div>
+                      <div className="break-all">
                         <span className="font-medium text-text-primary">Email:</span> {recipientEmail}
                       </div>
                       <div className="break-all">

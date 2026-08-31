@@ -124,7 +124,15 @@ function analyzeTemplatePlaceholders(content: string, templatePlaceholders?: Pla
   const requirements: PlaceholderRequirement[] = [];
 
   // Array placeholders that are handled by {{#each}} loops and don't need individual validation
-  const arrayPlaceholders = ['directors', 'shareholders', 'secretaries', 'officers', 'contacts'];
+  const arrayPlaceholders = [
+    'directors',
+    'shareholders',
+    'secretaries',
+    'officers',
+    'contacts',
+    'authorizedRepresentatives',
+    'signers',
+  ];
 
   // Process extracted placeholders
   for (const key of extractedKeys) {
@@ -567,20 +575,24 @@ export async function validateForGeneration(
       templateContent: contentToValidate,
       agreement,
     });
-    const representative = agreement.authorizedRepresentativeSnapshot;
-    if (representative) {
-      snapshotRepresentative = {
-        id: representative.id,
-        contactId: representative.id,
-        name: representative.name,
-        detail: representative.role,
-        role: representative.role,
-        contactType: 'INDIVIDUAL',
-        email: representative.email,
-        phone: representative.phone,
-        address: { full: null, letter: null },
-      };
-    }
+    const representativeById = new Map(
+      agreement.authorizedRepresentativeSnapshots.map((representative) => [
+        representative.id,
+        representative,
+      ]),
+    );
+    const representative = representativeById.get(agreement.signerContactIds[0]);
+    snapshotRepresentative = representative ? {
+      id: representative.id,
+      contactId: representative.id,
+      name: representative.name,
+      detail: representative.role,
+      role: representative.role,
+      contactType: 'INDIVIDUAL',
+      email: representative.email,
+      phone: representative.phone,
+      address: { full: null, letter: null },
+    } : undefined;
     contentToValidate = assembly.content;
     agreementErrors.push(
       ...assembly.itemDiagnostics.flatMap((item) =>

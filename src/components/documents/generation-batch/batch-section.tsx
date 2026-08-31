@@ -38,7 +38,12 @@ export function BatchSection({
       aria-labelledby={headingId}
       className="overflow-hidden rounded-lg border border-border-primary bg-background-primary"
     >
-      <header className="flex min-h-12 flex-wrap items-center gap-2 bg-oak-primary px-3 py-2.5 text-white">
+      <header
+        className={cn(
+          'flex min-h-12 flex-wrap items-center gap-2 px-3 py-2.5 text-white',
+          status && !status.complete ? 'bg-[#9b6348]' : 'bg-oak-primary',
+        )}
+      >
         {collapsible ? (
           <h3 id={headingId} className="min-w-0 flex-1">
             <button

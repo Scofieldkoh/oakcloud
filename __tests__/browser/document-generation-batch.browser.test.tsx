@@ -83,7 +83,8 @@ function itemDto(id: string, templateName: string, kind: 'STANDARD' | 'SERVICE_A
       useLetterhead: true,
       serviceAgreement: kind === 'SERVICE_AGREEMENT'
         ? {
-            authorizedContactId: null,
+            authorizedContactIds: [],
+            signerContactIds: [],
             entityIds: ['company-1'],
             agreementDate: '2026-08-12',
             effectiveDate: null,

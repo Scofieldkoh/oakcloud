@@ -43,6 +43,7 @@ export type EsigningEnvelopeDocumentMinAggregateOutputType = {
   tenantId: string | null
   envelopeId: string | null
   fileName: string | null
+  originalFileName: string | null
   storagePath: string | null
   signedStoragePath: string | null
   originalHash: string | null
@@ -60,6 +61,7 @@ export type EsigningEnvelopeDocumentMaxAggregateOutputType = {
   tenantId: string | null
   envelopeId: string | null
   fileName: string | null
+  originalFileName: string | null
   storagePath: string | null
   signedStoragePath: string | null
   originalHash: string | null
@@ -77,6 +79,7 @@ export type EsigningEnvelopeDocumentCountAggregateOutputType = {
   tenantId: number
   envelopeId: number
   fileName: number
+  originalFileName: number
   storagePath: number
   signedStoragePath: number
   originalHash: number
@@ -108,6 +111,7 @@ export type EsigningEnvelopeDocumentMinAggregateInputType = {
   tenantId?: true
   envelopeId?: true
   fileName?: true
+  originalFileName?: true
   storagePath?: true
   signedStoragePath?: true
   originalHash?: true
@@ -125,6 +129,7 @@ export type EsigningEnvelopeDocumentMaxAggregateInputType = {
   tenantId?: true
   envelopeId?: true
   fileName?: true
+  originalFileName?: true
   storagePath?: true
   signedStoragePath?: true
   originalHash?: true
@@ -142,6 +147,7 @@ export type EsigningEnvelopeDocumentCountAggregateInputType = {
   tenantId?: true
   envelopeId?: true
   fileName?: true
+  originalFileName?: true
   storagePath?: true
   signedStoragePath?: true
   originalHash?: true
@@ -246,6 +252,7 @@ export type EsigningEnvelopeDocumentGroupByOutputType = {
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName: string | null
   storagePath: string
   signedStoragePath: string | null
   originalHash: string
@@ -286,6 +293,7 @@ export type EsigningEnvelopeDocumentWhereInput = {
   tenantId?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   envelopeId?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   fileName?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
+  originalFileName?: Prisma.StringNullableFilter<"EsigningEnvelopeDocument"> | string | null
   storagePath?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   signedStoragePath?: Prisma.StringNullableFilter<"EsigningEnvelopeDocument"> | string | null
   originalHash?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
@@ -307,6 +315,7 @@ export type EsigningEnvelopeDocumentOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   envelopeId?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrderInput | Prisma.SortOrder
   storagePath?: Prisma.SortOrder
   signedStoragePath?: Prisma.SortOrderInput | Prisma.SortOrder
   originalHash?: Prisma.SortOrder
@@ -332,6 +341,7 @@ export type EsigningEnvelopeDocumentWhereUniqueInput = Prisma.AtLeast<{
   tenantId?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   envelopeId?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   fileName?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
+  originalFileName?: Prisma.StringNullableFilter<"EsigningEnvelopeDocument"> | string | null
   storagePath?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   signedStoragePath?: Prisma.StringNullableFilter<"EsigningEnvelopeDocument"> | string | null
   originalHash?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
@@ -353,6 +363,7 @@ export type EsigningEnvelopeDocumentOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   envelopeId?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrderInput | Prisma.SortOrder
   storagePath?: Prisma.SortOrder
   signedStoragePath?: Prisma.SortOrderInput | Prisma.SortOrder
   originalHash?: Prisma.SortOrder
@@ -378,6 +389,7 @@ export type EsigningEnvelopeDocumentScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeDocument"> | string
   envelopeId?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeDocument"> | string
   fileName?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeDocument"> | string
+  originalFileName?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelopeDocument"> | string | null
   storagePath?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeDocument"> | string
   signedStoragePath?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelopeDocument"> | string | null
   originalHash?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeDocument"> | string
@@ -394,6 +406,7 @@ export type EsigningEnvelopeDocumentCreateInput = {
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -414,6 +427,7 @@ export type EsigningEnvelopeDocumentUncheckedCreateInput = {
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -432,6 +446,7 @@ export type EsigningEnvelopeDocumentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -452,6 +467,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -471,6 +487,7 @@ export type EsigningEnvelopeDocumentCreateManyInput = {
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -487,6 +504,7 @@ export type EsigningEnvelopeDocumentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -503,6 +521,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -535,6 +554,7 @@ export type EsigningEnvelopeDocumentCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   envelopeId?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrder
   storagePath?: Prisma.SortOrder
   signedStoragePath?: Prisma.SortOrder
   originalHash?: Prisma.SortOrder
@@ -558,6 +578,7 @@ export type EsigningEnvelopeDocumentMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   envelopeId?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrder
   storagePath?: Prisma.SortOrder
   signedStoragePath?: Prisma.SortOrder
   originalHash?: Prisma.SortOrder
@@ -575,6 +596,7 @@ export type EsigningEnvelopeDocumentMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   envelopeId?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrder
   storagePath?: Prisma.SortOrder
   signedStoragePath?: Prisma.SortOrder
   originalHash?: Prisma.SortOrder
@@ -721,6 +743,7 @@ export type EsigningEnvelopeDocumentCreateWithoutGeneratedDocumentInput = {
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -740,6 +763,7 @@ export type EsigningEnvelopeDocumentUncheckedCreateWithoutGeneratedDocumentInput
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -787,6 +811,7 @@ export type EsigningEnvelopeDocumentScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   envelopeId?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   fileName?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
+  originalFileName?: Prisma.StringNullableFilter<"EsigningEnvelopeDocument"> | string | null
   storagePath?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
   signedStoragePath?: Prisma.StringNullableFilter<"EsigningEnvelopeDocument"> | string | null
   originalHash?: Prisma.StringFilter<"EsigningEnvelopeDocument"> | string
@@ -803,6 +828,7 @@ export type EsigningEnvelopeDocumentCreateWithoutEnvelopeInput = {
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -821,6 +847,7 @@ export type EsigningEnvelopeDocumentUncheckedCreateWithoutEnvelopeInput = {
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -865,6 +892,7 @@ export type EsigningEnvelopeDocumentCreateWithoutFieldDefinitionsInput = {
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -884,6 +912,7 @@ export type EsigningEnvelopeDocumentUncheckedCreateWithoutFieldDefinitionsInput 
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -917,6 +946,7 @@ export type EsigningEnvelopeDocumentUpdateWithoutFieldDefinitionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -936,6 +966,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateWithoutFieldDefinitionsInput 
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -953,6 +984,7 @@ export type EsigningEnvelopeDocumentCreateWithoutTaskEsigningPreparationsInput =
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -972,6 +1004,7 @@ export type EsigningEnvelopeDocumentUncheckedCreateWithoutTaskEsigningPreparatio
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -1005,6 +1038,7 @@ export type EsigningEnvelopeDocumentUpdateWithoutTaskEsigningPreparationsInput =
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1024,6 +1058,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateWithoutTaskEsigningPreparatio
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1042,6 +1077,7 @@ export type EsigningEnvelopeDocumentCreateManyGeneratedDocumentInput = {
   tenantId: string
   envelopeId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -1057,6 +1093,7 @@ export type EsigningEnvelopeDocumentUpdateWithoutGeneratedDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1076,6 +1113,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateWithoutGeneratedDocumentInput
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1094,6 +1132,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentI
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1109,6 +1148,7 @@ export type EsigningEnvelopeDocumentCreateManyEnvelopeInput = {
   id?: string
   tenantId: string
   fileName: string
+  originalFileName?: string | null
   storagePath: string
   signedStoragePath?: string | null
   originalHash: string
@@ -1125,6 +1165,7 @@ export type EsigningEnvelopeDocumentUpdateWithoutEnvelopeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1143,6 +1184,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateWithoutEnvelopeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1161,6 +1203,7 @@ export type EsigningEnvelopeDocumentUncheckedUpdateManyWithoutEnvelopeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storagePath?: Prisma.StringFieldUpdateOperationsInput | string
   signedStoragePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1218,6 +1261,7 @@ export type EsigningEnvelopeDocumentSelect<ExtArgs extends runtime.Types.Extensi
   tenantId?: boolean
   envelopeId?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   storagePath?: boolean
   signedStoragePath?: boolean
   originalHash?: boolean
@@ -1240,6 +1284,7 @@ export type EsigningEnvelopeDocumentSelectCreateManyAndReturn<ExtArgs extends ru
   tenantId?: boolean
   envelopeId?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   storagePath?: boolean
   signedStoragePath?: boolean
   originalHash?: boolean
@@ -1259,6 +1304,7 @@ export type EsigningEnvelopeDocumentSelectUpdateManyAndReturn<ExtArgs extends ru
   tenantId?: boolean
   envelopeId?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   storagePath?: boolean
   signedStoragePath?: boolean
   originalHash?: boolean
@@ -1278,6 +1324,7 @@ export type EsigningEnvelopeDocumentSelectScalar = {
   tenantId?: boolean
   envelopeId?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   storagePath?: boolean
   signedStoragePath?: boolean
   originalHash?: boolean
@@ -1290,7 +1337,7 @@ export type EsigningEnvelopeDocumentSelectScalar = {
   generatedDocumentId?: boolean
 }
 
-export type EsigningEnvelopeDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "envelopeId" | "fileName" | "storagePath" | "signedStoragePath" | "originalHash" | "signedHash" | "pageCount" | "sortOrder" | "fileSize" | "createdAt" | "updatedAt" | "generatedDocumentId", ExtArgs["result"]["esigningEnvelopeDocument"]>
+export type EsigningEnvelopeDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "envelopeId" | "fileName" | "originalFileName" | "storagePath" | "signedStoragePath" | "originalHash" | "signedHash" | "pageCount" | "sortOrder" | "fileSize" | "createdAt" | "updatedAt" | "generatedDocumentId", ExtArgs["result"]["esigningEnvelopeDocument"]>
 export type EsigningEnvelopeDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   envelope?: boolean | Prisma.EsigningEnvelopeDefaultArgs<ExtArgs>
   fieldDefinitions?: boolean | Prisma.EsigningEnvelopeDocument$fieldDefinitionsArgs<ExtArgs>
@@ -1320,6 +1367,7 @@ export type $EsigningEnvelopeDocumentPayload<ExtArgs extends runtime.Types.Exten
     tenantId: string
     envelopeId: string
     fileName: string
+    originalFileName: string | null
     storagePath: string
     signedStoragePath: string | null
     originalHash: string
@@ -1761,6 +1809,7 @@ export interface EsigningEnvelopeDocumentFieldRefs {
   readonly tenantId: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>
   readonly envelopeId: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>
   readonly fileName: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>
+  readonly originalFileName: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>
   readonly storagePath: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>
   readonly signedStoragePath: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>
   readonly originalHash: Prisma.FieldRef<"EsigningEnvelopeDocument", 'String'>

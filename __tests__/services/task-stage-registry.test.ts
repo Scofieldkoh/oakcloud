@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   outcomeDeleteMany: vi.fn(),
   companyFindFirst: vi.fn(),
   documentFindFirst: vi.fn(),
+  batchFindFirst: vi.fn(),
   batchItemFindFirst: vi.fn(),
   envelopeFindFirst: vi.fn(),
   recoveryFindFirst: vi.fn(),
@@ -56,6 +57,7 @@ const tx = {
   },
   company: { findFirst: mocks.companyFindFirst },
   generatedDocument: { findFirst: mocks.documentFindFirst },
+  documentGenerationBatch: { findFirst: mocks.batchFindFirst },
   documentGenerationBatchItem: { findFirst: mocks.batchItemFindFirst },
   esigningEnvelope: { findFirst: mocks.envelopeFindFirst },
   user: { findFirst: mocks.userFindFirst },
@@ -105,6 +107,7 @@ vi.mock('@/lib/prisma', () => ({
     $transaction: mocks.transaction,
     taskStage: { findFirst: mocks.stageFindFirst },
     generatedDocument: { findFirst: mocks.documentFindFirst },
+    documentGenerationBatch: { findFirst: mocks.batchFindFirst },
     documentGenerationBatchItem: { findFirst: mocks.batchItemFindFirst },
     company: { findFirst: mocks.companyFindFirst },
     taskCompanyRecoveryContext: { findFirst: mocks.recoveryFindFirst },
@@ -179,6 +182,67 @@ describe('Company recovery ownership', () => {
       },
     });
     expect(mocks.outcomeUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recovers a document outcome from a task-linked generation batch', async () => {
+    const documentId = '33333333-3333-4333-8333-333333333333';
+    const stage = {
+      id: 'stage-1',
+      taskId: 'task-1',
+      actionType: TaskStageActionType.DOCUMENT_GENERATION,
+      status: TaskStageStatus.IN_PROGRESS,
+    };
+    const linkedStage = {
+      ...stage,
+      tenantId: 'tenant-a',
+      name: 'Generate resolution',
+      startedAt: new Date('2026-08-29T00:00:00.000Z'),
+      completedAt: null,
+      isRequired: true,
+      task: { id: 'task-1', status: TaskStatus.IN_PROGRESS, companyId: null, deletedAt: null },
+      outcome: null,
+    };
+    mocks.batchFindFirst.mockResolvedValue({
+      items: [{ generatedDocumentId: documentId }],
+    });
+    mocks.documentFindFirst.mockResolvedValue({
+      id: documentId,
+      title: 'Resolution',
+      status: 'DRAFT',
+    });
+    mocks.stageFindFirst.mockResolvedValue(linkedStage);
+    mocks.rawQuery.mockResolvedValue([{
+      id: 'task-1',
+      tenantId: 'tenant-a',
+      status: TaskStatus.IN_PROGRESS,
+      title: 'Annual return',
+      companyId: null,
+    }]);
+    mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: TaskStageStatus.IN_PROGRESS });
+    mocks.stageFindMany.mockResolvedValue([{ status: TaskStageStatus.IN_PROGRESS }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1' });
+    mocks.transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
+
+    await expect(recoverTaskStageOutcomeFromDurableContext('tenant-a', stage))
+      .resolves.toBe(true);
+
+    expect(mocks.batchFindFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        tenantId: 'tenant-a',
+        deletedAt: null,
+        AND: [
+          { taskContext: { path: ['taskId'], equals: 'task-1' } },
+          { taskContext: { path: ['taskStageId'], equals: 'stage-1' } },
+        ],
+      }),
+    }));
+    expect(mocks.outcomeUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        type: 'GENERATED_DOCUMENT',
+        generatedDocumentId: documentId,
+      }),
+    }));
   });
 });
 
@@ -1162,6 +1226,81 @@ describe('task snapshots and stage mutations', () => {
       .resolves.toMatchObject({ status: 'FAILED', outcomeSummary: null });
     await expect(reconcileTaskStageOutcome('tenant-a', 'stage-1'))
       .resolves.toMatchObject({ status: 'FAILED' });
+  });
+
+  it('relinks a failed document stage to its active task-linked batch', async () => {
+    const oldDocumentId = '33333333-3333-4333-8333-333333333333';
+    const newDocumentId = '44444444-4444-4444-8444-444444444444';
+    const batchId = '55555555-5555-4555-8555-555555555555';
+    const initialStage = {
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Generate contract',
+      description: null,
+      position: 1,
+      icon: 'FileText',
+      isRequired: true,
+      actionType: 'DOCUMENT_GENERATION',
+      actionConfig: {},
+      status: 'COMPLETED',
+      startedAt: new Date('2026-08-29T00:00:00.000Z'),
+      completedAt: new Date('2026-08-29T00:00:00.000Z'),
+      assignee: null,
+      checklistItems: [],
+      task: { id: 'task-1', status: 'COMPLETED', companyId: null, deletedAt: null },
+      outcome: {
+        id: 'outcome-1',
+        type: 'GENERATED_DOCUMENT',
+        companyId: null,
+        generatedDocumentId: oldDocumentId,
+        esigningEnvelopeId: null,
+      },
+    };
+    const failedStage = {
+      ...initialStage,
+      status: 'FAILED',
+      completedAt: null,
+    };
+    const linkedStage = {
+      ...failedStage,
+      status: 'IN_PROGRESS',
+      outcome: { ...failedStage.outcome, generatedDocumentId: newDocumentId },
+    };
+    const stageReads = [initialStage, initialStage, failedStage, failedStage, linkedStage, linkedStage];
+    mocks.stageFindFirst.mockImplementation(({ select }: { select?: unknown }) => (
+      Promise.resolve(select ? { taskId: 'task-1' } : stageReads.shift() ?? linkedStage)
+    ));
+    mocks.documentFindFirst.mockImplementation(({ where }: { where: { id: string } }) => (
+      Promise.resolve(where.id === newDocumentId
+        ? { id: newDocumentId, title: 'New contract', status: 'DRAFT' }
+        : null)
+    ));
+    mocks.batchFindFirst.mockResolvedValue({
+      items: [{ generatedDocumentId: newDocumentId }],
+    });
+    mocks.batchItemFindFirst.mockResolvedValue({ batchId });
+    mocks.rawQuery.mockResolvedValue([{
+      id: 'task-1',
+      tenantId: 'tenant-a',
+      status: TaskStatus.COMPLETED,
+      title: 'Annual return',
+      companyId: null,
+    }]);
+    mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: TaskStageStatus.IN_PROGRESS });
+    mocks.stageFindMany.mockResolvedValue([{ status: TaskStageStatus.IN_PROGRESS }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1' });
+
+    const detail = await getTaskStageDetail('tenant-a', 'task-1', 'stage-1');
+
+    expect(detail.launch).toEqual({
+      href: `/generated-documents/generate?batch=${batchId}`,
+      context: { taskId: 'task-1', taskStageId: 'stage-1' },
+    });
+    expect(mocks.outcomeUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({ generatedDocumentId: newDocumentId }),
+    }));
   });
 
   it('preserves a skipped integrated stage until the user reopens it', async () => {

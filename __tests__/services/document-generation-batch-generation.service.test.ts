@@ -38,6 +38,7 @@ vi.mock('@/services/document-generation-batch/preview.service', () => previewMoc
 
 const generatorMock = vi.hoisted(() => ({
   materializeDocumentFromTemplate: vi.fn(),
+  finalizeDocument: vi.fn(),
 }));
 
 vi.mock('@/services/document-generator.service', () => generatorMock);
@@ -52,7 +53,10 @@ import {
   preflightDocumentGenerationBatch,
   retryDocumentGenerationBatchItem,
 } from '@/services/document-generation-batch';
-import { materializeDocumentFromTemplate } from '@/services/document-generator.service';
+import {
+  finalizeDocument,
+  materializeDocumentFromTemplate,
+} from '@/services/document-generator.service';
 import { createReviewedFingerprint } from '@/lib/document-generation-fingerprint';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
@@ -270,6 +274,9 @@ describe('document generation batch execution', () => {
     ]);
     expect(result.batchStatus).toBe('PARTIAL');
     expect(materializeDocumentFromTemplate).toHaveBeenCalledTimes(3);
+    expect(finalizeDocument).toHaveBeenCalledWith('doc-a', actor);
+    expect(finalizeDocument).toHaveBeenCalledWith('doc-c', actor);
+    expect(finalizeDocument).toHaveBeenCalledTimes(2);
   });
 
   it('refuses to regenerate an already generated item', async () => {
@@ -331,6 +338,7 @@ describe('document generation batch execution', () => {
       }),
       undefined,
     );
+    expect(finalizeDocument).toHaveBeenCalledWith('child-item-1', actor);
     expect(result.items.find((entry) => entry.id === 'item-1')?.status).toBe('GENERATED');
   });
 

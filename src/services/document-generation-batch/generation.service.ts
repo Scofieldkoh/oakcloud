@@ -11,6 +11,7 @@ import {
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
 import {
+  finalizeDocument,
   materializeDocumentFromTemplate,
 } from '@/services/document-generator.service';
 import {
@@ -386,6 +387,7 @@ export async function generateDocumentGenerationBatch(
           },
           taskContext,
         );
+        await finalizeDocument(document.id, params);
         await prisma.documentGenerationBatchItem.update({
           where: { id: item.id },
           data: {
@@ -567,7 +569,7 @@ export async function retryDocumentGenerationBatchItem(
 
   const taskContext = taskLaunchContextFromBatch(batch.taskContext);
   try {
-    await materializeDocumentFromTemplate(
+    const document = await materializeDocumentFromTemplate(
       {
         templateId: item.templateId,
         companyId: batch.primaryCompanyId ?? undefined,
@@ -591,6 +593,7 @@ export async function retryDocumentGenerationBatchItem(
       },
       taskContext,
     );
+    await finalizeDocument(document.id, params);
     await prisma.documentGenerationBatchItem.update({
       where: { id: item.id },
       data: {

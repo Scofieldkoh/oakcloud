@@ -262,6 +262,13 @@ Agreement entities, service items, item/entity assignments, and fee lines are
 normalized relational data. This structured draft is the authority used by
 the later Client Services activation workflow.
 
+Representatives are item-specific multi-selections. The draft pins an ordered
+snapshot for every authorised representative and stores a signer-ID subset;
+at least one representative and signer are required, and every signer must be
+one of the representatives. Rendering exposes `authorizedRepresentatives` for
+the instructions table and `signers` for repeated keep-together client signing
+blocks. Missing both email and phone is a non-blocking configuration warning.
+
 Generation session metadata is versioned. Version 1 sessions remain readable
 and are normalized to the three-stage version 2 model in memory; the next save
 writes version 2. A version 2 Service Agreement session also returns its

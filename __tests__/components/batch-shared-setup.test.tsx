@@ -79,7 +79,12 @@ describe('BatchSharedSetup', () => {
     await user.type(search, 'Acme');
     expect(p.onCompanyQueryChange).toHaveBeenCalled();
     await user.click(screen.getByText('Acme Pte. Ltd.'));
-    expect(p.onCompanyChange).toHaveBeenCalledWith('company-1');
+    expect(p.onCompanyChange).toHaveBeenCalledWith('company-1', {
+      id: 'company-1',
+      name: 'Acme Pte. Ltd.',
+      status: 'LIVE',
+      uen: '202600001A',
+    });
   });
 
   it('shows the selected company details and records master values', async () => {

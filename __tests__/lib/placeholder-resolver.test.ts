@@ -143,6 +143,23 @@ describe('placeholder resolver', () => {
     expect(result.resolved).not.toContain('&lt;ul');
     expect(result.missing).toEqual([]);
   });
+
+  it('expands a sanitizer-safe table row-group loop for authorised representatives', () => {
+    const result = resolvePlaceholders(
+      '<table><tbody data-template-each="authorizedRepresentatives"><tr><td>{{this.name}}</td><td>{{this.email}}</td></tr></tbody></table>',
+      {
+        authorizedRepresentatives: [
+          { id: 'c1', name: 'Alex Tan', role: 'Director', email: 'alex@example.com', phone: null },
+          { id: 'c2', name: 'Bea Lim', role: 'Manager', email: 'bea@example.com', phone: null },
+        ] as never,
+      },
+    );
+
+    expect(result.resolved).toBe(
+      '<table><tbody><tr><td>Alex Tan</td><td>alex@example.com</td></tr></tbody><tbody><tr><td>Bea Lim</td><td>bea@example.com</td></tr></tbody></table>',
+    );
+    expect(result.missing).toEqual([]);
+  });
   it('supports one-based @number inside each blocks', () => {
     const result = resolvePlaceholders(
       '{{#each directors}}<p>{{@number}}. {{name}}</p>{{/each}}',
@@ -234,6 +251,30 @@ describe('placeholder resolver', () => {
 
     expect(result.resolved).toContain('<p>Director</p>');
     expect(result.resolved).not.toContain('{{');
+    expect(result.missing).toEqual([]);
+  });
+
+  it('applies DESIGNATION to selected Service Agreement representative roles', () => {
+    const representative = {
+      id: 'contact-1',
+      contactId: 'contact-1',
+      name: 'Alex Tan',
+      detail: 'MANAGING DIRECTOR',
+      role: 'MANAGING DIRECTOR',
+      email: null,
+      phone: null,
+      address: { full: null, letter: null },
+    };
+    const result = resolvePlaceholders(
+      '{{#each authorizedRepresentatives}}<p>{{DESIGNATION(this.role)}}</p>{{/each}}'
+        + '{{#each signers}}<p>{{DESIGNATION(this.role)}}</p>{{/each}}',
+      {
+        authorizedRepresentatives: [representative],
+        signers: [{ ...representative, role: 'CEO', detail: 'CEO' }],
+      },
+    );
+
+    expect(result.resolved).toBe('<p>Managing Director</p><p>CEO</p>');
     expect(result.missing).toEqual([]);
   });
 

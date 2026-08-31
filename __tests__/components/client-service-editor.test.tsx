@@ -208,6 +208,12 @@ describe('ClientServiceEditor deadline preview', () => {
     expect(screen.queryByRole('button', { name: 'Delete service permanently' })).not.toBeInTheDocument();
   });
 
+  it('keeps the service family read-only while editing a service', () => {
+    renderEditor();
+
+    expect(screen.getByLabelText('Service family')).toHaveProperty('readOnly', true);
+  });
+
   it('renders every stored open deadline and billing occurrence in read-only mode', async () => {
     renderEditor({ readOnly: true });
 

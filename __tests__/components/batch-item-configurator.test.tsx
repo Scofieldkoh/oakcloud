@@ -71,14 +71,17 @@ function props(overrides: Partial<BatchItemConfiguratorProps> = {}): BatchItemCo
 }
 
 describe('BatchItemConfigurator', () => {
-  it('uses the Companies-style header for every standard Configure section', () => {
+  it('uses muted orange headers for incomplete required sections and green for complete sections', () => {
     render(<BatchItemConfigurator {...props()} />);
 
     const headers = document.querySelectorAll('section > header');
     expect(headers.length).toBeGreaterThan(1);
-    for (const header of headers) {
-      expect(header).toHaveClass('bg-oak-primary');
-    }
+    expect(screen.getByRole('heading', { name: 'Details' }).closest('header'))
+      .toHaveClass('bg-oak-primary');
+    expect(screen.getByRole('heading', { name: /^Parties/ }).closest('header'))
+      .toHaveClass('bg-[#9b6348]');
+    expect(screen.getByRole('heading', { name: /^ContactsRecipients/ }).closest('header'))
+      .toHaveClass('bg-oak-primary');
   });
 
   it('does not expose letterhead controls', () => {

@@ -60,6 +60,33 @@ async function findDocumentGenerationBatchId(
   return batchItem?.batchId ?? null;
 }
 
+async function findTaskLinkedDocumentId(
+  tenantId: string,
+  taskId: string,
+  taskStageId: string,
+) {
+  const batch = await prisma.documentGenerationBatch.findFirst({
+    where: {
+      tenantId,
+      deletedAt: null,
+      AND: [
+        { taskContext: { path: ['taskId'], equals: taskId } },
+        { taskContext: { path: ['taskStageId'], equals: taskStageId } },
+      ],
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      items: {
+        where: { generatedDocument: { deletedAt: null } },
+        orderBy: { displayOrder: 'asc' },
+        take: 1,
+        select: { generatedDocumentId: true },
+      },
+    },
+  });
+  return batch?.items[0]?.generatedDocumentId ?? null;
+}
+
 const stageDetailInclude = {
   task: {
     select: {
@@ -176,6 +203,31 @@ export async function getTaskStageDetail(
       include: stageDetailInclude,
     });
     if (!stage) throw new NotFoundError('Task stage not found');
+  }
+
+  // A deleted document can leave a SetNull outcome row behind. Once the
+  // normal reconciliation marks that stale link as failed, use any newer
+  // task-linked batch as the replacement durable outcome.
+  if (
+    !recovered
+    && stage.status === TaskStageStatus.FAILED
+    && stage.actionType === TaskStageActionType.DOCUMENT_GENERATION
+    && stage.outcome?.type === TaskStageOutcomeType.GENERATED_DOCUMENT
+  ) {
+    const relinked = await recoverTaskStageOutcomeFromDurableContext(tenantId, stage);
+    if (relinked) {
+      await reconcileTaskStageOutcome(tenantId, stage.id, actorUserId);
+      stage = await prisma.taskStage.findFirst({
+        where: {
+          id: stageId,
+          taskId,
+          tenantId,
+          task: { deletedAt: null },
+        },
+        include: stageDetailInclude,
+      });
+      if (!stage) throw new NotFoundError('Task stage not found');
+    }
   }
 
   const adapter = getStageActionAdapter(stage.actionType);
@@ -388,6 +440,18 @@ export async function recoverTaskStageOutcomeFromDurableContext(
     return true;
   }
   if (stage.actionType === TaskStageActionType.DOCUMENT_GENERATION) {
+    const batchDocumentId = await findTaskLinkedDocumentId(
+      tenantId,
+      stage.taskId,
+      stage.id,
+    );
+    if (batchDocumentId) {
+      await linkTaskStageOutcome(tenantId, stage.id, {
+        type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+        generatedDocumentId: batchDocumentId,
+      });
+      return true;
+    }
     const document = await prisma.generatedDocument.findFirst({
       where: {
         tenantId,

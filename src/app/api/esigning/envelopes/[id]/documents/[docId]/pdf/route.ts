@@ -9,6 +9,7 @@ import {
 import { storage } from '@/lib/storage';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
 import { prisma } from '@/lib/prisma';
+import { getEsigningDocumentPdfFileName } from '@/lib/esigning-document-filename';
 
 interface RouteParams {
   params: Promise<{ id: string; docId: string }>;
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       select: {
         storagePath: true,
         fileName: true,
+        originalFileName: true,
       },
     });
 
@@ -51,7 +53,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': buildContentDispositionHeader(disposition, stored.fileName),
+        'Content-Disposition': buildContentDispositionHeader(
+          disposition,
+          getEsigningDocumentPdfFileName(stored),
+        ),
       },
     });
   } catch (error) {

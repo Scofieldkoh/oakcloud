@@ -3,6 +3,7 @@ import {
   buildPartyContactFields,
   type DocumentParty,
 } from '@/lib/document-party';
+import { rankAppointments } from '@/lib/representative-authority';
 
 export interface DocumentPartySelections {
   selectedDirector?: DocumentParty;
@@ -40,7 +41,7 @@ export async function getDocumentPartyOptions(
     select: {
       id: true,
       officers: {
-        where: { isCurrent: true, role: 'DIRECTOR' },
+        where: { isCurrent: true },
         select: {
           id: true,
           contactId: true,
@@ -151,7 +152,7 @@ export async function getDocumentPartyOptions(
     }),
   });
 
-  const directors = company.officers.map((officer) =>
+  const officerParties = company.officers.map((officer) =>
     toParty({
       id: officer.id,
       contactId: officer.contactId,
@@ -169,6 +170,8 @@ export async function getDocumentPartyOptions(
       },
     }),
   );
+  const directors = officerParties.filter((_, index) =>
+    company.officers[index].role === 'DIRECTOR');
   const shareholders = company.shareholders.map((shareholder) =>
     toParty({
       id: shareholder.id,
@@ -190,36 +193,43 @@ export async function getDocumentPartyOptions(
     }),
   );
 
-  const contactMap = new Map<string, DocumentParty>();
+  const appointmentsByContactId = new Map<string, string[]>();
+  const addAppointment = (contactId: string | null | undefined, appointment: string) => {
+    if (!contactId) return;
+    appointmentsByContactId.set(contactId, [
+      ...(appointmentsByContactId.get(contactId) ?? []),
+      appointment,
+    ]);
+  };
   for (const relation of company.contacts) {
-    const contact = eligibleContactMap.get(relation.contactId);
-    if (!contact) continue;
+    addAppointment(relation.contactId, relation.relationship);
+  }
+  for (const officer of company.officers) {
+    addAppointment(officer.contactId, officer.role);
+  }
+  for (const shareholder of company.shareholders) {
+    addAppointment(shareholder.contactId, 'Shareholder');
+  }
 
-    contactMap.set(
-      contact.id,
-      toParty({
+  const contacts = [...eligibleContactMap.values()].flatMap((contact) => {
+    const appointments = rankAppointments(appointmentsByContactId.get(contact.id) ?? []);
+    if (appointments.length === 0) return [];
+    return [{
+      ...toParty({
         id: contact.id,
         contactId: contact.id,
         name: contact.fullName,
-        detail: relation.relationship,
+        detail: appointments[0],
         contact,
       }),
-    );
-  }
-  for (const party of [...directors, ...shareholders]) {
-    if (
-      party.contactId &&
-      eligibleContactMap.has(party.contactId) &&
-      !contactMap.has(party.contactId)
-    ) {
-      contactMap.set(party.contactId, { ...party, id: party.contactId });
-    }
-  }
+      appointments,
+    }];
+  });
 
   return {
     directors,
     shareholders,
-    contacts: Array.from(contactMap.values()),
+    contacts,
   };
 }
 

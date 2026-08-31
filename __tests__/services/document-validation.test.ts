@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/lib/prisma';
 import { resolveDocumentPartySelections } from '@/services/document-party.service';
 import { resolvePartials } from '@/services/template-partial.service';
+import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktree-service-agreement-v1';
 import {
   extractSections,
   validateForGeneration,
@@ -249,6 +250,15 @@ describe('Document Validation Service', () => {
         id: 'agreement-1',
         generatedDocumentId: 'document-1',
         primaryCompanyId: 'company-1',
+        authorizedContactIds: ['contact-1'],
+        signerContactIds: ['contact-1'],
+        authorizedRepresentativeSnapshots: [{
+          id: 'contact-1',
+          name: 'Alex Tan',
+          role: 'Director',
+          email: 'alex@example.com',
+          phone: null,
+        }],
       });
       serviceAgreementMock.assembleServiceAgreementTemplate.mockReturnValue({
         content: '<p>Agreement</p>',
@@ -278,6 +288,51 @@ describe('Document Validation Service', () => {
       expect(result.isValid).toBe(false);
     });
 
+    it('does not require custom data for representative and signer loops in the seed template', async () => {
+      const templateContent = OAKTREE_SERVICE_AGREEMENT_V1.template.content;
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Service Agreement',
+        content: templateContent,
+        placeholders: [],
+        compositionType: 'SERVICE_AGREEMENT',
+      } as never);
+      serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue({
+        id: 'agreement-1',
+        generatedDocumentId: 'document-1',
+        primaryCompanyId: 'company-1',
+        authorizedRepresentativeSnapshots: [{
+          id: 'contact-1',
+          name: 'Alex Tan',
+          role: 'Director',
+          email: 'alex@example.com',
+          phone: null,
+        }],
+        signerContactIds: ['contact-1'],
+      });
+      serviceAgreementMock.assembleServiceAgreementTemplate.mockReturnValue({
+        content: templateContent,
+        itemDiagnostics: [],
+      });
+
+      const result = await validateForGeneration(
+        'tenant-1',
+        {
+          draftId: 'document-1',
+          templateId: 'template-1',
+          companyId: 'company-1',
+          serviceAgreementId: 'agreement-1',
+        },
+        'Taylor User',
+        'user-1',
+      );
+
+      expect(result.resolvedData.requiredPlaceholders).not.toContain('authorizedRepresentatives');
+      expect(result.resolvedData.requiredPlaceholders).not.toContain('signers');
+      expect(result.errors.map((error) => error.field)).not.toContain('authorizedRepresentatives');
+      expect(result.errors.map((error) => error.field)).not.toContain('signers');
+    });
+
     it('validates Service Agreement contact placeholders from the saved representative snapshot', async () => {
       vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
         id: 'template-1',
@@ -290,13 +345,14 @@ describe('Document Validation Service', () => {
         id: 'agreement-1',
         generatedDocumentId: 'document-1',
         primaryCompanyId: 'company-1',
-        authorizedRepresentativeSnapshot: {
+        authorizedRepresentativeSnapshots: [{
           id: 'deleted-contact',
           name: 'Pinned representative',
           role: 'Director',
           email: 'pinned@example.com',
           phone: null,
-        },
+        }],
+        signerContactIds: ['deleted-contact'],
       });
       serviceAgreementMock.assembleServiceAgreementTemplate.mockReturnValue({
         content: '{{selectedContact.name}}',

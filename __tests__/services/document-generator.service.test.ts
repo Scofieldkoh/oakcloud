@@ -1011,7 +1011,7 @@ describe('Document generator service', () => {
     expect(result.context.custom?.contacts).toBe(result.context.contacts);
   });
 
-  it('renders Service Agreement representative placeholders from the saved snapshot', async () => {
+  it('renders Service Agreement representative and signer collections from saved snapshots', async () => {
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
       id: 'template-1',
       tenantId: 'workspace-1',
@@ -1033,14 +1033,24 @@ describe('Document generator service', () => {
       id: 'agreement-1',
       generatedDocumentId: 'document-1',
       primaryCompanyId: 'company-1',
-      authorizedContactId: 'deleted-contact',
-      authorizedRepresentativeSnapshot: {
-        id: 'deleted-contact',
-        name: 'Pinned Name',
-        role: 'Director',
-        email: 'pinned@example.com',
-        phone: '+65 6123 4567',
-      },
+      authorizedContactIds: ['deleted-contact', 'second-contact'],
+      signerContactIds: ['deleted-contact', 'second-contact'],
+      authorizedRepresentativeSnapshots: [
+        {
+          id: 'deleted-contact',
+          name: 'Pinned Name',
+          role: 'Director',
+          email: 'pinned@example.com',
+          phone: '+65 6123 4567',
+        },
+        {
+          id: 'second-contact',
+          name: 'Second Signer',
+          role: 'Manager',
+          email: 'second@example.com',
+          phone: null,
+        },
+      ],
       agreementDate: '2026-07-30',
       effectiveDate: '2026-08-01',
       termMonths: 12,
@@ -1080,6 +1090,10 @@ describe('Document generator service', () => {
       email: 'pinned@example.com',
       phone: '+65 6123 4567',
     }));
+    expect(result.context.authorizedRepresentatives?.map((representative) => representative.id))
+      .toEqual(['deleted-contact', 'second-contact']);
+    expect(result.context.signers?.map((signer) => signer.id))
+      .toEqual(['deleted-contact', 'second-contact']);
   });
 
   it('renders Service Agreement representative email/phone as blank when the snapshot omits them', async () => {
@@ -1104,14 +1118,15 @@ describe('Document generator service', () => {
       id: 'agreement-1',
       generatedDocumentId: 'document-1',
       primaryCompanyId: 'company-1',
-      authorizedContactId: 'contact-1',
-      authorizedRepresentativeSnapshot: {
+      authorizedContactIds: ['contact-1'],
+      signerContactIds: ['contact-1'],
+      authorizedRepresentativeSnapshots: [{
         id: 'contact-1',
         name: 'Pinned Name',
         role: 'Director',
         email: null,
         phone: null,
-      },
+      }],
       agreementDate: '2026-07-30',
       effectiveDate: '2026-08-01',
       termMonths: 12,

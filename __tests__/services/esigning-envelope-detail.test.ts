@@ -158,5 +158,28 @@ describe('e-signing envelope detail serialization', () => {
 
     expect(detail.postCompletion.completionDeliveryStatus).toBe('NOT_TRACKED');
     expect(detail.emailDelivery).toMatchObject({ status: 'ok', failures: [] });
+    expect(detail.canDelete).toBe(true);
+  });
+
+  it('serializes the preserved original document filename', async () => {
+    mocks.findFirst.mockResolvedValue(makeEnvelope({
+      documents: [{
+        id: 'document-1',
+        fileName: 'dr-appointment-of-corp-sec-flowmind-ai-pte-limited-2026-08-29.pdf',
+        originalFileName: 'DR - Appointment of Corp Sec_Flowmind AI Pte. Limited_29 Aug 2026',
+        pageCount: 1,
+        sortOrder: 0,
+        fileSize: 1024,
+        originalHash: 'hash-1',
+        signedHash: null,
+      }],
+    }));
+
+    const detail = await getEsigningEnvelopeDetail(session, 'tenant-1', 'envelope-1');
+
+    expect(detail.documents[0]).toMatchObject({
+      fileName: 'DR - Appointment of Corp Sec_Flowmind AI Pte. Limited_29 Aug 2026',
+      originalFileName: 'DR - Appointment of Corp Sec_Flowmind AI Pte. Limited_29 Aug 2026',
+    });
   });
 });

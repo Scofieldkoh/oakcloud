@@ -63,9 +63,12 @@ const sessionMock = vi.hoisted(() => ({
 
 vi.mock('@/lib/document-generation-session', () => sessionMock);
 
-vi.mock('@/services/tasks/integration.service', () => ({
+const taskIntegrationMock = vi.hoisted(() => ({
   linkFirstGeneratedDocumentTaskOutcomeForBatch: vi.fn(),
+  safelyLinkGeneratedDocumentTaskOutcome: vi.fn(),
 }));
+
+vi.mock('@/services/tasks/integration.service', () => taskIntegrationMock);
 
 import { prisma } from '@/lib/prisma';
 import {
@@ -305,7 +308,8 @@ describe('document generation batch lifecycle', () => {
     const incomplete = {
       ...defaultConfig(templateB.name),
       serviceAgreement: {
-        authorizedContactId: null,
+        authorizedContactIds: [],
+        signerContactIds: [],
         entityIds: [],
         agreementDate: '2026-08-12',
         effectiveDate: null,
@@ -403,6 +407,12 @@ describe('document generation batch lifecycle', () => {
         }),
       }),
     );
+    expect(taskIntegrationMock.safelyLinkGeneratedDocumentTaskOutcome).toHaveBeenCalledWith({
+      tenantId,
+      context: { taskId: 'task-1', taskStageId: 'stage-1', returnTo: '/tasks' },
+      authoritativeId: items[0].generatedDocumentId,
+      userId,
+    });
   });
 
   it('adopts the existing child and agreement instead of creating another output', async () => {

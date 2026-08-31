@@ -142,7 +142,7 @@ export function PipelineStageModalFrame({
     >
       <ModalBody
         data-testid="pipeline-stage-modal-body"
-        className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem]"
+        className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]"
       >
         <div data-testid="pipeline-stage-modal-main" className="min-w-0 space-y-4">
           {children}

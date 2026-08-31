@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocumentPageViewer } from '@/components/processing/document-page-viewer';
 
@@ -9,8 +9,12 @@ vi.mock('@/hooks/use-processing-documents', () => ({
   useDeletePages: () => ({ deletePages: vi.fn(), isDeleting: false }),
 }));
 
+const mediaMocks = vi.hoisted(() => ({
+  isMobile: false,
+}));
+
 vi.mock('@/hooks/use-media-query', () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => mediaMocks.isMobile,
 }));
 
 const pdfMocks = vi.hoisted(() => ({
@@ -57,6 +61,7 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mediaMocks.isMobile = false;
     originalGetContext = HTMLCanvasElement.prototype.getContext;
     const context2d = {} as CanvasRenderingContext2D;
     Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
@@ -169,6 +174,47 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
     expect(screen.queryByTitle(/page thumbnails/i)).not.toBeInTheDocument();
   });
 
+  it('increments mobile zoom by one percent per control step', async () => {
+    mediaMocks.isMobile = true;
+
+    render(<DocumentPageViewer pdfUrl="/mobile-zoom.pdf" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('100%')).toBeInTheDocument();
+      expect(screen.getByText('/ 2')).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Zoom in (+)'));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('101%')).toBeInTheDocument();
+    });
+  });
+
+  it('fills the viewport height when fullscreen overrides an embedded height', async () => {
+    render(
+      <DocumentPageViewer
+        pdfUrl="/fullscreen.pdf"
+        className="h-[calc(100dvh-10rem)]"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('/ 2')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('Fullscreen'));
+
+    const viewer = screen.getByTitle('Exit fullscreen').closest(
+      'div.flex.flex-col.bg-background-secondary'
+    );
+    expect(viewer).not.toBeNull();
+    expect(viewer).toHaveStyle({ height: '100dvh' });
+  });
+
   it('renders every PDF page in one scrollable surface in continuous mode', async () => {
     render(
       <DocumentPageViewer
@@ -186,6 +232,22 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
         canvas.getAttribute('data-page-number')
       )
     ).toEqual(['1', '2']);
+  });
+
+  it('left-aligns oversized continuous pages so the mobile left edge remains reachable', async () => {
+    render(
+      <DocumentPageViewer
+        pdfUrl="/continuous-mobile.pdf"
+        viewMode="continuous"
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('canvas[data-main-pdf-canvas="true"]')).toHaveLength(2);
+    });
+
+    const content = scrollContainer().firstElementChild;
+    expect(content).toHaveClass('items-start', 'sm:items-center');
   });
 
   it('renders page-relative overlay content for every continuous page', async () => {

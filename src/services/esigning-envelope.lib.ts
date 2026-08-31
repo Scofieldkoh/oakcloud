@@ -11,6 +11,7 @@ import type {
   EsigningFieldValueDto,
 } from '@/types/esigning';
 import type { EsigningListQueryInput } from '@/lib/validations/esigning';
+import { getEsigningDocumentOriginalFileName } from '@/lib/esigning-document-filename';
 import { getEsigningEmailDeliveryHealth } from '@/services/esigning-email-delivery.service';
 import {
   getEsigningPostCompletionSummary,
@@ -264,6 +265,7 @@ export function serializeEnvelopeDetail(input: {
     id: envelope.id,
     tenantId: envelope.tenantId,
     title: envelope.title,
+    emailSubject: envelope.emailSubject ?? envelope.title,
     message: envelope.message,
     status: envelope.status,
     signingOrder: envelope.signingOrder,
@@ -284,7 +286,9 @@ export function serializeEnvelopeDetail(input: {
     createdById: envelope.createdById,
     createdByName: formatUserName(envelope.createdBy.firstName, envelope.createdBy.lastName, envelope.createdBy.email),
     canEdit: envelope.status === 'DRAFT' && canMutateEnvelope(scope, session, envelope.createdById),
-    canDelete: envelope.status === 'DRAFT' && canDeleteEnvelope(scope, session, envelope.createdById),
+    canDelete:
+      ['DRAFT', 'COMPLETED'].includes(envelope.status) &&
+      canDeleteEnvelope(scope, session, envelope.createdById),
     canSend: envelope.status === 'DRAFT' && canMutateEnvelope(scope, session, envelope.createdById),
     canVoid: ['SENT', 'IN_PROGRESS'].includes(envelope.status) && (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
     canDuplicate: scope.canCreate && canReadEnvelope(scope, session, envelope.createdById),
@@ -305,7 +309,8 @@ export function serializeEnvelopeDetail(input: {
     completedSignerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER' && recipient.status === 'SIGNED').length,
     documents: envelope.documents.map((document) => ({
       id: document.id,
-      fileName: document.fileName,
+      fileName: getEsigningDocumentOriginalFileName(document),
+      originalFileName: getEsigningDocumentOriginalFileName(document),
       pageCount: document.pageCount,
       sortOrder: document.sortOrder,
       fileSize: document.fileSize,

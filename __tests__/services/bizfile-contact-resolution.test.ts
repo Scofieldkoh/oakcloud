@@ -25,6 +25,7 @@ const tx = {
   processingDocument: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
   documentRevision: { create: vi.fn() },
   taskCompanyRecoveryContext: { upsert: mocks.recoveryUpsert },
+  serviceScheduleReconciliationRequest: { findUnique: vi.fn(), upsert: vi.fn() },
 };
 
 vi.mock('@/lib/prisma', () => ({
@@ -78,6 +79,8 @@ describe('BizFile contact identity resolution', () => {
     tx.documentRevision.create.mockResolvedValue({ id: 'revision-1' });
     tx.processingDocument.findUnique.mockResolvedValue({ id: 'processing-existing' });
     tx.companyShareholder.findMany.mockResolvedValue([]);
+    tx.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue(null);
+    tx.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({ id: 'reconciliation-1' });
     mocks.resolveOrCreateContact
       .mockResolvedValueOnce({ contact: { id: 'contact-existing' } })
       .mockResolvedValueOnce({ contact: { id: 'contact-new-corporate' } });

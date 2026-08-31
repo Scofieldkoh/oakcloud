@@ -31,7 +31,9 @@ export interface ServiceAgreementItemInput {
 
 export interface ServiceAgreementDraftInput {
   primaryCompanyId: string;
-  authorizedContactId: string;
+  authorizedContactIds: string[];
+  authorizedRepresentativeRoles?: Record<string, string>;
+  signerContactIds: string[];
   entityIds: string[];
   agreementDate: string;
   effectiveDate?: string | null;
@@ -92,8 +94,9 @@ export interface ServiceAgreementDraftDto {
   id: string;
   generatedDocumentId: string;
   primaryCompanyId: string;
-  authorizedContactId: string | null;
-  authorizedRepresentativeSnapshot: AuthorizedRepresentativeSnapshot;
+  authorizedContactIds: string[];
+  signerContactIds: string[];
+  authorizedRepresentativeSnapshots: AuthorizedRepresentativeSnapshot[];
   agreementDate: string;
   effectiveDate: string | null;
   termMonths: number;

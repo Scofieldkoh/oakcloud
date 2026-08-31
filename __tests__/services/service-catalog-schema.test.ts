@@ -12,9 +12,9 @@ describe('service catalog Prisma schema', () => {
     expect(schema).toContain('model ServiceFamily');
     expect(schema).toContain('model ServiceVariant');
     expect(schema).toContain('model ServiceVariantFeeTemplate');
-    expect(schema).toContain(
-      'compositionType DocumentTemplateCompositionType @default(STANDARD)',
+    expect(schema).toMatch(
+      /^\s*compositionType\s+DocumentTemplateCompositionType\s+@default\(STANDARD\)(?:\s+@map\("[^"]+"\))?\s*$/m,
     );
-    expect(schema).toContain('version     Int       @default(1)');
+    expect(schema).toMatch(/^\s*version\s+Int\s+@default\(1\)\s*$/m);
   });
 });

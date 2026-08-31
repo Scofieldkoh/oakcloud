@@ -43,105 +43,137 @@ export function ServiceFeeEditor({
 
   return (
     <div className="space-y-3">
-      {fees.map((fee, index) => (
-        <div
-          key={fee.clientKey}
-          className="grid gap-2 rounded-md border border-border-secondary p-3 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <label className="text-xs text-text-secondary sm:col-span-2">
-            {companyNames.get(fee.companyId) ?? 'Entity'} fee description
-            <input
-              value={fee.description}
-              onChange={(event) => update(index, { description: event.target.value })}
-              className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-sm sm:h-8"
-            />
-          </label>
-          <label className="text-xs text-text-secondary">
-            Amount
-            <input
-              inputMode="decimal"
-              value={fee.amount}
-              onChange={(event) => update(index, { amount: event.target.value })}
-              className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-sm sm:h-8"
-            />
-          </label>
-          <label className="text-xs text-text-secondary">
-            Currency
-            <input
-              maxLength={3}
-              value={fee.currency}
-              onChange={(event) => update(index, {
-                currency: event.target.value.toUpperCase(),
-              })}
-              className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-sm sm:h-8"
-            />
-          </label>
-          <label className="text-xs text-text-secondary">
-            Frequency
-            <select
-              value={fee.billingFrequency}
-              onChange={(event) => update(index, {
-                billingFrequency: event.target
-                  .value as ServiceAgreementFeeLineInput['billingFrequency'],
-                customFrequencyLabel: event.target.value === 'CUSTOM'
-                  ? fee.customFrequencyLabel
-                  : null,
-              })}
-              className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-xs sm:h-8"
-            >
-              {['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY', 'ONE_TIME', 'CUSTOM'].map(
-                (frequency) => (
-                  <option key={frequency} value={frequency}>
-                    {frequency.replaceAll('_', ' ')}
-                  </option>
-                ),
-              )}
-            </select>
-          </label>
-          {fee.billingFrequency === 'CUSTOM' ? (
-            <label className="text-xs text-text-secondary">
-              Custom frequency
-              <input
-                value={fee.customFrequencyLabel ?? ''}
-                onChange={(event) => update(index, {
-                  customFrequencyLabel: event.target.value,
-                })}
-                className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-sm sm:h-8"
-              />
-            </label>
-          ) : null}
-          <div className="text-xs text-text-secondary">
-            <span>Billing start date</span>
-            <SingleDateInput
-              value={fee.billingStartDate ?? startDate}
-              onChange={(next) => update(index, {
-                billingStartDate: next || null,
-              })}
-              ariaLabel="Billing start date"
-              className="mt-1"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => onChange(
-                fees
-                  .filter((_, candidate) => candidate !== index)
-                  .map((candidate, candidateIndex, remaining) => ({
-                    ...candidate,
-                    displayOrder: remaining
-                      .slice(0, candidateIndex)
-                      .filter((other) => other.companyId === candidate.companyId)
-                      .length,
-                  })),
-              )}
-            >
-              Remove fee
-            </Button>
-          </div>
+      {fees.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs text-text-secondary">
+                <th scope="col" className="border-b border-border-secondary px-2 pb-2 font-medium">Description</th>
+                <th scope="col" className="w-48 border-b border-border-secondary px-2 pb-2 font-medium">Company applied</th>
+                <th scope="col" className="w-28 border-b border-border-secondary px-2 pb-2 font-medium">Amount</th>
+                <th scope="col" className="w-24 border-b border-border-secondary px-2 pb-2 font-medium">Currency</th>
+                <th scope="col" className="w-36 border-b border-border-secondary px-2 pb-2 font-medium">Frequency</th>
+                <th scope="col" className="w-40 border-b border-border-secondary px-2 pb-2 font-medium">Billing start date</th>
+                <th scope="col" className="w-24 border-b border-border-secondary px-2 pb-2 font-medium"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {fees.map((fee, index) => (
+                <tr key={fee.clientKey} className="align-top text-xs text-text-secondary">
+                  <td className="border-b border-border-secondary px-2 py-2">
+                    <label className="sr-only" htmlFor={`${fee.clientKey}-description`}>
+                      {companyNames.get(fee.companyId) ?? 'Entity'} fee description
+                    </label>
+                    <input
+                      id={`${fee.clientKey}-description`}
+                      aria-label={`${companyNames.get(fee.companyId) ?? 'Entity'} fee description`}
+                      value={fee.description}
+                      onChange={(event) => update(index, { description: event.target.value })}
+                      className="h-10 w-full min-w-64 rounded border border-border-primary bg-background-primary px-2 text-sm text-text-primary"
+                    />
+                  </td>
+                  <td className="border-b border-border-secondary px-2 py-2 align-middle">
+                    <span className="block truncate text-sm text-text-primary">
+                      {companyNames.get(fee.companyId) ?? 'Entity'}
+                    </span>
+                  </td>
+                  <td className="border-b border-border-secondary px-2 py-2">
+                    <label className="sr-only" htmlFor={`${fee.clientKey}-amount`}>Amount</label>
+                    <input
+                      id={`${fee.clientKey}-amount`}
+                      aria-label="Amount"
+                      inputMode="decimal"
+                      value={fee.amount}
+                      onChange={(event) => update(index, { amount: event.target.value })}
+                      className="h-10 w-full rounded border border-border-primary bg-background-primary px-2 text-sm text-text-primary"
+                    />
+                  </td>
+                  <td className="border-b border-border-secondary px-2 py-2">
+                    <label className="sr-only" htmlFor={`${fee.clientKey}-currency`}>Currency</label>
+                    <input
+                      id={`${fee.clientKey}-currency`}
+                      aria-label="Currency"
+                      maxLength={3}
+                      value={fee.currency}
+                      onChange={(event) => update(index, {
+                        currency: event.target.value.toUpperCase(),
+                      })}
+                      className="h-10 w-full rounded border border-border-primary bg-background-primary px-2 text-sm text-text-primary"
+                    />
+                  </td>
+                  <td className="border-b border-border-secondary px-2 py-2">
+                    <label className="sr-only" htmlFor={`${fee.clientKey}-frequency`}>Frequency</label>
+                    <select
+                      id={`${fee.clientKey}-frequency`}
+                      aria-label="Frequency"
+                      value={fee.billingFrequency}
+                      onChange={(event) => update(index, {
+                        billingFrequency: event.target
+                          .value as ServiceAgreementFeeLineInput['billingFrequency'],
+                        customFrequencyLabel: event.target.value === 'CUSTOM'
+                          ? fee.customFrequencyLabel
+                          : null,
+                      })}
+                      className="h-10 w-full rounded border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
+                    >
+                      {['MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY', 'ONE_TIME', 'CUSTOM'].map(
+                        (frequency) => (
+                          <option key={frequency} value={frequency}>
+                            {frequency.replaceAll('_', ' ')}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                    {fee.billingFrequency === 'CUSTOM' ? (
+                      <label className="sr-only" htmlFor={`${fee.clientKey}-custom-frequency`}>Custom frequency</label>
+                    ) : null}
+                    {fee.billingFrequency === 'CUSTOM' ? (
+                      <input
+                        id={`${fee.clientKey}-custom-frequency`}
+                        aria-label="Custom frequency"
+                        value={fee.customFrequencyLabel ?? ''}
+                        onChange={(event) => update(index, {
+                          customFrequencyLabel: event.target.value,
+                        })}
+                        className="mt-1 h-10 w-full rounded border border-border-primary bg-background-primary px-2 text-sm text-text-primary"
+                      />
+                    ) : null}
+                  </td>
+                  <td className="border-b border-border-secondary px-2 py-2">
+                    <SingleDateInput
+                      value={fee.billingStartDate ?? startDate}
+                      onChange={(next) => update(index, {
+                        billingStartDate: next || null,
+                      })}
+                      ariaLabel="Billing start date"
+                      className="w-44 max-w-full"
+                    />
+                  </td>
+                  <td className="border-b border-border-secondary px-2 py-2 align-middle">
+                    <Button
+                      variant="danger"
+                      size="xs"
+                      onClick={() => onChange(
+                        fees
+                          .filter((_, candidate) => candidate !== index)
+                          .map((candidate, candidateIndex, remaining) => ({
+                            ...candidate,
+                            displayOrder: remaining
+                              .slice(0, candidateIndex)
+                              .filter((other) => other.companyId === candidate.companyId)
+                              .length,
+                          })),
+                      )}
+                    >
+                      Remove
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
+      ) : null}
       <div className="flex flex-wrap gap-2">
         {entityIds.map((entityId) => (
           <Button

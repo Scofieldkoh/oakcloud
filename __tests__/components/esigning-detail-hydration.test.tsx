@@ -309,5 +309,6 @@ describe('E-signing detail hydration', () => {
     await waitFor(() => {
       expect(recoverableErrors).toHaveLength(0);
     });
+    expect(container.textContent).toContain('Delete envelope');
   });
 });

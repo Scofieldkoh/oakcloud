@@ -447,11 +447,19 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   async function handleDeleteEnvelope() {
     try {
       await deleteEnvelope.mutateAsync(envelopeId);
-      toast.success('Draft deleted');
+      toast.success(
+        envelope?.status === 'COMPLETED' ? 'Envelope permanently deleted' : 'Draft deleted'
+      );
       setIsDeleteEnvelopeOpen(false);
       router.push(returnHref);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete draft');
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : envelope?.status === 'COMPLETED'
+            ? 'Failed to delete envelope'
+            : 'Failed to delete draft'
+      );
     }
   }
 
@@ -715,9 +723,13 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         isOpen={isDeleteEnvelopeOpen}
         onClose={() => setIsDeleteEnvelopeOpen(false)}
         onConfirm={handleDeleteEnvelope}
-        title="Delete draft envelope?"
-        description="This permanently removes the draft envelope and its uploaded source files."
-        confirmLabel="Delete draft"
+        title={envelope?.status === 'COMPLETED' ? 'Delete completed envelope?' : 'Delete draft envelope?'}
+        description={
+          envelope?.status === 'COMPLETED'
+            ? 'This permanently removes the completed envelope, its signed documents, certificates, and download access.'
+            : 'This permanently removes the draft envelope and its uploaded source files.'
+        }
+        confirmLabel={envelope?.status === 'COMPLETED' ? 'Delete envelope' : 'Delete draft'}
         isLoading={deleteEnvelope.isPending}
       />
       <ConfirmDialog
@@ -750,7 +762,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       <div
         className={cn(
           'flex flex-col bg-background-primary',
-          currentStep === 2
+          currentStep === 2 || currentStep === 3
             ? 'h-[calc(100dvh-3rem)] overflow-hidden md:h-dvh'
             : 'min-h-screen'
         )}
@@ -795,7 +807,9 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         <div
           ref={wizardContentRef}
           data-wizard-main="true"
-          className={currentStep === 2 ? 'flex flex-1 min-h-0 flex-col overflow-hidden' : 'flex-1 overflow-auto'}
+          className={currentStep === 2 || currentStep === 3
+            ? 'flex flex-1 min-h-0 flex-col overflow-hidden'
+            : 'flex-1 overflow-auto'}
         >
           {currentStep === 1 && (
             <>
@@ -852,7 +866,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               <h1
                 id="esigning-step-2-heading"
                 tabIndex={-1}
-                className="px-4 pt-4 text-xl font-semibold text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:px-6 sm:pt-6"
+                className="sr-only"
               >
                 Place fields
               </h1>
@@ -1009,6 +1023,16 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   Duplicate
                 </Button>
               )}
+              {envelope.canDelete ? (
+                <Button
+                  className="w-full sm:w-auto"
+                  variant="danger"
+                  leftIcon={<Trash2 className="h-4 w-4" />}
+                  onClick={() => setIsDeleteEnvelopeOpen(true)}
+                >
+                  Delete envelope
+                </Button>
+              ) : null}
               {envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED' ? (
                 <>
                   <Button

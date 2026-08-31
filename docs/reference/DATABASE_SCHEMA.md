@@ -2664,7 +2664,7 @@ A pipeline create/update transaction inserts an unpublished `task_pipeline_versi
 
 | Table | Purpose | Key constraints |
 |---|---|---|
-| `service_agreements` | Structured agreement header beside a generated-document draft | Unique generated document; tenant/status and primary-company indexes |
+| `service_agreements` | Structured agreement header with ordered representative snapshots and a signer-ID subset beside a generated-document draft | Unique generated document; tenant/status and primary-company indexes |
 | `service_agreement_entities` | Included company name/UEN snapshots | Unique company within an agreement |
 | `service_agreement_items` | Repeated service selections and pinned SOW/version data | Tenant/agreement/display-order index |
 | `service_agreement_item_entities` | Many-to-many item targeting | Unique item/entity pair |
@@ -2673,8 +2673,9 @@ A pipeline create/update transaction inserts an unpublished `task_pipeline_versi
 `ServiceAgreementStatus` is `DRAFT`, `EFFECTIVE`, or `CANCELLED`. Stage 2
 creates and edits only `DRAFT` rows. Every relation is tenant-scoped and uses
 additive foreign keys; deleting a generation draft cascades its structured
-agreement, while company, contact, variant, and partial references are
-restricted or set null as declared in the Prisma schema.
+agreement, while company, variant, and partial references are restricted as
+declared in the Prisma schema. Representative snapshots and signer IDs are
+JSON because document rendering must remain stable after contact changes.
 
 Agreement item snapshots store the material service-variant version, SOW
 partial version, expanded legal wording, service placeholder definitions, and

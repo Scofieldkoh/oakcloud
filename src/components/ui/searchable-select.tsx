@@ -34,7 +34,7 @@ export interface SearchableSelectProps {
   /** Whether the select is disabled */
   disabled?: boolean;
   /** Size variant */
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   /** Visual treatment for the select trigger */
   variant?: 'default' | 'table-filter';
   /** Additional class name */
@@ -330,6 +330,7 @@ export function SearchableSelect({
   const sizeClasses = {
     sm: 'h-8 text-sm',
     md: 'h-9 text-sm',
+    lg: 'h-10 text-sm',
   };
   const triggerSizeClasses = variant === 'table-filter' ? 'h-9 text-sm' : sizeClasses[size];
 

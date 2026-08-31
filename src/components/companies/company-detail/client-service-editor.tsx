@@ -304,7 +304,7 @@ export function ClientServiceEditor({
   const serviceHeader = (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl border border-border-primary bg-background-primary p-4 shadow-sm">
       <FormInput id="client-service-name" label="Service name" disabled={readOnly || busy} value={serviceName} error={fieldErrors.serviceName} onChange={(event) => setServiceName(event.target.value)} />
-      <FormInput id="client-service-family" label="Service family" disabled={readOnly || busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
+      <FormInput id="client-service-family" label="Service family" readOnly disabled={readOnly || busy} value={familyName} error={fieldErrors.familyName} onChange={(event) => setFamilyName(event.target.value)} />
     </div>
   );
 

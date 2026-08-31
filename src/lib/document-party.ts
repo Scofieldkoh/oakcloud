@@ -8,6 +8,7 @@ export interface DocumentParty {
   contactId: string | null;
   name: string;
   detail: string | null;
+  appointments?: string[];
   contactType?: string | null;
   email: string | null;
   phone: string | null;

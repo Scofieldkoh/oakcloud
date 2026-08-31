@@ -10,13 +10,55 @@ const fieldValues = z
   });
 
 export const serviceAgreementWorkspaceSchema = z.object({
-  authorizedContactId: nullableUuid,
+  authorizedContactIds: z.array(uuid).max(100),
+  authorizedRepresentativeRoles: z
+    .record(uuid, z.string().trim().min(1).max(200))
+    .refine((value) => Object.keys(value).length <= 100, {
+      message: 'At most 100 representative appointments are allowed',
+    })
+    .optional(),
+  signerContactIds: z.array(uuid).max(100),
   entityIds: z.array(uuid).max(100),
   agreementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   termMonths: z.number().int().min(1).max(1200),
   items: z.array(serviceAgreementItemSchema).max(50),
-}).strict();
+}).strict().superRefine((value, context) => {
+  const representativeIds = new Set(value.authorizedContactIds);
+  if (representativeIds.size !== value.authorizedContactIds.length) {
+    context.addIssue({
+      code: 'custom',
+      path: ['authorizedContactIds'],
+      message: 'Authorised representatives must be unique',
+    });
+  }
+  const signerIds = new Set(value.signerContactIds);
+  if (signerIds.size !== value.signerContactIds.length) {
+    context.addIssue({
+      code: 'custom',
+      path: ['signerContactIds'],
+      message: 'Signers must be unique',
+    });
+  }
+  value.signerContactIds.forEach((contactId, index) => {
+    if (!representativeIds.has(contactId)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['signerContactIds', index],
+        message: 'Every signer must be an authorised representative',
+      });
+    }
+  });
+  for (const contactId of Object.keys(value.authorizedRepresentativeRoles ?? {})) {
+    if (!representativeIds.has(contactId)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['authorizedRepresentativeRoles', contactId],
+        message: 'Appointments may only be selected for authorised representatives',
+      });
+    }
+  }
+});
 
 export const batchItemConfigurationSchema = z.object({
   version: z.literal(1),

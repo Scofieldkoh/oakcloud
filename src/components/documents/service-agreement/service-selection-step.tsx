@@ -10,6 +10,7 @@ import type {
 import type { Company } from '@/types/document-generation';
 import { ServiceItemEditor } from './service-item-editor';
 import { createServiceAgreementClientKey } from './client-key';
+import { ServiceVariantPicker } from './service-variant-picker';
 
 interface ServiceSelectionStepProps {
   entities: Company[];
@@ -128,29 +129,15 @@ export function ServiceSelectionStep({
 
   return (
     <section className="space-y-3">
-      <div className="rounded-xl border border-border-primary bg-background-primary p-4">
-        <h2 className="text-lg font-semibold text-text-primary">Services</h2>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <label className="flex-1 text-xs text-text-secondary">
-            Service variant
-            <select
-              aria-label="Service variant"
-              value={selectedVariantId}
-              onChange={(event) => setSelectedVariantId(event.target.value)}
-              className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 text-sm sm:h-9"
-            >
-              <option value="">Select a service</option>
-              {variants.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Button className="self-end" onClick={addItem} disabled={!selectedVariantId}>
-            Add service
-          </Button>
-        </div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <ServiceVariantPicker
+          variants={variants}
+          value={selectedVariantId}
+          onChange={setSelectedVariantId}
+        />
+        <Button className="self-end" onClick={addItem} disabled={!selectedVariantId}>
+          Add service
+        </Button>
       </div>
       {items.map((item, index) => {
         const variant = variants.find((candidate) => candidate.id === item.variantId);

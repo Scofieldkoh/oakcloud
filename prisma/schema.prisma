@@ -443,7 +443,6 @@ model Contact {
   contactDetails              ContactDetail[]
   tenant                      Workspace            @relation(fields: [tenantId], references: [id])
   noteTabs                    NoteTab[]
-  authorizedServiceAgreements ServiceAgreement[]
 
   @@unique([tenantId, identificationType, identificationNumber])
   @@index([tenantId])
@@ -1165,8 +1164,8 @@ model ServiceAgreement {
   tenantId                         String                            @map("tenant_id")
   generatedDocumentId              String                            @unique @map("generated_document_id")
   primaryCompanyId                 String                            @map("primary_company_id")
-  authorizedContactId              String?                           @map("authorized_contact_id")
-  authorizedRepresentativeSnapshot Json                              @map("authorized_representative_snapshot")
+  authorizedRepresentativeSnapshots Json                             @map("authorized_representative_snapshots")
+  signerContactIds                 Json                              @map("signer_contact_ids")
   agreementDate                    DateTime                          @map("agreement_date") @db.Date
   effectiveDate                    DateTime?                         @map("effective_date") @db.Date
   termMonths                       Int                               @default(12) @map("term_months")
@@ -1189,7 +1188,6 @@ model ServiceAgreement {
   tenant                           Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   generatedDocument                GeneratedDocument                 @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
   primaryCompany                   Company                           @relation("ServiceAgreementPrimaryCompany", fields: [primaryCompanyId], references: [id], onDelete: Restrict)
-  authorizedContact                Contact?                          @relation(fields: [authorizedContactId], references: [id], onDelete: SetNull)
   activationRequestedBy            User?                             @relation("ServiceAgreementActivationRequester", fields: [activationRequestedById], references: [id], onDelete: SetNull)
   entities                         ServiceAgreementEntity[]
   items                            ServiceAgreementItem[]
@@ -1876,6 +1874,7 @@ model EsigningEnvelope {
   tenantId                  String
   createdById               String
   title                     String
+  emailSubject              String?
   message                   String?
   status                    EsigningEnvelopeStatus            @default(DRAFT)
   signingOrder              EsigningSigningOrder              @default(PARALLEL)
@@ -1933,6 +1932,7 @@ model EsigningEnvelopeDocument {
   tenantId                 String
   envelopeId               String
   fileName                 String
+  originalFileName         String?
   storagePath              String
   signedStoragePath        String?
   originalHash             String
@@ -1963,7 +1963,7 @@ model EsigningEnvelopeRecipient {
   email            String
   signingOrder     Int?
   status           EsigningRecipientStatus           @default(QUEUED)
-  accessMode       EsigningRecipientAccessMode       @default(EMAIL_LINK)
+  accessMode       EsigningRecipientAccessMode       @default(MANUAL_LINK)
   accessTokenHash  String?
   sessionVersion   Int                               @default(1)
   accessCodeHash   String?

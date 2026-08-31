@@ -31,6 +31,24 @@ describe('A4PageEditor', () => {
     });
   });
 
+  it('preserves sanitizer-safe template loop attributes in editable content', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value='<table><tbody data-template-each="authorizedRepresentatives"><tr><td>{{this.name}}</td></tr></tbody></table>'
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-page-content-1').querySelector('tbody'))
+        .toHaveAttribute('data-template-each', 'authorizedRepresentatives');
+    });
+    expect(editorRef.current?.getContent()).toContain(
+      'data-template-each="authorizedRepresentatives"',
+    );
+  });
+
   it('applies global typography while preserving explicit partial formatting', () => {
     render(
       <A4PageEditor

@@ -108,7 +108,7 @@ export const esigningRecipientInputSchema = z
     name: z.string().trim().min(1).max(160),
     email: z.string().trim().toLowerCase().email().max(320),
     signingOrder: z.number().int().min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional().nullable(),
-    accessMode: esigningRecipientAccessModeSchema.default('EMAIL_LINK'),
+    accessMode: esigningRecipientAccessModeSchema.default('MANUAL_LINK'),
     accessCode: emptyStringToUndefined(
       z.string().min(ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH).max(ESIGNING_LIMITS.MAX_ACCESS_CODE_LENGTH)
     ).optional(),
@@ -134,6 +134,7 @@ export const esigningRecipientInputSchema = z
 
 export const createEsigningEnvelopeSchema = z.object({
   title: z.string().trim().min(1).max(160),
+  emailSubject: z.string().trim().min(1).max(160).optional(),
   message: emptyStringToNull(z.string().max(ESIGNING_LIMITS.MAX_MESSAGE_LENGTH)).optional(),
   companyId: emptyStringToNull(z.string().uuid()).optional(),
   signingOrder: esigningSigningOrderSchema.default('PARALLEL'),

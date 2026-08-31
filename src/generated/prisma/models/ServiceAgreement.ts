@@ -41,7 +41,6 @@ export type ServiceAgreementMinAggregateOutputType = {
   tenantId: string | null
   generatedDocumentId: string | null
   primaryCompanyId: string | null
-  authorizedContactId: string | null
   agreementDate: Date | null
   effectiveDate: Date | null
   termMonths: number | null
@@ -68,7 +67,6 @@ export type ServiceAgreementMaxAggregateOutputType = {
   tenantId: string | null
   generatedDocumentId: string | null
   primaryCompanyId: string | null
-  authorizedContactId: string | null
   agreementDate: Date | null
   effectiveDate: Date | null
   termMonths: number | null
@@ -95,8 +93,8 @@ export type ServiceAgreementCountAggregateOutputType = {
   tenantId: number
   generatedDocumentId: number
   primaryCompanyId: number
-  authorizedContactId: number
-  authorizedRepresentativeSnapshot: number
+  authorizedRepresentativeSnapshots: number
+  signerContactIds: number
   agreementDate: number
   effectiveDate: number
   termMonths: number
@@ -135,7 +133,6 @@ export type ServiceAgreementMinAggregateInputType = {
   tenantId?: true
   generatedDocumentId?: true
   primaryCompanyId?: true
-  authorizedContactId?: true
   agreementDate?: true
   effectiveDate?: true
   termMonths?: true
@@ -162,7 +159,6 @@ export type ServiceAgreementMaxAggregateInputType = {
   tenantId?: true
   generatedDocumentId?: true
   primaryCompanyId?: true
-  authorizedContactId?: true
   agreementDate?: true
   effectiveDate?: true
   termMonths?: true
@@ -189,8 +185,8 @@ export type ServiceAgreementCountAggregateInputType = {
   tenantId?: true
   generatedDocumentId?: true
   primaryCompanyId?: true
-  authorizedContactId?: true
-  authorizedRepresentativeSnapshot?: true
+  authorizedRepresentativeSnapshots?: true
+  signerContactIds?: true
   agreementDate?: true
   effectiveDate?: true
   termMonths?: true
@@ -304,8 +300,8 @@ export type ServiceAgreementGroupByOutputType = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId: string | null
-  authorizedRepresentativeSnapshot: runtime.JsonValue
+  authorizedRepresentativeSnapshots: runtime.JsonValue
+  signerContactIds: runtime.JsonValue
   agreementDate: Date
   effectiveDate: Date | null
   termMonths: number
@@ -355,8 +351,8 @@ export type ServiceAgreementWhereInput = {
   tenantId?: Prisma.StringFilter<"ServiceAgreement"> | string
   generatedDocumentId?: Prisma.StringFilter<"ServiceAgreement"> | string
   primaryCompanyId?: Prisma.StringFilter<"ServiceAgreement"> | string
-  authorizedContactId?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonFilter<"ServiceAgreement">
+  authorizedRepresentativeSnapshots?: Prisma.JsonFilter<"ServiceAgreement">
+  signerContactIds?: Prisma.JsonFilter<"ServiceAgreement">
   agreementDate?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
   effectiveDate?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   termMonths?: Prisma.IntFilter<"ServiceAgreement"> | number
@@ -379,7 +375,6 @@ export type ServiceAgreementWhereInput = {
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocument?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
   primaryCompany?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  authorizedContact?: Prisma.XOR<Prisma.ContactNullableScalarRelationFilter, Prisma.ContactWhereInput> | null
   activationRequestedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   entities?: Prisma.ServiceAgreementEntityListRelationFilter
   items?: Prisma.ServiceAgreementItemListRelationFilter
@@ -391,8 +386,8 @@ export type ServiceAgreementOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   generatedDocumentId?: Prisma.SortOrder
   primaryCompanyId?: Prisma.SortOrder
-  authorizedContactId?: Prisma.SortOrderInput | Prisma.SortOrder
-  authorizedRepresentativeSnapshot?: Prisma.SortOrder
+  authorizedRepresentativeSnapshots?: Prisma.SortOrder
+  signerContactIds?: Prisma.SortOrder
   agreementDate?: Prisma.SortOrder
   effectiveDate?: Prisma.SortOrderInput | Prisma.SortOrder
   termMonths?: Prisma.SortOrder
@@ -415,7 +410,6 @@ export type ServiceAgreementOrderByWithRelationInput = {
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   generatedDocument?: Prisma.GeneratedDocumentOrderByWithRelationInput
   primaryCompany?: Prisma.CompanyOrderByWithRelationInput
-  authorizedContact?: Prisma.ContactOrderByWithRelationInput
   activationRequestedBy?: Prisma.UserOrderByWithRelationInput
   entities?: Prisma.ServiceAgreementEntityOrderByRelationAggregateInput
   items?: Prisma.ServiceAgreementItemOrderByRelationAggregateInput
@@ -430,8 +424,8 @@ export type ServiceAgreementWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ServiceAgreementWhereInput | Prisma.ServiceAgreementWhereInput[]
   tenantId?: Prisma.StringFilter<"ServiceAgreement"> | string
   primaryCompanyId?: Prisma.StringFilter<"ServiceAgreement"> | string
-  authorizedContactId?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonFilter<"ServiceAgreement">
+  authorizedRepresentativeSnapshots?: Prisma.JsonFilter<"ServiceAgreement">
+  signerContactIds?: Prisma.JsonFilter<"ServiceAgreement">
   agreementDate?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
   effectiveDate?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   termMonths?: Prisma.IntFilter<"ServiceAgreement"> | number
@@ -454,7 +448,6 @@ export type ServiceAgreementWhereUniqueInput = Prisma.AtLeast<{
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocument?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
   primaryCompany?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  authorizedContact?: Prisma.XOR<Prisma.ContactNullableScalarRelationFilter, Prisma.ContactWhereInput> | null
   activationRequestedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   entities?: Prisma.ServiceAgreementEntityListRelationFilter
   items?: Prisma.ServiceAgreementItemListRelationFilter
@@ -466,8 +459,8 @@ export type ServiceAgreementOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   generatedDocumentId?: Prisma.SortOrder
   primaryCompanyId?: Prisma.SortOrder
-  authorizedContactId?: Prisma.SortOrderInput | Prisma.SortOrder
-  authorizedRepresentativeSnapshot?: Prisma.SortOrder
+  authorizedRepresentativeSnapshots?: Prisma.SortOrder
+  signerContactIds?: Prisma.SortOrder
   agreementDate?: Prisma.SortOrder
   effectiveDate?: Prisma.SortOrderInput | Prisma.SortOrder
   termMonths?: Prisma.SortOrder
@@ -502,8 +495,8 @@ export type ServiceAgreementScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"ServiceAgreement"> | string
   generatedDocumentId?: Prisma.StringWithAggregatesFilter<"ServiceAgreement"> | string
   primaryCompanyId?: Prisma.StringWithAggregatesFilter<"ServiceAgreement"> | string
-  authorizedContactId?: Prisma.StringNullableWithAggregatesFilter<"ServiceAgreement"> | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonWithAggregatesFilter<"ServiceAgreement">
+  authorizedRepresentativeSnapshots?: Prisma.JsonWithAggregatesFilter<"ServiceAgreement">
+  signerContactIds?: Prisma.JsonWithAggregatesFilter<"ServiceAgreement">
   agreementDate?: Prisma.DateTimeWithAggregatesFilter<"ServiceAgreement"> | Date | string
   effectiveDate?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
   termMonths?: Prisma.IntWithAggregatesFilter<"ServiceAgreement"> | number
@@ -527,7 +520,8 @@ export type ServiceAgreementScalarWhereWithAggregatesInput = {
 
 export type ServiceAgreementCreateInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -549,7 +543,6 @@ export type ServiceAgreementCreateInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
@@ -561,8 +554,8 @@ export type ServiceAgreementUncheckedCreateInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -589,7 +582,8 @@ export type ServiceAgreementUncheckedCreateInput = {
 
 export type ServiceAgreementUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -611,7 +605,6 @@ export type ServiceAgreementUpdateInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
@@ -623,8 +616,8 @@ export type ServiceAgreementUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -654,8 +647,8 @@ export type ServiceAgreementCreateManyInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -679,7 +672,8 @@ export type ServiceAgreementCreateManyInput = {
 
 export type ServiceAgreementUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -705,8 +699,8 @@ export type ServiceAgreementUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -748,8 +742,8 @@ export type ServiceAgreementCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   generatedDocumentId?: Prisma.SortOrder
   primaryCompanyId?: Prisma.SortOrder
-  authorizedContactId?: Prisma.SortOrder
-  authorizedRepresentativeSnapshot?: Prisma.SortOrder
+  authorizedRepresentativeSnapshots?: Prisma.SortOrder
+  signerContactIds?: Prisma.SortOrder
   agreementDate?: Prisma.SortOrder
   effectiveDate?: Prisma.SortOrder
   termMonths?: Prisma.SortOrder
@@ -781,7 +775,6 @@ export type ServiceAgreementMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   generatedDocumentId?: Prisma.SortOrder
   primaryCompanyId?: Prisma.SortOrder
-  authorizedContactId?: Prisma.SortOrder
   agreementDate?: Prisma.SortOrder
   effectiveDate?: Prisma.SortOrder
   termMonths?: Prisma.SortOrder
@@ -808,7 +801,6 @@ export type ServiceAgreementMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   generatedDocumentId?: Prisma.SortOrder
   primaryCompanyId?: Prisma.SortOrder
-  authorizedContactId?: Prisma.SortOrder
   agreementDate?: Prisma.SortOrder
   effectiveDate?: Prisma.SortOrder
   termMonths?: Prisma.SortOrder
@@ -966,48 +958,6 @@ export type ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput 
   deleteMany?: Prisma.ServiceAgreementScalarWhereInput | Prisma.ServiceAgreementScalarWhereInput[]
 }
 
-export type ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput = {
-  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput> | Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput[]
-  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput | Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput[]
-  createMany?: Prisma.ServiceAgreementCreateManyAuthorizedContactInputEnvelope
-  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-}
-
-export type ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput = {
-  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput> | Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput[]
-  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput | Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput[]
-  createMany?: Prisma.ServiceAgreementCreateManyAuthorizedContactInputEnvelope
-  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-}
-
-export type ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput = {
-  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput> | Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput[]
-  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput | Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput[]
-  upsert?: Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutAuthorizedContactInput | Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutAuthorizedContactInput[]
-  createMany?: Prisma.ServiceAgreementCreateManyAuthorizedContactInputEnvelope
-  set?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  disconnect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  delete?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  update?: Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutAuthorizedContactInput | Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutAuthorizedContactInput[]
-  updateMany?: Prisma.ServiceAgreementUpdateManyWithWhereWithoutAuthorizedContactInput | Prisma.ServiceAgreementUpdateManyWithWhereWithoutAuthorizedContactInput[]
-  deleteMany?: Prisma.ServiceAgreementScalarWhereInput | Prisma.ServiceAgreementScalarWhereInput[]
-}
-
-export type ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput = {
-  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput> | Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput[]
-  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput | Prisma.ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput[]
-  upsert?: Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutAuthorizedContactInput | Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutAuthorizedContactInput[]
-  createMany?: Prisma.ServiceAgreementCreateManyAuthorizedContactInputEnvelope
-  set?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  disconnect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  delete?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
-  update?: Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutAuthorizedContactInput | Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutAuthorizedContactInput[]
-  updateMany?: Prisma.ServiceAgreementUpdateManyWithWhereWithoutAuthorizedContactInput | Prisma.ServiceAgreementUpdateManyWithWhereWithoutAuthorizedContactInput[]
-  deleteMany?: Prisma.ServiceAgreementScalarWhereInput | Prisma.ServiceAgreementScalarWhereInput[]
-}
-
 export type ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput = {
   create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutGeneratedDocumentInput, Prisma.ServiceAgreementUncheckedCreateWithoutGeneratedDocumentInput>
   connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutGeneratedDocumentInput
@@ -1098,7 +1048,8 @@ export type ServiceAgreementUpdateOneWithoutClientServicesNestedInput = {
 
 export type ServiceAgreementCreateWithoutTenantInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1119,7 +1070,6 @@ export type ServiceAgreementCreateWithoutTenantInput = {
   updatedAt?: Date | string
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
@@ -1130,8 +1080,8 @@ export type ServiceAgreementUncheckedCreateWithoutTenantInput = {
   id?: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1190,8 +1140,8 @@ export type ServiceAgreementScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"ServiceAgreement"> | string
   generatedDocumentId?: Prisma.StringFilter<"ServiceAgreement"> | string
   primaryCompanyId?: Prisma.StringFilter<"ServiceAgreement"> | string
-  authorizedContactId?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonFilter<"ServiceAgreement">
+  authorizedRepresentativeSnapshots?: Prisma.JsonFilter<"ServiceAgreement">
+  signerContactIds?: Prisma.JsonFilter<"ServiceAgreement">
   agreementDate?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
   effectiveDate?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   termMonths?: Prisma.IntFilter<"ServiceAgreement"> | number
@@ -1215,7 +1165,8 @@ export type ServiceAgreementScalarWhereInput = {
 
 export type ServiceAgreementCreateWithoutActivationRequestedByInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1237,7 +1188,6 @@ export type ServiceAgreementCreateWithoutActivationRequestedByInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
@@ -1248,8 +1198,8 @@ export type ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1301,7 +1251,8 @@ export type ServiceAgreementUpdateManyWithWhereWithoutActivationRequestedByInput
 
 export type ServiceAgreementCreateWithoutPrimaryCompanyInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1322,7 +1273,6 @@ export type ServiceAgreementCreateWithoutPrimaryCompanyInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
@@ -1333,8 +1283,8 @@ export type ServiceAgreementUncheckedCreateWithoutPrimaryCompanyInput = {
   id?: string
   tenantId: string
   generatedDocumentId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1385,95 +1335,10 @@ export type ServiceAgreementUpdateManyWithWhereWithoutPrimaryCompanyInput = {
   data: Prisma.XOR<Prisma.ServiceAgreementUpdateManyMutationInput, Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyInput>
 }
 
-export type ServiceAgreementCreateWithoutAuthorizedContactInput = {
-  id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  agreementDate: Date | string
-  effectiveDate?: Date | string | null
-  termMonths?: number
-  status?: $Enums.ServiceAgreementStatus
-  signedAt?: Date | string | null
-  activatedAt?: Date | string | null
-  activationStatus?: $Enums.ServiceAgreementActivationStatus
-  activationSource?: $Enums.ServiceAgreementActivationSource | null
-  activationAttemptCount?: number
-  activationAvailableAt?: Date | string | null
-  activationClaimedAt?: Date | string | null
-  activationLeaseExpiresAt?: Date | string | null
-  activationClaimToken?: string | null
-  activationLastError?: string | null
-  activationReason?: string | null
-  cancelledAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
-  generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
-  primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
-  entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
-  items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
-  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
-}
-
-export type ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput = {
-  id?: string
-  tenantId: string
-  generatedDocumentId: string
-  primaryCompanyId: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  agreementDate: Date | string
-  effectiveDate?: Date | string | null
-  termMonths?: number
-  status?: $Enums.ServiceAgreementStatus
-  signedAt?: Date | string | null
-  activatedAt?: Date | string | null
-  activationStatus?: $Enums.ServiceAgreementActivationStatus
-  activationSource?: $Enums.ServiceAgreementActivationSource | null
-  activationAttemptCount?: number
-  activationAvailableAt?: Date | string | null
-  activationClaimedAt?: Date | string | null
-  activationLeaseExpiresAt?: Date | string | null
-  activationClaimToken?: string | null
-  activationLastError?: string | null
-  activationRequestedById?: string | null
-  activationReason?: string | null
-  cancelledAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
-  items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
-  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
-}
-
-export type ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput = {
-  where: Prisma.ServiceAgreementWhereUniqueInput
-  create: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput>
-}
-
-export type ServiceAgreementCreateManyAuthorizedContactInputEnvelope = {
-  data: Prisma.ServiceAgreementCreateManyAuthorizedContactInput | Prisma.ServiceAgreementCreateManyAuthorizedContactInput[]
-  skipDuplicates?: boolean
-}
-
-export type ServiceAgreementUpsertWithWhereUniqueWithoutAuthorizedContactInput = {
-  where: Prisma.ServiceAgreementWhereUniqueInput
-  update: Prisma.XOR<Prisma.ServiceAgreementUpdateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedUpdateWithoutAuthorizedContactInput>
-  create: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput>
-}
-
-export type ServiceAgreementUpdateWithWhereUniqueWithoutAuthorizedContactInput = {
-  where: Prisma.ServiceAgreementWhereUniqueInput
-  data: Prisma.XOR<Prisma.ServiceAgreementUpdateWithoutAuthorizedContactInput, Prisma.ServiceAgreementUncheckedUpdateWithoutAuthorizedContactInput>
-}
-
-export type ServiceAgreementUpdateManyWithWhereWithoutAuthorizedContactInput = {
-  where: Prisma.ServiceAgreementScalarWhereInput
-  data: Prisma.XOR<Prisma.ServiceAgreementUpdateManyMutationInput, Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactInput>
-}
-
 export type ServiceAgreementCreateWithoutGeneratedDocumentInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1494,7 +1359,6 @@ export type ServiceAgreementCreateWithoutGeneratedDocumentInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
@@ -1505,8 +1369,8 @@ export type ServiceAgreementUncheckedCreateWithoutGeneratedDocumentInput = {
   id?: string
   tenantId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1549,7 +1413,8 @@ export type ServiceAgreementUpdateToOneWithWhereWithoutGeneratedDocumentInput = 
 
 export type ServiceAgreementUpdateWithoutGeneratedDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1570,7 +1435,6 @@ export type ServiceAgreementUpdateWithoutGeneratedDocumentInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
@@ -1581,8 +1445,8 @@ export type ServiceAgreementUncheckedUpdateWithoutGeneratedDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1609,7 +1473,8 @@ export type ServiceAgreementUncheckedUpdateWithoutGeneratedDocumentInput = {
 
 export type ServiceAgreementCreateWithoutEntitiesInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1631,7 +1496,6 @@ export type ServiceAgreementCreateWithoutEntitiesInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
@@ -1642,8 +1506,8 @@ export type ServiceAgreementUncheckedCreateWithoutEntitiesInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1685,7 +1549,8 @@ export type ServiceAgreementUpdateToOneWithWhereWithoutEntitiesInput = {
 
 export type ServiceAgreementUpdateWithoutEntitiesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1707,7 +1572,6 @@ export type ServiceAgreementUpdateWithoutEntitiesInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
@@ -1718,8 +1582,8 @@ export type ServiceAgreementUncheckedUpdateWithoutEntitiesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1745,7 +1609,8 @@ export type ServiceAgreementUncheckedUpdateWithoutEntitiesInput = {
 
 export type ServiceAgreementCreateWithoutItemsInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1767,7 +1632,6 @@ export type ServiceAgreementCreateWithoutItemsInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
@@ -1778,8 +1642,8 @@ export type ServiceAgreementUncheckedCreateWithoutItemsInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1821,7 +1685,8 @@ export type ServiceAgreementUpdateToOneWithWhereWithoutItemsInput = {
 
 export type ServiceAgreementUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1843,7 +1708,6 @@ export type ServiceAgreementUpdateWithoutItemsInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
@@ -1854,8 +1718,8 @@ export type ServiceAgreementUncheckedUpdateWithoutItemsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1881,7 +1745,8 @@ export type ServiceAgreementUncheckedUpdateWithoutItemsInput = {
 
 export type ServiceAgreementCreateWithoutClientServicesInput = {
   id?: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1903,7 +1768,6 @@ export type ServiceAgreementCreateWithoutClientServicesInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
-  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
   activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
@@ -1914,8 +1778,8 @@ export type ServiceAgreementUncheckedCreateWithoutClientServicesInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -1957,7 +1821,8 @@ export type ServiceAgreementUpdateToOneWithWhereWithoutClientServicesInput = {
 
 export type ServiceAgreementUpdateWithoutClientServicesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1979,7 +1844,6 @@ export type ServiceAgreementUpdateWithoutClientServicesInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
@@ -1990,8 +1854,8 @@ export type ServiceAgreementUncheckedUpdateWithoutClientServicesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2019,8 +1883,8 @@ export type ServiceAgreementCreateManyTenantInput = {
   id?: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -2044,7 +1908,8 @@ export type ServiceAgreementCreateManyTenantInput = {
 
 export type ServiceAgreementUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2065,7 +1930,6 @@ export type ServiceAgreementUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
@@ -2076,8 +1940,8 @@ export type ServiceAgreementUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2106,8 +1970,8 @@ export type ServiceAgreementUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2134,8 +1998,8 @@ export type ServiceAgreementCreateManyActivationRequestedByInput = {
   tenantId: string
   generatedDocumentId: string
   primaryCompanyId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -2158,7 +2022,8 @@ export type ServiceAgreementCreateManyActivationRequestedByInput = {
 
 export type ServiceAgreementUpdateWithoutActivationRequestedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2180,7 +2045,6 @@ export type ServiceAgreementUpdateWithoutActivationRequestedByInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
   clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
@@ -2191,8 +2055,8 @@ export type ServiceAgreementUncheckedUpdateWithoutActivationRequestedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2221,8 +2085,8 @@ export type ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByInput
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
   primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2247,8 +2111,8 @@ export type ServiceAgreementCreateManyPrimaryCompanyInput = {
   id?: string
   tenantId: string
   generatedDocumentId: string
-  authorizedContactId?: string | null
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate: Date | string
   effectiveDate?: Date | string | null
   termMonths?: number
@@ -2272,7 +2136,8 @@ export type ServiceAgreementCreateManyPrimaryCompanyInput = {
 
 export type ServiceAgreementUpdateWithoutPrimaryCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2293,7 +2158,6 @@ export type ServiceAgreementUpdateWithoutPrimaryCompanyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
-  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
   activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
@@ -2304,8 +2168,8 @@ export type ServiceAgreementUncheckedUpdateWithoutPrimaryCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2334,122 +2198,8 @@ export type ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
-  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
-  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
-  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type ServiceAgreementCreateManyAuthorizedContactInput = {
-  id?: string
-  tenantId: string
-  generatedDocumentId: string
-  primaryCompanyId: string
-  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  agreementDate: Date | string
-  effectiveDate?: Date | string | null
-  termMonths?: number
-  status?: $Enums.ServiceAgreementStatus
-  signedAt?: Date | string | null
-  activatedAt?: Date | string | null
-  activationStatus?: $Enums.ServiceAgreementActivationStatus
-  activationSource?: $Enums.ServiceAgreementActivationSource | null
-  activationAttemptCount?: number
-  activationAvailableAt?: Date | string | null
-  activationClaimedAt?: Date | string | null
-  activationLeaseExpiresAt?: Date | string | null
-  activationClaimToken?: string | null
-  activationLastError?: string | null
-  activationRequestedById?: string | null
-  activationReason?: string | null
-  cancelledAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type ServiceAgreementUpdateWithoutAuthorizedContactInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
-  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
-  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
-  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
-  generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
-  primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
-  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
-  entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
-  items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
-  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
-}
-
-export type ServiceAgreementUncheckedUpdateWithoutAuthorizedContactInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
-  primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
-  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
-  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
-  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
-  items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
-  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
-}
-
-export type ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
-  primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
-  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  authorizedRepresentativeSnapshots?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  signerContactIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   termMonths?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2525,8 +2275,8 @@ export type ServiceAgreementSelect<ExtArgs extends runtime.Types.Extensions.Inte
   tenantId?: boolean
   generatedDocumentId?: boolean
   primaryCompanyId?: boolean
-  authorizedContactId?: boolean
-  authorizedRepresentativeSnapshot?: boolean
+  authorizedRepresentativeSnapshots?: boolean
+  signerContactIds?: boolean
   agreementDate?: boolean
   effectiveDate?: boolean
   termMonths?: boolean
@@ -2549,7 +2299,6 @@ export type ServiceAgreementSelect<ExtArgs extends runtime.Types.Extensions.Inte
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
   activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
   entities?: boolean | Prisma.ServiceAgreement$entitiesArgs<ExtArgs>
   items?: boolean | Prisma.ServiceAgreement$itemsArgs<ExtArgs>
@@ -2562,8 +2311,8 @@ export type ServiceAgreementSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   tenantId?: boolean
   generatedDocumentId?: boolean
   primaryCompanyId?: boolean
-  authorizedContactId?: boolean
-  authorizedRepresentativeSnapshot?: boolean
+  authorizedRepresentativeSnapshots?: boolean
+  signerContactIds?: boolean
   agreementDate?: boolean
   effectiveDate?: boolean
   termMonths?: boolean
@@ -2586,7 +2335,6 @@ export type ServiceAgreementSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
   activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }, ExtArgs["result"]["serviceAgreement"]>
 
@@ -2595,8 +2343,8 @@ export type ServiceAgreementSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   tenantId?: boolean
   generatedDocumentId?: boolean
   primaryCompanyId?: boolean
-  authorizedContactId?: boolean
-  authorizedRepresentativeSnapshot?: boolean
+  authorizedRepresentativeSnapshots?: boolean
+  signerContactIds?: boolean
   agreementDate?: boolean
   effectiveDate?: boolean
   termMonths?: boolean
@@ -2619,7 +2367,6 @@ export type ServiceAgreementSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
   activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }, ExtArgs["result"]["serviceAgreement"]>
 
@@ -2628,8 +2375,8 @@ export type ServiceAgreementSelectScalar = {
   tenantId?: boolean
   generatedDocumentId?: boolean
   primaryCompanyId?: boolean
-  authorizedContactId?: boolean
-  authorizedRepresentativeSnapshot?: boolean
+  authorizedRepresentativeSnapshots?: boolean
+  signerContactIds?: boolean
   agreementDate?: boolean
   effectiveDate?: boolean
   termMonths?: boolean
@@ -2651,12 +2398,11 @@ export type ServiceAgreementSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ServiceAgreementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "generatedDocumentId" | "primaryCompanyId" | "authorizedContactId" | "authorizedRepresentativeSnapshot" | "agreementDate" | "effectiveDate" | "termMonths" | "status" | "signedAt" | "activatedAt" | "activationStatus" | "activationSource" | "activationAttemptCount" | "activationAvailableAt" | "activationClaimedAt" | "activationLeaseExpiresAt" | "activationClaimToken" | "activationLastError" | "activationRequestedById" | "activationReason" | "cancelledAt" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceAgreement"]>
+export type ServiceAgreementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "generatedDocumentId" | "primaryCompanyId" | "authorizedRepresentativeSnapshots" | "signerContactIds" | "agreementDate" | "effectiveDate" | "termMonths" | "status" | "signedAt" | "activatedAt" | "activationStatus" | "activationSource" | "activationAttemptCount" | "activationAvailableAt" | "activationClaimedAt" | "activationLeaseExpiresAt" | "activationClaimToken" | "activationLastError" | "activationRequestedById" | "activationReason" | "cancelledAt" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceAgreement"]>
 export type ServiceAgreementInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
   activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
   entities?: boolean | Prisma.ServiceAgreement$entitiesArgs<ExtArgs>
   items?: boolean | Prisma.ServiceAgreement$itemsArgs<ExtArgs>
@@ -2667,14 +2413,12 @@ export type ServiceAgreementIncludeCreateManyAndReturn<ExtArgs extends runtime.T
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
   activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }
 export type ServiceAgreementIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
   activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }
 
@@ -2684,7 +2428,6 @@ export type $ServiceAgreementPayload<ExtArgs extends runtime.Types.Extensions.In
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     generatedDocument: Prisma.$GeneratedDocumentPayload<ExtArgs>
     primaryCompany: Prisma.$CompanyPayload<ExtArgs>
-    authorizedContact: Prisma.$ContactPayload<ExtArgs> | null
     activationRequestedBy: Prisma.$UserPayload<ExtArgs> | null
     entities: Prisma.$ServiceAgreementEntityPayload<ExtArgs>[]
     items: Prisma.$ServiceAgreementItemPayload<ExtArgs>[]
@@ -2695,8 +2438,8 @@ export type $ServiceAgreementPayload<ExtArgs extends runtime.Types.Extensions.In
     tenantId: string
     generatedDocumentId: string
     primaryCompanyId: string
-    authorizedContactId: string | null
-    authorizedRepresentativeSnapshot: runtime.JsonValue
+    authorizedRepresentativeSnapshots: runtime.JsonValue
+    signerContactIds: runtime.JsonValue
     agreementDate: Date
     effectiveDate: Date | null
     termMonths: number
@@ -3113,7 +2856,6 @@ export interface Prisma__ServiceAgreementClient<T, Null = never, ExtArgs extends
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   generatedDocument<T extends Prisma.GeneratedDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__GeneratedDocumentClient<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   primaryCompany<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  authorizedContact<T extends Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>>): Prisma.Prisma__ContactClient<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   activationRequestedBy<T extends Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   entities<T extends Prisma.ServiceAgreement$entitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$entitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementEntityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   items<T extends Prisma.ServiceAgreement$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3151,8 +2893,8 @@ export interface ServiceAgreementFieldRefs {
   readonly tenantId: Prisma.FieldRef<"ServiceAgreement", 'String'>
   readonly generatedDocumentId: Prisma.FieldRef<"ServiceAgreement", 'String'>
   readonly primaryCompanyId: Prisma.FieldRef<"ServiceAgreement", 'String'>
-  readonly authorizedContactId: Prisma.FieldRef<"ServiceAgreement", 'String'>
-  readonly authorizedRepresentativeSnapshot: Prisma.FieldRef<"ServiceAgreement", 'Json'>
+  readonly authorizedRepresentativeSnapshots: Prisma.FieldRef<"ServiceAgreement", 'Json'>
+  readonly signerContactIds: Prisma.FieldRef<"ServiceAgreement", 'Json'>
   readonly agreementDate: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
   readonly effectiveDate: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
   readonly termMonths: Prisma.FieldRef<"ServiceAgreement", 'Int'>
@@ -3565,25 +3307,6 @@ export type ServiceAgreementDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
    * Limit how many ServiceAgreements to delete.
    */
   limit?: number
-}
-
-/**
- * ServiceAgreement.authorizedContact
- */
-export type ServiceAgreement$authorizedContactArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Contact
-   */
-  select?: Prisma.ContactSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Contact
-   */
-  omit?: Prisma.ContactOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ContactInclude<ExtArgs> | null
-  where?: Prisma.ContactWhereInput
 }
 
 /**

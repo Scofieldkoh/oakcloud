@@ -132,6 +132,12 @@ export function StandardDocumentConfig({
   const requiredSharedFields = masterFields.fields.filter(
     (field) => field.requiredTemplateIds.includes(item.templateId),
   ).length;
+  const partyMissingCount = [
+    partySelections.director && !configuration.selectedDirectorId,
+    partyCollections.directors && selectedDirectorIds.length === 0,
+    partySelections.shareholder && !configuration.selectedShareholderId,
+    partySelections.contact && !configuration.selectedContactId,
+  ].filter(Boolean).length;
 
   const applyMenu = (label: string, keys: Array<keyof BatchItemConfiguration>) =>
     onApplyToOthers ? (
@@ -196,6 +202,10 @@ export function StandardDocumentConfig({
         <BatchSection
           title="Parties"
           description="Officers and the contact addressed by this document."
+          status={{
+            complete: partyMissingCount === 0,
+            label: partyMissingCount === 0 ? 'Complete' : `${partyMissingCount} required`,
+          }}
           action={applyMenu('parties', partyKeys)}
         >
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">

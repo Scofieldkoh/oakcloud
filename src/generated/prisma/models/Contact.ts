@@ -309,7 +309,6 @@ export type ContactWhereInput = {
   contactDetails?: Prisma.ContactDetailListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   noteTabs?: Prisma.NoteTabListRelationFilter
-  authorizedServiceAgreements?: Prisma.ServiceAgreementListRelationFilter
 }
 
 export type ContactOrderByWithRelationInput = {
@@ -340,7 +339,6 @@ export type ContactOrderByWithRelationInput = {
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   noteTabs?: Prisma.NoteTabOrderByRelationAggregateInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementOrderByRelationAggregateInput
 }
 
 export type ContactWhereUniqueInput = Prisma.AtLeast<{
@@ -375,7 +373,6 @@ export type ContactWhereUniqueInput = Prisma.AtLeast<{
   contactDetails?: Prisma.ContactDetailListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   noteTabs?: Prisma.NoteTabListRelationFilter
-  authorizedServiceAgreements?: Prisma.ServiceAgreementListRelationFilter
 }, "id" | "tenantId_identificationType_identificationNumber">
 
 export type ContactOrderByWithAggregationInput = {
@@ -457,7 +454,6 @@ export type ContactCreateInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateInput = {
@@ -487,7 +483,6 @@ export type ContactUncheckedCreateInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUpdateInput = {
@@ -517,7 +512,6 @@ export type ContactUpdateInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateInput = {
@@ -547,7 +541,6 @@ export type ContactUncheckedUpdateInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactCreateManyInput = {
@@ -857,22 +850,6 @@ export type ContactUpdateOneWithoutNoteTabsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutNoteTabsInput, Prisma.ContactUpdateWithoutNoteTabsInput>, Prisma.ContactUncheckedUpdateWithoutNoteTabsInput>
 }
 
-export type ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput = {
-  create?: Prisma.XOR<Prisma.ContactCreateWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUncheckedCreateWithoutAuthorizedServiceAgreementsInput>
-  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutAuthorizedServiceAgreementsInput
-  connect?: Prisma.ContactWhereUniqueInput
-}
-
-export type ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput = {
-  create?: Prisma.XOR<Prisma.ContactCreateWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUncheckedCreateWithoutAuthorizedServiceAgreementsInput>
-  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutAuthorizedServiceAgreementsInput
-  upsert?: Prisma.ContactUpsertWithoutAuthorizedServiceAgreementsInput
-  disconnect?: Prisma.ContactWhereInput | boolean
-  delete?: Prisma.ContactWhereInput | boolean
-  connect?: Prisma.ContactWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUpdateWithoutAuthorizedServiceAgreementsInput>, Prisma.ContactUncheckedUpdateWithoutAuthorizedServiceAgreementsInput>
-}
-
 export type ContactCreateWithoutTenantInput = {
   id?: string
   contactType?: $Enums.ContactType
@@ -899,7 +876,6 @@ export type ContactCreateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutTenantInput = {
@@ -928,7 +904,6 @@ export type ContactUncheckedCreateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutTenantInput = {
@@ -1009,7 +984,6 @@ export type ContactCreateWithoutCompanyRelationsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
@@ -1038,7 +1012,6 @@ export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutCompanyRelationsInput = {
@@ -1083,7 +1056,6 @@ export type ContactUpdateWithoutCompanyRelationsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
@@ -1112,7 +1084,6 @@ export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactCreateWithoutContactDetailsInput = {
@@ -1141,7 +1112,6 @@ export type ContactCreateWithoutContactDetailsInput = {
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutContactDetailsInput = {
@@ -1170,7 +1140,6 @@ export type ContactUncheckedCreateWithoutContactDetailsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutContactDetailsInput = {
@@ -1215,7 +1184,6 @@ export type ContactUpdateWithoutContactDetailsInput = {
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutContactDetailsInput = {
@@ -1244,7 +1212,6 @@ export type ContactUncheckedUpdateWithoutContactDetailsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactCreateWithoutOfficerPositionsInput = {
@@ -1273,7 +1240,6 @@ export type ContactCreateWithoutOfficerPositionsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
@@ -1302,7 +1268,6 @@ export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutOfficerPositionsInput = {
@@ -1347,7 +1312,6 @@ export type ContactUpdateWithoutOfficerPositionsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
@@ -1376,7 +1340,6 @@ export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactCreateWithoutShareholdingsInput = {
@@ -1405,7 +1368,6 @@ export type ContactCreateWithoutShareholdingsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutShareholdingsInput = {
@@ -1434,7 +1396,6 @@ export type ContactUncheckedCreateWithoutShareholdingsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutShareholdingsInput = {
@@ -1479,7 +1440,6 @@ export type ContactUpdateWithoutShareholdingsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutShareholdingsInput = {
@@ -1508,7 +1468,6 @@ export type ContactUncheckedUpdateWithoutShareholdingsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactCreateWithoutChargeHoldingsInput = {
@@ -1537,7 +1496,6 @@ export type ContactCreateWithoutChargeHoldingsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
@@ -1566,7 +1524,6 @@ export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutChargeHoldingsInput = {
@@ -1611,7 +1568,6 @@ export type ContactUpdateWithoutChargeHoldingsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
@@ -1640,7 +1596,6 @@ export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactCreateWithoutNoteTabsInput = {
@@ -1669,7 +1624,6 @@ export type ContactCreateWithoutNoteTabsInput = {
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactUncheckedCreateWithoutNoteTabsInput = {
@@ -1698,7 +1652,6 @@ export type ContactUncheckedCreateWithoutNoteTabsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutAuthorizedContactInput
 }
 
 export type ContactCreateOrConnectWithoutNoteTabsInput = {
@@ -1743,7 +1696,6 @@ export type ContactUpdateWithoutNoteTabsInput = {
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutNoteTabsInput = {
@@ -1772,139 +1724,6 @@ export type ContactUncheckedUpdateWithoutNoteTabsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
-}
-
-export type ContactCreateWithoutAuthorizedServiceAgreementsInput = {
-  id?: string
-  contactType?: $Enums.ContactType
-  firstName?: string | null
-  lastName?: string | null
-  fullName: string
-  canonicalName?: string | null
-  alias?: string | null
-  canonicalAlias?: string | null
-  identificationType?: $Enums.IdentificationType | null
-  identificationNumber?: string | null
-  nationality?: string | null
-  dateOfBirth?: Date | string | null
-  corporateName?: string | null
-  corporateUen?: string | null
-  fullAddress?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
-  companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
-  officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
-  shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-}
-
-export type ContactUncheckedCreateWithoutAuthorizedServiceAgreementsInput = {
-  id?: string
-  tenantId: string
-  contactType?: $Enums.ContactType
-  firstName?: string | null
-  lastName?: string | null
-  fullName: string
-  canonicalName?: string | null
-  alias?: string | null
-  canonicalAlias?: string | null
-  identificationType?: $Enums.IdentificationType | null
-  identificationNumber?: string | null
-  nationality?: string | null
-  dateOfBirth?: Date | string | null
-  corporateName?: string | null
-  corporateUen?: string | null
-  fullAddress?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
-  companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
-  officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
-  shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-}
-
-export type ContactCreateOrConnectWithoutAuthorizedServiceAgreementsInput = {
-  where: Prisma.ContactWhereUniqueInput
-  create: Prisma.XOR<Prisma.ContactCreateWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUncheckedCreateWithoutAuthorizedServiceAgreementsInput>
-}
-
-export type ContactUpsertWithoutAuthorizedServiceAgreementsInput = {
-  update: Prisma.XOR<Prisma.ContactUpdateWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUncheckedUpdateWithoutAuthorizedServiceAgreementsInput>
-  create: Prisma.XOR<Prisma.ContactCreateWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUncheckedCreateWithoutAuthorizedServiceAgreementsInput>
-  where?: Prisma.ContactWhereInput
-}
-
-export type ContactUpdateToOneWithWhereWithoutAuthorizedServiceAgreementsInput = {
-  where?: Prisma.ContactWhereInput
-  data: Prisma.XOR<Prisma.ContactUpdateWithoutAuthorizedServiceAgreementsInput, Prisma.ContactUncheckedUpdateWithoutAuthorizedServiceAgreementsInput>
-}
-
-export type ContactUpdateWithoutAuthorizedServiceAgreementsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
-  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullName?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
-  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
-  companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
-  officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
-  shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-}
-
-export type ContactUncheckedUpdateWithoutAuthorizedServiceAgreementsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
-  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullName?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
-  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
-  companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
-  officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
-  shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
 }
 
 export type ContactCreateManyTenantInput = {
@@ -1955,7 +1774,6 @@ export type ContactUpdateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutTenantInput = {
@@ -1984,7 +1802,6 @@ export type ContactUncheckedUpdateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  authorizedServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactNestedInput
 }
 
 export type ContactUncheckedUpdateManyWithoutTenantInput = {
@@ -2021,7 +1838,6 @@ export type ContactCountOutputType = {
   shareholdings: number
   contactDetails: number
   noteTabs: number
-  authorizedServiceAgreements: number
 }
 
 export type ContactCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2031,7 +1847,6 @@ export type ContactCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   shareholdings?: boolean | ContactCountOutputTypeCountShareholdingsArgs
   contactDetails?: boolean | ContactCountOutputTypeCountContactDetailsArgs
   noteTabs?: boolean | ContactCountOutputTypeCountNoteTabsArgs
-  authorizedServiceAgreements?: boolean | ContactCountOutputTypeCountAuthorizedServiceAgreementsArgs
 }
 
 /**
@@ -2086,13 +1901,6 @@ export type ContactCountOutputTypeCountNoteTabsArgs<ExtArgs extends runtime.Type
   where?: Prisma.NoteTabWhereInput
 }
 
-/**
- * ContactCountOutputType without action
- */
-export type ContactCountOutputTypeCountAuthorizedServiceAgreementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ServiceAgreementWhereInput
-}
-
 
 export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2122,7 +1930,6 @@ export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   contactDetails?: boolean | Prisma.Contact$contactDetailsArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   noteTabs?: boolean | Prisma.Contact$noteTabsArgs<ExtArgs>
-  authorizedServiceAgreements?: boolean | Prisma.Contact$authorizedServiceAgreementsArgs<ExtArgs>
   _count?: boolean | Prisma.ContactCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["contact"]>
 
@@ -2206,7 +2013,6 @@ export type ContactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   contactDetails?: boolean | Prisma.Contact$contactDetailsArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   noteTabs?: boolean | Prisma.Contact$noteTabsArgs<ExtArgs>
-  authorizedServiceAgreements?: boolean | Prisma.Contact$authorizedServiceAgreementsArgs<ExtArgs>
   _count?: boolean | Prisma.ContactCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ContactIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2226,7 +2032,6 @@ export type $ContactPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     noteTabs: Prisma.$NoteTabPayload<ExtArgs>[]
-    authorizedServiceAgreements: Prisma.$ServiceAgreementPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2650,7 +2455,6 @@ export interface Prisma__ContactClient<T, Null = never, ExtArgs extends runtime.
   contactDetails<T extends Prisma.Contact$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   noteTabs<T extends Prisma.Contact$noteTabsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$noteTabsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NoteTabPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  authorizedServiceAgreements<T extends Prisma.Contact$authorizedServiceAgreementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$authorizedServiceAgreementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3237,30 +3041,6 @@ export type Contact$noteTabsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.NoteTabScalarFieldEnum | Prisma.NoteTabScalarFieldEnum[]
-}
-
-/**
- * Contact.authorizedServiceAgreements
- */
-export type Contact$authorizedServiceAgreementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ServiceAgreement
-   */
-  select?: Prisma.ServiceAgreementSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ServiceAgreement
-   */
-  omit?: Prisma.ServiceAgreementOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ServiceAgreementInclude<ExtArgs> | null
-  where?: Prisma.ServiceAgreementWhereInput
-  orderBy?: Prisma.ServiceAgreementOrderByWithRelationInput | Prisma.ServiceAgreementOrderByWithRelationInput[]
-  cursor?: Prisma.ServiceAgreementWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ServiceAgreementScalarFieldEnum | Prisma.ServiceAgreementScalarFieldEnum[]
 }
 
 /**

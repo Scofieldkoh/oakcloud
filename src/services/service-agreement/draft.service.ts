@@ -4,6 +4,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import { chooseContactDetail } from '@/lib/document-party';
+import { canonicalAppointment, rankAppointments } from '@/lib/representative-authority';
 import { serviceAgreementDraftSchema } from '@/lib/validations/service-agreement';
 import { checkUserCompanyAccess } from '@/services/user-company.service';
 import type {
@@ -47,6 +48,10 @@ function fixedAmount(value: unknown): string {
 
 function jsonObject<T>(value: unknown, fallback: T): T {
   return value && typeof value === 'object' ? (value as T) : fallback;
+}
+
+function jsonArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : [];
 }
 
 function toItemDto(item: AgreementItemWithRelations): ServiceAgreementItemDto {
@@ -102,10 +107,12 @@ function toDraftDto(agreement: AgreementWithRelations): ServiceAgreementDraftDto
     id: agreement.id,
     generatedDocumentId: agreement.generatedDocumentId,
     primaryCompanyId: agreement.primaryCompanyId,
-    authorizedContactId: agreement.authorizedContactId,
-    authorizedRepresentativeSnapshot: jsonObject(
-      agreement.authorizedRepresentativeSnapshot,
-      { id: '', name: '', role: null, email: null, phone: null },
+    authorizedContactIds: jsonArray<AuthorizedRepresentativeSnapshot>(
+      agreement.authorizedRepresentativeSnapshots,
+    ).map((representative) => representative.id),
+    signerContactIds: jsonArray<string>(agreement.signerContactIds),
+    authorizedRepresentativeSnapshots: jsonArray<AuthorizedRepresentativeSnapshot>(
+      agreement.authorizedRepresentativeSnapshots,
     ),
     agreementDate: dateOnly(agreement.agreementDate) ?? '',
     effectiveDate: dateOnly(agreement.effectiveDate),
@@ -137,39 +144,94 @@ async function assertCompanyAccess(companyIds: string[], params: TenantAwarePara
   return companies;
 }
 
-async function representativeSnapshot(
-  contactId: string,
+async function representativeSnapshots(
+  contactIds: string[],
   primaryCompanyId: string,
   tenantId: string,
-): Promise<AuthorizedRepresentativeSnapshot> {
-  const relation = await prisma.companyContact.findFirst({
-    where: {
-      companyId: primaryCompanyId,
-      contactId,
-      deletedAt: null,
-      company: { tenantId, deletedAt: null },
-      contact: { tenantId, deletedAt: null, isActive: true },
-    },
+  selectedRoles: Readonly<Record<string, string>> = {},
+): Promise<AuthorizedRepresentativeSnapshot[]> {
+  if (contactIds.length === 0) return [];
+  const contactInclude = {
     include: {
-      contact: {
-        include: {
-          contactDetails: {
-            where: { deletedAt: null },
-            orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
-          },
-        },
+      contactDetails: {
+        where: { deletedAt: null },
+        orderBy: [{ isPrimary: 'desc' as const }, { createdAt: 'asc' as const }],
       },
     },
-  });
-  if (!relation) throw new ValidationError('Authorised contact must belong to the primary company');
-  const details = relation.contact.contactDetails;
-  return {
-    id: relation.contact.id,
-    name: relation.contact.fullName,
-    role: relation.relationship || null,
-    email: chooseContactDetail(details, 'EMAIL', primaryCompanyId),
-    phone: chooseContactDetail(details, 'PHONE', primaryCompanyId),
-  };
+  } satisfies Prisma.ContactDefaultArgs;
+  const [relations, officers, shareholders] = await Promise.all([
+    prisma.companyContact.findMany({
+      where: {
+        companyId: primaryCompanyId,
+        contactId: { in: contactIds },
+        deletedAt: null,
+        company: { tenantId, deletedAt: null },
+        contact: { tenantId, deletedAt: null, isActive: true },
+      },
+      include: { contact: contactInclude },
+    }),
+    prisma.companyOfficer.findMany({
+      where: {
+        companyId: primaryCompanyId,
+        contactId: { in: contactIds },
+        isCurrent: true,
+        company: { tenantId, deletedAt: null },
+        contact: { tenantId, deletedAt: null, isActive: true },
+      },
+      include: { contact: contactInclude },
+    }),
+    prisma.companyShareholder.findMany({
+      where: {
+        companyId: primaryCompanyId,
+        contactId: { in: contactIds },
+        isCurrent: true,
+        company: { tenantId, deletedAt: null },
+        contact: { tenantId, deletedAt: null, isActive: true },
+      },
+      include: { contact: contactInclude },
+    }),
+  ]);
+  const sources = [
+    ...relations.map((relation) => ({
+      contact: relation.contact,
+      appointment: relation.relationship,
+    })),
+    ...officers.flatMap((officer) => officer.contact ? [{
+      contact: officer.contact,
+      appointment: officer.role,
+    }] : []),
+    ...shareholders.flatMap((shareholder) => shareholder.contact ? [{
+      contact: shareholder.contact,
+      appointment: 'Shareholder',
+    }] : []),
+  ];
+  const sourceIds = new Set(sources.map((source) => source.contact.id));
+  if (contactIds.some((contactId) => !sourceIds.has(contactId))) {
+    throw new ValidationError('Every authorised contact must belong to the primary company');
+  }
+  const byId = new Map<string, AuthorizedRepresentativeSnapshot>();
+  for (const contactId of contactIds) {
+    const contactSources = sources.filter((source) => source.contact.id === contactId);
+    const contact = contactSources[0].contact;
+    const details = contact.contactDetails;
+    const roles = rankAppointments(contactSources.map((source) => source.appointment));
+    const requestedRole = selectedRoles[contactId]
+      ? canonicalAppointment(selectedRoles[contactId])
+      : null;
+    if (requestedRole && !roles.includes(requestedRole)) {
+      throw new ValidationError(
+        `${requestedRole} is not a current appointment for ${contact.fullName}`,
+      );
+    }
+    byId.set(contactId, {
+      id: contact.id,
+      name: contact.fullName,
+      role: requestedRole ?? roles[0] ?? null,
+      email: chooseContactDetail(details, 'EMAIL', primaryCompanyId),
+      phone: chooseContactDetail(details, 'PHONE', primaryCompanyId),
+    });
+  }
+  return contactIds.map((contactId) => byId.get(contactId)!);
 }
 
 function validateRequiredFields(
@@ -218,27 +280,48 @@ export async function upsertServiceAgreementDraft(
     if (existing && existing.status !== 'DRAFT') {
       throw new ConflictError('Only draft service agreements can be changed');
     }
-    const existingRepresentative = existing
-      ? jsonObject<AuthorizedRepresentativeSnapshot>(
-          existing.authorizedRepresentativeSnapshot,
-          { id: '', name: '', role: null, email: null, phone: null },
-        )
-      : null;
-    const preservesRepresentative = Boolean(
-      existingRepresentative?.id
-      && existing?.primaryCompanyId === parsed.primaryCompanyId
-      && existingRepresentative.id === parsed.authorizedContactId,
+    const existingRepresentatives = existing?.primaryCompanyId === parsed.primaryCompanyId
+      ? jsonArray<AuthorizedRepresentativeSnapshot>(existing.authorizedRepresentativeSnapshots)
+      : [];
+    const existingRepresentativeById = new Map(
+      existingRepresentatives.map((representative) => [representative.id, representative]),
     );
-    const representative = preservesRepresentative
-      ? existingRepresentative!
-      : await representativeSnapshot(
-          parsed.authorizedContactId,
-          parsed.primaryCompanyId,
-          params.tenantId,
+    const newContactIds = parsed.authorizedContactIds.filter(
+      (contactId) => !existingRepresentativeById.has(contactId),
+    );
+    const changedRoleContactIds = parsed.authorizedContactIds.filter((contactId) => {
+      const existingRepresentative = existingRepresentativeById.get(contactId);
+      const selectedRole = parsed.authorizedRepresentativeRoles?.[contactId];
+      return existingRepresentative
+        && selectedRole
+        && canonicalAppointment(selectedRole) !== canonicalAppointment(
+          existingRepresentative.role ?? '',
         );
-    const persistedContactId = preservesRepresentative
-      ? existing!.authorizedContactId
-      : parsed.authorizedContactId;
+    });
+    const contactIdsToResolve = [...new Set([
+      ...newContactIds,
+      ...changedRoleContactIds,
+    ])];
+    const resolvedRepresentatives = await representativeSnapshots(
+      contactIdsToResolve,
+      parsed.primaryCompanyId,
+      params.tenantId,
+      parsed.authorizedRepresentativeRoles,
+    );
+    const newContactIdSet = new Set(newContactIds);
+    const newRepresentatives = resolvedRepresentatives.filter((representative) =>
+      newContactIdSet.has(representative.id));
+    const representativeById = new Map([
+      ...existingRepresentativeById,
+      ...newRepresentatives.map((representative) => [representative.id, representative] as const),
+    ]);
+    const representatives = parsed.authorizedContactIds.map((contactId) => {
+      const representative = representativeById.get(contactId)!;
+      const selectedRole = parsed.authorizedRepresentativeRoles?.[contactId];
+      return selectedRole
+        ? { ...representative, role: canonicalAppointment(selectedRole) }
+        : representative;
+    });
 
     const agreement = await tx.serviceAgreement.upsert({
       where: { generatedDocumentId },
@@ -246,8 +329,8 @@ export async function upsertServiceAgreementDraft(
         tenantId: params.tenantId,
         generatedDocumentId,
         primaryCompanyId: parsed.primaryCompanyId,
-        authorizedContactId: parsed.authorizedContactId,
-        authorizedRepresentativeSnapshot: representative as unknown as Prisma.InputJsonValue,
+        authorizedRepresentativeSnapshots: representatives as unknown as Prisma.InputJsonValue,
+        signerContactIds: parsed.signerContactIds as unknown as Prisma.InputJsonValue,
         agreementDate: new Date(`${parsed.agreementDate}T00:00:00.000Z`),
         effectiveDate: parsed.effectiveDate
           ? new Date(`${parsed.effectiveDate}T00:00:00.000Z`)
@@ -256,8 +339,8 @@ export async function upsertServiceAgreementDraft(
       },
       update: {
         primaryCompanyId: parsed.primaryCompanyId,
-        authorizedContactId: persistedContactId,
-        authorizedRepresentativeSnapshot: representative as unknown as Prisma.InputJsonValue,
+        authorizedRepresentativeSnapshots: representatives as unknown as Prisma.InputJsonValue,
+        signerContactIds: parsed.signerContactIds as unknown as Prisma.InputJsonValue,
         agreementDate: new Date(`${parsed.agreementDate}T00:00:00.000Z`),
         effectiveDate: parsed.effectiveDate
           ? new Date(`${parsed.effectiveDate}T00:00:00.000Z`)

@@ -21,6 +21,8 @@ export interface SingleDateInputProps {
   placeholder?: string;
   /** Additional class name */
   className?: string;
+  /** Additional classes for the visible input control. */
+  controlClassName?: string;
   /** Visual treatment for inline table filters */
   variant?: 'default' | 'table-filter';
   /** Whether the input is disabled */
@@ -467,6 +469,7 @@ export function SingleDateInput({
   onChange,
   placeholder = 'dd mmm yyyy',
   className,
+  controlClassName,
   variant = 'default',
   disabled,
   showCalendar = true,
@@ -796,7 +799,8 @@ export function SingleDateInput({
             ? 'h-9 bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:border-oak-primary'
             : 'h-10 bg-[#F4F7F6] dark:bg-background-secondary border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
           disabled && 'opacity-50 cursor-not-allowed',
-          displayError && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30'
+          displayError && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30',
+          controlClassName,
         )}
       >
         {/* Text input */}

@@ -80,7 +80,7 @@ export function DocumentContactSelect({
 
           <div
             className={cn(
-              'max-h-[360px] overflow-y-auto rounded-lg border bg-background-primary',
+              'max-h-[360px] max-w-xl overflow-y-auto rounded-lg border bg-background-primary',
               missingRequired ? 'border-status-error/40' : 'border-border-primary',
             )}
           >

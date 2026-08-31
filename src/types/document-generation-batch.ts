@@ -30,7 +30,9 @@ export type BatchStatus = 'DRAFT' | 'PARTIAL' | 'COMPLETED';
  * synchronized into the relational Service Agreement draft.
  */
 export interface ServiceAgreementWorkspaceState {
-  authorizedContactId: string | null;
+  authorizedContactIds: string[];
+  authorizedRepresentativeRoles?: Record<string, string>;
+  signerContactIds: string[];
   entityIds: string[];
   agreementDate: string;
   effectiveDate: string | null;

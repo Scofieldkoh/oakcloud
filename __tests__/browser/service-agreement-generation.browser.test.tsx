@@ -1,5 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   afterAll,
   afterEach,
@@ -63,6 +64,7 @@ function button(host: HTMLElement, label: string) {
 describe('Service Agreement batch generation browser workflow', () => {
   let host: HTMLDivElement;
   let root: Root;
+  let queryClient: QueryClient;
   const actEnvironment = globalThis as typeof globalThis & {
     IS_REACT_ACT_ENVIRONMENT?: boolean;
   };
@@ -97,6 +99,7 @@ describe('Service Agreement batch generation browser workflow', () => {
             contactId: 'contact-1',
             name: 'Browser Signatory',
             detail: 'Director',
+            appointments: ['Director', 'CEO'],
             email: null,
             phone: null,
             address: { letter: null, full: null },
@@ -112,10 +115,17 @@ describe('Service Agreement batch generation browser workflow', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    queryClient.clear();
     host.remove();
     vi.unstubAllGlobals();
   });
@@ -154,7 +164,8 @@ describe('Service Agreement batch generation browser workflow', () => {
           masterOverrides: {},
           useLetterhead: true,
           serviceAgreement: {
-            authorizedContactId: null,
+            authorizedContactIds: [],
+            signerContactIds: [],
             entityIds: ['company-1'],
             agreementDate: '2026-08-12',
             effectiveDate: null,
@@ -179,28 +190,30 @@ describe('Service Agreement batch generation browser workflow', () => {
 
     await act(async () => {
       root.render(
-        <DocumentGenerationBatchWorkspace
-          templates={[{
-            id: 'template-b',
-            name: 'Service Agreement',
-            category: 'CONTRACT',
-            compositionType: 'SERVICE_AGREEMENT',
-            version: 1,
-            isActive: true,
-            content: '<p>x</p>',
-            placeholders: [],
-            createdAt: '',
-            updatedAt: '',
-          }]}
-          companies={[{
-            id: 'company-1',
-            name: 'Browser Company',
-            uen: '202600001A',
-            status: 'ACTIVE',
-          }]}
-          contacts={[]}
-          initialBatch={savedBatch}
-        />,
+        <QueryClientProvider client={queryClient}>
+          <DocumentGenerationBatchWorkspace
+            templates={[{
+              id: 'template-b',
+              name: 'Service Agreement',
+              category: 'CONTRACT',
+              compositionType: 'SERVICE_AGREEMENT',
+              version: 1,
+              isActive: true,
+              content: '<p>x</p>',
+              placeholders: [],
+              createdAt: '',
+              updatedAt: '',
+            }]}
+            companies={[{
+              id: 'company-1',
+              name: 'Browser Company',
+              uen: '202600001A',
+              status: 'ACTIVE',
+            }]}
+            contacts={[]}
+            initialBatch={savedBatch}
+          />
+        </QueryClientProvider>,
       );
     });
 
@@ -217,9 +230,26 @@ describe('Service Agreement batch generation browser workflow', () => {
     await act(async () => button(host, 'Configure').click());
     await waitUntil(() => host.textContent?.includes('Services and fees') ?? false);
     expect(host.textContent).toContain('Entities and representative');
-    expect(host.textContent).toContain('Agreement entities');
-    expect(host.textContent).toContain('Authorised representative');
+    expect(host.textContent).toContain('Authorised representatives');
+    expect(host.textContent).toContain('Appendix 3 - additional entities');
     expect(host.textContent).toContain('Browser Signatory');
-    expect(host.querySelector('input[type="radio"]')).toBeTruthy();
+    const representativeCheckbox = host.querySelector<HTMLInputElement>(
+      'input[aria-label="Select Browser Signatory as an authorised representative"]',
+    );
+    expect(representativeCheckbox?.type).toBe('checkbox');
+
+    await act(async () => representativeCheckbox?.click());
+    await waitUntil(() => Boolean(host.querySelector('[aria-label="Browser Signatory rank 1"]')));
+    const tile = host.querySelector('[aria-label="Browser Signatory rank 1"]')
+      ?.closest('[data-representative-tile]');
+    expect(tile).toBeTruthy();
+    expect(tile?.querySelector<HTMLSelectElement>(
+      'select[aria-label="Appointment for Browser Signatory"]',
+    )?.value).toBe('Director');
+    const signer = tile?.querySelector<HTMLInputElement>(
+      'input[aria-label="Make Browser Signatory a signer"]',
+    );
+    expect(signer?.checked).toBe(true);
+    expect(signer?.disabled).toBe(true);
   });
 });

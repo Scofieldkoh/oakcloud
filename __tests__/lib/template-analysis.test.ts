@@ -34,6 +34,15 @@ describe('template-analysis', () => {
     )).toEqual(['directors']);
   });
 
+  it('recognises Service Agreement representative and signer collections', () => {
+    expect(analyzeTemplateContent({
+      content: [
+        '{{#each authorizedRepresentatives}}{{this.email}}{{/each}}',
+        '{{#each signers}}{{this.name}}{{/each}}',
+      ].join(''),
+    }).unknownPlaceholders).toEqual([]);
+  });
+
   it('extracts keys from external modifiers wrapped in inline HTML', () => {
     expect(extractTemplatePlaceholderKeys(
       '<p>PCASE(<span style="color: rgb(0, 0, 0);">{{selectedContact.detail}}</span>)</p>',

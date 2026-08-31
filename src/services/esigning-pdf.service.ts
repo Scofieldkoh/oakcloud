@@ -2,6 +2,10 @@ import { PDFDocument, PDFPage, StandardFonts, rgb } from 'pdf-lib';
 import { prisma } from '@/lib/prisma';
 import { hashBlake3 } from '@/lib/encryption';
 import { storage, StorageKeys } from '@/lib/storage';
+import {
+  getEsigningDocumentOriginalFileName,
+  getEsigningDocumentVariantFileName,
+} from '@/lib/esigning-document-filename';
 import { Prisma } from '@/generated/prisma';
 import {
   buildEsigningDeliveryDownloadUrl,
@@ -703,7 +707,7 @@ export async function buildCertificatePdf(input: {
     });
 
     page.drawText('File', { x: ML + 12, y: cursorY, size: 8.5, font: headingFont, color: cTextSec });
-    page.drawText(truncate(input.document.fileName, bodyFont, 8.5, PW - MR - 12 - hashValueX), {
+    page.drawText(truncate(getEsigningDocumentOriginalFileName(input.document), bodyFont, 8.5, PW - MR - 12 - hashValueX), {
       x: hashValueX, y: cursorY, size: 8.5, font: bodyFont, color: cText,
     });
     cursorY -= 12;
@@ -784,6 +788,7 @@ export async function buildCertificatePdf(input: {
 export function buildEmailAttachments(input: {
   documents: Array<{
     fileName: string;
+    originalFileName?: string | null;
     signedBuffer: Buffer;
   }>;
 }): Array<{
@@ -797,9 +802,7 @@ export function buildEmailAttachments(input: {
   }
 
   return input.documents.map((document) => ({
-    filename: document.fileName.toLowerCase().endsWith('.pdf')
-      ? document.fileName.replace(/\.pdf$/i, '-signed.pdf')
-      : `${document.fileName}-signed.pdf`,
+    filename: getEsigningDocumentVariantFileName(document, 'signed'),
     content: document.signedBuffer,
     contentType: 'application/pdf',
   }));
@@ -854,6 +857,7 @@ export async function buildDeliveryDocumentLinks(input: {
   documents: Array<{
     id: string;
     fileName: string;
+    originalFileName?: string | null;
   }>;
 }): Promise<Array<{
   label: string;
@@ -867,7 +871,7 @@ export async function buildDeliveryDocumentLinks(input: {
   });
 
   return input.documents.map((document) => ({
-    label: document.fileName,
+    label: getEsigningDocumentOriginalFileName(document),
     signedUrl: buildEsigningDeliveryDownloadUrl({
       token,
       documentId: document.id,
@@ -958,6 +962,7 @@ async function generateEnvelopeArtifacts(
   const generatedDocuments: Array<{
     id: string;
     fileName: string;
+    originalFileName?: string | null;
     signedBuffer: Buffer;
   }> = [];
 
@@ -1074,6 +1079,7 @@ async function generateEnvelopeArtifacts(
     generatedDocuments.push({
       id: document.id,
       fileName: document.fileName,
+      originalFileName: document.originalFileName,
       signedBuffer,
     });
 
@@ -1441,14 +1447,10 @@ export async function downloadEsigningDeliveryDocument(input: {
   }
 
   const buffer = await storage.download(storagePath);
-  const fileName =
-    variant === 'certificate'
-      ? document.fileName.toLowerCase().endsWith('.pdf')
-        ? document.fileName.replace(/\.pdf$/i, '-certificate.pdf')
-        : `${document.fileName}-certificate.pdf`
-      : document.fileName.toLowerCase().endsWith('.pdf')
-        ? document.fileName.replace(/\.pdf$/i, '-signed.pdf')
-        : `${document.fileName}-signed.pdf`;
+  const fileName = getEsigningDocumentVariantFileName(
+    document,
+    variant === 'certificate' ? 'certificate' : 'signed',
+  );
 
   return { buffer, fileName };
 }

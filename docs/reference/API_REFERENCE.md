@@ -1555,6 +1555,11 @@ Resume one batch with its derived master-field catalogue. Permission:
 ### PUT /api/document-generation-batches/[id]
 Save full shared and item state. Permission: `document:update`.
 
+For a Service Agreement item, `configuration.serviceAgreement` carries
+`authorizedContactIds` and `signerContactIds` arrays. Both may be empty while
+the workspace is incomplete; preview and generation require both arrays to be
+non-empty, unique, and every signer ID to occur in `authorizedContactIds`.
+
 **Request Body:**
 ```json
 {

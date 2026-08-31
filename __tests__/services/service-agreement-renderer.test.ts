@@ -4,19 +4,31 @@ import {
   canonicalServiceAgreementData,
 } from '@/services/service-agreement';
 import type { ServiceAgreementDraftDto } from '@/services/service-agreement';
+import { resolvePlaceholders } from '@/lib/placeholder-resolver';
+import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktree-service-agreement-v1';
 
 const agreement: ServiceAgreementDraftDto = {
   id: 'agreement-1',
   generatedDocumentId: 'document-1',
   primaryCompanyId: 'company-1',
-  authorizedContactId: 'contact-1',
-  authorizedRepresentativeSnapshot: {
-    id: 'contact-1',
-    name: 'Alex Tan',
-    role: 'Director',
-    email: 'alex@example.com',
-    phone: '61234567',
-  },
+  authorizedContactIds: ['contact-1', 'contact-2'],
+  signerContactIds: ['contact-1', 'contact-2'],
+  authorizedRepresentativeSnapshots: [
+    {
+      id: 'contact-1',
+      name: 'Alex Tan',
+      role: 'Director',
+      email: 'alex@example.com',
+      phone: '61234567',
+    },
+    {
+      id: 'contact-2',
+      name: 'Bea Lim',
+      role: 'Manager',
+      email: 'bea@example.com',
+      phone: null,
+    },
+  ],
   agreementDate: '2026-07-30',
   effectiveDate: '2026-08-01',
   termMonths: 12,
@@ -124,6 +136,39 @@ const templateContent = [
 ].join('');
 
 describe('service agreement renderer', () => {
+  it('renders every representative in the instructions table and every signer in both client signing sections', () => {
+    const assembled = assembleServiceAgreementTemplate({
+      templateContent: OAKTREE_SERVICE_AGREEMENT_V1.template.content,
+      agreement,
+    });
+    const representatives = agreement.authorizedRepresentativeSnapshots.map((representative) => ({
+      ...representative,
+      contactId: representative.id,
+      detail: representative.role,
+      address: { full: null, letter: null },
+    }));
+    const result = resolvePlaceholders(assembled.content, {
+      company: { id: 'company-1', name: 'Alpha Pte. Ltd.', uen: '11111111A' },
+      selectedContact: representatives[0],
+      authorizedRepresentatives: representatives,
+      signers: representatives,
+      custom: {
+        agreementDate: agreement.agreementDate,
+        effectiveDate: agreement.effectiveDate,
+        termMonths: agreement.termMonths,
+      },
+    }, { missingPlaceholder: 'blank' });
+
+    const representativeTable = result.resolved.match(
+      /<table data-authorised-representative="true">[\s\S]*?<\/table>/,
+    )?.[0] ?? '';
+    expect(representativeTable).toContain('Alex Tan');
+    expect(representativeTable).toContain('Bea Lim');
+    expect(result.resolved.match(/data-signature-placeholder="client-acceptance"/g)).toHaveLength(2);
+    expect(result.resolved.match(/data-signature-placeholder="client-sow"/g)).toHaveLength(2);
+    expect(result.resolved.match(/data-flow-keep-together="true"/g)?.length).toBeGreaterThanOrEqual(4);
+  });
+
   it('assembles ordered local SOWs, entity fees, and the entity appendix', () => {
     const result = assembleServiceAgreementTemplate({ templateContent, agreement });
 

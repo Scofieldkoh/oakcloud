@@ -80,6 +80,7 @@ function makeEnvelope(overrides: Partial<EsigningEnvelopeDetailDto> = {}): Esign
     companyId: null,
     companyName: null,
     title: 'NDA',
+    emailSubject: 'NDA',
     message: '',
     status: 'DRAFT',
     signingOrder: 'PARALLEL',
@@ -174,7 +175,7 @@ describe('EsigningStepUpload', () => {
     vi.restoreAllMocks();
   });
 
-  it('uses the shared form date picker for the advanced expiration field', async () => {
+  it('uses the shared form date picker for the expiration field', async () => {
     render(
       <EsigningStepUpload
         envelope={makeEnvelope()}
@@ -283,32 +284,96 @@ describe('EsigningStepUpload', () => {
       'Documents (1)',
       'Add recipients',
       'Email subject & message',
-      'Advanced settings',
+      'Settings',
     ]);
     screen.getAllByRole('heading', { level: 2 }).forEach((heading) => {
       expect(heading.parentElement?.className).toContain('bg-oak-primary');
     });
   });
 
-  it('places the contact action beside the name field and updates it for an existing contact', async () => {
+  it('keeps envelope name and email subject independent with standardized control heights', async () => {
+    const user = userEvent.setup();
+    const { onUpdateSettings } = renderUpload();
+
+    const envelopeName = screen.getByRole('textbox', { name: 'Envelope name' });
+    const emailSubject = screen.getByRole('textbox', { name: 'Email subject' });
+    expect(envelopeName).toHaveValue('NDA');
+    expect(emailSubject).toHaveValue('NDA');
+    expect(envelopeName.className).toContain('h-10');
+    expect(emailSubject.className).toContain('h-10');
+
+    await user.clear(envelopeName);
+    await user.type(envelopeName, 'Envelope label');
+    await user.clear(emailSubject);
+    await user.type(emailSubject, 'Please review and sign');
+    await user.click(nextButton());
+
+    await waitFor(() => expect(onUpdateSettings).toHaveBeenCalled());
+    expect(onUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Envelope label',
+      emailSubject: 'Please review and sign',
+    }));
+  });
+
+  it('defaults new recipients to manual link access', async () => {
+    const user = userEvent.setup();
+    renderUpload({ recipients: [], recipientCount: 0, signerCount: 0 });
+
+    await user.click(screen.getByRole('button', { name: 'Add recipient' }));
+
+    expect(screen.getByRole('combobox', { name: 'Access method' })).toHaveValue('MANUAL_LINK');
+  });
+
+  it('shows the access method beside each recipient role badge', () => {
+    renderUpload();
+
+    expect(screen.getByTestId('recipient-access-method-badge-recipient-1')).toHaveTextContent('Email Link');
+  });
+
+  it('disables email subject and message when all recipients use manual links', () => {
+    renderUpload({
+      recipients: [{
+        ...makeEnvelope().recipients[0],
+        accessMode: 'MANUAL_LINK',
+      }],
+    });
+
+    expect(screen.getByRole('textbox', { name: 'Email subject' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Message' })).toBeDisabled();
+  });
+
+  it('organizes recipient fields and footer actions around contact changes', async () => {
     const user = userEvent.setup();
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ defaultDetails: [] }), { status: 200 }));
     renderUpload({ recipients: [], recipientCount: 0, signerCount: 0 });
 
     await user.click(screen.getByRole('button', { name: 'Add recipient' }));
 
-    expect(screen.getByRole('textbox', { name: 'Full name' })).toBeInTheDocument();
+    const contactPicker = screen.getByTestId('contact-search-select');
+    const nameInput = screen.getByRole('textbox', { name: 'Full name' });
+    const detailsRow = screen.getByTestId('recipient-details-row');
+    expect(contactPicker.compareDocumentPosition(nameInput)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(nameInput.compareDocumentPosition(detailsRow)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByRole('button', { name: 'Quick add' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'New recipient' }).parentElement?.className).toContain('bg-oak-primary');
     expect(screen.getByTestId('recipient-details-row').className).toContain('sm:grid-cols-3');
-    expect(screen.getByTestId('recipient-details-row').compareDocumentPosition(screen.getByTestId('contact-search-select')))
-      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect([...screen.getByTestId('recipient-actions').querySelectorAll('button')].map((button) => button.textContent?.trim()))
+      .toEqual(['Cancel', 'Quick add', 'Add recipient']);
     expect(screen.queryByText('Save as a contact?')).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId('contact-search-select'));
+    await user.click(contactPicker);
 
-    expect(screen.getByRole('button', { name: 'Update email' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update contact' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Quick add' })).not.toBeInTheDocument();
+    expect([...screen.getByTestId('recipient-actions').querySelectorAll('button')].map((button) => button.textContent?.trim()))
+      .toEqual(['Cancel', 'Add recipient']);
+
+    await user.clear(screen.getByRole('textbox', { name: 'Email address' }));
+    await user.type(screen.getByRole('textbox', { name: 'Email address' }), 'updated@example.com');
+
+    expect(screen.getByRole('button', { name: 'Update contact' })).toBeInTheDocument();
+    expect([...screen.getByTestId('recipient-actions').querySelectorAll('button')].map((button) => button.textContent?.trim()))
+      .toEqual(['Cancel', 'Update contact', 'Add recipient']);
   });
 
   it('is a keyboard-operable upload control with a 44px mobile target', async () => {
@@ -356,7 +421,7 @@ describe('EsigningStepUpload', () => {
     const user = userEvent.setup();
     const { onUpdateSettings, onNext } = renderUpload();
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Subject' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Email subject' }), {
       target: { value },
     });
     await user.click(nextButton());
@@ -365,7 +430,7 @@ describe('EsigningStepUpload', () => {
     expect(onUpdateSettings).not.toHaveBeenCalled();
     expect(screen.getByText(message)).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByRole('textbox', { name: 'Subject' })).toHaveFocus()
+      expect(screen.getByRole('textbox', { name: 'Email subject' })).toHaveFocus()
     );
   });
 

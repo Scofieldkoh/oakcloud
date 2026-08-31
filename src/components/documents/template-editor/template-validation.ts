@@ -6,13 +6,19 @@ import {
 
 const LOOP_FIELD_KEYS = new Set([
   'name',
+  'detail',
+  'contactType',
   'identificationNumber',
   'nationality',
   'role',
   'address',
+  'address.full',
+  'address.letter',
   'shareClass',
   'numberOfShares',
   'percentageHeld',
+  'email',
+  'phone',
 ]);
 
 type BlockName = 'each' | 'if';

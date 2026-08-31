@@ -52,6 +52,15 @@ describe('template syntax validation', () => {
     expect(issues).toEqual([]);
   });
 
+  it('accepts contact fields used by Service Agreement representative loops', () => {
+    const issues = validateTemplateSyntax(
+      '{{#each authorizedRepresentatives}}<p>{{this.name}} {{this.detail}} {{this.contactType}} {{this.email}} {{this.phone}} {{this.address.full}}</p>{{/each}}',
+      new Set(),
+    );
+
+    expect(issues).toEqual([]);
+  });
+
   it('recovers from a nested mismatch without adding an EOF error before later unknown keys', () => {
     const issues = validateTemplateSyntax(
       '{{#each directors}}{{#if company.name}}{{/each}}{{company.missing}}',

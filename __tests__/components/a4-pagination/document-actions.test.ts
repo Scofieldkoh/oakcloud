@@ -8,6 +8,7 @@ import {
   insertParagraphAtSelection,
   removeHardPageBreak,
   replaceLogicalSelection,
+  sanitizeReplacementHtml,
 } from '@/components/documents/a4-pagination/document-actions';
 import {
   HARD_PAGE_BREAK_HTML,
@@ -23,6 +24,15 @@ function collapsed(flowId: string, offset: number): FlowSelectionBookmark {
 }
 
 describe('A4 canonical document actions', () => {
+  it('preserves template loop markers when sanitizing pasted table HTML', () => {
+    const sanitized = sanitizeReplacementHtml(
+      '<table data-authorised-representative="true"><tbody data-template-each="authorizedRepresentatives"><tr><td>{{this.name}}</td></tr></tbody></table>',
+    );
+
+    expect(sanitized).toContain('data-template-each="authorizedRepresentatives"');
+    expect(sanitized).toContain('{{this.name}}');
+  });
+
   it('forward Delete removes the next character at a soft page boundary', () => {
     const result = applyLogicalDelete(
       '<p data-flow-id="a">One</p><p data-flow-id="b">Two</p>',

@@ -51,12 +51,18 @@ export interface AsyncSearchSelectProps<T extends AsyncSearchSelectOption> {
   showSearchIcon?: boolean;
   /** Additional classes for the search input text (font size/colour) */
   inputClassName?: string;
+  /** Optional classes for the visible control height and spacing. */
+  controlClassName?: string;
+  /** Optional classes for the visible label spacing and styling. */
+  labelClassName?: string;
   /** Text to show when there's no search query */
   emptySearchText?: string;
   /** Text to show when search returns no results */
   noResultsText?: string;
   /** Optional server-side pagination controls for the results list. */
   pagination?: AsyncSearchSelectPagination;
+  /** Allow users to click the selected value and search for a replacement. */
+  allowReselect?: boolean;
 }
 
 export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
@@ -75,13 +81,17 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   icon,
   showSearchIcon = true,
   inputClassName = 'text-sm text-text-primary placeholder:text-text-muted',
+  controlClassName,
+  labelClassName = 'mb-1.5',
   emptySearchText = 'Type to search',
   noResultsText = 'No results found',
   pagination,
+  allowReselect = false,
 }: AsyncSearchSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputId = useId();
@@ -111,8 +121,11 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   useEffect(() => {
     if (!value) {
       setSelectedItem(null);
+      setIsEditing(false);
       return;
     }
+
+    if (isEditing) return;
 
     if (selectedItem?.id === value) {
       return;
@@ -122,13 +135,13 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     if (matchingOption) {
       setSelectedItem(matchingOption);
     }
-  }, [options, selectedItem?.id, value]);
+  }, [isEditing, options, selectedItem?.id, value]);
 
   useEffect(() => {
     if (focusTargetRef.current === 'selected' && selectedItem) {
       selectedControlRef.current?.focus();
       focusTargetRef.current = null;
-    } else if (focusTargetRef.current === 'input' && !selectedItem) {
+    } else if (focusTargetRef.current === 'input') {
       inputRef.current?.focus();
       focusTargetRef.current = null;
     }
@@ -159,6 +172,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
         !popoverRef.current.contains(target)
       ) {
         setIsOpen(false);
+        setIsEditing(false);
         onSearchChange('');
       }
     };
@@ -166,6 +180,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
+        setIsEditing(false);
         onSearchChange('');
       }
     };
@@ -195,6 +210,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     (item: T) => {
       focusTargetRef.current = 'selected';
       setSelectedItem(item);
+      setIsEditing(false);
       onChange(item.id, item);
       setIsOpen(false);
       onSearchChange('');
@@ -205,6 +221,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const handleClear = useCallback(() => {
     focusTargetRef.current = 'input';
     setSelectedItem(null);
+    setIsEditing(false);
     onChange('', null);
     onSearchChange('');
   }, [onChange, onSearchChange]);
@@ -245,10 +262,12 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           break;
         case 'Tab':
           setIsOpen(false);
+          setIsEditing(false);
           onSearchChange('');
           break;
         case 'Escape':
           setIsOpen(false);
+          setIsEditing(false);
           onSearchChange('');
           break;
       }
@@ -291,7 +310,10 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   return (
     <div className={cn('relative', className)}>
       {label && (
-        <label id={labelId} htmlFor={inputId} className="block text-sm font-medium text-text-primary mb-1.5">
+        <label id={labelId} htmlFor={inputId} className={cn(
+          'block text-sm font-medium text-text-primary',
+          labelClassName,
+        )}>
           {label}
         </label>
       )}
@@ -304,11 +326,12 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           'bg-background-secondary/30 border-border-primary',
           'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
           'transition-colors',
+          controlClassName,
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary'
         )}
       >
-        {selectedItem ? (
+      {selectedItem && !isEditing ? (
           // Show selected item
           <div
             ref={selectedControlRef}
@@ -323,7 +346,16 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             aria-disabled={disabled || undefined}
             tabIndex={disabled ? -1 : 0}
             onKeyDown={disabled ? undefined : handleSelectedKeyDown}
-            className="flex min-h-11 min-w-0 flex-1 items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
+            onClick={disabled || !allowReselect ? undefined : () => {
+              focusTargetRef.current = 'input';
+              setIsEditing(true);
+              setIsOpen(true);
+            }}
+            className={cn(
+              'flex min-h-11 min-w-0 flex-1 items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+              allowReselect && 'cursor-pointer',
+              controlClassName
+            )}
           >
             {renderSelected ? renderSelected(selectedItem) : defaultRenderSelected(selectedItem)}
           </div>
@@ -368,7 +400,10 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             type="button"
             onClick={handleClear}
             aria-label={label ? `Clear ${label}` : 'Clear selection'}
-            className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded p-1 transition-colors hover:bg-background-tertiary"
+            className={cn(
+              'mr-2 flex min-h-11 min-w-11 items-center justify-center rounded p-1 transition-colors hover:bg-background-tertiary',
+              controlClassName
+            )}
           >
             <X className="w-3.5 h-3.5 text-text-muted" />
           </button>
@@ -377,7 +412,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
 
       {/* Dropdown */}
       {isOpen &&
-        !selectedItem &&
+        (!selectedItem || isEditing) &&
         mounted &&
         position.width > 0 &&
         createPortal(

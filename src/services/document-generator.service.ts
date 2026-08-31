@@ -469,10 +469,8 @@ export async function renderTemplateForGeneration(
     }
   }
   if (agreement) {
-    const representative = agreement.authorizedRepresentativeSnapshot;
-    context = {
-      ...context,
-      selectedContact: {
+    const authorizedRepresentatives = agreement.authorizedRepresentativeSnapshots.map(
+      (representative) => ({
         id: representative.id,
         contactId: representative.id,
         name: representative.name,
@@ -482,7 +480,16 @@ export async function renderTemplateForGeneration(
         email: representative.email ?? '',
         phone: representative.phone ?? '',
         address: { full: null, letter: null },
-      },
+      }),
+    );
+    const signerIdSet = new Set(agreement.signerContactIds);
+    const signers = authorizedRepresentatives.filter((representative) =>
+      signerIdSet.has(representative.id));
+    context = {
+      ...context,
+      selectedContact: signers[0] ?? authorizedRepresentatives[0],
+      authorizedRepresentatives,
+      signers,
     };
   }
 
