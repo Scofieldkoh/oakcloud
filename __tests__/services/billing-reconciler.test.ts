@@ -180,6 +180,120 @@ describe('reconcileClientServiceBilling', () => {
     ]));
   });
 
+  it('backfills all recent historical periods for creation or activation reconciliation', async () => {
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      feeLines: [feeLine({
+        billingFrequency: 'ANNUALLY',
+        billingStartDate: new Date('2025-08-19T00:00:00.000Z'),
+        scheduleConfig: {
+          schemaVersion: 1,
+          cadence: 'ANNUALLY',
+          startDate: '2025-08-19',
+          customInterval: { unit: 'MONTH', count: 12 },
+          scheduleEntries: [{
+            key: 'default',
+            label: 'Billing date',
+            expression: { kind: 'DAY_OF_MONTH', day: 19 },
+            businessDayAdjustment: 'NONE',
+          }],
+        },
+      })],
+    }));
+    mocks.billingOccurrence.createMany.mockResolvedValue({ count: 3 });
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      today: '2026-09-01',
+      horizonEnd: '2027-09-01',
+      includeHistoricalStart: true,
+    });
+
+    const createData = mocks.billingOccurrence.createMany.mock.calls[0]?.[0]?.data as Array<Record<string, unknown>>;
+    expect(result.created).toBe(3);
+    expect(createData).toHaveLength(3);
+    expect(createData.map((row) => row.calculatedExpectedDate)).toEqual(expect.arrayContaining([
+      new Date('2025-08-19T00:00:00.000Z'),
+      new Date('2026-08-19T00:00:00.000Z'),
+      new Date('2027-08-19T00:00:00.000Z'),
+    ]));
+  });
+
+  it('does not repeat historical backfill during ordinary reconciliation', async () => {
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      source: 'AGREEMENT',
+      feeLines: [feeLine({
+        billingFrequency: 'ANNUALLY',
+        billingStartDate: new Date('2025-08-19T00:00:00.000Z'),
+        scheduleConfig: {
+          schemaVersion: 1,
+          cadence: 'ANNUALLY',
+          startDate: '2025-08-19',
+          customInterval: { unit: 'MONTH', count: 12 },
+          scheduleEntries: [{
+            key: 'default',
+            label: 'Billing date',
+            expression: { kind: 'DAY_OF_MONTH', day: 19 },
+            businessDayAdjustment: 'NONE',
+          }],
+        },
+      })],
+    }));
+    mocks.billingOccurrence.createMany.mockResolvedValue({ count: 1 });
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      today: '2026-09-01',
+      horizonEnd: '2027-09-01',
+    });
+
+    const createData = mocks.billingOccurrence.createMany.mock.calls[0]?.[0]?.data as Array<Record<string, unknown>>;
+    expect(result.created).toBe(1);
+    expect(createData).toHaveLength(1);
+    expect(createData[0]?.calculatedExpectedDate).toEqual(new Date('2027-08-19T00:00:00.000Z'));
+  });
+
+  it('caps historical backfill at 50 occurrences', async () => {
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      feeLines: [feeLine({
+        billingFrequency: 'MONTHLY',
+        billingStartDate: new Date('2000-01-19T00:00:00.000Z'),
+        scheduleConfig: {
+          schemaVersion: 1,
+          cadence: 'MONTHLY',
+          startDate: '2000-01-19',
+          customInterval: { unit: 'MONTH', count: 1 },
+          scheduleEntries: [{
+            key: 'default',
+            label: 'Billing date',
+            expression: { kind: 'DAY_OF_MONTH', day: 19 },
+            businessDayAdjustment: 'NONE',
+          }],
+        },
+      })],
+    }));
+    mocks.billingOccurrence.createMany.mockResolvedValue({ count: 62 });
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      today: '2026-09-01',
+      horizonEnd: '2027-09-01',
+      includeHistoricalStart: true,
+    });
+
+    const createData = mocks.billingOccurrence.createMany.mock.calls[0]?.[0]?.data as Array<Record<string, unknown>>;
+    expect(result.created).toBe(62);
+    expect(createData).toHaveLength(62);
+    expect(createData.map((row) => row.calculatedExpectedDate)).toEqual(expect.arrayContaining([
+      new Date('2022-07-19T00:00:00.000Z'),
+      new Date('2026-08-19T00:00:00.000Z'),
+      new Date('2027-08-19T00:00:00.000Z'),
+    ]));
+    expect(createData.map((row) => row.calculatedExpectedDate)).not.toContain(new Date('2000-01-19T00:00:00.000Z'));
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'HISTORICAL_BACKFILL_CAPPED' }),
+    ]));
+  });
+
   it('preserves historical, billed, waived, cancelled, and overridden occurrences', async () => {
     mocks.billingOccurrence.findMany.mockResolvedValue([
       occurrence({ id: 'occ-historical', billingPeriodKey: '2026-07', calculatedExpectedDate: new Date('2026-07-01'), operativeExpectedDate: new Date('2026-07-01') }),

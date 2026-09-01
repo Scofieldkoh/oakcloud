@@ -5,6 +5,7 @@
  */
 
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
+import { normalizeCompanyAlias } from '@/lib/company-display-label';
 import type { ExtractedBizFileData } from './types';
 
 const CURRENCY_NAME_MAP: Record<string, string> = {
@@ -213,6 +214,9 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
     normalized.entityDetails = {
       ...normalized.entityDetails,
       name: normalizeBizFileCompanyName(normalized.entityDetails.name),
+      ...(normalized.entityDetails.displayAlias === undefined
+        ? {}
+        : { displayAlias: normalizeCompanyAlias(normalized.entityDetails.displayAlias) }),
       formerName: normalized.entityDetails.formerName
         ? normalizeCompanyName(normalized.entityDetails.formerName)
         : undefined,

@@ -341,6 +341,24 @@ describe('Document generator service', () => {
     );
   });
 
+  it('sorts generated documents by signed date', async () => {
+    await searchGeneratedDocuments(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'signedAt',
+        sortOrder: 'asc',
+      },
+      'workspace-1',
+    );
+
+    expect(prisma.generatedDocument.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { signedAt: 'asc' },
+      }),
+    );
+  });
+
   it('creates template-generated documents as editable drafts', async () => {
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
       id: 'template-1',

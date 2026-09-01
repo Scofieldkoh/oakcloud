@@ -7,6 +7,7 @@ import { ApiError, ErrorCodes } from '@/lib/errors';
 import { getClientService } from '@/services/client-service';
 import {
   enqueueScheduleReconciliation,
+  processScheduleReconciliationBatch,
   requireServicesWorkspaceEnabled,
 } from '@/services/schedule-reconciliation';
 import { prisma } from '@/lib/prisma';
@@ -37,6 +38,14 @@ export async function POST(_request: NextRequest, { params }: Context): Promise<
       requestedById: session.id,
       notBefore: new Date(),
     }));
+    try {
+      // Process the newly queued request before the client refetches. If the
+      // immediate attempt fails, the durable request remains available for the
+      // scheduler to retry.
+      await processScheduleReconciliationBatch();
+    } catch (error) {
+      console.error('Immediate billing reconciliation batch failed:', error);
+    }
     return NextResponse.json({
       status: 'PENDING',
       requestId: requestRef.id,

@@ -1,7 +1,8 @@
 'use client';
 
-import { memo, useState, useCallback, useRef } from 'react';
+import { memo, useState, useCallback, useRef, type MouseEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatDateShort, formatCurrency, cn } from '@/lib/utils';
 import { getEntityTypeLabel, ENTITY_TYPES, COMPANY_STATUSES } from '@/lib/constants';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
@@ -352,6 +353,22 @@ export function CompanyTable({
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
 }: CompanyTableProps) {
+  const router = useRouter();
+
+  const handleRowClick = useCallback((
+    event: MouseEvent<HTMLTableRowElement>,
+    company: CompanyWithRelations,
+  ) => {
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
+
+    router.push(buildDetailHref(`/companies/${company.id}`, returnTo));
+  }, [returnTo, router]);
+
   // Internal column widths state (used if external not provided)
   const [internalColumnWidths, setInternalColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
   const columnWidths = externalColumnWidths ?? internalColumnWidths;
@@ -822,6 +839,7 @@ export function CompanyTable({
                     canDelete={checkCanDelete(company.id)}
                   />
                 }
+                onCardClick={() => router.push(detailHref)}
                 details={
                   <CardDetailsGrid>
                     <CardDetailItem label="Type" value={getEntityTypeLabel(company.entityType, true)} />
@@ -934,8 +952,9 @@ export function CompanyTable({
                   return (
                     <tr
                       key={company.id}
+                      onClick={(event) => handleRowClick(event, company)}
                       className={cn(
-                        'border-b border-border-primary transition-colors',
+                        'border-b border-border-primary transition-colors cursor-pointer',
                         isSelected
                           ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
                           : isAlternate

@@ -496,8 +496,6 @@ export function OperationalServiceForm({
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
   const [expandedRuleIds, setExpandedRuleIds] = useState<Set<string>>(new Set());
 
-  const activeRulesCount = values.deadlineRules.filter((r) => r.enabled).length;
-  const activeFeesCount = values.billingDisposition === 'NOT_REQUIRED' ? 0 : values.fees.length;
   const activeTab = userSelectedTab ?? (values.deadlineRules.length > 0 ? 'deadlines' : 'billing');
 
   const today = currentDateInSingapore();
@@ -744,7 +742,7 @@ export function OperationalServiceForm({
                 'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
                 activeTab === 'deadlines' ? 'bg-oak-primary text-white' : 'border border-border-primary bg-background-elevated text-text-secondary'
               )}>
-                {activeRulesCount}
+                  {deadlineItems.length}
               </span>
             </button>
             <button
@@ -766,7 +764,7 @@ export function OperationalServiceForm({
                 'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
                 activeTab === 'billing' ? 'bg-oak-primary text-white' : 'border border-border-primary bg-background-elevated text-text-secondary'
               )}>
-                {activeFeesCount}
+                  {billingItems.length}
               </span>
             </button>
           </div>

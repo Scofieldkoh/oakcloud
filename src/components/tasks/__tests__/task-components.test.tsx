@@ -19,6 +19,11 @@ const preferenceMocks = vi.hoisted(() => ({
   save: vi.fn(),
 }));
 
+const esigningMocks = vi.hoisted(() => ({
+  attachGeneratedDocuments: vi.fn(),
+  recipientManualLink: vi.fn(),
+}));
+
 vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreferences: () => ({
     data: {
@@ -30,6 +35,17 @@ vi.mock('@/hooks/use-user-preferences', () => ({
     },
   }),
   useUpsertUserPreference: () => ({ mutate: preferenceMocks.save }),
+}));
+
+vi.mock('@/hooks/use-esigning', () => ({
+  useAttachGeneratedEsigningDocuments: () => ({
+    mutateAsync: esigningMocks.attachGeneratedDocuments,
+    isPending: false,
+  }),
+  useEsigningRecipientManualLink: () => ({
+    mutateAsync: esigningMocks.recipientManualLink,
+    isPending: false,
+  }),
 }));
 
 vi.mock('@/components/ui/company-select', () => ({
@@ -123,6 +139,8 @@ const taskListFilterProps = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  esigningMocks.attachGeneratedDocuments.mockResolvedValue({});
+  esigningMocks.recipientManualLink.mockResolvedValue({});
 });
 
 describe('TaskList', () => {
@@ -1328,6 +1346,136 @@ describe('TaskStageModal', () => {
     expect(screen.getByTestId('stage-primary-action')).toBeDisabled();
     fireEvent.click(selectAll);
     expect(firstDocument).toBeChecked();
+    expect(secondDocument).toBeChecked();
+  });
+
+  it('shows document checkboxes for a linked draft signing request', () => {
+    const signingStage: TaskStageDetail = {
+      ...stageDetail,
+      id: 'stage-signing',
+      name: 'E-signing',
+      position: 2,
+      actionType: 'ESIGNING',
+      status: 'IN_PROGRESS',
+      outcome: {
+        id: 'outcome-signing',
+        type: 'ESIGNING_ENVELOPE',
+        companyId: null,
+        generatedDocumentId: null,
+        esigningEnvelopeId: 'envelope-1',
+      },
+      blockers: [],
+      launch: {
+        href: '/esigning/envelope-1',
+        context: { taskId: task.id, taskStageId: 'stage-signing', returnTo: '/tasks' },
+      },
+    };
+    const documentStage = {
+      id: 'stage-documents',
+      name: 'Generated documents',
+      position: 1,
+      status: 'COMPLETED' as const,
+      description: null,
+      notes: null,
+      startedAt: null,
+      completedAt: null,
+      assignee: null,
+      checklist: [],
+      blockers: [],
+      actionType: 'DOCUMENT_GENERATION' as const,
+      resources: [
+        {
+          kind: 'generatedDocument' as const,
+          id: 'doc-1',
+          state: 'available' as const,
+          label: 'Generated document',
+          title: 'Service Agreement',
+          status: 'FINALIZED',
+          href: '/generated-documents/doc-1',
+          reason: null,
+        },
+        {
+          kind: 'generatedDocument' as const,
+          id: 'doc-2',
+          state: 'available' as const,
+          label: 'Generated document',
+          title: 'Privacy Notice',
+          status: 'FINALIZED',
+          href: '/generated-documents/doc-2',
+          reason: null,
+        },
+      ],
+    };
+    const signingResourceStage = {
+      id: signingStage.id,
+      name: signingStage.name,
+      position: signingStage.position,
+      actionType: signingStage.actionType,
+      status: signingStage.status,
+      description: signingStage.description,
+      notes: signingStage.notes,
+      startedAt: signingStage.startedAt,
+      completedAt: signingStage.completedAt,
+      assignee: null,
+      checklist: [],
+      blockers: [],
+      resources: [{
+        kind: 'esigningEnvelope' as const,
+        id: 'envelope-1',
+        state: 'available' as const,
+        label: 'Signing request',
+        title: 'Service Agreement',
+        status: 'DRAFT',
+        pdfGenerationStatus: null,
+        expiresAt: null,
+        completedSignatures: 0,
+        requiredSignatures: 0,
+        href: '/esigning/envelope-1',
+        canGenerateSignerLink: false,
+        generatedDocumentIds: ['doc-1'],
+        documents: [{
+          id: 'envelope-document-1',
+          fileName: 'service-agreement.pdf',
+          originalPdfHref: '/api/esigning/envelopes/envelope-1/documents/envelope-document-1/pdf',
+          signedPdfHref: null,
+        }],
+        signers: [],
+        reason: null,
+      }],
+    };
+    const taskResources: TaskResourcesResponse = {
+      task: {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        dueDate: task.dueDate,
+        company: null,
+        owner: null,
+        pipelineName: task.pipelineVersion.pipeline.name,
+      },
+      stages: [documentStage, signingResourceStage],
+      hasPendingResources: false,
+    };
+
+    render(
+      <TaskStageModal
+        isOpen
+        stage={signingStage}
+        resources={taskResources}
+        taskDueDate={task.dueDate}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('esigning-document-selection')).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: 'Select Service Agreement' })).toBeChecked();
+    const secondDocument = screen.getByRole('checkbox', { name: 'Select Privacy Notice' });
+    expect(secondDocument).not.toBeChecked();
+
+    fireEvent.click(secondDocument);
+
     expect(secondDocument).toBeChecked();
   });
 

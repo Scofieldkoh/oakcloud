@@ -48,6 +48,7 @@ Return a JSON object with the following structure (include only fields that have
   "entityDetails": {
     "uen": "string - Unique Entity Number",
     "name": "string - Current company name using its correct brand casing; preserve acronyms such as DAP, while legal suffixes must use title case such as Pte Ltd, never PTE LTD",
+    "displayAlias": "string - Short company alias for internal display, derived from the current company name; maximum 10 characters, preserve meaningful brand casing, omit only when no useful alias can be determined",
     "formerName": "string - Previous company name if any (from 'former_name' field)",
     "dateOfNameChange": "YYYY-MM-DD - Date when name was changed",
     "formerNames": [{ "name": "string", "effectiveFrom": "YYYY-MM-DD", "effectiveTo": "YYYY-MM-DD" }],
@@ -170,6 +171,7 @@ Important:
 - For FREE BUSINESS PROFILE documents (no receipt number), use "FREE" as the receiptNo value
 - Country names and nationalities must use title case (e.g. "Singapore", "Malaysia", "United States"), never full caps (e.g. NOT "SINGAPORE")
 - Preserve meaningful uppercase brand acronyms in company names (for example "DAP Atelier"), but always format legal suffixes in title case (for example "Pte Ltd", never "PTE LTD")
+- Extract a concise company alias into entityDetails.displayAlias for internal display. Keep it to a maximum of 10 characters, preserve meaningful brand casing, and do not include legal suffixes unless they are part of the useful short name.
 
 Respond ONLY with valid JSON, no markdown or explanation.`;
 

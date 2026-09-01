@@ -7,6 +7,7 @@ import {
   BIZFILE_OFFICER_ROLE_OPTIONS,
   BIZFILE_STATUS_OPTIONS,
 } from '@/services/bizfile/canonical-values';
+import { COMPANY_ALIAS_MAX_LENGTH } from '@/lib/company-display-label';
 
 const optionalText = z.string().trim().nullable().optional();
 const optionalDate = optionalDateOnlySchema;
@@ -31,7 +32,7 @@ const identityRecord = z.object({
 export const identitySectionSchema = z.object({
   uen: requiredText,
   name: requiredText,
-  displayAlias: z.string().trim().max(40).nullable().optional(),
+  displayAlias: z.string().trim().max(COMPANY_ALIAS_MAX_LENGTH).nullable().optional(),
   entityType: z.enum(BIZFILE_ENTITY_TYPE_OPTIONS),
   status: z.enum(BIZFILE_STATUS_OPTIONS),
   statusDate: optionalDate,

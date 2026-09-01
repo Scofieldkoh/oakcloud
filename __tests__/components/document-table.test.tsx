@@ -65,12 +65,13 @@ describe('DocumentTable', () => {
 
   it('renders Vault-style inline filters above their matching columns', () => {
     const onFilterChange = vi.fn();
+    const onSortChange = vi.fn();
     render(
       <DocumentTable
         documents={[documentFixture()]}
         filters={{}}
         onFilterChange={onFilterChange}
-        onSortChange={vi.fn()}
+        onSortChange={onSortChange}
       />,
     );
 
@@ -94,6 +95,9 @@ describe('DocumentTable', () => {
       { target: { value: 'minutes' } },
     );
     expect(onFilterChange).toHaveBeenCalledWith({ title: 'minutes' });
+
+    fireEvent.click(within(rows[1]).getByRole('button', { name: 'Signed On' }));
+    expect(onSortChange).toHaveBeenCalledWith('signedAt');
   });
 
   it('shows template names in their own column', () => {
@@ -164,7 +168,8 @@ describe('DocumentTable', () => {
     );
 
     const bodyRows = screen.getAllByRole('row').slice(2);
-    expect(within(bodyRows[0]).getAllByRole('cell')[4]).toHaveTextContent('3 August 2026');
+    expect(within(bodyRows[0]).getAllByRole('cell')[4]).toHaveTextContent('3 Aug 2026');
+    expect(within(bodyRows[0]).getAllByRole('cell')[6]).toHaveTextContent('2 Aug 2026');
     expect(within(bodyRows[1]).getAllByRole('cell')[4]).toHaveTextContent('—');
   });
 

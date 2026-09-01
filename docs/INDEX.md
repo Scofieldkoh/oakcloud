@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-07-27
+> **Last Updated**: 2026-09-01
 > Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
@@ -43,6 +43,8 @@
 | Document | Description |
 |----------|-------------|
 | [AI Helpbot Specification](./features/ai-helpbot/SPECIFICATION.md) | Current feature specification under `docs/features/` |
+| [SharePoint Signed-Document Filing](./superpowers/specs/2026-09-01-sharepoint-signed-document-filing-design.md) | Company folder mapping, template-relative routing, durable filing, and orphan recovery |
+| [SharePoint Signed-Document Filing Implementation Plan](./superpowers/plans/2026-09-01-sharepoint-signed-document-filing.md) | Single-phase, test-first implementation tasks and completion gate |
 
 ## Forms Rollout Docs
 

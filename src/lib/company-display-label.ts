@@ -11,9 +11,12 @@ const LEGAL_SUFFIXES = new Set([
   'corporation',
 ]);
 
+export const COMPANY_ALIAS_MAX_LENGTH = 10;
+
 export function normalizeCompanyAlias(value: string | null | undefined): string | null {
   const normalized = value?.trim();
-  return normalized || null;
+  if (!normalized) return null;
+  return Array.from(normalized).slice(0, COMPANY_ALIAS_MAX_LENGTH).join('') || null;
 }
 
 export function deriveCompanyInitials(legalName: string): string {

@@ -157,8 +157,7 @@ export function CompanyProfileSections({ company, companyId, onRetrieveAcra, isR
 
       <Section title="Additional company information">
         <div className="grid gap-4 border-b border-border-primary p-3 text-sm sm:grid-cols-2">
-          <div><FieldLabel>Service display alias</FieldLabel><p>{company.displayAlias ?? '-'}</p></div>
-          <div><FieldLabel>Service display label</FieldLabel><p>{getCompanyDisplayLabel(company)}</p></div>
+          <div><FieldLabel>ALIAS</FieldLabel><p>{getCompanyDisplayLabel(company)}</p></div>
         </div>
         <div className="divide-y divide-border-primary text-sm">
           <details className="group px-3 py-2.5">

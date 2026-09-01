@@ -1,7 +1,8 @@
 'use client';
 
-import { memo, useState, useCallback, useRef } from 'react';
+import { memo, useState, useCallback, useRef, type MouseEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, Square, CheckSquare, MinusSquare, ArrowUp, ArrowDown, ArrowUpDown, X, ArrowUpRight } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
@@ -215,6 +216,22 @@ export function ContactTable({
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
 }: ContactTableProps) {
+  const router = useRouter();
+
+  const handleRowClick = useCallback((
+    event: MouseEvent<HTMLTableRowElement>,
+    contact: ContactWithCount,
+  ) => {
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
+
+    router.push(buildDetailHref(`/contacts/${contact.id}`, returnTo));
+  }, [returnTo, router]);
+
   const checkCanEdit = (contactId: string): boolean => {
     if (typeof canEdit === 'function') return canEdit(contactId);
     return canEdit;
@@ -628,6 +645,7 @@ export function ContactTable({
                   canDelete={checkCanDelete(contact.id)}
                 />
               }
+              onCardClick={() => router.push(detailHref)}
               details={
                 <CardDetailsGrid>
                   {contact.defaultEmail && (
@@ -746,8 +764,9 @@ export function ContactTable({
                   return (
                     <tr
                       key={contact.id}
+                      onClick={(event) => handleRowClick(event, contact)}
                       className={cn(
-                        'border-b border-border-primary transition-colors',
+                        'border-b border-border-primary transition-colors cursor-pointer',
                         isSelected
                           ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
                           : isAlternate

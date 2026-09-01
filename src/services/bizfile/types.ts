@@ -21,7 +21,7 @@ export interface ExtractedBizFileData {
   entityDetails: {
     uen: string;
     name: string;
-    /** User-maintained service label; not extracted from the BizFile. */
+    /** Short company alias extracted from or confirmed against the BizFile review. */
     displayAlias?: string | null;
     formerName?: string;
     dateOfNameChange?: string;

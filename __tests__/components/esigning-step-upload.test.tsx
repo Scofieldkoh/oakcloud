@@ -326,6 +326,17 @@ describe('EsigningStepUpload', () => {
     });
   });
 
+  it('keeps document actions visible outside the thumbnail card bounds', async () => {
+    const user = userEvent.setup();
+    renderUpload();
+
+    await user.click(screen.getByRole('button', { name: 'More document actions' }));
+
+    expect(screen.getByRole('button', { name: 'View document' })).toBeVisible();
+    expect(screen.getByText('nda.pdf').closest('.group')).toHaveClass('overflow-visible');
+    expect(screen.getByRole('heading', { name: 'Documents (1)' }).closest('section')).toHaveClass('overflow-visible');
+  });
+
   it('keeps envelope name and email subject independent with standardized control heights', async () => {
     const user = userEvent.setup();
     const { onUpdateSettings } = renderUpload();

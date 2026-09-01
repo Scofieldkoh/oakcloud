@@ -465,6 +465,7 @@ describe('OperationalServiceForm', () => {
     }} />);
 
     expect(screen.getByText('Canonical deadline preview')).toBeVisible();
+    expect(screen.getByRole('tab', { name: /Deadline2/ })).toBeVisible();
     expect(screen.getByText('30 Jun 2027')).toBeVisible();
     expect(screen.getByText('31 Jul 2027')).toBeVisible();
     expect(screen.getByText('2 scheduled milestones')).toBeVisible();
@@ -599,6 +600,7 @@ describe('OperationalServiceForm', () => {
     };
 
     render(<Harness initial={valuesWithMonthlyFee} />);
+    expect(screen.getByRole('tab', { name: /Billing12/ })).toBeVisible();
     expect(screen.getByText('12 billing items')).toBeVisible();
     expect(screen.getByText('Month 1 of 12 · SGD 500.00')).toBeVisible();
     expect(screen.getByText('Month 12 of 12 · SGD 500.00')).toBeVisible();

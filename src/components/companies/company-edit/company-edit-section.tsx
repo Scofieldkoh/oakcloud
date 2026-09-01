@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { Toggle } from '@/components/ui/toggle';
+import { COMPANY_ALIAS_MAX_LENGTH } from '@/lib/company-display-label';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
 import {
@@ -39,7 +40,7 @@ function words(value: string): string {
 function fieldLabel(path: string[]): string {
   const meaningful = path.filter((part) => !/^\d+$/.test(part));
   const last = meaningful.at(-1) ?? 'value';
-  if (last === 'displayAlias') return 'Service display alias';
+  if (last === 'displayAlias') return 'ALIAS';
   const parent = meaningful.at(-2);
   const prefix = parent === 'registered' || parent === 'mailing' ? `${words(parent)} ` : '';
   const label = `${prefix}${words(last)}`;
@@ -87,7 +88,7 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
   if (isDateField(key)) {
     return <SingleDateInput label={label} value={value == null ? '' : String(value)} onChange={(next) => onChange(next || null)} />;
   }
-  return <label className="block text-sm"><span className="label">{label}</span><input aria-label={label} className="input input-sm w-full" type={numeric ? 'number' : 'text'} step={numeric ? 'any' : undefined} maxLength={key === 'displayAlias' ? 40 : undefined} value={value == null ? '' : String(value)} onChange={(event) => onChange(numeric ? (event.target.value === '' ? null : Number(event.target.value)) : (event.target.value || ''))} />{key === 'displayAlias' ? <span className="mt-1 block text-xs text-text-muted">Shown on service calendars; leave blank to use company initials</span> : null}</label>;
+  return <label className="block text-sm"><span className="label">{label}</span><input aria-label={label} className="input input-sm w-full" type={numeric ? 'number' : 'text'} step={numeric ? 'any' : undefined} maxLength={key === 'displayAlias' ? COMPANY_ALIAS_MAX_LENGTH : undefined} value={value == null ? '' : String(value)} onChange={(event) => onChange(numeric ? (event.target.value === '' ? null : Number(event.target.value)) : (event.target.value || ''))} />{key === 'displayAlias' ? <span className="mt-1 block text-xs text-text-muted">Short company alias; maximum {COMPANY_ALIAS_MAX_LENGTH} characters</span> : null}</label>;
 }
 
 export interface CompanyEditSectionProps {

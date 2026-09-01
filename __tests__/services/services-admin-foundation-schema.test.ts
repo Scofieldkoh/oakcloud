@@ -12,11 +12,22 @@ describe('services administration foundation schema', () => {
 
   it('adds optional company aliases and required family colors', () => {
     expect(schema).toContain('displayAlias');
-    expect(schema).toContain('@map("display_alias") @db.VarChar(40)');
+    expect(schema).toContain('@map("display_alias") @db.VarChar(10)');
     expect(schema).toContain('displayColor');
     expect(schema).toContain('@default("#2F6F5E")');
     expect(migration).toContain('service_families_display_color_hex');
     expect(migration).toContain('UPDATE "service_families"');
+  });
+
+  it('limits existing company aliases to ten characters', () => {
+    const migrationPath = resolve(
+      process.cwd(),
+      'prisma/migrations/20260901000000_limit_company_alias_length/migration.sql',
+    );
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    expect(migration).toContain('ALTER COLUMN "display_alias" TYPE VARCHAR(10)');
+    expect(migration).toContain('USING LEFT("display_alias", 10)');
   });
 
   it('backfills families with the stable tenant palette and preserves existing data', () => {

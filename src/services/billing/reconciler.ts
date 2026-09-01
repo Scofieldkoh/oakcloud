@@ -1,6 +1,6 @@
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
-import { addCalendarDays, addMonthsClamped, compareDateOnly, formatDateOnly, parseDateOnly, type BusinessCalendarSnapshot, type DateOnly } from '@/services/service-schedule';
+import { addCalendarDays, compareDateOnly, formatDateOnly, parseDateOnly, type BusinessCalendarSnapshot, type DateOnly } from '@/services/service-schedule';
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import { canonicalizeBillingSchedule, evaluateBillingSchedule } from './schedule';
 import type {
@@ -83,22 +83,7 @@ type BillingOccurrenceDelegate = {
 };
 
 const MAX_OPTIMISTIC_WRITE_ATTEMPTS = 3;
-
-function initialBillingPeriodEnd(config: BillingScheduleConfigV1): DateOnly {
-  if (!config.startDate) throw new Error('Billing schedule start date is required');
-  const intervalMonths = (() => {
-    switch (config.cadence) {
-      case 'ONE_TIME': return 1;
-      case 'CUSTOM': return config.customInterval?.count ?? 1;
-      case 'MONTHLY': return 1;
-      case 'QUARTERLY': return 3;
-      case 'SEMI_ANNUALLY': return 6;
-      case 'ANNUALLY': return 12;
-    }
-  })();
-  const periodStart = `${config.startDate.slice(0, 7)}-01` as DateOnly;
-  return addCalendarDays(addMonthsClamped(periodStart, intervalMonths), -1);
-}
+const MAX_HISTORICAL_BACKFILL_OCCURRENCES = 50;
 
 class BillingReconciliationConflictError extends Error {
   readonly code = 'BILLING_RECONCILIATION_CONFLICT';
@@ -544,6 +529,7 @@ export async function reconcileClientServiceBilling(
   const processed = new Set<string>();
   const skipCleanupFeeLineIds = new Set<string>();
   const proposals: EvaluatedProposal[] = [];
+  const historicalBackfillProposals: EvaluatedProposal[] = [];
   const calendar = await loadCalendar(db, input.tenantId);
 
   const serviceDeleted = service.deletedAt != null;
@@ -602,23 +588,31 @@ export async function reconcileClientServiceBilling(
           generationKey: generation,
         };
         const startDate = config.startDate;
-        const historicalStartOccurrences = input.includeHistoricalStart
+        const historicalBackfillOccurrences = input.includeHistoricalStart
           && startDate
           && compareDateOnly(startDate, input.today) < 0
           ? evaluateBillingSchedule({
             ...evaluationInput,
             from: startDate,
-            to: initialBillingPeriodEnd(config),
-          }).filter((occurrence) => occurrence.periodStart === `${startDate.slice(0, 7)}-01`)
+            to: addCalendarDays(input.today, -1),
+          })
           : [];
-        const evaluated = [
-          ...historicalStartOccurrences,
-          ...evaluateBillingSchedule({
-            ...evaluationInput,
-            from: input.today,
-            to: effectiveHorizonEnd,
-          }),
-        ];
+        const evaluated = evaluateBillingSchedule({
+          ...evaluationInput,
+          from: input.today,
+          to: effectiveHorizonEnd,
+        });
+        historicalBackfillProposals.push(...historicalBackfillOccurrences.map((occurrence) => ({
+          feeLine,
+          feeLineId: occurrence.feeLineId,
+          billingPeriodKey: occurrence.billingPeriodKey,
+          scheduleEntryKey: occurrence.scheduleEntryKey,
+          generationKey: occurrence.generationKey,
+          calculatedExpectedDate: occurrence.calculatedExpectedDate,
+          operativeExpectedDate: occurrence.operativeExpectedDate,
+          amount: occurrence.amount,
+          currency: occurrence.currency,
+        })));
         proposals.push(...evaluated.map((occurrence) => ({
           feeLine,
           feeLineId: occurrence.feeLineId,
@@ -636,6 +630,21 @@ export async function reconcileClientServiceBilling(
       }
     }
   }
+
+  const cappedHistoricalBackfill = historicalBackfillProposals.length > MAX_HISTORICAL_BACKFILL_OCCURRENCES
+    ? historicalBackfillProposals
+      .slice()
+      .sort((left, right) => compareDateOnly(left.operativeExpectedDate, right.operativeExpectedDate))
+      .slice(-MAX_HISTORICAL_BACKFILL_OCCURRENCES)
+    : historicalBackfillProposals;
+  if (historicalBackfillProposals.length > cappedHistoricalBackfill.length) {
+    warning(
+      result.warnings,
+      'HISTORICAL_BACKFILL_CAPPED',
+      `Historical billing backfill was capped at ${MAX_HISTORICAL_BACKFILL_OCCURRENCES} occurrences`,
+    );
+  }
+  proposals.unshift(...cappedHistoricalBackfill);
 
   const createProposals: EvaluatedProposal[] = [];
   for (const proposal of proposals) {
