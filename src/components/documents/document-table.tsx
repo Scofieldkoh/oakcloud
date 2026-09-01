@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type MouseEvent,
@@ -63,6 +62,8 @@ export interface GeneratedDocumentFilters {
   templateName?: string;
   status?: GeneratedDocumentStatus | '';
   createdBy?: string;
+  signedFrom?: string;
+  signedTo?: string;
   updatedFrom?: string;
   updatedTo?: string;
   sortBy?: GeneratedDocumentSortField;
@@ -77,6 +78,7 @@ export interface GeneratedDocument {
   useLetterhead: boolean;
   createdAt: string;
   updatedAt: string;
+  signedAt?: string | null;
   metadata?: unknown;
   finalizedAt?: string;
   template?: {
@@ -141,6 +143,7 @@ const COLUMN_IDS = [
   'company',
   'template',
   'status',
+  'signedOn',
   'createdBy',
   'updated',
   'actions',
@@ -152,6 +155,7 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   company: 'Company',
   template: 'Template',
   status: 'Status',
+  signedOn: 'Signed On',
   createdBy: 'Created By',
   updated: 'Updated',
   actions: 'Actions',
@@ -180,6 +184,7 @@ const DEFAULT_COLUMN_WIDTHS: Record<ColumnId, number> = {
   company: 200,
   template: 180,
   status: 120,
+  signedOn: 140,
   createdBy: 160,
   updated: 140,
   actions: 110,
@@ -189,6 +194,7 @@ const MINIMUM_COLUMN_WIDTHS: Record<ColumnId, number> = {
   company: 120,
   template: 120,
   status: 100,
+  signedOn: 110,
   createdBy: 110,
   updated: 110,
   actions: 80,
@@ -543,6 +549,7 @@ export function DocumentTable({
               <th>Company</th>
               <th>Template</th>
               <th>Status</th>
+              <th>Signed On</th>
               <th>Created By</th>
               <th>Updated</th>
               <th className="text-right">Actions</th>
@@ -554,6 +561,7 @@ export function DocumentTable({
                 <td><div className="skeleton h-4 w-48" /></td>
                 <td><div className="skeleton h-4 w-32" /></td>
                 <td><div className="skeleton h-4 w-28" /></td>
+                <td><div className="skeleton h-4 w-20" /></td>
                 <td><div className="skeleton h-4 w-20" /></td>
                 <td><div className="skeleton h-4 w-24" /></td>
                 <td><div className="skeleton h-4 w-20" /></td>
@@ -632,6 +640,11 @@ export function DocumentTable({
                       label="Company"
                       value={doc.company?.name || '—'}
                       icon={<Building2 className="w-3 h-3" />}
+                    />
+                    <CardDetailItem
+                      label="Signed On"
+                      value={doc.signedAt ? formatDate(doc.signedAt) : '—'}
+                      icon={<CheckCircle className="w-3 h-3" />}
                     />
                     <CardDetailItem
                       label="Created By"
@@ -758,6 +771,31 @@ export function DocumentTable({
                       className="text-xs"
                       showChevron={false}
                       showKeyboardHints={false}
+                    />
+                  ) : columnId === 'signedOn' ? (
+                    <DatePicker
+                      value={
+                        filters.signedFrom || filters.signedTo
+                          ? {
+                              mode: 'range' as const,
+                              range: {
+                                from: parseLocalDate(filters.signedFrom),
+                                to: parseLocalDate(filters.signedTo),
+                              },
+                            }
+                          : undefined
+                      }
+                      onChange={(value: DatePickerValue | undefined) => {
+                        const range = value?.mode === 'range' ? value.range : undefined;
+                        onFilterChange?.({
+                          signedFrom: toLocalDateString(range?.from),
+                          signedTo: toLocalDateString(range?.to),
+                        });
+                      }}
+                      placeholder="All dates"
+                      size="sm"
+                      defaultTab="range"
+                      className="text-xs"
                     />
                   ) : columnId === 'createdBy' ? (
                     <InlineTextFilter
@@ -930,6 +968,13 @@ export function DocumentTable({
                         <StatusIcon className="w-3 h-3" aria-hidden="true" />
                         {status.label}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-text-secondary">
+                      {doc.signedAt ? (
+                        formatDate(doc.signedAt)
+                      ) : (
+                        <span className="text-text-muted">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-text-secondary">
                       {doc.createdBy.firstName} {doc.createdBy.lastName}

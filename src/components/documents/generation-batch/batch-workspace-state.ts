@@ -23,7 +23,7 @@ import type {
 } from '@/types/document-generation';
 import { masterFieldId } from '@/lib/document-generation-master-fields';
 import {
-  formatDocumentGenerationTitle,
+  DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
   isAutoDocumentGenerationTitle,
 } from '@/lib/document-generation-title';
 
@@ -120,12 +120,11 @@ export const STAGE_LABELS: Record<BatchStage, string> = {
 };
 
 export function defaultItemConfiguration(
-  template: Pick<DocumentTemplateSummary, 'name'> | string,
+  _template: Pick<DocumentTemplateSummary, 'name'> | string,
 ): BatchItemConfiguration {
-  const templateName = typeof template === 'string' ? template : template.name;
   return {
     version: 1,
-    title: templateName,
+    title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
     contactIds: [],
     selectedDirectorId: null,
     selectedShareholderId: null,
@@ -169,7 +168,7 @@ export function createInitialBatchWorkspaceState(
         items: batchOrItems.slice(0, 20).map(itemFromTemplate),
       }
     : batchOrItems;
-  const batch = applyCompanyTitleDefaults(initialBatch, initialBatch.company?.name ?? null);
+  const batch = applyAutomaticTitleDefaults(initialBatch);
   const capabilities = deriveCapabilities(batch);
   return {
     batch,
@@ -330,11 +329,9 @@ export function syncServiceAgreementPrimaryCompany(
   };
 }
 
-function applyCompanyTitleDefaults(
+function applyAutomaticTitleDefaults(
   batch: EditableDocumentGenerationBatch,
-  companyName: string | null,
 ): EditableDocumentGenerationBatch {
-  if (!companyName?.trim()) return batch;
   let changed = false;
   const items = batch.items.map((item) => {
     if (
@@ -343,7 +340,7 @@ function applyCompanyTitleDefaults(
     ) {
       return item;
     }
-    const title = formatDocumentGenerationTitle(item.templateName, companyName);
+    const title = DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN;
     if (title === item.configuration.title) return item;
     changed = true;
     return {
@@ -432,23 +429,19 @@ function reduceBatchState(
       if (!state.capabilities.canEditSharedSetup) return state;
       const previousPrimaryCompanyId = state.batch.primaryCompanyId;
       const nextBatch = { ...state.batch, primaryCompanyId: action.companyId };
-      const items = action.companyName
-        ? nextBatch.items.map((item) => {
-            if (
-              item.status === 'GENERATED'
-              || !isAutoDocumentGenerationTitle(item.configuration.title, item.templateName)
-            ) {
-              return item;
-            }
-            return invalidateItem({
-              ...item,
-              configuration: {
-                ...item.configuration,
-                title: formatDocumentGenerationTitle(item.templateName, action.companyName!),
-              },
-            });
-          })
-        : nextBatch.items;
+      const items = nextBatch.items.map((item) => {
+        if (item.status === 'GENERATED') return item;
+        const title = isAutoDocumentGenerationTitle(
+          item.configuration.title,
+          item.templateName,
+        )
+          ? DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN
+          : item.configuration.title;
+        return invalidateItem({
+          ...item,
+          configuration: { ...item.configuration, title },
+        });
+      });
       const synchronizedItems = items.map((item) => {
         if (
           item.status === 'GENERATED'

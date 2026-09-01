@@ -66,6 +66,13 @@ details retains only Agreement date and appears immediately after Details;
 Effective date and Term are removed. Service Agreement configuration does not
 render Document fields.
 
+Service start dates default to and remain pegged to the Agreement date until
+explicitly overwritten. Billing start dates likewise default to and remain
+pegged to their Service start date. Pegged date controls use the neutral grey
+field background; overwritten controls use the current selected green tint.
+Clearing either override restores the current pegged value and returns the
+control to grey.
+
 ## State and data flow
 
 The Step 3 primary-company callback is threaded through

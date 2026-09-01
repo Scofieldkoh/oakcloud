@@ -252,6 +252,10 @@ export function EsigningListPage() {
     [searchParams],
   );
   const generatedDocumentId = searchParams.get('generatedDocumentId') ?? undefined;
+  const selectedGeneratedDocumentIds = useMemo(
+    () => Array.from(new Set(searchParams.getAll('generatedDocumentIds').filter(Boolean))),
+    [searchParams],
+  );
   const configuredSigningOrder = searchParams.get('signingOrder');
   const signingOrder = (
     configuredSigningOrder
@@ -279,6 +283,7 @@ export function EsigningListPage() {
   const [manualLinks, setManualLinks] = useState<EsigningManualLinkDto[]>([]);
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
   const ensuredTaskRef = useRef<string | null>(null);
+  const selectedTaskDocumentsRef = useRef<string | null>(null);
   const openedPreparedEnvelopeRef = useRef<string | null>(null);
 
   const activeStatuses = TAB_STATUSES[activeTab];
@@ -369,7 +374,9 @@ export function EsigningListPage() {
         signingOrder,
         expiresAt,
         taskContext,
-        generatedDocumentId,
+        ...(selectedGeneratedDocumentIds.length > 0
+          ? { generatedDocumentIds: selectedGeneratedDocumentIds }
+          : { generatedDocumentId }),
       });
       const destination = withTaskLaunchContext(
         `/esigning/${createdEnvelope.id}`,
@@ -417,6 +424,7 @@ export function EsigningListPage() {
     expiresInDays,
     generatedDocumentId,
     isStarting,
+    selectedGeneratedDocumentIds,
     signingOrder,
     taskContext,
     toast,
@@ -424,7 +432,7 @@ export function EsigningListPage() {
   ]);
 
   useEffect(() => {
-    if (!taskContext || !can.createEsigning) return;
+    if (!taskContext || selectedGeneratedDocumentIds.length > 0 || !can.createEsigning) return;
     const launchKey = `${taskContext.taskId}:${taskContext.taskStageId}`;
     if (ensuredTaskRef.current === launchKey) return;
     ensuredTaskRef.current = launchKey;
@@ -434,11 +442,20 @@ export function EsigningListPage() {
     }).catch((error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to prepare E-signing');
     });
-  }, [can.createEsigning, ensurePreparation, taskContext, toast]);
+  }, [can.createEsigning, ensurePreparation, selectedGeneratedDocumentIds, taskContext, toast]);
+
+  useEffect(() => {
+    if (!taskContext || selectedGeneratedDocumentIds.length === 0 || !can.createEsigning) return;
+    const launchKey = `${taskContext.taskId}:${taskContext.taskStageId}:${selectedGeneratedDocumentIds.join(',')}`;
+    if (selectedTaskDocumentsRef.current === launchKey) return;
+    selectedTaskDocumentsRef.current = launchKey;
+    void handleStart();
+  }, [can.createEsigning, handleStart, selectedGeneratedDocumentIds, taskContext]);
 
   useEffect(() => {
     if (
       !taskContext
+      || selectedGeneratedDocumentIds.length > 0
       || preparation?.status !== 'READY'
       || !preparation.esigningEnvelopeId
       || openedPreparedEnvelopeRef.current === preparation.esigningEnvelopeId
@@ -450,7 +467,7 @@ export function EsigningListPage() {
       `/esigning/${preparation.esigningEnvelopeId}`,
       taskContext,
     ));
-  }, [preparation, taskContext]);
+  }, [preparation, selectedGeneratedDocumentIds, taskContext]);
 
   async function handleRetryPdf(envelopeId: string) {
     try {
@@ -542,13 +559,15 @@ export function EsigningListPage() {
               <RefreshCw
                 className={cn(
                   'h-6 w-6',
-                  (!preparation || preparation.status === 'QUEUED' || preparation.status === 'PROCESSING')
+                  (isStarting || !preparation || preparation.status === 'QUEUED' || preparation.status === 'PROCESSING')
                     && 'animate-spin',
                 )}
               />
             </div>
             <h2 className="mt-4 text-lg font-semibold text-text-primary">
-              {preparation?.status === 'WAITING'
+              {selectedGeneratedDocumentIds.length > 0
+                ? 'Preparing selected documents'
+                : preparation?.status === 'WAITING'
                 ? 'E-signing is waiting'
                 : preparation?.status === 'FAILED_RETRYABLE'
                   ? 'Preparation needs attention'
@@ -559,7 +578,9 @@ export function EsigningListPage() {
                       : 'Preparing E-signing'}
             </h2>
             <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary">
-              {preparation?.status === 'WAITING' && preparation.blockingStage
+              {selectedGeneratedDocumentIds.length > 0
+                ? `${selectedGeneratedDocumentIds.length} ${selectedGeneratedDocumentIds.length === 1 ? 'document is' : 'documents are'} being added to a new signing workspace.`
+                : preparation?.status === 'WAITING' && preparation.blockingStage
                 ? `Complete or skip ${preparation.blockingStage.name} before the generated document is attached.`
                 : preparation?.status === 'WAITING'
                   ? 'Finalize the preceding generated document to continue.'
@@ -1023,7 +1044,7 @@ export function EsigningListPage() {
         title="Manual signing links"
         size="xl"
       >
-        <ModalBody className="space-y-3">
+        <ModalBody className="min-w-0 space-y-3">
           <Alert variant="info">
             Share these links securely with recipients whose access mode uses manual delivery.
           </Alert>
@@ -1036,13 +1057,13 @@ export function EsigningListPage() {
                 <div className="min-w-0">
                   <div className="font-medium text-text-primary">{link.recipientName}</div>
                   <div className="break-all text-sm text-text-secondary">{link.recipientEmail}</div>
-                  <div className="mt-2 flex min-w-0 items-center gap-2">
+                  <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                     <a
                       href={link.signingUrl}
                       target="_blank"
                       rel="noreferrer"
                       title={link.signingUrl}
-                      className="min-w-0 flex-1 truncate rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-xs text-text-secondary hover:border-oak-primary/40 hover:text-text-primary"
+                      className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-xs text-text-secondary hover:border-oak-primary/40 hover:text-text-primary"
                     >
                       {link.signingUrl}
                     </a>

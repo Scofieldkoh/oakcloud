@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   taskFindFirst: vi.fn(),
+  documentGenerationBatchFindFirst: vi.fn(),
   hasPermission: vi.fn(),
   canAccessCompany: vi.fn(),
   resolveEsigningActorScope: vi.fn(),
@@ -9,7 +10,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/prisma', () => ({
-  prisma: { task: { findFirst: mocks.taskFindFirst } },
+  prisma: {
+    task: { findFirst: mocks.taskFindFirst },
+    documentGenerationBatch: { findFirst: mocks.documentGenerationBatchFindFirst },
+  },
 }));
 vi.mock('@/lib/rbac', () => ({
   hasPermission: mocks.hasPermission,
@@ -151,6 +155,7 @@ describe('getTaskResources', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-29T08:00:00.000Z'));
     vi.clearAllMocks();
+    mocks.documentGenerationBatchFindFirst.mockResolvedValue(null);
     mocks.hasPermission.mockResolvedValue(true);
     mocks.canAccessCompany.mockResolvedValue(true);
     mocks.resolveEsigningActorScope.mockResolvedValue({
@@ -190,9 +195,9 @@ describe('getTaskResources', () => {
       kind: 'generatedDocument',
       state: 'available',
       href: expect.stringContaining('/generated-documents/doc-1?taskId=task-1'),
-      pdfHref: '/api/generated-documents/doc-1/export/pdf',
-      downloadFileName: 'service-agreement-2026-08-29.pdf',
     });
+    expect(result.stages[1].resources[0]).not.toHaveProperty('pdfHref');
+    expect(result.stages[1].resources[0]).not.toHaveProperty('downloadFileName');
     expect(result.stages[2].resources[0]).toMatchObject({
       kind: 'esigningEnvelope',
       state: 'available',
@@ -209,6 +214,42 @@ describe('getTaskResources', () => {
     expect(result.hasPendingResources).toBe(true);
     expect(JSON.stringify(result)).not.toContain('storagePath');
     expect(JSON.stringify(result)).not.toContain('lastError');
+  });
+
+  it('serializes every document in the latest task-linked generation batch', async () => {
+    mocks.documentGenerationBatchFindFirst.mockResolvedValue({
+      items: [
+        {
+          generatedDocument: {
+            id: 'doc-1',
+            title: 'Service Agreement',
+            status: 'FINALIZED',
+            companyId: 'company-1',
+            deletedAt: null,
+          },
+        },
+        {
+          generatedDocument: {
+            id: 'doc-2',
+            title: 'Privacy Notice',
+            status: 'DRAFT',
+            companyId: 'company-1',
+            deletedAt: null,
+          },
+        },
+      ],
+    });
+
+    const result = await getTaskResources(session, 'tenant-a', 'task-1');
+    const documents = result.stages[1].resources;
+
+    expect(documents).toHaveLength(2);
+    expect(documents.map((resource) => resource.id)).toEqual(['doc-1', 'doc-2']);
+    expect(documents.map((resource) => resource.href)).toEqual([
+      expect.stringContaining('/generated-documents/doc-1?taskId=task-1'),
+      expect.stringContaining('/generated-documents/doc-2?taskId=task-1'),
+    ]);
+    expect(JSON.stringify(documents)).not.toContain('pdfHref');
   });
 
   it('returns pending resources while a stage has not created its linked record', async () => {

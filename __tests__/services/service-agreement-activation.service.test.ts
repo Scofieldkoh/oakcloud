@@ -15,9 +15,11 @@ const prismaMock = vi.hoisted(() => ({
 }));
 const auditMock = vi.hoisted(() => ({ createAuditLog: vi.fn() }));
 const loggerMock = vi.hoisted(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }));
+const reconciliationMock = vi.hoisted(() => ({ processScheduleReconciliationBatch: vi.fn() }));
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/audit', () => auditMock);
 vi.mock('@/lib/logger', () => ({ createLogger: () => loggerMock }));
+vi.mock('@/services/schedule-reconciliation/worker', () => reconciliationMock);
 
 import { processServiceAgreementActivation, queueServiceAgreementActivationsForEnvelope, requestManualServiceAgreementActivation, retryServiceAgreementActivation } from '@/services/service-agreement';
 
@@ -54,6 +56,9 @@ describe('service agreement activation', () => {
     prismaMock.serviceScheduleReconciliationRequest.findUnique.mockResolvedValue(null);
     prismaMock.serviceScheduleReconciliationRequest.upsert.mockResolvedValue({ id: 'req-1', dedupeKey: 'k-1' });
     prismaMock.$queryRaw.mockResolvedValue([{ id: 'req-1', dedupe_key: 'canonical', status: 'PENDING', next_attempt_at: new Date() }]);
+    reconciliationMock.processScheduleReconciliationBatch.mockResolvedValue({
+      claimed: 0, completed: 0, failed: 0, leaseLost: 0, summaries: [],
+    });
   });
 
   afterEach(() => {
@@ -64,6 +69,7 @@ describe('service agreement activation', () => {
     prismaMock.serviceAgreement.findFirst.mockResolvedValue(agreement);
     const result = await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
     expect(result).toEqual({ status: 'completed', clientServiceCount: 2 });
+    expect(reconciliationMock.processScheduleReconciliationBatch).toHaveBeenCalledTimes(1);
     expect(prismaMock.clientService.create).toHaveBeenCalledTimes(2);
     expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ source: 'AGREEMENT', billingDisposition: 'CONFIGURED' }) }));
     expect(prismaMock.clientService.create.mock.calls[1]?.[0].data).toEqual(expect.objectContaining({ billingDisposition: 'UNREVIEWED' }));
@@ -94,6 +100,22 @@ describe('service agreement activation', () => {
         }),
       }),
     }), prismaMock);
+  });
+
+  it('keeps activation successful when immediate reconciliation fails', async () => {
+    prismaMock.serviceAgreement.findFirst.mockResolvedValue(agreement);
+    reconciliationMock.processScheduleReconciliationBatch.mockRejectedValueOnce(new Error('temporary failure'));
+
+    await expect(processServiceAgreementActivation({
+      agreementId: agreement.id,
+      tenantId: agreement.tenantId,
+      claimToken: 'claim-1',
+    })).resolves.toEqual({ status: 'completed', clientServiceCount: 2 });
+
+    await vi.waitFor(() => expect(loggerMock.warn).toHaveBeenCalledWith(
+      'Immediate Service Agreement schedule reconciliation failed; the scheduler will retry',
+      expect.objectContaining({ agreementId: agreement.id, tenantId: agreement.tenantId }),
+    ));
   });
 
   it('keeps activated legacy fee data UNREVIEWED when it cannot materialize a schedule', async () => {

@@ -377,6 +377,7 @@ export type WorkerServiceReconciliationInput = {
   horizonEnd: DateOnly;
   writeMode: 'OBSERVE' | 'APPLY';
   reconciliationRequestId: string;
+  includeHistoricalBillingStart?: boolean;
   cancellationActorId?: string | null;
   assertLease: () => Promise<void>;
 };
@@ -410,6 +411,7 @@ export async function reconcileClientServiceThroughWorkerTransaction(
       horizonEnd: input.horizonEnd,
       writeMode: input.writeMode,
       reconciliationRequestId: input.reconciliationRequestId,
+      ...(input.includeHistoricalBillingStart ? { includeHistoricalStart: true } : {}),
       cancellationActorId: input.cancellationActorId,
       assertLease: input.assertLease,
     }, tx);
@@ -646,6 +648,8 @@ async function processSingleRequest(
     const operation = req.triggerType === 'RULE_ARCHIVED' ? 'ARCHIVE' as const : 'PUBLISH' as const;
     const today = currentDateInSingapore(now);
     const horizonEnd = addMonthsClamped(today, 12);
+    const includeHistoricalBillingStart = req.triggerType === 'CLIENT_SERVICE_CREATED'
+      || req.triggerType === 'SERVICE_AGREEMENT_ACTIVATED';
 
     const clientServiceIds = await resolveClientServiceIds(req);
     const summaries: ServiceScheduleReconciliationSummary[] = [];
@@ -686,6 +690,7 @@ async function processSingleRequest(
         horizonEnd,
         writeMode,
         reconciliationRequestId: req.id,
+        includeHistoricalBillingStart,
         cancellationActorId: req.requestedById,
         assertLease,
       });

@@ -113,6 +113,8 @@ export const searchGeneratedDocumentsSchema = z.object({
   templateId: z.string().uuid().optional(),
   templateName: z.string().optional(), // Free text filter by template name
   createdBy: z.string().optional(),
+  signedFrom: z.string().optional(),
+  signedTo: z.string().optional(),
   updatedFrom: z.string().optional(),
   updatedTo: z.string().optional(),
   status: generatedDocumentStatusEnum.optional(),

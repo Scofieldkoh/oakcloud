@@ -113,16 +113,37 @@ describe('PipelineList', () => {
 describe('PipelineBuilder', () => {
   it('edits required state, checklist, icon search, and document-template configuration', () => {
     const onSave = vi.fn();
-    render(<PipelineBuilder initialDraft={pipelineToDraft(pipeline)} templates={[{ id: '11111111-1111-4111-8111-111111111111', name: 'Annual return' }]} onCancel={vi.fn()} onSave={onSave} />);
+    render(<PipelineBuilder initialDraft={pipelineToDraft(pipeline)} templates={[{ id: '11111111-1111-4111-8111-111111111111', name: 'Annual return' }, { id: '33333333-3333-4333-8333-333333333333', name: 'Board resolution' }]} onCancel={vi.fn()} onSave={onSave} />);
     fireEvent.click(screen.getByRole('switch', { name: 'Required stage' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Checklist item 2' }), { target: { value: 'Confirm template' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Search icons' }), { target: { value: 'mail' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mail' })); fireEvent.click(screen.getByRole('button', { name: 'Save pipeline' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ stages: [expect.objectContaining({
-      isRequired: false, icon: 'Mail', actionConfig: expect.objectContaining({ templateId: '11111111-1111-4111-8111-111111111111' }),
+      isRequired: false, icon: 'Mail', actionConfig: expect.objectContaining({ templateIds: ['11111111-1111-4111-8111-111111111111'] }),
       checklistItems: expect.arrayContaining([expect.objectContaining({ label: 'Verify records' })]),
     })] }));
+  });
+
+  it('supports selecting multiple document templates for one stage', () => {
+    const onSave = vi.fn();
+    render(<PipelineBuilder initialDraft={{ name: 'Pipeline', description: '', stages: [{
+      id: 'documents-stage', name: 'Prepare documents', description: '', actionType: 'DOCUMENT_GENERATION', icon: 'FileText', isRequired: true, actionConfig: {}, checklistItems: [],
+    }] }} templates={[{ id: '11111111-1111-4111-8111-111111111111', name: 'Annual return' }, { id: '33333333-3333-4333-8333-333333333333', name: 'Board resolution' }]} onCancel={vi.fn()} onSave={onSave} />);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Annual return' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Board resolution' }));
+    expect(screen.getByText('2 of 20 templates selected')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save pipeline' }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      stages: [expect.objectContaining({
+        actionConfig: { templateIds: [
+          '11111111-1111-4111-8111-111111111111',
+          '33333333-3333-4333-8333-333333333333',
+        ] },
+      })],
+    }));
   });
 
   it('supports stage and checklist add, edit, and remove operations', () => {
@@ -203,12 +224,12 @@ describe('PipelineBuilder', () => {
     }));
     onSave.mockClear();
     fireEvent.change(screen.getByRole('combobox', { name: 'Action type' }), { target: { value: 'DOCUMENT_GENERATION' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Default document template' }), { target: { value: '11111111-1111-4111-8111-111111111111' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Annual return' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save pipeline' }));
     expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({
       stages: [expect.objectContaining({
         actionType: 'DOCUMENT_GENERATION',
-        actionConfig: { templateId: '11111111-1111-4111-8111-111111111111' },
+        actionConfig: { templateIds: ['11111111-1111-4111-8111-111111111111'] },
       })],
     }));
     onSave.mockClear();
@@ -229,16 +250,16 @@ describe('PipelineBuilder', () => {
   it('restores action-specific configuration when a stage action is changed back', () => {
     const onSave = vi.fn();
     render(<PipelineBuilder initialDraft={{ name: 'Pipeline', description: 'Description', stages: [{
-      id: 'restore-stage', name: 'Start', description: '', actionType: 'DOCUMENT_GENERATION', icon: 'FileText', isRequired: true, actionConfig: { templateId: '11111111-1111-4111-8111-111111111111' }, checklistItems: [],
+      id: 'restore-stage', name: 'Start', description: '', actionType: 'DOCUMENT_GENERATION', icon: 'FileText', isRequired: true, actionConfig: { templateIds: ['11111111-1111-4111-8111-111111111111'] }, checklistItems: [],
     }] }} templates={[{ id: '11111111-1111-4111-8111-111111111111', name: 'Annual return' }]} onCancel={vi.fn()} onSave={onSave} />);
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Action type' }), { target: { value: 'COMPANY_PROFILE' } });
     fireEvent.click(screen.getByRole('switch', { name: 'Allow creating a company' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Action type' }), { target: { value: 'DOCUMENT_GENERATION' } });
-    expect(screen.getByRole('combobox', { name: 'Default document template' })).toHaveValue('11111111-1111-4111-8111-111111111111');
+    expect(screen.getByRole('checkbox', { name: 'Annual return' })).toBeChecked();
     fireEvent.click(screen.getByRole('button', { name: 'Save pipeline' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ stages: [expect.objectContaining({
-      actionConfig: { templateId: '11111111-1111-4111-8111-111111111111' },
+      actionConfig: { templateIds: ['11111111-1111-4111-8111-111111111111'] },
     })] }));
   });
 
@@ -266,7 +287,7 @@ describe('PipelineBuilder', () => {
     expect(screen.getByText('Stage 1 expiry must be a whole number of days')).toBeInTheDocument();
     expect(screen.getByText('Stage 2 icon must use a curated option')).toBeInTheDocument();
     expect(screen.getByText('Stage 2 checklist item 1 must be 300 characters or fewer')).toBeInTheDocument();
-    expect(screen.getByText('Stage 2 template must be a valid document template')).toBeInTheDocument();
+    expect(screen.getByText('Stage 2 templates must be valid document templates (up to 20)')).toBeInTheDocument();
     expect(screen.getByText('Stage 3 allow-create setting must be true or false')).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
   });

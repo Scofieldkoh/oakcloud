@@ -50,6 +50,7 @@ describe('ServiceSelectionStep', () => {
     render(
       <ServiceSelectionStep
         entities={[{ id: 'company-1', name: 'Acme Pte. Ltd.', uen: '202600001A', status: 'LIVE' }]}
+        agreementDate="2026-08-29"
         items={[]}
         onChange={vi.fn()}
       />,

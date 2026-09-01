@@ -14,6 +14,7 @@ import { createServiceAgreementClientKey } from './client-key';
 
 interface ServiceItemEditorProps {
   item: ServiceAgreementItemInput;
+  agreementDate: string;
   variant?: ServiceVariantDto;
   pinnedItem?: ServiceAgreementItemDto;
   entities: Company[];
@@ -29,6 +30,7 @@ interface ServiceItemEditorProps {
 
 export function ServiceItemEditor({
   item,
+  agreementDate,
   variant: currentVariant,
   pinnedItem,
   entities,
@@ -163,7 +165,8 @@ export function ServiceItemEditor({
                           currency: template.currency,
                           billingFrequency: template.billingFrequency,
                           customFrequencyLabel: template.customFrequencyLabel,
-                          billingStartDate: item.startDate,
+                          billingStartDate: null,
+                          billingStartDateOverridden: false,
                           displayOrder: index,
                         })),
                       ]
@@ -214,12 +217,19 @@ export function ServiceItemEditor({
       ) : null}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div className="max-w-44 text-xs text-text-secondary">
-          <span>Start date</span>
+          <span>Service start date</span>
           <SingleDateInput
             value={item.startDate}
-            onChange={(next) => onChange({ ...item, startDate: next })}
-            ariaLabel="Start date"
+            onChange={(next) => onChange({
+              ...item,
+              startDate: next || agreementDate,
+              startDateOverridden: Boolean(next),
+            })}
+            ariaLabel="Service start date"
             className="mt-1 w-44 max-w-full"
+            controlClassName={(item.startDateOverridden ?? item.startDate !== agreementDate)
+              ? 'bg-oak-row-selected dark:bg-oak-row-selected'
+              : 'bg-background-tertiary dark:bg-background-tertiary'}
           />
         </div>
         <div className="max-w-44 text-xs text-text-secondary">

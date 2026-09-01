@@ -14,6 +14,7 @@ import { ServiceVariantPicker } from './service-variant-picker';
 
 interface ServiceSelectionStepProps {
   entities: Company[];
+  agreementDate: string;
   items: ServiceAgreementItemInput[];
   pinnedItems?: ServiceAgreementItemDto[];
   agreementId?: string | null;
@@ -24,6 +25,7 @@ interface ServiceSelectionStepProps {
 
 export function ServiceSelectionStep({
   entities,
+  agreementDate,
   items,
   pinnedItems = [],
   agreementId,
@@ -89,13 +91,14 @@ export function ServiceSelectionStep({
     const variant = variants.find((candidate) => candidate.id === selectedVariantId);
     if (!variant || entities.length === 0) return;
     const key = createServiceAgreementClientKey();
-    const startDate = new Date().toISOString().slice(0, 10);
+    const startDate = agreementDate;
     const entityIds = entities.map((entity) => entity.id);
     const next: ServiceAgreementItemInput = {
       clientKey: key,
       variantId: variant.id,
       entityIds,
       startDate,
+      startDateOverridden: false,
       endDate: null,
       fieldValues: {},
       displayOrder: items.length,
@@ -119,7 +122,8 @@ export function ServiceSelectionStep({
           currency: fee.currency,
           billingFrequency: fee.billingFrequency,
           customFrequencyLabel: fee.customFrequencyLabel,
-          billingStartDate: startDate,
+          billingStartDate: null,
+          billingStartDateOverridden: false,
           displayOrder: index,
         })),
       ),
@@ -146,6 +150,7 @@ export function ServiceSelectionStep({
           <ServiceItemEditor
             key={item.clientKey}
             item={item}
+            agreementDate={agreementDate}
             variant={variant}
             pinnedItem={pinnedItem}
             entities={entities}

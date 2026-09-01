@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ServiceItemEditor } from '@/components/documents/service-agreement/service-item-editor';
 import type { ServiceVariantDto } from '@/services/service-catalog/types';
 import type { ServiceAgreementItemInput } from '@/services/service-agreement';
@@ -58,6 +58,7 @@ describe('ServiceItemEditor', () => {
     render(
       <ServiceItemEditor
         item={item}
+        agreementDate="2026-08-29"
         variant={variant}
         entities={[company]}
         onChange={vi.fn()}
@@ -83,5 +84,102 @@ describe('ServiceItemEditor', () => {
       .toHaveClass('bg-red-600');
     expect(screen.queryByRole('button', { name: 'Remove fee' })).not.toBeInTheDocument();
     expect(screen.getByText('Fees').closest('details')).toHaveAttribute('open');
+  });
+
+  it('pegs service and billing dates until each field is explicitly overridden', () => {
+    const onChange = vi.fn();
+    const peggedItem = {
+      ...item,
+      startDateOverridden: false,
+      feeLines: item.feeLines.map((fee) => ({
+        ...fee,
+        billingStartDate: null,
+        billingStartDateOverridden: false,
+      })),
+    };
+    const sharedProps = {
+      variant,
+      entities: [company],
+      onChange,
+      onRemove: vi.fn(),
+      onCopy: vi.fn(),
+      onMoveUp: vi.fn(),
+      onMoveDown: vi.fn(),
+      canMoveUp: false,
+      canMoveDown: false,
+    };
+    const { rerender } = render(
+      <ServiceItemEditor
+        {...sharedProps}
+        item={peggedItem}
+        agreementDate="2026-08-29"
+      />,
+    );
+
+    const serviceDate = screen.getByLabelText('Service start date');
+    const billingDate = screen.getByLabelText('Billing start date');
+    expect(serviceDate).toHaveValue('29 Aug 2026');
+    expect(billingDate).toHaveValue('29 Aug 2026');
+    expect(serviceDate.parentElement).toHaveClass('bg-background-tertiary');
+    expect(billingDate.parentElement).toHaveClass('bg-background-tertiary');
+
+    fireEvent.change(serviceDate, { target: { value: '1 Sep 2026' } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      startDate: '2026-09-01',
+      startDateOverridden: true,
+    }));
+
+    rerender(
+      <ServiceItemEditor
+        {...sharedProps}
+        item={{ ...peggedItem, startDate: '2026-09-01', startDateOverridden: true }}
+        agreementDate="2026-08-29"
+      />,
+    );
+    expect(screen.getByLabelText('Service start date').parentElement)
+      .toHaveClass('bg-oak-row-selected');
+    expect(screen.getByLabelText('Billing start date')).toHaveValue('1 Sep 2026');
+
+    fireEvent.change(screen.getByLabelText('Billing start date'), {
+      target: { value: '5 Sep 2026' },
+    });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      feeLines: [expect.objectContaining({
+        billingStartDate: '2026-09-05',
+        billingStartDateOverridden: true,
+      })],
+    }));
+
+    rerender(
+      <ServiceItemEditor
+        {...sharedProps}
+        item={{
+          ...peggedItem,
+          startDate: '2026-09-01',
+          startDateOverridden: true,
+          feeLines: peggedItem.feeLines.map((fee) => ({
+            ...fee,
+            billingStartDate: '2026-09-05',
+            billingStartDateOverridden: true,
+          })),
+        }}
+        agreementDate="2026-08-29"
+      />,
+    );
+    const overriddenBillingDate = screen.getByLabelText('Billing start date');
+    expect(overriddenBillingDate.parentElement).toHaveClass('bg-oak-row-selected');
+    fireEvent.change(overriddenBillingDate, { target: { value: '' } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      feeLines: [expect.objectContaining({
+        billingStartDate: null,
+        billingStartDateOverridden: false,
+      })],
+    }));
+
+    fireEvent.change(screen.getByLabelText('Service start date'), { target: { value: '' } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      startDate: '2026-08-29',
+      startDateOverridden: false,
+    }));
   });
 });

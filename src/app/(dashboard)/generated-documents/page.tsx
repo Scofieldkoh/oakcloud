@@ -71,6 +71,8 @@ function generatedDocumentsListKey(
     filters.templateName,
     filters.status,
     filters.createdBy,
+    filters.signedFrom,
+    filters.signedTo,
     filters.updatedFrom,
     filters.updatedTo,
     filters.sortBy,
@@ -120,6 +122,8 @@ export default function GeneratedDocumentsPage() {
   const initialTemplateFilter = searchParams.get('templateName') || '';
   const initialStatusFilter = searchParams.get('status') || '';
   const initialCreatedByFilter = searchParams.get('createdBy') || '';
+  const initialSignedFrom = searchParams.get('signedFrom') || '';
+  const initialSignedTo = searchParams.get('signedTo') || '';
   const initialUpdatedFrom = searchParams.get('updatedFrom') || '';
   const initialUpdatedTo = searchParams.get('updatedTo') || '';
   const initialSortBy = (searchParams.get('sortBy') as GeneratedDocumentSortField | null) || 'updatedAt';
@@ -136,6 +140,8 @@ export default function GeneratedDocumentsPage() {
         templateName: initialTemplateFilter || undefined,
         status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
         createdBy: initialCreatedByFilter || undefined,
+        signedFrom: initialSignedFrom || undefined,
+        signedTo: initialSignedTo || undefined,
         updatedFrom: initialUpdatedFrom || undefined,
         updatedTo: initialUpdatedTo || undefined,
         sortBy: initialSortBy,
@@ -181,6 +187,8 @@ export default function GeneratedDocumentsPage() {
     templateName: initialTemplateFilter || undefined,
     status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
     createdBy: initialCreatedByFilter || undefined,
+    signedFrom: initialSignedFrom || undefined,
+    signedTo: initialSignedTo || undefined,
     updatedFrom: initialUpdatedFrom || undefined,
     updatedTo: initialUpdatedTo || undefined,
     sortBy: initialSortBy,
@@ -206,6 +214,8 @@ export default function GeneratedDocumentsPage() {
       if (filters.templateName) params.set('templateName', filters.templateName);
       if (filters.status) params.set('status', filters.status);
       if (filters.createdBy) params.set('createdBy', filters.createdBy);
+      if (filters.signedFrom) params.set('signedFrom', filters.signedFrom);
+      if (filters.signedTo) params.set('signedTo', filters.signedTo);
       if (filters.updatedFrom) params.set('updatedFrom', filters.updatedFrom);
       if (filters.updatedTo) params.set('updatedTo', filters.updatedTo);
       if (filters.sortBy) params.set('sortBy', filters.sortBy);
@@ -508,6 +518,14 @@ export default function GeneratedDocumentsPage() {
         label: 'Created By',
         value: filters.createdBy,
         onRemove: () => handleFilterChange({ createdBy: undefined }),
+      });
+    }
+    if (filters.signedFrom || filters.signedTo) {
+      chips.push({
+        key: 'signedOn',
+        label: 'Signed On',
+        value: `${filters.signedFrom || '...'} to ${filters.signedTo || '...'}`,
+        onRemove: () => handleFilterChange({ signedFrom: undefined, signedTo: undefined }),
       });
     }
     if (filters.updatedFrom || filters.updatedTo) {

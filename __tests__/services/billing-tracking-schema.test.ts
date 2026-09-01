@@ -14,6 +14,11 @@ describe('billing tracking schema', () => {
     'prisma/migrations/20260824100000_billing_reconciliation_provenance/migration.sql',
   );
   const provenanceMigration = existsSync(provenanceMigrationPath) ? readFileSync(provenanceMigrationPath, 'utf8') : '';
+  const optionalReasonMigrationPath = resolve(
+    process.cwd(),
+    'prisma/migrations/20260831183000_allow_null_billing_not_required_reason/migration.sql',
+  );
+  const optionalReasonMigration = existsSync(optionalReasonMigrationPath) ? readFileSync(optionalReasonMigrationPath, 'utf8') : '';
 
   const enumMembers = (name: string): string[] => {
     const match = schema.match(new RegExp(`enum ${name} \\{([\\s\\S]*?)\\n\\}`));
@@ -127,6 +132,16 @@ describe('billing tracking schema', () => {
     expect(schema).toContain('@relation("BillingOccurrenceBilledActor"');
     expect(schema).toContain('@relation("BillingOccurrenceWaiverActor"');
     expect(schema).toContain('@relation("BillingOccurrenceCancellationActor"');
+  });
+
+  it('allows a null reason when billing is not required', () => {
+    expect(optionalReasonMigration).toContain('DROP CONSTRAINT "client_services_billing_disposition_reason"');
+    expect(optionalReasonMigration).toMatch(
+      /"billing_disposition" = 'NOT_REQUIRED'[\s\S]*?"billing_not_required_reason" IS NULL[\s\S]*?OR length\(btrim\("billing_not_required_reason"\)\) >= 3/,
+    );
+    expect(optionalReasonMigration).toMatch(
+      /"billing_disposition" <> 'NOT_REQUIRED'[\s\S]*?"billing_not_required_reason" IS NULL/,
+    );
   });
 
   it('attributes automatic cancellations to durable reconciliation requests', () => {

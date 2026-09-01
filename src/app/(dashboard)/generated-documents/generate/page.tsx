@@ -171,7 +171,7 @@ function GenerateDocumentContent() {
   const searchParams = useSearchParams();
   const requestedBatchId = searchParams.get('batch');
   const requestedDraftId = searchParams.get('draft');
-  const requestedTemplateId = searchParams.get('templateId');
+  const requestedTemplateIdsKey = searchParams.getAll('templateId').join(',');
   const requestedCompanyId = searchParams.get('companyId');
   const taskContext = useMemo(
     () => readTaskLaunchContext(searchParams),
@@ -196,10 +196,15 @@ function GenerateDocumentContent() {
       setIsLoading(true);
       setError(null);
       try {
-        for (const id of [requestedBatchId, requestedDraftId, requestedTemplateId, requestedCompanyId]) {
+        const requestedTemplateIds = requestedTemplateIdsKey ? requestedTemplateIdsKey.split(',') : [];
+        const requestedTemplateId = requestedTemplateIds[0] ?? null;
+        for (const id of [requestedBatchId, requestedDraftId, ...requestedTemplateIds, requestedCompanyId]) {
           if (id && !UUID_PATTERN.test(id)) {
             throw new Error('The linked identifier is invalid.');
           }
+        }
+        if (requestedTemplateIds.length > 20 || new Set(requestedTemplateIds).size !== requestedTemplateIds.length) {
+          throw new Error('The linked document template selection is invalid.');
         }
         const templatesParams = new URLSearchParams({ isActive: 'true', limit: '100' });
         const optionParams = new URLSearchParams({ limit: String(OPTION_SEED_LIMIT) });
@@ -248,20 +253,25 @@ function GenerateDocumentContent() {
             items: [sessionToEditableItem(envelope, template)],
           });
         } else if (requestedTemplateId) {
-          const template = templateList.find(
-            (candidate) => candidate.id === requestedTemplateId,
+          const selectedTemplates = requestedTemplateIds.map(
+            (templateId) => templateList.find((candidate) => candidate.id === templateId),
           );
-          if (!template) throw new Error('The linked template is unavailable.');
+          if (selectedTemplates.some((template) => !template)) {
+            throw new Error('One or more linked templates are unavailable.');
+          }
+          const templatesForBatch = selectedTemplates.filter(
+            (template): template is DocumentTemplateSummary => Boolean(template),
+          );
           setInitialBatch({
             primaryCompanyId: requestedCompanyId,
             company: null,
-            activeItemId: template.id,
+            activeItemId: templatesForBatch[0].id,
             currentStage: 0,
             status: 'DRAFT',
             masterFieldValues: {},
             masterFields: { fields: [], conflicts: [] },
             taskContext,
-            items: [{
+            items: templatesForBatch.map((template) => ({
               key: template.id,
               templateId: template.id,
               templateName: template.name,
@@ -287,7 +297,7 @@ function GenerateDocumentContent() {
               reviewedFingerprint: null,
               validationDiagnostics: null,
               lastError: null,
-            }],
+            })),
           });
         } else {
           setInitialBatch(null);
@@ -300,7 +310,7 @@ function GenerateDocumentContent() {
       }
     };
     void load();
-  }, [fetchJson, requestedBatchId, requestedDraftId, requestedTemplateId, requestedCompanyId, taskContext]);
+  }, [fetchJson, requestedBatchId, requestedDraftId, requestedTemplateIdsKey, requestedCompanyId, taskContext]);
 
   if (isLoading) return <WorkspaceSkeleton />;
 

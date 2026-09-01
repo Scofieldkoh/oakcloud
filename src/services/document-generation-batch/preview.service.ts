@@ -18,6 +18,10 @@ import {
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
 import {
+  resolveDocumentGenerationTitle,
+  selectDocumentGenerationTitleDate,
+} from '@/lib/document-generation-title';
+import {
   renderTemplateForGeneration,
 } from '@/services/document-generator.service';
 import type {
@@ -46,16 +50,20 @@ export interface EvaluatedPreview {
   fingerprint: string;
   blockingErrors: string[];
   effectiveCustomData: Record<string, string>;
+  resolvedTitle: string;
   rendered: Awaited<ReturnType<typeof renderTemplateForGeneration>>;
 }
 
 async function templateCustomFields(
   templateId: string,
   tenantId: string,
-): Promise<CustomPlaceholderDefinition[]> {
+): Promise<{
+  fields: CustomPlaceholderDefinition[];
+  titleDateFieldKey: string | null;
+}> {
   const template = await prisma.documentTemplate.findFirst({
     where: { id: templateId, tenantId, deletedAt: null },
-    select: { id: true, content: true, placeholders: true },
+    select: { id: true, content: true, placeholders: true, contentJson: true },
   });
   if (!template) throw new NotFoundError('Template not found');
   const partials = await prisma.templatePartial.findMany({
@@ -69,13 +77,21 @@ async function templateCustomFields(
       version: true,
     },
   });
-  return mergeTemplateAndPartialPlaceholders({
+  const fields = mergeTemplateAndPartialPlaceholders({
     templatePlaceholders: storageFormatToCustomPlaceholders(
       normalizeStoredPlaceholders(template.placeholders),
     ),
     templateContent: template.content,
     partials,
   });
+  const contentJson = template.contentJson;
+  const titleDateFieldKey = contentJson
+    && typeof contentJson === 'object'
+    && !Array.isArray(contentJson)
+    && typeof (contentJson as Record<string, unknown>).documentTitleDateFieldKey === 'string'
+    ? (contentJson as Record<string, string>).documentTitleDateFieldKey
+    : null;
+  return { fields, titleDateFieldKey };
 }
 
 export async function buildBatchItemRenderInput(
@@ -85,7 +101,8 @@ export async function buildBatchItemRenderInput(
   actorName: string,
 ): Promise<EvaluatedPreview> {
   const configuration = parseBatchItemConfiguration(item.configuration);
-  const templateFields = await templateCustomFields(item.templateId, params.tenantId);
+  const templateFieldConfig = await templateCustomFields(item.templateId, params.tenantId);
+  const templateFields = templateFieldConfig.fields;
   const effectiveCustomData = resolveEffectiveCustomData({
     templateFields,
     templateId: item.templateId,
@@ -94,6 +111,27 @@ export async function buildBatchItemRenderInput(
     itemValues: configuration.itemValues,
   });
   const agreement = item.generatedDocument?.serviceAgreement;
+  const titleDate = selectDocumentGenerationTitleDate({
+    values: effectiveCustomData,
+    selectedFieldKey: item.template.compositionType === 'STANDARD'
+      ? templateFieldConfig.titleDateFieldKey
+      : null,
+    serviceAgreementDate: configuration.serviceAgreement?.agreementDate
+      ?? agreement?.agreementDate.toISOString().slice(0, 10),
+  });
+  const selectedTitleDateMissing = item.template.compositionType === 'STANDARD'
+    && configuration.title.includes('{{date}}')
+    && Boolean(templateFieldConfig.titleDateFieldKey)
+    && !effectiveCustomData[templateFieldConfig.titleDateFieldKey!]?.trim();
+  const titleErrors = selectedTitleDateMissing
+    ? ['The selected document title date is missing']
+    : [];
+  const resolvedTitle = resolveDocumentGenerationTitle({
+    title: configuration.title,
+    templateName: item.template.name,
+    companyName: batch.primaryCompany?.name,
+    date: titleDate,
+  });
   const rendered = await renderTemplateForGeneration({
     templateId: item.templateId,
     tenantId: params.tenantId,
@@ -129,8 +167,9 @@ export async function buildBatchItemRenderInput(
   return {
     content: rendered.content,
     fingerprint,
-    blockingErrors: rendered.blockingErrors,
+    blockingErrors: [...rendered.blockingErrors, ...titleErrors],
     effectiveCustomData,
+    resolvedTitle,
     rendered,
   };
 }
@@ -232,6 +271,10 @@ export async function previewDocumentGenerationBatchItem(
         validationDiagnostics: diagnostics as never,
       },
     });
+    await tx.generatedDocument.update({
+      where: { id: item.generatedDocumentId },
+      data: { title: evaluated.resolvedTitle },
+    });
     return tx.documentGenerationBatch.findFirstOrThrow({
       where: { id: batchId },
       include: batchInclude,
@@ -310,6 +353,10 @@ export async function reviewDocumentGenerationBatchItem(
         status: 'READY',
         validationDiagnostics: Prisma.DbNull,
       },
+    });
+    await tx.generatedDocument.update({
+      where: { id: item.generatedDocumentId },
+      data: { title: evaluated.resolvedTitle },
     });
     return tx.documentGenerationBatch.findFirstOrThrow({
       where: { id: batchId },

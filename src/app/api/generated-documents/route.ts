@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
       templateId: searchParams.get('templateId') || undefined,
       templateName: searchParams.get('templateName') || undefined,
       createdBy: searchParams.get('createdBy') || undefined,
+      signedFrom: searchParams.get('signedFrom') || undefined,
+      signedTo: searchParams.get('signedTo') || undefined,
       updatedFrom: searchParams.get('updatedFrom') || undefined,
       updatedTo: searchParams.get('updatedTo') || undefined,
       status: searchParams.get('status') || undefined,

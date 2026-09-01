@@ -32,6 +32,7 @@ import {
   Mail,
   ClipboardList,
   PenSquare,
+  Signature,
   Database,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
@@ -563,6 +564,13 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
     router.push('/change-password');
   };
 
+  const handleSignatureSpecimen = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+    router.push('/signature-specimen');
+  };
+
   return (
     <div className={cn(
       "border-t border-border-primary bg-background-tertiary",
@@ -620,6 +628,9 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
               <DropdownSeparator />
               <DropdownItem icon={<Lock className="w-4 h-4" />} onClick={handleChangePassword}>
                 Change Password
+              </DropdownItem>
+              <DropdownItem icon={<Signature className="w-4 h-4" />} onClick={handleSignatureSpecimen}>
+                Signature Specimen
               </DropdownItem>
               <DropdownItem icon={<LogOut className="w-4 h-4" />} onClick={handleLogout} destructive>
                 Sign Out

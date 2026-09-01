@@ -100,8 +100,13 @@ async function validateStageConfigs(
       ...(stage.actionConfig ?? {}),
       checklistItems: stage.checklistItems,
     });
-    if (stage.actionType === 'DOCUMENT_GENERATION' && typeof config.templateId === 'string') {
-      templateIds.add(config.templateId);
+    if (stage.actionType === 'DOCUMENT_GENERATION') {
+      const configuredTemplateIds = Array.isArray(config.templateIds)
+        ? config.templateIds.filter((templateId): templateId is string => typeof templateId === 'string')
+        : typeof config.templateId === 'string'
+          ? [config.templateId]
+          : [];
+      configuredTemplateIds.forEach((templateId) => templateIds.add(templateId));
     }
     if (stage.actionType === 'ESIGNING' && typeof config.generatedDocumentId === 'string') {
       generatedDocumentIds.add(config.generatedDocumentId);

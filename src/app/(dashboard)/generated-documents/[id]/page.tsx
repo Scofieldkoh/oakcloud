@@ -24,6 +24,7 @@ import {
   Eye,
   EyeOff,
   MessageCircle,
+  PenLine,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -31,6 +32,10 @@ import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
+import {
+  GeneratedDocumentEnvelopeHistory,
+  type GeneratedDocumentEnvelopeSummary,
+} from '@/components/documents/generated-document-envelope-history';
 import {
   readTaskLaunchContext,
   withTaskLaunchContext,
@@ -77,6 +82,7 @@ interface GeneratedDocument {
   createdAt: string;
   updatedAt: string;
   finalizedAt?: string | null;
+  signedAt?: string | null;
   template?: {
     id: string;
     name: string;
@@ -100,6 +106,9 @@ interface GeneratedDocument {
   _count?: {
     comments: number;
   };
+  esigningEnvelopeDocuments?: Array<{
+    envelope: GeneratedDocumentEnvelopeSummary;
+  }>;
 }
 
 interface DocumentComment {
@@ -410,6 +419,8 @@ export default function DocumentViewPage() {
     );
   }
 
+  const linkedEnvelopes = docData.esigningEnvelopeDocuments?.map(({ envelope }) => envelope) ?? [];
+
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -427,6 +438,12 @@ export default function DocumentViewPage() {
               {docData.title}
             </h1>
             <StatusBadge status={docData.status} />
+            {docData.signedAt ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-400">
+                <PenLine className="h-4 w-4" aria-hidden="true" />
+                Signed
+              </span>
+            ) : null}
           </div>
           {docData.template && (
             <p className="text-text-secondary text-sm mt-1">
@@ -592,12 +609,23 @@ export default function DocumentViewPage() {
                   </div>
                 )}
 
+                {docData.signedAt ? (
+                  <div className="border-t border-border-secondary pt-2">
+                    <p className="text-xs text-text-muted">First signed</p>
+                    <p className="text-xs text-text-muted">
+                      {formatDateTime(docData.signedAt)}
+                    </p>
+                  </div>
+                ) : null}
+
                 {docData._count && (
                   <div className="pt-2 border-t border-border-secondary flex items-center gap-4 text-xs text-text-muted">
                     <span>{docData._count.comments} comments</span>
                   </div>
                 )}
               </div>
+
+              <GeneratedDocumentEnvelopeHistory envelopes={linkedEnvelopes} />
 
               {/* Comments Section - Inside sticky container */}
               {comments.length > 0 && (

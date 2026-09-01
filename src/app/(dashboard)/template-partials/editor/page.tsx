@@ -901,6 +901,7 @@ function TemplateEditorContent() {
     content: '',
     isActive: true,
     customPlaceholders: [],
+    titleDateFieldKey: null,
     layout: DEFAULT_A4_DOCUMENT_LAYOUT,
   });
 
@@ -1218,6 +1219,11 @@ function TemplateEditorContent() {
     return result;
   }, [isPartialMode, formData.customPlaceholders, formData.content, partialsData?.partials, extractPartialReferences, partialPlaceholderLinkings]);
 
+  const titleDateFields = useMemo(
+    () => mergedPlaceholders.filter((field) => field.type === 'date'),
+    [mergedPlaceholders],
+  );
+
   // Get template boolean placeholders for linking dropdown
   const templateBooleanPlaceholders = useMemo(() => {
     return formData.customPlaceholders.filter((p) => p.type === 'boolean');
@@ -1289,6 +1295,12 @@ function TemplateEditorContent() {
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
         customPlaceholders: placeholdersWithLegacy,
+        titleDateFieldKey: (() => {
+          const contentJson = existingTemplate.contentJson;
+          if (!contentJson || typeof contentJson !== 'object' || Array.isArray(contentJson)) return null;
+          const value = (contentJson as Record<string, unknown>).documentTitleDateFieldKey;
+          return typeof value === 'string' ? value : null;
+        })(),
         layout: extractA4DocumentLayout(existingTemplate.contentJson),
       });
 
@@ -1567,7 +1579,10 @@ function TemplateEditorContent() {
         content: formData.content,
         isActive: formData.isActive,
         placeholders,
-        contentJson: mergeA4DocumentLayout(existingTemplate?.contentJson, formData.layout),
+        contentJson: {
+          ...mergeA4DocumentLayout(existingTemplate?.contentJson, formData.layout),
+          documentTitleDateFieldKey: formData.titleDateFieldKey || null,
+        },
       };
 
       if (isEditMode && itemId) {
@@ -1743,6 +1758,7 @@ function TemplateEditorContent() {
             isDirty={isDirty}
             isSuperAdmin={session?.isSuperAdmin}
             activeTenantId={activeTenantId}
+            dateFields={titleDateFields}
             fieldsContent={
               <PlaceholderPanel
                 onInsert={handleInsertPlaceholder}

@@ -1433,6 +1433,7 @@ Documents created from templates or blank.
 | finalized_at | TIMESTAMP | Yes | When document was finalized |
 | finalized_by_id | UUID | Yes | FK to users who finalized |
 | unfinalized_at | TIMESTAMP | Yes | Last time un-finalized |
+| signed_at | TIMESTAMP | Yes | Completion time of the first successfully completed linked E-signing envelope |
 | use_letterhead | BOOLEAN | No | Include letterhead in PDF (default: true) |
 | placeholder_data | JSONB | Yes | Snapshot of data used for placeholders |
 | metadata | JSONB | Yes | Additional metadata |
@@ -1540,6 +1541,7 @@ stale.
 - `generated_documents_status_idx` on status
 - `generated_documents_created_by_id_idx` on created_by_id
 - `generated_documents_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+- `generated_documents_tenant_id_signed_at_idx` on (tenant_id, signed_at)
 
 ---
 

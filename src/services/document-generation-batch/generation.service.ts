@@ -372,7 +372,7 @@ export async function generateDocumentGenerationBatch(
             selectedDirectorIds: configuration.selectedDirectorIds,
             selectedShareholderId: configuration.selectedShareholderId ?? undefined,
             selectedContactId: configuration.selectedContactId ?? undefined,
-            title: configuration.title,
+            title: evaluated.resolvedTitle,
             customData: evaluated.effectiveCustomData,
             useLetterhead: configuration.useLetterhead,
             editedContent: item.editedContent ?? undefined,
@@ -578,7 +578,7 @@ export async function retryDocumentGenerationBatchItem(
         selectedDirectorIds: configuration.selectedDirectorIds,
         selectedShareholderId: configuration.selectedShareholderId ?? undefined,
         selectedContactId: configuration.selectedContactId ?? undefined,
-        title: configuration.title,
+        title: evaluated.resolvedTitle,
         customData: evaluated.effectiveCustomData,
         useLetterhead: configuration.useLetterhead,
         editedContent: item.editedContent ?? undefined,
@@ -612,7 +612,7 @@ export async function retryDocumentGenerationBatchItem(
         successes: [{
           itemId: item.id,
           documentId: item.generatedDocumentId,
-          title: configuration.title,
+          title: evaluated.resolvedTitle,
         }],
       });
     }

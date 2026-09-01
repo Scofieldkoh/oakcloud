@@ -5,6 +5,7 @@ import { OperationalServiceForm } from '@/components/companies/company-detail/op
 import {
   type DeadlinePreviewState,
   type OperationalServiceValues,
+  createManualPayload,
   validateOperationalServiceValues,
 } from '@/components/companies/company-detail/client-service-form-state';
 import type { ClientServiceProjectedDeadlineDto } from '@/services/client-service';
@@ -160,6 +161,21 @@ describe('OperationalServiceForm', () => {
       ...values,
       fees: [{ ...values.fees[0], amount: '0.00' }],
     })).filter(Boolean)).toHaveLength(0);
+  });
+
+  it('normalizes a blank not-required billing reason before submitting', () => {
+    const payload = createManualPayload('variant-1', {
+      ...baseValues(),
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: '   ',
+      fees: [],
+    }, false);
+
+    expect(payload).toMatchObject({
+      billingDisposition: 'NOT_REQUIRED',
+      billingNotRequiredReason: null,
+      feeLines: [],
+    });
   });
 
   it('accepts custom frequency with interval months without requiring a manual label', () => {

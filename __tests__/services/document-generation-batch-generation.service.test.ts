@@ -183,6 +183,7 @@ function evaluatedFor(entry: TestItem) {
     fingerprint: entry.previewFingerprint,
     blockingErrors: [],
     effectiveCustomData: {},
+    resolvedTitle: `${entry.template.name}_Acme_31 Aug 2026`,
     rendered: {},
   };
 }
@@ -330,7 +331,10 @@ describe('document generation batch execution', () => {
 
     expect(materializeDocumentFromTemplate).toHaveBeenCalledTimes(1);
     expect(materializeDocumentFromTemplate).toHaveBeenCalledWith(
-      expect.objectContaining({ templateId: templateB.id }),
+      expect.objectContaining({
+        templateId: templateB.id,
+        title: 'Service Agreement_Acme_31 Aug 2026',
+      }),
       actor,
       expect.objectContaining({
         generatedDocumentId: 'child-item-1',

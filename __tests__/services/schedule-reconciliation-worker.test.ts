@@ -149,7 +149,7 @@ describe('schedule reconciliation worker', () => {
     }));
     expect(mocks.billingReconcile).toHaveBeenCalledWith(expect.objectContaining({
       tenantId: 'tenant-1', clientServiceId: 'service-1', writeMode: 'OBSERVE', horizonEnd: '2027-08-18',
-      reconciliationRequestId: 'request-1', cancellationActorId: null,
+      reconciliationRequestId: 'request-1', includeHistoricalStart: true, cancellationActorId: null,
     }), expect.anything());
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: 'request-1', tenantId: 'tenant-1', status: 'PROCESSING' }),

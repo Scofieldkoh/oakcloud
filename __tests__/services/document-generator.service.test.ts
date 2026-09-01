@@ -77,6 +77,7 @@ import { prisma } from '@/lib/prisma';
 import {
   createDocumentFromTemplate,
   finalizeDocument,
+  getGeneratedDocumentById,
   renderTemplateForGeneration,
   searchGeneratedDocuments,
   unfinalizeDocument,
@@ -142,6 +143,33 @@ describe('Document generator service', () => {
       contacts: [],
     });
     vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
+  });
+
+  it('loads live linked envelope summaries with document details', async () => {
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue(null);
+
+    await getGeneratedDocumentById('doc-1', 'workspace-1');
+
+    expect(prisma.generatedDocument.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          esigningEnvelopeDocuments: {
+            where: { envelope: { deletedAt: null } },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              envelope: {
+                select: {
+                  id: true,
+                  title: true,
+                  status: true,
+                  completedAt: true,
+                },
+              },
+            },
+          },
+        }),
+      }),
+    );
   });
 
   it('requires a workspace id for generated document search', async () => {
@@ -221,7 +249,7 @@ describe('Document generator service', () => {
     });
   });
 
-  it('applies title, created-by and updated date filters to generated document search', async () => {
+  it('applies title, created-by, signed, and updated date filters to generated document search', async () => {
     await searchGeneratedDocuments(
       {
         page: 1,
@@ -230,6 +258,8 @@ describe('Document generator service', () => {
         sortOrder: 'desc',
         title: 'minutes',
         createdBy: 'sam',
+        signedFrom: '2026-07-01',
+        signedTo: '2026-07-31',
         updatedFrom: '2026-08-01',
         updatedTo: '2026-08-07',
       },
@@ -247,6 +277,10 @@ describe('Document generator service', () => {
               { firstName: { contains: 'sam', mode: 'insensitive' } },
               { lastName: { contains: 'sam', mode: 'insensitive' } },
             ],
+          },
+          signedAt: {
+            gte: expect.any(Date),
+            lte: expect.any(Date),
           },
           updatedAt: {
             gte: expect.any(Date),

@@ -48,7 +48,7 @@ const hoisted = vi.hoisted(() => {
         {
           key: 'custom.agreementDate',
           label: 'Agreement date',
-          type: 'text',
+          type: 'date',
           required: false,
           source: 'custom',
         },
@@ -238,7 +238,12 @@ describe('template editor page panel integration', () => {
       const leftMargin = screen.getByLabelText('Left margin');
       act(() => {
         fireEvent.change(leftMargin, { target: { value: '25' } });
-        fireEvent.blur(leftMargin);
+      fireEvent.blur(leftMargin);
+      });
+      act(() => {
+        fireEvent.change(screen.getByLabelText('Document title date'), {
+          target: { value: 'agreementDate' },
+        });
       });
       await waitForA4EditorIdle(surface);
 
@@ -319,12 +324,14 @@ describe('template editor page panel integration', () => {
         contentJson: Record<string, unknown> & {
           existingMetadata: { keep: boolean };
           layout: { marginsMm: { top: number; left: number } };
+          documentTitleDateFieldKey: string;
         };
         placeholders: Array<{ key: string }>;
       };
       expect(payload.content.match(/Draft line 24/g)).toHaveLength(1);
       expect(payload.contentJson).toMatchObject({
         existingMetadata: { keep: true },
+        documentTitleDateFieldKey: 'agreementDate',
         layout: {
           marginsMm: { top: 30, left: 25 },
         },
@@ -364,6 +371,7 @@ describe('template editor page panel integration', () => {
       ).toHaveLength(1);
       expect(screen.getByLabelText('Top margin')).toHaveValue(30);
       expect(screen.getByLabelText('Left margin')).toHaveValue(25);
+      expect(screen.getByLabelText('Document title date')).toHaveValue('agreementDate');
 
       act(() => unmount());
     } finally {

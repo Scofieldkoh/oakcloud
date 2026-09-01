@@ -36,7 +36,8 @@ export function ServiceFeeEditor({
       currency: 'SGD',
       billingFrequency: 'ANNUALLY',
       customFrequencyLabel: null,
-      billingStartDate: startDate,
+      billingStartDate: null,
+      billingStartDateOverridden: false,
       displayOrder,
     }]);
   };
@@ -58,7 +59,10 @@ export function ServiceFeeEditor({
               </tr>
             </thead>
             <tbody>
-              {fees.map((fee, index) => (
+              {fees.map((fee, index) => {
+                const billingStartDateOverridden = fee.billingStartDateOverridden
+                  ?? (Boolean(fee.billingStartDate) && fee.billingStartDate !== startDate);
+                return (
                 <tr key={fee.clientKey} className="align-top text-xs text-text-secondary">
                   <td className="border-b border-border-secondary px-2 py-2">
                     <label className="sr-only" htmlFor={`${fee.clientKey}-description`}>
@@ -141,12 +145,18 @@ export function ServiceFeeEditor({
                   </td>
                   <td className="border-b border-border-secondary px-2 py-2">
                     <SingleDateInput
-                      value={fee.billingStartDate ?? startDate}
+                      value={billingStartDateOverridden
+                        ? fee.billingStartDate ?? startDate
+                        : startDate}
                       onChange={(next) => update(index, {
                         billingStartDate: next || null,
+                        billingStartDateOverridden: Boolean(next),
                       })}
                       ariaLabel="Billing start date"
                       className="w-44 max-w-full"
+                      controlClassName={billingStartDateOverridden
+                        ? 'bg-oak-row-selected dark:bg-oak-row-selected'
+                        : 'bg-background-tertiary dark:bg-background-tertiary'}
                     />
                   </td>
                   <td className="border-b border-border-secondary px-2 py-2 align-middle">
@@ -169,7 +179,8 @@ export function ServiceFeeEditor({
                     </Button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -1210,6 +1210,127 @@ describe('TaskStageModal', () => {
     );
   });
 
+  it('selects all or individual finalized task documents before opening E-signing', () => {
+    const signingStage: TaskStageDetail = {
+      ...stageDetail,
+      id: 'stage-signing',
+      name: 'E-signing',
+      position: 2,
+      actionType: 'ESIGNING',
+      status: 'NOT_STARTED',
+      outcome: null,
+      blockers: [],
+      launch: {
+        href: '/esigning',
+        context: { taskId: task.id, taskStageId: 'stage-signing', returnTo: '/tasks' },
+      },
+    };
+    const documentStage = {
+      id: 'stage-documents',
+      name: 'Generated documents',
+      position: 1,
+      status: 'COMPLETED' as const,
+      description: null,
+      notes: null,
+      startedAt: null,
+      completedAt: null,
+      assignee: null,
+      checklist: [],
+      blockers: [],
+      actionType: 'DOCUMENT_GENERATION' as const,
+      resources: [
+        {
+          kind: 'generatedDocument' as const,
+          id: 'doc-1',
+          state: 'available' as const,
+          label: 'Generated document',
+          title: 'Service Agreement',
+          status: 'FINALIZED',
+          href: '/generated-documents/doc-1',
+          reason: null,
+        },
+        {
+          kind: 'generatedDocument' as const,
+          id: 'doc-2',
+          state: 'available' as const,
+          label: 'Generated document',
+          title: 'Privacy Notice',
+          status: 'FINALIZED',
+          href: '/generated-documents/doc-2',
+          reason: null,
+        },
+      ],
+    };
+    const signingResourceStage = {
+      id: signingStage.id,
+      name: signingStage.name,
+      position: signingStage.position,
+      actionType: signingStage.actionType,
+      status: signingStage.status,
+      description: signingStage.description,
+      notes: signingStage.notes,
+      startedAt: signingStage.startedAt,
+      completedAt: signingStage.completedAt,
+      assignee: null,
+      checklist: [],
+      blockers: [],
+      resources: [],
+    };
+    const taskResources: TaskResourcesResponse = {
+      task: {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        dueDate: task.dueDate,
+        company: null,
+        owner: null,
+        pipelineName: task.pipelineVersion.pipeline.name,
+      },
+      stages: [documentStage, signingResourceStage],
+      hasPendingResources: false,
+    };
+
+    render(
+      <TaskStageModal
+        isOpen
+        stage={signingStage}
+        resources={taskResources}
+        taskDueDate={task.dueDate}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    const selectAll = screen.getByRole('checkbox', { name: 'Select all documents' });
+    const firstDocument = screen.getByRole('checkbox', { name: 'Select Service Agreement' });
+    const secondDocument = screen.getByRole('checkbox', { name: 'Select Privacy Notice' });
+    expect(selectAll).toBeChecked();
+    expect(firstDocument).toBeChecked();
+    expect(secondDocument).toBeChecked();
+    expect(screen.getByTestId('stage-primary-action')).toHaveAttribute(
+      'href',
+      expect.stringContaining('generatedDocumentIds=doc-1'),
+    );
+
+    fireEvent.click(secondDocument);
+    expect(firstDocument).toBeChecked();
+    expect(secondDocument).not.toBeChecked();
+    expect(screen.getByTestId('stage-primary-action')).not.toHaveAttribute(
+      'href',
+      expect.stringContaining('generatedDocumentIds=doc-2'),
+    );
+
+    fireEvent.click(selectAll);
+    expect(firstDocument).toBeChecked();
+    expect(secondDocument).toBeChecked();
+    fireEvent.click(selectAll);
+    expect(screen.getByTestId('stage-primary-action')).toBeDisabled();
+    fireEvent.click(selectAll);
+    expect(firstDocument).toBeChecked();
+    expect(secondDocument).toBeChecked();
+  });
+
   it(
     'keeps the authoritative integrated workspace action for a completed stage',
     () => {

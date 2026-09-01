@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Building2, ChevronDown, ChevronUp, Search, UserRound } from 'lucide-react';
+import Link from 'next/link';
+import { Building2, ChevronDown, ChevronUp, ExternalLink, Search, UserRound } from 'lucide-react';
 import { AsyncSearchSelect, type AsyncSearchSelectOption } from '@/components/ui/async-search-select';
 import type { Company, DocumentContact } from '@/types/document-generation';
 import { Alert } from '@/components/ui/alert';
@@ -221,7 +222,17 @@ export function ServiceAgreementSetup({
                             </span>
                           )}
                           <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-medium text-text-primary">{contact.fullName}</span>
+                            <Link
+                              href={`/contacts/${encodeURIComponent(contact.id)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(event) => event.stopPropagation()}
+                              aria-label={`Open ${contact.fullName} contact details in a new tab`}
+                              className="inline-flex max-w-full items-center gap-1 text-sm font-medium text-oak-primary hover:underline"
+                            >
+                              <span className="truncate">{contact.fullName}</span>
+                              <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            </Link>
                             {metadata.length > 0 ? (
                               <span className="mt-0.5 block truncate text-xs text-text-muted">
                                 {metadata.join(' · ')}

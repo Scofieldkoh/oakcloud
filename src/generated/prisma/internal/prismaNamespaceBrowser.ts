@@ -743,6 +743,7 @@ export const GeneratedDocumentScalarFieldEnum = {
   finalizedAt: 'finalizedAt',
   finalizedById: 'finalizedById',
   unfinalizedAt: 'unfinalizedAt',
+  signedAt: 'signedAt',
   useLetterhead: 'useLetterhead',
   placeholderData: 'placeholderData',
   metadata: 'metadata',
