@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Loader2, Search, UsersRound } from 'lucide-react';
+import Link from 'next/link';
+import { ExternalLink, Loader2, Search, UsersRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -131,13 +132,24 @@ export function DocumentContactChoiceList({
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggleContact(contact)}
+                  aria-label={`Select ${contact.fullName}`}
                   className="mt-1 h-4 w-4 shrink-0 rounded accent-oak-primary"
                 />
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
                   <UsersRound className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-text-primary">{contact.fullName}</span>
+                  <Link
+                    href={`/contacts/${encodeURIComponent(contact.id)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    aria-label={`Open ${contact.fullName} contact details in a new tab`}
+                    className="inline-flex max-w-full items-center gap-1 text-sm font-medium text-oak-primary hover:underline"
+                  >
+                    <span className="truncate">{contact.fullName}</span>
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  </Link>
                   {metadata.length > 0 ? (
                     <span className="mt-0.5 block truncate text-xs text-text-muted">
                       {metadata.join(' · ')}

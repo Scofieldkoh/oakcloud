@@ -498,7 +498,9 @@ export function createManualPayload(variantId: string, values: OperationalServic
     billingDisposition: values.billingDisposition === 'CONFIGURED' || values.billingDisposition === 'NOT_REQUIRED'
       ? values.billingDisposition
       : undefined,
-    billingNotRequiredReason: values.billingDisposition === 'NOT_REQUIRED' ? values.billingNotRequiredReason : null,
+    billingNotRequiredReason: values.billingDisposition === 'NOT_REQUIRED'
+      ? values.billingNotRequiredReason.trim() || null
+      : null,
     feeLines: manualCreateFeeLines(values),
     deadlineRules: deadlineRuleInputs(values),
     confirmDuplicate,

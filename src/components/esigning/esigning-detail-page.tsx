@@ -30,6 +30,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import {
   useAddEsigningRecipient,
+  useAttachGeneratedEsigningDocuments,
   useDeleteEsigningDocument,
   useDeleteEsigningEnvelope,
   useDuplicateEsigningEnvelope,
@@ -92,7 +93,7 @@ const DEFAULT_RECIPIENT_FORM: RecipientForm = {
   email: '',
   type: 'SIGNER',
   signingOrder: '1',
-  accessMode: 'EMAIL_LINK',
+  accessMode: 'MANUAL_LINK',
   accessCode: '',
 };
 
@@ -169,6 +170,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   // Mutations
   const updateEnvelope = useUpdateEsigningEnvelope(envelopeId);
   const uploadDocument = useUploadEsigningDocument(envelopeId);
+  const attachGeneratedDocuments = useAttachGeneratedEsigningDocuments(envelopeId);
   const saveFields = useSaveEsigningFields(envelopeId);
   const sendEnvelope = useSendEsigningEnvelope(envelopeId);
   const voidEnvelope = useVoidEsigningEnvelope(envelopeId);
@@ -646,17 +648,18 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       title="Manual signing links"
       size="2xl"
     >
-      <ModalBody className="space-y-3">
+      <ModalBody className="min-w-0 space-y-3">
         {manualLinks.map((link) => (
-          <div key={link.recipientId} className="rounded-2xl border border-border-primary bg-background-primary p-4">
+          <div key={link.recipientId} className="min-w-0 rounded-2xl border border-border-primary bg-background-primary p-4">
             <div className="text-sm font-semibold text-text-primary">{link.recipientName}</div>
             <div className="mt-1 text-xs text-text-secondary">{link.recipientEmail}</div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
               <a
                 href={link.signingUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="min-w-0 flex-1 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-xs text-text-secondary"
+                title={link.signingUrl}
+                className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-xs text-text-secondary"
               >
                 {link.signingUrl}
               </a>
@@ -833,6 +836,10 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 isUpdating={updateEnvelope.isPending}
                 onUploadDocuments={async (files) => { await uploadFiles(files); }}
                 isUploading={uploadDocument.isPending}
+                onAttachGeneratedDocuments={async (documentIds) => {
+                  await attachGeneratedDocuments.mutateAsync(documentIds);
+                }}
+                isAttachingGeneratedDocuments={attachGeneratedDocuments.isPending}
                 onDeleteDocument={(docId) => {
                   setDocumentActionId(docId);
                   setIsDeleteDocumentOpen(true);

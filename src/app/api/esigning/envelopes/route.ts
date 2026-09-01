@@ -9,14 +9,17 @@ import {
   esigningListQuerySchema,
 } from '@/lib/validations/esigning';
 import {
+  attachGeneratedDocumentsToDraftEnvelope,
   createEsigningEnvelope,
   deleteDraftEsigningEnvelope,
+  getEsigningEnvelopeDetail,
   listEsigningEnvelopes,
   uploadGeneratedDocumentToEsigningEnvelope,
 } from '@/services/esigning-envelope.service';
 import {
   parseTaskLaunchContext,
   resolveEsigningGeneratedDocument,
+  resolveEsigningGeneratedDocuments,
   safelyLinkEsigningEnvelopeTaskOutcome,
 } from '@/services/tasks/integration.service';
 
@@ -52,17 +55,29 @@ export async function POST(request: NextRequest) {
     const selectedGeneratedDocumentId = z.string().uuid().optional().parse(
       body.generatedDocumentId,
     );
-    if (selectedGeneratedDocumentId && !taskContext) {
+    const selectedGeneratedDocumentIds = z.array(z.string().uuid()).min(1).max(20).refine(
+      (ids) => new Set(ids).size === ids.length,
+      'Selected generated documents must be distinct',
+    ).optional().parse(body.generatedDocumentIds);
+    if ((selectedGeneratedDocumentId || selectedGeneratedDocumentIds) && !taskContext) {
       throw new z.ZodError([{
         code: z.ZodIssueCode.custom,
-        path: ['generatedDocumentId'],
-        message: 'Task context is required to select a generated document',
+        path: [selectedGeneratedDocumentIds ? 'generatedDocumentIds' : 'generatedDocumentId'],
+        message: 'Task context is required to select generated documents',
       }]);
     }
     if (taskContext) {
       await requirePermission(session, 'document', 'read');
     }
-    const generatedDocument = taskContext
+    const selectedGeneratedDocuments = taskContext && selectedGeneratedDocumentIds
+      ? await resolveEsigningGeneratedDocuments(
+        tenantId,
+        taskContext,
+        selectedGeneratedDocumentIds,
+        session,
+      )
+      : null;
+    const generatedDocument = taskContext && !selectedGeneratedDocumentIds
       ? await resolveEsigningGeneratedDocument(
         tenantId,
         taskContext,
@@ -78,7 +93,15 @@ export async function POST(request: NextRequest) {
       taskContext,
     );
     try {
-      if (generatedDocument) {
+      if (selectedGeneratedDocuments) {
+        await attachGeneratedDocumentsToDraftEnvelope({
+          tenantId,
+          envelopeId: result.id,
+          generatedDocumentIds: selectedGeneratedDocuments.map((document) => document.id),
+          actorUserId: session.id,
+        });
+        result = await getEsigningEnvelopeDetail(session, tenantId, result.id);
+      } else if (generatedDocument) {
         result = await uploadGeneratedDocumentToEsigningEnvelope(
           session,
           tenantId,

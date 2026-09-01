@@ -98,6 +98,9 @@ function makeTx(envelope = makeEnvelope()) {
     esigningEnvelopeDocument: {
       findMany: vi.fn().mockResolvedValue([]),
     },
+    generatedDocument: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     serviceAgreement: {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -162,6 +165,30 @@ describe('e-signing completion queueing', () => {
     });
   });
 
+  it('records the first successful envelope completion on linked generated documents', async () => {
+    const completedAt = new Date('2026-08-01T00:00:00.000Z');
+    const tx = makeTx();
+
+    await finalizeEsigningEnvelopeCompletion(tx as never, {
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      currentStatus: 'IN_PROGRESS',
+      remainingSignerCount: 0,
+      completedAt,
+    });
+
+    expect(tx.generatedDocument.updateMany).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        signedAt: null,
+        esigningEnvelopeDocuments: {
+          some: { envelopeId: 'envelope-1' },
+        },
+      },
+      data: { signedAt: completedAt },
+    });
+  });
+
   it('marks auto-filing as NOT_REQUIRED for envelopes without a company', async () => {
     const completedAt = new Date('2026-08-01T00:00:00.000Z');
     const tx = makeTx(makeEnvelope({ companyId: null }));
@@ -203,6 +230,7 @@ describe('e-signing completion queueing', () => {
     });
 
     expect(tx.esigningEmailDelivery.createMany).toHaveBeenCalledTimes(1);
+    expect(tx.generatedDocument.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it('propagates a delivery-queue failure so the completion transaction rolls back', async () => {

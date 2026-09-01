@@ -49,6 +49,7 @@ import {
 import {
   buildCompletenessMap,
   completenessFor,
+  hasManualEdits,
   selectGenerationBlockers,
   selectHighestReachableStageIndex,
   selectStageGates,
@@ -355,7 +356,7 @@ export function DocumentGenerationBatchWorkspace({
     const queue = state.batch.items.filter(
       (item) =>
         item.status !== 'GENERATED'
-        && !item.previewContent
+        && (!item.previewContent || (!item.previewFingerprint && !hasManualEdits(item)))
         && !autoPreviewedKeys.current.has(item.key),
     );
     if (queue.length === 0) return;

@@ -54,6 +54,12 @@ export function BatchDocumentQueue({
   mode = 'configure',
   onNextIncomplete,
 }: BatchDocumentQueueProps) {
+  const displayTitle = (item: EditableBatchItem) => mode === 'review'
+    ? (item.status === 'GENERATED' || item.previewFingerprint
+      ? item.generatedDocumentTitle || item.configuration.title || item.templateName
+      : item.configuration.title || item.templateName)
+    : item.configuration.title || item.templateName;
+
   const pendingCount = items.filter((item) => {
     if (item.status === 'GENERATED') return false;
     if (mode === 'review') return !item.reviewedFingerprint;
@@ -100,7 +106,7 @@ export function BatchDocumentQueue({
                   : `${itemCompleteness.missing.length} missing`;
             return (
               <option key={item.key} value={item.key}>
-                {index + 1}. {item.configuration.title || item.templateName} — {suffix}
+                {index + 1}. {displayTitle(item)} — {suffix}
               </option>
             );
           })}
@@ -146,7 +152,7 @@ export function BatchDocumentQueue({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-text-primary">
-                    {item.configuration.title || item.templateName}
+                    {displayTitle(item)}
                   </span>
                   <span className="block truncate text-xs text-text-muted">
                     {item.templateName}

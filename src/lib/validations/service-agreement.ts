@@ -28,6 +28,7 @@ export const serviceAgreementFeeLineSchema = z
     billingFrequency: billingFrequencySchema,
     customFrequencyLabel: z.string().trim().min(1).max(100).nullable().optional(),
     billingStartDate: nullableDate,
+    billingStartDateOverridden: z.boolean().optional(),
     displayOrder: z.number().int().min(0),
   })
   .superRefine((value, context) => {
@@ -52,6 +53,7 @@ export const serviceAgreementItemSchema = z
     variantId: uuid,
     entityIds: z.array(uuid).min(1).max(100),
     startDate: dateString,
+    startDateOverridden: z.boolean().optional(),
     endDate: nullableDate,
     fieldValues: z
       .record(z.string().max(10_000))

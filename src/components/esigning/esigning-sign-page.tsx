@@ -250,6 +250,7 @@ export function EsigningSignPage() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signatureModalMode, setSignatureModalMode] = useState<'SIGNATURE' | 'INITIALS'>('SIGNATURE');
   const [activeSignatureFieldId, setActiveSignatureFieldId] = useState<string | null>(null);
+  const [isSavedSignaturePromptOpen, setIsSavedSignaturePromptOpen] = useState(false);
   const [activeInputFieldId, setActiveInputFieldId] = useState<string | null>(null);
 
   // Decline modal
@@ -743,7 +744,11 @@ export function EsigningSignPage() {
       } else {
         setActiveSignatureFieldId(field.id);
         setSignatureModalMode(field.type);
-        setIsSignatureModalOpen(true);
+        if (field.type === 'SIGNATURE' && session?.savedSignatureSpecimenDataUrl) {
+          setIsSavedSignaturePromptOpen(true);
+        } else {
+          setIsSignatureModalOpen(true);
+        }
       }
     } else if (field.type === 'CHECKBOX') {
       const current = draftValues[field.id]?.value;
@@ -781,6 +786,28 @@ export function EsigningSignPage() {
     }
     setIsSignatureModalOpen(false);
     advanceToNextField();
+  }
+
+  function handleUseSavedSignature() {
+    const dataUrl = session?.savedSignatureSpecimenDataUrl;
+    if (!dataUrl || !activeSignatureFieldId) {
+      setIsSavedSignaturePromptOpen(false);
+      return;
+    }
+
+    setAdoptedSignature(dataUrl);
+    setDraft(activeSignatureFieldId, {
+      signatureDataUrl: dataUrl,
+      signaturePreviewUrl: dataUrl,
+      value: 'signed',
+    });
+    setIsSavedSignaturePromptOpen(false);
+    advanceToNextField();
+  }
+
+  function handleChooseAnotherSignature() {
+    setIsSavedSignaturePromptOpen(false);
+    setIsSignatureModalOpen(true);
   }
 
   // ==========================================================================
@@ -1323,6 +1350,28 @@ export function EsigningSignPage() {
         existingSignature={signatureModalMode === 'SIGNATURE' ? adoptedSignature : adoptedInitials}
         isSubmitting={false}
       />
+
+      <ConfirmDialog
+        isOpen={isSavedSignaturePromptOpen}
+        onClose={handleChooseAnotherSignature}
+        onConfirm={handleUseSavedSignature}
+        title="Use your saved signature?"
+        description="Your signed-in email matches this signing request. Apply your saved signature specimen to this field?"
+        confirmLabel="Use Saved Signature"
+        cancelLabel="Choose Another"
+        variant="info"
+      >
+        {session.savedSignatureSpecimenDataUrl ? (
+          <div className="flex min-h-24 items-center justify-center rounded-lg border border-border-primary bg-background-tertiary p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={session.savedSignatureSpecimenDataUrl}
+              alt="Saved signature specimen"
+              className="max-h-20 max-w-full object-contain"
+            />
+          </div>
+        ) : null}
+      </ConfirmDialog>
 
       <EsigningFieldInputModal
         field={activeInputField}

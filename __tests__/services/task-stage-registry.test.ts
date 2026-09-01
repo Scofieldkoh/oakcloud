@@ -294,6 +294,31 @@ describe('stage action registry', () => {
     });
   });
 
+  it('passes multiple configured templates into the document generation workspace', () => {
+    const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
+
+    expect(adapter.launch({
+      tenantId: 'tenant-a',
+      stage: {
+        id: 'stage-2',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.DOCUMENT_GENERATION,
+        actionConfig: {
+          templateIds: [
+            '11111111-1111-4111-8111-111111111111',
+            '33333333-3333-4333-8333-333333333333',
+          ],
+        },
+        status: TaskStageStatus.NOT_STARTED,
+        task: { companyId: '22222222-2222-4222-8222-222222222222' },
+      },
+    })).toEqual({
+      href: '/generated-documents/generate?templateId=11111111-1111-4111-8111-111111111111&templateId=33333333-3333-4333-8333-333333333333&companyId=22222222-2222-4222-8222-222222222222',
+      context: { taskId: 'task-1', taskStageId: 'stage-2' },
+    });
+  });
+
   it.each([
     {
       status: TaskStageStatus.IN_PROGRESS,

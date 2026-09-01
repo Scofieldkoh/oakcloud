@@ -309,6 +309,7 @@ export function serializeEnvelopeDetail(input: {
     completedSignerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER' && recipient.status === 'SIGNED').length,
     documents: envelope.documents.map((document) => ({
       id: document.id,
+      generatedDocumentId: document.generatedDocumentId,
       fileName: getEsigningDocumentOriginalFileName(document),
       originalFileName: getEsigningDocumentOriginalFileName(document),
       pageCount: document.pageCount,

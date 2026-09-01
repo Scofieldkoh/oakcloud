@@ -141,6 +141,53 @@ describe('ServiceAgreementConfig', () => {
     unmount();
   });
 
+  it('moves pegged service dates with the agreement date and preserves overrides', () => {
+    const item = saItem();
+    item.configuration.serviceAgreement = {
+      ...item.configuration.serviceAgreement!,
+      items: [
+        {
+          clientKey: 'pegged-service',
+          variantId: 'variant-1',
+          entityIds: ['company-1'],
+          startDate: '2026-08-12',
+          startDateOverridden: false,
+          endDate: null,
+          fieldValues: {},
+          displayOrder: 0,
+          feeLines: [],
+        },
+        {
+          clientKey: 'overridden-service',
+          variantId: 'variant-2',
+          entityIds: ['company-1'],
+          startDate: '2026-08-20',
+          startDateOverridden: true,
+          endDate: null,
+          fieldValues: {},
+          displayOrder: 1,
+          feeLines: [],
+        },
+      ],
+    };
+    const p = props({ item });
+    render(<ServiceAgreementConfig {...p} />);
+
+    fireEvent.change(screen.getByLabelText('Agreement date'), {
+      target: { value: '1 Sep 2026' },
+    });
+
+    expect(p.onPatch).toHaveBeenLastCalledWith({
+      serviceAgreement: expect.objectContaining({
+        agreementDate: '2026-09-01',
+        items: [
+          expect.objectContaining({ startDate: '2026-09-01', startDateOverridden: false }),
+          expect.objectContaining({ startDate: '2026-08-20', startDateOverridden: true }),
+        ],
+      }),
+    });
+  });
+
   it('aligns agreement fields and gives the primary company twice its current field width', () => {
     render(<ServiceAgreementConfig {...props()} />);
 
@@ -237,6 +284,40 @@ describe('ServiceAgreementConfig', () => {
       serviceAgreement: expect.objectContaining({
         authorizedContactIds: ['contact-1', 'contact-2'],
         signerContactIds: ['contact-1', 'contact-2'],
+      }),
+    }));
+  });
+
+  it('links representatives to their contact details in a new tab', () => {
+    render(<ServiceAgreementConfig {...props({
+      contacts: [{ id: 'contact-1', fullName: 'Alex Tan', designation: 'Director' }],
+    })} />);
+
+    const link = screen.getByRole('link', {
+      name: 'Open Alex Tan contact details in a new tab',
+    });
+    expect(link).toHaveAttribute('href', '/contacts/contact-1');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('keeps the representative tile selectable without selecting when its name link is clicked', () => {
+    const p = props({
+      contacts: [{ id: 'contact-1', fullName: 'Alex Tan', designation: 'Director' }],
+    });
+    render(<ServiceAgreementConfig {...p} />);
+
+    fireEvent.click(screen.getByRole('link', {
+      name: 'Open Alex Tan contact details in a new tab',
+    }));
+    expect(p.onPatch).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('checkbox', {
+      name: /select Alex Tan as an authorised representative/i,
+    }));
+    expect(p.onPatch).toHaveBeenCalledWith(expect.objectContaining({
+      serviceAgreement: expect.objectContaining({
+        authorizedContactIds: ['contact-1'],
       }),
     }));
   });

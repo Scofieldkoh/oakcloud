@@ -17,7 +17,12 @@ import { CompanySearchableSelect } from '@/components/ui/company-searchable-sele
 import { cn } from '@/lib/utils';
 import { withTaskLaunchContext } from '@/lib/task-launch-context';
 import type { TaskStageTransition } from '@/hooks/use-tasks';
-import type { TaskResourcesResponse, TaskStageDetail } from '@/services/tasks/types';
+import type {
+  TaskGeneratedDocumentResource,
+  TaskResource,
+  TaskResourcesResponse,
+  TaskStageDetail,
+} from '@/services/tasks/types';
 import { TaskResourcesPanel } from './task-resources-panel';
 import {
   PipelineStageLinkedOutcome,
@@ -48,6 +53,134 @@ interface TaskStageModalProps {
   isResourcesLoading?: boolean;
   resourcesError?: Error | null;
   onRetryResources?: () => void;
+}
+
+interface EsigningDocumentSelectionOption {
+  resource: TaskGeneratedDocumentResource;
+  stageName: string;
+}
+
+function isGeneratedDocumentResource(resource: TaskResource): resource is TaskGeneratedDocumentResource {
+  return resource.kind === 'generatedDocument';
+}
+
+function statusLabel(status: string) {
+  return status
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function isSelectableEsigningDocument(resource: TaskGeneratedDocumentResource) {
+  return resource.state === 'available' && resource.status === 'FINALIZED' && Boolean(resource.id);
+}
+
+function EsigningDocumentSelection({
+  options,
+  selectedIds,
+  isLoading,
+  error,
+  disabled,
+  onToggle,
+  onToggleAll,
+}: {
+  options: EsigningDocumentSelectionOption[];
+  selectedIds: string[];
+  isLoading: boolean;
+  error?: Error | null;
+  disabled: boolean;
+  onToggle: (id: string) => void;
+  onToggleAll: () => void;
+}) {
+  const selectedIdSet = new Set(selectedIds);
+  const selectableOptions = options.filter(({ resource }) => isSelectableEsigningDocument(resource));
+  const selectableIdSet = new Set(selectableOptions.map(({ resource }) => resource.id!));
+  const selectedSelectableCount = selectedIds.filter((id) => selectableIdSet.has(id)).length;
+  const isAllSelected = selectableOptions.length > 0
+    && selectableOptions.every(({ resource }) => selectedIdSet.has(resource.id!));
+  const isPartiallySelected = selectedSelectableCount > 0 && !isAllSelected;
+
+  return (
+    <section
+      data-testid="esigning-document-selection"
+      className="rounded-lg border border-oak-primary/25 bg-oak-primary/5 p-4"
+    >
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-text-primary">Documents to send</h3>
+          <p className="mt-0.5 text-xs text-text-secondary">
+            Select the finalized documents to include in this signing request.
+          </p>
+        </div>
+        {!isLoading && !error && selectableOptions.length > 0 ? (
+          <span className="shrink-0 text-xs font-medium text-oak-primary" aria-live="polite">
+            {selectedSelectableCount} of {selectableOptions.length} selected
+          </span>
+        ) : null}
+      </div>
+
+      {isLoading ? (
+        <p role="status" className="mt-3 text-xs text-text-secondary">Loading task documents…</p>
+      ) : error ? (
+        <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">
+          Task documents could not be loaded. Try again before opening the workspace.
+        </p>
+      ) : options.length === 0 ? (
+        <p className="mt-3 text-xs text-text-secondary">
+          No finalized generated documents are available to send yet.
+        </p>
+      ) : (
+        <div className="mt-3 space-y-1.5">
+          <label className="flex cursor-pointer items-center gap-3 rounded-md border-b border-oak-primary/15 px-2 py-2 text-sm font-medium text-text-primary">
+            <input
+              type="checkbox"
+              aria-label="Select all documents"
+              aria-checked={isPartiallySelected ? 'mixed' : isAllSelected ? 'true' : 'false'}
+              checked={isAllSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = isPartiallySelected;
+              }}
+              onChange={onToggleAll}
+              disabled={disabled || selectableOptions.length === 0}
+              className="h-4 w-4 rounded border-border-secondary text-oak-primary focus:ring-oak-primary/30"
+            />
+            <span>Select all</span>
+          </label>
+          {options.map(({ resource, stageName }) => {
+            const documentId = resource.id!;
+            const isSelectable = isSelectableEsigningDocument(resource);
+            const isSelected = selectedIdSet.has(documentId);
+            return (
+              <label
+                key={documentId}
+                className={cn(
+                  'flex items-start gap-3 rounded-md px-2 py-2 text-sm transition-colors',
+                  isSelectable
+                    ? 'cursor-pointer text-text-primary hover:bg-background-secondary'
+                    : 'cursor-not-allowed text-text-muted',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${resource.title || resource.label}`}
+                  checked={isSelected}
+                  onChange={() => onToggle(documentId)}
+                  disabled={disabled || !isSelectable}
+                  className="mt-0.5 h-4 w-4 rounded border-border-secondary text-oak-primary focus:ring-oak-primary/30"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{resource.title || resource.label}</span>
+                  <span className="mt-0.5 block text-xs text-text-secondary">
+                    {stageName} · {resource.status ? statusLabel(resource.status) : 'Not ready'}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function launchHref(stage: TaskStageDetail) {
@@ -102,6 +235,8 @@ export function TaskStageModal({
   const [bizFile, setBizFile] = useState<File | null>(null);
   const [bizFileError, setBizFileError] = useState('');
   const [isUploadingBizFile, setIsUploadingBizFile] = useState(false);
+  const [selectedGeneratedDocumentIds, setSelectedGeneratedDocumentIds] = useState<string[]>([]);
+  const selectionStageIdRef = useRef<string | null>(null);
   const persistedStageId = stage?.id;
   const persistedStageNotes = stage?.notes ?? '';
   const isLinkedCompanySelected = Boolean(
@@ -122,6 +257,37 @@ export function TaskStageModal({
         ? 'new'
         : 'empty';
 
+  const taskEsigningDocumentOptions = useMemo<EsigningDocumentSelectionOption[]>(() => {
+    if (!stage || stage.actionType !== 'ESIGNING' || !resources) return [];
+    const seenIds = new Set<string>();
+    return resources.stages
+      .filter((resourceStage) => resourceStage.position < stage.position)
+      .flatMap((resourceStage) => resourceStage.resources
+        .filter(isGeneratedDocumentResource)
+        .flatMap((resource) => {
+          if (!resource.id || seenIds.has(resource.id)) return [];
+          seenIds.add(resource.id);
+          return [{ resource, stageName: resourceStage.name }];
+        }))
+      .sort((left, right) => left.resource.title?.localeCompare(right.resource.title ?? '') ?? 0);
+  }, [resources, stage]);
+  const selectableTaskEsigningDocuments = useMemo(
+    () => taskEsigningDocumentOptions.filter(({ resource }) => isSelectableEsigningDocument(resource)),
+    [taskEsigningDocumentOptions],
+  );
+  const hasLinkedEsigningEnvelope = Boolean(
+    stage?.actionType === 'ESIGNING'
+    && stage.outcome?.type === 'ESIGNING_ENVELOPE'
+    && stage.outcome.esigningEnvelopeId,
+  );
+  const isTaskEsigningDocumentSelectionReady = Boolean(
+    stage?.actionType === 'ESIGNING'
+    && !hasLinkedEsigningEnvelope
+    && resources
+    && !isResourcesLoading
+    && !resourcesError,
+  );
+
   useEffect(() => {
     onUpdateMetadataRef.current = onUpdateMetadata;
   }, [onUpdateMetadata]);
@@ -136,7 +302,30 @@ export function TaskStageModal({
     setBizFile(null);
     setBizFileError('');
     setIsUploadingBizFile(false);
-  }, [stage?.id, stage?.isRequired, stage?.notes, taskCompanyId]);
+    selectionStageIdRef.current = null;
+    setSelectedGeneratedDocumentIds([]);
+  }, [stage?.actionType, stage?.id, stage?.isRequired, stage?.notes, taskCompanyId]);
+
+  useEffect(() => {
+    if (!stage || stage.actionType !== 'ESIGNING' || hasLinkedEsigningEnvelope) {
+      selectionStageIdRef.current = null;
+      setSelectedGeneratedDocumentIds([]);
+      return;
+    }
+
+    const availableIds = selectableTaskEsigningDocuments
+      .map(({ resource }) => resource.id)
+      .filter((id): id is string => Boolean(id));
+    const availableIdSet = new Set(availableIds);
+    setSelectedGeneratedDocumentIds((current) => {
+      if (selectionStageIdRef.current !== stage.id) {
+        if (availableIds.length === 0) return current;
+        selectionStageIdRef.current = stage.id;
+        return availableIds;
+      }
+      return current.filter((id) => availableIdSet.has(id));
+    });
+  }, [hasLinkedEsigningEnvelope, selectableTaskEsigningDocuments, stage]);
 
   useEffect(() => {
     if (!persistedStageId || notes === persistedStageNotes) return;
@@ -159,6 +348,15 @@ export function TaskStageModal({
   }, [notes, persistedStageId, persistedStageNotes]);
 
   const resolvedLaunchHref = useMemo(() => stage ? launchHref(stage) : null, [stage]);
+  const taskEsigningLaunchHref = useMemo(() => {
+    if (!resolvedLaunchHref || !isTaskEsigningDocumentSelectionReady) return resolvedLaunchHref;
+    const [path, query = ''] = resolvedLaunchHref.split('?');
+    const params = new URLSearchParams(query);
+    params.delete('generatedDocumentId');
+    params.delete('generatedDocumentIds');
+    selectedGeneratedDocumentIds.forEach((documentId) => params.append('generatedDocumentIds', documentId));
+    return `${path}?${params.toString()}`;
+  }, [isTaskEsigningDocumentSelectionReady, resolvedLaunchHref, selectedGeneratedDocumentIds]);
   const canCreateCompany = stage?.actionType === 'COMPANY_PROFILE'
     && Boolean(resolvedLaunchHref);
   const createCompanyHref = useMemo(() => {
@@ -205,6 +403,22 @@ export function TaskStageModal({
     if (!stage) return null;
     const label = primaryActionLabel(stage);
     const isBlocked = stage.blockers.length > 0;
+
+    if (
+      stage.actionType === 'ESIGNING'
+      && isTaskEsigningDocumentSelectionReady
+      && selectedGeneratedDocumentIds.length === 0
+    ) {
+      return (
+        <Button
+          data-testid="stage-primary-action"
+          disabled
+          leftIcon={<ArrowUpRight />}
+        >
+          Select documents to continue
+        </Button>
+      );
+    }
 
     if (stage.status === 'SKIPPED' || (
       stage.actionType === 'MANUAL' && stage.status === 'COMPLETED'
@@ -281,7 +495,7 @@ export function TaskStageModal({
         </Button>
       );
     }
-    if (isBlocked || !resolvedLaunchHref) {
+    if (isBlocked || !taskEsigningLaunchHref) {
       return (
         <Button
           data-testid="stage-primary-action"
@@ -295,7 +509,7 @@ export function TaskStageModal({
     return (
       <a
         data-testid="stage-primary-action"
-        href={resolvedLaunchHref}
+        href={taskEsigningLaunchHref}
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-oak-primary px-5 text-sm font-medium text-white transition-colors hover:bg-oak-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2"
       >
         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -341,6 +555,31 @@ export function TaskStageModal({
         <>
           <PipelineStageLinkedOutcome stage={stage} />
           <PipelineStageMetadata stage={stage} taskDueDate={taskDueDate} />
+
+          {stage.actionType === 'ESIGNING' && !hasLinkedEsigningEnvelope && (resources || isResourcesLoading || resourcesError) ? (
+            <EsigningDocumentSelection
+              options={taskEsigningDocumentOptions}
+              selectedIds={selectedGeneratedDocumentIds}
+              isLoading={isResourcesLoading}
+              error={resourcesError}
+              disabled={isMutating}
+              onToggle={(documentId) => {
+                setSelectedGeneratedDocumentIds((current) => (
+                  current.includes(documentId)
+                    ? current.filter((id) => id !== documentId)
+                    : [...current, documentId]
+                ));
+              }}
+              onToggleAll={() => {
+                const selectableIds = selectableTaskEsigningDocuments
+                  .map(({ resource }) => resource.id)
+                  .filter((id): id is string => Boolean(id));
+                setSelectedGeneratedDocumentIds((current) => (
+                  current.length === selectableIds.length ? [] : selectableIds
+                ));
+              }}
+            />
+          ) : null}
 
           {stage.actionType === 'COMPANY_PROFILE' && stage.status !== 'SKIPPED' ? (
               <>

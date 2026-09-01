@@ -50,6 +50,34 @@ describe('DocumentContactChoiceList', () => {
     expect(onChange).toHaveBeenCalledWith([]);
   });
 
+  it('links contacts to their contact details in a new tab', () => {
+    render(
+      <DocumentContactChoiceList contacts={contacts} selected={[]} onChange={vi.fn()} />,
+    );
+
+    const link = screen.getByRole('link', {
+      name: 'Open Jane Tan contact details in a new tab',
+    });
+    expect(link).toHaveAttribute('href', '/contacts/one');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('keeps the contact tile selectable without selecting when its name link is clicked', () => {
+    const onChange = vi.fn();
+    render(
+      <DocumentContactChoiceList contacts={contacts} selected={[]} onChange={onChange} />,
+    );
+
+    fireEvent.click(screen.getByRole('link', {
+      name: 'Open Jane Tan contact details in a new tab',
+    }));
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Jane Tan/ }));
+    expect(onChange).toHaveBeenCalledWith([contacts[0]]);
+  });
+
   it('retains selected contacts while filtering and forwards search', () => {
     const onSearch = vi.fn();
     render(

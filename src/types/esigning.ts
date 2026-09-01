@@ -95,6 +95,7 @@ export type EsigningEnvelopeStatusCounts = Record<EsigningEnvelopeStatus, number
 
 export interface EsigningEnvelopeDocumentDto {
   id: string;
+  generatedDocumentId?: string | null;
   fileName: string;
   originalFileName?: string;
   pageCount: number;
@@ -224,6 +225,7 @@ export interface EsigningManualLinkDto {
 }
 
 export interface EsigningSigningSessionDto {
+  savedSignatureSpecimenDataUrl?: string | null;
   envelope: {
     id: string;
     title: string;

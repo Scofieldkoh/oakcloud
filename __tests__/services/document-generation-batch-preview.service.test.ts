@@ -10,6 +10,9 @@ vi.mock('@/lib/prisma', () => ({
     documentGenerationBatchItem: {
       update: vi.fn(),
     },
+    generatedDocument: {
+      update: vi.fn(),
+    },
     documentTemplate: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
@@ -43,6 +46,7 @@ import {
   createPreviewFingerprint,
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
+import { DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN } from '@/lib/document-generation-title';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const userId = '22222222-2222-4222-8222-222222222222';
@@ -267,6 +271,41 @@ describe('document generation batch preview and review', () => {
       }),
     );
     expect(typeof result.items[0].previewFingerprint).toBe('string');
+  });
+
+  it('resolves the configured template title date before review', async () => {
+    const item = batchItem({
+      configuration: {
+        ...batchItem().configuration,
+        title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
+      },
+    });
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      ...template,
+      contentJson: { documentTitleDateFieldKey: 'engagement_date' },
+    } as never);
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(batchWith(item) as never);
+    vi.mocked(prisma.documentGenerationBatch.findFirstOrThrow).mockResolvedValue(
+      batchWith({
+        ...item,
+        generatedDocument: {
+          ...item.generatedDocument,
+          title: 'Engagement Letter_Acme_1 Sep 2026',
+        },
+      }) as never,
+    );
+
+    await previewDocumentGenerationBatchItem(
+      batchId,
+      itemId,
+      { expectedRevision: 3 },
+      actor,
+    );
+
+    expect(prisma.generatedDocument.update).toHaveBeenCalledWith({
+      where: { id: 'child-1' },
+      data: { title: 'Engagement Letter_Acme_1 Sep 2026' },
+    });
   });
 
   it('binds review to preview inputs and persisted editor content', async () => {

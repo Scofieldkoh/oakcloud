@@ -85,6 +85,48 @@ describe('DocumentPartyChoiceList', () => {
     expect(screen.getByRole('radio', { name: /Ben Lim/ })).toBeVisible();
   });
 
+  it('links linked parties to their contact details in a new tab', () => {
+    render(
+      <DocumentPartyChoiceList
+        id="director"
+        label="Director"
+        options={options}
+        value=""
+        onChange={vi.fn()}
+        isLoading={false}
+      />,
+    );
+
+    const link = screen.getByRole('link', {
+      name: 'Open Alice Tan contact details in a new tab',
+    });
+    expect(link).toHaveAttribute('href', '/contacts/c1');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('keeps the party tile selectable without selecting when its name link is clicked', () => {
+    const onChange = vi.fn();
+    render(
+      <DocumentPartyChoiceList
+        id="director"
+        label="Director"
+        options={options}
+        value=""
+        onChange={onChange}
+        isLoading={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('link', {
+      name: 'Open Alice Tan contact details in a new tab',
+    }));
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Alice Tan/ }));
+    expect(onChange).toHaveBeenCalledWith('one');
+  });
+
   it('keeps retry and empty states inside the selection section', () => {
     const onRetry = vi.fn();
     const { rerender } = render(

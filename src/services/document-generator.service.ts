@@ -41,6 +41,7 @@ import type {
   GeneratedDocument,
   DocumentComment,
   GeneratedDocumentStatus,
+  EsigningEnvelopeStatus,
 } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
@@ -88,6 +89,14 @@ export interface GeneratedDocumentWithRelations extends GeneratedDocument {
     firstName: string;
     lastName: string;
   } | null;
+  esigningEnvelopeDocuments?: Array<{
+    envelope: {
+      id: string;
+      title: string;
+      status: EsigningEnvelopeStatus;
+      completedAt: Date | null;
+    };
+  }>;
   comments?: DocumentCommentWithReplies[];
   _count?: {
     comments: number;
@@ -1417,6 +1426,20 @@ export async function getGeneratedDocumentById(
           lastName: true,
         },
       },
+      esigningEnvelopeDocuments: {
+        where: { envelope: { deletedAt: null } },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          envelope: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              completedAt: true,
+            },
+          },
+        },
+      },
       ...(includeComments
         ? {
             comments: {
@@ -1537,6 +1560,18 @@ export async function searchGeneratedDocuments(
         { firstName: { contains: searchTerm, mode: 'insensitive' } },
         { lastName: { contains: searchTerm, mode: 'insensitive' } },
       ],
+    };
+  }
+
+  // Signed date range
+  if (params.signedFrom || params.signedTo) {
+    where.signedAt = {
+      ...(params.signedFrom
+        ? { gte: new Date(`${params.signedFrom}T00:00:00.000`) }
+        : {}),
+      ...(params.signedTo
+        ? { lte: new Date(`${params.signedTo}T23:59:59.999`) }
+        : {}),
     };
   }
 

@@ -870,6 +870,7 @@ model GeneratedDocument {
   finalizedAt               DateTime?                    @map("finalized_at")
   finalizedById             String?                      @map("finalized_by_id")
   unfinalizedAt             DateTime?                    @map("unfinalized_at")
+  signedAt                  DateTime?                    @map("signed_at")
   useLetterhead             Boolean                      @default(true) @map("use_letterhead")
   placeholderData           Json?                        @map("placeholder_data")
   metadata                  Json?
@@ -900,6 +901,7 @@ model GeneratedDocument {
   @@index([status, createdAt])
   @@index([tenantId, status, updatedAt])
   @@index([finalizedAt])
+  @@index([tenantId, signedAt])
   @@map("generated_documents")
 }
 

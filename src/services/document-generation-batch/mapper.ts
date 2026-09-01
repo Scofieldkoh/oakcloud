@@ -145,6 +145,7 @@ export function serviceAgreementWorkspaceFromDto(
           saved.entities.find((entity) => entity.id === entityId)?.companyId)
         .filter((id): id is string => Boolean(id)),
       startDate: item.startDate,
+      startDateOverridden: item.startDate !== saved.agreementDate,
       endDate: item.endDate,
       fieldValues: item.fieldValues,
       displayOrder: item.displayOrder,
@@ -158,6 +159,7 @@ export function serviceAgreementWorkspaceFromDto(
         billingFrequency: fee.billingFrequency,
         customFrequencyLabel: fee.customFrequencyLabel ?? null,
         billingStartDate: fee.billingStartDate,
+        billingStartDateOverridden: fee.billingStartDate !== item.startDate,
         displayOrder: fee.displayOrder,
       })),
     })),

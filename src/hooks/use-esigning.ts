@@ -98,6 +98,7 @@ async function fetchEsigningEnvelopeDetail(id: string, tenantId?: string | null)
 export type CreateEsigningEnvelopeRequest = CreateEsigningEnvelopeInput & {
   taskContext?: TaskLaunchContext;
   generatedDocumentId?: string;
+  generatedDocumentIds?: string[];
 };
 
 async function createEnvelopeRequest(
@@ -273,6 +274,24 @@ async function deleteDocumentRequest(
 
   if (!response.ok) {
     await readJsonError(response, 'Failed to remove document');
+  }
+
+  return response.json();
+}
+
+async function attachGeneratedDocumentsRequest(
+  envelopeId: string,
+  generatedDocumentIds: string[],
+  tenantId?: string | null,
+): Promise<EsigningEnvelopeDetailDto> {
+  const response = await fetch(`/api/esigning/envelopes/${envelopeId}/documents`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId, generatedDocumentIds }),
+  });
+
+  if (!response.ok) {
+    await readJsonError(response, 'Failed to add generated documents');
   }
 
   return response.json();
@@ -594,6 +613,20 @@ export function useDeleteEsigningDocument(envelopeId: string, documentId: string
 
   return useMutation({
     mutationFn: () => deleteDocumentRequest(envelopeId, documentId, tenantId),
+    onSuccess: async (result) => {
+      queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
+      await invalidateEnvelopeQueries(queryClient, tenantId);
+    },
+  });
+}
+
+export function useAttachGeneratedEsigningDocuments(envelopeId: string) {
+  const tenantId = useEsigningTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (generatedDocumentIds: string[]) =>
+      attachGeneratedDocumentsRequest(envelopeId, generatedDocumentIds, tenantId),
     onSuccess: async (result) => {
       queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
       await invalidateEnvelopeQueries(queryClient, tenantId);

@@ -168,23 +168,13 @@ function GeneratedDocumentCard({ resource }: { resource: TaskGeneratedDocumentRe
             ) : (
               <span className="font-medium text-text-primary">{resource.title || resource.label}</span>
             )}
-            {resource.status ? <div className="mt-0.5 text-xs text-text-secondary">{statusLabel(resource.status)}</div> : null}
+            {resource.status ? (
+              <span className="text-xs font-normal text-text-secondary"> ({statusLabel(resource.status)})</span>
+            ) : null}
           </div>
         </div>
         <ResourceState resource={resource} />
       </div>
-      {resource.pdfHref && resource.downloadFileName ? (
-        <a
-          href={resource.pdfHref}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs text-oak-primary hover:underline sm:min-h-0"
-        >
-          <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-          {resource.downloadFileName}
-          <LinkIcon />
-        </a>
-      ) : null}
     </div>
   );
 }

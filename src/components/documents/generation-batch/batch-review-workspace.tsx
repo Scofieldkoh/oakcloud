@@ -97,6 +97,10 @@ export function BatchReviewWorkspace({
   const approved = Boolean(activeItem?.reviewedFingerprint);
   const generated = activeItem?.status === 'GENERATED';
   const diagnostics = activeItem?.validationDiagnostics;
+  const displayTitle = activeItem
+    && (activeItem.status === 'GENERATED' || activeItem.previewFingerprint)
+    ? activeItem.generatedDocumentTitle || activeItem.configuration.title || activeItem.templateName
+    : activeItem?.configuration.title || activeItem?.templateName;
   const diagnosticCount = diagnostics
     ? diagnostics.errors.length + diagnostics.fieldErrors.length
     : 0;
@@ -173,7 +177,7 @@ export function BatchReviewWorkspace({
             <header className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <h2 className="truncate text-base font-semibold text-text-primary">
-                  {activeItem.configuration.title || activeItem.templateName}
+                  {displayTitle}
                 </h2>
                 <p className="flex flex-wrap items-center gap-x-2 text-xs text-text-muted">
                   <span>{activeItem.templateName}</span>

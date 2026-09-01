@@ -8,7 +8,6 @@ import {
   resolveEsigningActorScope,
   type EsigningActorScope,
 } from '@/services/esigning-envelope.lib';
-import { generatedDocumentPdfFileName } from '@/lib/generated-document-filename';
 import { NotFoundError } from '@/lib/errors';
 import { getStageActionAdapter } from './action-registry';
 import type {
@@ -112,6 +111,25 @@ const taskResourcesSelect = {
 type TaskResourcesRecord = Prisma.TaskGetPayload<{ select: typeof taskResourcesSelect }>;
 type TaskResourceStageRecord = TaskResourcesRecord['stages'][number];
 
+const taskLinkedBatchSelect = {
+  items: {
+    orderBy: { displayOrder: 'asc' as const },
+    where: { generatedDocument: { deletedAt: null } },
+    select: {
+      generatedDocument: {
+        select: { id: true, title: true, status: true, companyId: true, deletedAt: true },
+      },
+    },
+  },
+} satisfies Prisma.DocumentGenerationBatchSelect;
+
+type TaskLinkedBatchRecord = Prisma.DocumentGenerationBatchGetPayload<{
+  select: typeof taskLinkedBatchSelect;
+}>;
+type TaskGeneratedDocumentRecord = NonNullable<
+  TaskLinkedBatchRecord['items'][number]['generatedDocument']
+>;
+
 function taskResourceHref(path: string, taskId: string, stageId: string): string {
   const params = new URLSearchParams({
     taskId,
@@ -195,9 +213,7 @@ function createPlaceholderResource(
       label: 'Generated document',
       title: null,
       status: null,
-      downloadFileName: null,
       href: null,
-      pdfHref: null,
       reason,
     };
   }
@@ -269,17 +285,37 @@ async function serializeCompanyResource(
   };
 }
 
+async function findTaskLinkedBatch(
+  tenantId: string,
+  taskId: string,
+  stageId: string,
+): Promise<TaskLinkedBatchRecord | null> {
+  return prisma.documentGenerationBatch.findFirst({
+    where: {
+      tenantId,
+      deletedAt: null,
+      AND: [
+        { taskContext: { path: ['taskId'], equals: taskId } },
+        { taskContext: { path: ['taskStageId'], equals: stageId } },
+      ],
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: taskLinkedBatchSelect,
+  });
+}
+
 async function serializeGeneratedDocumentResource(
   session: SessionUser,
   taskId: string,
-  stage: TaskResourceStageRecord,
+  stageId: string,
+  stageStatus: TaskStageStatus,
+  document: TaskGeneratedDocumentRecord | NonNullable<TaskResourceStageRecord['outcome']>['generatedDocument'] | null,
 ): Promise<TaskGeneratedDocumentResource> {
-  const document = stage.outcome?.generatedDocument;
   if (!document) {
     return createPlaceholderResource(
       'generatedDocument',
-      isTerminalStage(stage.status) ? 'unavailable' : 'pending',
-      isTerminalStage(stage.status) ? missingReason() : pendingReason(),
+      isTerminalStage(stageStatus) ? 'unavailable' : 'pending',
+      isTerminalStage(stageStatus) ? missingReason() : pendingReason(),
     ) as TaskGeneratedDocumentResource;
   }
   if (document.deletedAt) {
@@ -295,9 +331,7 @@ async function serializeGeneratedDocumentResource(
     label: 'Generated document',
     title: document.title,
     status: document.status,
-    downloadFileName: generatedDocumentPdfFileName(document.title),
-    href: taskResourceHref(`/generated-documents/${document.id}`, taskId, stage.id),
-    pdfHref: `/api/generated-documents/${document.id}/export/pdf`,
+    href: taskResourceHref(`/generated-documents/${document.id}`, taskId, stageId),
     reason: null,
   };
 }
@@ -395,7 +429,25 @@ async function serializeResourceStage(input: {
         isTerminalStage(stage.status) ? missingReason() : pendingReason(),
       )];
   } else if (stage.actionType === 'DOCUMENT_GENERATION') {
-    resources = [await serializeGeneratedDocumentResource(session, taskId, stage)];
+    const batch = await findTaskLinkedBatch(tenantId, taskId, stage.id);
+    const batchDocuments = batch?.items.map((item) => item.generatedDocument) ?? [];
+    resources = batchDocuments.length > 0
+      ? await Promise.all(batchDocuments.map((document) => (
+        serializeGeneratedDocumentResource(
+          session,
+          taskId,
+          stage.id,
+          stage.status,
+          document,
+        )
+      )))
+      : [await serializeGeneratedDocumentResource(
+        session,
+        taskId,
+        stage.id,
+        stage.status,
+        stage.outcome?.generatedDocument ?? null,
+      )];
   } else if (stage.actionType === 'ESIGNING') {
     resources = [await serializeEsigningEnvelopeResource(
       session,

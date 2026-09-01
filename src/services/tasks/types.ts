@@ -258,9 +258,7 @@ export interface TaskGeneratedDocumentResource extends TaskResourceBase {
   kind: 'generatedDocument';
   title: string | null;
   status: string | null;
-  downloadFileName: string | null;
   href: string | null;
-  pdfHref: string | null;
 }
 
 export interface TaskEsigningDocumentResource {

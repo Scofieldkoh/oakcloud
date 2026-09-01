@@ -30,6 +30,10 @@ const companyConfigSchema = baseConfigSchema.extend({
 
 const documentConfigSchema = baseConfigSchema.extend({
   templateId: z.string().uuid().optional(),
+  templateIds: z.array(z.string().uuid()).min(1).max(20).refine(
+    (templateIds) => new Set(templateIds).size === templateIds.length,
+    'Document templates must be distinct',
+  ).optional(),
 });
 
 const esigningConfigSchema = baseConfigSchema.extend({
@@ -64,11 +68,15 @@ function noBlockers(): StageActionBlocker[] {
 
 function configQuery(
   path: string,
-  values: Record<string, string | number | undefined>,
+  values: Record<string, string | number | Array<string | number> | undefined>,
 ) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined) params.set(key, String(value));
+    if (Array.isArray(value)) {
+      value.forEach((entry) => params.append(key, String(entry)));
+    } else if (value !== undefined) {
+      params.set(key, String(value));
+    }
   }
   const query = params.toString();
   return query ? `${path}?${query}` : path;
@@ -137,8 +145,13 @@ const documentAdapter: StageActionAdapter = {
       }), context);
     }
     const config = documentConfigSchema.parse(context.stage.actionConfig ?? {});
+    const templateIds = Array.isArray(config.templateIds)
+      ? config.templateIds
+      : config.templateId
+        ? [config.templateId]
+        : undefined;
     return launch(configQuery('/generated-documents/generate', {
-      templateId: config.templateId,
+      templateId: templateIds,
       companyId: context.stage.task?.companyId ?? undefined,
     }), context);
   },

@@ -440,6 +440,32 @@ describe('EsigningSignPage autosave and field values', () => {
     expect(fieldSaveRequests).toHaveLength(0);
   });
 
+  it('asks before applying a saved specimen and uses it after confirmation', async () => {
+    const specimen = 'data:image/png;base64,c2lnbmF0dXJl';
+    const session = makeSigningSession(makeField({ type: 'SIGNATURE' }), {
+      savedSignatureSpecimenDataUrl: specimen,
+    });
+    stubSigningFetch(session);
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('signing-document');
+    await userEvent.click(screen.getByRole('button', { name: 'Sign Here' }));
+
+    expect(screen.getByRole('heading', { name: 'Use your saved signature?' })).toBeInTheDocument();
+    expect(screen.getByAltText('Saved signature specimen')).toHaveAttribute('src', specimen);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Use Saved Signature' }));
+
+    await waitFor(() => expect(fieldSaveRequests).toHaveLength(1));
+    const body = JSON.parse(String(fieldSaveRequests[0].body)) as {
+      values: Array<{ fieldDefinitionId: string; signatureDataUrl: string }>;
+    };
+    expect(body.values[0]).toEqual(expect.objectContaining({
+      fieldDefinitionId: 'field-1',
+      signatureDataUrl: specimen,
+    }));
+  });
+
   it('hides the page panel while signing on a portrait mobile viewport', async () => {
     mocks.isMobile = true;
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });

@@ -9,6 +9,7 @@ import {
   type EditableBatchItem,
   type EditableDocumentGenerationBatch,
 } from '@/components/documents/generation-batch/batch-workspace-state';
+import { DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN } from '@/lib/document-generation-title';
 
 function item(
   id: string,
@@ -91,9 +92,9 @@ function batch(items: EditableBatchItem[], overrides: Partial<EditableDocumentGe
 }
 
 describe('document generation batch workspace state', () => {
-  it('defaults new items to no letterhead and applies the company-aware title', () => {
+  it('defaults new items to no letterhead and the automatic title pattern', () => {
     expect(defaultItemConfiguration('Engagement Letter')).toMatchObject({
-      title: 'Engagement Letter',
+      title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
       useLetterhead: false,
     });
 
@@ -105,9 +106,8 @@ describe('document generation batch workspace state', () => {
       company: { id: 'company-1', name: 'Acme Pte. Ltd.', uen: '202600001A' },
     });
 
-    expect(state.batch.items[0].configuration.title).toMatch(
-      /^Template a_Acme Pte\. Ltd\._\d{1,2} [A-Z][a-z]{2} \d{4}$/,
-    );
+    expect(state.batch.items[0].configuration.title)
+      .toBe(DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN);
   });
 
   it('updates only automatic titles when the shared company changes', () => {
@@ -122,9 +122,8 @@ describe('document generation batch workspace state', () => {
       companyName: 'New Company Pte. Ltd.',
     });
 
-    expect(next.batch.items[0].configuration.title).toMatch(
-      /^Template a_New Company Pte\. Ltd\._\d{1,2} [A-Z][a-z]{2} \d{4}$/,
-    );
+    expect(next.batch.items[0].configuration.title)
+      .toBe(DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN);
     expect(next.batch.items[1].configuration.title).toBe('Custom document title');
   });
 

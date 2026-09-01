@@ -195,6 +195,11 @@ export function StandardDocumentConfig({
               A title is required — it becomes the generated document name.
             </span>
           )}
+          {!titleMissing && (
+            <span className="mt-1 block text-xs text-text-muted">
+              {'Keep {{template_name}}_{{company_name}}_{{date}} for an automatic title, or replace it with your own.'}
+            </span>
+          )}
         </label>
       </BatchSection>
 

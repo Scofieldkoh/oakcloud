@@ -167,6 +167,11 @@ export function ServiceAgreementConfig({
               titleMissing ? 'border-status-error/60' : 'border-border-primary',
             )}
           />
+          {!titleMissing && (
+            <span className="mt-1 block text-xs text-text-muted">
+              {'Keep {{template_name}}_{{company_name}}_{{date}} to use the agreement date, or replace it with your own title.'}
+            </span>
+          )}
         </label>
       </BatchSection>
 
@@ -179,7 +184,18 @@ export function ServiceAgreementConfig({
             <SingleDateInput
               id="agreement-date"
               value={workspace.agreementDate}
-              onChange={(next) => updateWorkspace({ agreementDate: next })}
+              onChange={(next) => updateWorkspace({
+                agreementDate: next,
+                items: next
+                  ? workspace.items.map((service) => {
+                      const startDateOverridden = service.startDateOverridden
+                        ?? service.startDate !== workspace.agreementDate;
+                      return startDateOverridden
+                        ? service
+                        : { ...service, startDate: next, startDateOverridden: false };
+                    })
+                  : workspace.items,
+              })}
               disabled={disabled}
               ariaLabel="Agreement date"
               className="w-44 max-w-full"
@@ -265,6 +281,7 @@ export function ServiceAgreementConfig({
       >
         <ServiceSelectionStep
           entities={entities}
+          agreementDate={workspace.agreementDate}
           items={workspace.items}
           onChange={(items) => updateWorkspace({ items })}
         />

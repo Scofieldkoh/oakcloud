@@ -46,6 +46,7 @@ export type GeneratedDocumentMinAggregateOutputType = {
   finalizedAt: Date | null
   finalizedById: string | null
   unfinalizedAt: Date | null
+  signedAt: Date | null
   useLetterhead: boolean | null
   createdById: string | null
   createdAt: Date | null
@@ -65,6 +66,7 @@ export type GeneratedDocumentMaxAggregateOutputType = {
   finalizedAt: Date | null
   finalizedById: string | null
   unfinalizedAt: Date | null
+  signedAt: Date | null
   useLetterhead: boolean | null
   createdById: string | null
   createdAt: Date | null
@@ -85,6 +87,7 @@ export type GeneratedDocumentCountAggregateOutputType = {
   finalizedAt: number
   finalizedById: number
   unfinalizedAt: number
+  signedAt: number
   useLetterhead: number
   placeholderData: number
   metadata: number
@@ -116,6 +119,7 @@ export type GeneratedDocumentMinAggregateInputType = {
   finalizedAt?: true
   finalizedById?: true
   unfinalizedAt?: true
+  signedAt?: true
   useLetterhead?: true
   createdById?: true
   createdAt?: true
@@ -135,6 +139,7 @@ export type GeneratedDocumentMaxAggregateInputType = {
   finalizedAt?: true
   finalizedById?: true
   unfinalizedAt?: true
+  signedAt?: true
   useLetterhead?: true
   createdById?: true
   createdAt?: true
@@ -155,6 +160,7 @@ export type GeneratedDocumentCountAggregateInputType = {
   finalizedAt?: true
   finalizedById?: true
   unfinalizedAt?: true
+  signedAt?: true
   useLetterhead?: true
   placeholderData?: true
   metadata?: true
@@ -264,6 +270,7 @@ export type GeneratedDocumentGroupByOutputType = {
   finalizedAt: Date | null
   finalizedById: string | null
   unfinalizedAt: Date | null
+  signedAt: Date | null
   useLetterhead: boolean
   placeholderData: runtime.JsonValue | null
   metadata: runtime.JsonValue | null
@@ -309,6 +316,7 @@ export type GeneratedDocumentWhereInput = {
   finalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   finalizedById?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
+  signedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolFilter<"GeneratedDocument"> | boolean
   placeholderData?: Prisma.JsonNullableFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableFilter<"GeneratedDocument">
@@ -344,6 +352,7 @@ export type GeneratedDocumentOrderByWithRelationInput = {
   finalizedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   finalizedById?: Prisma.SortOrderInput | Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  signedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
   placeholderData?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -382,6 +391,7 @@ export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
   finalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   finalizedById?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
+  signedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolFilter<"GeneratedDocument"> | boolean
   placeholderData?: Prisma.JsonNullableFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableFilter<"GeneratedDocument">
@@ -417,6 +427,7 @@ export type GeneratedDocumentOrderByWithAggregationInput = {
   finalizedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   finalizedById?: Prisma.SortOrderInput | Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  signedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
   placeholderData?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -447,6 +458,7 @@ export type GeneratedDocumentScalarWhereWithAggregatesInput = {
   finalizedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GeneratedDocument"> | Date | string | null
   finalizedById?: Prisma.StringNullableWithAggregatesFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GeneratedDocument"> | Date | string | null
+  signedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolWithAggregatesFilter<"GeneratedDocument"> | boolean
   placeholderData?: Prisma.JsonNullableWithAggregatesFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"GeneratedDocument">
@@ -465,6 +477,7 @@ export type GeneratedDocumentCreateInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -499,6 +512,7 @@ export type GeneratedDocumentUncheckedCreateInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -525,6 +539,7 @@ export type GeneratedDocumentUpdateInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -559,6 +574,7 @@ export type GeneratedDocumentUncheckedUpdateInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -589,6 +605,7 @@ export type GeneratedDocumentCreateManyInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -607,6 +624,7 @@ export type GeneratedDocumentUpdateManyMutationInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -628,6 +646,7 @@ export type GeneratedDocumentUncheckedUpdateManyInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -660,6 +679,7 @@ export type GeneratedDocumentCountOrderByAggregateInput = {
   finalizedAt?: Prisma.SortOrder
   finalizedById?: Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrder
+  signedAt?: Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
   placeholderData?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
@@ -685,6 +705,7 @@ export type GeneratedDocumentMaxOrderByAggregateInput = {
   finalizedAt?: Prisma.SortOrder
   finalizedById?: Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrder
+  signedAt?: Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -704,6 +725,7 @@ export type GeneratedDocumentMinOrderByAggregateInput = {
   finalizedAt?: Prisma.SortOrder
   finalizedById?: Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrder
+  signedAt?: Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -1066,6 +1088,7 @@ export type GeneratedDocumentCreateWithoutTenantInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1098,6 +1121,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1157,6 +1181,7 @@ export type GeneratedDocumentScalarWhereInput = {
   finalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   finalizedById?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
+  signedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolFilter<"GeneratedDocument"> | boolean
   placeholderData?: Prisma.JsonNullableFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableFilter<"GeneratedDocument">
@@ -1175,6 +1200,7 @@ export type GeneratedDocumentCreateWithoutCreatedByInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1208,6 +1234,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1243,6 +1270,7 @@ export type GeneratedDocumentCreateWithoutFinalizedByInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1275,6 +1303,7 @@ export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1343,6 +1372,7 @@ export type GeneratedDocumentCreateWithoutCompanyInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1375,6 +1405,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1427,6 +1458,7 @@ export type GeneratedDocumentCreateWithoutTemplateInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1459,6 +1491,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1511,6 +1544,7 @@ export type GeneratedDocumentCreateWithoutBatchItemInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1544,6 +1578,7 @@ export type GeneratedDocumentUncheckedCreateWithoutBatchItemInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1585,6 +1620,7 @@ export type GeneratedDocumentUpdateWithoutBatchItemInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1618,6 +1654,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutBatchItemInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1643,6 +1680,7 @@ export type GeneratedDocumentCreateWithoutSectionsInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1676,6 +1714,7 @@ export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1717,6 +1756,7 @@ export type GeneratedDocumentUpdateWithoutSectionsInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1750,6 +1790,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1775,6 +1816,7 @@ export type GeneratedDocumentCreateWithoutCommentsInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1808,6 +1850,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1849,6 +1892,7 @@ export type GeneratedDocumentUpdateWithoutCommentsInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1882,6 +1926,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1907,6 +1952,7 @@ export type GeneratedDocumentCreateWithoutDraftsInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1940,6 +1986,7 @@ export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1981,6 +2028,7 @@ export type GeneratedDocumentUpdateWithoutDraftsInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2014,6 +2062,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2039,6 +2088,7 @@ export type GeneratedDocumentCreateWithoutServiceAgreementInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2072,6 +2122,7 @@ export type GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2113,6 +2164,7 @@ export type GeneratedDocumentUpdateWithoutServiceAgreementInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2146,6 +2198,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2171,6 +2224,7 @@ export type GeneratedDocumentCreateWithoutEsigningEnvelopeDocumentsInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2204,6 +2258,7 @@ export type GeneratedDocumentUncheckedCreateWithoutEsigningEnvelopeDocumentsInpu
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2245,6 +2300,7 @@ export type GeneratedDocumentUpdateWithoutEsigningEnvelopeDocumentsInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2278,6 +2334,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutEsigningEnvelopeDocumentsInpu
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2303,6 +2360,7 @@ export type GeneratedDocumentCreateWithoutTaskStageOutcomesInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2336,6 +2394,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTaskStageOutcomesInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2377,6 +2436,7 @@ export type GeneratedDocumentUpdateWithoutTaskStageOutcomesInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2410,6 +2470,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskStageOutcomesInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2435,6 +2496,7 @@ export type GeneratedDocumentCreateWithoutTaskEsigningPreparationsInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2468,6 +2530,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTaskEsigningPreparationsInput
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2509,6 +2572,7 @@ export type GeneratedDocumentUpdateWithoutTaskEsigningPreparationsInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2542,6 +2606,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskEsigningPreparationsInput
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2570,6 +2635,7 @@ export type GeneratedDocumentCreateManyTenantInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2588,6 +2654,7 @@ export type GeneratedDocumentUpdateWithoutTenantInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2620,6 +2687,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2649,6 +2717,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTenantInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2671,6 +2740,7 @@ export type GeneratedDocumentCreateManyCreatedByInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2691,6 +2761,7 @@ export type GeneratedDocumentCreateManyFinalizedByInput = {
   status?: $Enums.GeneratedDocumentStatus
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2709,6 +2780,7 @@ export type GeneratedDocumentUpdateWithoutCreatedByInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2742,6 +2814,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2771,6 +2844,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCreatedByInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2788,6 +2862,7 @@ export type GeneratedDocumentUpdateWithoutFinalizedByInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2820,6 +2895,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2849,6 +2925,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2870,6 +2947,7 @@ export type GeneratedDocumentCreateManyCompanyInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2888,6 +2966,7 @@ export type GeneratedDocumentUpdateWithoutCompanyInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2920,6 +2999,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2949,6 +3029,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCompanyInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2970,6 +3051,7 @@ export type GeneratedDocumentCreateManyTemplateInput = {
   finalizedAt?: Date | string | null
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
+  signedAt?: Date | string | null
   useLetterhead?: boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2988,6 +3070,7 @@ export type GeneratedDocumentUpdateWithoutTemplateInput = {
   status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3020,6 +3103,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3049,6 +3133,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTemplateInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3147,6 +3232,7 @@ export type GeneratedDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   finalizedAt?: boolean
   finalizedById?: boolean
   unfinalizedAt?: boolean
+  signedAt?: boolean
   useLetterhead?: boolean
   placeholderData?: boolean
   metadata?: boolean
@@ -3183,6 +3269,7 @@ export type GeneratedDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.T
   finalizedAt?: boolean
   finalizedById?: boolean
   unfinalizedAt?: boolean
+  signedAt?: boolean
   useLetterhead?: boolean
   placeholderData?: boolean
   metadata?: boolean
@@ -3210,6 +3297,7 @@ export type GeneratedDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   finalizedAt?: boolean
   finalizedById?: boolean
   unfinalizedAt?: boolean
+  signedAt?: boolean
   useLetterhead?: boolean
   placeholderData?: boolean
   metadata?: boolean
@@ -3237,6 +3325,7 @@ export type GeneratedDocumentSelectScalar = {
   finalizedAt?: boolean
   finalizedById?: boolean
   unfinalizedAt?: boolean
+  signedAt?: boolean
   useLetterhead?: boolean
   placeholderData?: boolean
   metadata?: boolean
@@ -3246,7 +3335,7 @@ export type GeneratedDocumentSelectScalar = {
   deletedAt?: boolean
 }
 
-export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "useLetterhead" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
+export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "signedAt" | "useLetterhead" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
 export type GeneratedDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comments?: boolean | Prisma.GeneratedDocument$commentsArgs<ExtArgs>
   drafts?: boolean | Prisma.GeneratedDocument$draftsArgs<ExtArgs>
@@ -3308,6 +3397,7 @@ export type $GeneratedDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     finalizedAt: Date | null
     finalizedById: string | null
     unfinalizedAt: Date | null
+    signedAt: Date | null
     useLetterhead: boolean
     placeholderData: runtime.JsonValue | null
     metadata: runtime.JsonValue | null
@@ -3763,6 +3853,7 @@ export interface GeneratedDocumentFieldRefs {
   readonly finalizedAt: Prisma.FieldRef<"GeneratedDocument", 'DateTime'>
   readonly finalizedById: Prisma.FieldRef<"GeneratedDocument", 'String'>
   readonly unfinalizedAt: Prisma.FieldRef<"GeneratedDocument", 'DateTime'>
+  readonly signedAt: Prisma.FieldRef<"GeneratedDocument", 'DateTime'>
   readonly useLetterhead: Prisma.FieldRef<"GeneratedDocument", 'Boolean'>
   readonly placeholderData: Prisma.FieldRef<"GeneratedDocument", 'Json'>
   readonly metadata: Prisma.FieldRef<"GeneratedDocument", 'Json'>

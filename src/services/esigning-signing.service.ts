@@ -111,6 +111,17 @@ export async function finalizeEsigningEnvelopeCompletion(
     });
     if (completionUpdate.count === 0) return false;
 
+    await tx.generatedDocument.updateMany({
+      where: {
+        tenantId: input.tenantId,
+        signedAt: null,
+        esigningEnvelopeDocuments: {
+          some: { envelopeId: input.envelopeId },
+        },
+      },
+      data: { signedAt: input.completedAt },
+    });
+
     await tx.esigningEnvelopeEvent.create({
       data: {
         tenantId: input.tenantId,

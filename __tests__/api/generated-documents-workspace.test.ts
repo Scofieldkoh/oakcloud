@@ -81,6 +81,23 @@ describe('Generated documents workspace scoping', () => {
     );
   });
 
+  it('forwards the signed date range when listing documents', async () => {
+    const response = await listGeneratedDocuments(
+      request(
+        'http://localhost/api/generated-documents?signedFrom=2026-08-01&signedTo=2026-08-31',
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(searchGeneratedDocuments).toHaveBeenCalledWith(
+      expect.objectContaining({
+        signedFrom: '2026-08-01',
+        signedTo: '2026-08-31',
+      }),
+      workspaceId,
+    );
+  });
+
   it('ignores tenantId in create bodies and uses the session workspace', async () => {
     const response = await createGeneratedDocument(
       request('http://localhost/api/generated-documents', {

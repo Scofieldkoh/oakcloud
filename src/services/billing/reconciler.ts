@@ -1,6 +1,6 @@
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
-import { compareDateOnly, formatDateOnly, parseDateOnly, type BusinessCalendarSnapshot, type DateOnly } from '@/services/service-schedule';
+import { addCalendarDays, addMonthsClamped, compareDateOnly, formatDateOnly, parseDateOnly, type BusinessCalendarSnapshot, type DateOnly } from '@/services/service-schedule';
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import { canonicalizeBillingSchedule, evaluateBillingSchedule } from './schedule';
 import type {
@@ -83,6 +83,22 @@ type BillingOccurrenceDelegate = {
 };
 
 const MAX_OPTIMISTIC_WRITE_ATTEMPTS = 3;
+
+function initialBillingPeriodEnd(config: BillingScheduleConfigV1): DateOnly {
+  if (!config.startDate) throw new Error('Billing schedule start date is required');
+  const intervalMonths = (() => {
+    switch (config.cadence) {
+      case 'ONE_TIME': return 1;
+      case 'CUSTOM': return config.customInterval?.count ?? 1;
+      case 'MONTHLY': return 1;
+      case 'QUARTERLY': return 3;
+      case 'SEMI_ANNUALLY': return 6;
+      case 'ANNUALLY': return 12;
+    }
+  })();
+  const periodStart = `${config.startDate.slice(0, 7)}-01` as DateOnly;
+  return addCalendarDays(addMonthsClamped(periodStart, intervalMonths), -1);
+}
 
 class BillingReconciliationConflictError extends Error {
   readonly code = 'BILLING_RECONCILIATION_CONFLICT';
@@ -579,14 +595,30 @@ export async function reconcileClientServiceBilling(
       }
       const generation = generationKey(feeLine);
       try {
-        const evaluated = evaluateBillingSchedule({
+        const evaluationInput = {
           config,
           feeLine: { id: feeLine.id, amount, currency: feeLine.currency },
           calendar,
-          from: input.today,
-          to: effectiveHorizonEnd,
           generationKey: generation,
-        });
+        };
+        const startDate = config.startDate;
+        const historicalStartOccurrences = input.includeHistoricalStart
+          && startDate
+          && compareDateOnly(startDate, input.today) < 0
+          ? evaluateBillingSchedule({
+            ...evaluationInput,
+            from: startDate,
+            to: initialBillingPeriodEnd(config),
+          }).filter((occurrence) => occurrence.periodStart === `${startDate.slice(0, 7)}-01`)
+          : [];
+        const evaluated = [
+          ...historicalStartOccurrences,
+          ...evaluateBillingSchedule({
+            ...evaluationInput,
+            from: input.today,
+            to: effectiveHorizonEnd,
+          }),
+        ];
         proposals.push(...evaluated.map((occurrence) => ({
           feeLine,
           feeLineId: occurrence.feeLineId,

@@ -80,9 +80,7 @@ function createData(): TaskResourcesResponse {
           label: 'Generated document',
           title: 'Service Agreement',
           status: 'FINALIZED',
-          downloadFileName: 'service-agreement-2026-08-29.pdf',
           href: '/generated-documents/doc-1?taskId=task-1',
-          pdfHref: '/api/generated-documents/doc-1/export/pdf',
           reason: null,
         }],
       },
@@ -156,6 +154,11 @@ describe('TaskResourcesPanel', () => {
       'href',
       expect.stringContaining('/generated-documents/doc-1'),
     );
+    expect(screen.getByRole('link', { name: 'Service Agreement' }).parentElement).toHaveTextContent(
+      'Service Agreement (Finalized)',
+    );
+    expect(screen.queryByText('service-agreement-2026-08-29.pdf')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'service-agreement-2026-08-29.pdf' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'service-agreement.pdf' })).toHaveAttribute(
       'href',
       '/api/esigning/envelopes/envelope-1/documents/esign-doc-1/pdf',
@@ -203,9 +206,7 @@ describe('TaskResourcesPanel', () => {
       label: 'Generated document',
       title: null,
       status: null,
-      downloadFileName: null,
       href: null,
-      pdfHref: null,
       reason: 'You do not have permission to view this resource.',
     }];
     data.stages[2].resources = [];
@@ -214,6 +215,35 @@ describe('TaskResourcesPanel', () => {
     expect(screen.getByText('You do not have permission to view this resource.')).toBeVisible();
     expect(screen.getByText('No linked resources for this stage.')).toBeVisible();
     expect(screen.queryByText('doc-1')).not.toBeInTheDocument();
+  });
+
+  it('renders multiple generated documents with inline statuses and no PDF links', () => {
+    const data = createData();
+    const generatedDocument = data.stages[1].resources[0];
+    if (generatedDocument.kind !== 'generatedDocument') throw new Error('fixture error');
+    data.stages[1].resources = [
+      generatedDocument,
+      {
+        ...generatedDocument,
+        id: 'doc-2',
+        title: 'Privacy Notice',
+        status: 'DRAFT',
+        href: '/generated-documents/doc-2?taskId=task-1',
+      },
+    ];
+
+    render(<TaskResourcesPanel data={data} isLoading={false} onRetry={vi.fn()} />);
+
+    expect(screen.getByRole('link', { name: 'Service Agreement' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Privacy Notice' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Service Agreement' }).parentElement).toHaveTextContent(
+      'Service Agreement (Finalized)',
+    );
+    expect(screen.getByRole('link', { name: 'Privacy Notice' }).parentElement).toHaveTextContent(
+      'Privacy Notice (Draft)',
+    );
+    expect(document.querySelector('a[href="/api/generated-documents/doc-1/export/pdf"]')).toBeNull();
+    expect(document.querySelector('a[href="/api/generated-documents/doc-2/export/pdf"]')).toBeNull();
   });
 
   it('explains processing PDFs and shows the signed link after completion', () => {

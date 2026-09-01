@@ -35,6 +35,7 @@ import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
+import { GeneratedDocumentPicker } from './generated-document-picker';
 
 const RECIPIENT_ACCENT_COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316'];
 const SIGNING_ORDER_CYCLE: EsigningSigningOrder[] = ['PARALLEL', 'SEQUENTIAL', 'MIXED'];
@@ -58,6 +59,8 @@ interface EsigningStepUploadProps {
   isUpdating: boolean;
   onUploadDocuments: (files: FileList) => Promise<void>;
   isUploading: boolean;
+  onAttachGeneratedDocuments?: (documentIds: string[]) => Promise<void>;
+  isAttachingGeneratedDocuments?: boolean;
   onDeleteDocument: (documentId: string) => void;
   onAddRecipient: (data: EsigningRecipientInput) => Promise<void>;
   onReorderRecipients: (payload: ReorderEsigningRecipientsPayload) => Promise<void>;
@@ -454,6 +457,8 @@ export function EsigningStepUpload({
   isUpdating,
   onUploadDocuments,
   isUploading,
+  onAttachGeneratedDocuments = async () => undefined,
+  isAttachingGeneratedDocuments = false,
   onDeleteDocument,
   onAddRecipient,
   onReorderRecipients,
@@ -477,6 +482,7 @@ export function EsigningStepUpload({
   const persistedSignerGroupsRef = useRef<string[][]>([]);
   const signerRecipientIdsRef = useRef<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGeneratedDocumentPickerOpen, setIsGeneratedDocumentPickerOpen] = useState(false);
 
   // Settings form local state
   const [title, setTitle] = useState('');
@@ -747,6 +753,20 @@ export function EsigningStepUpload({
     return false;
   }
 
+  async function handleAttachGeneratedDocuments(documentIds: string[]) {
+    try {
+      await onAttachGeneratedDocuments(documentIds);
+      setIsGeneratedDocumentPickerOpen(false);
+      toast.success(
+        documentIds.length === 1
+          ? 'Generated document added'
+          : `${documentIds.length} generated documents added`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to add generated documents');
+    }
+  }
+
   async function moveSequentialSigner(recipientId: string, direction: -1 | 1) {
     const flat = flattenSignerGroups(reconciledPendingSignerGroups);
     const currentIndex = flat.indexOf(recipientId);
@@ -926,7 +946,7 @@ async function applyMixedGroupChange(
       email: currentUser.email,
       type: 'SIGNER',
       signingOrder: null,
-      accessMode: 'EMAIL_LINK',
+      accessMode: 'MANUAL_LINK',
     };
     await onAddRecipient(payload);
     setSelfSignNotice(true);
@@ -1087,7 +1107,8 @@ async function applyMixedGroupChange(
       {/* ——— Section 1: Documents ——— */}
       <CompanyAccentSection
         title={`Documents${envelope.documents.length > 0 ? ` (${envelope.documents.length})` : ''}`}
-        actions={envelope.documents.length > 0 && envelope.canEdit ? (
+        actions={envelope.canEdit ? (
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -1096,6 +1117,16 @@ async function applyMixedGroupChange(
               <Upload className="h-3.5 w-3.5" />
               Add more
             </button>
+            <button
+              type="button"
+              onClick={() => setIsGeneratedDocumentPickerOpen(true)}
+              disabled={isAttachingGeneratedDocuments}
+              className="inline-flex items-center gap-1.5 rounded border border-white/50 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Add from Generated documents
+            </button>
+          </div>
         ) : undefined}
       >
         <div className="space-y-4 p-4 sm:p-5">
@@ -1160,6 +1191,19 @@ async function applyMixedGroupChange(
         )}
         </div>
       </CompanyAccentSection>
+
+      <GeneratedDocumentPicker
+        isOpen={isGeneratedDocumentPickerOpen}
+        onClose={() => setIsGeneratedDocumentPickerOpen(false)}
+        onConfirm={handleAttachGeneratedDocuments}
+        companies={companies}
+        companiesLoading={companiesLoading}
+        tenantId={activeTenantId}
+        attachedDocumentIds={envelope.documents
+          .map((document) => document.generatedDocumentId)
+          .filter((documentId): documentId is string => Boolean(documentId))}
+        isConfirming={isAttachingGeneratedDocuments}
+      />
 
       {/* ——— Section 2: Recipients ——— */}
       <CompanyAccentSection

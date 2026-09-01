@@ -14,6 +14,8 @@ export interface ServiceAgreementFeeLineInput {
   billingFrequency: BillingFrequency;
   customFrequencyLabel?: string | null;
   billingStartDate?: string | null;
+  /** UI state: true when billingStartDate was explicitly entered by the user. */
+  billingStartDateOverridden?: boolean;
   displayOrder: number;
 }
 
@@ -23,6 +25,8 @@ export interface ServiceAgreementItemInput {
   variantId: string;
   entityIds: string[];
   startDate: string;
+  /** UI state: true when startDate no longer follows the agreement date. */
+  startDateOverridden?: boolean;
   endDate?: string | null;
   fieldValues: Record<string, string>;
   displayOrder: number;

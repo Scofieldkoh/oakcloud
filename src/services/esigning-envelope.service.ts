@@ -1621,6 +1621,7 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
   envelopeId: string;
   generatedDocumentId: string;
   actorUserId: string;
+  replaceExistingGeneratedDocument?: boolean;
 }): Promise<{ envelopeDocumentId: string }> {
   const envelope = await prisma.esigningEnvelope.findFirst({
     where: {
@@ -1682,9 +1683,9 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
     );
   }
 
-  const managedDocument = envelope.documents.find(
-    (document) => document.generatedDocumentId !== null,
-  );
+  const managedDocument = input.replaceExistingGeneratedDocument === false
+    ? undefined
+    : envelope.documents.find((document) => document.generatedDocumentId !== null);
   const otherDocuments = envelope.documents.filter(
     (document) => document.id !== managedDocument?.id,
   );
@@ -1782,6 +1783,92 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
     },
   });
   return { envelopeDocumentId };
+}
+
+export async function attachGeneratedDocumentsToDraftEnvelope(input: {
+  tenantId: string;
+  envelopeId: string;
+  generatedDocumentIds: string[];
+  actorUserId: string;
+}): Promise<{ envelopeDocumentIds: string[] }> {
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: input.envelopeId,
+      tenantId: input.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      status: true,
+      documents: {
+        select: {
+          generatedDocumentId: true,
+        },
+      },
+    },
+  });
+  if (!envelope) throw new Error('Envelope not found');
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Generated documents can only be attached while the envelope is a draft');
+  }
+
+  const generatedDocumentIds = [...new Set(input.generatedDocumentIds)];
+  const existingGeneratedDocumentIds = new Set(
+    envelope.documents.flatMap((document) => document.generatedDocumentId ? [document.generatedDocumentId] : []),
+  );
+  const newDocumentCount = generatedDocumentIds.filter((id) => !existingGeneratedDocumentIds.has(id)).length;
+  if (envelope.documents.length + newDocumentCount > ESIGNING_LIMITS.MAX_DOCUMENTS) {
+    throw new Error(`An envelope can contain at most ${ESIGNING_LIMITS.MAX_DOCUMENTS} documents`);
+  }
+
+  const envelopeDocumentIds: string[] = [];
+  for (const generatedDocumentId of generatedDocumentIds) {
+    const attachment = await attachGeneratedDocumentToDraftEnvelope({
+      tenantId: input.tenantId,
+      envelopeId: input.envelopeId,
+      generatedDocumentId,
+      actorUserId: input.actorUserId,
+      replaceExistingGeneratedDocument: false,
+    });
+    envelopeDocumentIds.push(attachment.envelopeDocumentId);
+  }
+  return { envelopeDocumentIds };
+}
+
+export async function attachGeneratedDocumentsToEsigningEnvelope(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string,
+  generatedDocumentIds: string[],
+): Promise<EsigningEnvelopeDetailDto> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: envelopeId,
+      tenantId,
+      deletedAt: null,
+    },
+    select: {
+      status: true,
+      createdById: true,
+    },
+  });
+
+  if (!envelope) throw new Error('Envelope not found');
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Generated documents can only be attached while the envelope is a draft');
+  }
+  if (!canMutateEnvelope(scope, session, envelope.createdById)) {
+    throw new Error('Forbidden');
+  }
+
+  await attachGeneratedDocumentsToDraftEnvelope({
+    tenantId,
+    envelopeId,
+    generatedDocumentIds,
+    actorUserId: session.id,
+  });
+
+  return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
 export async function detachGeneratedDocumentFromDraftEnvelope(input: {

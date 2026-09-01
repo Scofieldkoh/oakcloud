@@ -10,6 +10,7 @@ import type { MarkServiceAgreementEffectiveInput } from '@/lib/validations/clien
 import { Prisma } from '@/generated/prisma';
 import type { ServiceAgreementActivationDto } from '@/services/client-service';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import { processScheduleReconciliationBatch } from '@/services/schedule-reconciliation/worker';
 import { canonicalizeBillingSchedule, isMaterializableBillingSchedule } from '@/services/billing/schedule';
 import { snapshotClientServiceFees } from '@/services/client-service/fee-summary';
 
@@ -173,7 +174,7 @@ async function persistActivationFailure(claim: ActivationClaim, failure: Activat
 
 export async function processServiceAgreementActivation(claim: ActivationClaim): Promise<ActivationResult> {
   try {
-    return await runSerializableTransaction(prisma, async (tx) => {
+    const activationResult = await runSerializableTransaction(prisma, async (tx) => {
       const agreement = await tx.serviceAgreement.findFirst({ where: { id: claim.agreementId, tenantId: claim.tenantId }, include: activationInclude });
       if (!agreement) throw new NotFoundError('Service agreement not found');
       if (agreement.activationStatus === 'COMPLETED') {
@@ -286,6 +287,16 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
       await createAuditLog({ tenantId: agreement.tenantId, userId: agreement.activationRequestedById ?? undefined, companyId: agreement.primaryCompanyId, entityType: 'ServiceAgreement', entityId: agreement.id, action: 'UPDATE', changeSource: agreement.activationSource === 'MANUAL' ? 'MANUAL' : 'SYSTEM', reason: agreement.activationReason ?? undefined, summary: `Activated ${clientServiceCount} operational service(s)` }, tx);
       return { status: 'completed' as const, clientServiceCount };
     });
+    if (activationResult.status === 'completed') {
+      processScheduleReconciliationBatch().catch((error) => {
+        log.warn('Immediate Service Agreement schedule reconciliation failed; the scheduler will retry', {
+          agreementId: claim.agreementId,
+          tenantId: claim.tenantId,
+          error,
+        });
+      });
+    }
+    return activationResult;
   } catch (error) {
     if (error instanceof NotFoundError) throw error;
     if (error instanceof LostActivationClaimError) return { status: 'stale-worker' };

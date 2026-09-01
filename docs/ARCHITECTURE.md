@@ -338,7 +338,12 @@ detail, update, archive, backup, restore, and cleanup stay common through one
 nullable-agreement DTO mapper with no per-service agreement lookups.
 
 Envelope completion queues activation without depending on the post-commit
-worker. The scheduler claims pending or retryable agreements with
+worker. The same authoritative completion transaction records
+`GeneratedDocument.signedAt` for each linked generated document only when it is
+still null, preserving the first successfully completed envelope timestamp.
+Generated-document detail reads expose every live linked envelope with its
+completion date and E-signing detail link. The scheduler claims pending or
+retryable agreements with
 `FOR UPDATE SKIP LOCKED`, a unique claim token, a five-minute lease, partial
 queue indexes, and 1/5/15/60 minute backoff. Compare-and-set transitions keep
 stale workers, retries, and repeated manual requests from overwriting newer
@@ -376,6 +381,10 @@ The `src/services/tasks/` stage-action registry owns action configuration parsin
 Tasks retain only links and immutable stage snapshots. Company, Generated Document, and E-signing Envelope records remain authoritative in their own modules. Optional `TaskLaunchContext` (`taskId`, `taskStageId`, `returnTo`) follows the user into those workspaces; creation/status callbacks link or reconcile the stage outcome. Detail reads also reconcile so missed callbacks self-heal. Declined, expired, voided, or cancelled envelopes derive a failed stage.
 
 E-signing task stages use a durable preparation record rather than creating an envelope during navigation. Preparation selects the nearest preceding Document Generation stage and becomes eligible only after its generated document is finalized and every intervening stage, such as Review, is `COMPLETED` or `SKIPPED`. The worker creates or reuses one draft envelope, links it to the E-signing stage, and attaches one managed PDF without adding recipients, fields, or sending the envelope. Opening the task stage ensures legacy preparation state, polls `QUEUED` or `PROCESSING` work, and opens the prepared envelope when it reaches `READY`.
+
+New e-signing recipients, including the current user added through “Add myself,” default to `MANUAL_LINK`. A user may save a private signature specimen in their user preferences. Public signing bootstrap data includes that specimen only when a valid authenticated account email exactly matches the active recipient email; clicking a signature field then requires explicit confirmation before applying it.
+
+When E-signing is launched from a task, the stage modal can explicitly select any preceding finalized task-generated documents. The selected documents are attached to the new draft envelope as separate envelope documents; automatic preparation continues to use the nearest preceding finalized document.
 
 Unfinalizing the generated document queues removal of only its managed envelope document; document-bound fields cascade away while recipients, manual documents, and envelope settings remain. Refinalizing queues a fresh PDF attachment to the same draft. Unfinalization is rejected after the related envelope leaves `DRAFT` unless it has been voided.
 

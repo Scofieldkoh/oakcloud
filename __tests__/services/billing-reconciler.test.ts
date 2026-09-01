@@ -143,6 +143,43 @@ describe('reconcileClientServiceBilling', () => {
     }));
   });
 
+  it('creates the first billing period when a new service starts in the past', async () => {
+    mocks.clientService.findFirst.mockResolvedValue(service({
+      feeLines: [feeLine({
+        billingFrequency: 'ANNUALLY',
+        billingStartDate: new Date('2025-11-07T00:00:00.000Z'),
+        scheduleConfig: {
+          schemaVersion: 1,
+          cadence: 'ANNUALLY',
+          startDate: '2025-11-07',
+          customInterval: { unit: 'MONTH', count: 12 },
+          scheduleEntries: [{
+            key: 'default',
+            label: 'Billing date',
+            expression: { kind: 'DAY_OF_MONTH', day: 7 },
+            businessDayAdjustment: 'NONE',
+          }],
+        },
+      })],
+    }));
+    mocks.billingOccurrence.createMany.mockResolvedValue({ count: 2 });
+
+    const result = await reconcileClientServiceBilling({
+      ...input,
+      today: '2026-09-01',
+      horizonEnd: '2027-09-01',
+      includeHistoricalStart: true,
+    });
+
+    const createData = mocks.billingOccurrence.createMany.mock.calls[0]?.[0]?.data as Array<Record<string, unknown>>;
+    expect(result.created).toBe(2);
+    expect(createData).toHaveLength(2);
+    expect(createData.map((row) => row.calculatedExpectedDate)).toEqual(expect.arrayContaining([
+      new Date('2025-11-07T00:00:00.000Z'),
+      new Date('2026-11-07T00:00:00.000Z'),
+    ]));
+  });
+
   it('preserves historical, billed, waived, cancelled, and overridden occurrences', async () => {
     mocks.billingOccurrence.findMany.mockResolvedValue([
       occurrence({ id: 'occ-historical', billingPeriodKey: '2026-07', calculatedExpectedDate: new Date('2026-07-01'), operativeExpectedDate: new Date('2026-07-01') }),

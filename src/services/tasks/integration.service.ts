@@ -415,3 +415,117 @@ export async function resolveEsigningGeneratedDocument(
   }
   return selected;
 }
+
+async function findTaskGeneratedDocumentIds(
+  tenantId: string,
+  taskId: string,
+  signingStagePosition: number,
+) {
+  const documentStages = await prisma.taskStage.findMany({
+    where: {
+      tenantId,
+      taskId,
+      position: { lt: signingStagePosition },
+      actionType: TaskStageActionType.DOCUMENT_GENERATION,
+      task: { deletedAt: null },
+    },
+    select: { id: true },
+  });
+  const documentStageIds = documentStages.map((stage) => stage.id);
+  if (documentStageIds.length === 0) return new Set<string>();
+
+  const [outcomes, batches] = await Promise.all([
+    prisma.taskStageOutcome.findMany({
+      where: {
+        tenantId,
+        taskStageId: { in: documentStageIds },
+        type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+        generatedDocumentId: { not: null },
+      },
+      select: { generatedDocumentId: true },
+    }),
+    prisma.documentGenerationBatch.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        AND: [
+          { taskContext: { path: ['taskId'], equals: taskId } },
+          {
+            OR: documentStageIds.map((stageId) => ({
+              taskContext: { path: ['taskStageId'], equals: stageId },
+            })),
+          },
+        ],
+      },
+      select: {
+        items: {
+          where: { generatedDocument: { deletedAt: null } },
+          select: { generatedDocumentId: true },
+        },
+      },
+    }),
+  ]);
+
+  return new Set([
+    ...outcomes
+      .map(({ generatedDocumentId }) => generatedDocumentId)
+      .filter((id): id is string => Boolean(id)),
+    ...batches.flatMap((batch) => batch.items.map((item) => item.generatedDocumentId)),
+  ]);
+}
+
+export async function resolveEsigningGeneratedDocuments(
+  tenantId: string,
+  context: TaskLaunchContext,
+  selectedGeneratedDocumentIds: string[],
+  session?: SessionUser,
+) {
+  const stage = await preflightTaskLaunchContext(
+    tenantId,
+    context,
+    TaskStageActionType.ESIGNING,
+    session,
+  );
+  const uniqueSelectedIds = Array.from(new Set(selectedGeneratedDocumentIds));
+  if (uniqueSelectedIds.length === 0) {
+    const preferred = await findPreferredEsigningDocument(tenantId, context);
+    if (!preferred) throw new NotFoundError('No eligible finalized document is available');
+    return [preferred];
+  }
+
+  const taskDocumentIds = await findTaskGeneratedDocumentIds(
+    tenantId,
+    context.taskId,
+    stage.position,
+  );
+  if (uniqueSelectedIds.some((id) => !taskDocumentIds.has(id))) {
+    throw new ValidationError('Selected documents must belong to this task');
+  }
+
+  const documents = await prisma.generatedDocument.findMany({
+    where: {
+      id: { in: uniqueSelectedIds },
+      tenantId,
+      status: 'FINALIZED',
+      deletedAt: null,
+    },
+    select: { id: true, title: true, companyId: true },
+  });
+  const documentsById = new Map(documents.map((document) => [document.id, document]));
+  if (documentsById.size !== uniqueSelectedIds.length) {
+    throw new NotFoundError('Selected generated documents must be finalized and available');
+  }
+
+  const orderedDocuments = uniqueSelectedIds.map((id) => documentsById.get(id)!);
+  if (session) {
+    await Promise.all(orderedDocuments.map((document) => requireTaskOutcomeAccess(
+      session,
+      tenantId,
+      {
+        type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+        generatedDocumentId: document.id,
+      },
+    )));
+  }
+  return orderedDocuments;
+}

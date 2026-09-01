@@ -6,6 +6,7 @@ import {
   DOCUMENT_FONT_OPTIONS,
   DOCUMENT_FONT_SIZE_OPTIONS,
 } from '@/components/documents/document-typography';
+import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 
 export interface TemplateEditorTemplateForm {
   name: string;
@@ -14,6 +15,7 @@ export interface TemplateEditorTemplateForm {
   compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
   content: string;
   isActive: boolean;
+  titleDateFieldKey?: string | null;
   layout: A4DocumentLayout;
 }
 
@@ -33,6 +35,7 @@ export interface TemplateDetailsPanelProps {
   isSuperAdmin?: boolean;
   activeTenantId?: string;
   tenantName?: string;
+  dateFields?: CustomPlaceholderDefinition[];
 }
 
 const CATEGORIES = [
@@ -102,7 +105,7 @@ function WorkspaceContext({ isSuperAdmin, activeTenantId, tenantName }: Pick<Tem
   return <div><label className="mb-1.5 block text-xs font-medium text-text-secondary">Workspace</label><div className="rounded-md border border-accent-primary/20 bg-accent-primary/10 px-3 py-2 text-xs text-accent-primary">{activeTenantId ? tenantName || 'Current Workspace' : 'Workspace context is required'}</div></div>;
 }
 
-export function TemplateDetailsPanel({ mode, templateForm, partialForm, onTemplateChange, onPartialChange, isSuperAdmin, activeTenantId, tenantName }: TemplateDetailsPanelProps) {
+export function TemplateDetailsPanel({ mode, templateForm, partialForm, onTemplateChange, onPartialChange, isSuperAdmin, activeTenantId, tenantName, dateFields = [] }: TemplateDetailsPanelProps) {
   const updateMargin = (side: keyof A4DocumentLayout['marginsMm'], value: number) => {
     onTemplateChange({ layout: { ...templateForm.layout, marginsMm: { ...templateForm.layout.marginsMm, [side]: value } } });
   };
@@ -115,5 +118,45 @@ export function TemplateDetailsPanel({ mode, templateForm, partialForm, onTempla
     return <div className="space-y-4 p-4"><WorkspaceContext isSuperAdmin={isSuperAdmin} activeTenantId={activeTenantId} tenantName={tenantName} /><label className="block text-xs font-medium text-text-secondary">Name<input aria-label="Name" value={partialForm.displayName} onChange={(event) => onPartialChange({ displayName: event.target.value })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" /></label><label className="block text-xs font-medium text-text-secondary">Identifier<input aria-label="Identifier" value={partialForm.name} onChange={(event) => onPartialChange({ name: event.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '') })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 font-mono text-xs text-text-primary" /></label><label className="block text-xs font-medium text-text-secondary">Description<textarea aria-label="Description" value={partialForm.description} onChange={(event) => onPartialChange({ description: event.target.value })} rows={3} className="mt-1 w-full rounded-md border border-border-primary bg-background-primary px-2 py-2 text-xs text-text-primary" /></label><p className="rounded-md bg-status-info/10 p-3 text-xs text-text-secondary">Partials are reusable content blocks. Insert them into templates with <code>{'{{> identifier }}'}</code>.</p></div>;
   }
 
-  return <div className="space-y-4 p-4"><WorkspaceContext isSuperAdmin={isSuperAdmin} activeTenantId={activeTenantId} tenantName={tenantName} /><label className="block text-xs font-medium text-text-secondary">Template Name<input aria-label="Template Name" value={templateForm.name} onChange={(event) => onTemplateChange({ name: event.target.value })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" /></label><label className="block text-xs font-medium text-text-secondary">Category<select aria-label="Category" value={templateForm.category} onChange={(event) => onTemplateChange({ category: event.target.value })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{CATEGORIES.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label><label className="block text-xs font-medium text-text-secondary">Composition<select aria-label="Composition" value={templateForm.compositionType} onChange={(event) => onTemplateChange({ compositionType: event.target.value as TemplateEditorTemplateForm['compositionType'] })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary"><option value="STANDARD">Standard</option><option value="SERVICE_AGREEMENT">Service agreement</option></select></label><label className="block text-xs font-medium text-text-secondary">Description<textarea aria-label="Description" value={templateForm.description} onChange={(event) => onTemplateChange({ description: event.target.value })} rows={3} className="mt-1 w-full rounded-md border border-border-primary bg-background-primary px-2 py-2 text-xs text-text-primary" /></label><div className="rounded-md border border-border-primary p-3"><div className="mb-2 text-xs font-semibold text-text-primary">Global setting</div><div className="mb-2 grid grid-cols-2 gap-2"><label className="text-xs text-text-secondary">Global font<select aria-label="Global font" value={templateForm.layout.fontFamily} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, fontFamily: event.target.value } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{DOCUMENT_FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}</select></label><label className="text-xs text-text-secondary">Font size<select aria-label="Font size" value={templateForm.layout.fontSize} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, fontSize: event.target.value } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{DOCUMENT_FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}</select></label></div><div className="mb-2 grid grid-cols-2 gap-2"><label className="text-xs text-text-secondary">Line spacing<select aria-label="Line spacing" value={templateForm.layout.lineHeight} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, lineHeight: Number(event.target.value) } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{LINE_HEIGHT_OPTIONS.map((value) => <option key={value} value={value}>{value === 1 ? 'Single' : value}</option>)}</select></label><label className="text-xs text-text-secondary">Paragraph spacing<select aria-label="Paragraph spacing" value={templateForm.layout.paragraphSpacing} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, paragraphSpacing: event.target.value } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{PARAGRAPH_SPACING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div><div className="grid grid-cols-2 gap-2">{(['top', 'right', 'bottom', 'left'] as const).map((side) => <MarginField key={side} label={`${side[0].toUpperCase() + side.slice(1)} margin`} value={templateForm.layout.marginsMm[side]} onCommit={(value) => updateMargin(side, value)} />)}</div></div><div className="flex items-center justify-between rounded-md border border-border-primary p-3"><span className="text-xs text-text-secondary">{templateForm.isActive ? 'Available for document generation' : 'Hidden from document generation'}</span><button type="button" role="switch" aria-label="Template status" aria-checked={templateForm.isActive} onClick={() => onTemplateChange({ isActive: !templateForm.isActive })} className="h-6 w-11 rounded-full bg-accent-primary text-xs text-white transition-colors duration-150">{templateForm.isActive ? 'On' : 'Off'}</button></div></div>;
+  return (
+    <div className="space-y-4 p-4">
+      <WorkspaceContext isSuperAdmin={isSuperAdmin} activeTenantId={activeTenantId} tenantName={tenantName} />
+      <label className="block text-xs font-medium text-text-secondary">
+        Template Name
+        <input aria-label="Template Name" value={templateForm.name} onChange={(event) => onTemplateChange({ name: event.target.value })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" />
+      </label>
+      <label className="block text-xs font-medium text-text-secondary">
+        Category
+        <select aria-label="Category" value={templateForm.category} onChange={(event) => onTemplateChange({ category: event.target.value })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">
+          {CATEGORIES.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
+        </select>
+      </label>
+      <label className="block text-xs font-medium text-text-secondary">
+        Composition
+        <select aria-label="Composition" value={templateForm.compositionType} onChange={(event) => onTemplateChange({ compositionType: event.target.value as TemplateEditorTemplateForm['compositionType'] })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">
+          <option value="STANDARD">Standard</option>
+          <option value="SERVICE_AGREEMENT">Service agreement</option>
+        </select>
+      </label>
+      <label className="block text-xs font-medium text-text-secondary">
+        Document title date
+        <select aria-label="Document title date" value={templateForm.titleDateFieldKey ?? ''} onChange={(event) => onTemplateChange({ titleDateFieldKey: event.target.value || null })} disabled={dateFields.length === 0} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">
+          <option value="">Use generation date</option>
+          {dateFields.map((field) => <option key={field.key} value={field.key}>{field.label} ({field.key})</option>)}
+        </select>
+        <span className="mt-1 block text-[11px] text-text-muted">The selected date is used by the <code>{'{{date}}'}</code> title token. Service Agreements use their agreement date.</span>
+      </label>
+      <label className="block text-xs font-medium text-text-secondary">
+        Description
+        <textarea aria-label="Description" value={templateForm.description} onChange={(event) => onTemplateChange({ description: event.target.value })} rows={3} className="mt-1 w-full rounded-md border border-border-primary bg-background-primary px-2 py-2 text-xs text-text-primary" />
+      </label>
+      <div className="rounded-md border border-border-primary p-3">
+        <div className="mb-2 text-xs font-semibold text-text-primary">Global setting</div>
+        <div className="mb-2 grid grid-cols-2 gap-2"><label className="text-xs text-text-secondary">Global font<select aria-label="Global font" value={templateForm.layout.fontFamily} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, fontFamily: event.target.value } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{DOCUMENT_FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}</select></label><label className="text-xs text-text-secondary">Font size<select aria-label="Font size" value={templateForm.layout.fontSize} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, fontSize: event.target.value } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{DOCUMENT_FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}</select></label></div>
+        <div className="mb-2 grid grid-cols-2 gap-2"><label className="text-xs text-text-secondary">Line spacing<select aria-label="Line spacing" value={templateForm.layout.lineHeight} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, lineHeight: Number(event.target.value) } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{LINE_HEIGHT_OPTIONS.map((value) => <option key={value} value={value}>{value === 1 ? 'Single' : value}</option>)}</select></label><label className="text-xs text-text-secondary">Paragraph spacing<select aria-label="Paragraph spacing" value={templateForm.layout.paragraphSpacing} onChange={(event) => onTemplateChange({ layout: { ...templateForm.layout, paragraphSpacing: event.target.value } })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary">{PARAGRAPH_SPACING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>
+        <div className="grid grid-cols-2 gap-2">{(['top', 'right', 'bottom', 'left'] as const).map((side) => <MarginField key={side} label={`${side[0].toUpperCase() + side.slice(1)} margin`} value={templateForm.layout.marginsMm[side]} onCommit={(value) => updateMargin(side, value)} />)}</div>
+      </div>
+      <div className="flex items-center justify-between rounded-md border border-border-primary p-3"><span className="text-xs text-text-secondary">{templateForm.isActive ? 'Available for document generation' : 'Hidden from document generation'}</span><button type="button" role="switch" aria-label="Template status" aria-checked={templateForm.isActive} onClick={() => onTemplateChange({ isActive: !templateForm.isActive })} className="h-6 w-11 rounded-full bg-accent-primary text-xs text-white transition-colors duration-150">{templateForm.isActive ? 'On' : 'Off'}</button></div>
+    </div>
+  );
 }

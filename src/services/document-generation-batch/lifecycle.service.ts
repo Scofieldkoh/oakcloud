@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from '@/lib/errors';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
+import { DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN } from '@/lib/document-generation-title';
 import {
   normalizeStoredPlaceholders,
   storageFormatToCustomPlaceholders,
@@ -79,10 +80,10 @@ async function safelyLinkBatchOutcome(
   });
 }
 
-export function defaultItemConfiguration(templateName: string): BatchItemConfiguration {
+export function defaultItemConfiguration(_templateName: string): BatchItemConfiguration {
   return {
     version: 1,
-    title: `Untitled - ${templateName}`,
+    title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
     contactIds: [],
     selectedDirectorId: null,
     selectedShareholderId: null,
@@ -252,7 +253,7 @@ export async function createDocumentGenerationBatch(
           tenantId,
           templateId: template.id,
           templateVersion: template.version,
-          title: `Untitled - ${template.name}`,
+          title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
           content: '',
           status: 'DRAFT',
           useLetterhead: false,
@@ -584,7 +585,7 @@ export async function updateDocumentGenerationBatch(
             templateId: template.id,
             templateVersion: template.version,
             title: submitted.configuration?.title
-              || `Untitled - ${template.name}`,
+              || DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
             content: '',
             status: 'DRAFT',
             useLetterhead: submitted.configuration?.useLetterhead ?? false,
@@ -838,7 +839,7 @@ export async function adoptLegacyGenerationSession(
 
   const configuration: BatchItemConfiguration = {
     version: 1,
-    title: state.title || `Untitled - ${template.name}`,
+    title: state.title || DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
     contactIds: state.contactIds,
     selectedDirectorId: state.selectedDirectorId ?? null,
     selectedShareholderId: state.selectedShareholderId ?? null,

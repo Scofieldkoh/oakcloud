@@ -79,13 +79,14 @@ describe('DocumentTable', () => {
     expect(rows[0]).toHaveAttribute('data-filter-row');
     expect(rows[1]).toHaveAttribute('data-column-header-row');
     expect(within(rows[1]).getAllByRole('columnheader').map((header) => header.textContent))
-      .toEqual(['Document', 'Company', 'Template', 'Status', 'Created By', 'Updated', 'Actions']);
+      .toEqual(['Document', 'Company', 'Template', 'Status', 'Signed On', 'Created By', 'Updated', 'Actions']);
 
     expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by title' })).toBeInTheDocument();
     expect(within(rows[0]).getByPlaceholderText('All companies')).toBeInTheDocument();
     expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by template' })).toBeInTheDocument();
     expect(within(rows[0]).getByRole('combobox', { name: 'All statuses' })).toBeInTheDocument();
     expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by creator' })).toBeInTheDocument();
+    expect(within(rows[0]).getAllByText('All dates')).toHaveLength(2);
     expect(screen.getByRole('separator', { name: 'Resize Document column' })).toBeInTheDocument();
 
     fireEvent.change(
@@ -124,7 +125,7 @@ describe('DocumentTable', () => {
     expect(table.style.minWidth).toBe('');
     expect(screen.queryByTestId('document-column-header-band')).not.toBeInTheDocument();
     expect(screen.queryByTestId('document-filter-row-band')).not.toBeInTheDocument();
-    expect((table.querySelectorAll('colgroup col').item(6) as HTMLElement).style.width).toBe('');
+    expect((table.querySelectorAll('colgroup col').item(7) as HTMLElement).style.width).toBe('');
     expect(screen.queryByRole('separator', { name: 'Resize Actions column' })).not.toBeInTheDocument();
 
     const handle = screen.getByRole('separator', { name: 'Resize Document column' });
@@ -149,6 +150,22 @@ describe('DocumentTable', () => {
     const bodyRows = screen.getAllByRole('row').slice(2);
     expect(bodyRows[0]).not.toHaveClass('bg-oak-row-alt');
     expect(bodyRows[1]).toHaveClass('bg-oak-row-alt', 'hover:bg-oak-row-alt-hover');
+  });
+
+  it('shows the signing date after Status and a placeholder when unsigned', () => {
+    render(
+      <DocumentTable
+        documents={[
+          documentFixture({ signedAt: '2026-08-03T08:00:00.000Z' }),
+          documentFixture({ id: 'doc-2', title: 'Unsigned document', signedAt: null }),
+        ]}
+        filters={{}}
+      />,
+    );
+
+    const bodyRows = screen.getAllByRole('row').slice(2);
+    expect(within(bodyRows[0]).getAllByRole('cell')[4]).toHaveTextContent('3 August 2026');
+    expect(within(bodyRows[1]).getAllByRole('cell')[4]).toHaveTextContent('—');
   });
 
   it('opens the document detail page from a desktop row click', () => {

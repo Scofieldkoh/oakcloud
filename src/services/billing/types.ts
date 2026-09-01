@@ -93,6 +93,11 @@ export type ReconcileClientServiceBillingInput = {
   horizonEnd: DateOnly;
   writeMode: 'OBSERVE' | 'APPLY';
   reconciliationRequestId: string;
+  /**
+   * On creation/activation only, include the first billing period even when
+   * its configured start date is before the rolling reconciliation window.
+   */
+  includeHistoricalStart?: boolean;
   /** Optional human actor; automatic APPLY cancellations retain request provenance. */
   cancellationActorId?: string | null;
   assertLease?: () => Promise<void>;

@@ -430,7 +430,10 @@ describe('EsigningListPage manual signing links', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Resend active requests' }));
 
     const link = await screen.findByRole('link', { name: signingUrl });
-    expect(link).toHaveClass('min-w-0', 'flex-1', 'truncate');
-    expect(link.parentElement).toHaveClass('min-w-0');
+    expect(link).toHaveClass('block', 'min-w-0', 'overflow-hidden', 'text-ellipsis', 'whitespace-nowrap');
+    expect(link.parentElement).toHaveClass(
+      'min-w-0',
+      'grid-cols-[minmax(0,1fr)_auto]',
+    );
   });
 });
