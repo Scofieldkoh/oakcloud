@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { ContactMatchPreview } from "@/types/contact-identity";
 import type { ContactResolutionDecision } from "@/types/contact-identity";
+import { COMPANY_ALIAS_MAX_LENGTH } from "@/lib/company-display-label";
 import {
   BIZFILE_ENTITY_TYPE_OPTIONS,
   BIZFILE_IDENTIFICATION_TYPE_OPTIONS,
@@ -89,10 +90,10 @@ export function EntitySection({ draft, onChange, issues }: Props) {
         />
         <ReviewField
           id="entity-display-alias"
-          label="Service display alias"
+          label="ALIAS"
           value={entity.displayAlias ?? ""}
-          maxLength={40}
-          hint="Shown on service calendars; leave blank to use company initials"
+          maxLength={COMPANY_ALIAS_MAX_LENGTH}
+          hint={`Review or edit the extracted alias before saving. Maximum ${COMPANY_ALIAS_MAX_LENGTH} characters.`}
           onChange={(e) => set("displayAlias", e.target.value)}
           error={issue(issues, "entityDetails.displayAlias")}
         />

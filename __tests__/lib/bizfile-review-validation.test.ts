@@ -106,12 +106,12 @@ describe('BizFile review validation', () => {
       .toContain('officers.0.cessationDate');
   });
 
-  it('rejects a service display alias longer than forty characters', () => {
+  it('rejects an ALIAS longer than ten characters', () => {
     expect(() => bizFileReviewSchema.parse({
       entityDetails: {
         uen: '1',
         name: 'X',
-        displayAlias: 'A'.repeat(41),
+        displayAlias: 'A'.repeat(11),
         entityType: 'PRIVATE_LIMITED',
         status: 'LIVE',
       },

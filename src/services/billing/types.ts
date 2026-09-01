@@ -94,8 +94,9 @@ export type ReconcileClientServiceBillingInput = {
   writeMode: 'OBSERVE' | 'APPLY';
   reconciliationRequestId: string;
   /**
-   * On creation/activation only, include the first billing period even when
-   * its configured start date is before the rolling reconciliation window.
+   * On creation/activation, include capped historical backfill even when the
+   * configured start date is before the rolling window. Ordinary reconciliation
+   * must leave this unset.
    */
   includeHistoricalStart?: boolean;
   /** Optional human actor; automatic APPLY cancellations retain request provenance. */

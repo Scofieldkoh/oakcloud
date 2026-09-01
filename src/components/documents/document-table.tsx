@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { formatDate, cn } from '@/lib/utils';
+import { formatDateShort, cn } from '@/lib/utils';
 import {
   FileText,
   Eye,
@@ -48,6 +48,7 @@ export type GeneratedDocumentSortField =
   | 'companyName'
   | 'templateName'
   | 'status'
+  | 'signedAt'
   | 'createdByName'
   | 'createdAt'
   | 'updatedAt'
@@ -166,6 +167,7 @@ const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, GeneratedDocumentSortField>> 
   company: 'companyName',
   template: 'templateName',
   status: 'status',
+  signedOn: 'signedAt',
   createdBy: 'createdByName',
   updated: 'updatedAt',
 };
@@ -323,7 +325,7 @@ function DocumentActions({
         {canEdit && (
           <Link
             href={`/generated-documents/generate?draft=${documentId}`}
-            className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+            className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
             aria-label={`Resume ${documentTitle}`}
           >
             <RotateCcw className="w-4 h-4" aria-hidden="true" />
@@ -333,7 +335,7 @@ function DocumentActions({
           <button
             type="button"
             onClick={() => onDiscardDraft?.(documentId)}
-            className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
             aria-label={`Discard ${documentTitle}`}
           >
             <Trash2 className="w-4 h-4" aria-hidden="true" />
@@ -348,7 +350,7 @@ function DocumentActions({
       {/* View */}
       <Link
         href={`/generated-documents/${documentId}`}
-        className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+        className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
         aria-label={`View ${documentTitle}`}
       >
         <Eye className="w-4 h-4" aria-hidden="true" />
@@ -358,7 +360,7 @@ function DocumentActions({
       {canEdit && status === 'DRAFT' && (
         <Link
           href={`/generated-documents/${documentId}/edit`}
-          className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
           aria-label={`Edit ${documentTitle}`}
         >
           <Pencil className="w-4 h-4" aria-hidden="true" />
@@ -370,7 +372,7 @@ function DocumentActions({
         <button
           type="button"
           onClick={() => onExport?.(documentId)}
-          className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
           aria-label={`Export ${documentTitle} as PDF`}
         >
           <Download className="w-4 h-4" aria-hidden="true" />
@@ -382,7 +384,7 @@ function DocumentActions({
         <button
           type="button"
           onClick={() => onDelete?.(documentId)}
-          className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
           aria-label={`Delete ${documentTitle}`}
         >
           <Trash2 className="w-4 h-4" aria-hidden="true" />
@@ -643,7 +645,7 @@ export function DocumentTable({
                     />
                     <CardDetailItem
                       label="Signed On"
-                      value={doc.signedAt ? formatDate(doc.signedAt) : '—'}
+                      value={doc.signedAt ? formatDateShort(doc.signedAt) : '—'}
                       icon={<CheckCircle className="w-3 h-3" />}
                     />
                     <CardDetailItem
@@ -653,7 +655,7 @@ export function DocumentTable({
                     />
                     <CardDetailItem
                       label="Updated"
-                      value={formatDate(doc.updatedAt)}
+                      value={formatDateShort(doc.updatedAt)}
                       icon={<Clock className="w-3 h-3" />}
                     />
                   </CardDetailsGrid>
@@ -971,7 +973,7 @@ export function DocumentTable({
                     </td>
                     <td className="px-4 py-3 text-text-secondary">
                       {doc.signedAt ? (
-                        formatDate(doc.signedAt)
+                        formatDateShort(doc.signedAt)
                       ) : (
                         <span className="text-text-muted">—</span>
                       )}
@@ -980,7 +982,7 @@ export function DocumentTable({
                       {doc.createdBy.firstName} {doc.createdBy.lastName}
                     </td>
                     <td className="px-4 py-3 text-text-secondary">
-                      {formatDate(doc.updatedAt)}
+                      {formatDateShort(doc.updatedAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <DocumentActions

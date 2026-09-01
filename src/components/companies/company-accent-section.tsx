@@ -1,18 +1,21 @@
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface CompanyAccentSectionProps {
   title: string;
   actions?: ReactNode;
   children: ReactNode;
+  className?: string;
 }
 
 export function CompanyAccentSection({
   title,
   actions,
   children,
+  className,
 }: CompanyAccentSectionProps) {
-  return <section className="card overflow-hidden p-0">
-    <header className="flex min-h-12 items-center justify-between gap-3 bg-oak-primary px-4 py-3 text-white">
+  return <section className={cn('card overflow-hidden p-0', className)}>
+    <header className="flex min-h-12 items-center justify-between gap-3 rounded-t-xl bg-oak-primary px-4 py-3 text-white">
       <h2 className="text-sm font-semibold leading-5">{title}</h2>
       {actions}
     </header>

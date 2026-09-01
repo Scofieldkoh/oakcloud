@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   listBillingCoverage: vi.fn(),
   getClientService: vi.fn(),
   enqueueScheduleReconciliation: vi.fn(),
+  processScheduleReconciliationBatch: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -17,6 +18,7 @@ vi.mock('@/lib/rbac', () => ({ requirePermission: mocks.requirePermission }));
 vi.mock('@/services/schedule-reconciliation', () => ({
   requireServicesWorkspaceEnabled: mocks.requireServicesWorkspaceEnabled,
   enqueueScheduleReconciliation: mocks.enqueueScheduleReconciliation,
+  processScheduleReconciliationBatch: mocks.processScheduleReconciliationBatch,
 }));
 vi.mock('@/lib/api/company-query', async () => {
   const actual = await vi.importActual<typeof import('@/lib/api/company-query')>('@/lib/api/company-query');
@@ -60,6 +62,7 @@ describe('billing coverage routes', () => {
     mocks.getClientService.mockResolvedValue({ id: serviceId, companyId });
     mocks.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({}));
     mocks.enqueueScheduleReconciliation.mockResolvedValue({ id: 'request-1', dedupeKey: 'dedupe-1' });
+    mocks.processScheduleReconciliationBatch.mockResolvedValue({ claimed: 1, completed: 1, failed: 0, leaseLost: 0, summaries: [] });
   });
 
   it('requires company:read and passes the SQL access scope to the summary query', async () => {
@@ -105,6 +108,7 @@ describe('billing coverage routes', () => {
       triggerType: 'BILLING_MANUAL_RECONCILE',
       requestedById: session.id,
     }));
+    expect(mocks.processScheduleReconciliationBatch).toHaveBeenCalledTimes(1);
     expect(await response.json()).toEqual(expect.objectContaining({ status: 'PENDING', requestId: 'request-1' }));
   });
 });

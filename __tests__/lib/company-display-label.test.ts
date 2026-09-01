@@ -42,10 +42,10 @@ describe('company display labels', () => {
       statusDate: null,
       incorporationDate: null,
     }],
-  ])('accepts omitted, null, and forty-character aliases in %s schema', (_name, schema, base) => {
+  ])('accepts omitted, null, and ten-character aliases in %s schema', (_name, schema, base) => {
     expect(schema.parse(base)).not.toHaveProperty('displayAlias');
     expect(schema.parse({ ...base, displayAlias: null }).displayAlias).toBeNull();
-    expect(schema.parse({ ...base, displayAlias: 'X'.repeat(40) }).displayAlias).toHaveLength(40);
+    expect(schema.parse({ ...base, displayAlias: 'X'.repeat(10) }).displayAlias).toHaveLength(10);
   });
 
   it.each([
@@ -59,7 +59,11 @@ describe('company display labels', () => {
       statusDate: null,
       incorporationDate: null,
     }],
-  ])('rejects a forty-one-character alias in the %s schema', (_name, schema, base) => {
-    expect(() => schema.parse({ ...base, displayAlias: 'X'.repeat(41) })).toThrow();
+  ])('rejects an eleven-character alias in the %s schema', (_name, schema, base) => {
+    expect(() => schema.parse({ ...base, displayAlias: 'X'.repeat(11) })).toThrow();
+  });
+
+  it('truncates legacy or extracted aliases to ten characters for display', () => {
+    expect(normalizeCompanyAlias('ABCDEFGHIJK')).toBe('ABCDEFGHIJ');
   });
 });

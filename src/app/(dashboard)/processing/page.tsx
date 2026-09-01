@@ -509,9 +509,11 @@ export default function ProcessingDocumentsPage() {
                 >
                   {doc.document.fileName}
                 </Link>
-                <p className="text-xs text-text-muted truncate">
-                  {doc.isContainer ? 'Container' : `Pages ${doc.pageFrom}-${doc.pageTo}`}
-                </p>
+                {!doc.isContainer && (
+                  <p className="text-xs text-text-muted truncate">
+                    Pages {doc.pageFrom}-{doc.pageTo}
+                  </p>
+                )}
               </div>
             </div>
           </td>

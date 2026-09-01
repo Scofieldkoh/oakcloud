@@ -1,7 +1,13 @@
-import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { ContactTable } from '@/components/contacts/contact-table';
 import { CompanyTable } from '@/components/companies/company-table';
+
+const navigation = vi.hoisted(() => ({ push: vi.fn(), prefetch: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => navigation,
+}));
 
 function detailHrefs(container: HTMLElement, detailPath: string): string[] {
   return Array.from(container.querySelectorAll<HTMLAnchorElement>('a'))
@@ -73,5 +79,64 @@ describe('list table detail navigation', () => {
       '/companies/company-1?returnTo=%2Fcompanies%3Fpage%3D4%26limit%3D50%26status%3DLIVE%26sortOrder%3Ddesc',
       '/companies/company-1?returnTo=%2Fcompanies%3Fpage%3D4%26limit%3D50%26status%3DLIVE%26sortOrder%3Ddesc',
     ]);
+  });
+
+  it('navigates to a company detail page when a non-interactive row area is clicked', () => {
+    const { container } = render(
+      <CompanyTable
+        companies={[{
+          id: 'company-1',
+          name: 'Example Pte. Ltd.',
+          uen: '202400001A',
+          entityType: 'PRIVATE_LIMITED',
+          status: 'LIVE',
+          addresses: [],
+          homeCurrency: 'SGD',
+          incorporationDate: null,
+          financialYearEndDay: 31,
+          financialYearEndMonth: 12,
+          hasPoc: true,
+          issuedCapitalAmount: null,
+          issuedCapitalCurrency: null,
+          paidUpCapitalAmount: null,
+          paidUpCapitalCurrency: null,
+          _count: { officers: 0, shareholders: 0, charges: 0 },
+        } as never]}
+        returnTo="/companies?page=4&limit=50"
+      />,
+    );
+
+    fireEvent.click(container.querySelector('tbody tr')!);
+
+    expect(navigation.push).toHaveBeenCalledWith(
+      '/companies/company-1?returnTo=%2Fcompanies%3Fpage%3D4%26limit%3D50',
+    );
+  });
+
+  it('navigates to a contact detail page when a non-interactive row area is clicked', () => {
+    const { container } = render(
+      <ContactTable
+        contacts={[{
+          id: 'contact-1',
+          fullName: 'Jane Tan',
+          alias: null,
+          contactType: 'INDIVIDUAL',
+          identificationType: 'NRIC',
+          identificationNumber: 'S1234567A',
+          corporateUen: null,
+          nationality: 'Singaporean',
+          defaultEmail: null,
+          defaultPhone: null,
+          _count: { companyRelations: 0 },
+        } as never]}
+        returnTo="/contacts?page=3&limit=50"
+      />,
+    );
+
+    fireEvent.click(container.querySelector('tbody tr')!);
+
+    expect(navigation.push).toHaveBeenCalledWith(
+      '/contacts/contact-1?returnTo=%2Fcontacts%3Fpage%3D3%26limit%3D50',
+    );
   });
 });

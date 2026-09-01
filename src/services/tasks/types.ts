@@ -289,6 +289,7 @@ export interface TaskEsigningEnvelopeResource extends TaskResourceBase {
   requiredSignatures: number;
   href: string | null;
   canGenerateSignerLink: boolean;
+  generatedDocumentIds?: string[];
   documents: TaskEsigningDocumentResource[];
   signers: TaskEsigningSignerResource[];
 }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { contactResolutionSchema } from '@/lib/validations/contact';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
+import { COMPANY_ALIAS_MAX_LENGTH } from '@/lib/company-display-label';
 import { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS, canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
 export { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS } from '@/services/bizfile/canonical-values';
 
@@ -82,7 +83,7 @@ export const bizFileReviewSchema = z.object({
   entityDetails: z.object({
     uen: reviewString,
     name: reviewString,
-    displayAlias: z.string().trim().max(40).nullable().optional(),
+    displayAlias: z.string().trim().max(COMPANY_ALIAS_MAX_LENGTH).nullable().optional(),
     formerName: optionalString,
     dateOfNameChange: optionalDate,
     formerNames: z.array(z.object({ name: requiredString, effectiveFrom: optionalDate, effectiveTo: optionalDate })).optional(),

@@ -284,11 +284,11 @@ external billing and does not assert that an Oakcloud invoice exists.
   dates, business-day offsets, and multiple entries in a `ONE_TIME` schedule—
   each materialize once per applicable period. Entry keys are stable across
   reorder and are part of occurrence identity.
-- Creation and service-agreement activation reconciliation also materialize the
-  first configured billing period when its start date is already historical.
-  This is a bounded initial catch-up for the new service; ordinary rolling
-  reconciliation still evaluates only from the current date through the
-  12-month horizon and does not backfill unlimited history.
+- Creation and service-agreement activation reconciliation materialize configured
+  billing occurrences from the configured start date through yesterday, capped
+  at the latest 50 historical occurrences per service. Ordinary rolling and
+  manual reconciliation only evaluate from the current date through the
+  12-month horizon, so historical backfill is not repeated.
 - Manual historical deadline cycles have origin `MANUAL_TRIGGER` and never
   enqueue billing reconciliation or create billing occurrences. The shared
   worker processes only durable schedule-reconciliation requests, so a manual

@@ -274,6 +274,20 @@ describe('BizFile Service', () => {
       expect(result.entityDetails.name).toBe('DAP Atelier Pte Ltd');
     });
 
+    it('limits an extracted alias to ten characters', () => {
+      const result = normalizeExtractedData({
+        entityDetails: {
+          uen: '202312345A',
+          name: 'Example Pte. Ltd.',
+          displayAlias: ' ABCDEFGHIJK ',
+          entityType: 'PRIVATE_LIMITED',
+          status: 'LIVE',
+        },
+      });
+
+      expect(result.entityDetails.displayAlias).toBe('ABCDEFGHIJ');
+    });
+
     it('should normalize company name to title case', () => {
       const data: ExtractedBizFileData = {
         entityDetails: {

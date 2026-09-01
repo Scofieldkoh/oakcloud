@@ -31,7 +31,7 @@ export interface RelatedContact {
  * Company with all related data included
  */
 export interface CompanyWithRelations extends Company {
-  /** Optional user-facing label; null means derive initials from the legal name. */
+  /** Optional user-facing alias; null means derive initials for service displays. */
   displayAlias: string | null;
   formerNames?: Array<{
     id: string;

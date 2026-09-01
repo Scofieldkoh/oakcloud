@@ -217,6 +217,7 @@ describe('ClientServiceEditor deadline preview', () => {
   it('renders every stored open deadline and billing occurrence in read-only mode', async () => {
     renderEditor({ readOnly: true });
 
+    expect(screen.getByRole('tab', { name: /Deadline2/ })).toBeVisible();
     expect(screen.getByText('Open deadline items')).toBeVisible();
     expect(screen.getByText('2 open items')).toBeVisible();
     expect(screen.getByText('31 Jul 2027')).toBeVisible();
@@ -225,6 +226,7 @@ describe('ClientServiceEditor deadline preview', () => {
       screen.getByRole('tab', { name: /Billing/ }).click();
       await Promise.resolve();
     });
+    expect(screen.getByRole('tab', { name: /Billing2/ })).toBeVisible();
     expect(screen.getByText('Open billing items')).toBeVisible();
     expect(screen.getByText('2 open billing items')).toBeVisible();
     expect(screen.getByText('30 Jul 2027')).toBeVisible();

@@ -13,6 +13,7 @@ import {
   type CompositionEvent as ReactCompositionEvent,
   type FormEvent as ReactFormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
 } from 'react';
 import DOMPurify from 'dompurify';
 import {
@@ -82,6 +83,10 @@ import {
   insertParagraphAtSelection,
   removeHardPageBreak,
   replaceLogicalSelection,
+  getTableColumnResizeTarget,
+  resizeTableColumnBoundary,
+  TABLE_COLUMN_MIN_WIDTH_PX,
+  type TableColumnResizeTarget,
   type DocumentTransactionResult,
 } from './a4-pagination/document-actions';
 import {
@@ -405,6 +410,18 @@ interface PageData {
   content: string;
   hardBreakBefore: boolean;
   oversized?: boolean;
+}
+
+interface TableResizeSession {
+  table: HTMLTableElement;
+  linkedTables: HTMLTableElement[];
+  boundaryIndex: number;
+  startX: number;
+  initialWidths: number[];
+  currentWidths: number[];
+  previousBodyCursor: string;
+  previousBodyUserSelect: string;
+  cleanup: () => void;
 }
 
 // Shared font styles
@@ -801,6 +818,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     );
     const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [surfaceRepairGeneration, setSurfaceRepairGeneration] = useState(0);
+    const tableResizeRef = useRef<TableResizeSession | null>(null);
+    const tableResizeHoverRef = useRef<{
+      cell: HTMLTableCellElement;
+      className: string;
+      previousCursor: string;
+    } | null>(null);
     const pageLayout = useMemo(
       () => createA4PageLayout(effectiveLayout.marginsMm),
       [effectiveLayout.marginsMm],
@@ -1221,6 +1244,167 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       pagesRef.current = nextPages;
       scheduleReflow(nextPages, true);
     }, [effectivePreviewMode, preserveScrollPosition, pushHistorySnapshot, scheduleReflow]);
+
+    const clearTableResizeHover = useCallback(() => {
+      const previous = tableResizeHoverRef.current;
+      if (!previous) return;
+      previous.cell.classList.remove(previous.className);
+      previous.cell.style.cursor = previous.previousCursor;
+      tableResizeHoverRef.current = null;
+    }, []);
+
+    const setTableResizeHover = useCallback(
+      (target: TableColumnResizeTarget | null) => {
+        const previous = tableResizeHoverRef.current;
+        if (previous?.cell === target?.cell) return;
+
+        clearTableResizeHover();
+        if (!target) return;
+
+        const className = `a4-table-resize-target-${target.edge}`;
+        tableResizeHoverRef.current = {
+          cell: target.cell,
+          className,
+          previousCursor: target.cell.style.cursor,
+        };
+        target.cell.classList.add(className);
+        target.cell.style.cursor = 'col-resize';
+      },
+      [clearTableResizeHover],
+    );
+
+    const finishTableResize = useCallback(
+      (commit: boolean) => {
+        const session = tableResizeRef.current;
+        if (!session) {
+          clearTableResizeHover();
+          return;
+        }
+
+        session.cleanup();
+        tableResizeRef.current = null;
+        if (!commit) {
+          session.linkedTables.forEach((table) => {
+            resizeTableColumnBoundary(
+              table,
+              session.boundaryIndex,
+              session.initialWidths,
+            );
+          });
+        }
+        document.body.style.cursor = session.previousBodyCursor;
+        document.body.style.userSelect = session.previousBodyUserSelect;
+        clearTableResizeHover();
+
+        const changed = session.currentWidths.some(
+          (width, index) => width !== session.initialWidths[index],
+        );
+        if (commit && changed) commitDocumentSurface();
+        setEditorStatus(null);
+      },
+      [clearTableResizeHover, commitDocumentSurface],
+    );
+
+    const handleTableResizePointerDown = useCallback(
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (effectivePreviewMode || tableResizeRef.current) return;
+
+        const target = getTableColumnResizeTarget(
+          documentSurfaceRef.current ?? event.currentTarget,
+          event.target,
+          event.clientX,
+        );
+        if (!target) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        setTableResizeHover(target);
+
+        const previousBodyCursor = document.body.style.cursor;
+        const previousBodyUserSelect = document.body.style.userSelect;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const initialWidths = [...target.columnWidths];
+        const linkedTables = Array.from(
+          (documentSurfaceRef.current ?? event.currentTarget).querySelectorAll<HTMLTableElement>('table'),
+        ).filter(
+          (table) =>
+            table === target.table ||
+            (target.table.dataset.flowId &&
+              table.dataset.flowId === target.table.dataset.flowId),
+        );
+        const onMove = (moveEvent: globalThis.PointerEvent) => {
+          const session = tableResizeRef.current;
+          if (!session) return;
+
+          moveEvent.preventDefault();
+          const leftIndex = session.boundaryIndex - 1;
+          const rightIndex = session.boundaryIndex;
+          const pairWidth =
+            session.initialWidths[leftIndex] + session.initialWidths[rightIndex];
+          const minimumWidth = Math.min(TABLE_COLUMN_MIN_WIDTH_PX, pairWidth / 2);
+          const nextLeftWidth = Math.min(
+            pairWidth - minimumWidth,
+            Math.max(
+              minimumWidth,
+              session.initialWidths[leftIndex] +
+                (moveEvent.clientX - session.startX),
+            ),
+          );
+          const nextWidths = [...session.initialWidths];
+          nextWidths[leftIndex] = nextLeftWidth;
+          nextWidths[rightIndex] = pairWidth - nextLeftWidth;
+          session.linkedTables.forEach((table) => {
+            resizeTableColumnBoundary(
+              table,
+              session.boundaryIndex,
+              nextWidths,
+            );
+          });
+          session.currentWidths = nextWidths;
+        };
+        const onUp = () => finishTableResize(true);
+        const cleanup = () => {
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          window.removeEventListener('pointercancel', onUp);
+        };
+
+        tableResizeRef.current = {
+          table: target.table,
+          linkedTables,
+          boundaryIndex: target.boundaryIndex,
+          startX: event.clientX,
+          initialWidths,
+          currentWidths: initialWidths,
+          previousBodyCursor,
+          previousBodyUserSelect,
+          cleanup,
+        };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+        setEditorStatus('Drag to adjust the table column width.');
+      },
+      [effectivePreviewMode, finishTableResize, setTableResizeHover],
+    );
+
+    useEffect(
+      () => () => finishTableResize(false),
+      [finishTableResize],
+    );
+
+    const handleTableResizePointerMove = useCallback(
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (effectivePreviewMode || tableResizeRef.current) return;
+        const surface = documentSurfaceRef.current ?? event.currentTarget;
+        setTableResizeHover(
+          getTableColumnResizeTarget(surface, event.target, event.clientX),
+        );
+      },
+      [effectivePreviewMode, setTableResizeHover],
+    );
 
     const commitUserTransaction = useCallback(
       (result: DocumentTransactionResult) => {
@@ -2522,7 +2706,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     return (
       <div className={cn('flex flex-col h-full bg-background-secondary', className)}>
-        <style>{`${buildA4FontFaceCss()}\n${buildA4PageContentStyles(paragraphSpacing)}`}</style>
+        <style>{`${buildA4FontFaceCss()}\n${buildA4PageContentStyles(paragraphSpacing)}
+          .a4-page-content .a4-table-resize-target-left { box-shadow: inset 2px 0 0 var(--oak-primary, #294d44); cursor: col-resize !important; }
+          .a4-page-content .a4-table-resize-target-right { box-shadow: inset -2px 0 0 var(--oak-primary, #294d44); cursor: col-resize !important; }
+        `}</style>
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-background-elevated border-b border-border-primary">
           <div className="flex items-center gap-3">
             <FileText className="w-4 h-4 text-text-muted" />
@@ -2656,6 +2843,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             onCompositionEnd={handleDocumentCompositionEnd}
             onKeyDown={handleDocumentKeyDown}
             onPaste={handleDocumentPaste}
+            onPointerDown={handleTableResizePointerDown}
+            onPointerMove={handleTableResizePointerMove}
+            onPointerLeave={clearTableResizeHover}
             onMouseUp={(event) => {
               if (!effectivePreviewMode) {
                 syncActivePage(event.target);

@@ -316,8 +316,8 @@ function DocumentCard({ doc, canEdit, onDelete }: {
   }, [menuOpen]);
 
   return (
-    <div className="group rounded-xl border border-border-primary bg-background-secondary overflow-hidden">
-      <div className="aspect-[3/4] overflow-hidden">
+    <div className="group rounded-xl border border-border-primary bg-background-secondary overflow-visible">
+      <div className="aspect-[3/4] overflow-hidden rounded-t-xl">
         <PdfThumbnailCanvas url={doc.pdfUrl} />
       </div>
       <div className="flex items-center justify-between gap-1 px-2 py-2 border-t border-border-primary">
@@ -329,6 +329,7 @@ function DocumentCard({ doc, canEdit, onDelete }: {
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
+            aria-label="More document actions"
             className="rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
           >
             <MoreVertical className="h-3.5 w-3.5" />
@@ -1107,6 +1108,7 @@ async function applyMixedGroupChange(
       {/* ——— Section 1: Documents ——— */}
       <CompanyAccentSection
         title={`Documents${envelope.documents.length > 0 ? ` (${envelope.documents.length})` : ''}`}
+        className="overflow-visible"
         actions={envelope.canEdit ? (
           <div className="flex flex-wrap justify-end gap-2">
             <button

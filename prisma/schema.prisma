@@ -273,7 +273,7 @@ model Company {
   tenantId                    String
   uen                         String
   name                        String
-  displayAlias                String?                      @map("display_alias") @db.VarChar(40)
+  displayAlias                String?                      @map("display_alias") @db.VarChar(10)
   formerName                  String?
   dateOfNameChange            DateTime?
   entityType                  EntityType                   @default(PRIVATE_LIMITED)

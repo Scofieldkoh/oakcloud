@@ -14,11 +14,13 @@ import { useDropzone } from 'react-dropzone';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
+import { useAttachGeneratedEsigningDocuments } from '@/hooks/use-esigning';
 import { cn } from '@/lib/utils';
 import { withTaskLaunchContext } from '@/lib/task-launch-context';
 import type { TaskStageTransition } from '@/hooks/use-tasks';
 import type {
   TaskGeneratedDocumentResource,
+  TaskEsigningEnvelopeResource,
   TaskResource,
   TaskResourcesResponse,
   TaskStageDetail,
@@ -62,6 +64,10 @@ interface EsigningDocumentSelectionOption {
 
 function isGeneratedDocumentResource(resource: TaskResource): resource is TaskGeneratedDocumentResource {
   return resource.kind === 'generatedDocument';
+}
+
+function isAvailableEsigningEnvelopeResource(resource: TaskResource): resource is TaskEsigningEnvelopeResource {
+  return resource.kind === 'esigningEnvelope' && resource.state === 'available';
 }
 
 function statusLabel(status: string) {
@@ -236,6 +242,7 @@ export function TaskStageModal({
   const [bizFileError, setBizFileError] = useState('');
   const [isUploadingBizFile, setIsUploadingBizFile] = useState(false);
   const [selectedGeneratedDocumentIds, setSelectedGeneratedDocumentIds] = useState<string[]>([]);
+  const [documentSelectionError, setDocumentSelectionError] = useState('');
   const selectionStageIdRef = useRef<string | null>(null);
   const persistedStageId = stage?.id;
   const persistedStageNotes = stage?.notes ?? '';
@@ -280,13 +287,34 @@ export function TaskStageModal({
     && stage.outcome?.type === 'ESIGNING_ENVELOPE'
     && stage.outcome.esigningEnvelopeId,
   );
+  const linkedEsigningEnvelopeResource = useMemo(() => {
+    if (!stage || stage.actionType !== 'ESIGNING' || !resources) return null;
+    const resourceStage = resources.stages.find(({ id }) => id === stage.id);
+    return resourceStage?.resources.find(isAvailableEsigningEnvelopeResource) ?? null;
+  }, [resources, stage]);
+  const linkedEsigningEnvelopeId = stage?.actionType === 'ESIGNING'
+    && stage.outcome?.type === 'ESIGNING_ENVELOPE'
+    ? stage.outcome.esigningEnvelopeId ?? ''
+    : '';
+  const isLinkedEsigningDraft = Boolean(
+    hasLinkedEsigningEnvelope
+    && linkedEsigningEnvelopeResource?.status === 'DRAFT',
+  );
+  const linkedEsigningGeneratedDocumentIds = useMemo(
+    () => linkedEsigningEnvelopeResource?.generatedDocumentIds ?? [],
+    [linkedEsigningEnvelopeResource?.generatedDocumentIds],
+  );
+  const linkedEsigningEnvelopeHasDocuments = Boolean(
+    linkedEsigningEnvelopeResource && linkedEsigningEnvelopeResource.documents.length > 0,
+  );
   const isTaskEsigningDocumentSelectionReady = Boolean(
     stage?.actionType === 'ESIGNING'
-    && !hasLinkedEsigningEnvelope
     && resources
     && !isResourcesLoading
-    && !resourcesError,
+    && !resourcesError
+    && (!hasLinkedEsigningEnvelope || isLinkedEsigningDraft),
   );
+  const attachGeneratedDocuments = useAttachGeneratedEsigningDocuments(linkedEsigningEnvelopeId);
 
   useEffect(() => {
     onUpdateMetadataRef.current = onUpdateMetadata;
@@ -303,11 +331,12 @@ export function TaskStageModal({
     setBizFileError('');
     setIsUploadingBizFile(false);
     selectionStageIdRef.current = null;
+    setDocumentSelectionError('');
     setSelectedGeneratedDocumentIds([]);
   }, [stage?.actionType, stage?.id, stage?.isRequired, stage?.notes, taskCompanyId]);
 
   useEffect(() => {
-    if (!stage || stage.actionType !== 'ESIGNING' || hasLinkedEsigningEnvelope) {
+    if (!stage || stage.actionType !== 'ESIGNING' || !isTaskEsigningDocumentSelectionReady) {
       selectionStageIdRef.current = null;
       setSelectedGeneratedDocumentIds([]);
       return;
@@ -321,11 +350,19 @@ export function TaskStageModal({
       if (selectionStageIdRef.current !== stage.id) {
         if (availableIds.length === 0) return current;
         selectionStageIdRef.current = stage.id;
-        return availableIds;
+        return hasLinkedEsigningEnvelope
+          ? availableIds.filter((id) => linkedEsigningGeneratedDocumentIds.includes(id))
+          : availableIds;
       }
       return current.filter((id) => availableIdSet.has(id));
     });
-  }, [hasLinkedEsigningEnvelope, selectableTaskEsigningDocuments, stage]);
+  }, [
+    hasLinkedEsigningEnvelope,
+    isTaskEsigningDocumentSelectionReady,
+    linkedEsigningGeneratedDocumentIds,
+    selectableTaskEsigningDocuments,
+    stage,
+  ]);
 
   useEffect(() => {
     if (!persistedStageId || notes === persistedStageNotes) return;
@@ -349,14 +386,16 @@ export function TaskStageModal({
 
   const resolvedLaunchHref = useMemo(() => stage ? launchHref(stage) : null, [stage]);
   const taskEsigningLaunchHref = useMemo(() => {
-    if (!resolvedLaunchHref || !isTaskEsigningDocumentSelectionReady) return resolvedLaunchHref;
+    if (!resolvedLaunchHref || !isTaskEsigningDocumentSelectionReady || hasLinkedEsigningEnvelope) {
+      return resolvedLaunchHref;
+    }
     const [path, query = ''] = resolvedLaunchHref.split('?');
     const params = new URLSearchParams(query);
     params.delete('generatedDocumentId');
     params.delete('generatedDocumentIds');
     selectedGeneratedDocumentIds.forEach((documentId) => params.append('generatedDocumentIds', documentId));
     return `${path}?${params.toString()}`;
-  }, [isTaskEsigningDocumentSelectionReady, resolvedLaunchHref, selectedGeneratedDocumentIds]);
+  }, [hasLinkedEsigningEnvelope, isTaskEsigningDocumentSelectionReady, resolvedLaunchHref, selectedGeneratedDocumentIds]);
   const canCreateCompany = stage?.actionType === 'COMPANY_PROFILE'
     && Boolean(resolvedLaunchHref);
   const createCompanyHref = useMemo(() => {
@@ -403,11 +442,15 @@ export function TaskStageModal({
     if (!stage) return null;
     const label = primaryActionLabel(stage);
     const isBlocked = stage.blockers.length > 0;
+    const canOpenLinkedDraft = isLinkedEsigningDraft && (
+      linkedEsigningEnvelopeHasDocuments || selectedGeneratedDocumentIds.length > 0
+    );
 
     if (
       stage.actionType === 'ESIGNING'
       && isTaskEsigningDocumentSelectionReady
       && selectedGeneratedDocumentIds.length === 0
+      && !canOpenLinkedDraft
     ) {
       return (
         <Button
@@ -495,6 +538,38 @@ export function TaskStageModal({
         </Button>
       );
     }
+    if (isLinkedEsigningDraft && linkedEsigningEnvelopeId && taskEsigningLaunchHref) {
+      return (
+        <Button
+          data-testid="stage-primary-action"
+          onClick={() => {
+            const linkedDocumentIds = new Set(linkedEsigningGeneratedDocumentIds);
+            const documentIdsToAttach = selectedGeneratedDocumentIds.filter((id) => !linkedDocumentIds.has(id));
+            setDocumentSelectionError('');
+            if (documentIdsToAttach.length === 0) {
+              window.location.assign(taskEsigningLaunchHref);
+              return;
+            }
+            void attachGeneratedDocuments.mutateAsync(documentIdsToAttach)
+              .then(() => {
+                window.location.assign(taskEsigningLaunchHref);
+              })
+              .catch((attachError) => {
+                setDocumentSelectionError(
+                  attachError instanceof Error
+                    ? attachError.message
+                    : 'Could not add the selected documents to the signing request.',
+                );
+              });
+          }}
+          disabled={isBlocked || isMutating || attachGeneratedDocuments.isPending}
+          isLoading={attachGeneratedDocuments.isPending}
+          leftIcon={<ArrowUpRight />}
+        >
+          {label}
+        </Button>
+      );
+    }
     if (isBlocked || !taskEsigningLaunchHref) {
       return (
         <Button
@@ -556,30 +631,33 @@ export function TaskStageModal({
           <PipelineStageLinkedOutcome stage={stage} />
           <PipelineStageMetadata stage={stage} taskDueDate={taskDueDate} />
 
-          {stage.actionType === 'ESIGNING' && !hasLinkedEsigningEnvelope && (resources || isResourcesLoading || resourcesError) ? (
+          {stage.actionType === 'ESIGNING' && isTaskEsigningDocumentSelectionReady && (resources || isResourcesLoading || resourcesError) ? (
             <EsigningDocumentSelection
               options={taskEsigningDocumentOptions}
               selectedIds={selectedGeneratedDocumentIds}
               isLoading={isResourcesLoading}
               error={resourcesError}
-              disabled={isMutating}
+              disabled={isMutating || attachGeneratedDocuments.isPending}
               onToggle={(documentId) => {
-                setSelectedGeneratedDocumentIds((current) => (
+                  setSelectedGeneratedDocumentIds((current) => (
                   current.includes(documentId)
                     ? current.filter((id) => id !== documentId)
                     : [...current, documentId]
-                ));
-              }}
+                  ));
+                  setDocumentSelectionError('');
+                }}
               onToggleAll={() => {
                 const selectableIds = selectableTaskEsigningDocuments
                   .map(({ resource }) => resource.id)
                   .filter((id): id is string => Boolean(id));
                 setSelectedGeneratedDocumentIds((current) => (
                   current.length === selectableIds.length ? [] : selectableIds
-                ));
-              }}
-            />
+                  ));
+                  setDocumentSelectionError('');
+                }}
+              />
           ) : null}
+          {documentSelectionError ? <Alert variant="error">{documentSelectionError}</Alert> : null}
 
           {stage.actionType === 'COMPANY_PROFILE' && stage.status !== 'SKIPPED' ? (
               <>

@@ -81,7 +81,7 @@ const taskResourcesSelect = {
               deletedAt: true,
               documents: {
                 orderBy: { sortOrder: 'asc' as const },
-                select: { id: true, fileName: true, signedStoragePath: true },
+                select: { id: true, fileName: true, signedStoragePath: true, generatedDocumentId: true },
               },
               recipients: {
                 where: { type: 'SIGNER' },
@@ -395,6 +395,9 @@ async function serializeEsigningEnvelopeResource(
     requiredSignatures: signers.length,
     href: taskResourceHref(`/esigning/${envelope.id}`, taskId, stage.id),
     canGenerateSignerLink: Boolean(esigningScope?.canUpdateAny),
+    generatedDocumentIds: envelope.documents.flatMap((document) => (
+      document.generatedDocumentId ? [document.generatedDocumentId] : []
+    )),
     documents: envelope.documents.map((document) => ({
       id: document.id,
       fileName: document.fileName,

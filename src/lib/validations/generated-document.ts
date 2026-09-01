@@ -125,6 +125,7 @@ export const searchGeneratedDocumentsSchema = z.object({
     'companyName',
     'templateName',
     'status',
+    'signedAt',
     'createdByName',
     'createdAt',
     'updatedAt',

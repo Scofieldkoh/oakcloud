@@ -38,6 +38,17 @@ export interface DocumentTransactionResult {
   changed: boolean;
 }
 
+export interface TableColumnResizeTarget {
+  table: HTMLTableElement;
+  cell: HTMLTableCellElement;
+  boundaryIndex: number;
+  edge: 'left' | 'right';
+  columnWidths: number[];
+}
+
+const TABLE_RESIZE_EDGE_TOLERANCE_PX = 7;
+export const TABLE_COLUMN_MIN_WIDTH_PX = 48;
+
 type LogicalUnit =
   | { type: 'break'; element: HTMLElement }
   | { type: 'text'; node: Text };
@@ -46,6 +57,141 @@ function createContainer(html: string): HTMLElement {
   const container = document.createElement('div');
   container.innerHTML = normalizeCanonicalHtml(html);
   return container;
+}
+
+function tableCellColumnRanges(
+  table: HTMLTableElement,
+): Map<HTMLTableCellElement, { start: number; end: number }> {
+  const ranges = new Map<HTMLTableCellElement, { start: number; end: number }>();
+  const occupied: number[] = [];
+
+  for (const row of Array.from(table.rows)) {
+    let column = 0;
+    for (const cell of Array.from(row.cells)) {
+      // `occupied` stores the number of future rows covered by a rowspan.
+      while ((occupied[column] ?? 0) > 0) {
+        occupied[column] -= 1;
+        column += 1;
+      }
+
+      const start = column;
+      const columnSpan = Math.max(1, cell.colSpan || 1);
+      const rowSpan = Math.max(1, cell.rowSpan || 1);
+      const end = start + columnSpan;
+      ranges.set(cell, { start, end });
+
+      for (let index = start; index < end; index += 1) {
+        occupied[index] = Math.max(occupied[index] ?? 0, rowSpan - 1);
+      }
+      column = end;
+    }
+  }
+
+  return ranges;
+}
+
+function tableColumnWidths(
+  table: HTMLTableElement,
+  ranges: Map<HTMLTableCellElement, { start: number; end: number }>,
+): number[] | null {
+  const firstRow = table.rows[0];
+  if (!firstRow) return null;
+
+  const columnCount = Math.max(
+    0,
+    ...Array.from(firstRow.cells).map((cell) => ranges.get(cell)?.end ?? 0),
+  );
+  if (columnCount < 2) return null;
+
+  const tableWidth = table.getBoundingClientRect().width;
+  const widths = Array.from({ length: columnCount }, () => 0);
+  for (const cell of Array.from(firstRow.cells)) {
+    const range = ranges.get(cell);
+    if (!range) continue;
+    const measuredWidth = cell.getBoundingClientRect().width;
+    const widthPerColumn = measuredWidth / (range.end - range.start);
+    for (let index = range.start; index < range.end; index += 1) {
+      widths[index] = widthPerColumn;
+    }
+  }
+
+  const measuredTotal = widths.reduce((sum, width) => sum + width, 0);
+  const fallbackWidth = tableWidth > 0 ? tableWidth / columnCount : 0;
+  if (fallbackWidth <= 0 && measuredTotal <= 0) return null;
+
+  const sourceTotal = measuredTotal > 0 ? measuredTotal : tableWidth;
+  const targetTotal = tableWidth > 0 ? tableWidth : sourceTotal;
+  return widths.map((width) =>
+    (width > 0 ? width : fallbackWidth) * (targetTotal / sourceTotal),
+  );
+}
+
+export function getTableColumnResizeTarget(
+  root: HTMLElement,
+  eventTarget: EventTarget | null,
+  clientX: number,
+): TableColumnResizeTarget | null {
+  if (!(eventTarget instanceof Element)) return null;
+  const cell = eventTarget.closest<HTMLTableCellElement>('td, th');
+  const table = cell?.closest<HTMLTableElement>('table');
+  if (!cell || !table || !root.contains(cell) || !root.contains(table)) return null;
+
+  const ranges = tableCellColumnRanges(table);
+  const range = ranges.get(cell);
+  const columnWidths = tableColumnWidths(table, ranges);
+  if (!range || !columnWidths) return null;
+
+  const rect = cell.getBoundingClientRect();
+  const nearRightEdge =
+    Math.abs(clientX - rect.right) <= TABLE_RESIZE_EDGE_TOLERANCE_PX &&
+    range.end < columnWidths.length;
+  const nearLeftEdge =
+    Math.abs(clientX - rect.left) <= TABLE_RESIZE_EDGE_TOLERANCE_PX &&
+    range.start > 0;
+
+  if (!nearRightEdge && !nearLeftEdge) return null;
+
+  return {
+    table,
+    cell,
+    boundaryIndex: nearRightEdge ? range.end : range.start,
+    edge: nearRightEdge ? 'right' : 'left',
+    columnWidths,
+  };
+}
+
+export function resizeTableColumnBoundary(
+  table: HTMLTableElement,
+  boundaryIndex: number,
+  columnWidths: number[],
+): boolean {
+  if (
+    boundaryIndex <= 0 ||
+    boundaryIndex >= columnWidths.length ||
+    columnWidths.some((width) => !Number.isFinite(width) || width <= 0)
+  ) {
+    return false;
+  }
+
+  const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+  if (!Number.isFinite(totalWidth) || totalWidth <= 0) return false;
+
+  const ranges = tableCellColumnRanges(table);
+  let changed = false;
+  for (const [cell, range] of ranges) {
+    const width = columnWidths
+      .slice(range.start, Math.min(range.end, columnWidths.length))
+      .reduce((sum, value) => sum + value, 0);
+    if (width <= 0) continue;
+
+    const nextWidth = `${Math.round((width / totalWidth) * 100000) / 1000}%`;
+    if (cell.style.width !== nextWidth) {
+      cell.style.width = nextWidth;
+      changed = true;
+    }
+  }
+
+  return changed;
 }
 
 export function sanitizeReplacementHtml(html: string): string {

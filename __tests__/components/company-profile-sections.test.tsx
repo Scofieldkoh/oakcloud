@@ -67,7 +67,7 @@ describe('CompanyProfileSections', () => {
     expect(screen.getByText('Show share capital breakdown').closest('details')).toHaveAttribute('open');
   });
 
-  it('shows the stored alias and the resolved service display label', () => {
+  it('shows only the effective ALIAS', () => {
     const aliased = {
       ...(company as object),
       displayAlias: 'OAK',
@@ -75,9 +75,10 @@ describe('CompanyProfileSections', () => {
 
     render(<CompanyProfileSections company={aliased} companyId="company-1" />);
 
-    expect(screen.getByText('Service display alias')).toBeInTheDocument();
-    expect(screen.getByText('Service display label')).toBeInTheDocument();
-    expect(screen.getAllByText('OAK')).toHaveLength(2);
+    expect(screen.getByText('ALIAS')).toBeInTheDocument();
+    expect(screen.queryByText('Service display alias')).not.toBeInTheDocument();
+    expect(screen.queryByText('Service display label')).not.toBeInTheDocument();
+    expect(screen.getAllByText('OAK')).toHaveLength(1);
   });
 
   it('falls back to meaningful company initials when no alias is stored', () => {
@@ -89,6 +90,7 @@ describe('CompanyProfileSections', () => {
 
     render(<CompanyProfileSections company={withoutAlias} companyId="company-1" />);
 
+    expect(screen.getByText('ALIAS')).toBeInTheDocument();
     expect(screen.getByText('OACS')).toBeInTheDocument();
   });
 

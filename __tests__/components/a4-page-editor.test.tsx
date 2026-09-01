@@ -693,6 +693,58 @@ describe('A4PageEditor', () => {
     expect(getComputedStyle(cell!).borderStyle).toBe('solid');
   });
 
+  it('resizes table columns from a cell boundary and persists the widths', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value="<table><tbody><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></tbody></table>"
+        onChange={onChange}
+      />,
+    );
+
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => expect(surface).toHaveAttribute('aria-busy', 'false'));
+
+    const table = screen.getByTestId('a4-page-content-1').querySelector('table')!;
+    const firstRowCells = Array.from(table.rows[0].cells);
+    const rect = (left: number, right: number) => ({
+      left,
+      right,
+      top: 0,
+      bottom: 40,
+      width: right - left,
+      height: 40,
+      x: left,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    vi.spyOn(table, 'getBoundingClientRect').mockReturnValue(rect(0, 400));
+    firstRowCells.forEach((cell, index) => {
+      vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(
+        rect(index * 200, (index + 1) * 200),
+      );
+    });
+
+    fireEvent.pointerMove(firstRowCells[0], { clientX: 200 });
+    expect(firstRowCells[0]).toHaveClass('a4-table-resize-target-right');
+
+    fireEvent.pointerDown(firstRowCells[0], { clientX: 200 });
+    act(() => {
+      fireEvent.pointerMove(window, { clientX: 260 });
+      fireEvent.pointerUp(window);
+    });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining('width: 65%'),
+      );
+    });
+    expect(firstRowCells[0]).toHaveStyle({ width: '65%' });
+    expect(firstRowCells[1]).toHaveStyle({ width: '35%' });
+    expect(firstRowCells[0]).not.toHaveClass('a4-table-resize-target-right');
+  });
+
   it('surfaces oversized content with an accessible warning and editable overflow', async () => {
     const originalScrollHeight = Object.getOwnPropertyDescriptor(
       HTMLElement.prototype,

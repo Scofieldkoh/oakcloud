@@ -168,15 +168,16 @@ describe("BizFileReviewSections", () => {
     }
   });
 
-  it("labels and maps the optional service display alias field", () => {
+  it("labels and maps the optional ALIAS field after the company name", () => {
     const onChange = vi.fn();
     view(fullDraft, "entity", onChange);
 
-    const alias = screen.getByLabelText("Service display alias");
-    expect(alias).toHaveAttribute("maxLength", "40");
+    const alias = screen.getByLabelText("ALIAS");
+    expect(alias).toHaveAttribute("maxLength", "10");
     expect(alias).toHaveAccessibleDescription(
-      "Shown on service calendars; leave blank to use company initials",
+      "Review or edit the extracted alias before saving. Maximum 10 characters.",
     );
+    expect(screen.getByLabelText("Company name").compareDocumentPosition(alias) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     fireEvent.change(alias, { target: { value: "OAK" } });
     expect(onChange).toHaveBeenCalledWith(
