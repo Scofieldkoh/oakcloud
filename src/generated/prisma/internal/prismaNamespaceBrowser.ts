@@ -61,6 +61,7 @@ export const ModelName = {
   PerformanceMeasurement: 'PerformanceMeasurement',
   UserCompanyAssignment: 'UserCompanyAssignment',
   Company: 'Company',
+  CompanySharePointFolder: 'CompanySharePointFolder',
   CompanyFormerName: 'CompanyFormerName',
   CompanyAddress: 'CompanyAddress',
   Contact: 'Contact',
@@ -113,6 +114,7 @@ export const ModelName = {
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
+  EsigningSharePointFiling: 'EsigningSharePointFiling',
   EsigningEnvelopeRecipient: 'EsigningEnvelopeRecipient',
   EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
   EsigningDocumentFieldValue: 'EsigningDocumentFieldValue',
@@ -373,6 +375,24 @@ export const CompanyScalarFieldEnum = {
 } as const
 
 export type CompanyScalarFieldEnum = (typeof CompanyScalarFieldEnum)[keyof typeof CompanyScalarFieldEnum]
+
+
+export const CompanySharePointFolderScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  connectorId: 'connectorId',
+  driveId: 'driveId',
+  folderItemId: 'folderItemId',
+  folderName: 'folderName',
+  folderWebUrl: 'folderWebUrl',
+  lastVerifiedAt: 'lastVerifiedAt',
+  verifiedById: 'verifiedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanySharePointFolderScalarFieldEnum = (typeof CompanySharePointFolderScalarFieldEnum)[keyof typeof CompanySharePointFolderScalarFieldEnum]
 
 
 export const CompanyFormerNameScalarFieldEnum = {
@@ -719,6 +739,7 @@ export const DocumentTemplateScalarFieldEnum = {
   content: 'content',
   contentJson: 'contentJson',
   placeholders: 'placeholders',
+  sharePointRelativeFolderPath: 'sharePointRelativeFolderPath',
   isActive: 'isActive',
   version: 'version',
   createdById: 'createdById',
@@ -735,6 +756,7 @@ export const GeneratedDocumentScalarFieldEnum = {
   tenantId: 'tenantId',
   templateId: 'templateId',
   templateVersion: 'templateVersion',
+  sharePointRelativeFolderPathSnapshot: 'sharePointRelativeFolderPathSnapshot',
   companyId: 'companyId',
   title: 'title',
   content: 'content',
@@ -1465,6 +1487,53 @@ export const EsigningEnvelopeDocumentScalarFieldEnum = {
 } as const
 
 export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
+
+
+export const EsigningSharePointFilingScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  envelopeDocumentId: 'envelopeDocumentId',
+  companyId: 'companyId',
+  connectorId: 'connectorId',
+  destinationKind: 'destinationKind',
+  routingReason: 'routingReason',
+  templateId: 'templateId',
+  templateVersion: 'templateVersion',
+  configVersion: 'configVersion',
+  companyNameSnapshot: 'companyNameSnapshot',
+  documentTitleSnapshot: 'documentTitleSnapshot',
+  intendedCompanyDriveId: 'intendedCompanyDriveId',
+  intendedCompanyFolderId: 'intendedCompanyFolderId',
+  intendedRelativePath: 'intendedRelativePath',
+  orphanDriveId: 'orphanDriveId',
+  orphanFolderItemId: 'orphanFolderItemId',
+  resolvedDestinationDriveId: 'resolvedDestinationDriveId',
+  resolvedDestinationId: 'resolvedDestinationId',
+  sourceSignedHash: 'sourceSignedHash',
+  sourceSize: 'sourceSize',
+  targetFileName: 'targetFileName',
+  uploadedDriveId: 'uploadedDriveId',
+  uploadedItemId: 'uploadedItemId',
+  uploadedWebUrl: 'uploadedWebUrl',
+  uploadedFileName: 'uploadedFileName',
+  status: 'status',
+  attempts: 'attempts',
+  availableAt: 'availableAt',
+  claimedAt: 'claimedAt',
+  leaseExpiresAt: 'leaseExpiresAt',
+  claimToken: 'claimToken',
+  lastErrorCode: 'lastErrorCode',
+  lastError: 'lastError',
+  filedAt: 'filedAt',
+  resolvedAt: 'resolvedAt',
+  resolvedById: 'resolvedById',
+  resolutionNote: 'resolutionNote',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningSharePointFilingScalarFieldEnum = (typeof EsigningSharePointFilingScalarFieldEnum)[keyof typeof EsigningSharePointFilingScalarFieldEnum]
 
 
 export const EsigningEnvelopeRecipientScalarFieldEnum = {

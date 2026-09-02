@@ -6,6 +6,7 @@ import { AlertCircle, ArrowLeft, Loader2, ShieldAlert, Upload } from 'lucide-rea
 import { useCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { CompanyEditWorkspace } from '@/components/companies/company-edit/company-edit-workspace';
+import { CompanySharePointFolderField } from '@/components/companies/company-sharepoint-folder-field';
 
 export default function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -22,5 +23,12 @@ export default function EditCompanyPage({ params }: { params: Promise<{ id: stri
       {can.updateDocument ? <Link href={`/companies/upload?companyId=${id}`} className="btn-secondary btn-sm inline-flex items-center gap-2"><Upload className="h-4 w-4" />Update via BizFile</Link> : null}
     </div>
     <CompanyEditWorkspace companyId={id} />
+    <section className="rounded-xl border border-border-primary bg-background-secondary">
+      <div className="border-b border-border-primary p-4">
+        <h2 className="text-sm font-semibold text-text-primary">Additional company integrations</h2>
+        <p className="mt-1 text-xs text-text-secondary">Manage the explicit SharePoint company-folder mapping used for future signed-document filing.</p>
+      </div>
+      <CompanySharePointFolderField company={company} canEdit={can.updateCompany} />
+    </section>
   </main>;
 }

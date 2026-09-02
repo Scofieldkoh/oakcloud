@@ -32,6 +32,7 @@ model Workspace {
   backupSchedule                   BackupSchedule?
   chartOfAccounts                  ChartOfAccount[]
   companies                        Company[]
+  companySharePointFolders         CompanySharePointFolder[]
   connectorUsageLogs               ConnectorUsageLog[]
   connectors                       Connector[]
   contactDetails                   ContactDetail[]
@@ -47,6 +48,7 @@ model Workspace {
   formUploads                      FormUpload[]
   forms                            Form[]
   generatedDocuments               GeneratedDocument[]
+  esigningSharePointFilings        EsigningSharePointFiling[]
   esigningEmailDeliveries          EsigningEmailDelivery[]
   esigningEnvelopes                EsigningEnvelope[]
   taskEsigningPreparations         TaskEsigningPreparation[]
@@ -192,6 +194,8 @@ model User {
   companyAssignments                   UserCompanyAssignment[]
   preferences                          UserPreference[]
   roleAssignments                      UserRoleAssignment[]
+  resolvedSharePointFilings            EsigningSharePointFiling[] @relation("SharePointFilingResolver")
+  verifiedCompanySharePointFolders     CompanySharePointFolder[]  @relation("CompanySharePointFolderVerifier")
   tenant                               Workspace?                             @relation(fields: [tenantId], references: [id])
   ownedTasks                           Task[]                                 @relation("TaskOwner")
   assignedTaskStages                   TaskStage[]                            @relation("TaskStageAssignee")
@@ -349,6 +353,8 @@ model Company {
   deadlineOccurrences         DeadlineOccurrence[]
   billingOccurrences          BillingOccurrence[]
   billingCoverageIssues       BillingCoverageIssue[]
+  sharePointFolderMapping     CompanySharePointFolder?
+  esigningSharePointFilings   EsigningSharePointFiling[]
 
   @@unique([tenantId, uen])
   @@unique([tenantId, id], map: "companies_tenant_id_id_key")
@@ -369,6 +375,30 @@ model Company {
   @@index([tenantId, documentCount])
   @@index([tenantId, hasPoc])
   @@map("companies")
+}
+
+model CompanySharePointFolder {
+  id              String    @id @default(uuid())
+  tenantId        String    @map("tenant_id")
+  companyId       String    @unique @map("company_id")
+  connectorId     String    @map("connector_id")
+  driveId         String    @map("drive_id")
+  folderItemId    String    @map("folder_item_id")
+  folderName      String    @map("folder_name")
+  folderWebUrl    String    @map("folder_web_url")
+  lastVerifiedAt  DateTime? @map("last_verified_at")
+  verifiedById    String?   @map("verified_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  tenant          Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  connector       Connector @relation(fields: [connectorId], references: [id], onDelete: Restrict)
+  verifiedBy      User?     @relation("CompanySharePointFolderVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, connectorId, driveId, folderItemId])
+  @@index([tenantId, companyId])
+  @@index([connectorId, driveId, folderItemId])
+  @@map("company_sharepoint_folders")
 }
 
 model CompanyFormerName {
@@ -740,6 +770,8 @@ model Connector {
   usageLogs       ConnectorUsageLog[]
   workspace       Workspace?                 @relation(fields: [workspaceId], references: [id])
   workspaceAccess WorkspaceConnectorAccess[]
+  companySharePointFolders CompanySharePointFolder[]
+  esigningSharePointFilings EsigningSharePointFiling[]
 
   @@unique([workspaceId, provider, deletedAt])
   @@index([workspaceId])
@@ -839,6 +871,7 @@ model DocumentTemplate {
   content              String
   contentJson          Json?                           @map("content_json")
   placeholders         Json                            @default("[]")
+  sharePointRelativeFolderPath String?                  @map("sharepoint_relative_folder_path")
   isActive             Boolean                         @default(true) @map("is_active")
   version              Int                             @default(1)
   createdById          String                          @map("created_by_id")
@@ -849,6 +882,7 @@ model DocumentTemplate {
   tenant               Workspace                       @relation(fields: [tenantId], references: [id])
   generatedDocuments   GeneratedDocument[]
   generationBatchItems DocumentGenerationBatchItem[]
+  sharePointFilings   EsigningSharePointFiling[]
 
   @@index([tenantId])
   @@index([category])
@@ -862,6 +896,7 @@ model GeneratedDocument {
   tenantId                  String                       @map("tenant_id")
   templateId                String?                      @map("template_id")
   templateVersion           Int?                         @map("template_version")
+  sharePointRelativeFolderPathSnapshot String?            @map("sharepoint_relative_folder_path_snapshot")
   companyId                 String?                      @map("company_id")
   title                     String                       @db.VarChar(300)
   content                   String
@@ -1916,6 +1951,7 @@ model EsigningEnvelope {
   emailDeliveries           EsigningEmailDelivery[]
   taskStageOutcomes         TaskStageOutcome[]
   taskEsigningPreparations  TaskEsigningPreparation[]
+  sharePointFilings         EsigningSharePointFiling[]
 
   @@index([tenantId, status, createdAt])
   @@index([createdById, status, createdAt])
@@ -1949,11 +1985,71 @@ model EsigningEnvelopeDocument {
   generatedDocumentId      String?                           @map("generated_document_id")
   generatedDocument        GeneratedDocument?                @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
   taskEsigningPreparations TaskEsigningPreparation[]
+  sharePointFiling          EsigningSharePointFiling?
 
   @@unique([envelopeId, generatedDocumentId])
   @@index([envelopeId, sortOrder])
   @@index([tenantId, envelopeId])
   @@map("esigning_envelope_documents")
+}
+
+model EsigningSharePointFiling {
+  id                          String                            @id @default(uuid())
+  tenantId                    String                            @map("tenant_id")
+  envelopeId                  String                            @map("envelope_id")
+  envelopeDocumentId          String                            @unique @map("envelope_document_id")
+  companyId                   String?                           @map("company_id")
+  connectorId                 String                            @map("connector_id")
+  destinationKind             EsigningSharePointDestinationKind @map("destination_kind")
+  routingReason               EsigningSharePointRoutingReason   @map("routing_reason")
+  templateId                  String?                           @map("template_id")
+  templateVersion             Int?                              @map("template_version")
+  configVersion               Int                               @map("config_version")
+  companyNameSnapshot         String?                           @map("company_name_snapshot")
+  documentTitleSnapshot       String                            @map("document_title_snapshot")
+  intendedCompanyDriveId      String?                           @map("intended_company_drive_id")
+  intendedCompanyFolderId     String?                           @map("intended_company_folder_id")
+  intendedRelativePath        String?                           @map("intended_relative_path")
+  orphanDriveId               String                            @map("orphan_drive_id")
+  orphanFolderItemId          String                            @map("orphan_folder_item_id")
+  resolvedDestinationDriveId  String?                           @map("resolved_destination_drive_id")
+  resolvedDestinationId       String?                           @map("resolved_destination_id")
+  sourceSignedHash            String?                           @map("source_signed_hash")
+  sourceSize                  Int?                              @map("source_size")
+  targetFileName              String?                           @map("target_file_name")
+  uploadedDriveId             String?                           @map("uploaded_drive_id")
+  uploadedItemId              String?                           @map("uploaded_item_id")
+  uploadedWebUrl              String?                           @map("uploaded_web_url")
+  uploadedFileName            String?                           @map("uploaded_file_name")
+  status                      EsigningSharePointFilingStatus   @default(PENDING)
+  attempts                    Int                               @default(0)
+  availableAt                 DateTime                          @default(now()) @map("available_at")
+  claimedAt                   DateTime?                         @map("claimed_at")
+  leaseExpiresAt              DateTime?                         @map("lease_expires_at")
+  claimToken                  String?                           @map("claim_token") @db.VarChar(36)
+  lastErrorCode               String?                           @map("last_error_code") @db.VarChar(100)
+  lastError                   String?                           @map("last_error") @db.VarChar(2000)
+  filedAt                     DateTime?                         @map("filed_at")
+  resolvedAt                  DateTime?                         @map("resolved_at")
+  resolvedById                String?                           @map("resolved_by_id")
+  resolutionNote              String?                           @map("resolution_note") @db.VarChar(2000)
+  createdAt                   DateTime                          @default(now()) @map("created_at")
+  updatedAt                   DateTime                          @updatedAt @map("updated_at")
+  tenant                      Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  envelope                    EsigningEnvelope                  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  envelopeDocument            EsigningEnvelopeDocument           @relation(fields: [envelopeDocumentId], references: [id], onDelete: Cascade)
+  company                     Company?                          @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  connector                   Connector                         @relation(fields: [connectorId], references: [id], onDelete: Restrict)
+  template                    DocumentTemplate?                 @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  resolvedBy                  User?                             @relation("SharePointFilingResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, availableAt])
+  @@index([tenantId, destinationKind, status])
+  @@index([envelopeId])
+  @@index([tenantId, status, availableAt])
+  @@unique([connectorId, resolvedDestinationDriveId, resolvedDestinationId, targetFileName])
+  @@unique([connectorId, uploadedDriveId, uploadedItemId])
+  @@map("esigning_sharepoint_filings")
 }
 
 model EsigningEnvelopeRecipient {
@@ -3714,6 +3810,29 @@ enum GeneratedDocumentStatus {
   DRAFT
   FINALIZED
   ARCHIVED
+}
+
+enum EsigningSharePointFilingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+  REVIEW_REQUIRED
+}
+
+enum EsigningSharePointDestinationKind {
+  INTENDED
+  ORPHAN
+}
+
+enum EsigningSharePointRoutingReason {
+  TEMPLATE_ROUTE
+  NO_COMPANY_MAPPING
+  NO_TEMPLATE_PATH
+  MANUAL_DOCUMENT
+  COMPANY_FOLDER_UNAVAILABLE
+  DESTINATION_PATH_INVALID
 }
 
 enum DocumentCommentStatus {

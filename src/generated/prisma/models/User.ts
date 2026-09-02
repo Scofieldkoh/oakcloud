@@ -279,6 +279,8 @@ export type UserWhereInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
   preferences?: Prisma.UserPreferenceListRelationFilter
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   ownedTasks?: Prisma.TaskListRelationFilter
   assignedTaskStages?: Prisma.TaskStageListRelationFilter
@@ -336,6 +338,8 @@ export type UserOrderByWithRelationInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentOrderByRelationAggregateInput
   preferences?: Prisma.UserPreferenceOrderByRelationAggregateInput
   roleAssignments?: Prisma.UserRoleAssignmentOrderByRelationAggregateInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingOrderByRelationAggregateInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderOrderByRelationAggregateInput
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   ownedTasks?: Prisma.TaskOrderByRelationAggregateInput
   assignedTaskStages?: Prisma.TaskStageOrderByRelationAggregateInput
@@ -396,6 +400,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   companyAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
   preferences?: Prisma.UserPreferenceListRelationFilter
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   ownedTasks?: Prisma.TaskListRelationFilter
   assignedTaskStages?: Prisma.TaskStageListRelationFilter
@@ -494,6 +500,8 @@ export type UserCreateInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -551,6 +559,8 @@ export type UserUncheckedCreateInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -606,6 +616,8 @@ export type UserUpdateInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -663,6 +675,8 @@ export type UserUncheckedUpdateInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -895,6 +909,22 @@ export type UserUpdateOneRequiredWithoutCompanyAssignmentsNestedInput = {
   upsert?: Prisma.UserUpsertWithoutCompanyAssignmentsInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCompanyAssignmentsInput, Prisma.UserUpdateWithoutCompanyAssignmentsInput>, Prisma.UserUncheckedUpdateWithoutCompanyAssignmentsInput>
+}
+
+export type UserCreateNestedOneWithoutVerifiedCompanySharePointFoldersInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVerifiedCompanySharePointFoldersInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutVerifiedCompanySharePointFoldersNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVerifiedCompanySharePointFoldersInput
+  upsert?: Prisma.UserUpsertWithoutVerifiedCompanySharePointFoldersInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUpdateWithoutVerifiedCompanySharePointFoldersInput>, Prisma.UserUncheckedUpdateWithoutVerifiedCompanySharePointFoldersInput>
 }
 
 export type UserCreateNestedOneWithoutUploadedDocumentsInput = {
@@ -1393,6 +1423,22 @@ export type UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedEsigningEnvelopesInput, Prisma.UserUpdateWithoutCreatedEsigningEnvelopesInput>, Prisma.UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput>
 }
 
+export type UserCreateNestedOneWithoutResolvedSharePointFilingsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutResolvedSharePointFilingsInput, Prisma.UserUncheckedCreateWithoutResolvedSharePointFilingsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutResolvedSharePointFilingsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutResolvedSharePointFilingsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutResolvedSharePointFilingsInput, Prisma.UserUncheckedCreateWithoutResolvedSharePointFilingsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutResolvedSharePointFilingsInput
+  upsert?: Prisma.UserUpsertWithoutResolvedSharePointFilingsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutResolvedSharePointFilingsInput, Prisma.UserUpdateWithoutResolvedSharePointFilingsInput>, Prisma.UserUncheckedUpdateWithoutResolvedSharePointFilingsInput>
+}
+
 export type UserCreateNestedOneWithoutOwnedTasksInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutOwnedTasksInput, Prisma.UserUncheckedCreateWithoutOwnedTasksInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutOwnedTasksInput
@@ -1473,6 +1519,8 @@ export type UserCreateWithoutTenantInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
@@ -1528,6 +1576,8 @@ export type UserUncheckedCreateWithoutTenantInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -1629,6 +1679,8 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -1685,6 +1737,8 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -1755,6 +1809,8 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -1811,6 +1867,8 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -1865,6 +1923,8 @@ export type UserCreateWithoutPreferencesInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -1921,6 +1981,8 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -1991,6 +2053,8 @@ export type UserUpdateWithoutPreferencesInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -2047,6 +2111,8 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -2101,6 +2167,8 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -2157,6 +2225,8 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -2227,6 +2297,8 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -2283,6 +2355,252 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutValueOverriddenByNestedInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByNestedInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutVerifiedCompanySharePointFoldersInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceCreateNestedManyWithoutValueOverriddenByInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutMarkedBilledByInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutValueOverriddenByInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutMarkedBilledByInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutVerifiedCompanySharePointFoldersInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput>
+}
+
+export type UserUpsertWithoutVerifiedCompanySharePointFoldersInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUncheckedUpdateWithoutVerifiedCompanySharePointFoldersInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutVerifiedCompanySharePointFoldersInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutVerifiedCompanySharePointFoldersInput, Prisma.UserUncheckedUpdateWithoutVerifiedCompanySharePointFoldersInput>
+}
+
+export type UserUpdateWithoutVerifiedCompanySharePointFoldersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUpdateManyWithoutValueOverriddenByNestedInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutMarkedBilledByNestedInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutVerifiedCompanySharePointFoldersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -2337,6 +2655,8 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -2393,6 +2713,8 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -2463,6 +2785,8 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -2519,6 +2843,8 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -2573,6 +2899,8 @@ export type UserCreateWithoutAuditLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -2629,6 +2957,8 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -2699,6 +3029,8 @@ export type UserUpdateWithoutAuditLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -2755,6 +3087,8 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -2809,6 +3143,8 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -2865,6 +3201,8 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -2935,6 +3273,8 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -2991,6 +3331,8 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -3045,6 +3387,8 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -3101,6 +3445,8 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -3171,6 +3517,8 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -3227,6 +3575,8 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -3281,6 +3631,8 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -3337,6 +3689,8 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -3396,6 +3750,8 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -3452,6 +3808,8 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -3522,6 +3880,8 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -3578,6 +3938,8 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -3643,6 +4005,8 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -3699,6 +4063,8 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -3754,6 +4120,8 @@ export type UserCreateWithoutCreatedGenerationBatchesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -3810,6 +4178,8 @@ export type UserUncheckedCreateWithoutCreatedGenerationBatchesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -3880,6 +4250,8 @@ export type UserUpdateWithoutCreatedGenerationBatchesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -3936,6 +4308,8 @@ export type UserUncheckedUpdateWithoutCreatedGenerationBatchesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -3989,6 +4363,8 @@ export type UserCreateWithoutHiddenCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -4045,6 +4421,8 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -4104,6 +4482,8 @@ export type UserCreateWithoutResolvedCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -4160,6 +4540,8 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -4219,6 +4601,8 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -4275,6 +4659,8 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -4345,6 +4731,8 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -4401,6 +4789,8 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -4466,6 +4856,8 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -4522,6 +4914,8 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -4587,6 +4981,8 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -4643,6 +5039,8 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -4697,6 +5095,8 @@ export type UserCreateWithoutDocumentDraftsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -4753,6 +5153,8 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -4823,6 +5225,8 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -4879,6 +5283,8 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -4933,6 +5339,8 @@ export type UserCreateWithoutCreatedPartialsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -4989,6 +5397,8 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -5059,6 +5469,8 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -5115,6 +5527,8 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -5170,6 +5584,8 @@ export type UserCreateWithoutRequestedServiceAgreementActivationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -5226,6 +5642,8 @@ export type UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput 
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
@@ -5296,6 +5714,8 @@ export type UserUpdateWithoutRequestedServiceAgreementActivationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -5352,6 +5772,8 @@ export type UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput 
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -5406,6 +5828,8 @@ export type UserCreateWithoutOverriddenBillingOccurrenceDatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -5462,6 +5886,8 @@ export type UserUncheckedCreateWithoutOverriddenBillingOccurrenceDatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -5521,6 +5947,8 @@ export type UserCreateWithoutOverriddenBillingOccurrenceValuesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -5577,6 +6005,8 @@ export type UserUncheckedCreateWithoutOverriddenBillingOccurrenceValuesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -5636,6 +6066,8 @@ export type UserCreateWithoutMarkedBilledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -5692,6 +6124,8 @@ export type UserUncheckedCreateWithoutMarkedBilledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -5751,6 +6185,8 @@ export type UserCreateWithoutWaivedBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -5807,6 +6243,8 @@ export type UserUncheckedCreateWithoutWaivedBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -5866,6 +6304,8 @@ export type UserCreateWithoutCancelledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -5922,6 +6362,8 @@ export type UserUncheckedCreateWithoutCancelledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -5992,6 +6434,8 @@ export type UserUpdateWithoutOverriddenBillingOccurrenceDatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -6048,6 +6492,8 @@ export type UserUncheckedUpdateWithoutOverriddenBillingOccurrenceDatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -6113,6 +6559,8 @@ export type UserUpdateWithoutOverriddenBillingOccurrenceValuesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -6169,6 +6617,8 @@ export type UserUncheckedUpdateWithoutOverriddenBillingOccurrenceValuesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -6234,6 +6684,8 @@ export type UserUpdateWithoutMarkedBilledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -6290,6 +6742,8 @@ export type UserUncheckedUpdateWithoutMarkedBilledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -6355,6 +6809,8 @@ export type UserUpdateWithoutWaivedBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -6411,6 +6867,8 @@ export type UserUncheckedUpdateWithoutWaivedBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -6476,6 +6934,8 @@ export type UserUpdateWithoutCancelledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -6532,6 +6992,8 @@ export type UserUncheckedUpdateWithoutCancelledBillingOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -6586,6 +7048,8 @@ export type UserCreateWithoutCreatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -6642,6 +7106,8 @@ export type UserUncheckedCreateWithoutCreatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -6701,6 +7167,8 @@ export type UserCreateWithoutUpdatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -6757,6 +7225,8 @@ export type UserUncheckedCreateWithoutUpdatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -6816,6 +7286,8 @@ export type UserCreateWithoutArchivedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -6872,6 +7344,8 @@ export type UserUncheckedCreateWithoutArchivedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -6942,6 +7416,8 @@ export type UserUpdateWithoutCreatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -6998,6 +7474,8 @@ export type UserUncheckedUpdateWithoutCreatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -7063,6 +7541,8 @@ export type UserUpdateWithoutUpdatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -7119,6 +7599,8 @@ export type UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -7184,6 +7666,8 @@ export type UserUpdateWithoutArchivedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -7240,6 +7724,8 @@ export type UserUncheckedUpdateWithoutArchivedDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -7294,6 +7780,8 @@ export type UserCreateWithoutPublishedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -7350,6 +7838,8 @@ export type UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -7409,6 +7899,8 @@ export type UserCreateWithoutCreatedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -7465,6 +7957,8 @@ export type UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -7535,6 +8029,8 @@ export type UserUpdateWithoutPublishedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -7591,6 +8087,8 @@ export type UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -7656,6 +8154,8 @@ export type UserUpdateWithoutCreatedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -7712,6 +8212,8 @@ export type UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -7766,6 +8268,8 @@ export type UserCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -7822,6 +8326,8 @@ export type UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -7892,6 +8398,8 @@ export type UserUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -7948,6 +8456,8 @@ export type UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -8002,6 +8512,8 @@ export type UserCreateWithoutCreatedServiceCyclesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -8058,6 +8570,8 @@ export type UserUncheckedCreateWithoutCreatedServiceCyclesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -8128,6 +8642,8 @@ export type UserUpdateWithoutCreatedServiceCyclesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -8184,6 +8700,8 @@ export type UserUncheckedUpdateWithoutCreatedServiceCyclesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -8238,6 +8756,8 @@ export type UserCreateWithoutOverriddenDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -8294,6 +8814,8 @@ export type UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -8353,6 +8875,8 @@ export type UserCreateWithoutCompletedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -8409,6 +8933,8 @@ export type UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -8468,6 +8994,8 @@ export type UserCreateWithoutWaivedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -8524,6 +9052,8 @@ export type UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -8583,6 +9113,8 @@ export type UserCreateWithoutCancelledDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -8639,6 +9171,8 @@ export type UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -8709,6 +9243,8 @@ export type UserUpdateWithoutOverriddenDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -8765,6 +9301,8 @@ export type UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -8830,6 +9368,8 @@ export type UserUpdateWithoutCompletedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -8886,6 +9426,8 @@ export type UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -8951,6 +9493,8 @@ export type UserUpdateWithoutWaivedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -9007,6 +9551,8 @@ export type UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -9072,6 +9618,8 @@ export type UserUpdateWithoutCancelledDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -9128,6 +9676,8 @@ export type UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -9182,6 +9732,8 @@ export type UserCreateWithoutRequestedScheduleReconciliationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -9238,6 +9790,8 @@ export type UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -9308,6 +9862,8 @@ export type UserUpdateWithoutRequestedScheduleReconciliationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -9364,6 +9920,8 @@ export type UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -9417,6 +9975,8 @@ export type UserCreateWithoutAiConversationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -9473,6 +10033,8 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -9543,6 +10105,8 @@ export type UserUpdateWithoutAiConversationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -9599,6 +10163,8 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -9653,6 +10219,8 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -9709,6 +10277,8 @@ export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -9779,6 +10349,8 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -9835,6 +10407,252 @@ export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutValueOverriddenByNestedInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByNestedInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutResolvedSharePointFilingsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceCreateNestedManyWithoutValueOverriddenByInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutMarkedBilledByInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutResolvedSharePointFilingsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutValueOverriddenByInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutMarkedBilledByInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutResolvedSharePointFilingsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutResolvedSharePointFilingsInput, Prisma.UserUncheckedCreateWithoutResolvedSharePointFilingsInput>
+}
+
+export type UserUpsertWithoutResolvedSharePointFilingsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutResolvedSharePointFilingsInput, Prisma.UserUncheckedUpdateWithoutResolvedSharePointFilingsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutResolvedSharePointFilingsInput, Prisma.UserUncheckedCreateWithoutResolvedSharePointFilingsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutResolvedSharePointFilingsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutResolvedSharePointFilingsInput, Prisma.UserUncheckedUpdateWithoutResolvedSharePointFilingsInput>
+}
+
+export type UserUpdateWithoutResolvedSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUpdateManyWithoutValueOverriddenByNestedInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutMarkedBilledByNestedInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutResolvedSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -9890,6 +10708,8 @@ export type UserCreateWithoutOwnedTasksInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
@@ -9946,6 +10766,8 @@ export type UserUncheckedCreateWithoutOwnedTasksInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
@@ -10016,6 +10838,8 @@ export type UserUpdateWithoutOwnedTasksInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
@@ -10072,6 +10896,8 @@ export type UserUncheckedUpdateWithoutOwnedTasksInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -10126,6 +10952,8 @@ export type UserCreateWithoutAssignedTaskStagesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
@@ -10182,6 +11010,8 @@ export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
@@ -10252,6 +11082,8 @@ export type UserUpdateWithoutAssignedTaskStagesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
@@ -10308,6 +11140,8 @@ export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
   createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -10361,6 +11195,8 @@ export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
@@ -10417,6 +11253,8 @@ export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
@@ -10487,6 +11325,8 @@ export type UserUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
@@ -10543,6 +11383,8 @@ export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -10615,6 +11457,8 @@ export type UserUpdateWithoutTenantInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
@@ -10670,6 +11514,8 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
   requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
@@ -10733,6 +11579,8 @@ export type UserCountOutputType = {
   companyAssignments: number
   preferences: number
   roleAssignments: number
+  resolvedSharePointFilings: number
+  verifiedCompanySharePointFolders: number
   ownedTasks: number
   assignedTaskStages: number
   requestedServiceAgreementActivations: number
@@ -10774,6 +11622,8 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   companyAssignments?: boolean | UserCountOutputTypeCountCompanyAssignmentsArgs
   preferences?: boolean | UserCountOutputTypeCountPreferencesArgs
   roleAssignments?: boolean | UserCountOutputTypeCountRoleAssignmentsArgs
+  resolvedSharePointFilings?: boolean | UserCountOutputTypeCountResolvedSharePointFilingsArgs
+  verifiedCompanySharePointFolders?: boolean | UserCountOutputTypeCountVerifiedCompanySharePointFoldersArgs
   ownedTasks?: boolean | UserCountOutputTypeCountOwnedTasksArgs
   assignedTaskStages?: boolean | UserCountOutputTypeCountAssignedTaskStagesArgs
   requestedServiceAgreementActivations?: boolean | UserCountOutputTypeCountRequestedServiceAgreementActivationsArgs
@@ -10924,6 +11774,20 @@ export type UserCountOutputTypeCountPreferencesArgs<ExtArgs extends runtime.Type
  */
 export type UserCountOutputTypeCountRoleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.UserRoleAssignmentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountResolvedSharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EsigningSharePointFilingWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountVerifiedCompanySharePointFoldersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanySharePointFolderWhereInput
 }
 
 /**
@@ -11107,6 +11971,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   companyAssignments?: boolean | Prisma.User$companyAssignmentsArgs<ExtArgs>
   preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
   roleAssignments?: boolean | Prisma.User$roleAssignmentsArgs<ExtArgs>
+  resolvedSharePointFilings?: boolean | Prisma.User$resolvedSharePointFilingsArgs<ExtArgs>
+  verifiedCompanySharePointFolders?: boolean | Prisma.User$verifiedCompanySharePointFoldersArgs<ExtArgs>
   tenant?: boolean | Prisma.User$tenantArgs<ExtArgs>
   ownedTasks?: boolean | Prisma.User$ownedTasksArgs<ExtArgs>
   assignedTaskStages?: boolean | Prisma.User$assignedTaskStagesArgs<ExtArgs>
@@ -11207,6 +12073,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   companyAssignments?: boolean | Prisma.User$companyAssignmentsArgs<ExtArgs>
   preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
   roleAssignments?: boolean | Prisma.User$roleAssignmentsArgs<ExtArgs>
+  resolvedSharePointFilings?: boolean | Prisma.User$resolvedSharePointFilingsArgs<ExtArgs>
+  verifiedCompanySharePointFolders?: boolean | Prisma.User$verifiedCompanySharePointFoldersArgs<ExtArgs>
   tenant?: boolean | Prisma.User$tenantArgs<ExtArgs>
   ownedTasks?: boolean | Prisma.User$ownedTasksArgs<ExtArgs>
   assignedTaskStages?: boolean | Prisma.User$assignedTaskStagesArgs<ExtArgs>
@@ -11258,6 +12126,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     companyAssignments: Prisma.$UserCompanyAssignmentPayload<ExtArgs>[]
     preferences: Prisma.$UserPreferencePayload<ExtArgs>[]
     roleAssignments: Prisma.$UserRoleAssignmentPayload<ExtArgs>[]
+    resolvedSharePointFilings: Prisma.$EsigningSharePointFilingPayload<ExtArgs>[]
+    verifiedCompanySharePointFolders: Prisma.$CompanySharePointFolderPayload<ExtArgs>[]
     tenant: Prisma.$WorkspacePayload<ExtArgs> | null
     ownedTasks: Prisma.$TaskPayload<ExtArgs>[]
     assignedTaskStages: Prisma.$TaskStagePayload<ExtArgs>[]
@@ -11708,6 +12578,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   companyAssignments<T extends Prisma.User$companyAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$companyAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserCompanyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   preferences<T extends Prisma.User$preferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$preferencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPreferencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   roleAssignments<T extends Prisma.User$roleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  resolvedSharePointFilings<T extends Prisma.User$resolvedSharePointFilingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$resolvedSharePointFilingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningSharePointFilingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  verifiedCompanySharePointFolders<T extends Prisma.User$verifiedCompanySharePointFoldersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$verifiedCompanySharePointFoldersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanySharePointFolderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tenant<T extends Prisma.User$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   ownedTasks<T extends Prisma.User$ownedTasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ownedTasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignedTaskStages<T extends Prisma.User$assignedTaskStagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignedTaskStagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -12575,6 +13447,54 @@ export type User$roleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.UserRoleAssignmentScalarFieldEnum | Prisma.UserRoleAssignmentScalarFieldEnum[]
+}
+
+/**
+ * User.resolvedSharePointFilings
+ */
+export type User$resolvedSharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EsigningSharePointFiling
+   */
+  select?: Prisma.EsigningSharePointFilingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EsigningSharePointFiling
+   */
+  omit?: Prisma.EsigningSharePointFilingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EsigningSharePointFilingInclude<ExtArgs> | null
+  where?: Prisma.EsigningSharePointFilingWhereInput
+  orderBy?: Prisma.EsigningSharePointFilingOrderByWithRelationInput | Prisma.EsigningSharePointFilingOrderByWithRelationInput[]
+  cursor?: Prisma.EsigningSharePointFilingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EsigningSharePointFilingScalarFieldEnum | Prisma.EsigningSharePointFilingScalarFieldEnum[]
+}
+
+/**
+ * User.verifiedCompanySharePointFolders
+ */
+export type User$verifiedCompanySharePointFoldersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanySharePointFolder
+   */
+  select?: Prisma.CompanySharePointFolderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanySharePointFolder
+   */
+  omit?: Prisma.CompanySharePointFolderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanySharePointFolderInclude<ExtArgs> | null
+  where?: Prisma.CompanySharePointFolderWhereInput
+  orderBy?: Prisma.CompanySharePointFolderOrderByWithRelationInput | Prisma.CompanySharePointFolderOrderByWithRelationInput[]
+  cursor?: Prisma.CompanySharePointFolderWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanySharePointFolderScalarFieldEnum | Prisma.CompanySharePointFolderScalarFieldEnum[]
 }
 
 /**

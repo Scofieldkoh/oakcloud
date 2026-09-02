@@ -195,6 +195,41 @@ describe('useDocumentGenerationBatch', () => {
     await waitFor(() => expect(result.current.state.pending).toBeNull());
   });
 
+  it('keeps the selected item active when its preview response defaults to the first item', async () => {
+    const secondItem = {
+      ...serverBatch.items[0],
+      key: 'item-b',
+      id: 'item-b',
+      templateId: 'template-b',
+      templateName: 'Service Agreement',
+      generatedDocumentId: 'child-2',
+    };
+    const twoItemBatch: EditableDocumentGenerationBatch = {
+      ...serverBatch,
+      items: [serverBatch.items[0], secondItem],
+      activeItemId: 'item-a',
+    };
+    apiMock.previewDocumentGenerationBatchItem.mockResolvedValue({
+      ...twoItemBatch,
+      revision: 3,
+      activeItemId: 'item-a',
+    });
+    const { result } = renderHook(() => useDocumentGenerationBatch({
+      initialBatch: twoItemBatch,
+    }));
+
+    act(() => {
+      result.current.dispatch({ type: 'item/activate', itemId: 'item-b' });
+    });
+
+    await act(async () => {
+      await result.current.previewItem('item-b');
+    });
+
+    expect(result.current.state.activeItemId).toBe('item-b');
+    expect(result.current.state.batch.activeItemId).toBe('item-b');
+  });
+
   it('resolves the server item id when previewing right after the first save', async () => {
     apiMock.createDocumentGenerationBatch.mockResolvedValue({
       ...serverBatch,

@@ -2,6 +2,7 @@ import { PDFDocument, PDFPage, StandardFonts, rgb } from 'pdf-lib';
 import { prisma } from '@/lib/prisma';
 import { hashBlake3 } from '@/lib/encryption';
 import { storage, StorageKeys } from '@/lib/storage';
+import { markFilingJobsForTerminalSourceFailure } from '@/services/esigning-sharepoint-filing/enqueue';
 import {
   getEsigningDocumentOriginalFileName,
   getEsigningDocumentVariantFileName,
@@ -838,7 +839,7 @@ function withEnvelopeArtifactVersion(metadata: Prisma.JsonValue | null | undefin
   } satisfies Prisma.InputJsonValue;
 }
 
-async function mergePdfBuffers(buffers: Buffer[]): Promise<Buffer> {
+export async function mergePdfBuffers(buffers: Uint8Array[]): Promise<Buffer> {
   const mergedPdf = await PDFDocument.create();
 
   for (const buffer of buffers) {
@@ -1227,6 +1228,7 @@ async function markEnvelopePdfFailure(envelopeId: string, error: unknown): Promi
         },
       },
     });
+    await markFilingJobsForTerminalSourceFailure(tx, envelopeId, 'SOURCE_GENERATION_FAILED', envelope.tenantId);
   });
 
   const senderName =

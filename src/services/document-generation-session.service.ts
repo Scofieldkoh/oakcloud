@@ -20,6 +20,7 @@ interface SessionReferences {
   templateName: string | null;
   compositionType: 'STANDARD' | 'SERVICE_AGREEMENT' | null;
   templateContentJson?: unknown;
+  sharePointRelativeFolderPath?: string | null;
 }
 
 function metadataRecord(metadata: unknown): Record<string, unknown> {
@@ -78,16 +79,18 @@ async function validateSessionReferences(
   let templateName: string | null = null;
   let compositionType: SessionReferences['compositionType'] = null;
   let templateContentJson: unknown = undefined;
+  let sharePointRelativeFolderPath: string | null = null;
 
   if (input.templateId) {
     const template = await prisma.documentTemplate.findFirst({
       where: { id: input.templateId, tenantId, deletedAt: null },
-      select: { id: true, name: true, compositionType: true, contentJson: true },
+      select: { id: true, name: true, compositionType: true, contentJson: true, sharePointRelativeFolderPath: true },
     });
     if (!template) throw new NotFoundError('Template not found');
     templateName = template.name;
     compositionType = template.compositionType;
     templateContentJson = template.contentJson;
+    sharePointRelativeFolderPath = template.sharePointRelativeFolderPath;
   }
 
   if (input.companyId) {
@@ -124,7 +127,7 @@ async function validateSessionReferences(
     throw new ValidationError('Service Agreement details are required after Setup');
   }
 
-  return { templateName, compositionType, templateContentJson };
+  return { templateName, compositionType, templateContentJson, sharePointRelativeFolderPath };
 }
 
 function generationSessionMetadata(
@@ -162,6 +165,7 @@ export async function createGenerationSession(
         data: {
           tenantId: params.tenantId,
           templateId: input.templateId,
+          sharePointRelativeFolderPathSnapshot: references.sharePointRelativeFolderPath ?? null,
           companyId: input.companyId,
           title,
           content: input.editedContent ?? input.previewContent ?? '',
@@ -195,6 +199,7 @@ export async function createGenerationSession(
     data: {
       tenantId: params.tenantId,
       templateId: input.templateId,
+      sharePointRelativeFolderPathSnapshot: references.sharePointRelativeFolderPath ?? null,
       companyId: input.companyId,
       title,
       content: input.editedContent ?? input.previewContent ?? '',

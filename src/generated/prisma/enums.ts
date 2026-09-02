@@ -548,6 +548,38 @@ export const GeneratedDocumentStatus = {
 export type GeneratedDocumentStatus = (typeof GeneratedDocumentStatus)[keyof typeof GeneratedDocumentStatus]
 
 
+export const EsigningSharePointFilingStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT',
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED'
+} as const
+
+export type EsigningSharePointFilingStatus = (typeof EsigningSharePointFilingStatus)[keyof typeof EsigningSharePointFilingStatus]
+
+
+export const EsigningSharePointDestinationKind = {
+  INTENDED: 'INTENDED',
+  ORPHAN: 'ORPHAN'
+} as const
+
+export type EsigningSharePointDestinationKind = (typeof EsigningSharePointDestinationKind)[keyof typeof EsigningSharePointDestinationKind]
+
+
+export const EsigningSharePointRoutingReason = {
+  TEMPLATE_ROUTE: 'TEMPLATE_ROUTE',
+  NO_COMPANY_MAPPING: 'NO_COMPANY_MAPPING',
+  NO_TEMPLATE_PATH: 'NO_TEMPLATE_PATH',
+  MANUAL_DOCUMENT: 'MANUAL_DOCUMENT',
+  COMPANY_FOLDER_UNAVAILABLE: 'COMPANY_FOLDER_UNAVAILABLE',
+  DESTINATION_PATH_INVALID: 'DESTINATION_PATH_INVALID'
+} as const
+
+export type EsigningSharePointRoutingReason = (typeof EsigningSharePointRoutingReason)[keyof typeof EsigningSharePointRoutingReason]
+
+
 export const DocumentCommentStatus = {
   OPEN: 'OPEN',
   RESOLVED: 'RESOLVED'

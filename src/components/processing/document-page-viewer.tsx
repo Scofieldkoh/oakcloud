@@ -138,6 +138,7 @@ const MOBILE_DEFAULT_ZOOM_INDEX = 4; // 100%
 const MIN_ZOOM_LEVEL = ZOOM_LEVELS[0];
 const MAX_ZOOM_LEVEL = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
 const MOBILE_ZOOM_STEP = 0.01;
+const MOBILE_ZOOM_RENDER_DELAY_MS = 120;
 const PINCH_ZOOM_STEP_PX = 40; // Pinch distance (px) required to move one percent
 export const DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS = [...ZOOM_LEVELS] as const;
 
@@ -964,7 +965,6 @@ export function DocumentPageViewer({
 
     renderTasks.forEach((task) => task.cancel());
     renderTasks.clear();
-    setContinuousRenderedPages(new Set());
 
     async function renderAllPages() {
       try {
@@ -1049,10 +1049,14 @@ export function DocumentPageViewer({
       }
     }
 
-    void renderAllPages();
+    const renderDelay = isMobile ? MOBILE_ZOOM_RENDER_DELAY_MS : 0;
+    const renderTimer = window.setTimeout(() => {
+      void renderAllPages();
+    }, renderDelay);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(renderTimer);
       renderTasks.forEach((task) => task.cancel());
       renderTasks.clear();
     };
@@ -1060,6 +1064,7 @@ export function DocumentPageViewer({
     continuousPageRotations,
     initialRotation,
     isPdfLoading,
+    isMobile,
     onTextLayerReady,
     pageCount,
     viewMode,

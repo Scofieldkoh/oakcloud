@@ -42,6 +42,7 @@ export type DocumentTemplateMinAggregateOutputType = {
   category: $Enums.DocumentTemplateCategory | null
   compositionType: $Enums.DocumentTemplateCompositionType | null
   content: string | null
+  sharePointRelativeFolderPath: string | null
   isActive: boolean | null
   version: number | null
   createdById: string | null
@@ -58,6 +59,7 @@ export type DocumentTemplateMaxAggregateOutputType = {
   category: $Enums.DocumentTemplateCategory | null
   compositionType: $Enums.DocumentTemplateCompositionType | null
   content: string | null
+  sharePointRelativeFolderPath: string | null
   isActive: boolean | null
   version: number | null
   createdById: string | null
@@ -76,6 +78,7 @@ export type DocumentTemplateCountAggregateOutputType = {
   content: number
   contentJson: number
   placeholders: number
+  sharePointRelativeFolderPath: number
   isActive: number
   version: number
   createdById: number
@@ -102,6 +105,7 @@ export type DocumentTemplateMinAggregateInputType = {
   category?: true
   compositionType?: true
   content?: true
+  sharePointRelativeFolderPath?: true
   isActive?: true
   version?: true
   createdById?: true
@@ -118,6 +122,7 @@ export type DocumentTemplateMaxAggregateInputType = {
   category?: true
   compositionType?: true
   content?: true
+  sharePointRelativeFolderPath?: true
   isActive?: true
   version?: true
   createdById?: true
@@ -136,6 +141,7 @@ export type DocumentTemplateCountAggregateInputType = {
   content?: true
   contentJson?: true
   placeholders?: true
+  sharePointRelativeFolderPath?: true
   isActive?: true
   version?: true
   createdById?: true
@@ -241,6 +247,7 @@ export type DocumentTemplateGroupByOutputType = {
   content: string
   contentJson: runtime.JsonValue | null
   placeholders: runtime.JsonValue
+  sharePointRelativeFolderPath: string | null
   isActive: boolean
   version: number
   createdById: string
@@ -282,6 +289,7 @@ export type DocumentTemplateWhereInput = {
   content?: Prisma.StringFilter<"DocumentTemplate"> | string
   contentJson?: Prisma.JsonNullableFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonFilter<"DocumentTemplate">
+  sharePointRelativeFolderPath?: Prisma.StringNullableFilter<"DocumentTemplate"> | string | null
   isActive?: Prisma.BoolFilter<"DocumentTemplate"> | boolean
   version?: Prisma.IntFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringFilter<"DocumentTemplate"> | string
@@ -292,6 +300,7 @@ export type DocumentTemplateWhereInput = {
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
   generationBatchItems?: Prisma.DocumentGenerationBatchItemListRelationFilter
+  sharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
 }
 
 export type DocumentTemplateOrderByWithRelationInput = {
@@ -304,6 +313,7 @@ export type DocumentTemplateOrderByWithRelationInput = {
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
+  sharePointRelativeFolderPath?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -314,6 +324,7 @@ export type DocumentTemplateOrderByWithRelationInput = {
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemOrderByRelationAggregateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingOrderByRelationAggregateInput
 }
 
 export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
@@ -329,6 +340,7 @@ export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
   content?: Prisma.StringFilter<"DocumentTemplate"> | string
   contentJson?: Prisma.JsonNullableFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonFilter<"DocumentTemplate">
+  sharePointRelativeFolderPath?: Prisma.StringNullableFilter<"DocumentTemplate"> | string | null
   isActive?: Prisma.BoolFilter<"DocumentTemplate"> | boolean
   version?: Prisma.IntFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringFilter<"DocumentTemplate"> | string
@@ -339,6 +351,7 @@ export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
   generationBatchItems?: Prisma.DocumentGenerationBatchItemListRelationFilter
+  sharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
 }, "id">
 
 export type DocumentTemplateOrderByWithAggregationInput = {
@@ -351,6 +364,7 @@ export type DocumentTemplateOrderByWithAggregationInput = {
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
+  sharePointRelativeFolderPath?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -377,6 +391,7 @@ export type DocumentTemplateScalarWhereWithAggregatesInput = {
   content?: Prisma.StringWithAggregatesFilter<"DocumentTemplate"> | string
   contentJson?: Prisma.JsonNullableWithAggregatesFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonWithAggregatesFilter<"DocumentTemplate">
+  sharePointRelativeFolderPath?: Prisma.StringNullableWithAggregatesFilter<"DocumentTemplate"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"DocumentTemplate"> | boolean
   version?: Prisma.IntWithAggregatesFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringWithAggregatesFilter<"DocumentTemplate"> | string
@@ -394,6 +409,7 @@ export type DocumentTemplateCreateInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -403,6 +419,7 @@ export type DocumentTemplateCreateInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateInput = {
@@ -415,6 +432,7 @@ export type DocumentTemplateUncheckedCreateInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdById: string
@@ -423,6 +441,7 @@ export type DocumentTemplateUncheckedCreateInput = {
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUpdateInput = {
@@ -434,6 +453,7 @@ export type DocumentTemplateUpdateInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -443,6 +463,7 @@ export type DocumentTemplateUpdateInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateInput = {
@@ -455,6 +476,7 @@ export type DocumentTemplateUncheckedUpdateInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -463,6 +485,7 @@ export type DocumentTemplateUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateCreateManyInput = {
@@ -475,6 +498,7 @@ export type DocumentTemplateCreateManyInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdById: string
@@ -492,6 +516,7 @@ export type DocumentTemplateUpdateManyMutationInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -509,6 +534,7 @@ export type DocumentTemplateUncheckedUpdateManyInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -537,6 +563,7 @@ export type DocumentTemplateCountOrderByAggregateInput = {
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrder
   placeholders?: Prisma.SortOrder
+  sharePointRelativeFolderPath?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -557,6 +584,7 @@ export type DocumentTemplateMaxOrderByAggregateInput = {
   category?: Prisma.SortOrder
   compositionType?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  sharePointRelativeFolderPath?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -573,6 +601,7 @@ export type DocumentTemplateMinOrderByAggregateInput = {
   category?: Prisma.SortOrder
   compositionType?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  sharePointRelativeFolderPath?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -717,6 +746,22 @@ export type DocumentTemplateUpdateOneRequiredWithoutGenerationBatchItemsNestedIn
   update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentTemplateUpdateToOneWithWhereWithoutGenerationBatchItemsInput, Prisma.DocumentTemplateUpdateWithoutGenerationBatchItemsInput>, Prisma.DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput>
 }
 
+export type DocumentTemplateCreateNestedOneWithoutSharePointFilingsInput = {
+  create?: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutSharePointFilingsInput, Prisma.DocumentTemplateUncheckedCreateWithoutSharePointFilingsInput>
+  connectOrCreate?: Prisma.DocumentTemplateCreateOrConnectWithoutSharePointFilingsInput
+  connect?: Prisma.DocumentTemplateWhereUniqueInput
+}
+
+export type DocumentTemplateUpdateOneWithoutSharePointFilingsNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutSharePointFilingsInput, Prisma.DocumentTemplateUncheckedCreateWithoutSharePointFilingsInput>
+  connectOrCreate?: Prisma.DocumentTemplateCreateOrConnectWithoutSharePointFilingsInput
+  upsert?: Prisma.DocumentTemplateUpsertWithoutSharePointFilingsInput
+  disconnect?: Prisma.DocumentTemplateWhereInput | boolean
+  delete?: Prisma.DocumentTemplateWhereInput | boolean
+  connect?: Prisma.DocumentTemplateWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentTemplateUpdateToOneWithWhereWithoutSharePointFilingsInput, Prisma.DocumentTemplateUpdateWithoutSharePointFilingsInput>, Prisma.DocumentTemplateUncheckedUpdateWithoutSharePointFilingsInput>
+}
+
 export type DocumentTemplateCreateWithoutTenantInput = {
   id?: string
   name: string
@@ -726,6 +771,7 @@ export type DocumentTemplateCreateWithoutTenantInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -734,6 +780,7 @@ export type DocumentTemplateCreateWithoutTenantInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutTenantInput = {
@@ -745,6 +792,7 @@ export type DocumentTemplateUncheckedCreateWithoutTenantInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdById: string
@@ -753,6 +801,7 @@ export type DocumentTemplateUncheckedCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutTenantInput = {
@@ -794,6 +843,7 @@ export type DocumentTemplateScalarWhereInput = {
   content?: Prisma.StringFilter<"DocumentTemplate"> | string
   contentJson?: Prisma.JsonNullableFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonFilter<"DocumentTemplate">
+  sharePointRelativeFolderPath?: Prisma.StringNullableFilter<"DocumentTemplate"> | string | null
   isActive?: Prisma.BoolFilter<"DocumentTemplate"> | boolean
   version?: Prisma.IntFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringFilter<"DocumentTemplate"> | string
@@ -811,6 +861,7 @@ export type DocumentTemplateCreateWithoutCreatedByInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -819,6 +870,7 @@ export type DocumentTemplateCreateWithoutCreatedByInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutCreatedByInput = {
@@ -831,6 +883,7 @@ export type DocumentTemplateUncheckedCreateWithoutCreatedByInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -838,6 +891,7 @@ export type DocumentTemplateUncheckedCreateWithoutCreatedByInput = {
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutCreatedByInput = {
@@ -875,6 +929,7 @@ export type DocumentTemplateCreateWithoutGeneratedDocumentsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -883,6 +938,7 @@ export type DocumentTemplateCreateWithoutGeneratedDocumentsInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -895,6 +951,7 @@ export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdById: string
@@ -902,6 +959,7 @@ export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -929,6 +987,7 @@ export type DocumentTemplateUpdateWithoutGeneratedDocumentsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -937,6 +996,7 @@ export type DocumentTemplateUpdateWithoutGeneratedDocumentsInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -949,6 +1009,7 @@ export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -956,6 +1017,7 @@ export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateCreateWithoutGenerationBatchItemsInput = {
@@ -967,6 +1029,7 @@ export type DocumentTemplateCreateWithoutGenerationBatchItemsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -975,6 +1038,7 @@ export type DocumentTemplateCreateWithoutGenerationBatchItemsInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput = {
@@ -987,6 +1051,7 @@ export type DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdById: string
@@ -994,6 +1059,7 @@ export type DocumentTemplateUncheckedCreateWithoutGenerationBatchItemsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type DocumentTemplateCreateOrConnectWithoutGenerationBatchItemsInput = {
@@ -1021,6 +1087,7 @@ export type DocumentTemplateUpdateWithoutGenerationBatchItemsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1029,6 +1096,7 @@ export type DocumentTemplateUpdateWithoutGenerationBatchItemsInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput = {
@@ -1041,6 +1109,7 @@ export type DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1048,6 +1117,107 @@ export type DocumentTemplateUncheckedUpdateWithoutGenerationBatchItemsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutTemplateNestedInput
+}
+
+export type DocumentTemplateCreateWithoutSharePointFilingsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  category?: $Enums.DocumentTemplateCategory
+  compositionType?: $Enums.DocumentTemplateCompositionType
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
+  isActive?: boolean
+  version?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTemplateInput
+}
+
+export type DocumentTemplateUncheckedCreateWithoutSharePointFilingsInput = {
+  id?: string
+  tenantId: string
+  name: string
+  description?: string | null
+  category?: $Enums.DocumentTemplateCategory
+  compositionType?: $Enums.DocumentTemplateCompositionType
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
+  isActive?: boolean
+  version?: number
+  createdById: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTemplateInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTemplateInput
+}
+
+export type DocumentTemplateCreateOrConnectWithoutSharePointFilingsInput = {
+  where: Prisma.DocumentTemplateWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutSharePointFilingsInput, Prisma.DocumentTemplateUncheckedCreateWithoutSharePointFilingsInput>
+}
+
+export type DocumentTemplateUpsertWithoutSharePointFilingsInput = {
+  update: Prisma.XOR<Prisma.DocumentTemplateUpdateWithoutSharePointFilingsInput, Prisma.DocumentTemplateUncheckedUpdateWithoutSharePointFilingsInput>
+  create: Prisma.XOR<Prisma.DocumentTemplateCreateWithoutSharePointFilingsInput, Prisma.DocumentTemplateUncheckedCreateWithoutSharePointFilingsInput>
+  where?: Prisma.DocumentTemplateWhereInput
+}
+
+export type DocumentTemplateUpdateToOneWithWhereWithoutSharePointFilingsInput = {
+  where?: Prisma.DocumentTemplateWhereInput
+  data: Prisma.XOR<Prisma.DocumentTemplateUpdateWithoutSharePointFilingsInput, Prisma.DocumentTemplateUncheckedUpdateWithoutSharePointFilingsInput>
+}
+
+export type DocumentTemplateUpdateWithoutSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumDocumentTemplateCategoryFieldUpdateOperationsInput | $Enums.DocumentTemplateCategory
+  compositionType?: Prisma.EnumDocumentTemplateCompositionTypeFieldUpdateOperationsInput | $Enums.DocumentTemplateCompositionType
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
+}
+
+export type DocumentTemplateUncheckedUpdateWithoutSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumDocumentTemplateCategoryFieldUpdateOperationsInput | $Enums.DocumentTemplateCategory
+  compositionType?: Prisma.EnumDocumentTemplateCompositionTypeFieldUpdateOperationsInput | $Enums.DocumentTemplateCompositionType
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
+  generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateCreateManyTenantInput = {
@@ -1059,6 +1229,7 @@ export type DocumentTemplateCreateManyTenantInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdById: string
@@ -1076,6 +1247,7 @@ export type DocumentTemplateUpdateWithoutTenantInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1084,6 +1256,7 @@ export type DocumentTemplateUpdateWithoutTenantInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutTenantInput = {
@@ -1095,6 +1268,7 @@ export type DocumentTemplateUncheckedUpdateWithoutTenantInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1103,6 +1277,7 @@ export type DocumentTemplateUncheckedUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateManyWithoutTenantInput = {
@@ -1114,6 +1289,7 @@ export type DocumentTemplateUncheckedUpdateManyWithoutTenantInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1132,6 +1308,7 @@ export type DocumentTemplateCreateManyCreatedByInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: string | null
   isActive?: boolean
   version?: number
   createdAt?: Date | string
@@ -1148,6 +1325,7 @@ export type DocumentTemplateUpdateWithoutCreatedByInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1156,6 +1334,7 @@ export type DocumentTemplateUpdateWithoutCreatedByInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutCreatedByInput = {
@@ -1168,6 +1347,7 @@ export type DocumentTemplateUncheckedUpdateWithoutCreatedByInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1175,6 +1355,7 @@ export type DocumentTemplateUncheckedUpdateWithoutCreatedByInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTemplateNestedInput
   generationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTemplateNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateManyWithoutCreatedByInput = {
@@ -1187,6 +1368,7 @@ export type DocumentTemplateUncheckedUpdateManyWithoutCreatedByInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sharePointRelativeFolderPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1202,11 +1384,13 @@ export type DocumentTemplateUncheckedUpdateManyWithoutCreatedByInput = {
 export type DocumentTemplateCountOutputType = {
   generatedDocuments: number
   generationBatchItems: number
+  sharePointFilings: number
 }
 
 export type DocumentTemplateCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   generatedDocuments?: boolean | DocumentTemplateCountOutputTypeCountGeneratedDocumentsArgs
   generationBatchItems?: boolean | DocumentTemplateCountOutputTypeCountGenerationBatchItemsArgs
+  sharePointFilings?: boolean | DocumentTemplateCountOutputTypeCountSharePointFilingsArgs
 }
 
 /**
@@ -1233,6 +1417,13 @@ export type DocumentTemplateCountOutputTypeCountGenerationBatchItemsArgs<ExtArgs
   where?: Prisma.DocumentGenerationBatchItemWhereInput
 }
 
+/**
+ * DocumentTemplateCountOutputType without action
+ */
+export type DocumentTemplateCountOutputTypeCountSharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EsigningSharePointFilingWhereInput
+}
+
 
 export type DocumentTemplateSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1244,6 +1435,7 @@ export type DocumentTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  sharePointRelativeFolderPath?: boolean
   isActive?: boolean
   version?: boolean
   createdById?: boolean
@@ -1254,6 +1446,7 @@ export type DocumentTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>
   generationBatchItems?: boolean | Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs>
+  sharePointFilings?: boolean | Prisma.DocumentTemplate$sharePointFilingsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentTemplate"]>
 
@@ -1267,6 +1460,7 @@ export type DocumentTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  sharePointRelativeFolderPath?: boolean
   isActive?: boolean
   version?: boolean
   createdById?: boolean
@@ -1287,6 +1481,7 @@ export type DocumentTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  sharePointRelativeFolderPath?: boolean
   isActive?: boolean
   version?: boolean
   createdById?: boolean
@@ -1307,6 +1502,7 @@ export type DocumentTemplateSelectScalar = {
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  sharePointRelativeFolderPath?: boolean
   isActive?: boolean
   version?: boolean
   createdById?: boolean
@@ -1315,12 +1511,13 @@ export type DocumentTemplateSelectScalar = {
   deletedAt?: boolean
 }
 
-export type DocumentTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "description" | "category" | "compositionType" | "content" | "contentJson" | "placeholders" | "isActive" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentTemplate"]>
+export type DocumentTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "description" | "category" | "compositionType" | "content" | "contentJson" | "placeholders" | "sharePointRelativeFolderPath" | "isActive" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentTemplate"]>
 export type DocumentTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>
   generationBatchItems?: boolean | Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs>
+  sharePointFilings?: boolean | Prisma.DocumentTemplate$sharePointFilingsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentTemplateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1339,6 +1536,7 @@ export type $DocumentTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
     generationBatchItems: Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>[]
+    sharePointFilings: Prisma.$EsigningSharePointFilingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1350,6 +1548,7 @@ export type $DocumentTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     content: string
     contentJson: runtime.JsonValue | null
     placeholders: runtime.JsonValue
+    sharePointRelativeFolderPath: string | null
     isActive: boolean
     version: number
     createdById: string
@@ -1754,6 +1953,7 @@ export interface Prisma__DocumentTemplateClient<T, Null = never, ExtArgs extends
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   generatedDocuments<T extends Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   generationBatchItems<T extends Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentTemplate$generationBatchItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentGenerationBatchItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sharePointFilings<T extends Prisma.DocumentTemplate$sharePointFilingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentTemplate$sharePointFilingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningSharePointFilingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1792,6 +1992,7 @@ export interface DocumentTemplateFieldRefs {
   readonly content: Prisma.FieldRef<"DocumentTemplate", 'String'>
   readonly contentJson: Prisma.FieldRef<"DocumentTemplate", 'Json'>
   readonly placeholders: Prisma.FieldRef<"DocumentTemplate", 'Json'>
+  readonly sharePointRelativeFolderPath: Prisma.FieldRef<"DocumentTemplate", 'String'>
   readonly isActive: Prisma.FieldRef<"DocumentTemplate", 'Boolean'>
   readonly version: Prisma.FieldRef<"DocumentTemplate", 'Int'>
   readonly createdById: Prisma.FieldRef<"DocumentTemplate", 'String'>
@@ -2239,6 +2440,30 @@ export type DocumentTemplate$generationBatchItemsArgs<ExtArgs extends runtime.Ty
   take?: number
   skip?: number
   distinct?: Prisma.DocumentGenerationBatchItemScalarFieldEnum | Prisma.DocumentGenerationBatchItemScalarFieldEnum[]
+}
+
+/**
+ * DocumentTemplate.sharePointFilings
+ */
+export type DocumentTemplate$sharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EsigningSharePointFiling
+   */
+  select?: Prisma.EsigningSharePointFilingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EsigningSharePointFiling
+   */
+  omit?: Prisma.EsigningSharePointFilingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EsigningSharePointFilingInclude<ExtArgs> | null
+  where?: Prisma.EsigningSharePointFilingWhereInput
+  orderBy?: Prisma.EsigningSharePointFilingOrderByWithRelationInput | Prisma.EsigningSharePointFilingOrderByWithRelationInput[]
+  cursor?: Prisma.EsigningSharePointFilingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EsigningSharePointFilingScalarFieldEnum | Prisma.EsigningSharePointFilingScalarFieldEnum[]
 }
 
 /**

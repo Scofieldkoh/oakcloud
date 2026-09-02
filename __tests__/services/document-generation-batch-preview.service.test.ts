@@ -306,6 +306,59 @@ describe('document generation batch preview and review', () => {
       where: { id: 'child-1' },
       data: { title: 'Engagement Letter_Acme_1 Sep 2026' },
     });
+    expect(prisma.documentGenerationBatchItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          validationDiagnostics: expect.objectContaining({ errors: [] }),
+        }),
+      }),
+    );
+  });
+
+  it('uses a populated document-specific date for the title token', async () => {
+    const item = batchItem({
+      configuration: {
+        ...batchItem().configuration,
+        title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
+        itemValues: { engagement_date: '2026-09-01' },
+        masterOverrides: {},
+      },
+    });
+    const batch = batchWith(item);
+    batch.masterFieldValues = {};
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      ...template,
+      contentJson: { documentTitleDateFieldKey: 'engagement_date' },
+    } as never);
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(batch as never);
+    vi.mocked(prisma.documentGenerationBatch.findFirstOrThrow).mockResolvedValue(
+      batchWith({
+        ...item,
+        generatedDocument: {
+          ...item.generatedDocument,
+          title: 'Engagement Letter_Acme_1 Sep 2026',
+        },
+      }) as never,
+    );
+
+    await previewDocumentGenerationBatchItem(
+      batchId,
+      itemId,
+      { expectedRevision: 3 },
+      actor,
+    );
+
+    expect(prisma.generatedDocument.update).toHaveBeenCalledWith({
+      where: { id: 'child-1' },
+      data: { title: 'Engagement Letter_Acme_1 Sep 2026' },
+    });
+    expect(prisma.documentGenerationBatchItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          validationDiagnostics: expect.objectContaining({ errors: [] }),
+        }),
+      }),
+    );
   });
 
   it('binds review to preview inputs and persisted editor content', async () => {

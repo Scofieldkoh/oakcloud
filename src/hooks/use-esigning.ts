@@ -279,7 +279,7 @@ async function deleteDocumentRequest(
   return response.json();
 }
 
-async function attachGeneratedDocumentsRequest(
+export async function attachGeneratedDocumentsRequest(
   envelopeId: string,
   generatedDocumentIds: string[],
   tenantId?: string | null,

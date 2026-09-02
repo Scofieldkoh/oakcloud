@@ -3,6 +3,7 @@ import { v5 as uuidv5 } from 'uuid';
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
+import { ensureFilingJobsForCompletedEnvelope } from '@/services/esigning-sharepoint-filing/enqueue';
 import { getEsigningDocumentOriginalFileName } from '@/lib/esigning-document-filename';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
@@ -239,8 +240,13 @@ export async function queueEsigningCompletionWork(
         }
       : {
           autoFilingStatus: 'NOT_REQUIRED',
-        },
+      },
   });
+
+  // SharePoint filing is an independent per-document queue. Queue its rows in
+  // this same transaction, but never let its state drive the legacy internal
+  // auto-filing status above.
+  await ensureFilingJobsForCompletedEnvelope(tx, input.envelopeId, input.completedAt);
 }
 
 async function claimAutoFileJobs(input: {

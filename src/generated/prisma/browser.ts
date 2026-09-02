@@ -68,6 +68,11 @@ export type UserCompanyAssignment = Prisma.UserCompanyAssignmentModel
  */
 export type Company = Prisma.CompanyModel
 /**
+ * Model CompanySharePointFolder
+ *
+ */
+export type CompanySharePointFolder = Prisma.CompanySharePointFolderModel
+/**
  * Model CompanyFormerName
  *
  */
@@ -327,6 +332,11 @@ export type EsigningEnvelope = Prisma.EsigningEnvelopeModel
  *
  */
 export type EsigningEnvelopeDocument = Prisma.EsigningEnvelopeDocumentModel
+/**
+ * Model EsigningSharePointFiling
+ *
+ */
+export type EsigningSharePointFiling = Prisma.EsigningSharePointFilingModel
 /**
  * Model EsigningEnvelopeRecipient
  *

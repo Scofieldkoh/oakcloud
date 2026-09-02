@@ -2872,3 +2872,13 @@ npm run db:backfill-contact-canonical-names -- --batch-size=500 --resume-after=<
 The JSON result reports `processed`, `updated`, `skipped`, `failed`, and `lastId`. A failed batch is rolled back, leaves `lastId` at the prior committed batch, and exits nonzero so the operator can correct the cause and resume. A second complete run should report zero updates.
 
 For a dry operational verification, use only an explicitly confirmed disposable/local PostgreSQL database: validate and migrate, run the backfill twice, approve two concurrent Chinese-name document revisions and confirm they resolve to one contact, then merge a disposable duplicate group. Verify source contacts are absent, the append-only ledger and audit rows exist, and all former source references point to the master. Exercise a forced transaction failure to confirm rollback and retry behavior, then remove the disposable tenant/data. Never run smoke fixtures against a shared or production URL.
+
+### SharePoint signed-document filing
+
+The `company_sharepoint_folders` table stores a workspace-owned, same-drive
+mapping from a company to an immediate child of the configured Client Documents
+root. `esigning_sharepoint_filings` is an independent per-envelope-document
+ledger. It snapshots route/configuration inputs, waits for the signed source,
+uses leased claims for worker concurrency, and retains remote identity, error,
+retry, and recovery-resolution evidence. Existing `autoFilingStatus` fields on
+`esigning_envelopes` remain the Oakcloud internal filing workflow.

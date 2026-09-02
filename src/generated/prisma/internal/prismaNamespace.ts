@@ -394,6 +394,7 @@ export const ModelName = {
   PerformanceMeasurement: 'PerformanceMeasurement',
   UserCompanyAssignment: 'UserCompanyAssignment',
   Company: 'Company',
+  CompanySharePointFolder: 'CompanySharePointFolder',
   CompanyFormerName: 'CompanyFormerName',
   CompanyAddress: 'CompanyAddress',
   Contact: 'Contact',
@@ -446,6 +447,7 @@ export const ModelName = {
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
+  EsigningSharePointFiling: 'EsigningSharePointFiling',
   EsigningEnvelopeRecipient: 'EsigningEnvelopeRecipient',
   EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
   EsigningDocumentFieldValue: 'EsigningDocumentFieldValue',
@@ -521,7 +523,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1262,6 +1264,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CompanyCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CompanyCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanySharePointFolder: {
+      payload: Prisma.$CompanySharePointFolderPayload<ExtArgs>
+      fields: Prisma.CompanySharePointFolderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanySharePointFolderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanySharePointFolderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>
+        }
+        findFirst: {
+          args: Prisma.CompanySharePointFolderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanySharePointFolderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>
+        }
+        findMany: {
+          args: Prisma.CompanySharePointFolderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>[]
+        }
+        create: {
+          args: Prisma.CompanySharePointFolderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>
+        }
+        createMany: {
+          args: Prisma.CompanySharePointFolderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanySharePointFolderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>[]
+        }
+        delete: {
+          args: Prisma.CompanySharePointFolderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>
+        }
+        update: {
+          args: Prisma.CompanySharePointFolderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanySharePointFolderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanySharePointFolderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanySharePointFolderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanySharePointFolderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySharePointFolderPayload>
+        }
+        aggregate: {
+          args: Prisma.CompanySharePointFolderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanySharePointFolder>
+        }
+        groupBy: {
+          args: Prisma.CompanySharePointFolderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanySharePointFolderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanySharePointFolderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanySharePointFolderCountAggregateOutputType> | number
         }
       }
     }
@@ -5110,6 +5186,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EsigningEnvelopeDocumentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeDocumentCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningSharePointFiling: {
+      payload: Prisma.$EsigningSharePointFilingPayload<ExtArgs>
+      fields: Prisma.EsigningSharePointFilingFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningSharePointFilingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningSharePointFilingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningSharePointFilingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningSharePointFilingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningSharePointFilingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningSharePointFilingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningSharePointFilingCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningSharePointFilingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningSharePointFilingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>
+        }
+        update: {
+          args: Prisma.EsigningSharePointFilingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningSharePointFilingDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningSharePointFilingUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningSharePointFilingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningSharePointFilingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningSharePointFilingPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningSharePointFilingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningSharePointFiling>
+        }
+        groupBy: {
+          args: Prisma.EsigningSharePointFilingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningSharePointFilingGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningSharePointFilingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningSharePointFilingCountAggregateOutputType> | number
         }
       }
     }
@@ -9776,6 +9926,24 @@ export const CompanyScalarFieldEnum = {
 export type CompanyScalarFieldEnum = (typeof CompanyScalarFieldEnum)[keyof typeof CompanyScalarFieldEnum]
 
 
+export const CompanySharePointFolderScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  connectorId: 'connectorId',
+  driveId: 'driveId',
+  folderItemId: 'folderItemId',
+  folderName: 'folderName',
+  folderWebUrl: 'folderWebUrl',
+  lastVerifiedAt: 'lastVerifiedAt',
+  verifiedById: 'verifiedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanySharePointFolderScalarFieldEnum = (typeof CompanySharePointFolderScalarFieldEnum)[keyof typeof CompanySharePointFolderScalarFieldEnum]
+
+
 export const CompanyFormerNameScalarFieldEnum = {
   id: 'id',
   companyId: 'companyId',
@@ -10120,6 +10288,7 @@ export const DocumentTemplateScalarFieldEnum = {
   content: 'content',
   contentJson: 'contentJson',
   placeholders: 'placeholders',
+  sharePointRelativeFolderPath: 'sharePointRelativeFolderPath',
   isActive: 'isActive',
   version: 'version',
   createdById: 'createdById',
@@ -10136,6 +10305,7 @@ export const GeneratedDocumentScalarFieldEnum = {
   tenantId: 'tenantId',
   templateId: 'templateId',
   templateVersion: 'templateVersion',
+  sharePointRelativeFolderPathSnapshot: 'sharePointRelativeFolderPathSnapshot',
   companyId: 'companyId',
   title: 'title',
   content: 'content',
@@ -10866,6 +11036,53 @@ export const EsigningEnvelopeDocumentScalarFieldEnum = {
 } as const
 
 export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
+
+
+export const EsigningSharePointFilingScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  envelopeDocumentId: 'envelopeDocumentId',
+  companyId: 'companyId',
+  connectorId: 'connectorId',
+  destinationKind: 'destinationKind',
+  routingReason: 'routingReason',
+  templateId: 'templateId',
+  templateVersion: 'templateVersion',
+  configVersion: 'configVersion',
+  companyNameSnapshot: 'companyNameSnapshot',
+  documentTitleSnapshot: 'documentTitleSnapshot',
+  intendedCompanyDriveId: 'intendedCompanyDriveId',
+  intendedCompanyFolderId: 'intendedCompanyFolderId',
+  intendedRelativePath: 'intendedRelativePath',
+  orphanDriveId: 'orphanDriveId',
+  orphanFolderItemId: 'orphanFolderItemId',
+  resolvedDestinationDriveId: 'resolvedDestinationDriveId',
+  resolvedDestinationId: 'resolvedDestinationId',
+  sourceSignedHash: 'sourceSignedHash',
+  sourceSize: 'sourceSize',
+  targetFileName: 'targetFileName',
+  uploadedDriveId: 'uploadedDriveId',
+  uploadedItemId: 'uploadedItemId',
+  uploadedWebUrl: 'uploadedWebUrl',
+  uploadedFileName: 'uploadedFileName',
+  status: 'status',
+  attempts: 'attempts',
+  availableAt: 'availableAt',
+  claimedAt: 'claimedAt',
+  leaseExpiresAt: 'leaseExpiresAt',
+  claimToken: 'claimToken',
+  lastErrorCode: 'lastErrorCode',
+  lastError: 'lastError',
+  filedAt: 'filedAt',
+  resolvedAt: 'resolvedAt',
+  resolvedById: 'resolvedById',
+  resolutionNote: 'resolutionNote',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningSharePointFilingScalarFieldEnum = (typeof EsigningSharePointFilingScalarFieldEnum)[keyof typeof EsigningSharePointFilingScalarFieldEnum]
 
 
 export const EsigningEnvelopeRecipientScalarFieldEnum = {
@@ -12791,6 +13008,48 @@ export type ListEnumEsigningPostCompletionStatusFieldRefInput<$PrismaModel> = Fi
 
 
 /**
+ * Reference to a field of type 'EsigningSharePointDestinationKind'
+ */
+export type EnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSharePointDestinationKind'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningSharePointDestinationKind[]'
+ */
+export type ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSharePointDestinationKind[]'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningSharePointRoutingReason'
+ */
+export type EnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSharePointRoutingReason'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningSharePointRoutingReason[]'
+ */
+export type ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSharePointRoutingReason[]'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningSharePointFilingStatus'
+ */
+export type EnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSharePointFilingStatus'>
+
+
+
+/**
+ * Reference to a field of type 'EsigningSharePointFilingStatus[]'
+ */
+export type ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSharePointFilingStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'EsigningRecipientType'
  */
 export type EnumEsigningRecipientTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientType'>
@@ -13706,6 +13965,7 @@ export type GlobalOmitConfig = {
   performanceMeasurement?: Prisma.PerformanceMeasurementOmit
   userCompanyAssignment?: Prisma.UserCompanyAssignmentOmit
   company?: Prisma.CompanyOmit
+  companySharePointFolder?: Prisma.CompanySharePointFolderOmit
   companyFormerName?: Prisma.CompanyFormerNameOmit
   companyAddress?: Prisma.CompanyAddressOmit
   contact?: Prisma.ContactOmit
@@ -13758,6 +14018,7 @@ export type GlobalOmitConfig = {
   aiConversation?: Prisma.AiConversationOmit
   esigningEnvelope?: Prisma.EsigningEnvelopeOmit
   esigningEnvelopeDocument?: Prisma.EsigningEnvelopeDocumentOmit
+  esigningSharePointFiling?: Prisma.EsigningSharePointFilingOmit
   esigningEnvelopeRecipient?: Prisma.EsigningEnvelopeRecipientOmit
   esigningDocumentFieldDefinition?: Prisma.EsigningDocumentFieldDefinitionOmit
   esigningDocumentFieldValue?: Prisma.EsigningDocumentFieldValueOmit

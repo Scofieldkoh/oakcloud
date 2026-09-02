@@ -253,6 +253,7 @@ export async function createDocumentGenerationBatch(
           tenantId,
           templateId: template.id,
           templateVersion: template.version,
+          sharePointRelativeFolderPathSnapshot: template.sharePointRelativeFolderPath,
           title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
           content: '',
           status: 'DRAFT',
@@ -584,6 +585,7 @@ export async function updateDocumentGenerationBatch(
             tenantId: params.tenantId,
             templateId: template.id,
             templateVersion: template.version,
+            sharePointRelativeFolderPathSnapshot: template.sharePointRelativeFolderPath,
             title: submitted.configuration?.title
               || DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
             content: '',

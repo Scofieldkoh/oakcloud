@@ -179,4 +179,48 @@ describe('connector visibility with undecryptable credentials', () => {
       })
     );
   });
+
+  it('preserves signed-document filing settings during a general connector update', async () => {
+    const { prisma } = await import('@/lib/prisma');
+    const { decrypt } = await import('@/lib/encryption');
+    const { updateConnector } = await import('@/services/connector.service');
+    const filingSettings = {
+      enabled: false,
+      configVersion: 3,
+      clientDocumentsRoot: { driveId: 'drive-id', itemId: 'client-root', name: 'Client Documents', webUrl: 'https://sharepoint.test/client' },
+      orphanDocumentsFolder: { driveId: 'drive-id', itemId: 'orphan-root', name: 'Unassigned', webUrl: 'https://sharepoint.test/unassigned' },
+    };
+    const existing = connector({
+      id: 'sharepoint-connector',
+      workspaceId: 'tenant-1',
+      type: 'STORAGE',
+      provider: 'SHAREPOINT',
+      settings: { signedDocumentFiling: filingSettings, mailboxUserIds: ['old@example.com'] },
+    });
+
+    vi.mocked(prisma.connector.findFirst).mockResolvedValue(existing as never);
+    vi.mocked(prisma.connector.update).mockResolvedValue(existing as never);
+    vi.mocked(decrypt).mockReturnValue(JSON.stringify({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      tenantId: 'tenant-id',
+      siteId: 'site-id',
+    }));
+
+    await updateConnector(
+      'sharepoint-connector',
+      { settings: { mailboxUserIds: ['new@example.com'] } },
+      { tenantId: 'tenant-1', userId: 'user-1', isSuperAdmin: false }
+    );
+
+    expect(prisma.connector.update).toHaveBeenCalledWith({
+      where: { id: 'sharepoint-connector' },
+      data: {
+        settings: {
+          mailboxUserIds: ['new@example.com'],
+          signedDocumentFiling: filingSettings,
+        },
+      },
+    });
+  });
 });

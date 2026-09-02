@@ -7,6 +7,7 @@ import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import type { CompanyWithRelations } from '@/services/company/types';
 import { addMonthsClamped, type DateOnly } from '@/services/service-schedule';
 import { ActiveBadge, OfficerRoleBadge, ShareholderTypeBadge } from './company-profile-badges';
+import { CompanySharePointFolderField } from '@/components/companies/company-sharepoint-folder-field';
 
 function day(value: Date | string | null | undefined): string {
   if (!value) return '-';
@@ -88,7 +89,7 @@ function FieldLabel({ children }: { children: ReactNode }) {
   return <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-text-secondary">{children}</p>;
 }
 
-export function CompanyProfileSections({ company, companyId, onRetrieveAcra, isRetrievingAcra }: { company: CompanyWithRelations; companyId: string; onRetrieveAcra?: () => void; isRetrievingAcra?: boolean }) {
+export function CompanyProfileSections({ company, companyId, canEdit = false, onRetrieveAcra, isRetrievingAcra }: { company: CompanyWithRelations; companyId: string; canEdit?: boolean; onRetrieveAcra?: () => void; isRetrievingAcra?: boolean }) {
   const [showCeased, setShowCeased] = useState(false);
   const [showFormer, setShowFormer] = useState(false);
   const [showDischarged, setShowDischarged] = useState(false);
@@ -160,6 +161,7 @@ export function CompanyProfileSections({ company, companyId, onRetrieveAcra, isR
           <div><FieldLabel>ALIAS</FieldLabel><p>{getCompanyDisplayLabel(company)}</p></div>
         </div>
         <div className="divide-y divide-border-primary text-sm">
+          <CompanySharePointFolderField company={company} canEdit={canEdit} />
           <details className="group px-3 py-2.5">
             <summary className="cursor-pointer font-medium text-text-primary">Company history</summary>
             <div className="mt-3 space-y-2 text-text-secondary">

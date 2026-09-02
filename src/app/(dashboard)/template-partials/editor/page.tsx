@@ -900,6 +900,7 @@ function TemplateEditorContent() {
     compositionType: 'STANDARD',
     content: '',
     isActive: true,
+    sharePointRelativeFolderPath: null,
     customPlaceholders: [],
     titleDateFieldKey: null,
     layout: DEFAULT_A4_DOCUMENT_LAYOUT,
@@ -1294,6 +1295,7 @@ function TemplateEditorContent() {
         compositionType: existingTemplate.compositionType || 'STANDARD',
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
+        sharePointRelativeFolderPath: existingTemplate.sharePointRelativeFolderPath ?? null,
         customPlaceholders: placeholdersWithLegacy,
         titleDateFieldKey: (() => {
           const contentJson = existingTemplate.contentJson;
@@ -1578,6 +1580,7 @@ function TemplateEditorContent() {
         compositionType: formData.compositionType,
         content: formData.content,
         isActive: formData.isActive,
+        sharePointRelativeFolderPath: formData.sharePointRelativeFolderPath || null,
         placeholders,
         contentJson: {
           ...mergeA4DocumentLayout(existingTemplate?.contentJson, formData.layout),

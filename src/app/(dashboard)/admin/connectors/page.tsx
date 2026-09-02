@@ -67,6 +67,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { SharePointFilingSettings } from '@/components/connectors/sharepoint/sharepoint-filing-settings';
 
 /**
  * Convert a Date to a local YYYY-MM-DD string (uses browser timezone, not UTC)
@@ -450,11 +451,20 @@ export default function ConnectorsPage() {
         name: editForm.name,
         isEnabled: editForm.isEnabled,
       };
+      const isStorageProvider =
+        editingConnector.provider === 'ONEDRIVE' || editingConnector.provider === 'SHAREPOINT';
       const existingSettings =
         editingConnector.settings && typeof editingConnector.settings === 'object'
           ? editingConnector.settings
           : {};
       const nextSettings: Record<string, unknown> = { ...existingSettings };
+
+      // Signed-document filing is edited by its own settings panel. Do not
+      // submit the snapshot captured when this modal opened, or a later save
+      // could overwrite newer filing roots/configuration.
+      if (isStorageProvider) {
+        delete nextSettings.signedDocumentFiling;
+      }
 
       // Only include credentials if they've been modified (non-empty)
       const hasCredentialChanges = Object.values(editForm.credentials).some((v) => v);
@@ -462,8 +472,6 @@ export default function ConnectorsPage() {
         updateData.credentials = editForm.credentials;
       }
 
-      const isStorageProvider =
-        editingConnector.provider === 'ONEDRIVE' || editingConnector.provider === 'SHAREPOINT';
       if (isStorageProvider) {
         const parsedMailboxInput = parseMailboxUserIdsInput(editForm.mailboxUserIdsText);
         if (parsedMailboxInput.invalidValues.length > 0) {
@@ -1034,7 +1042,7 @@ export default function ConnectorsPage() {
         title="Add Connector"
         size="md"
       >
-        <form onSubmit={handleCreate}>
+        <form onSubmit={handleCreate} autoComplete="off">
           <ModalBody>
             {formError && (
               <Alert variant="error" className="mb-4">
@@ -1135,6 +1143,8 @@ export default function ConnectorsPage() {
                 {getCredentialFields(createForm.provider).map((field) => (
                   <div key={field.key} className="relative">
                     <FormInput
+                      id={`create-connector-${field.key}`}
+                      name={`create-connector-${field.key}`}
                       label={field.label}
                       type={
                         field.type === 'password' && !showCredentials[field.key]
@@ -1142,6 +1152,7 @@ export default function ConnectorsPage() {
                           : 'text'
                       }
                       value={createForm.credentials[field.key] || ''}
+                      autoComplete={field.type === 'password' ? 'new-password' : 'off'}
                       onChange={(e) =>
                         setCreateForm({
                           ...createForm,
@@ -1260,7 +1271,7 @@ export default function ConnectorsPage() {
         title={`Edit ${editingConnector?.name}`}
         size="4xl"
       >
-        <form onSubmit={handleUpdate}>
+        <form onSubmit={handleUpdate} autoComplete="off">
           <ModalBody>
             {formError && (
               <Alert variant="error" className="mb-4">
@@ -1300,6 +1311,8 @@ export default function ConnectorsPage() {
                   {getCredentialFields(editingConnector.provider).map((field) => (
                     <div key={field.key} className="relative">
                       <FormInput
+                        id={`edit-connector-${field.key}`}
+                        name={`edit-connector-${field.key}`}
                         label={field.label}
                         type={
                           field.type === 'password' && !showCredentials[field.key]
@@ -1307,6 +1320,7 @@ export default function ConnectorsPage() {
                             : 'text'
                         }
                         value={editForm.credentials[field.key] || ''}
+                        autoComplete={field.type === 'password' ? 'new-password' : 'off'}
                         onChange={(e) =>
                           setEditForm({
                             ...editForm,
@@ -1359,7 +1373,11 @@ export default function ConnectorsPage() {
                       values with comma or newline.
                     </p>
                   </div>
-                )}
+                  )}
+
+              {editingConnector?.provider === 'SHAREPOINT' && editingConnector.workspaceId === session?.tenantId && (
+                <SharePointFilingSettings connectorId={editingConnector.id} />
+              )}
 
               {/* Models Ã¢â‚¬â€ AI providers only */}
               {editingConnector?.type === 'AI_PROVIDER' && (

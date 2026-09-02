@@ -166,7 +166,12 @@ export function resolveEffectiveCustomData(
     const key = normalizePlaceholderKey(field.key);
     if (!key) continue;
     const id = masterFieldId(key, canonicalPlaceholderType(field.type));
-    if (Object.prototype.hasOwnProperty.call(overrides, id)) {
+    if (Object.prototype.hasOwnProperty.call(itemValues, key)) {
+      effective[key] = itemValues[key];
+    } else if (Object.prototype.hasOwnProperty.call(itemValues, `custom.${key}`)) {
+      // Legacy generation sessions stored custom values with their namespace.
+      effective[key] = itemValues[`custom.${key}`];
+    } else if (Object.prototype.hasOwnProperty.call(overrides, id)) {
       effective[key] = overrides[id];
     } else if (Object.prototype.hasOwnProperty.call(masterValues, id)) {
       effective[key] = masterValues[id];

@@ -37,6 +37,16 @@ type Decimal = Prisma.Decimal;
 // ============================================================================
 
 export interface CompanyWithRelations extends Company {
+  sharePointFolderMapping?: {
+    id: string;
+    companyId: string;
+    connectorId: string;
+    driveId: string;
+    folderItemId: string;
+    folderName: string;
+    folderWebUrl: string;
+    lastVerifiedAt: Date | null;
+  } | null;
   /** Optional user-facing label; null means derive initials from the legal name. */
   displayAlias: string | null;
   addresses?: Array<{
@@ -1234,6 +1244,7 @@ export async function getCompanyFullDetails(
     charges,
     auditor,
     documents,
+    sharePointFolderMapping,
   ] = await Promise.all([
     // Main company data (minimal select for speed)
     prisma.company.findFirst({
@@ -1326,6 +1337,19 @@ export async function getCompanyFullDetails(
         },
       },
     }),
+    prisma.companySharePointFolder?.findUnique({
+      where: { companyId: id },
+      select: {
+        id: true,
+        companyId: true,
+        connectorId: true,
+        driveId: true,
+        folderItemId: true,
+        folderName: true,
+        folderWebUrl: true,
+        lastVerifiedAt: true,
+      },
+    }),
   ]);
 
   if (!company) return null;
@@ -1342,6 +1366,7 @@ export async function getCompanyFullDetails(
     charges,
     auditor,
     documents,
+    sharePointFolderMapping,
     _count: {
       documents: documents.length,
       officers: officers.length,

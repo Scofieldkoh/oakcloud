@@ -146,4 +146,28 @@ describe('document generation master fields', () => {
       client_name: 'Default client',
     });
   });
+
+  it('keeps populated document-specific fields in the effective data', () => {
+    const effective = resolveEffectiveCustomData({
+      templateFields: definitions,
+      templateId: 'template-a',
+      masterValues: {},
+      overrides: {},
+      itemValues: { engagement_date: '2026-09-01' },
+    });
+
+    expect(effective.engagement_date).toBe('2026-09-01');
+  });
+
+  it('normalizes namespaced legacy item values', () => {
+    const effective = resolveEffectiveCustomData({
+      templateFields: definitions,
+      templateId: 'template-a',
+      masterValues: {},
+      overrides: {},
+      itemValues: { 'custom.engagement_date': '2026-09-01' },
+    });
+
+    expect(effective.engagement_date).toBe('2026-09-01');
+  });
 });

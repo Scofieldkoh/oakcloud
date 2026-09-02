@@ -2305,6 +2305,24 @@ Remove a tag from a processing document.
 
 *Last updated: 2026-03-11*
 
+### SharePoint signed-document filing
+
+All filing endpoints require an authenticated workspace session and a
+workspace-owned SharePoint connector. System/shared connectors and raw Graph
+continuation URLs are rejected.
+
+- `GET /api/sharepoint/connection-status?connectorId=<id>` checks the selected connector and canonical drive.
+- `GET|PUT /api/settings/sharepoint-filing?connectorId=<id>` reads or updates verified filing roots and the workspace cutover toggle.
+- `GET|POST /api/sharepoint/folders` lists immediate child folders or creates a validated child folder. Clients receive opaque cursors.
+- `GET|PUT|DELETE /api/companies/:id/sharepoint-folder` reads, maps, or removes a company folder; `POST .../verify` refreshes its canonical name/URL.
+- `GET /api/settings/sharepoint-filing/status` returns tenant-scoped safe queue aggregates.
+- `GET /api/settings/sharepoint-filing/unassigned` lists orphan and failed jobs; the job `retry`, `resolve`, and `notes` endpoints provide recovery actions.
+
+Automatic filing requires both `SHAREPOINT_SIGNED_FILING_ENABLED=true` and the
+workspace toggle. Only envelopes completed at or after the current `enabledAt`
+cutover are discovered automatically; Oakcloud's internal signed PDF remains
+the source of record.
+
 ---
 
 **Changelog:**

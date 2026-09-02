@@ -528,6 +528,8 @@ Automated filing may deconflict genuine filename collisions with ` (1)`, ` (2)`,
 - Cap automatic suffix allocation at 100 candidates; an exhausted or ambiguous reconciliation becomes `REVIEW_REQUIRED`.
 - Use the small-file API or upload sessions according to Graph limits.
 
+The uploaded PDF is the signed document followed by its certificate of completion. The persisted source hash and size refer to this combined filing package, so retries and collision reconciliation compare the complete SharePoint payload.
+
 Recommended filename:
 
 ```text

@@ -12,7 +12,7 @@ vi.mock('@/services/esigning-email-delivery.service', () => ({
   withEsigningDeliveryTarget: vi.fn(),
 }));
 
-const { buildCertificatePdf } = await import('@/services/esigning-pdf.service');
+const { buildCertificatePdf, mergePdfBuffers } = await import('@/services/esigning-pdf.service');
 
 function at(iso: string) {
   return new Date(iso);
@@ -149,5 +149,25 @@ describe('buildCertificatePdf', () => {
     await expect(
       render(buildEnvelope(), { ...documentFixture, signedHash: null }),
     ).resolves.toBeInstanceOf(Buffer);
+  });
+});
+
+describe('mergePdfBuffers', () => {
+  it('keeps the signed document before its certificate', async () => {
+    const signedDocument = await PDFDocument.create();
+    signedDocument.addPage([400, 500]);
+    const certificate = await PDFDocument.create();
+    certificate.addPage([600, 700]);
+    certificate.addPage([600, 700]);
+
+    const merged = await mergePdfBuffers([
+      new Uint8Array(await signedDocument.save()),
+      new Uint8Array(await certificate.save()),
+    ]);
+    const mergedPdf = await PDFDocument.load(new Uint8Array(merged));
+
+    expect(mergedPdf.getPageCount()).toBe(3);
+    expect(mergedPdf.getPage(0).getSize()).toMatchObject({ width: 400, height: 500 });
+    expect(mergedPdf.getPage(1).getSize()).toMatchObject({ width: 600, height: 700 });
   });
 });

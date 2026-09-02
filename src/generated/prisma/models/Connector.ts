@@ -304,6 +304,8 @@ export type ConnectorWhereInput = {
   usageLogs?: Prisma.ConnectorUsageLogListRelationFilter
   workspace?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   workspaceAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
+  companySharePointFolders?: Prisma.CompanySharePointFolderListRelationFilter
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
 }
 
 export type ConnectorOrderByWithRelationInput = {
@@ -327,6 +329,8 @@ export type ConnectorOrderByWithRelationInput = {
   usageLogs?: Prisma.ConnectorUsageLogOrderByRelationAggregateInput
   workspace?: Prisma.WorkspaceOrderByWithRelationInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessOrderByRelationAggregateInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderOrderByRelationAggregateInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingOrderByRelationAggregateInput
 }
 
 export type ConnectorWhereUniqueInput = Prisma.AtLeast<{
@@ -354,6 +358,8 @@ export type ConnectorWhereUniqueInput = Prisma.AtLeast<{
   usageLogs?: Prisma.ConnectorUsageLogListRelationFilter
   workspace?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   workspaceAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
+  companySharePointFolders?: Prisma.CompanySharePointFolderListRelationFilter
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
 }, "id" | "workspaceId_provider_deletedAt">
 
 export type ConnectorOrderByWithAggregationInput = {
@@ -422,6 +428,8 @@ export type ConnectorCreateInput = {
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
   workspace?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateInput = {
@@ -444,6 +452,8 @@ export type ConnectorUncheckedCreateInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUpdateInput = {
@@ -466,6 +476,8 @@ export type ConnectorUpdateInput = {
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
   workspace?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateInput = {
@@ -488,6 +500,8 @@ export type ConnectorUncheckedUpdateInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateManyInput = {
@@ -554,6 +568,11 @@ export type ConnectorListRelationFilter = {
 
 export type ConnectorOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type ConnectorScalarRelationFilter = {
+  is?: Prisma.ConnectorWhereInput
+  isNot?: Prisma.ConnectorWhereInput
 }
 
 export type ConnectorWorkspaceIdProviderDeletedAtCompoundUniqueInput = {
@@ -625,11 +644,6 @@ export type ConnectorSumOrderByAggregateInput = {
   callCount?: Prisma.SortOrder
 }
 
-export type ConnectorScalarRelationFilter = {
-  is?: Prisma.ConnectorWhereInput
-  isNot?: Prisma.ConnectorWhereInput
-}
-
 export type ConnectorCreateNestedManyWithoutWorkspaceInput = {
   create?: Prisma.XOR<Prisma.ConnectorCreateWithoutWorkspaceInput, Prisma.ConnectorUncheckedCreateWithoutWorkspaceInput> | Prisma.ConnectorCreateWithoutWorkspaceInput[] | Prisma.ConnectorUncheckedCreateWithoutWorkspaceInput[]
   connectOrCreate?: Prisma.ConnectorCreateOrConnectWithoutWorkspaceInput | Prisma.ConnectorCreateOrConnectWithoutWorkspaceInput[]
@@ -670,6 +684,20 @@ export type ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput = {
   update?: Prisma.ConnectorUpdateWithWhereUniqueWithoutWorkspaceInput | Prisma.ConnectorUpdateWithWhereUniqueWithoutWorkspaceInput[]
   updateMany?: Prisma.ConnectorUpdateManyWithWhereWithoutWorkspaceInput | Prisma.ConnectorUpdateManyWithWhereWithoutWorkspaceInput[]
   deleteMany?: Prisma.ConnectorScalarWhereInput | Prisma.ConnectorScalarWhereInput[]
+}
+
+export type ConnectorCreateNestedOneWithoutCompanySharePointFoldersInput = {
+  create?: Prisma.XOR<Prisma.ConnectorCreateWithoutCompanySharePointFoldersInput, Prisma.ConnectorUncheckedCreateWithoutCompanySharePointFoldersInput>
+  connectOrCreate?: Prisma.ConnectorCreateOrConnectWithoutCompanySharePointFoldersInput
+  connect?: Prisma.ConnectorWhereUniqueInput
+}
+
+export type ConnectorUpdateOneRequiredWithoutCompanySharePointFoldersNestedInput = {
+  create?: Prisma.XOR<Prisma.ConnectorCreateWithoutCompanySharePointFoldersInput, Prisma.ConnectorUncheckedCreateWithoutCompanySharePointFoldersInput>
+  connectOrCreate?: Prisma.ConnectorCreateOrConnectWithoutCompanySharePointFoldersInput
+  upsert?: Prisma.ConnectorUpsertWithoutCompanySharePointFoldersInput
+  connect?: Prisma.ConnectorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ConnectorUpdateToOneWithWhereWithoutCompanySharePointFoldersInput, Prisma.ConnectorUpdateWithoutCompanySharePointFoldersInput>, Prisma.ConnectorUncheckedUpdateWithoutCompanySharePointFoldersInput>
 }
 
 export type EnumConnectorTypeFieldUpdateOperationsInput = {
@@ -722,6 +750,20 @@ export type ConnectorUpdateOneRequiredWithoutModelConfigsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ConnectorUpdateToOneWithWhereWithoutModelConfigsInput, Prisma.ConnectorUpdateWithoutModelConfigsInput>, Prisma.ConnectorUncheckedUpdateWithoutModelConfigsInput>
 }
 
+export type ConnectorCreateNestedOneWithoutEsigningSharePointFilingsInput = {
+  create?: Prisma.XOR<Prisma.ConnectorCreateWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUncheckedCreateWithoutEsigningSharePointFilingsInput>
+  connectOrCreate?: Prisma.ConnectorCreateOrConnectWithoutEsigningSharePointFilingsInput
+  connect?: Prisma.ConnectorWhereUniqueInput
+}
+
+export type ConnectorUpdateOneRequiredWithoutEsigningSharePointFilingsNestedInput = {
+  create?: Prisma.XOR<Prisma.ConnectorCreateWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUncheckedCreateWithoutEsigningSharePointFilingsInput>
+  connectOrCreate?: Prisma.ConnectorCreateOrConnectWithoutEsigningSharePointFilingsInput
+  upsert?: Prisma.ConnectorUpsertWithoutEsigningSharePointFilingsInput
+  connect?: Prisma.ConnectorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ConnectorUpdateToOneWithWhereWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUpdateWithoutEsigningSharePointFilingsInput>, Prisma.ConnectorUncheckedUpdateWithoutEsigningSharePointFilingsInput>
+}
+
 export type ConnectorCreateWithoutWorkspaceInput = {
   id?: string
   name: string
@@ -741,6 +783,8 @@ export type ConnectorCreateWithoutWorkspaceInput = {
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutWorkspaceInput = {
@@ -762,6 +806,8 @@ export type ConnectorUncheckedCreateWithoutWorkspaceInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutWorkspaceInput = {
@@ -812,6 +858,114 @@ export type ConnectorScalarWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"Connector"> | Date | string | null
 }
 
+export type ConnectorCreateWithoutCompanySharePointFoldersInput = {
+  id?: string
+  name: string
+  type: $Enums.ConnectorType
+  provider: $Enums.ConnectorProvider
+  credentials: string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: boolean
+  isDefault?: boolean
+  callCount?: number
+  lastUsedAt?: Date | string | null
+  lastTestedAt?: Date | string | null
+  lastTestResult?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
+  usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
+  workspace?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutConnectorInput
+}
+
+export type ConnectorUncheckedCreateWithoutCompanySharePointFoldersInput = {
+  id?: string
+  workspaceId?: string | null
+  name: string
+  type: $Enums.ConnectorType
+  provider: $Enums.ConnectorProvider
+  credentials: string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: boolean
+  isDefault?: boolean
+  callCount?: number
+  lastUsedAt?: Date | string | null
+  lastTestedAt?: Date | string | null
+  lastTestResult?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
+  usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutConnectorInput
+}
+
+export type ConnectorCreateOrConnectWithoutCompanySharePointFoldersInput = {
+  where: Prisma.ConnectorWhereUniqueInput
+  create: Prisma.XOR<Prisma.ConnectorCreateWithoutCompanySharePointFoldersInput, Prisma.ConnectorUncheckedCreateWithoutCompanySharePointFoldersInput>
+}
+
+export type ConnectorUpsertWithoutCompanySharePointFoldersInput = {
+  update: Prisma.XOR<Prisma.ConnectorUpdateWithoutCompanySharePointFoldersInput, Prisma.ConnectorUncheckedUpdateWithoutCompanySharePointFoldersInput>
+  create: Prisma.XOR<Prisma.ConnectorCreateWithoutCompanySharePointFoldersInput, Prisma.ConnectorUncheckedCreateWithoutCompanySharePointFoldersInput>
+  where?: Prisma.ConnectorWhereInput
+}
+
+export type ConnectorUpdateToOneWithWhereWithoutCompanySharePointFoldersInput = {
+  where?: Prisma.ConnectorWhereInput
+  data: Prisma.XOR<Prisma.ConnectorUpdateWithoutCompanySharePointFoldersInput, Prisma.ConnectorUncheckedUpdateWithoutCompanySharePointFoldersInput>
+}
+
+export type ConnectorUpdateWithoutCompanySharePointFoldersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumConnectorTypeFieldUpdateOperationsInput | $Enums.ConnectorType
+  provider?: Prisma.EnumConnectorProviderFieldUpdateOperationsInput | $Enums.ConnectorProvider
+  credentials?: Prisma.StringFieldUpdateOperationsInput | string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  callCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUsedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestResult?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
+  usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
+  workspace?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutConnectorNestedInput
+}
+
+export type ConnectorUncheckedUpdateWithoutCompanySharePointFoldersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumConnectorTypeFieldUpdateOperationsInput | $Enums.ConnectorType
+  provider?: Prisma.EnumConnectorProviderFieldUpdateOperationsInput | $Enums.ConnectorProvider
+  credentials?: Prisma.StringFieldUpdateOperationsInput | string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  callCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUsedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestResult?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
+  usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutConnectorNestedInput
+}
+
 export type ConnectorCreateWithoutWorkspaceAccessInput = {
   id?: string
   name: string
@@ -831,6 +985,8 @@ export type ConnectorCreateWithoutWorkspaceAccessInput = {
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
   workspace?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutWorkspaceAccessInput = {
@@ -852,6 +1008,8 @@ export type ConnectorUncheckedCreateWithoutWorkspaceAccessInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutWorkspaceAccessInput = {
@@ -889,6 +1047,8 @@ export type ConnectorUpdateWithoutWorkspaceAccessInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
   workspace?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutWorkspaceAccessInput = {
@@ -910,6 +1070,8 @@ export type ConnectorUncheckedUpdateWithoutWorkspaceAccessInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateWithoutUsageLogsInput = {
@@ -931,6 +1093,8 @@ export type ConnectorCreateWithoutUsageLogsInput = {
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
   workspace?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutUsageLogsInput = {
@@ -952,6 +1116,8 @@ export type ConnectorUncheckedCreateWithoutUsageLogsInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutUsageLogsInput = {
@@ -989,6 +1155,8 @@ export type ConnectorUpdateWithoutUsageLogsInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
   workspace?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutUsageLogsInput = {
@@ -1010,6 +1178,8 @@ export type ConnectorUncheckedUpdateWithoutUsageLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateWithoutModelConfigsInput = {
@@ -1031,6 +1201,8 @@ export type ConnectorCreateWithoutModelConfigsInput = {
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
   workspace?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutModelConfigsInput = {
@@ -1052,6 +1224,8 @@ export type ConnectorUncheckedCreateWithoutModelConfigsInput = {
   deletedAt?: Date | string | null
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutConnectorInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutModelConfigsInput = {
@@ -1089,6 +1263,8 @@ export type ConnectorUpdateWithoutModelConfigsInput = {
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
   workspace?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutModelConfigsInput = {
@@ -1110,6 +1286,116 @@ export type ConnectorUncheckedUpdateWithoutModelConfigsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutConnectorNestedInput
+}
+
+export type ConnectorCreateWithoutEsigningSharePointFilingsInput = {
+  id?: string
+  name: string
+  type: $Enums.ConnectorType
+  provider: $Enums.ConnectorProvider
+  credentials: string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: boolean
+  isDefault?: boolean
+  callCount?: number
+  lastUsedAt?: Date | string | null
+  lastTestedAt?: Date | string | null
+  lastTestResult?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
+  usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
+  workspace?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutConnectorInput
+}
+
+export type ConnectorUncheckedCreateWithoutEsigningSharePointFilingsInput = {
+  id?: string
+  workspaceId?: string | null
+  name: string
+  type: $Enums.ConnectorType
+  provider: $Enums.ConnectorProvider
+  credentials: string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: boolean
+  isDefault?: boolean
+  callCount?: number
+  lastUsedAt?: Date | string | null
+  lastTestedAt?: Date | string | null
+  lastTestResult?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
+  usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutConnectorInput
+}
+
+export type ConnectorCreateOrConnectWithoutEsigningSharePointFilingsInput = {
+  where: Prisma.ConnectorWhereUniqueInput
+  create: Prisma.XOR<Prisma.ConnectorCreateWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUncheckedCreateWithoutEsigningSharePointFilingsInput>
+}
+
+export type ConnectorUpsertWithoutEsigningSharePointFilingsInput = {
+  update: Prisma.XOR<Prisma.ConnectorUpdateWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUncheckedUpdateWithoutEsigningSharePointFilingsInput>
+  create: Prisma.XOR<Prisma.ConnectorCreateWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUncheckedCreateWithoutEsigningSharePointFilingsInput>
+  where?: Prisma.ConnectorWhereInput
+}
+
+export type ConnectorUpdateToOneWithWhereWithoutEsigningSharePointFilingsInput = {
+  where?: Prisma.ConnectorWhereInput
+  data: Prisma.XOR<Prisma.ConnectorUpdateWithoutEsigningSharePointFilingsInput, Prisma.ConnectorUncheckedUpdateWithoutEsigningSharePointFilingsInput>
+}
+
+export type ConnectorUpdateWithoutEsigningSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumConnectorTypeFieldUpdateOperationsInput | $Enums.ConnectorType
+  provider?: Prisma.EnumConnectorProviderFieldUpdateOperationsInput | $Enums.ConnectorProvider
+  credentials?: Prisma.StringFieldUpdateOperationsInput | string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  callCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUsedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestResult?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
+  usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
+  workspace?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutConnectorNestedInput
+}
+
+export type ConnectorUncheckedUpdateWithoutEsigningSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumConnectorTypeFieldUpdateOperationsInput | $Enums.ConnectorType
+  provider?: Prisma.EnumConnectorProviderFieldUpdateOperationsInput | $Enums.ConnectorProvider
+  credentials?: Prisma.StringFieldUpdateOperationsInput | string
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDefault?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  callCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUsedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastTestResult?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
+  usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
+  workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateManyWorkspaceInput = {
@@ -1149,6 +1435,8 @@ export type ConnectorUpdateWithoutWorkspaceInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutWorkspaceInput = {
@@ -1170,6 +1458,8 @@ export type ConnectorUncheckedUpdateWithoutWorkspaceInput = {
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
   workspaceAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutConnectorNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateManyWithoutWorkspaceInput = {
@@ -1199,12 +1489,16 @@ export type ConnectorCountOutputType = {
   modelConfigs: number
   usageLogs: number
   workspaceAccess: number
+  companySharePointFolders: number
+  esigningSharePointFilings: number
 }
 
 export type ConnectorCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   modelConfigs?: boolean | ConnectorCountOutputTypeCountModelConfigsArgs
   usageLogs?: boolean | ConnectorCountOutputTypeCountUsageLogsArgs
   workspaceAccess?: boolean | ConnectorCountOutputTypeCountWorkspaceAccessArgs
+  companySharePointFolders?: boolean | ConnectorCountOutputTypeCountCompanySharePointFoldersArgs
+  esigningSharePointFilings?: boolean | ConnectorCountOutputTypeCountEsigningSharePointFilingsArgs
 }
 
 /**
@@ -1238,6 +1532,20 @@ export type ConnectorCountOutputTypeCountWorkspaceAccessArgs<ExtArgs extends run
   where?: Prisma.WorkspaceConnectorAccessWhereInput
 }
 
+/**
+ * ConnectorCountOutputType without action
+ */
+export type ConnectorCountOutputTypeCountCompanySharePointFoldersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanySharePointFolderWhereInput
+}
+
+/**
+ * ConnectorCountOutputType without action
+ */
+export type ConnectorCountOutputTypeCountEsigningSharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EsigningSharePointFilingWhereInput
+}
+
 
 export type ConnectorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1260,6 +1568,8 @@ export type ConnectorSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   usageLogs?: boolean | Prisma.Connector$usageLogsArgs<ExtArgs>
   workspace?: boolean | Prisma.Connector$workspaceArgs<ExtArgs>
   workspaceAccess?: boolean | Prisma.Connector$workspaceAccessArgs<ExtArgs>
+  companySharePointFolders?: boolean | Prisma.Connector$companySharePointFoldersArgs<ExtArgs>
+  esigningSharePointFilings?: boolean | Prisma.Connector$esigningSharePointFilingsArgs<ExtArgs>
   _count?: boolean | Prisma.ConnectorCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["connector"]>
 
@@ -1328,6 +1638,8 @@ export type ConnectorInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   usageLogs?: boolean | Prisma.Connector$usageLogsArgs<ExtArgs>
   workspace?: boolean | Prisma.Connector$workspaceArgs<ExtArgs>
   workspaceAccess?: boolean | Prisma.Connector$workspaceAccessArgs<ExtArgs>
+  companySharePointFolders?: boolean | Prisma.Connector$companySharePointFoldersArgs<ExtArgs>
+  esigningSharePointFilings?: boolean | Prisma.Connector$esigningSharePointFilingsArgs<ExtArgs>
   _count?: boolean | Prisma.ConnectorCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ConnectorIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1344,6 +1656,8 @@ export type $ConnectorPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     usageLogs: Prisma.$ConnectorUsageLogPayload<ExtArgs>[]
     workspace: Prisma.$WorkspacePayload<ExtArgs> | null
     workspaceAccess: Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>[]
+    companySharePointFolders: Prisma.$CompanySharePointFolderPayload<ExtArgs>[]
+    esigningSharePointFilings: Prisma.$EsigningSharePointFilingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1760,6 +2074,8 @@ export interface Prisma__ConnectorClient<T, Null = never, ExtArgs extends runtim
   usageLogs<T extends Prisma.Connector$usageLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$usageLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorUsageLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workspace<T extends Prisma.Connector$workspaceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$workspaceArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   workspaceAccess<T extends Prisma.Connector$workspaceAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$workspaceAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  companySharePointFolders<T extends Prisma.Connector$companySharePointFoldersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$companySharePointFoldersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanySharePointFolderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  esigningSharePointFilings<T extends Prisma.Connector$esigningSharePointFilingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$esigningSharePointFilingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningSharePointFilingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2289,6 +2605,54 @@ export type Connector$workspaceAccessArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.WorkspaceConnectorAccessScalarFieldEnum | Prisma.WorkspaceConnectorAccessScalarFieldEnum[]
+}
+
+/**
+ * Connector.companySharePointFolders
+ */
+export type Connector$companySharePointFoldersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanySharePointFolder
+   */
+  select?: Prisma.CompanySharePointFolderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanySharePointFolder
+   */
+  omit?: Prisma.CompanySharePointFolderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanySharePointFolderInclude<ExtArgs> | null
+  where?: Prisma.CompanySharePointFolderWhereInput
+  orderBy?: Prisma.CompanySharePointFolderOrderByWithRelationInput | Prisma.CompanySharePointFolderOrderByWithRelationInput[]
+  cursor?: Prisma.CompanySharePointFolderWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanySharePointFolderScalarFieldEnum | Prisma.CompanySharePointFolderScalarFieldEnum[]
+}
+
+/**
+ * Connector.esigningSharePointFilings
+ */
+export type Connector$esigningSharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EsigningSharePointFiling
+   */
+  select?: Prisma.EsigningSharePointFilingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EsigningSharePointFiling
+   */
+  omit?: Prisma.EsigningSharePointFilingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EsigningSharePointFilingInclude<ExtArgs> | null
+  where?: Prisma.EsigningSharePointFilingWhereInput
+  orderBy?: Prisma.EsigningSharePointFilingOrderByWithRelationInput | Prisma.EsigningSharePointFilingOrderByWithRelationInput[]
+  cursor?: Prisma.EsigningSharePointFilingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EsigningSharePointFilingScalarFieldEnum | Prisma.EsigningSharePointFilingScalarFieldEnum[]
 }
 
 /**
