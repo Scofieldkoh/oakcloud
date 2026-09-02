@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   envelopeFindFirst: vi.fn(),
   envelopeCreate: vi.fn(),
+  envelopeUpdateMany: vi.fn(),
   documentFindFirst: vi.fn(),
   envelopeDocumentCreate: vi.fn(),
   envelopeDocumentDelete: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('@/lib/prisma', () => ({
     esigningEnvelope: {
       findFirst: mocks.envelopeFindFirst,
       create: mocks.envelopeCreate,
+      updateMany: mocks.envelopeUpdateMany,
     },
     generatedDocument: { findFirst: mocks.documentFindFirst },
     esigningEnvelopeDocument: {
@@ -32,6 +34,9 @@ vi.mock('@/lib/prisma', () => ({
         create: mocks.envelopeDocumentCreate,
         delete: mocks.envelopeDocumentDelete,
         update: mocks.envelopeDocumentUpdate,
+      },
+      esigningEnvelope: {
+        updateMany: mocks.envelopeUpdateMany,
       },
     })),
   },
@@ -181,6 +186,35 @@ describe('task-prepared E-signing envelopes', () => {
         originalFileName: 'Engagement letter',
         pageCount: 1,
       }),
+    });
+  });
+
+  it('inherits the company from a generated document when the envelope has none', async () => {
+    mocks.envelopeFindFirst.mockResolvedValue({
+      id: 'envelope-1',
+      title: 'Engagement letter',
+      status: 'DRAFT',
+      companyId: null,
+      documents: [],
+    });
+    mocks.documentFindFirst.mockResolvedValue({
+      id: 'document-1',
+      title: 'Engagement letter',
+      companyId: 'company-1',
+    });
+    mocks.envelopeDocumentCreate.mockImplementation(async ({ data }) => data);
+    mocks.envelopeUpdateMany.mockResolvedValue({ count: 1 });
+
+    await attachGeneratedDocumentToDraftEnvelope({
+      tenantId: 'tenant-a',
+      envelopeId: 'envelope-1',
+      generatedDocumentId: 'document-1',
+      actorUserId: 'user-1',
+    });
+
+    expect(mocks.envelopeUpdateMany).toHaveBeenCalledWith({
+      where: { id: 'envelope-1', tenantId: 'tenant-a', companyId: null },
+      data: { companyId: 'company-1' },
     });
   });
 

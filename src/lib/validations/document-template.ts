@@ -104,6 +104,7 @@ export const createDocumentTemplateSchema = z.object({
   content: z.string().min(1, 'Template content is required'),
   contentJson: contentJsonSchema.optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).default([]),
+  sharePointRelativeFolderPath: z.string().max(400, 'SharePoint subfolder is too long').optional().nullable(),
   isActive: z.boolean().default(true),
 });
 
@@ -122,6 +123,7 @@ export const updateDocumentTemplateSchema = z.object({
   content: z.string().min(1).optional(),
   contentJson: contentJsonSchema.optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),
+  sharePointRelativeFolderPath: z.string().max(400, 'SharePoint subfolder is too long').optional().nullable(),
   isActive: z.boolean().optional(),
 });
 

@@ -15,6 +15,7 @@ export interface TemplateEditorTemplateForm {
   compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
   content: string;
   isActive: boolean;
+  sharePointRelativeFolderPath?: string | null;
   titleDateFieldKey?: string | null;
   layout: A4DocumentLayout;
 }
@@ -149,6 +150,12 @@ export function TemplateDetailsPanel({ mode, templateForm, partialForm, onTempla
       <label className="block text-xs font-medium text-text-secondary">
         Description
         <textarea aria-label="Description" value={templateForm.description} onChange={(event) => onTemplateChange({ description: event.target.value })} rows={3} className="mt-1 w-full rounded-md border border-border-primary bg-background-primary px-2 py-2 text-xs text-text-primary" />
+      </label>
+      <label className="block text-xs font-medium text-text-secondary">
+        SharePoint subfolder
+        <input aria-label="SharePoint subfolder" value={templateForm.sharePointRelativeFolderPath ?? ''} onChange={(event) => onTemplateChange({ sharePointRelativeFolderPath: event.target.value || null })} placeholder="e.g. 2. Accounting/Signed records" className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" />
+        <span className="mt-1 block text-[11px] font-normal text-text-muted">Relative to the company&apos;s SharePoint folder. Missing folders are created after signing. Use / for nested folders.</span>
+        <span className="mt-2 block rounded-md bg-accent-primary/10 px-2 py-1.5 text-[11px] font-normal text-accent-primary">&lt;Company SharePoint folder&gt;/{templateForm.sharePointRelativeFolderPath?.trim().replace(/\\/g, '/') || 'subfolder'}</span>
       </label>
       <div className="rounded-md border border-border-primary p-3">
         <div className="mb-2 text-xs font-semibold text-text-primary">Global setting</div>

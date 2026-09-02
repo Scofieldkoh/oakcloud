@@ -340,8 +340,8 @@
 
 - [ ] Write failing tests for transactional enqueue, crash after completion before source readiness, source-ready claim gating, terminal PDF-generation failure, intended upload, orphan upload, nested creation, mixed-template envelope, source temporarily missing, Graph throttling, timeout reconciliation, same-job collision adoption, genuine collision suffixing, ambiguous collision review, lost lease, snapshot stability, and duplicate completion webhook.
 - [ ] Integrate job creation into the same database transaction that changes the envelope to `COMPLETED`; do not wait until signed PDFs are persisted and do not couple SharePoint status to internal `autoFilingStatus`.
-- [ ] Read signed files from Oakcloud storage, validate PDF/type/size, and upload through the signed-upload service.
-- [ ] Populate source signed hash/size when ready. Resolve the snapshotted destination, reserve `targetFileName` before upload, and persist canonical remote drive/item/name/URL before final completion.
+- [ ] Read the signed document and certificate from Oakcloud storage, merge them in document-then-certificate order, validate the combined PDF/type/size, and upload through the signed-upload service.
+- [ ] Populate the source package hash/size when ready. Resolve the snapshotted destination, reserve `targetFileName` before upload, and persist canonical remote drive/item/name/URL before final completion.
 - [ ] On uncertain failure, inspect the persisted item ID or reserved target name and compare destination, signed hash, and size. Adopt the same job's item; allocate a numbered suffix only for a genuine different-file collision.
 - [ ] Classify `429`, `5xx`, network, temporary token, and temporary storage failures as retryable; configuration/permission/source-invalid failures as permanent; and exhausted/ambiguous work as `REVIEW_REQUIRED`.
 - [ ] Honor `Retry-After` and otherwise apply bounded exponential backoff with jitter.

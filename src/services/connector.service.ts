@@ -230,7 +230,26 @@ export async function updateConnector(
 
   if (data.name !== undefined) updateData.name = data.name;
   if (data.settings !== undefined) {
-    updateData.settings = data.settings ? (data.settings as Prisma.InputJsonValue) : Prisma.JsonNull;
+    if (data.settings === null) {
+      updateData.settings = Prisma.JsonNull;
+    } else {
+      const existingSettings =
+        existing.settings && typeof existing.settings === 'object' && !Array.isArray(existing.settings)
+          ? (existing.settings as Record<string, unknown>)
+          : {};
+      const nextSettings = { ...data.settings };
+
+      // Signed-document filing has a dedicated settings API. Preserve it
+      // when older/general connector forms submit a stale settings snapshot.
+      if (
+        Object.prototype.hasOwnProperty.call(existingSettings, 'signedDocumentFiling')
+        && !Object.prototype.hasOwnProperty.call(nextSettings, 'signedDocumentFiling')
+      ) {
+        nextSettings.signedDocumentFiling = existingSettings.signedDocumentFiling;
+      }
+
+      updateData.settings = nextSettings as Prisma.InputJsonValue;
+    }
   }
   if (data.isEnabled !== undefined) updateData.isEnabled = data.isEnabled;
 

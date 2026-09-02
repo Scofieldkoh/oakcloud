@@ -466,6 +466,7 @@ export type EsigningEnvelopeWhereInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryListRelationFilter
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
+  sharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
 }
 
 export type EsigningEnvelopeOrderByWithRelationInput = {
@@ -513,6 +514,7 @@ export type EsigningEnvelopeOrderByWithRelationInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryOrderByRelationAggregateInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationOrderByRelationAggregateInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingOrderByRelationAggregateInput
 }
 
 export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
@@ -563,6 +565,7 @@ export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
   emailDeliveries?: Prisma.EsigningEmailDeliveryListRelationFilter
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
+  sharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
 }, "id" | "certificateId">
 
 export type EsigningEnvelopeOrderByWithAggregationInput = {
@@ -689,6 +692,7 @@ export type EsigningEnvelopeCreateInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateInput = {
@@ -733,6 +737,7 @@ export type EsigningEnvelopeUncheckedCreateInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUpdateInput = {
@@ -777,6 +782,7 @@ export type EsigningEnvelopeUpdateInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateInput = {
@@ -821,6 +827,7 @@ export type EsigningEnvelopeUncheckedUpdateInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateManyInput = {
@@ -1230,6 +1237,20 @@ export type EsigningEnvelopeUpdateOneRequiredWithoutDocumentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EsigningEnvelopeUpdateToOneWithWhereWithoutDocumentsInput, Prisma.EsigningEnvelopeUpdateWithoutDocumentsInput>, Prisma.EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput>
 }
 
+export type EsigningEnvelopeCreateNestedOneWithoutSharePointFilingsInput = {
+  create?: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutSharePointFilingsInput>
+  connectOrCreate?: Prisma.EsigningEnvelopeCreateOrConnectWithoutSharePointFilingsInput
+  connect?: Prisma.EsigningEnvelopeWhereUniqueInput
+}
+
+export type EsigningEnvelopeUpdateOneRequiredWithoutSharePointFilingsNestedInput = {
+  create?: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutSharePointFilingsInput>
+  connectOrCreate?: Prisma.EsigningEnvelopeCreateOrConnectWithoutSharePointFilingsInput
+  upsert?: Prisma.EsigningEnvelopeUpsertWithoutSharePointFilingsInput
+  connect?: Prisma.EsigningEnvelopeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EsigningEnvelopeUpdateToOneWithWhereWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUpdateWithoutSharePointFilingsInput>, Prisma.EsigningEnvelopeUncheckedUpdateWithoutSharePointFilingsInput>
+}
+
 export type EsigningEnvelopeCreateNestedOneWithoutRecipientsInput = {
   create?: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutRecipientsInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutRecipientsInput>
   connectOrCreate?: Prisma.EsigningEnvelopeCreateOrConnectWithoutRecipientsInput
@@ -1359,6 +1380,7 @@ export type EsigningEnvelopeCreateWithoutTenantInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutTenantInput = {
@@ -1402,6 +1424,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTenantInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutTenantInput = {
@@ -1511,6 +1534,7 @@ export type EsigningEnvelopeCreateWithoutCreatedByInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutCreatedByInput = {
@@ -1554,6 +1578,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCreatedByInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutCreatedByInput = {
@@ -1623,6 +1648,7 @@ export type EsigningEnvelopeCreateWithoutCompanyInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutCompanyInput = {
@@ -1666,6 +1692,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCompanyInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutCompanyInput = {
@@ -1735,6 +1762,7 @@ export type EsigningEnvelopeCreateWithoutDocumentsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutDocumentsInput = {
@@ -1778,6 +1806,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutDocumentsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutDocumentsInput = {
@@ -1837,6 +1866,7 @@ export type EsigningEnvelopeUpdateWithoutDocumentsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput = {
@@ -1874,6 +1904,199 @@ export type EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
+  recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
+}
+
+export type EsigningEnvelopeCreateWithoutSharePointFilingsInput = {
+  id?: string
+  title: string
+  emailSubject?: string | null
+  message?: string | null
+  status?: $Enums.EsigningEnvelopeStatus
+  signingOrder?: $Enums.EsigningSigningOrder
+  expiresAt?: Date | string | null
+  reminderFrequencyDays?: number | null
+  reminderStartDays?: number | null
+  expiryWarningDays?: number | null
+  certificateId: string
+  completedAt?: Date | string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
+  pdfGenerationStatus?: $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: number
+  pdfGenerationClaimedAt?: Date | string | null
+  pdfGenerationError?: string | null
+  autoFilingStatus?: $Enums.EsigningPostCompletionStatus
+  autoFilingAttempts?: number
+  autoFilingAvailableAt?: Date | string | null
+  autoFilingClaimedAt?: Date | string | null
+  autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
+  autoFilingError?: string | null
+  consentVersion?: string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
+  documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
+  events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
+  recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+}
+
+export type EsigningEnvelopeUncheckedCreateWithoutSharePointFilingsInput = {
+  id?: string
+  tenantId: string
+  createdById: string
+  title: string
+  emailSubject?: string | null
+  message?: string | null
+  status?: $Enums.EsigningEnvelopeStatus
+  signingOrder?: $Enums.EsigningSigningOrder
+  expiresAt?: Date | string | null
+  reminderFrequencyDays?: number | null
+  reminderStartDays?: number | null
+  expiryWarningDays?: number | null
+  companyId?: string | null
+  certificateId: string
+  completedAt?: Date | string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
+  pdfGenerationStatus?: $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: number
+  pdfGenerationClaimedAt?: Date | string | null
+  pdfGenerationError?: string | null
+  autoFilingStatus?: $Enums.EsigningPostCompletionStatus
+  autoFilingAttempts?: number
+  autoFilingAvailableAt?: Date | string | null
+  autoFilingClaimedAt?: Date | string | null
+  autoFilingLeaseExpiresAt?: Date | string | null
+  autoFilingClaimToken?: string | null
+  autoFilingError?: string | null
+  consentVersion?: string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  documents?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutEnvelopeInput
+  events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
+  recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+}
+
+export type EsigningEnvelopeCreateOrConnectWithoutSharePointFilingsInput = {
+  where: Prisma.EsigningEnvelopeWhereUniqueInput
+  create: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutSharePointFilingsInput>
+}
+
+export type EsigningEnvelopeUpsertWithoutSharePointFilingsInput = {
+  update: Prisma.XOR<Prisma.EsigningEnvelopeUpdateWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUncheckedUpdateWithoutSharePointFilingsInput>
+  create: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutSharePointFilingsInput>
+  where?: Prisma.EsigningEnvelopeWhereInput
+}
+
+export type EsigningEnvelopeUpdateToOneWithWhereWithoutSharePointFilingsInput = {
+  where?: Prisma.EsigningEnvelopeWhereInput
+  data: Prisma.XOR<Prisma.EsigningEnvelopeUpdateWithoutSharePointFilingsInput, Prisma.EsigningEnvelopeUncheckedUpdateWithoutSharePointFilingsInput>
+}
+
+export type EsigningEnvelopeUpdateWithoutSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
+  signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  reminderFrequencyDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reminderStartDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryWarningDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  certificateId?: Prisma.StringFieldUpdateOperationsInput | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pdfGenerationStatus?: Prisma.NullableEnumEsigningPdfGenerationStatusFieldUpdateOperationsInput | $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  pdfGenerationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pdfGenerationError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  autoFilingStatus?: Prisma.EnumEsigningPostCompletionStatusFieldUpdateOperationsInput | $Enums.EsigningPostCompletionStatus
+  autoFilingAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
+  events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
+  recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+}
+
+export type EsigningEnvelopeUncheckedUpdateWithoutSharePointFilingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
+  signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  reminderFrequencyDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reminderStartDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryWarningDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  certificateId?: Prisma.StringFieldUpdateOperationsInput | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pdfGenerationStatus?: Prisma.NullableEnumEsigningPdfGenerationStatusFieldUpdateOperationsInput | $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  pdfGenerationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pdfGenerationError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  autoFilingStatus?: Prisma.EnumEsigningPostCompletionStatusFieldUpdateOperationsInput | $Enums.EsigningPostCompletionStatus
+  autoFilingAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  autoFilingAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  autoFilingClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  autoFilingError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  documents?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
@@ -1923,6 +2146,7 @@ export type EsigningEnvelopeCreateWithoutRecipientsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutRecipientsInput = {
@@ -1966,6 +2190,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutRecipientsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutRecipientsInput = {
@@ -2025,6 +2250,7 @@ export type EsigningEnvelopeUpdateWithoutRecipientsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutRecipientsInput = {
@@ -2068,6 +2294,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutRecipientsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
@@ -2111,6 +2338,7 @@ export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutFieldDefinitionsInput = {
@@ -2154,6 +2382,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutFieldDefinitionsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutFieldDefinitionsInput = {
@@ -2213,6 +2442,7 @@ export type EsigningEnvelopeUpdateWithoutFieldDefinitionsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutFieldDefinitionsInput = {
@@ -2256,6 +2486,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutFieldDefinitionsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutEventsInput = {
@@ -2299,6 +2530,7 @@ export type EsigningEnvelopeCreateWithoutEventsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutEventsInput = {
@@ -2342,6 +2574,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEventsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutEventsInput = {
@@ -2401,6 +2634,7 @@ export type EsigningEnvelopeUpdateWithoutEventsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutEventsInput = {
@@ -2444,6 +2678,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEventsInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutEmailDeliveriesInput = {
@@ -2487,6 +2722,7 @@ export type EsigningEnvelopeCreateWithoutEmailDeliveriesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutEmailDeliveriesInput = {
@@ -2530,6 +2766,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEmailDeliveriesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutEmailDeliveriesInput = {
@@ -2589,6 +2826,7 @@ export type EsigningEnvelopeUpdateWithoutEmailDeliveriesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutEmailDeliveriesInput = {
@@ -2632,6 +2870,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEmailDeliveriesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutTaskStageOutcomesInput = {
@@ -2675,6 +2914,7 @@ export type EsigningEnvelopeCreateWithoutTaskStageOutcomesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -2718,6 +2958,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -2777,6 +3018,7 @@ export type EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -2820,6 +3062,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutTaskEsigningPreparationsInput = {
@@ -2863,6 +3106,7 @@ export type EsigningEnvelopeCreateWithoutTaskEsigningPreparationsInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutTaskEsigningPreparationsInput = {
@@ -2906,6 +3150,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTaskEsigningPreparationsInput 
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutEnvelopeInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutTaskEsigningPreparationsInput = {
@@ -2965,6 +3210,7 @@ export type EsigningEnvelopeUpdateWithoutTaskEsigningPreparationsInput = {
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
@@ -3008,6 +3254,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTaskEsigningPreparationsInput 
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateManyTenantInput = {
@@ -3087,6 +3334,7 @@ export type EsigningEnvelopeUpdateWithoutTenantInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutTenantInput = {
@@ -3130,6 +3378,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTenantInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateManyWithoutTenantInput = {
@@ -3245,6 +3494,7 @@ export type EsigningEnvelopeUpdateWithoutCreatedByInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutCreatedByInput = {
@@ -3288,6 +3538,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCreatedByInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByInput = {
@@ -3403,6 +3654,7 @@ export type EsigningEnvelopeUpdateWithoutCompanyInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutCompanyInput = {
@@ -3446,6 +3698,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCompanyInput = {
   emailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutEnvelopeNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+  sharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateManyWithoutCompanyInput = {
@@ -3497,6 +3750,7 @@ export type EsigningEnvelopeCountOutputType = {
   emailDeliveries: number
   taskStageOutcomes: number
   taskEsigningPreparations: number
+  sharePointFilings: number
 }
 
 export type EsigningEnvelopeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3507,6 +3761,7 @@ export type EsigningEnvelopeCountOutputTypeSelect<ExtArgs extends runtime.Types.
   emailDeliveries?: boolean | EsigningEnvelopeCountOutputTypeCountEmailDeliveriesArgs
   taskStageOutcomes?: boolean | EsigningEnvelopeCountOutputTypeCountTaskStageOutcomesArgs
   taskEsigningPreparations?: boolean | EsigningEnvelopeCountOutputTypeCountTaskEsigningPreparationsArgs
+  sharePointFilings?: boolean | EsigningEnvelopeCountOutputTypeCountSharePointFilingsArgs
 }
 
 /**
@@ -3568,6 +3823,13 @@ export type EsigningEnvelopeCountOutputTypeCountTaskEsigningPreparationsArgs<Ext
   where?: Prisma.TaskEsigningPreparationWhereInput
 }
 
+/**
+ * EsigningEnvelopeCountOutputType without action
+ */
+export type EsigningEnvelopeCountOutputTypeCountSharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EsigningSharePointFilingWhereInput
+}
+
 
 export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -3614,6 +3876,7 @@ export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.Inte
   emailDeliveries?: boolean | Prisma.EsigningEnvelope$emailDeliveriesArgs<ExtArgs>
   taskStageOutcomes?: boolean | Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs>
   taskEsigningPreparations?: boolean | Prisma.EsigningEnvelope$taskEsigningPreparationsArgs<ExtArgs>
+  sharePointFilings?: boolean | Prisma.EsigningEnvelope$sharePointFilingsArgs<ExtArgs>
   _count?: boolean | Prisma.EsigningEnvelopeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["esigningEnvelope"]>
 
@@ -3746,6 +4009,7 @@ export type EsigningEnvelopeInclude<ExtArgs extends runtime.Types.Extensions.Int
   emailDeliveries?: boolean | Prisma.EsigningEnvelope$emailDeliveriesArgs<ExtArgs>
   taskStageOutcomes?: boolean | Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs>
   taskEsigningPreparations?: boolean | Prisma.EsigningEnvelope$taskEsigningPreparationsArgs<ExtArgs>
+  sharePointFilings?: boolean | Prisma.EsigningEnvelope$sharePointFilingsArgs<ExtArgs>
   _count?: boolean | Prisma.EsigningEnvelopeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EsigningEnvelopeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3772,6 +4036,7 @@ export type $EsigningEnvelopePayload<ExtArgs extends runtime.Types.Extensions.In
     emailDeliveries: Prisma.$EsigningEmailDeliveryPayload<ExtArgs>[]
     taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
     taskEsigningPreparations: Prisma.$TaskEsigningPreparationPayload<ExtArgs>[]
+    sharePointFilings: Prisma.$EsigningSharePointFilingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -4212,6 +4477,7 @@ export interface Prisma__EsigningEnvelopeClient<T, Null = never, ExtArgs extends
   emailDeliveries<T extends Prisma.EsigningEnvelope$emailDeliveriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$emailDeliveriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEmailDeliveryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskStageOutcomes<T extends Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskEsigningPreparations<T extends Prisma.EsigningEnvelope$taskEsigningPreparationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$taskEsigningPreparationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskEsigningPreparationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sharePointFilings<T extends Prisma.EsigningEnvelope$sharePointFilingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$sharePointFilingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningSharePointFilingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4855,6 +5121,30 @@ export type EsigningEnvelope$taskEsigningPreparationsArgs<ExtArgs extends runtim
   take?: number
   skip?: number
   distinct?: Prisma.TaskEsigningPreparationScalarFieldEnum | Prisma.TaskEsigningPreparationScalarFieldEnum[]
+}
+
+/**
+ * EsigningEnvelope.sharePointFilings
+ */
+export type EsigningEnvelope$sharePointFilingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EsigningSharePointFiling
+   */
+  select?: Prisma.EsigningSharePointFilingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EsigningSharePointFiling
+   */
+  omit?: Prisma.EsigningSharePointFilingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EsigningSharePointFilingInclude<ExtArgs> | null
+  where?: Prisma.EsigningSharePointFilingWhereInput
+  orderBy?: Prisma.EsigningSharePointFilingOrderByWithRelationInput | Prisma.EsigningSharePointFilingOrderByWithRelationInput[]
+  cursor?: Prisma.EsigningSharePointFilingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EsigningSharePointFilingScalarFieldEnum | Prisma.EsigningSharePointFilingScalarFieldEnum[]
 }
 
 /**

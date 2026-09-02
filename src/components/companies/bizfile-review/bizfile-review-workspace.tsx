@@ -23,6 +23,7 @@ export interface BizFileReviewWorkspaceProps {
   serverIssues?: BizFileReviewIssue[];
   tenantId?: string;
   extractionMetadata?: React.ReactNode;
+  sharePointSetup?: React.ReactNode;
   onConfirm: (data: ExtractedBizFileData) => void | Promise<void>;
   onCancel: () => void;
   onReset: () => void;
@@ -34,6 +35,29 @@ const sectionLabels: Record<BizFileReviewSectionId, string> = {
   auditor: "Auditor", compliance: "Compliance", charges: "Charges", document: "Document",
 };
 const EMPTY_SERVER_ISSUES: BizFileReviewIssue[] = [];
+
+interface OptionalSetupBoundaryState {
+  failed: boolean;
+}
+
+class OptionalSetupBoundary extends React.Component<
+  { children: React.ReactNode },
+  OptionalSetupBoundaryState
+> {
+  state: OptionalSetupBoundaryState = { failed: false };
+
+  static getDerivedStateFromError(): OptionalSetupBoundaryState {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    // Optional integrations should not prevent the core BizFile workflow from rendering.
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 type MatchPreviews = Record<string, ContactMatchPreview | null>;
 
@@ -214,7 +238,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
 }
 
 export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = false,
-  serverIssues = EMPTY_SERVER_ISSUES, tenantId, extractionMetadata, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
+  serverIssues = EMPTY_SERVER_ISSUES, tenantId, extractionMetadata, sharePointSetup, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Partial<Record<BizFileReviewSectionId, HTMLButtonElement | null>>>({});
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -457,10 +481,11 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
           leftPanelClassName="!overflow-hidden" rightPanelClassName="min-w-0 !overflow-hidden"
           defaultLeftWidth={70} minLeftWidth={40} maxLeftWidth={80} />
       </div>
+      <OptionalSetupBoundary>{sharePointSetup}</OptionalSetupBoundary>
       {actionFooter}
     </> : <div data-testid="mobile-workspace" className="min-h-0 flex-1">
       {mobilePanel === "document" ? <div className="h-full overflow-hidden">{sourcePanel}</div>
-        : <div className="flex h-full min-h-0 flex-col"><div className="min-h-0 flex-1">{editorContent}</div>{actionFooter}</div>}
+        : <div className="flex h-full min-h-0 flex-col"><div className="min-h-0 flex-1">{editorContent}</div><OptionalSetupBoundary>{sharePointSetup}</OptionalSetupBoundary>{actionFooter}</div>}
     </div>}
   </section>;
 }

@@ -29,11 +29,13 @@ vi.mock('@/hooks/use-media-query', () => ({
 
 vi.mock('@/components/processing/document-page-viewer', () => ({
   DocumentPageViewer: ({
+    pdfUrl,
     renderHighlightContent,
     highlights,
     initialPage,
     viewMode,
     allowPagePanel,
+    focusedHighlightLabel,
   }: {
     renderHighlightContent: (
       highlight: { label: string; pageNumber: number },
@@ -44,6 +46,8 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
     initialPage?: number;
     viewMode?: 'single' | 'continuous';
     allowPagePanel?: boolean;
+    pdfUrl?: string;
+    focusedHighlightLabel?: string;
   }) => {
     const visibleHighlights =
       viewMode === 'continuous'
@@ -54,6 +58,9 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
       <div
         data-testid="document-page-viewer"
         data-page-panel-allowed={String(allowPagePanel ?? true)}
+        data-pdf-url={pdfUrl}
+        data-initial-page={initialPage ?? 1}
+        data-focused-highlight={focusedHighlightLabel}
       >
         {visibleHighlights.map((highlight, index) => (
         <div key={highlight.label}>{renderHighlightContent(highlight, null, index)}</div>
@@ -91,7 +98,21 @@ vi.mock('@/components/esigning/signing/esigning-signing-header', () => ({
 }));
 
 vi.mock('@/components/esigning/signing/esigning-signature-modal', () => ({
-  EsigningSignatureModal: () => null,
+  EsigningSignatureModal: ({
+    isOpen,
+    onAdopt,
+  }: {
+    isOpen: boolean;
+    onAdopt: (result: { dataUrl: string; applyToAll: boolean }) => void;
+  }) =>
+    isOpen ? (
+      <button
+        type="button"
+        onClick={() => onAdopt({ dataUrl: 'data:image/png;base64,c2ln', applyToAll: false })}
+      >
+        Save signature
+      </button>
+    ) : null,
 }));
 
 vi.mock('@/components/esigning/signing/esigning-decline-modal', () => ({
@@ -99,7 +120,37 @@ vi.mock('@/components/esigning/signing/esigning-decline-modal', () => ({
 }));
 
 vi.mock('@/components/esigning/signing/esigning-post-it-tab', () => ({
-  EsigningPostItTab: () => null,
+  EsigningPostItTab: ({
+    label,
+    currentIndex,
+    totalCount,
+    onClick,
+    onNext,
+    onPrev,
+  }: {
+    label: string;
+    currentIndex: number;
+    totalCount: number;
+    onClick: () => void;
+    onNext: () => void;
+    onPrev: () => void;
+  }) => (
+    <div
+      data-testid="signing-post-it"
+      data-current-index={currentIndex}
+      data-total-count={totalCount}
+    >
+      <button type="button" data-testid="post-it-number" onClick={onClick}>
+        {label} {currentIndex + 1}/{totalCount}
+      </button>
+      <button type="button" aria-label="Previous field" onClick={onPrev}>
+        Previous field
+      </button>
+      <button type="button" aria-label="Next field" onClick={onNext}>
+        Next field
+      </button>
+    </div>
+  ),
 }));
 
 let consentHandler: () => Promise<Response> | Response;
@@ -557,6 +608,26 @@ describe('EsigningSignPage autosave and field values', () => {
     };
     expect(secondBody.values[0].value).toBe('Final');
   });
+
+  it('keeps the active field in place after signing until the signer advances', async () => {
+    const firstField = makeField({ id: 'signature-field-1', type: 'SIGNATURE', sortOrder: 1 });
+    const secondField = makeField({ id: 'signature-field-2', type: 'SIGNATURE', sortOrder: 2 });
+    const session = makeSigningSession(firstField, { fields: [firstField, secondField] });
+    stubSigningFetch(session);
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('signing-document');
+    await userEvent.click(screen.getAllByRole('button', { name: 'Sign Here' })[0]);
+    await userEvent.click(screen.getByRole('button', { name: 'Save signature' }));
+
+    expect(screen.getByTestId('signing-post-it')).toHaveAttribute('data-current-index', '0');
+
+    await userEvent.click(screen.getByTestId('post-it-number'));
+    expect(screen.getByTestId('signing-post-it')).toHaveAttribute('data-current-index', '0');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next field' }));
+    expect(screen.getByTestId('signing-post-it')).toHaveAttribute('data-current-index', '1');
+  });
 });
 
 describe('EsigningSignPage document navigation', () => {
@@ -586,6 +657,82 @@ describe('EsigningSignPage document navigation', () => {
 
     expect(screen.getByRole('button', { name: 'Sign Here' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument();
+  });
+
+  it('does not focus the first signing field until the signer navigates', async () => {
+    const firstField = makeField({ id: 'page-two-signature-1', type: 'SIGNATURE', pageNumber: 2 });
+    const secondField = makeField({ id: 'page-two-signature-2', type: 'SIGNATURE', pageNumber: 2, sortOrder: 2 });
+    const session = makeSigningSession(firstField, {
+      documents: [
+        {
+          ...makeSigningSession(firstField).documents[0],
+          pageCount: 2,
+        },
+      ],
+      fields: [firstField, secondField],
+    });
+    stubSigningFetch(session);
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('signing-document');
+    expect(screen.getByTestId('document-page-viewer')).toHaveAttribute('data-initial-page', '1');
+    expect(screen.getByTestId('document-page-viewer')).not.toHaveAttribute('data-focused-highlight');
+
+    await userEvent.click(screen.getByTestId('post-it-number'));
+
+    expect(screen.getByTestId('document-page-viewer')).toHaveAttribute(
+      'data-focused-highlight',
+      'page-two-signature-1'
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next field' }));
+
+    expect(screen.getByTestId('document-page-viewer')).toHaveAttribute(
+      'data-focused-highlight',
+      'page-two-signature-2'
+    );
+  });
+
+  it('moves to the next signing field when the down control switches documents', async () => {
+    const firstField = makeField({ id: 'document-one-signature', type: 'SIGNATURE', sortOrder: 1 });
+    const secondField = makeField({
+      id: 'document-two-signature',
+      documentId: 'document-2',
+      type: 'SIGNATURE',
+      sortOrder: 1,
+    });
+    const session = makeSigningSession(firstField, {
+      documents: [
+        {
+          ...makeSigningSession(firstField).documents[0],
+          fileName: 'first.pdf',
+        },
+        {
+          id: 'document-2',
+          fileName: 'second.pdf',
+          pageCount: 1,
+          sortOrder: 2,
+          fileSize: 1024,
+          originalHash: 'original-hash-2',
+          signedHash: null,
+          pdfUrl: '/second.pdf',
+          signedPdfUrl: null,
+        },
+      ],
+      fields: [firstField, secondField],
+    });
+    stubSigningFetch(session);
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('signing-document');
+    expect(screen.getByTestId('document-page-viewer')).toHaveAttribute('data-pdf-url', '/nda.pdf');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next field' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('document-page-viewer')).toHaveAttribute('data-pdf-url', '/second.pdf');
+    });
+    expect(screen.getByTestId('signing-post-it')).toHaveAttribute('data-current-index', '1');
   });
 });
 

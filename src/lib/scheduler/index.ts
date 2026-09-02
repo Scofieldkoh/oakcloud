@@ -61,6 +61,7 @@ import {
   esigningPdfGenerationTask,
   esigningPreparationTask,
   esigningRemindersTask,
+  esigningSharePointFilingTask,
   exchangeRateSyncTask,
   formAiReviewTask,
   formCountReconciliationTask,
@@ -86,6 +87,7 @@ export async function initializeScheduler(): Promise<void> {
   scheduler.registerTask(esigningPdfGenerationTask);
   scheduler.registerTask(esigningPreparationTask);
   scheduler.registerTask(esigningRemindersTask);
+  scheduler.registerTask(esigningSharePointFilingTask);
   scheduler.registerTask(exchangeRateSyncTask);
   scheduler.registerTask(formAiReviewTask);
   scheduler.registerTask(formCountReconciliationTask);

@@ -11,11 +11,12 @@ interface CompanyProfileTabProps {
   isRetrievingAcra?: boolean;
 }
 
-export function CompanyProfileTab({ company, companyId, onRetrieveAcra, isRetrievingAcra }: CompanyProfileTabProps) {
+export function CompanyProfileTab({ company, companyId, can, onRetrieveAcra, isRetrievingAcra }: CompanyProfileTabProps) {
   return (
     <CompanyProfileSections
       company={company}
       companyId={companyId}
+      canEdit={can.updateCompany}
       onRetrieveAcra={onRetrieveAcra}
       isRetrievingAcra={isRetrievingAcra}
     />

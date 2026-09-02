@@ -1089,6 +1089,57 @@ export type EnumEsigningPostCompletionStatusWithAggregatesFilter<$PrismaModel = 
   _max?: Prisma.NestedEnumEsigningPostCompletionStatusFilter<$PrismaModel>
 }
 
+export type EnumEsigningSharePointDestinationKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointDestinationKind | Prisma.EnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel> | $Enums.EsigningSharePointDestinationKind
+}
+
+export type EnumEsigningSharePointRoutingReasonFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointRoutingReason | Prisma.EnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel> | $Enums.EsigningSharePointRoutingReason
+}
+
+export type EnumEsigningSharePointFilingStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointFilingStatus | Prisma.EnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel> | $Enums.EsigningSharePointFilingStatus
+}
+
+export type EnumEsigningSharePointDestinationKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointDestinationKind | Prisma.EnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointDestinationKindWithAggregatesFilter<$PrismaModel> | $Enums.EsigningSharePointDestinationKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel>
+}
+
+export type EnumEsigningSharePointRoutingReasonWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointRoutingReason | Prisma.EnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointRoutingReasonWithAggregatesFilter<$PrismaModel> | $Enums.EsigningSharePointRoutingReason
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel>
+}
+
+export type EnumEsigningSharePointFilingStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointFilingStatus | Prisma.EnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointFilingStatusWithAggregatesFilter<$PrismaModel> | $Enums.EsigningSharePointFilingStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel>
+}
+
 export type EnumEsigningRecipientTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.EsigningRecipientType | Prisma.EnumEsigningRecipientTypeFieldRefInput<$PrismaModel>
   in?: $Enums.EsigningRecipientType[] | Prisma.ListEnumEsigningRecipientTypeFieldRefInput<$PrismaModel>
@@ -3154,6 +3205,57 @@ export type NestedEnumEsigningPostCompletionStatusWithAggregatesFilter<$PrismaMo
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumEsigningPostCompletionStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumEsigningPostCompletionStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointDestinationKind | Prisma.EnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel> | $Enums.EsigningSharePointDestinationKind
+}
+
+export type NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointRoutingReason | Prisma.EnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel> | $Enums.EsigningSharePointRoutingReason
+}
+
+export type NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointFilingStatus | Prisma.EnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel> | $Enums.EsigningSharePointFilingStatus
+}
+
+export type NestedEnumEsigningSharePointDestinationKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointDestinationKind | Prisma.EnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointDestinationKind[] | Prisma.ListEnumEsigningSharePointDestinationKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointDestinationKindWithAggregatesFilter<$PrismaModel> | $Enums.EsigningSharePointDestinationKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEsigningSharePointDestinationKindFilter<$PrismaModel>
+}
+
+export type NestedEnumEsigningSharePointRoutingReasonWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointRoutingReason | Prisma.EnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointRoutingReason[] | Prisma.ListEnumEsigningSharePointRoutingReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointRoutingReasonWithAggregatesFilter<$PrismaModel> | $Enums.EsigningSharePointRoutingReason
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEsigningSharePointRoutingReasonFilter<$PrismaModel>
+}
+
+export type NestedEnumEsigningSharePointFilingStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EsigningSharePointFilingStatus | Prisma.EnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EsigningSharePointFilingStatus[] | Prisma.ListEnumEsigningSharePointFilingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEsigningSharePointFilingStatusWithAggregatesFilter<$PrismaModel> | $Enums.EsigningSharePointFilingStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEsigningSharePointFilingStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumEsigningRecipientTypeFilter<$PrismaModel = never> = {

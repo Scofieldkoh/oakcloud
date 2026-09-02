@@ -194,6 +194,27 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
     });
   });
 
+  it('keeps continuous mobile pages visible while zoom rerenders in the background', async () => {
+    mediaMocks.isMobile = true;
+
+    render(
+      <DocumentPageViewer
+        pdfUrl="/continuous-mobile-zoom.pdf"
+        viewMode="continuous"
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('canvas[data-main-pdf-canvas="true"]')).toHaveLength(2);
+      expect(screen.queryByText('Loading page 1...')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('Zoom in (+)'));
+
+    expect(screen.getByText('101%')).toBeInTheDocument();
+    expect(screen.queryByText('Loading page 1...')).not.toBeInTheDocument();
+  });
+
   it('fills the viewport height when fullscreen overrides an embedded height', async () => {
     render(
       <DocumentPageViewer

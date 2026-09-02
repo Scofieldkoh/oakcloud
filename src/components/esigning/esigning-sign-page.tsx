@@ -242,6 +242,7 @@ export function EsigningSignPage() {
   const [selectedDocumentId, setSelectedDocumentId] = useState('');
   const [viewerPage, setViewerPage] = useState(1);
   const [activeFieldIndex, setActiveFieldIndex] = useState(0);
+  const [shouldFocusActiveField, setShouldFocusActiveField] = useState(false);
   const [viewerRetryKey, setViewerRetryKey] = useState(0);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
   const [portraitBannerDismissed, setPortraitBannerDismissed] = useState(false);
@@ -278,6 +279,7 @@ export function EsigningSignPage() {
   const needsSessionRefreshRef = useRef(false);
   const sessionReloadPromiseRef = useRef<Promise<EsigningSigningSessionDto> | null>(null);
   const [isCompletionTerminal, setIsCompletionTerminal] = useState(false);
+  const initializedFieldSequenceRef = useRef<string | null>(null);
 
   useEffect(() => {
     flowStateRef.current = flowState;
@@ -292,13 +294,38 @@ export function EsigningSignPage() {
     [selectedDocumentId, session?.documents]
   );
 
-  const fields = useMemo(
-    () => (session?.fields ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder),
-    [session?.fields]
-  );
+  const fields = useMemo(() => {
+    const documentOrder = new Map(
+      (session?.documents ?? []).map((document, index) => [document.id, index])
+    );
+
+    return (session?.fields ?? [])
+      .map((field, index) => ({ field, index }))
+      .sort((left, right) => {
+        const sortOrderDifference = left.field.sortOrder - right.field.sortOrder;
+        if (sortOrderDifference !== 0) {
+          return sortOrderDifference;
+        }
+
+        const documentOrderDifference =
+          (documentOrder.get(left.field.documentId) ?? Number.MAX_SAFE_INTEGER) -
+          (documentOrder.get(right.field.documentId) ?? Number.MAX_SAFE_INTEGER);
+        if (documentOrderDifference !== 0) {
+          return documentOrderDifference;
+        }
+
+        const pageDifference = left.field.pageNumber - right.field.pageNumber;
+        if (pageDifference !== 0) {
+          return pageDifference;
+        }
+
+        return left.index - right.index;
+      })
+      .map(({ field }) => field);
+  }, [session?.documents, session?.fields]);
 
   const requiredFields = useMemo(
-    () => fields.filter((f) => f.required).sort((a, b) => a.sortOrder - b.sortOrder),
+    () => fields.filter((f) => f.required),
     [fields]
   );
 
@@ -374,16 +401,24 @@ export function EsigningSignPage() {
 
   useEffect(() => {
     if (requiredFields.length === 0) {
+      initializedFieldSequenceRef.current = null;
       return;
     }
 
-    const nextIncompleteIndex = requiredFields.findIndex((field) => !isDraftValueComplete(draftValues[field.id]));
-    const fallbackIndex = nextIncompleteIndex === -1 ? requiredFields.length - 1 : nextIncompleteIndex;
-
-    if (fallbackIndex !== activeFieldIndex) {
-      setActiveFieldIndex(fallbackIndex);
+    const fieldSequenceKey = requiredFields.map((field) => field.id).join('|');
+    if (initializedFieldSequenceRef.current === fieldSequenceKey) {
+      return;
     }
-  }, [activeFieldIndex, draftValues, requiredFields]);
+
+    initializedFieldSequenceRef.current = fieldSequenceKey;
+    const nextIncompleteIndex = requiredFields.findIndex(
+      (field) => !isDraftValueComplete(draftValues[field.id])
+    );
+    const initialIndex = nextIncompleteIndex === -1 ? requiredFields.length - 1 : nextIncompleteIndex;
+    setActiveFieldIndex((current) =>
+      current === initialIndex ? current : Math.max(0, Math.min(requiredFields.length - 1, initialIndex))
+    );
+  }, [draftValues, requiredFields]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -655,14 +690,9 @@ export function EsigningSignPage() {
   // Field navigation
   // ==========================================================================
 
-  function advanceToNextField() {
-    const nextIndex = requiredFields.findIndex((f, i) => {
-      if (i <= activeFieldIndex) return false;
-      const d = draftValues[f.id];
-      return !d?.value && !d?.signatureDataUrl && !d?.signaturePreviewUrl;
-    });
-    if (nextIndex !== -1) {
-      goToFieldIndex(nextIndex);
+  function goToNextField() {
+    if (activeFieldIndex < requiredFields.length - 1) {
+      goToFieldIndex(activeFieldIndex + 1);
     }
   }
 
@@ -699,7 +729,12 @@ export function EsigningSignPage() {
   }
 
   function goToFieldIndex(index: number) {
+    if (requiredFields.length === 0) {
+      return;
+    }
+
     const clamped = Math.max(0, Math.min(requiredFields.length - 1, index));
+    setShouldFocusActiveField(true);
     setActiveFieldIndex(clamped);
     const field = requiredFields[clamped];
     if (field) {
@@ -740,7 +775,6 @@ export function EsigningSignPage() {
       const cached = field.type === 'SIGNATURE' ? adoptedSignature : adoptedInitials;
       if (cached) {
         setDraft(field.id, { signatureDataUrl: cached, signaturePreviewUrl: cached, value: 'signed' });
-        advanceToNextField();
       } else {
         setActiveSignatureFieldId(field.id);
         setSignatureModalMode(field.type);
@@ -753,10 +787,8 @@ export function EsigningSignPage() {
     } else if (field.type === 'CHECKBOX') {
       const current = draftValues[field.id]?.value;
       setDraft(field.id, { value: current === 'true' ? null : 'true' });
-      advanceToNextField();
     } else if (field.type === 'DATE_SIGNED') {
       setDraft(field.id, { value: getLocalDateInputValue() });
-      advanceToNextField();
     } else if (
       field.type === 'TEXT' ||
       field.type === 'NAME' ||
@@ -785,7 +817,6 @@ export function EsigningSignPage() {
       });
     }
     setIsSignatureModalOpen(false);
-    advanceToNextField();
   }
 
   function handleUseSavedSignature() {
@@ -802,7 +833,6 @@ export function EsigningSignPage() {
       value: 'signed',
     });
     setIsSavedSignaturePromptOpen(false);
-    advanceToNextField();
   }
 
   function handleChooseAnotherSignature() {
@@ -1286,7 +1316,7 @@ export function EsigningSignPage() {
             initialPage={viewerPage}
             onPageChange={setViewerPage}
             highlights={currentHighlights}
-            focusedHighlightLabel={activeField?.id}
+            focusedHighlightLabel={shouldFocusActiveField ? activeField?.id : undefined}
             showHighlights
             viewMode="continuous"
             allowPagePanel={!isPortraitMobile}
@@ -1331,11 +1361,11 @@ export function EsigningSignPage() {
           onClick={() => {
             if (canFinish) {
               void completeSigning();
-            } else if (activeField) {
+            } else {
               goToFieldIndex(activeFieldIndex);
             }
           }}
-          onNext={() => goToFieldIndex(activeFieldIndex + 1)}
+          onNext={goToNextField}
           onPrev={() => goToFieldIndex(activeFieldIndex - 1)}
         />
       )}
@@ -1388,9 +1418,6 @@ export function EsigningSignPage() {
           if (!activeInputField) return;
           setDraft(activeInputField.id, { value });
           setActiveInputFieldId(null);
-          if (value) {
-            advanceToNextField();
-          }
         }}
       />
 

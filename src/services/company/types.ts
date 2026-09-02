@@ -31,6 +31,16 @@ export interface RelatedContact {
  * Company with all related data included
  */
 export interface CompanyWithRelations extends Company {
+  sharePointFolderMapping?: {
+    id: string;
+    companyId: string;
+    connectorId: string;
+    driveId: string;
+    folderItemId: string;
+    folderName: string;
+    folderWebUrl: string;
+    lastVerifiedAt: Date | null;
+  } | null;
   /** Optional user-facing alias; null means derive initials for service displays. */
   displayAlias: string | null;
   formerNames?: Array<{

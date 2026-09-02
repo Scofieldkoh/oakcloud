@@ -13,6 +13,7 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { createCompanyRequestSchema, type CreateCompanyRequestInput } from '@/lib/validations/company';
 import { readTaskLaunchContext, withTaskLaunchContext } from '@/lib/task-launch-context';
+import type { PendingSharePointSelection } from '@/components/companies/company-create-sharepoint-field';
 
 const formId = 'add-company-form';
 
@@ -56,6 +57,8 @@ export default function NewCompanyPage() {
   const { can, isLoading: permissionsLoading } = usePermissions();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [sharePointSelection, setSharePointSelection] = useState<PendingSharePointSelection>({ kind: 'unmapped' });
+  const [createdCompanyId, setCreatedCompanyId] = useState<string | null>(null);
   const isSuperAdmin = session?.isSuperAdmin ?? false;
   const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
   const isSubmitting = createCompany.isPending;
@@ -80,6 +83,29 @@ export default function NewCompanyPage() {
         ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
         taskContext,
       });
+      if (sharePointSelection.kind !== 'unmapped') {
+        try {
+          let folder = sharePointSelection.kind === 'selected' ? sharePointSelection.folder : null;
+          if (!folder) {
+            const rootResponse = await fetch(`/api/settings/sharepoint-filing?connectorId=${encodeURIComponent(sharePointSelection.connectorId)}`);
+            const settings = await rootResponse.json() as { clientDocumentsRoot?: { itemId: string } };
+            if (!settings.clientDocumentsRoot) throw new Error('Client Documents root is not configured');
+            if (sharePointSelection.kind !== 'requested') throw new Error('A SharePoint folder selection is incomplete');
+            const folderResponse = await fetch('/api/sharepoint/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectorId: sharePointSelection.connectorId, parentItemId: settings.clientDocumentsRoot.itemId, name: sharePointSelection.name, mode: 'client-folder' }) });
+            const folderBody = await folderResponse.json();
+            if (!folderResponse.ok) throw new Error(folderBody.error || 'SharePoint folder could not be created');
+            folder = folderBody;
+          }
+          const mappingResponse = await fetch(`/api/companies/${company.id}/sharepoint-folder`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectorId: sharePointSelection.connectorId, folder }) });
+          const mappingBody = await mappingResponse.json();
+          if (!mappingResponse.ok) throw new Error(mappingBody.error || 'SharePoint company mapping failed');
+        } catch (mappingError) {
+          setCreatedCompanyId(company.id);
+          setSubmitError(`Company created, but SharePoint setup needs attention: ${mappingError instanceof Error ? mappingError.message : 'mapping failed'}`);
+          setIsDirty(false);
+          return;
+        }
+      }
       setIsDirty(false);
       router.push(taskContext?.returnTo ?? `/companies/${company.id}`);
     } catch (error) {
@@ -102,9 +128,9 @@ export default function NewCompanyPage() {
       <Link href={withTaskLaunchContext('/companies/upload', taskContext)} className="btn-secondary btn-sm inline-flex items-center gap-2"><Upload className="h-4 w-4" />Upload BizFile (F2)</Link>
     </div>
 
-    {submitError ? <div className="card mb-4 border-status-error bg-status-error/5"><div className="flex items-center gap-3 text-status-error"><AlertCircle className="h-5 w-5" /><p>{submitError}</p></div></div> : null}
+    {submitError ? <div className="card mb-4 border-status-error bg-status-error/5"><div className="flex items-center gap-3 text-status-error"><AlertCircle className="h-5 w-5" /><p>{submitError}</p></div>{createdCompanyId ? <Link className="mt-3 inline-flex text-sm text-oak-primary hover:underline" href={`/companies/${createdCompanyId}`}>Open the company to retry SharePoint setup</Link> : null}</div> : null}
     {isSuperAdmin && !activeTenantId ? <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20"><p className="text-sm text-amber-800 dark:text-amber-200">Please select a tenant from the sidebar to create a company.</p></div> : null}
 
-    <CompanyCreateWorkspace formId={formId} onSubmit={onSubmit} onDirtyChange={setIsDirty} actions={<div className="flex items-center justify-end gap-3 pt-2"><Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">Cancel (Ctrl+Backspace)</Link><button type="submit" disabled={isSubmitting} className="btn-primary btn-sm flex items-center gap-2" title="Create Company (Ctrl+S)"><Save className="h-4 w-4" />{isSubmitting ? 'Creating...' : 'Create Company (Ctrl+S)'}</button></div>} />
+    <CompanyCreateWorkspace formId={formId} onSubmit={onSubmit} onSharePointSelectionChange={setSharePointSelection} onDirtyChange={setIsDirty} actions={<div className="flex items-center justify-end gap-3 pt-2"><Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">Cancel (Ctrl+Backspace)</Link><button type="submit" disabled={isSubmitting} className="btn-primary btn-sm flex items-center gap-2" title="Create Company (Ctrl+S)"><Save className="h-4 w-4" />{isSubmitting ? 'Creating...' : 'Create Company (Ctrl+S)'}</button></div>} />
   </main>;
 }

@@ -24,6 +24,7 @@ import {
   type StoredPlaceholderLike,
 } from '@/lib/template-analysis';
 import { assertValidTemplateComposition } from '@/lib/service-agreement-template';
+import { parseSharePointRelativeFolderPath } from '@/lib/sharepoint/relative-folder-path';
 
 // ============================================================================
 // Types
@@ -51,7 +52,14 @@ const TRACKED_FIELDS: (keyof DocumentTemplate)[] = [
   'compositionType',
   'content',
   'isActive',
+  'sharePointRelativeFolderPath',
 ];
+
+function normalizeSharePointRelativeFolderPath(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value.trim() === '') return null;
+  return parseSharePointRelativeFolderPath(value).normalized;
+}
 
 // ============================================================================
 // Create Template
@@ -83,6 +91,7 @@ export async function createDocumentTemplate(
       content: data.content,
       contentJson: data.contentJson ?? undefined,
       placeholders: data.placeholders,
+      sharePointRelativeFolderPath: normalizeSharePointRelativeFolderPath(data.sharePointRelativeFolderPath),
       isActive: data.isActive,
       createdById: userId,
     },
@@ -159,6 +168,9 @@ export async function updateDocumentTemplate(
   }
   if (data.placeholders !== undefined) updateData.placeholders = data.placeholders;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
+  if (data.sharePointRelativeFolderPath !== undefined) {
+    updateData.sharePointRelativeFolderPath = normalizeSharePointRelativeFolderPath(data.sharePointRelativeFolderPath);
+  }
 
   const template = await prisma.documentTemplate.update({
     where: { id: data.id },
@@ -350,6 +362,7 @@ export async function duplicateDocumentTemplate(
       content: existing.content,
       contentJson: existing.contentJson ?? undefined,
       placeholders: existing.placeholders ?? [],
+      sharePointRelativeFolderPath: existing.sharePointRelativeFolderPath,
       isActive: true,
       createdById: userId,
       version: 1, // Reset version for duplicated template

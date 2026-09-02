@@ -31,6 +31,7 @@ import { DocumentPageViewer, ResizableSplitView } from '@/components/processing'
 import { postFormDataWithFallback } from '@/lib/browser-upload';
 import { applyAutomaticContactResolutions, BizFileReviewWorkspace, buildBizFileContactIdentityCandidates } from '@/components/companies/bizfile-review/bizfile-review-workspace';
 import { ContactMatchPanel } from '@/components/companies/bizfile-review/bizfile-review-sections';
+import { CompanyCreateSharePointField, type PendingSharePointSelection } from '@/components/companies/company-create-sharepoint-field';
 import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
@@ -218,6 +219,8 @@ export default function UploadBizFilePage() {
   const [shareholderChanges, setShareholderChanges] = useState<{ added: number; updated: number; removed: number } | null>(null);
   const [companyUpdatedAt, setCompanyUpdatedAt] = useState<string | null>(null); // For concurrent update detection
   const [concurrentUpdateWarning, setConcurrentUpdateWarning] = useState<string | null>(null);
+  const [sharePointSelection, setSharePointSelection] = useState<PendingSharePointSelection>({ kind: 'unmapped' });
+  const [sharePointSetupWarning, setSharePointSetupWarning] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{
     type: 'IN_RECYCLE_BIN' | 'ALREADY_EXISTS';
     companyId: string;
@@ -419,6 +422,33 @@ export default function UploadBizFilePage() {
     }
   };
 
+  const applySharePointSelection = async (createdCompanyId: string) => {
+    if (isUpdateMode || sharePointSelection.kind === 'unmapped') return;
+    let folder = sharePointSelection.kind === 'selected' ? sharePointSelection.folder : null;
+    if (!folder) {
+      if (sharePointSelection.kind !== 'requested') throw new Error('A SharePoint folder selection is incomplete');
+      const requestedSelection = sharePointSelection;
+      const rootResponse = await fetch(`/api/settings/sharepoint-filing?connectorId=${encodeURIComponent(requestedSelection.connectorId)}`);
+      const settings = await rootResponse.json() as { clientDocumentsRoot?: { itemId: string } | null; error?: string };
+      if (!rootResponse.ok || !settings.clientDocumentsRoot) throw new Error(settings.error || 'Client Documents root is not configured');
+      const folderResponse = await fetch('/api/sharepoint/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectorId: requestedSelection.connectorId, parentItemId: settings.clientDocumentsRoot.itemId, name: requestedSelection.name, mode: 'client-folder' }),
+      });
+      const folderBody = await folderResponse.json();
+      if (!folderResponse.ok) throw new Error(folderBody.error || 'SharePoint folder could not be created');
+      folder = folderBody;
+    }
+    const mappingResponse = await fetch(`/api/companies/${createdCompanyId}/sharepoint-folder`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ connectorId: sharePointSelection.connectorId, folder }),
+    });
+    const mappingBody = await mappingResponse.json();
+    if (!mappingResponse.ok) throw new Error(mappingBody.error || 'SharePoint company mapping failed');
+  };
+
   const handleConfirm = async (correctedData: ExtractedBizFileData) => {
     if (!documentId) return;
 
@@ -462,7 +492,14 @@ export default function UploadBizFilePage() {
       const { companyId: cId } = await response.json();
       if (generation !== confirmGenerationRef.current) return;
       setCompanyId(cId);
-      if (taskContext) {
+      let sharePointMappingFailed = false;
+      try {
+        await applySharePointSelection(cId);
+      } catch (mappingError) {
+        sharePointMappingFailed = true;
+        setSharePointSetupWarning(`Company saved, but SharePoint setup needs attention: ${mappingError instanceof Error ? mappingError.message : 'mapping failed'}`);
+      }
+      if (taskContext && !sharePointMappingFailed) {
         router.push(withTaskLaunchContext(returnHref, taskContext));
         return;
       }
@@ -604,6 +641,8 @@ export default function UploadBizFilePage() {
     setConflict(null);
     setConflictDialogOpen(false);
     setConflictLoading(false);
+    setSharePointSelection({ kind: 'unmapped' });
+    setSharePointSetupWarning(null);
   };
 
   useEffect(() => () => {
@@ -925,6 +964,7 @@ export default function UploadBizFilePage() {
             serverIssues={serverIssues}
             tenantId={activeTenantId || undefined}
             extractionMetadata={<AIExtractionMetadata metadata={aiMetadata} />}
+            sharePointSetup={!isUpdateMode ? <CompanyCreateSharePointField onChange={setSharePointSelection} /> : undefined}
             onConfirm={handleConfirm}
             onReset={handleReset}
             onCancel={handleCancel}
@@ -1374,6 +1414,12 @@ export default function UploadBizFilePage() {
           <h3 className="text-lg font-medium text-text-primary mb-2">
             {isUpdateMode ? 'Company Updated Successfully!' : 'Company Created Successfully!'}
           </h3>
+          {sharePointSetupWarning && (
+            <div className="mx-auto mb-5 max-w-xl rounded-lg border border-status-warning/30 bg-status-warning/10 p-4 text-left text-sm text-status-warning" role="alert">
+              <p>{sharePointSetupWarning}</p>
+              {companyId && <Link href={`/companies/${companyId}`} className="mt-2 inline-flex min-h-10 items-center text-oak-primary hover:underline">Open the company to repair its SharePoint mapping</Link>}
+            </div>
+          )}
           <div className="text-text-secondary mb-6 space-y-2">
             {isUpdateMode ? (
               <>

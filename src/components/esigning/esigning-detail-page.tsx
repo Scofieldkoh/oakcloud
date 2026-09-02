@@ -30,7 +30,6 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import {
   useAddEsigningRecipient,
-  useAttachGeneratedEsigningDocuments,
   useDeleteEsigningDocument,
   useDeleteEsigningEnvelope,
   useDuplicateEsigningEnvelope,
@@ -47,6 +46,7 @@ import {
   useUploadEsigningDocument,
   useVoidEsigningEnvelope,
 } from '@/hooks/use-esigning';
+import { attachGeneratedDocumentsRequest } from '@/hooks/use-esigning';
 import type {
   EsigningFieldDefinitionInput,
   EsigningRecipientInput,
@@ -170,7 +170,20 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   // Mutations
   const updateEnvelope = useUpdateEsigningEnvelope(envelopeId);
   const uploadDocument = useUploadEsigningDocument(envelopeId);
-  const attachGeneratedDocuments = useAttachGeneratedEsigningDocuments(envelopeId);
+  const [isAttachingGeneratedDocuments, setIsAttachingGeneratedDocuments] = useState(false);
+  const attachGeneratedDocuments = {
+    isPending: isAttachingGeneratedDocuments,
+    mutateAsync: async (documentIds: string[]) => {
+      setIsAttachingGeneratedDocuments(true);
+      try {
+        const result = await attachGeneratedDocumentsRequest(envelopeId, documentIds);
+        await envelopeQuery.refetch();
+        return result;
+      } finally {
+        setIsAttachingGeneratedDocuments(false);
+      }
+    },
+  };
   const saveFields = useSaveEsigningFields(envelopeId);
   const sendEnvelope = useSendEsigningEnvelope(envelopeId);
   const voidEnvelope = useVoidEsigningEnvelope(envelopeId);

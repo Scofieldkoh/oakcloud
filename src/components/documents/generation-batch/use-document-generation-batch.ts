@@ -112,21 +112,35 @@ export function useDocumentGenerationBatch(
   }, [disarm, requestNavigation]);
 
   const commit = useCallback((saved: DocumentGenerationBatchDto) => {
-    const normalized = editableBatchFromDto(saved);
-    dispatch({ type: 'server/replace', batch: normalized });
     const current = stateRef.current;
+    const normalized = editableBatchFromDto(saved);
+    const currentActiveItem = current.activeItemId
+      ? normalized.items.find((item) =>
+        item.key === current.activeItemId
+        || item.id === current.activeItemId
+        || item.templateId === current.activeItemId,
+      )
+      : undefined;
+    const activeItemId = currentActiveItem?.key
+      ?? normalized.activeItemId
+      ?? normalized.items[0]?.key
+      ?? null;
+    const committed = activeItemId === normalized.activeItemId
+      ? normalized
+      : { ...normalized, activeItemId };
+    dispatch({ type: 'server/replace', batch: committed });
     stateRef.current = {
       ...current,
-      batch: normalized,
-      stage: BATCH_STAGES[Math.min(normalized.currentStage, BATCH_STAGES.length - 1)],
-      activeItemId: normalized.activeItemId ?? normalized.items[0]?.key ?? null,
-      savedSnapshot: JSON.stringify(normalized),
+      batch: committed,
+      stage: BATCH_STAGES[Math.min(committed.currentStage, BATCH_STAGES.length - 1)],
+      activeItemId,
+      savedSnapshot: JSON.stringify(committed),
       dirty: false,
       pending: null,
       conflict: null,
-      capabilities: deriveCapabilitiesForCommit(normalized),
+      capabilities: deriveCapabilitiesForCommit(committed),
     };
-    return normalized;
+    return committed;
   }, []);
 
   const resolveItemId = useCallback((itemId: string): string => {

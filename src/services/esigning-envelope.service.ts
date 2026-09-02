@@ -97,6 +97,19 @@ type PreparedRecipientNotification = {
   signingUrl: string;
 };
 
+function assertGeneratedDocumentCompanyMatchesEnvelope(
+  envelopeCompanyId: string | null,
+  generatedDocumentCompanyId: string | null,
+): void {
+  if (
+    envelopeCompanyId &&
+    generatedDocumentCompanyId &&
+    envelopeCompanyId !== generatedDocumentCompanyId
+  ) {
+    throw new Error('All generated documents in an envelope must belong to the same company');
+  }
+}
+
 function buildConsentDisclosureSnapshot(): Prisma.InputJsonValue {
   return {
     title: 'Electronic Signature Disclosure',
@@ -1590,10 +1603,25 @@ export async function uploadGeneratedDocumentToEsigningEnvelope(
       status: 'FINALIZED',
       deletedAt: null,
     },
-    select: { id: true, title: true },
+    select: { id: true, title: true, companyId: true },
   });
   if (!document) {
     throw new Error('Selected generated document must be finalized and eligible');
+  }
+
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: { id: envelopeId, tenantId, deletedAt: null },
+    select: { companyId: true },
+  });
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  assertGeneratedDocumentCompanyMatchesEnvelope(envelope.companyId, document.companyId);
+  if (!envelope.companyId && document.companyId) {
+    await prisma.esigningEnvelope.updateMany({
+      where: { id: envelopeId, tenantId, deletedAt: null, companyId: null },
+      data: { companyId: document.companyId },
+    });
   }
 
   const pdf = await exportToPDF({
@@ -1661,11 +1689,12 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
       status: 'FINALIZED',
       deletedAt: null,
     },
-    select: { id: true, title: true },
+    select: { id: true, title: true, companyId: true },
   });
   if (!generatedDocument) {
     throw new Error('Selected generated document must be finalized and eligible');
   }
+  assertGeneratedDocumentCompanyMatchesEnvelope(envelope.companyId, generatedDocument.companyId);
 
   const exported = await exportToPDF({
     documentId: generatedDocument.id,
@@ -1741,6 +1770,12 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
           fileSize: pdfBuffer.length,
         },
       });
+      if (!envelope.companyId && generatedDocument.companyId) {
+        await tx.esigningEnvelope.updateMany({
+          where: { id: input.envelopeId, tenantId: input.tenantId, companyId: null },
+          data: { companyId: generatedDocument.companyId },
+        });
+      }
       if (managedDocument) {
         await tx.esigningEnvelopeDocument.delete({
           where: { id: managedDocument.id },

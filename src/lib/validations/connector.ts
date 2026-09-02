@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { sharePointFolderRefSchema } from '@/lib/sharepoint/folder-reference';
 
 // ============================================================================
 // Enums
@@ -101,13 +102,68 @@ export const onedriveSettingsSchema = z
   })
   .optional();
 
+export const signedDocumentFilingSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  enabledAt: z.string().datetime().optional(),
+  lastVerifiedAt: z.string().datetime().optional(),
+  configVersion: z.number().int().min(1).default(1),
+  clientDocumentsRoot: sharePointFolderRefSchema.optional(),
+  orphanDocumentsFolder: sharePointFolderRefSchema.optional(),
+}).passthrough();
+
+/**
+ * This schema is intentionally non-stripping. Connector settings are shared by
+ * conversion, sync, mailbox ingestion, and future integrations; parsing must
+ * never erase keys owned by another feature.
+ */
 export const sharepointSettingsSchema = z
   .object({
     rootFolder: z.string().optional(), // Default folder path within the library
     syncEnabled: z.boolean().optional(),
     documentLibraryName: z.string().optional(), // For display purposes
+    mailboxUserId: z.string().optional(),
+    mailboxUserIds: z.array(z.string()).optional(),
+    ingestAllEmails: z.boolean().optional(),
+    signedDocumentFiling: signedDocumentFilingSettingsSchema.optional(),
   })
-  .optional();
+  .passthrough()
+  .optional()
+  .nullable();
+
+export const sharepointSignedFilingUpdateSchema = z.object({
+  connectorId: z.string().uuid(),
+  clientDocumentsRoot: sharePointFolderRefSchema.nullable().optional(),
+  orphanDocumentsFolder: sharePointFolderRefSchema.nullable().optional(),
+  enabled: z.boolean().optional(),
+}).strict();
+
+export type SharePointSettings = z.infer<typeof sharepointSettingsSchema>;
+export type SharePointSignedFilingUpdate = z.infer<typeof sharepointSignedFilingUpdateSchema>;
+
+export interface ParsedSharePointSettings {
+  [key: string]: unknown;
+  signedDocumentFiling: {
+    enabled: boolean;
+    configVersion: number;
+    enabledAt?: string;
+    lastVerifiedAt?: string;
+    clientDocumentsRoot?: z.infer<typeof sharePointFolderRefSchema>;
+    orphanDocumentsFolder?: z.infer<typeof sharePointFolderRefSchema>;
+  };
+}
+
+/** Apply the compatibility default without rewriting the connector record. */
+export function parseSharePointSettings(value: unknown): ParsedSharePointSettings {
+  const parsed = sharepointSettingsSchema.parse(value) ?? {};
+  return {
+    ...parsed,
+    signedDocumentFiling: {
+      enabled: false,
+      configVersion: 1,
+      ...(parsed.signedDocumentFiling ?? {}),
+    },
+  };
+}
 
 // ============================================================================
 // Create Connector

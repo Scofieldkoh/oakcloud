@@ -5,6 +5,7 @@ import { CompanyAccentSection } from '@/components/companies/company-accent-sect
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
 import { CompanyProfileValueEditor } from './company-edit-section';
 import { companyProfileSectionOrder } from './company-edit-workspace';
+import { CompanyCreateSharePointField, type PendingSharePointSelection } from '@/components/companies/company-create-sharepoint-field';
 
 export type CompanyCreateProfile = Record<CompanyProfileSectionId, unknown>;
 
@@ -53,9 +54,10 @@ interface CompanyCreateWorkspaceProps {
   actions?: ReactNode;
   formId?: string;
   onDirtyChange?: (dirty: boolean) => void;
+  onSharePointSelectionChange?: (selection: PendingSharePointSelection) => void;
 }
 
-export function CompanyCreateWorkspace({ onSubmit, actions, formId, onDirtyChange }: CompanyCreateWorkspaceProps) {
+export function CompanyCreateWorkspace({ onSubmit, actions, formId, onDirtyChange, onSharePointSelectionChange }: CompanyCreateWorkspaceProps) {
   const [profile, setProfile] = useState<CompanyCreateProfile>(emptyCompanyProfile);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -78,6 +80,7 @@ export function CompanyCreateWorkspace({ onSubmit, actions, formId, onDirtyChang
         </div>
       </CompanyAccentSection>
     ))}
+    <CompanyCreateSharePointField onChange={onSharePointSelectionChange ?? (() => undefined)} />
     {actions}
   </form>;
 }

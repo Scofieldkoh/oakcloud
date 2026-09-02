@@ -14,7 +14,7 @@ import { useDropzone } from 'react-dropzone';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
-import { useAttachGeneratedEsigningDocuments } from '@/hooks/use-esigning';
+import { attachGeneratedDocumentsRequest } from '@/hooks/use-esigning';
 import { cn } from '@/lib/utils';
 import { withTaskLaunchContext } from '@/lib/task-launch-context';
 import type { TaskStageTransition } from '@/hooks/use-tasks';
@@ -314,7 +314,18 @@ export function TaskStageModal({
     && !resourcesError
     && (!hasLinkedEsigningEnvelope || isLinkedEsigningDraft),
   );
-  const attachGeneratedDocuments = useAttachGeneratedEsigningDocuments(linkedEsigningEnvelopeId);
+  const [isAttachingGeneratedDocuments, setIsAttachingGeneratedDocuments] = useState(false);
+  const attachGeneratedDocuments = {
+    isPending: isAttachingGeneratedDocuments,
+    mutateAsync: async (documentIds: string[]) => {
+      setIsAttachingGeneratedDocuments(true);
+      try {
+        return await attachGeneratedDocumentsRequest(linkedEsigningEnvelopeId, documentIds);
+      } finally {
+        setIsAttachingGeneratedDocuments(false);
+      }
+    },
+  };
 
   useEffect(() => {
     onUpdateMetadataRef.current = onUpdateMetadata;
