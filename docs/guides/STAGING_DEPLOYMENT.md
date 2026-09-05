@@ -83,6 +83,25 @@ Access staging at `http://<staging-device-ip>:<port>` (or set up a subdomain lik
 
 ## Deploying to Production (Minimising Downtime)
 
+### Node 24 Runtime Verification
+
+Build and restart the staging app before production deployment:
+
+```bash
+docker compose build --pull app
+docker compose up -d --no-deps app
+docker compose exec -T app node --version
+docker compose exec -T app sh -lc 'test -x "$CHROME_PATH" && "$CHROME_PATH" --version'
+docker compose exec -T app npm run test:chromium
+```
+
+Production deployment requires a successful staging image build and runtime
+verification. This migration does not require a database migration. Node 24's
+stricter TLS behaviour also requires real staging smoke tests for email,
+Microsoft Graph/SharePoint, HTTPS S3, and every AI provider enabled in
+production. Keep the previous source commit and application image recoverable
+until post-deployment checks pass.
+
 ### Release blocker: modular-task migration history
 
 Before deploying the modular Tasks/Pipelines release, inspect the deployed

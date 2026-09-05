@@ -228,7 +228,7 @@ export async function processSharePointFilingJob(claim: ClaimedSharePointFiling)
     }
     const sourceHash = sha256Content(content);
     const destination = await resolveDestination(claim, filing, context);
-    const preferred = preferredSignedDocumentFileName({ completedAt: filing.envelope.completedAt ?? new Date(), companyName: filing.companyNameSnapshot, documentTitle: filing.documentTitleSnapshot || filing.envelopeDocument.fileName || filing.envelope.title, envelopeIdentifier: filing.envelope.certificateId || filing.envelopeId });
+    const preferred = preferredSignedDocumentFileName({ documentTitle: filing.documentTitleSnapshot || filing.envelopeDocument.fileName || filing.envelope.title });
 
     // Prefer the persisted remote identity after a timeout or lease expiry.
     // A missing item is safe to recover through the reserved-name path below.

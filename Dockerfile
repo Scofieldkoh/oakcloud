@@ -1,26 +1,34 @@
-FROM node:20-alpine
+FROM node:24-alpine3.24
 
 WORKDIR /app
 
-# Install dependencies for native modules and Chromium for PDF generation.
+# Install the musl compatibility layer and Chromium used for document rendering.
 RUN apk add --no-cache \
-    libc6-compat \
-    chromium
-ENV CHROME_PATH=/usr/bin/chromium-browser
+    gcompat \
+    chromium \
+    && CHROME_BIN="$(command -v chromium-browser || command -v chromium)" \
+    && test -n "$CHROME_BIN" \
+    && test -x "$CHROME_BIN" \
+    && ln -sf "$CHROME_BIN" /usr/local/bin/oakcloud-chromium \
+    && /usr/local/bin/oakcloud-chromium --version
+ENV CHROME_PATH=/usr/local/bin/oakcloud-chromium
 
-# Copy package files
+# Copy package files.
 COPY package.json package-lock.json* ./
 
-# Install dependencies
+# Install the exact locked dependency graph.
 RUN npm ci
 
-# Copy prisma schema for generation
+# Copy Prisma schema for generation.
 COPY prisma ./prisma/
 
-# Copy the rest of the app
+# Copy the rest of the app.
 COPY . .
 
-# Build Next.js for production
+# Verify the installed Chromium can launch, generate a PDF, and render it.
+RUN npm run test:chromium
+
+# Build Next.js for production.
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npx prisma generate

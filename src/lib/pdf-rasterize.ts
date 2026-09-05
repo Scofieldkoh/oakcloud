@@ -1,4 +1,4 @@
-import { findChromePath } from '@/services/document-export.service';
+import { findChromePath } from '@/lib/chrome-executable';
 
 export async function renderPdfPageToPng(pdfBuffer: Buffer): Promise<Buffer> {
   const puppeteer = await import('puppeteer-core');

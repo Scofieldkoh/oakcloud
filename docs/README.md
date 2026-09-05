@@ -140,7 +140,7 @@ S3_BUCKET="oakcloud"
 |-------|--------------|
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Chakra UI |
 | State | Zustand, TanStack Query, React Hook Form |
-| Backend | Node.js 20, PostgreSQL 16, Prisma 7 |
+| Backend | Node.js 24 LTS, PostgreSQL 16, Prisma 7 |
 | Auth | JWT (`jose`), Argon2id (`@noble/hashes`) |
 | AI | OpenAI, Anthropic, Google AI, OpenRouter |
 | Storage | MinIO / S3-compatible object storage |

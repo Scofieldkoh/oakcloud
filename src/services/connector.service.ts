@@ -771,12 +771,32 @@ async function testGoogle(credentials: { apiKey: string }): Promise<void> {
 }
 
 async function testOpenRouter(credentials: { apiKey: string }): Promise<void> {
-  const OpenAI = (await import('openai')).default;
-  const client = new OpenAI({
-    apiKey: credentials.apiKey,
-    baseURL: 'https://openrouter.ai/api/v1',
+  const apiKey = credentials.apiKey.trim();
+  if (!apiKey.startsWith('sk-or-')) {
+    throw new Error('OpenRouter API key must start with sk-or-');
+  }
+
+  // /models is a public catalog endpoint and can succeed without valid
+  // credentials. /key requires bearer authentication and is a reliable
+  // connection test without spending inference credits.
+  const response = await fetch('https://openrouter.ai/api/v1/key', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: 'application/json',
+    },
   });
-  await client.models.list();
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => null)) as
+      | { error?: { message?: string } | string; message?: string }
+      | null;
+    const errorMessage =
+      (typeof errorData?.error === 'string' ? errorData.error : errorData?.error?.message) ||
+      errorData?.message ||
+      'Failed to validate OpenRouter API credentials';
+    throw new Error(errorMessage);
+  }
 }
 
 async function testMistral(credentials: { apiKey: string }): Promise<void> {

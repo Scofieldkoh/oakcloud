@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
   isAcraSyncing,
+  buildAcraRecordsSearchParams,
   useAcraRecords,
   useTriggerAcraSync,
   type AcraRecord,
@@ -24,6 +25,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   Database,
+  Download,
   RefreshCw,
   Search,
   SlidersHorizontal,
@@ -246,6 +248,8 @@ export default function AcraDataPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [expandedRecordIds, setExpandedRecordIds] = useState<string[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Debounce the toolbar search
   useEffect(() => {
@@ -379,6 +383,42 @@ export default function AcraDataPage() {
     setDateFilters({});
     setPage(1);
   }, []);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      const searchParams = buildAcraRecordsSearchParams({
+        search: debouncedSearch || undefined,
+        filters: {
+          ...debouncedTextFilters,
+          ...(entityTypeFilter ? { entityType: entityTypeFilter } : {}),
+        },
+        dateRanges: dateFilters,
+      });
+      const response = await fetch(`/api/admin/acra-records/export?${searchParams}`);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || 'Failed to export ACRA records');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = `acra-records-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Failed to export ACRA records');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [dateFilters, debouncedSearch, debouncedTextFilters, entityTypeFilter]);
 
   const startResize = useCallback(
     (e: React.PointerEvent, columnId: ColumnId) => {
@@ -704,6 +744,11 @@ export default function AcraDataPage() {
           {triggerSync.error instanceof Error ? triggerSync.error.message : 'Failed to start the ACRA sync'}
         </Alert>
       )}
+      {exportError && (
+        <Alert variant="error" className="mb-4">
+          {exportError}
+        </Alert>
+      )}
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 p-4 bg-background-secondary border border-border-primary rounded-lg mb-4">
@@ -740,6 +785,17 @@ export default function AcraDataPage() {
               {hiddenColumnCount}
             </span>
           )}
+        </button>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={isExporting}
+          className="btn-secondary btn-sm flex items-center gap-2"
+          aria-label={isExporting ? 'Exporting ACRA records' : 'Export CSV'}
+          title="Export all matching records with every database column"
+        >
+          <Download className="w-4 h-4" />
+          <span className="hidden xl:inline">{isExporting ? 'Exporting...' : 'Export CSV'}</span>
         </button>
       </div>
 

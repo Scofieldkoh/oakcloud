@@ -17,6 +17,7 @@ vi.mock('@/hooks/use-auth', () => ({
 
 vi.mock('@/hooks/use-acra-records', () => ({
   useAcraRecords: mocks.useAcraRecords,
+  buildAcraRecordsSearchParams: () => new URLSearchParams(),
   isAcraSyncing: (syncState: { lastStartedAt?: string | null; lastCompletedAt?: string | null } | null) => {
     if (!syncState?.lastStartedAt) return false;
     if (!syncState.lastCompletedAt) return true;
@@ -191,6 +192,13 @@ describe('ACRA Data admin page', () => {
     expect(screen.getAllByText('Local Company').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Foreign Company').length).toBeGreaterThan(0);
   }, 15_000);
+
+  it('renders the CSV export button', async () => {
+    const { default: AcraDataPage } = await import('@/app/(dashboard)/admin/acra-data/page');
+    render(<AcraDataPage />);
+
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeTruthy();
+  });
 
   it('shows the empty state when there are no records', async () => {
     mocks.useAcraRecords.mockReturnValue({

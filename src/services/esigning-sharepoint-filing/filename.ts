@@ -10,34 +10,20 @@ export function sanitizeSharePointFilenameComponent(value: string, fallback = 'D
   return sanitized || fallback;
 }
 
-function formatDate(value: Date | string): string {
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return 'unknown-date';
-  return date.toISOString().slice(0, 10);
-}
-
 function extensionless(value: string): string {
   return value.toLowerCase().endsWith('.pdf') ? value.slice(0, -4) : value;
 }
 
 export interface SignedDocumentFilenameInput {
-  completedAt: Date | string;
-  companyName?: string | null;
   documentTitle: string;
-  envelopeIdentifier: string;
 }
 
 export function preferredSignedDocumentFileName(input: SignedDocumentFilenameInput): string {
-  const shortIdentifier = sanitizeSharePointFilenameComponent(input.envelopeIdentifier, 'Envelope')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .slice(0, 12) || 'Envelope';
-  const base = [
-    formatDate(input.completedAt),
-    sanitizeSharePointFilenameComponent(input.companyName || 'Unassigned', 'Unassigned'),
-    sanitizeSharePointFilenameComponent(extensionless(input.documentTitle), 'Document'),
-    'Signed',
-    shortIdentifier,
-  ].join(' - ');
+  const sourceBaseName = sanitizeSharePointFilenameComponent(
+    extensionless(input.documentTitle),
+    'Document',
+  );
+  const base = /_signed$/i.test(sourceBaseName) ? sourceBaseName : `${sourceBaseName}_signed`;
   const suffix = '.pdf';
   return `${base.slice(0, Math.max(1, MAX_FILENAME_LENGTH - suffix.length))}${suffix}`;
 }

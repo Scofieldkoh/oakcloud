@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-09-01
+> **Last Updated**: 2026-09-05
 > Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
@@ -29,6 +29,13 @@
 | [Service Patterns](./guides/SERVICE_PATTERNS.md) | Service-layer architecture and conventions |
 | [Staging & Deployment](./guides/STAGING_DEPLOYMENT.md) | Two-environment workflow for self-hosted Docker deployments |
 | [Audit Logging](./guides/AUDIT_LOGGING.md) | Activity tracking and change logging |
+
+## Infrastructure and Runtime
+
+| Document | Description |
+|----------|-------------|
+| [Node 24 Runtime Migration](./plans/2026-09-05-node-24-runtime-migration.md) | Node 24, Chromium, Docker, CI, and verification plan |
+| [Staging & Deployment](./guides/STAGING_DEPLOYMENT.md) | Staging runtime checks and production deployment guidance |
 
 ## Reference
 

@@ -102,6 +102,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         model: modelId,
         tenantId: connector.workspaceId,
         userId: session.id,
+        connectorId: connector.id,
+        isSuperAdmin: session.isSuperAdmin,
         preferredProvider: 'openrouter',
         userPrompt: 'Read the attached PDF and respond with {"ok":true}.',
         jsonMode: true,

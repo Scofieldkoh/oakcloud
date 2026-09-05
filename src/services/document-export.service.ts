@@ -24,7 +24,9 @@ import { buildA4FontFaceCssDataUris } from '@/components/documents/a4-pagination
 import { A4_PAGINATION_BUNDLE } from '@/components/documents/a4-pagination/pagination-bundle.generated';
 import { buildA4PrintCss, PAGE_NUMBER_STRIP_MM } from '@/components/documents/a4-print-styles';
 import { generatedDocumentPdfFileName } from '@/lib/generated-document-filename';
+import { findChromePath } from '@/lib/chrome-executable';
 export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
+export { findChromePath };
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 import archiver from 'archiver';
@@ -283,41 +285,6 @@ export async function generatePDF(
   } finally {
     await browser.close();
   }
-}
-
-/**
- * Find Chrome executable path
- */
-export async function findChromePath(): Promise<string> {
-  // Check environment variable first
-  if (process.env.CHROME_PATH) {
-    return process.env.CHROME_PATH;
-  }
-
-  // Common paths
-  const paths = [
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-  ];
-
-  const fs = await import('fs');
-  for (const path of paths) {
-    try {
-      await fs.promises.access(path);
-      return path;
-    } catch {
-      // Path doesn't exist, try next
-    }
-  }
-
-  // If no Chrome found, throw helpful error
-  throw new Error(
-    'Chrome/Chromium not found. Set CHROME_PATH environment variable or install Chrome/Chromium.'
-  );
 }
 
 /**

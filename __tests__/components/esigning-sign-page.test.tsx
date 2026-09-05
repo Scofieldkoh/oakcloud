@@ -156,11 +156,13 @@ vi.mock('@/components/esigning/signing/esigning-post-it-tab', () => ({
 let consentHandler: () => Promise<Response> | Response;
 let consentRequestCount = 0;
 let fieldSaveRequests: RequestInit[] = [];
+let completeRequests: RequestInit[] = [];
 let fieldsHandler: ((init?: RequestInit) => Promise<Response> | Response) | null = null;
 let currentSession: EsigningSigningSessionDto;
 let statusHandler: (() => Promise<Response> | Response) | null = null;
 let statusRequestCount = 0;
 let sessionLoadHandler: (() => Promise<Response> | Response) | null = null;
+let completeHandler: ((init?: RequestInit) => Promise<Response> | Response) | null = null;
 
 function makeSession(
   overrides: Partial<EsigningSigningSessionDto> = {}
@@ -301,11 +303,13 @@ function statusForSession(session: EsigningSigningSessionDto): EsigningSigningSe
 function stubSigningFetch(session: EsigningSigningSessionDto) {
   consentRequestCount = 0;
   fieldSaveRequests = [];
+  completeRequests = [];
   fieldsHandler = null;
   currentSession = session;
   statusHandler = null;
   statusRequestCount = 0;
   sessionLoadHandler = null;
+  completeHandler = null;
 
   vi.stubGlobal(
     'fetch',
@@ -334,6 +338,10 @@ function stubSigningFetch(session: EsigningSigningSessionDto) {
       if (url.endsWith('/api/esigning/sign/session/fields')) {
         fieldSaveRequests.push(init ?? {});
         return fieldsHandler ? fieldsHandler(init) : jsonResponse(currentSession);
+      }
+      if (url.endsWith('/api/esigning/sign/session/complete')) {
+        completeRequests.push(init ?? {});
+        return completeHandler ? completeHandler(init) : jsonResponse(currentSession);
       }
 
       throw new Error(`Unexpected fetch in test: ${url}`);
@@ -515,6 +523,60 @@ describe('EsigningSignPage autosave and field values', () => {
       fieldDefinitionId: 'field-1',
       signatureDataUrl: specimen,
     }));
+  });
+
+  it('auto-signs with the saved specimen when the signed-in sender opts in', async () => {
+    const specimen = 'data:image/png;base64,c2lnbmF0dXJl';
+    const initialSession = makeSigningSession(makeField({ type: 'SIGNATURE' }), {
+      savedSignatureSpecimenDataUrl: specimen,
+      recipient: {
+        ...makeSigningSession(makeField({ type: 'SIGNATURE' })).recipient,
+        status: 'VIEWED',
+        consentedAt: null,
+      },
+    });
+    const consentedSession = {
+      ...initialSession,
+      recipient: {
+        ...initialSession.recipient,
+        consentedAt: '2026-08-11T08:00:00.000Z',
+      },
+    } satisfies EsigningSigningSessionDto;
+    const completedSession = {
+      ...initialSession,
+      envelope: {
+        ...initialSession.envelope,
+        status: 'COMPLETED' as const,
+      },
+      recipient: {
+        ...initialSession.recipient,
+        status: 'SIGNED' as const,
+        signedAt: '2026-08-11T08:00:00.000Z',
+      },
+    } satisfies EsigningSigningSessionDto;
+
+    window.history.replaceState({}, '', '/esigning/sign/token-1?autoSign=1');
+    stubSigningFetch(initialSession);
+    consentHandler = () => jsonResponse(consentedSession);
+    completeHandler = () => {
+      currentSession = completedSession;
+      return jsonResponse(completedSession);
+    };
+
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('consent-screen');
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to Document' }));
+    expect(await screen.findByRole('heading', { name: 'Completed' })).toBeInTheDocument();
+    await waitFor(() => expect(completeRequests).toHaveLength(1));
+    const body = JSON.parse(String(completeRequests[0]?.body)) as {
+      values: Array<{ fieldDefinitionId: string; signatureDataUrl: string }>;
+    };
+    expect(body.values[0]).toEqual(expect.objectContaining({
+      fieldDefinitionId: 'field-1',
+      signatureDataUrl: specimen,
+    }));
+    window.history.replaceState({}, '', '/');
   });
 
   it('hides the page panel while signing on a portrait mobile viewport', async () => {

@@ -70,3 +70,69 @@ To clear this log file, you can:
 2. Or use the `clearDebugLog()` function programmatically
 
 ---
+## AI Error - 2026-09-03T04:23:55.288Z
+
+| Field | Value |
+|-------|-------|
+| Operation | manual_connector_pdf_test |
+| Model | perplexity/sonar-pro-search |
+| Provider | openrouter |
+| Connector Source | system |
+| Connector ID | df13eefe-56bb-4f0b-902f-cdf9cb865ab8 |
+| Connector Name | Openrouter |
+
+### Error Details
+- **Type**: AuthenticationError
+- **Message**: 401 Missing Authentication header
+- **Retryable**: false
+
+<details>
+<summary>Stack Trace</summary>
+
+```
+Error: 401 Missing Authentication header
+    at Function.generate (C:\Users\Scofieldkoh\Documents\oakcloud\node_modules\openai\src\error.ts:76:14)
+    at OpenAI.makeStatusError (C:\Users\Scofieldkoh\Documents\oakcloud\node_modules\openai\src\core.ts:462:21)
+    at OpenAI.makeRequest (C:\Users\Scofieldkoh\Documents\oakcloud\node_modules\openai\src\core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async callOpenRouter (C:\Users\Scofieldkoh\Documents\oakcloud\src\lib\ai\providers\openrouter.ts:177:16)
+    at async callAIWithConnector (C:\Users\Scofieldkoh\Documents\oakcloud\src\lib\ai\index.ts:531:22)
+    at async [eval]:17:18
+```
+</details>
+
+---
+
+## AI Error - 2026-09-03T04:24:23.567Z
+
+| Field | Value |
+|-------|-------|
+| Operation | unknown |
+| Model | perplexity/sonar-pro-search |
+| Provider | openrouter |
+| Connector Source | system |
+| Connector ID | df13eefe-56bb-4f0b-902f-cdf9cb865ab8 |
+| Connector Name | Openrouter |
+
+### Error Details
+- **Type**: AuthenticationError
+- **Message**: 401 Missing Authentication header
+- **Retryable**: false
+
+<details>
+<summary>Stack Trace</summary>
+
+```
+Error: 401 Missing Authentication header
+    at Function.generate (C:\Users\Scofieldkoh\Documents\oakcloud\node_modules\openai\src\error.ts:76:14)
+    at OpenAI.makeStatusError (C:\Users\Scofieldkoh\Documents\oakcloud\node_modules\openai\src\core.ts:462:21)
+    at OpenAI.makeRequest (C:\Users\Scofieldkoh\Documents\oakcloud\node_modules\openai\src\core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async callOpenRouter (C:\Users\Scofieldkoh\Documents\oakcloud\src\lib\ai\providers\openrouter.ts:177:16)
+    at async callAIWithConnector (C:\Users\Scofieldkoh\Documents\oakcloud\src\lib\ai\index.ts:531:22)
+    at async [eval]:11:18
+```
+</details>
+
+---
+

@@ -3,9 +3,12 @@ import { preferredSignedDocumentFileName, signedDocumentFilenameCandidate } from
 
 describe('signed SharePoint filenames', () => {
   it('is deterministic and safe', () => {
-    const value = preferredSignedDocumentFileName({ completedAt: '2026-09-01T00:00:00.000Z', companyName: 'Acme / SG', documentTitle: 'Agreement: Final', envelopeIdentifier: 'certificate-123' });
-    expect(value).toBe('2026-09-01 - Acme SG - Agreement Final - Signed - certificate1.pdf');
+    const value = preferredSignedDocumentFileName({ documentTitle: 'Agreement: Final.pdf' });
+    expect(value).toBe('Agreement Final_signed.pdf');
     expect(value).not.toMatch(/["*:<>?|\\/]/);
+  });
+  it('preserves the source filename and adds the signed suffix once', () => {
+    expect(preferredSignedDocumentFileName({ documentTitle: 'engagement_signed.pdf' })).toBe('engagement_signed.pdf');
   });
   it('uses controlled numbered suffixes', () => expect(signedDocumentFilenameCandidate('document.pdf', 2)).toBe('document (2).pdf'));
 });

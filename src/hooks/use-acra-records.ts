@@ -60,6 +60,25 @@ export interface AcraRecordsParams {
   dateRanges?: Record<string, { from?: string; to?: string }>;
 }
 
+export function buildAcraRecordsSearchParams(params: AcraRecordsParams): URLSearchParams {
+  const searchParams = new URLSearchParams();
+  if (params.page) searchParams.set('page', params.page.toString());
+  if (params.limit) searchParams.set('limit', params.limit.toString());
+  if (params.sortBy) searchParams.set('sortBy', params.sortBy);
+  if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
+  if (params.search) searchParams.set('search', params.search);
+
+  for (const [field, value] of Object.entries(params.filters ?? {})) {
+    if (value) searchParams.set(field, value);
+  }
+  for (const [field, range] of Object.entries(params.dateRanges ?? {})) {
+    if (range.from) searchParams.set(`${field}From`, range.from);
+    if (range.to) searchParams.set(`${field}To`, range.to);
+  }
+
+  return searchParams;
+}
+
 /** Whether a sync run appears to be in progress. */
 export function isAcraSyncing(syncState: AcraSyncSummary | null | undefined): boolean {
   if (!syncState?.lastStartedAt) return false;
@@ -74,20 +93,7 @@ export function useAcraRecords(params: AcraRecordsParams) {
     // While a sync is running, poll so the UI reflects progress and results.
     refetchInterval: (query) => (isAcraSyncing(query.state.data?.syncState) ? 15_000 : false),
     queryFn: async () => {
-      const searchParams = new URLSearchParams();
-      if (params.page) searchParams.set('page', params.page.toString());
-      if (params.limit) searchParams.set('limit', params.limit.toString());
-      if (params.sortBy) searchParams.set('sortBy', params.sortBy);
-      if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
-      if (params.search) searchParams.set('search', params.search);
-
-      for (const [field, value] of Object.entries(params.filters ?? {})) {
-        if (value) searchParams.set(field, value);
-      }
-      for (const [field, range] of Object.entries(params.dateRanges ?? {})) {
-        if (range.from) searchParams.set(`${field}From`, range.from);
-        if (range.to) searchParams.set(`${field}To`, range.to);
-      }
+      const searchParams = buildAcraRecordsSearchParams(params);
 
       const res = await fetch(`/api/admin/acra-records?${searchParams}`);
       if (!res.ok) {

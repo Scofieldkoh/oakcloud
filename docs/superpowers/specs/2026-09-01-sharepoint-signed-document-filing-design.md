@@ -533,7 +533,7 @@ The uploaded PDF is the signed document followed by its certificate of completio
 Recommended filename:
 
 ```text
-YYYY-MM-DD - <Company> - <Document title> - Signed - <short envelope/certificate ID>.pdf
+<source document filename>_signed.pdf
 ```
 
 Sanitize display components while retaining the stable short identifier.
@@ -541,8 +541,8 @@ Sanitize display components while retaining the stable short identifier.
 For example, a genuine collision becomes:
 
 ```text
-2026-09-01 - Abzon Pte Ltd - Resolution - Signed - ABC123.pdf
-2026-09-01 - Abzon Pte Ltd - Resolution - Signed - ABC123 (1).pdf
+Resolution_signed.pdf
+Resolution_signed (1).pdf
 ```
 
 ## 9. API responsibilities

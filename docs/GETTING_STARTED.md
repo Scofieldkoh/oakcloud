@@ -1,6 +1,6 @@
 # Getting Started
 
-> **Last Updated**: 2026-03-11
+> **Last Updated**: 2026-09-05
 > **Audience**: Developers
 
 This guide walks you through setting up Oakcloud for local development.
@@ -12,7 +12,7 @@ This guide walks you through setting up Oakcloud for local development.
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24.x
 - Docker Desktop or Docker Engine with Compose support
 - npm
 
@@ -135,8 +135,13 @@ remain subject to administrator review and activation.
 | `npm run dev` | Start the local dev server |
 | `npm run build` | Production build |
 | `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run the TypeScript compiler without emitting files |
 | `npm run test:run` | Run the test suite once |
+| `npm run test:chromium` | Verify Chromium PDF generation and PDF-to-PNG rasterisation |
 | `npm run test:coverage` | Run tests with coverage |
+
+`npm run test:chromium` requires an installed Chrome/Chromium executable. Set
+`CHROME_PATH` when the executable is not in one of Oakcloud's standard paths.
 
 ## Common Issues
 

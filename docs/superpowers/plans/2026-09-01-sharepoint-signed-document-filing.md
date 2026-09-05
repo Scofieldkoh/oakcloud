@@ -308,7 +308,7 @@
 - `ensureFilingJobsForCompletedEnvelope(tx, envelopeId, completedAt)` runs inside the completion transaction, applies both enablement gates and the `enabledAt` cutover, and upserts by envelope document.
 - `snapshotFilingRoute(tx, envelopeDocumentId)` returns intended/orphan destination, routing reason, connector/config/root/company/template snapshots, and safe naming inputs without making a Graph call.
 - `claimFilingJobs`, `completeClaim`, `failClaim`, and `releaseExpiredClaims` mirror established completion-worker lease semantics.
-- Preferred filename includes date, company, document title, `Signed`, and short certificate/envelope identifier. `reserveTargetFileName` atomically reserves the preferred name or controlled ` (1)` through ` (99)` suffix.
+- Preferred filename preserves the source document filename and appends `_signed` before `.pdf`. `reserveTargetFileName` atomically reserves the preferred name or controlled ` (1)` through ` (99)` suffix.
 
 - [ ] Write enqueue route-matrix tests for generated-document snapshot, legacy one-time fallback, missing mapping, blank path, manual document, invalid stored path, deployment/workspace disabled states, and cutover exclusion. Definitive remote not-found and transient verification belong to worker tests because enqueue performs no Graph call.
 - [ ] Write repository concurrency tests for unique transactional upsert, source-readiness claim join, `SKIP LOCKED`, claim token, lease expiry, attempt increments, lost claim, cutover-bounded repair, destination/name reservation, uploaded-item uniqueness, and retry schedule.

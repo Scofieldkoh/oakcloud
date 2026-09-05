@@ -2,6 +2,9 @@
   "name": "oakcloud",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "npm run db:generate && next build",
@@ -9,6 +12,8 @@
     "lint": "eslint src",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:chromium": "tsx scripts/smoke-chromium.ts",
+    "typecheck": "tsc --noEmit",
     "test:a4:smoke": "node scripts/run-a4-editor-smoke.mjs",
     "test:stage3:postgres": "vitest run __tests__/integration/service-agreement-activation.postgres.test.ts",
     "test:esigning:postgres": "vitest run __tests__/integration/esigning-completion-worker.postgres.test.ts",
