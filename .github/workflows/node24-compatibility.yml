@@ -18,6 +18,12 @@ jobs:
     name: Node 24 static and build checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Parse-only URL for Prisma/Next build steps; no database connection is made.
+      DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
+      # Build-only placeholders; production secrets are injected by Compose.
+      JWT_SECRET: ci-only-build-secret-that-is-not-used-at-runtime-and-is-long-enough
+      ENCRYPTION_KEY: ci-only-build-encryption-key
 
     steps:
       - name: Check out repository

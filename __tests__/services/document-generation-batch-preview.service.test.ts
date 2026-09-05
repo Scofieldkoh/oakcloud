@@ -129,7 +129,7 @@ function batchItem(overrides: Record<string, unknown> = {}): any {
   };
 }
 
-function batchWith(item: any = batchItem()) {
+function batchWith(item: any = batchItem()): any {
   return {
     id: batchId,
     tenantId,

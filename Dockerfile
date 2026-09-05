@@ -31,9 +31,12 @@ RUN npm run test:chromium
 # Build Next.js for production.
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npx prisma generate
+RUN DATABASE_URL=postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud npx prisma generate
 RUN test -f src/generated/prisma/client.ts
-RUN npx next build
+RUN DATABASE_URL=postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud \
+    JWT_SECRET=ci-only-build-secret-that-is-not-used-at-runtime-and-is-long-enough \
+    ENCRYPTION_KEY=ci-only-build-encryption-key \
+    npx next build
 
 # Expose port
 EXPOSE 3000

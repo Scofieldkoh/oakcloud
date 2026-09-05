@@ -2,7 +2,9 @@ node_modules
 .next
 .git
 *.log
-.env.local
+.env
+.env.*
+!.env.example
 docker-data
 tmp
 uploads
