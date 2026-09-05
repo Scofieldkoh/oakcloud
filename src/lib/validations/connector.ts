@@ -47,7 +47,11 @@ export const mistralCredentialsSchema = z.object({
 });
 
 export const openrouterCredentialsSchema = z.object({
-  apiKey: z.string().min(1, 'API key is required'),
+  apiKey: z
+    .string()
+    .trim()
+    .min(1, 'API key is required')
+    .refine((value) => value.startsWith('sk-or-'), 'OpenRouter API key must start with sk-or-'),
 });
 
 export type OpenRouterCredentials = z.infer<typeof openrouterCredentialsSchema>;

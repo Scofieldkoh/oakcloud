@@ -62,7 +62,7 @@ import {
   formatEsigningFileSize,
   PdfGenerationBadge,
 } from '@/components/esigning/esigning-shared';
-import type { EsigningManualLinkDto } from '@/types/esigning';
+import type { EsigningEnvelopeDetailDto, EsigningManualLinkDto } from '@/types/esigning';
 import { cn } from '@/lib/utils';
 import { EsigningStepIndicator } from './prepare/esigning-step-indicator';
 import { EsigningStepUpload } from './prepare/esigning-step-upload';
@@ -151,6 +151,32 @@ function formatEventAction(
 
 type WizardStep = 1 | 2 | 3;
 
+type SendEnvelopeResult = {
+  envelope: EsigningEnvelopeDetailDto;
+  manualLinks: EsigningManualLinkDto[];
+};
+
+type PendingAutoSign = {
+  signingUrl: string;
+  specimen: string;
+};
+
+async function loadSavedSignatureSpecimen(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/auth/signature-specimen', {
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json().catch(() => ({}))) as { dataUrl?: unknown };
+    return typeof result.dataUrl === 'string' && result.dataUrl ? result.dataUrl : null;
+  } catch {
+    return null;
+  }
+}
+
 export function EsigningDetailPage({ envelopeId }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -206,6 +232,8 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const [isDeleteEnvelopeOpen, setIsDeleteEnvelopeOpen] = useState(false);
   const [isVoidOpen, setIsVoidOpen] = useState(false);
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
+  const [pendingAutoSign, setPendingAutoSign] = useState<PendingAutoSign | null>(null);
+  const [isAutoSignPromptOpen, setIsAutoSignPromptOpen] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
 
   // Field drafts
@@ -488,6 +516,56 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     }
   }
 
+  async function handleEnvelopeSent(result: SendEnvelopeResult) {
+    setManualLinks(result.manualLinks);
+
+    const currentUserEmail = sessionQuery.data?.email.trim().toLowerCase();
+    const selfSigner = result.envelope.recipients.find(
+      (recipient) =>
+        recipient.type === 'SIGNER' &&
+        currentUserEmail &&
+        recipient.email.trim().toLowerCase() === currentUserEmail
+    );
+    const selfSigningLink = selfSigner
+      ? result.manualLinks.find((link) => link.recipientId === selfSigner.id)
+      : null;
+
+    if (selfSigningLink) {
+      const specimen = await loadSavedSignatureSpecimen();
+      if (specimen) {
+        setPendingAutoSign({ signingUrl: selfSigningLink.signingUrl, specimen });
+        setIsAutoSignPromptOpen(true);
+        return;
+      }
+    }
+
+    if (result.manualLinks.length > 0) {
+      setIsLinksModalOpen(true);
+    }
+  }
+
+  function closeAutoSignPrompt() {
+    setIsAutoSignPromptOpen(false);
+    setPendingAutoSign(null);
+    if (manualLinks.length > 0) {
+      setIsLinksModalOpen(true);
+    }
+  }
+
+  function confirmAutoSign() {
+    const signingUrl = pendingAutoSign?.signingUrl;
+    if (!signingUrl) {
+      closeAutoSignPrompt();
+      return;
+    }
+
+    const autoSignUrl = new URL(signingUrl, window.location.origin);
+    autoSignUrl.searchParams.set('autoSign', '1');
+    setIsAutoSignPromptOpen(false);
+    setPendingAutoSign(null);
+    window.location.assign(autoSignUrl.toString());
+  }
+
   function openEnvelopeDownload(variant: 'documents' | 'documents_with_certificates' | 'certificates') {
     if (!envelope) {
       return;
@@ -701,6 +779,27 @@ export function EsigningDetailPage({ envelopeId }: Props) {
 
   const confirmDialogs = (
     <>
+      <ConfirmDialog
+        isOpen={isAutoSignPromptOpen}
+        onClose={closeAutoSignPrompt}
+        onConfirm={confirmAutoSign}
+        title="Auto-sign your portion?"
+        description="A saved signature specimen is available for your signer account. Apply it to your assigned fields and complete your portion of the envelope?"
+        confirmLabel="Auto-sign"
+        cancelLabel="Not now"
+        variant="info"
+      >
+        {pendingAutoSign?.specimen ? (
+          <div className="flex min-h-24 items-center justify-center rounded-lg border border-border-primary bg-background-tertiary p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={pendingAutoSign.specimen}
+              alt="Saved signature specimen"
+              className="max-h-20 max-w-full object-contain"
+            />
+          </div>
+        ) : null}
+      </ConfirmDialog>
       <ConfirmDialog
         isOpen={isDeleteRecipientOpen}
         onClose={() => setIsDeleteRecipientOpen(false)}
@@ -922,10 +1021,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   try {
                     await persistFields({ silent: true });
                     const result = await sendEnvelope.mutateAsync(taskContext);
-                    if (result.manualLinks.length > 0) {
-                      setManualLinks(result.manualLinks);
-                      setIsLinksModalOpen(true);
-                    }
+                    await handleEnvelopeSent(result);
                     toast.success('Envelope sent');
                   } catch (error) {
                     toast.error(error instanceof Error ? error.message : 'Failed to send envelope');
@@ -1011,10 +1107,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   onClick={async () => {
                     try {
                       const result = await sendEnvelope.mutateAsync(taskContext);
-                      if (result.manualLinks.length > 0) {
-                        setManualLinks(result.manualLinks);
-                        setIsLinksModalOpen(true);
-                      }
+                      await handleEnvelopeSent(result);
                       toast.success('Envelope sent');
                     } catch (error) {
                       toast.error(

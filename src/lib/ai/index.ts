@@ -340,6 +340,10 @@ export interface ConnectorAIOptions extends AIRequestOptions {
   tenantId: string | null;
   /** User ID who triggered the call (for usage tracking) */
   userId?: string | null;
+  /** Explicit connector to use, instead of resolving a workspace/system fallback */
+  connectorId?: string;
+  /** Required when an explicit system connector is used by a super admin */
+  isSuperAdmin?: boolean;
   /** Preferred provider (if not specified, uses model's default provider) */
   preferredProvider?: AIProvider;
   /** Operation type for usage tracking (e.g., 'bizfile_extraction') */
@@ -359,7 +363,7 @@ export interface ConnectorAIOptions extends AIRequestOptions {
  */
 export async function callAIWithConnector(options: ConnectorAIOptions): Promise<AIResponse> {
   // Lazy import to avoid circular dependencies
-  const { resolveConnector } = await import('@/services/connector.service');
+  const { getConnectorById, resolveConnector } = await import('@/services/connector.service');
   const { logConnectorUsage } = await import('@/services/connector-usage.service');
   const { logAIRequestStart, logAIResponse, logAIError } = await import('./debug');
 
@@ -370,6 +374,45 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
       ? [staticModelConfig.provider]
       : ['openai', 'anthropic', 'google', 'openrouter'];
 
+  // Some administrative probes must exercise the connector selected in the UI.
+  // Generic resolution can otherwise select a different workspace/system connector
+  // or fall through to environment credentials, producing misleading results.
+  const explicitConnector = options.connectorId
+    ? await getConnectorById(options.connectorId, {
+        tenantId: options.tenantId,
+        userId: options.userId ?? 'system',
+        isSuperAdmin: options.isSuperAdmin ?? false,
+      })
+    : null;
+
+  if (options.connectorId && !explicitConnector) {
+    throw new Error('Connector not found');
+  }
+
+  let explicitProvider: AIProvider | null = null;
+  let explicitResolved: Awaited<ReturnType<typeof resolveConnector>> | null = null;
+  if (explicitConnector) {
+    if (explicitConnector.type !== 'AI_PROVIDER') {
+      throw new Error('The selected connector is not an AI provider.');
+    }
+
+    explicitProvider = mapConnectorProviderToAIProvider(explicitConnector.provider);
+    if (!explicitProvider) {
+      throw new Error(`Unsupported AI connector provider: ${explicitConnector.provider}`);
+    }
+    if (options.preferredProvider && options.preferredProvider !== explicitProvider) {
+      throw new Error('The selected connector does not match the requested AI provider.');
+    }
+    if (!explicitConnector.isEnabled) {
+      throw new Error('The selected connector is disabled. Enable it before testing model input.');
+    }
+
+    explicitResolved = {
+      connector: explicitConnector,
+      source: explicitConnector.workspaceId ? 'workspace' : 'system',
+    };
+  }
+
   let provider = providerList[0];
   let connectorProvider = mapProviderToConnectorProvider(provider);
   let resolved:
@@ -379,11 +422,11 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
 
   for (const candidateProvider of providerList) {
     const candidateConnectorProvider = mapProviderToConnectorProvider(candidateProvider);
-    const candidateResolved = await resolveConnector(
-      options.tenantId,
-      'AI_PROVIDER',
-      candidateConnectorProvider
-    );
+    const candidateResolved = explicitResolved
+      ? candidateProvider === explicitProvider
+        ? explicitResolved
+        : null
+      : await resolveConnector(options.tenantId, 'AI_PROVIDER', candidateConnectorProvider);
     if (!candidateResolved) {
       if (staticModelConfig && candidateProvider === staticModelConfig.provider) {
         provider = candidateProvider;

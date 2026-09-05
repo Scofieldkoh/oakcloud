@@ -1,9 +1,10 @@
 import { createElement } from 'react';
-import { hydrateRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { screen, waitFor } from '@testing-library/react';
 import { EsigningDetailPage } from '@/components/esigning/esigning-detail-page';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 
@@ -226,6 +227,7 @@ function makeEnvelope(
 
 describe('E-signing detail hydration', () => {
   let container: HTMLDivElement;
+  let renderedRoot: Root | null = null;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -244,6 +246,8 @@ describe('E-signing detail hydration', () => {
   });
 
   afterEach(() => {
+    renderedRoot?.unmount();
+    renderedRoot = null;
     document.body.replaceChildren();
     vi.restoreAllMocks();
   });
@@ -310,5 +314,50 @@ describe('E-signing detail hydration', () => {
       expect(recoverableErrors).toHaveLength(0);
     });
     expect(container.textContent).toContain('Delete envelope');
+  });
+
+  it('prompts the sender to auto-sign after sending when a saved specimen is available', async () => {
+    const sentEnvelope = makeEnvelope({
+      status: 'SENT',
+      canEdit: false,
+      recipients: [
+        {
+          ...makeEnvelope().recipients[0],
+          email: 'sender@example.com',
+          accessMode: 'MANUAL_LINK',
+          status: 'NOTIFIED',
+        },
+      ],
+    });
+    hookMocks.envelope = sentEnvelope;
+    hookMocks.mutateAsync.mockResolvedValueOnce({
+      envelope: sentEnvelope,
+      manualLinks: [
+        {
+          recipientId: 'recipient-1',
+          recipientName: 'Sender',
+          recipientEmail: 'sender@example.com',
+          signingUrl: 'https://app.example.com/esigning/sign/token-1',
+        },
+      ],
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ dataUrl: 'data:image/png;base64,c2ln' }), { status: 200 })
+    );
+
+    renderedRoot = createRoot(container);
+    renderedRoot?.render(
+      <QueryClientProvider client={new QueryClient()}>
+        <EsigningDetailPage envelopeId="envelope-1" />
+      </QueryClientProvider>
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Send envelope' }));
+
+    expect(await screen.findByRole('heading', { name: 'Auto-sign your portion?' })).toBeInTheDocument();
+    expect(screen.getByAltText('Saved signature specimen')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,c2ln'
+    );
   });
 });

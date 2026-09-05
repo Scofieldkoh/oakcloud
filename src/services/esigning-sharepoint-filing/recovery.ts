@@ -220,7 +220,7 @@ export async function resolveSharePointFilingJob(input: { workspaceId: string; j
       if (!(error instanceof SharePointServiceError && error.code === 'FOLDER_NOT_FOUND')) throw error;
     }
   }
-  const targetFileName = job.targetFileName ?? preferredSignedDocumentFileName({ completedAt: job.envelope.completedAt ?? new Date(), companyName: job.companyNameSnapshot, documentTitle: job.documentTitleSnapshot || job.envelopeDocument.fileName, envelopeIdentifier: job.envelope.certificateId || job.envelopeId });
+  const targetFileName = job.targetFileName ?? preferredSignedDocumentFileName({ documentTitle: job.documentTitleSnapshot || job.envelopeDocument.fileName });
   if (uploaded) {
     if (uploaded.driveId !== destination.driveId) throw new SharePointServiceError({ code: 'DRIVE_MISMATCH', category: 'VALIDATION', statusCode: 400, message: 'Existing SharePoint item is in a different drive' });
     if (uploaded.parentItemId !== destination.folderId) {

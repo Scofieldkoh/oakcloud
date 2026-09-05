@@ -154,6 +154,47 @@ function getLocalDateInputValue(): string {
   return `${day}-${month}-${year}`;
 }
 
+function buildAutoSignDraftValues(
+  fields: EsigningFieldDefinitionDto[],
+  session: EsigningSigningSessionDto,
+  currentDraftValues: Record<string, DraftValue>,
+  signatureSpecimen: string
+): Record<string, DraftValue> {
+  const nextValues = { ...currentDraftValues };
+
+  for (const field of fields) {
+    if (isDraftValueComplete(nextValues[field.id])) {
+      continue;
+    }
+
+    const existing = nextValues[field.id];
+    const value =
+      field.type === 'SIGNATURE'
+        ? 'signed'
+        : field.type === 'DATE_SIGNED'
+          ? getLocalDateInputValue()
+          : field.type === 'NAME'
+            ? session.recipient.name
+            : field.type === 'COMPANY'
+              ? session.envelope.companyName ?? session.envelope.tenantName
+              : null;
+
+    if (!value) {
+      continue;
+    }
+
+    nextValues[field.id] = {
+      fieldDefinitionId: field.id,
+      value,
+      signatureDataUrl: field.type === 'SIGNATURE' ? signatureSpecimen : existing?.signatureDataUrl ?? null,
+      signaturePreviewUrl:
+        field.type === 'SIGNATURE' ? signatureSpecimen : existing?.signaturePreviewUrl ?? null,
+    };
+  }
+
+  return nextValues;
+}
+
 function normalizeSigningError(
   error: unknown,
   fallbackMessage: string
@@ -234,6 +275,7 @@ export function EsigningSignPage() {
   const [flowState, setFlowState] = useState<SigningFlowState>('loading');
   const [errorState, setErrorState] = useState<SigningErrorState | null>(null);
   const [session, setSession] = useState<EsigningSigningSessionDto | null>(null);
+  const [autoSignRequested, setAutoSignRequested] = useState(false);
   const [accessCode, setAccessCode] = useState('');
   const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
 
@@ -278,12 +320,20 @@ export function EsigningSignPage() {
   const latestStatusRef = useRef<EsigningSigningSessionStatusDto | null>(null);
   const needsSessionRefreshRef = useRef(false);
   const sessionReloadPromiseRef = useRef<Promise<EsigningSigningSessionDto> | null>(null);
+  const savedSignatureSpecimenRef = useRef<string | null>(null);
+  const autoSignAttemptedRef = useRef(false);
   const [isCompletionTerminal, setIsCompletionTerminal] = useState(false);
   const initializedFieldSequenceRef = useRef<string | null>(null);
 
   useEffect(() => {
     flowStateRef.current = flowState;
   }, [flowState]);
+
+  useEffect(() => {
+    setAutoSignRequested(
+      new URLSearchParams(window.location.search).get('autoSign') === '1'
+    );
+  }, []);
 
   // ==========================================================================
   // Derived state
@@ -421,6 +471,38 @@ export function EsigningSignPage() {
   }, [draftValues, requiredFields]);
 
   useEffect(() => {
+    if (!autoSignRequested || autoSignAttemptedRef.current || flowState !== 'signing' || !session) {
+      return;
+    }
+
+    const signatureSpecimen =
+      session.savedSignatureSpecimenDataUrl ?? savedSignatureSpecimenRef.current;
+    autoSignAttemptedRef.current = true;
+    if (!signatureSpecimen) {
+      return;
+    }
+
+    const nextDraftValues = buildAutoSignDraftValues(
+      fields,
+      session,
+      latestDraftValuesRef.current,
+      signatureSpecimen
+    );
+    latestDraftValuesRef.current = nextDraftValues;
+    dirtyRevisionRef.current += 1;
+    setDraftValues(nextDraftValues);
+
+    const allRequiredFieldsComplete =
+      requiredFields.length > 0 &&
+      requiredFields.every((field) => isDraftValueComplete(nextDraftValues[field.id]));
+    if (allRequiredFieldsComplete) {
+      void completeSigning(nextDraftValues);
+    }
+    // The ref guards this one-shot intent from rerunning when signing state updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSignRequested, fields, flowState, requiredFields, session]);
+
+  useEffect(() => {
     if (!isMobile) {
       setIsPortraitMobile(false);
       return;
@@ -460,29 +542,44 @@ export function EsigningSignPage() {
       const nextSession =
         (loadResult as { session?: EsigningSigningSessionDto }).session ??
         (loadResult as EsigningSigningSessionDto);
-      setSession(nextSession);
+      if (nextSession.savedSignatureSpecimenDataUrl) {
+        savedSignatureSpecimenRef.current = nextSession.savedSignatureSpecimenDataUrl;
+      }
+      const nextSessionWithSpecimen = {
+        ...nextSession,
+        savedSignatureSpecimenDataUrl:
+          nextSession.savedSignatureSpecimenDataUrl ?? savedSignatureSpecimenRef.current,
+      };
+      setSession(nextSessionWithSpecimen);
       setDraftValues(
         preserveDrafts
-          ? mergeDraftState(currentDraftValues, nextSession.fieldValues)
-          : buildDraftState(nextSession.fieldValues)
+          ? mergeDraftState(currentDraftValues, nextSessionWithSpecimen.fieldValues)
+          : buildDraftState(nextSessionWithSpecimen.fieldValues)
       );
-      setSelectedDocumentId((current) => current || nextSession.documents[0]?.id || '');
+      setSelectedDocumentId((current) => current || nextSessionWithSpecimen.documents[0]?.id || '');
 
       if (recordView) {
         const viewResponse = await fetch('/api/esigning/sign/session/view', { method: 'POST' });
         if (viewResponse.ok) {
           const viewedSession = (await viewResponse.json()) as EsigningSigningSessionDto;
-          setSession(viewedSession);
+          const viewedSessionWithSpecimen = {
+            ...viewedSession,
+            savedSignatureSpecimenDataUrl:
+              viewedSession.savedSignatureSpecimenDataUrl ??
+              nextSessionWithSpecimen.savedSignatureSpecimenDataUrl ??
+              savedSignatureSpecimenRef.current,
+          };
+          setSession(viewedSessionWithSpecimen);
           setDraftValues(
             preserveDrafts
-              ? mergeDraftState(currentDraftValues, viewedSession.fieldValues)
-              : buildDraftState(viewedSession.fieldValues)
+              ? mergeDraftState(currentDraftValues, viewedSessionWithSpecimen.fieldValues)
+              : buildDraftState(viewedSessionWithSpecimen.fieldValues)
           );
-          return viewedSession;
+          return viewedSessionWithSpecimen;
         }
       }
 
-      return nextSession;
+      return nextSessionWithSpecimen;
     },
     []
   );
@@ -918,7 +1015,11 @@ export function EsigningSignPage() {
             throw requestError;
           }
 
-          setSession(result);
+          setSession({
+            ...result,
+            savedSignatureSpecimenDataUrl:
+              result.savedSignatureSpecimenDataUrl ?? savedSignatureSpecimenRef.current,
+          });
           setSaveError(null);
           return result;
         } catch (error) {
@@ -961,7 +1062,7 @@ export function EsigningSignPage() {
     }
   }
 
-  async function flushPendingSaves() {
+  async function flushPendingSaves(values: Record<string, DraftValue> = latestDraftValuesRef.current) {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
@@ -971,23 +1072,27 @@ export function EsigningSignPage() {
       await savePromiseRef.current;
     }
 
-    await saveProgress();
+    await saveProgress(values);
   }
 
-  async function completeSigning() {
+  async function completeSigning(values: Record<string, DraftValue> = latestDraftValuesRef.current) {
     try {
       setIsCompleting(true);
-      await flushPendingSaves();
+      await flushPendingSaves(values);
       const response = await fetch('/api/esigning/sign/session/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: serializeValues(latestDraftValuesRef.current) }),
+        body: JSON.stringify({ values: serializeValues(values) }),
       });
       const result = await response.json().catch(() => ({})) as EsigningSigningSessionDto & { error?: string };
       if (!response.ok) {
         throw new Error(result.error || 'Failed to complete signing');
       }
-      setSession(result);
+      setSession({
+        ...result,
+        savedSignatureSpecimenDataUrl:
+          result.savedSignatureSpecimenDataUrl ?? savedSignatureSpecimenRef.current,
+      });
       setFlowState('completed');
       setSaveError(null);
     } catch (error) {
@@ -1022,7 +1127,11 @@ export function EsigningSignPage() {
       if (!result.recipient?.consentedAt) {
         throw new Error('Consent was not confirmed by the server');
       }
-      setSession(result);
+      setSession({
+        ...result,
+        savedSignatureSpecimenDataUrl:
+          result.savedSignatureSpecimenDataUrl ?? savedSignatureSpecimenRef.current,
+      });
       setSaveError(null);
       return true;
     } catch (error) {

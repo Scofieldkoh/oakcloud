@@ -13,14 +13,29 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 // Lazy-loaded singleton for env-var based calls
 let openrouterInstance: import('openai').default | null = null;
 
+function getConfiguredApiKey(credentials?: AICredentials['openrouter']): string {
+  // An explicitly supplied connector credential must not silently fall back to
+  // OPENROUTER_API_KEY; that can make connector tests exercise another account.
+  const apiKey = credentials
+    ? credentials.apiKey
+    : process.env.OPENROUTER_API_KEY;
+  return typeof apiKey === 'string' ? apiKey.trim() : '';
+}
+
 async function getOpenRouter(credentials?: AICredentials['openrouter']) {
   // If custom credentials provided, create a new instance
-  if (credentials?.apiKey) {
+  const apiKey = getConfiguredApiKey(credentials);
+  if (credentials) {
+    if (!apiKey) {
+      throw new Error('OpenRouter connector API key is missing');
+    }
+
     const OpenAI = (await import('openai')).default;
     return new OpenAI({
-      apiKey: credentials.apiKey,
+      apiKey,
       baseURL: OPENROUTER_BASE_URL,
       defaultHeaders: {
+        Authorization: `Bearer ${apiKey}`,
         'HTTP-Referer': process.env.OPENROUTER_SITE_URL ?? 'https://localhost',
         'X-Title': process.env.OPENROUTER_APP_NAME ?? 'OakCloud',
       },
@@ -31,9 +46,10 @@ async function getOpenRouter(credentials?: AICredentials['openrouter']) {
   if (!openrouterInstance) {
     const OpenAI = (await import('openai')).default;
     openrouterInstance = new OpenAI({
-      apiKey: process.env.OPENROUTER_API_KEY,
+      apiKey,
       baseURL: OPENROUTER_BASE_URL,
       defaultHeaders: {
+        Authorization: `Bearer ${apiKey}`,
         'HTTP-Referer': process.env.OPENROUTER_SITE_URL ?? 'https://localhost',
         'X-Title': process.env.OPENROUTER_APP_NAME ?? 'OakCloud',
       },
@@ -88,7 +104,7 @@ export async function callOpenRouter(
   options: AIRequestOptions,
   credentials?: AICredentials['openrouter']
 ): Promise<AIResponse> {
-  if (!isOpenRouterConfigured() && !credentials?.apiKey) {
+  if (!getConfiguredApiKey(credentials)) {
     throw new Error('OpenRouter API key not configured');
   }
 
@@ -113,6 +129,9 @@ export async function callOpenRouter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const contentParts: any[] = [];
 
+    // OpenRouter recommends putting the text prompt before file/image parts.
+    contentParts.push({ type: 'text', text: options.userPrompt });
+
     for (const image of options.images) {
       if (image.mimeType === 'application/pdf') {
         contentParts.push({
@@ -133,7 +152,6 @@ export async function callOpenRouter(
       }
     }
 
-    contentParts.push({ type: 'text', text: options.userPrompt });
     messages.push({ role: 'user', content: contentParts });
   } else {
     messages.push({ role: 'user', content: options.userPrompt });

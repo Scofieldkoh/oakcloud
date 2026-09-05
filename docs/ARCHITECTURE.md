@@ -1,6 +1,6 @@
 # Architecture
 
-> **Last Updated**: 2026-07-27
+> **Last Updated**: 2026-09-05
 > **Audience**: Developers
 
 System architecture and runtime design overview for Oakcloud.
@@ -41,7 +41,7 @@ Core design principles:
 
 | Technology | Purpose |
 |------------|---------|
-| Node.js 20 | Runtime |
+| Node.js 24 LTS | Runtime |
 | Prisma 7 | Database access |
 | PostgreSQL 16 | Primary relational database |
 | `jose` | JWT-based auth/session tokens |
@@ -56,6 +56,7 @@ Core design principles:
 | TipTap | Rich text editing |
 | pdf-lib | Existing document export paths |
 | Puppeteer | Form response PDF rendering |
+| System Chromium | Resolved by `src/lib/chrome-executable.ts`; Docker exposes the stable executable through `CHROME_PATH` |
 | data.gov.sg ACRA datastore | Source for the locally mirrored `acra_entity` table powering company name availability checks for the form "Company name check" element (ACRA Information on Corporate Entities collection, updated monthly; mirrored by the daily ACRA sync task) |
 | Microsoft Graph | Word-to-PDF conversion for e-signing uploads through usable SharePoint/OneDrive connectors; uploads remain PDF-only when no valid connector is configured |
 | MinIO / S3 | Uploaded file storage |
