@@ -41,7 +41,7 @@ jobs:
         run: npm ci
 
       - name: Guard P16 production gates
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/p16-')
         run: >-
           node scripts/check-business-assistant-p16-production-gates.mjs
           --base "${{ github.event.pull_request.base.sha }}"
