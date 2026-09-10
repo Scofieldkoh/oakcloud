@@ -7,6 +7,11 @@ import type { EsigningRecipientInput } from '@/lib/validations/esigning';
 import { useContacts } from '@/hooks/use-contacts';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
+import {
+  buildLinkedCompanySignerInput,
+  buildSignerEmailSet,
+  getLinkedCompanyQuickAddState,
+} from './linked-company-signer-utils';
 
 interface LinkedCompanySignerQuickAddProps {
   companyId: string;
@@ -14,10 +19,6 @@ interface LinkedCompanySignerQuickAddProps {
   recipients: EsigningEnvelopeRecipientDto[];
   canEdit: boolean;
   onAddRecipient: (data: EsigningRecipientInput) => Promise<void>;
-}
-
-function normalizeEmail(value: string | null | undefined): string {
-  return value?.trim().toLowerCase() ?? '';
 }
 
 export function LinkedCompanySignerQuickAdd({
@@ -44,32 +45,20 @@ export function LinkedCompanySignerQuickAdd({
   });
 
   const signerEmails = useMemo(
-    () => new Set(
-      recipients
-        .filter((recipient) => recipient.type === 'SIGNER')
-        .map((recipient) => normalizeEmail(recipient.email))
-        .filter(Boolean),
-    ),
+    () => buildSignerEmailSet(recipients),
     [recipients],
   );
-
   const contacts = data?.contacts ?? [];
 
   async function handleAddContact(contact: (typeof contacts)[number]) {
-    const email = normalizeEmail(contact.defaultEmail);
-    if (!email || signerEmails.has(email) || pendingContactId) {
+    const input = buildLinkedCompanySignerInput(contact);
+    if (!input || signerEmails.has(input.email ?? '') || pendingContactId) {
       return;
     }
 
     setPendingContactId(contact.id);
     try {
-      await onAddRecipient({
-        name: contact.fullName.trim(),
-        email,
-        type: 'SIGNER',
-        signingOrder: null,
-        accessMode: 'EMAIL_LINK',
-      });
+      await onAddRecipient(input);
       toast.success(`${contact.fullName} added as a signer`);
     } catch (addError) {
       toast.error(addError instanceof Error ? addError.message : `Failed to add ${contact.fullName} as a signer`);
@@ -122,42 +111,32 @@ export function LinkedCompanySignerQuickAdd({
       {contacts.length > 0 ? (
         <div className="flex flex-wrap gap-2" aria-label="Linked company contacts">
           {contacts.map((contact) => {
-            const email = normalizeEmail(contact.defaultEmail);
-            const isAdded = Boolean(email) && signerEmails.has(email);
-            const isPending = pendingContactId === contact.id;
-            const isDisabled = !email || isAdded || Boolean(pendingContactId);
-            const stateLabel = !email
-              ? 'No default email'
-              : isAdded
-                ? 'Already added as signer'
-                : isPending
-                  ? 'Adding as signer'
-                  : `Add ${contact.fullName} as signer`;
+            const state = getLinkedCompanyQuickAddState(contact, signerEmails, pendingContactId);
 
             return (
               <button
                 key={contact.id}
                 type="button"
                 onClick={() => void handleAddContact(contact)}
-                disabled={isDisabled}
-                title={stateLabel}
-                aria-label={stateLabel}
+                disabled={state.isDisabled}
+                title={state.stateLabel}
+                aria-label={state.stateLabel}
                 className={cn(
                   'inline-flex min-h-10 items-center gap-2 rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary transition-colors',
-                  !isDisabled && 'hover:border-oak-primary/40 hover:bg-background-tertiary',
-                  isDisabled && 'cursor-not-allowed opacity-60',
+                  !state.isDisabled && 'hover:border-oak-primary/40 hover:bg-background-tertiary',
+                  state.isDisabled && 'cursor-not-allowed opacity-60',
                 )}
               >
-                {isPending ? (
+                {state.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-hidden="true" />
-                ) : isAdded ? (
+                ) : state.isAdded ? (
                   <Check className="h-4 w-4 text-green-600" aria-hidden="true" />
                 ) : (
                   <UserPlus className="h-4 w-4 text-text-muted" aria-hidden="true" />
                 )}
                 <span className="max-w-52 truncate">{contact.fullName}</span>
-                {!email ? <span className="text-xs text-text-muted">No email</span> : null}
-                {isAdded ? <span className="text-xs text-text-muted">Added</span> : null}
+                {!state.email ? <span className="text-xs text-text-muted">No email</span> : null}
+                {state.isAdded ? <span className="text-xs text-text-muted">Added</span> : null}
               </button>
             );
           })}
