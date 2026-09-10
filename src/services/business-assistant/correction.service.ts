@@ -5,10 +5,10 @@ import { businessAssistantCapabilityRegistry } from '@/generated/business-assist
 import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup-barrier';
 import { resolveFreshActor } from '@/lib/fresh-authorization';
 import { prisma } from '@/lib/prisma';
-import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import { businessAssistantCorrectionRequestSchema } from '@/lib/validations/business-assistant';
 import { CapabilityCorrectionError, sha256, type CanonicalActorContext, type PreparedCapabilityArtifact } from './contracts';
 import { asPrefetchableCorrectionHandler } from './correction-prefetch';
+import { runCorrectionSerializableTransaction } from './correction-transaction';
 import { assertAssistantMutationAccess } from './policy.service';
 import { persistProposal } from './proposal.service';
 
@@ -69,7 +69,7 @@ export async function createCorrectionProposal(input: CreateCorrectionProposalIn
     }
   }
 
-  return runSerializableTransaction(prisma, async (tx) => {
+  return runCorrectionSerializableTransaction(prisma, async (tx) => {
     await acquireBusinessOperationBarrier(tx, input.actor.tenantId, 'shared');
     const actor = await resolveFreshActor({ userId: input.actor.userId, workspaceId: input.actor.tenantId }, tx);
     if (!actor) throw new CapabilityCorrectionError('FORBIDDEN', 'The current user or workspace is unavailable.');
