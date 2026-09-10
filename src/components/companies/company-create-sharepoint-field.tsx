@@ -36,20 +36,20 @@ function CompanyCreateSharePointFieldWithQuery({ onChange }: { onChange: (select
       <span className="text-xs text-text-secondary">SharePoint</span>
     </div>
     {selection.kind === 'selected' ? (
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-status-success/30 bg-status-success/10 p-3 text-sm shadow-elevation-1">
+      <div role="status" className="flex flex-col gap-3 rounded-xl border border-status-success/30 bg-status-success/10 p-3 text-sm shadow-elevation-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-status-success/15 text-status-success" aria-hidden="true">
             <FolderOpen className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-status-success">
-              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+              <CheckCircle2 className="h-3.5 w-3.5 text-status-success" aria-hidden="true" />
               Selected company folder
             </div>
-            <span className="mt-0.5 block truncate font-medium text-text-primary">{selection.folder.name}</span>
+            <span className="mt-0.5 block break-words font-medium text-text-primary">{selection.folder.name}</span>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
           <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)}>Change</Button>
           <Button variant="ghost" size="sm" onClick={() => update({ kind: 'unmapped' })}>Clear</Button>
         </div>
