@@ -39,15 +39,21 @@ export async function createCorrectionProposal(input: CreateCorrectionProposalIn
   const bodyHash = sha256({ kind: KIND, runId: input.runId, request });
 
   // External source verification must not extend the serializable write
-  // transaction. This preflight is evidence only; every authoritative record,
-  // authorization decision, revision and binding is re-read below before any
-  // correction proposal is persisted.
+  // transaction. These preflight reads are advisory only: an existing action
+  // merely suppresses unnecessary external I/O, while the transaction below
+  // remains authoritative for replay/conflict, permissions and source state.
+  const [preflightRun, preflightExistingAction] = await Promise.all([
+    prisma.businessAssistantRun.findFirst({
+      where: { id: input.runId, tenantId: input.actor.tenantId, ownerId: input.actor.userId },
+      select: { id: true, capabilityId: true, capabilityVersion: true, contractVersion: true },
+    }),
+    prisma.businessAssistantActionRequest.findFirst({
+      where: { tenantId: input.actor.tenantId, ownerId: input.actor.userId, actionKind: 'REVISE', clientRequestId: request.clientRequestId },
+      select: { id: true },
+    }),
+  ]);
   let correctionPrefetch: CorrectionPrefetchEnvelope | null = null;
-  const preflightRun = await prisma.businessAssistantRun.findFirst({
-    where: { id: input.runId, tenantId: input.actor.tenantId, ownerId: input.actor.userId },
-    select: { id: true, capabilityId: true, capabilityVersion: true, contractVersion: true },
-  });
-  if (preflightRun) {
+  if (preflightRun && !preflightExistingAction) {
     const preflightCapability = businessAssistantCapabilityRegistry.get(preflightRun.capabilityId, preflightRun.capabilityVersion);
     if (preflightCapability?.executionKind === 'CANONICAL_WRITE' && preflightCapability.prepareCorrection
       && preflightCapability.contractVersion === preflightRun.contractVersion) {
