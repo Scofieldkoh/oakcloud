@@ -4,6 +4,7 @@ import {
   type FullStateIndependentReviewResult,
 } from './full-state-independent-review';
 import { stripUnprovenLaterHumanEditAttribution } from './review-evidence-provenance';
+import { applyEvidenceIntegrityGate, validateFullStateEvidenceIntegrity } from './review-evidence-integrity';
 import { assertIndependentReviewerContext } from './reviewer-independence';
 
 export interface FullStateReviewContract {
@@ -52,14 +53,15 @@ export function evaluateFullStateReviewAgainstContract(
     input.verifiedSource,
     input.operationCompletedAt,
   ));
-
-  // Deliberately discard evidence-supplied canonicalPaths. Completeness is a
-  // reviewer contract concern and must not be controlled by planner/mutation input.
-  return evaluateFullStateIndependentReview({
+  const hardenedInput: FullStateIndependentReviewInput = {
     ...input,
     fields,
+    // Deliberately discard evidence-supplied canonicalPaths. Completeness is a
+    // reviewer contract concern and must not be controlled by planner/mutation input.
     canonicalPaths: [...contract.canonicalPaths],
-  });
+  };
+  const result = evaluateFullStateIndependentReview(hardenedInput);
+  return applyEvidenceIntegrityGate(result, validateFullStateEvidenceIntegrity(hardenedInput));
 }
 
 export function evaluateBizFileFullStateIndependentReview(
