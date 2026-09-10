@@ -3,7 +3,7 @@
 Date: 2026-09-10
 Branch: `feat/p16-integrated-validation-20260910`
 Baseline: reconciled `main` after PR #25
-Status: implementation tooling complete through review cycle 14; production gates remain disabled
+Status: implementation tooling complete through review cycle 16; production gates remain disabled
 
 ## Purpose
 
@@ -71,6 +71,8 @@ The Node 24 workflow checks out full history and passes the exact pull-request b
 
 The workload gate similarly requires 1–10 item ordering, fairness, isolation, partial outcomes, per-item failure, retries, cancellation, expiry, authorization revocation, bounded provider/resource/retry budgets, explicit exhaustion, no context leakage, no starvation, and no duplicate canonical mutation.
 
+Stopped or incomplete P16 runs remain unsealed; their manifests and referenced evidence are archived under external immutable storage/versioning controls. Sealing is reserved for a fully passing readiness record.
+
 ## Repository evidence versus staging evidence
 
 Repository CI is authoritative for code-level checks on the candidate SHA, including registry freshness, Prisma generation, lint, typecheck, focused contracts, P16 evidence tests, build, PostgreSQL integration coverage, production-image build, Node 24 runtime, and Chromium validation.
@@ -107,6 +109,8 @@ The first ten cycles satisfy the requested minimum. Additional review/fix/commit
 12. **Cycle 12 — library seal invariant.** Review found direct library callers could still seal incomplete evidence. Moved the complete-evidence/safety prerequisite into the evidence library itself.
 13. **Cycle 13 — seal regression coverage.** Added tests proving incomplete gates and false safety assertions cannot be sealed through the library.
 14. **Cycle 14 — handover reconciliation.** Updated this implementation record to reflect the completed post-ten review cycles and their safety fixes.
+15. **Cycle 15 — stopped-run archival consistency.** Review found the runbook still suggested sealing incomplete stopped runs. Corrected it so incomplete runs remain unsealed and are archived using external immutable storage/versioning controls.
+16. **Cycle 16 — final handover reconciliation.** Updated this implementation record to match the final extended review history before freezing the branch for exact-SHA CI.
 
 ## Completion semantics
 
