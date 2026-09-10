@@ -27,8 +27,11 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
   const selectedFindings = eligible.filter((finding) => selected.includes(finding.id));
 
   function toggle(findingId: string, checked: boolean) {
+    correction.reset();
     setCreated(null);
-    setSelected((current) => checked ? [...current, findingId] : current.filter((id) => id !== findingId));
+    setSelected((current) => checked
+      ? (current.includes(findingId) ? current : [...current, findingId])
+      : current.filter((id) => id !== findingId));
   }
 
   function submit() {
