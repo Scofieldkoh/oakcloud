@@ -147,6 +147,19 @@ Review outcomes:
 
 The final review also caught a CI-only issue: the Next production build compiled successfully and then exhausted Node's default ~4 GB heap during validation. Earlier repository evidence already showed that this production build succeeds with an 8 GB heap. `.github/workflows/node24-compatibility.yml` now sets `NODE_OPTIONS=--max-old-space-size=8192` for the build step instead of treating runner memory exhaustion as an application compile failure.
 
+## Documentation and credential cleanup in this merge
+
+The merge candidate updates the Business Assistant documentation set:
+
+- adds `docs/features/business-assistant/CORRECTION_WORKFLOW.md` with the implemented deterministic correction flow, server invariants, request limits, user experience, implementation map, and remaining P12 work;
+- consolidates this implementation plan around the current checkpoint and remaining P12-P16 work while preserving the verbose earlier plan in Git history;
+- updates `docs/INDEX.md` to link the correction workflow and current handover; and
+- removes working application/MinIO credentials from `docs/README.md`, replacing them with `.env` placeholders and secret-manager guidance.
+
+The README no longer publishes a default application password or working MinIO secret. Local MinIO access is documented through `S3_ACCESS_KEY` / `S3_SECRET_KEY` in the developer's local `.env`.
+
+**Important:** removing credentials from the current README does not erase them from Git history. If the removed values were ever used outside an isolated disposable development environment, rotate them separately. Do not rewrite repository history as part of this Business Assistant PR unless that remediation is deliberately authorized.
+
 ## Verification status for the merge candidate
 
 Latest pre-merge CI evidence before the 8 GB workflow adjustment:
@@ -272,7 +285,7 @@ Authorization loss may stop new user/provider work while audited canonical recov
 
 ## Implemented/verified foundation summary
 
-The implementation history before this checkpoint established the following boundaries. These are not a claim that every original P01–P11 acceptance criterion is permanently closed; revalidate affected gates when changing their code.
+The implementation history before this checkpoint established the following boundaries. These are not a claim that every original P01-P11 acceptance criterion is permanently closed; revalidate affected gates when changing their code.
 
 | Area | Current boundary |
 |---|---|
@@ -352,7 +365,7 @@ Required gate:
 - API/database/environment/index documentation is current;
 - Node 24 static/full/focused/PostgreSQL/browser/image/worker/provider evaluation gates are traceable;
 - kill switches and rollback path are exercised;
-- BA-AC01–23 have evidence or are explicitly marked incomplete.
+- BA-AC01-23 have evidence or are explicitly marked incomplete.
 
 Release remains incomplete if reviewer quality, governed learning, retention/recovery, active legacy retirement, or real deployment evidence is missing.
 
@@ -424,8 +437,9 @@ Current Business Assistant documentation:
 - `docs/plans/2026-09-05-business-assistant-implementation.md` — current implementation handover and remaining work
 - `docs/reference/API_REFERENCE.md#business-assistant-endpoints` — route contracts including correction preparation
 - `docs/INDEX.md` — documentation navigation
+- `docs/README.md` — project quick-start with credentials removed in favor of `.env` placeholders and secret-storage guidance
 
-The pre-consolidation plan remains recoverable from Git history using blob `5ceeff0cd020daf736688224e3fac0e629905502` if a future investigation needs the verbose September 5–10 implementation narrative.
+The pre-consolidation plan remains recoverable from Git history using blob `5ceeff0cd020daf736688224e3fac0e629905502` if a future investigation needs the verbose September 5-10 implementation narrative.
 
 ## Next-session objective
 
