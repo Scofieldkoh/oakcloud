@@ -14,11 +14,29 @@ import {
   type CanonicalActorContext,
   sha256,
 } from '@/services/business-assistant/contracts';
+import { withCorrectionPrefetch, type CapabilityCorrectionPrefetchContext } from '@/services/business-assistant/correction-prefetch';
 import { assertBizFileChangePlan, assertSafeBizFileNumbers, buildBizFileChangePlan, hashBizFileValue, type BizFileBaselineSnapshot, type BizFileChange, type BizFileChangePlan } from '../change-plan';
 import { baselineFromCompany } from './prepare-import';
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
 type AnyRecord = Record<string, unknown>;
+
+interface BizFileCorrectionPrefetchEvidence {
+  kind: 'BIZFILE_CORRECTION_SOURCE_PREFETCH';
+  sourceRunId: string;
+  reviewId: string;
+  sourceItemId: string;
+  sourceOperationId: string;
+  receiptId: string;
+  documentId: string;
+  companyId: string;
+  retainedSourceHash: string;
+  retainedSourceRevision: number;
+  currentStorageKey: string;
+  currentSourceRevision: number;
+  currentVersion: number;
+  verifiedStorageKeys: string[];
+}
 
 const ALLOWED_FINDING_CODES = new Set<string>(BIZFILE_CORRECTION_FINDING_CODES);
 
@@ -240,17 +258,20 @@ function baselineInput(baseline: BizFileBaselineSnapshot) {
 }
 
 async function requireFreshPermission(
-  tx: TransactionClient,
   actor: CanonicalActorContext,
   permission: { resource: 'document' | 'company'; action: 'read' | 'update' },
   id: string,
+  tx?: TransactionClient,
 ): Promise<void> {
-  const decision = await evaluateFreshAuthorization({
+  const request = {
     userId: actor.userId,
     workspaceId: actor.tenantId,
     permission,
     resource: { kind: permission.resource, id },
-  }, tx as unknown as FreshAuthorizationTransactionClient);
+  } as const;
+  const decision = tx
+    ? await evaluateFreshAuthorization(request, tx as unknown as FreshAuthorizationTransactionClient)
+    : await evaluateFreshAuthorization(request);
   if (!decision.allowed) throw new CapabilityCorrectionError('FORBIDDEN', 'Fresh source and target authorization is required for this correction.');
 }
 
@@ -274,28 +295,30 @@ async function verifyRetainedSourceBytes(storageKey: string, expectedHash: strin
   }
 }
 
-async function verifyCurrentSourcePointer(
+function verifyCurrentSourcePointer(
   document: AnyRecord | null,
   oldSource: ReturnType<typeof sourceFromPreparedItem>,
   tenantId: string,
   companyId: string,
   retainedSourceHash: string,
   retainedSourceRevision: number,
-): Promise<AnyRecord> {
+): { document: AnyRecord; storageKeys: string[] } {
   if (!document || document.companyId !== companyId || document.mimeType !== oldSource.mimeType
     || document.version !== oldSource.version || document.deletedAt !== null || document.isLatest !== true) {
     throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The BizFile source has changed since the committed review.');
   }
   const currentRevision = nonNegativeInteger(document.sourceRevision, 'current source revision');
+  const currentStorageKey = text(document.storageKey, 'current source storage key');
   const destinationKey = destinationKeyForDocument(document, tenantId, companyId, retainedSourceHash);
-  const originalPointer = document.storageKey === oldSource.storageKey && currentRevision === retainedSourceRevision;
-  const finalizedPointer = document.storageKey === destinationKey && currentRevision === retainedSourceRevision + 1;
+  const originalPointer = currentStorageKey === oldSource.storageKey && currentRevision === retainedSourceRevision;
+  const finalizedPointer = currentStorageKey === destinationKey && currentRevision === retainedSourceRevision + 1;
   if (!originalPointer && !finalizedPointer) {
     throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The BizFile source pointer changed after this operation was committed.');
   }
-  await verifyRetainedSourceBytes(oldSource.storageKey, retainedSourceHash);
-  if (finalizedPointer) await verifyRetainedSourceBytes(text(document.storageKey, 'current source storage key'), retainedSourceHash);
-  return document;
+  return {
+    document,
+    storageKeys: finalizedPointer ? [oldSource.storageKey, currentStorageKey] : [oldSource.storageKey],
+  };
 }
 
 function requestShape(value: unknown): { reviewId: string; corrections: Array<{ findingId: string; value: unknown }> } {
@@ -316,8 +339,117 @@ function requestShape(value: unknown): { reviewId: string; corrections: Array<{ 
   };
 }
 
-/** Module-owned correction preparation for the BizFile reference capability. */
-export async function prepareBizFileCorrection(context: CapabilityCorrectionContext): Promise<CapabilityCorrectionPreparation> {
+function validatePrefetchedEvidence(value: unknown, expected: Omit<BizFileCorrectionPrefetchEvidence, 'kind' | 'verifiedStorageKeys'> & { verifiedStorageKeys: readonly string[] }): void {
+  const record = asRecord(value);
+  const keys = Array.isArray(record?.verifiedStorageKeys) && record.verifiedStorageKeys.every((key) => typeof key === 'string')
+    ? record.verifiedStorageKeys as string[]
+    : [];
+  if (!record || record.kind !== 'BIZFILE_CORRECTION_SOURCE_PREFETCH'
+    || record.sourceRunId !== expected.sourceRunId || record.reviewId !== expected.reviewId
+    || record.sourceItemId !== expected.sourceItemId || record.sourceOperationId !== expected.sourceOperationId
+    || record.receiptId !== expected.receiptId || record.documentId !== expected.documentId || record.companyId !== expected.companyId
+    || record.retainedSourceHash !== expected.retainedSourceHash || record.retainedSourceRevision !== expected.retainedSourceRevision
+    || record.currentStorageKey !== expected.currentStorageKey || record.currentSourceRevision !== expected.currentSourceRevision
+    || record.currentVersion !== expected.currentVersion || keys.length !== expected.verifiedStorageKeys.length
+    || keys.some((key, index) => key !== expected.verifiedStorageKeys[index])) {
+    throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The prefetched BizFile source evidence no longer matches current transactional state.');
+  }
+}
+
+/**
+ * Perform authorized storage I/O before the serializable correction
+ * transaction. The returned metadata is evidence only and is fully rebound to
+ * current source identity, revision, pointer and hash by the transaction.
+ */
+export async function prefetchBizFileCorrection(context: CapabilityCorrectionPrefetchContext): Promise<BizFileCorrectionPrefetchEvidence> {
+  const db = context.db as PrismaClient;
+  const request = requestShape(context.request);
+  const review = await db.businessAssistantReview.findFirst({
+    where: { id: request.reviewId, tenantId: context.actor.tenantId },
+    select: { id: true, runItemId: true, coverage: true, evidence: true },
+  });
+  if (!review) throw new CapabilityCorrectionError('NOT_FOUND', 'The source review is unavailable.');
+  const item = await db.businessAssistantRunItem.findFirst({
+    where: { id: review.runItemId, tenantId: context.actor.tenantId, runId: context.sourceRunId },
+    select: {
+      id: true, operationId: true, input: true, output: true, receiptRef: true,
+      executionOutcome: true, lifecycleState: true, activeStage: true,
+      reviews: { orderBy: { attemptNumber: 'desc' }, take: 1, select: { id: true } },
+    },
+  });
+  if (!item || item.reviews[0]?.id !== review.id || item.executionOutcome !== 'COMMITTED' || !item.receiptRef || !item.operationId
+    || item.activeStage !== null || !['NEEDS_REVIEW', 'PASSED', 'PASSED_WITH_WARNINGS'].includes(item.lifecycleState)) {
+    throw new CapabilityCorrectionError('PROPOSAL_STALE', 'Corrections require the latest review of a committed operation.');
+  }
+
+  const sourceItem = item as unknown as AnyRecord;
+  const oldPlan = planFromPreparedItem(sourceItem);
+  const oldSource = sourceFromPreparedItem(sourceItem);
+  if (oldPlan.tenantId !== context.actor.tenantId || oldPlan.documentId !== oldSource.documentId) {
+    throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The source plan is bound to another workspace or document.');
+  }
+  const oldReceiptReference = receiptRef(item.receiptRef);
+  const persistedReceipt = committedOutputReceipt(item.output);
+  const sourceOperationId = text(item.operationId, 'source operation');
+  if (oldReceiptReference.receiptType !== 'BizFileOperationReceipt' || persistedReceipt.receiptType !== 'BizFileOperationReceipt'
+    || oldReceiptReference.receiptId !== persistedReceipt.receiptId || oldReceiptReference.operationId !== sourceOperationId
+    || persistedReceipt.operationId !== sourceOperationId || oldReceiptReference.status !== 'COMMITTED' || persistedReceipt.status !== 'COMMITTED') {
+    throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The committed BizFile receipt identity is invalid.');
+  }
+
+  const receiptId = text(oldReceiptReference.receiptId, 'receipt');
+  const receipt = await db.bizFileOperationReceipt.findFirst({
+    where: { tenantId: context.actor.tenantId, id: receiptId, operationId: sourceOperationId, status: 'COMMITTED' },
+    select: {
+      id: true, tenantId: true, operationId: true, capabilityId: true, capabilityVersion: true, schemaVersion: true,
+      mode: true, companyId: true, documentId: true, payloadHash: true, beforeRevision: true, afterRevision: true, status: true, effectStatus: true,
+      evidence: { select: { kind: true, artifact: true, artifactHash: true, sourceRef: true } },
+    },
+  });
+  if (!receipt || !receipt.documentId || !receipt.companyId || receipt.capabilityId !== 'bizfile.import_and_review' || receipt.capabilityVersion !== '1.0'
+    || receipt.payloadHash !== oldPlan.canonicalHash || oldReceiptReference.payloadHash !== receipt.payloadHash || persistedReceipt.payloadHash !== receipt.payloadHash
+    || receipt.mode !== oldPlan.mode || (oldPlan.mode === 'UPDATE' && oldPlan.targetCompanyId !== receipt.companyId)) {
+    throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The committed BizFile receipt does not match its approved plan.');
+  }
+  const { artifact: receiptSource, sourceRef } = sourceEvidence(receipt as unknown as AnyRecord);
+  const retainedSourceHash = sourceHashFromEvidence(receiptSource);
+  const retainedSourceRevision = sourceRevisionFromEvidence(receiptSource, sourceRef);
+  if (receiptSource.documentId !== oldSource.documentId || receiptSource.storageKey !== oldSource.storageKey || receiptSource.mimeType !== oldSource.mimeType
+    || (oldSource.sourceHash && oldSource.sourceHash !== retainedSourceHash) || (oldPlan.sourceHash && oldPlan.sourceHash !== retainedSourceHash)) {
+    throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The committed source evidence no longer matches the reviewed proposal.');
+  }
+  reviewEvidenceBindings(review as unknown as AnyRecord, retainedSourceHash, receipt.companyId, receipt.afterRevision);
+
+  // Both permissions must be fresh before any storage byte is read.
+  await requireFreshPermission(context.actor, { resource: 'document', action: 'read' }, oldSource.documentId);
+  await requireFreshPermission(context.actor, { resource: 'company', action: 'update' }, receipt.companyId);
+  const sourceDocument = await db.document.findFirst({
+    where: { id: oldSource.documentId, tenantId: context.actor.tenantId, deletedAt: null },
+    select: { id: true, tenantId: true, companyId: true, version: true, sourceRevision: true, storageKey: true, mimeType: true, originalFileName: true, fileName: true, isLatest: true, deletedAt: true },
+  });
+  const pointer = verifyCurrentSourcePointer(sourceDocument as unknown as AnyRecord | null, oldSource, context.actor.tenantId, receipt.companyId, retainedSourceHash, retainedSourceRevision);
+  for (const storageKey of pointer.storageKeys) await verifyRetainedSourceBytes(storageKey, retainedSourceHash);
+
+  return {
+    kind: 'BIZFILE_CORRECTION_SOURCE_PREFETCH',
+    sourceRunId: context.sourceRunId,
+    reviewId: review.id,
+    sourceItemId: item.id,
+    sourceOperationId,
+    receiptId: receipt.id,
+    documentId: oldSource.documentId,
+    companyId: receipt.companyId,
+    retainedSourceHash,
+    retainedSourceRevision,
+    currentStorageKey: text(pointer.document.storageKey, 'current source storage key'),
+    currentSourceRevision: nonNegativeInteger(pointer.document.sourceRevision, 'current source revision'),
+    currentVersion: nonNegativeInteger(pointer.document.version, 'current source version'),
+    verifiedStorageKeys: pointer.storageKeys,
+  };
+}
+
+/** Module-owned transactional correction preparation for the BizFile reference capability. */
+async function prepareBizFileCorrectionTransactional(context: CapabilityCorrectionContext, prefetched?: unknown): Promise<CapabilityCorrectionPreparation> {
   const tx = context.db as TransactionClient;
   const request = requestShape(context.request);
   const sourceItem = asRecord(context.sourceItem);
@@ -370,7 +502,7 @@ export async function prepareBizFileCorrection(context: CapabilityCorrectionCont
     || receipt.mode !== oldPlan.mode || (oldPlan.mode === 'UPDATE' && oldPlan.targetCompanyId !== receipt.companyId)) {
     throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The committed BizFile receipt does not match its approved plan.');
   }
-  const { artifact: receiptSource, sourceRef } = sourceEvidence(receipt);
+  const { artifact: receiptSource, sourceRef } = sourceEvidence(receipt as unknown as AnyRecord);
   const retainedSourceHash = sourceHashFromEvidence(receiptSource);
   const retainedSourceRevision = sourceRevisionFromEvidence(receiptSource, sourceRef);
   if (receiptSource.documentId !== oldSource.documentId || receiptSource.storageKey !== oldSource.storageKey || receiptSource.mimeType !== oldSource.mimeType
@@ -398,13 +530,29 @@ export async function prepareBizFileCorrection(context: CapabilityCorrectionCont
   const correctedData = normalizeBizFileReviewDraft(parsedReviewedData.data);
   assertSafeBizFileNumbers(correctedData);
 
-  await requireFreshPermission(tx, context.actor, { resource: 'document', action: 'read' }, oldSource.documentId);
+  await requireFreshPermission(context.actor, { resource: 'document', action: 'read' }, oldSource.documentId, tx);
   const sourceDocument = await tx.document.findFirst({
     where: { id: oldSource.documentId, tenantId: context.actor.tenantId, deletedAt: null },
     select: { id: true, tenantId: true, companyId: true, version: true, sourceRevision: true, storageKey: true, mimeType: true, originalFileName: true, fileName: true, isLatest: true, deletedAt: true },
   });
-  await requireFreshPermission(tx, context.actor, { resource: 'company', action: 'update' }, receipt.companyId);
-  const currentSource = await verifyCurrentSourcePointer(sourceDocument, oldSource, context.actor.tenantId, receipt.companyId, retainedSourceHash, retainedSourceRevision);
+  await requireFreshPermission(context.actor, { resource: 'company', action: 'update' }, receipt.companyId, tx);
+  const pointer = verifyCurrentSourcePointer(sourceDocument as unknown as AnyRecord | null, oldSource, context.actor.tenantId, receipt.companyId, retainedSourceHash, retainedSourceRevision);
+  const currentSource = pointer.document;
+  validatePrefetchedEvidence(prefetched, {
+    sourceRunId: context.sourceRunId,
+    reviewId: text(sourceReview.id, 'source review'),
+    sourceItemId: text(sourceItem.id, 'source item'),
+    sourceOperationId,
+    receiptId: receipt.id,
+    documentId: oldSource.documentId,
+    companyId: receipt.companyId,
+    retainedSourceHash,
+    retainedSourceRevision,
+    currentStorageKey: text(currentSource.storageKey, 'current source storage key'),
+    currentSourceRevision: nonNegativeInteger(currentSource.sourceRevision, 'current source revision'),
+    currentVersion: nonNegativeInteger(currentSource.version, 'current source version'),
+    verifiedStorageKeys: pointer.storageKeys,
+  });
   const company = await tx.company.findFirst({
     where: { id: receipt.companyId, tenantId: context.actor.tenantId, deletedAt: null },
     include: {
@@ -460,3 +608,8 @@ export async function prepareBizFileCorrection(context: CapabilityCorrectionCont
   };
   return { status: 'PREPARED', preparedItem, lineage: json(lineage), resources };
 }
+
+export const prepareBizFileCorrection = withCorrectionPrefetch(
+  prepareBizFileCorrectionTransactional,
+  prefetchBizFileCorrection,
+);
