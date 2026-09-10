@@ -3,6 +3,10 @@ import type { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import { BUSINESS_ASSISTANT_LIMITS } from './contracts';
+import {
+  BUSINESS_ASSISTANT_OPERATIONAL_LIMITS,
+  assertBusinessAssistantStageBudget,
+} from './operational-policy';
 
 export interface AssistantClaim {
   token: string;
@@ -29,7 +33,7 @@ const LEASE_MS = BUSINESS_ASSISTANT_LIMITS.leaseSeconds * 1_000;
 const SLOT_KEYS = ['business-assistant-0', 'business-assistant-1'] as const;
 
 /**
- * Capacity rows are durable global coordination state.  Seed them with an
+ * Capacity rows are durable global coordination state. Seed them with an
  * idempotent insert before attempting a claim so the first concurrent worker
  * pair cannot race on the unique slot key.
  */
@@ -50,6 +54,11 @@ function leaseAvailable(now: Date) {
 
 function leaseActive(now: Date) {
   return { leaseExpiresAt: { gt: now } } as const;
+}
+
+function incrementsRetryCount(data: Prisma.BusinessAssistantRunItemUpdateManyMutationInput): boolean {
+  const value = data.retryCount;
+  return Boolean(value && typeof value === 'object' && 'increment' in value && Number(value.increment) > 0);
 }
 
 /** Claim one accepted or expired inbound message with a fenced token. */
@@ -105,7 +114,8 @@ export async function renewInboundMessageClaim(claim: AssistantClaim & { id: str
 /**
  * Claim one item and one of the two global capacity slots in a serializable
  * transaction. The item CAS includes an unexpired lease predicate so an old
- * worker cannot settle work after a new worker has reclaimed it.
+ * worker cannot settle work after a new worker has reclaimed it. Items that
+ * exhausted the worker retry budget are never claimable again.
  */
 export async function claimRunnableItem(): Promise<ClaimedItem | null> {
   const token = randomUUID();
@@ -125,11 +135,12 @@ export async function claimRunnableItem(): Promise<ClaimedItem | null> {
       const candidate = await tx.businessAssistantRunItem.findFirst({
         where: {
           lifecycleState: { in: ['PENDING', 'PREPARING', 'READY', 'EXECUTING', 'RECOVERING', 'READING_BACK', 'REVIEWING'] },
+          retryCount: { lt: BUSINESS_ASSISTANT_OPERATIONAL_LIMITS.maxWorkerFailuresPerItem },
           availableAt: { lte: now },
           ...leaseAvailable(now),
           run: { status: { in: ['PREPARING', 'READY', 'RUNNING', 'RECOVERING', 'REVIEWING'] } },
         },
-        orderBy: [{ availableAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+        orderBy: [{ availableAt: 'asc' }, { retryCount: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
         select: { id: true, tenantId: true, runId: true, activeStage: true, claimGeneration: true },
       });
       if (!candidate) {
@@ -138,7 +149,13 @@ export async function claimRunnableItem(): Promise<ClaimedItem | null> {
       }
       const generation = (candidate.claimGeneration ?? 0) + 1;
       const updated = await tx.businessAssistantRunItem.updateMany({
-        where: { id: candidate.id, claimGeneration: candidate.claimGeneration, lifecycleState: { in: ['PENDING', 'PREPARING', 'READY', 'EXECUTING', 'RECOVERING', 'READING_BACK', 'REVIEWING'] }, ...leaseAvailable(now) },
+        where: {
+          id: candidate.id,
+          claimGeneration: candidate.claimGeneration,
+          retryCount: { lt: BUSINESS_ASSISTANT_OPERATIONAL_LIMITS.maxWorkerFailuresPerItem },
+          lifecycleState: { in: ['PENDING', 'PREPARING', 'READY', 'EXECUTING', 'RECOVERING', 'READING_BACK', 'REVIEWING'] },
+          ...leaseAvailable(now),
+        },
         data: { claimToken: token, claimGeneration: generation, leaseExpiresAt, activeStage: candidate.activeStage ?? 'PREPARATION' },
       });
       if (updated.count !== 1) {
@@ -168,10 +185,39 @@ export async function renewItemClaim(claim: ClaimedItem): Promise<boolean> {
   });
 }
 
-/** Fenced item settlement primitive for every worker state transition. */
+/**
+ * Fenced item settlement primitive for every worker state transition. Retry
+ * increments are made terminal at the budget boundary in the same serializable
+ * transaction, preventing an active-but-unclaimable poison item.
+ */
 export async function updateClaimedItem(claim: AssistantClaim & { id: string }, data: Prisma.BusinessAssistantRunItemUpdateManyMutationInput): Promise<boolean> {
-  const updated = await prisma.businessAssistantRunItem.updateMany({ where: { id: claim.id, claimToken: claim.token, claimGeneration: claim.generation, ...leaseActive(new Date()) }, data });
-  return updated.count === 1;
+  if (!incrementsRetryCount(data)) {
+    const updated = await prisma.businessAssistantRunItem.updateMany({ where: { id: claim.id, claimToken: claim.token, claimGeneration: claim.generation, ...leaseActive(new Date()) }, data });
+    return updated.count === 1;
+  }
+  return runSerializableTransaction(prisma, async (tx) => {
+    const now = new Date();
+    const current = await tx.businessAssistantRunItem.findFirst({
+      where: { id: claim.id, claimToken: claim.token, claimGeneration: claim.generation, ...leaseActive(now) },
+      select: { retryCount: true },
+    });
+    if (!current) return false;
+    const exhausted = current.retryCount + 1 >= BUSINESS_ASSISTANT_OPERATIONAL_LIMITS.maxWorkerFailuresPerItem;
+    const boundedData: Prisma.BusinessAssistantRunItemUpdateManyMutationInput = exhausted
+      ? {
+          ...data,
+          lifecycleState: 'FAILED',
+          activeStage: null,
+          dispositionReason: 'RETRY_BUDGET_EXHAUSTED',
+          availableAt: now,
+        }
+      : data;
+    const updated = await tx.businessAssistantRunItem.updateMany({
+      where: { id: claim.id, claimToken: claim.token, claimGeneration: claim.generation, retryCount: current.retryCount, ...leaseActive(now) },
+      data: boundedData,
+    });
+    return updated.count === 1;
+  });
 }
 
 export async function releaseItemClaim(claim: AssistantClaim & { id: string }, options: { availableAt?: Date; keepState?: boolean } = {}): Promise<boolean> {
@@ -194,6 +240,8 @@ export async function startStageAttempt(claim: ClaimedItem, stage: string, input
     const now = new Date();
     const item = await tx.businessAssistantRunItem.findFirst({ where: { id: claim.id, tenantId: claim.tenantId, claimToken: claim.token, claimGeneration: claim.generation, ...leaseActive(now) }, select: { id: true, activeStage: true } });
     if (!item) throw new FencedClaimError();
+    const totalAttempts = await tx.businessAssistantRunStep.count({ where: { tenantId: claim.tenantId, runItemId: claim.id } });
+    assertBusinessAssistantStageBudget(totalAttempts);
     const previous = await tx.businessAssistantRunStep.findFirst({ where: { tenantId: claim.tenantId, runItemId: claim.id, stage: stage as never }, orderBy: { attemptNumber: 'desc' }, select: { id: true, attemptNumber: true, status: true } });
     const attemptNumber = (previous?.attemptNumber ?? 0) + 1;
     if (attemptNumber > BUSINESS_ASSISTANT_LIMITS.maxAttemptsPerStage) throw new StageAttemptsExhaustedError(stage);
