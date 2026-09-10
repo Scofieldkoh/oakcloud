@@ -36,12 +36,21 @@ import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
 import { fetchBizFileContactMatchPreviews } from '@/services/bizfile/contact-match-preview.client';
+import { BizFilePlanReview } from '@/components/companies/bizfile-review/bizfile-plan-review';
+import type { BizFileChangePlan } from '@/services/bizfile/change-plan';
 import {
   readTaskLaunchContext,
   withTaskLaunchContext,
 } from '@/lib/task-launch-context';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
+
+interface CanonicalReview {
+  plan: BizFileChangePlan;
+  preparationToken: string;
+  operationId: string;
+  update: boolean;
+}
 
 interface DiffEntry {
   field: string;
@@ -215,6 +224,8 @@ export default function UploadBizFilePage() {
   const [contactMatchPreviews, setContactMatchPreviews] = useState<Record<string, ContactMatchPreview | null>>({});
   const [updatedFields, setUpdatedFields] = useState<string[]>([]);
   const [officerActions, setOfficerActions] = useState<OfficerAction[]>([]);
+  const [canonicalReview, setCanonicalReview] = useState<CanonicalReview | null>(null);
+  const [isPreparingPlan, setIsPreparingPlan] = useState(false);
   const [officerChanges, setOfficerChanges] = useState<{ added: number; updated: number; ceased: number; followUp: number } | null>(null);
   const [shareholderChanges, setShareholderChanges] = useState<{ added: number; updated: number; removed: number } | null>(null);
   const [companyUpdatedAt, setCompanyUpdatedAt] = useState<string | null>(null); // For concurrent update detection
@@ -449,8 +460,53 @@ export default function UploadBizFilePage() {
     if (!mappingResponse.ok) throw new Error(mappingBody.error || 'SharePoint company mapping failed');
   };
 
-  const handleConfirm = async (correctedData: ExtractedBizFileData) => {
+  const prepareCanonicalReview = async (correctedData: ExtractedBizFileData, update: boolean, selectedChangeIds?: string[]) => {
     if (!documentId) return;
+    confirmAbortRef.current?.abort();
+    const generation = ++confirmGenerationRef.current;
+    const controller = new AbortController();
+    confirmAbortRef.current = controller;
+    setIsPreparingPlan(true);
+    setServerIssues([]);
+    setError(null);
+    try {
+      const response = await fetch(`/api/documents/${documentId}/prepare-import`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extractedData: correctedData, targetCompanyId: update ? companyId : undefined,
+          mode: update ? 'UPDATE' : 'CREATE', selectedChangeIds, taskContext,
+          officerActions: update && officerActions.length ? officerActions : undefined }),
+        signal: controller.signal,
+      });
+      if (generation !== confirmGenerationRef.current) return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: string; issues?: BizFileReviewIssue[] } | null;
+        if (generation !== confirmGenerationRef.current) return;
+        if (Array.isArray(body?.issues)) setServerIssues(body.issues);
+        throw new Error(typeof body?.error === 'string' ? body.error : `Could not prepare the reviewed changes (HTTP ${response.status})`);
+      }
+      const prepared = await response.json() as { plan: BizFileChangePlan; preparationToken: string };
+      if (generation !== confirmGenerationRef.current) return;
+      if (!prepared.plan || typeof prepared.preparationToken !== 'string' || prepared.plan.documentId !== documentId) throw new Error('The prepared changes are unavailable. Please try again.');
+      const review = { plan: prepared.plan, preparationToken: prepared.preparationToken, operationId: crypto.randomUUID(), update };
+      if (update) setCanonicalReview(review);
+      return review;
+    } catch (error) {
+      if (generation !== confirmGenerationRef.current || controller.signal.aborted) return;
+      throw error;
+    } finally {
+      if (generation === confirmGenerationRef.current) { setIsPreparingPlan(false); confirmAbortRef.current = null; }
+    }
+  };
+
+  const handleConfirm = async (correctedData: ExtractedBizFileData, approved?: CanonicalReview) => {
+    if (!documentId) return;
+
+    if (!approved) {
+      // The upload workspace is the user's review and confirmation for creation.
+      try { approved = await prepareCanonicalReview(correctedData, false); }
+      catch (error) { setError(error instanceof Error ? error.message : 'Could not prepare the reviewed changes'); throw error; }
+      if (!approved) return;
+    }
 
     confirmAbortRef.current?.abort();
     const generation = ++confirmGenerationRef.current;
@@ -465,7 +521,8 @@ export default function UploadBizFilePage() {
       const response = await fetch(`/api/documents/${documentId}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ extractedData: correctedData, taskContext }),
+        body: JSON.stringify({ extractedData: correctedData, taskContext, plan: approved.plan,
+          operationId: approved.operationId, preparationToken: approved.preparationToken }),
         signal: controller.signal,
       });
 
@@ -492,6 +549,7 @@ export default function UploadBizFilePage() {
       const { companyId: cId } = await response.json();
       if (generation !== confirmGenerationRef.current) return;
       setCompanyId(cId);
+      setCanonicalReview(null);
       let sharePointMappingFailed = false;
       try {
         await applySharePointSelection(cId);
@@ -560,14 +618,14 @@ export default function UploadBizFilePage() {
     return Number.isInteger(index) && index >= 0 ? index : -1;
   };
 
-  const handleApplyUpdate = async () => {
+  const handleApplyUpdate = async (approved?: CanonicalReview) => {
     if (!documentId || !companyId || !extractedData) return;
 
     setError(null);
 
     try {
-      const latestMatches = await requestContactMatchPreviews(extractedData);
-      const resolvedData = applyAutomaticContactResolutions(extractedData, latestMatches);
+      const latestMatches = approved ? {} : await requestContactMatchPreviews(extractedData);
+      const resolvedData = approved ? approved.plan.reviewedData : applyAutomaticContactResolutions(extractedData, latestMatches);
       setExtractedData(resolvedData);
       const unresolved = Object.entries(latestMatches).find(([path, match]) => {
         if (!match) return false;
@@ -580,6 +638,7 @@ export default function UploadBizFilePage() {
         setError(`Review the contact match for ${unresolved[0]} before applying changes.`);
         return;
       }
+      if (!approved) { await prepareCanonicalReview(resolvedData, true); return; }
       setStep('saving');
       // Apply selective update with only changed fields
       const response = await fetch(`/api/documents/${documentId}/apply-update`, {
@@ -591,6 +650,9 @@ export default function UploadBizFilePage() {
           taskContext,
           officerActions: officerActions.length > 0 ? officerActions : undefined,
           expectedUpdatedAt: companyUpdatedAt || undefined, // For concurrent update detection
+          plan: approved.plan,
+          operationId: approved.operationId,
+          preparationToken: approved.preparationToken,
         }),
       });
 
@@ -600,6 +662,7 @@ export default function UploadBizFilePage() {
       }
 
       const result = await response.json();
+      setCanonicalReview(null);
       setUpdatedFields(result.updatedFields || []);
       setOfficerChanges(result.officerChanges || null);
       setShareholderChanges(result.shareholderChanges || null);
@@ -625,6 +688,7 @@ export default function UploadBizFilePage() {
     setExtractedData(null);
     setServerIssues([]);
     setIsConfirming(false);
+    setIsPreparingPlan(false);
     setDocumentId(null);
     setCompanyId(null);
     setAiMetadata(null);
@@ -634,6 +698,7 @@ export default function UploadBizFilePage() {
     setContactMatchPreviews({});
     setUpdatedFields([]);
     setOfficerActions([]);
+    setCanonicalReview(null);
     setOfficerChanges(null);
     setShareholderChanges(null);
     setCompanyUpdatedAt(null);
@@ -758,7 +823,7 @@ export default function UploadBizFilePage() {
     ...(step === 'diff-preview' ? [{
       key: 's',
       ctrl: true,
-      handler: handleApplyUpdate,
+      handler: () => { if (!canonicalReview && !isPreparingPlan) void handleApplyUpdate(); },
       description: 'Apply changes',
     }] : []),
     {
@@ -817,6 +882,13 @@ export default function UploadBizFilePage() {
 
   return (
     <div data-testid="bizfile-upload-page" className={`p-4 sm:p-6 w-full ${(step === 'preview' || step === 'diff-preview') ? 'max-w-none h-dvh overflow-hidden flex flex-col' : 'max-w-7xl'}`}>
+      {canonicalReview && <BizFilePlanReview key={canonicalReview.plan.canonicalHash} plan={canonicalReview.plan}
+        busy={isPreparingPlan || isConfirming || step === 'saving'} error={error}
+        onClose={() => { if (!isPreparingPlan && !isConfirming && step !== 'saving') { setCanonicalReview(null); setError(null); } }}
+        onRevise={(selected) => { void prepareCanonicalReview(canonicalReview.plan.reviewedData, canonicalReview.update, selected)
+          .catch((error) => setError(error instanceof Error ? error.message : 'Could not revise the proposal')); }}
+        onApprove={() => { if (canonicalReview.update) void handleApplyUpdate(canonicalReview);
+          else void handleConfirm(canonicalReview.plan.reviewedData, canonicalReview).catch(() => undefined); }} />}
       {/* Header */}
       <div className={(step === 'preview' || step === 'diff-preview') ? 'mb-3 shrink-0' : 'mb-6'}>
         <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
@@ -851,7 +923,7 @@ export default function UploadBizFilePage() {
       )}
 
       {/* Error */}
-      {error && (
+      {error && !canonicalReview && (
         <div className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
@@ -909,7 +981,7 @@ export default function UploadBizFilePage() {
             value={selectedModelId}
             onChange={setSelectedModelId}
             label="AI Model for Extraction"
-            helpText="Leave this on Auto to let the backend choose the best extraction path, including Mistral OCR when configured."
+            helpText="Auto uses your BizFile extraction default from Connectors. If none is set, it uses automatic extraction, including Mistral OCR when configured."
             allowAuto
             jsonModeOnly
             showContextInput
@@ -960,12 +1032,13 @@ export default function UploadBizFilePage() {
           <BizFileReviewWorkspace
             initialData={extractedData}
             sourcePanel={previewPanel}
-            isSaving={isConfirming}
+            isSaving={isPreparingPlan || isConfirming}
             serverIssues={serverIssues}
             tenantId={activeTenantId || undefined}
             extractionMetadata={<AIExtractionMetadata metadata={aiMetadata} />}
             sharePointSetup={!isUpdateMode ? <CompanyCreateSharePointField onChange={setSharePointSelection} /> : undefined}
-            onConfirm={handleConfirm}
+            confirmationStage="SAVE"
+            onConfirm={(data) => handleConfirm(data)}
             onReset={handleReset}
             onCancel={handleCancel}
           />
@@ -1353,20 +1426,20 @@ export default function UploadBizFilePage() {
 
                 return (
                   <button
-                    onClick={handleApplyUpdate}
+                    onClick={() => { if (!isPreparingPlan) void handleApplyUpdate(); }}
                     className="btn-primary btn-sm flex items-center gap-2"
-                    title="Apply Changes (Ctrl+S)"
+                    title="Review Proposed Changes (Ctrl+S)"
                   >
                     <CheckCircle className="w-4 h-4" />
                     {hasAnyChanges ? (
                       <>
-                        <span className="hidden sm:inline">{`Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''} (Ctrl+S)`}</span>
-                        <span className="sm:hidden">{`Apply ${totalChanges} Change${totalChanges > 1 ? 's' : ''}`}</span>
+                        <span className="hidden sm:inline">{`Review ${totalChanges} Change${totalChanges > 1 ? 's' : ''} (Ctrl+S)`}</span>
+                        <span className="sm:hidden">Review proposed changes</span>
                       </>
                     ) : (
                       <>
-                        <span className="hidden sm:inline">Confirm & Save Document (Ctrl+S)</span>
-                        <span className="sm:hidden">Confirm & Save Document</span>
+                        <span className="hidden sm:inline">Review Document Approval (Ctrl+S)</span>
+                        <span className="sm:hidden">Review document approval</span>
                       </>
                     )}
                   </button>

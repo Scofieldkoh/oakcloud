@@ -8,8 +8,18 @@ import type { EsigningRecipientInput } from '@/lib/validations/esigning';
 import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
 import type { SearchableContact } from '@/components/ui/contact-search-select';
 
+const preferenceMocks = vi.hoisted(() => ({
+  value: { version: 1 as const, emails: [] as string[] },
+  save: vi.fn(),
+}));
+
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
+
+vi.mock('@/hooks/use-user-preferences', () => ({
+  useUserPreference: () => ({ data: { value: preferenceMocks.value } }),
+  useUpsertUserPreference: () => ({ mutateAsync: preferenceMocks.save, isPending: false }),
 }));
 
 vi.mock('@/components/ui/single-date-input', () => ({
@@ -111,6 +121,7 @@ function makeEnvelope(overrides: Partial<EsigningEnvelopeDetailDto> = {}): Esign
     companyName: null,
     title: 'NDA',
     emailSubject: 'NDA',
+    completionCopyEmails: [],
     message: '',
     status: 'DRAFT',
     signingOrder: 'PARALLEL',
@@ -193,6 +204,8 @@ function makeEnvelope(overrides: Partial<EsigningEnvelopeDetailDto> = {}): Esign
 
 describe('EsigningStepUpload', () => {
   beforeEach(() => {
+    preferenceMocks.value = { version: 1, emails: [] };
+    preferenceMocks.save.mockReset().mockResolvedValue({});
     vi.spyOn(console, 'error').mockImplementation((...args) => {
       if (typeof args[0] === 'string' && args[0].startsWith('Failed to render e-signing thumbnail')) {
         return;
@@ -361,6 +374,39 @@ describe('EsigningStepUpload', () => {
     }));
   });
 
+  it('saves normalized Completion BCC addresses from the settings step', async () => {
+    const user = userEvent.setup();
+    const { onUpdateSettings } = renderUpload();
+    const copyEmails = screen.getByRole('textbox', { name: 'Completion BCC' });
+
+    await user.type(copyEmails, 'Ops@Example.com, legal@example.com');
+    await user.click(nextButton());
+
+    await waitFor(() => expect(onUpdateSettings).toHaveBeenCalled());
+    expect(onUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      completionCopyEmails: ['ops@example.com', 'legal@example.com'],
+    }));
+  });
+
+  it('saves the current Completion BCC list as the default for new envelopes', async () => {
+    const user = userEvent.setup();
+    renderUpload();
+    const completionBcc = screen.getByRole('textbox', { name: 'Completion BCC' });
+
+    await user.type(completionBcc, 'Ops@Example.com; legal@example.com');
+    await user.click(screen.getByRole('button', { name: 'Set as default' }));
+
+    expect(preferenceMocks.save).toHaveBeenCalledWith({
+      key: 'esigning.completion-bcc.v1',
+      value: {
+        version: 1,
+        emails: ['ops@example.com', 'legal@example.com'],
+      },
+    });
+    expect(completionBcc).toHaveClass('px-3', 'py-2.5');
+    expect(completionBcc.parentElement).toHaveClass('space-y-2');
+  });
+
   it('defaults new recipients to manual link access', async () => {
     const user = userEvent.setup();
     renderUpload({ recipients: [], recipientCount: 0, signerCount: 0 });
@@ -368,6 +414,26 @@ describe('EsigningStepUpload', () => {
     await user.click(screen.getByRole('button', { name: 'Add recipient' }));
 
     expect(screen.getByRole('combobox', { name: 'Access method' })).toHaveValue('MANUAL_LINK');
+  });
+
+  it('allows a manual-link signer without an email address', async () => {
+    const user = userEvent.setup();
+    const onAddRecipient = vi.fn().mockResolvedValue(undefined);
+    renderUpload(
+      { recipients: [], recipientCount: 0, signerCount: 0 },
+      { onAddRecipient }
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Add recipient' }));
+    await user.type(screen.getByRole('textbox', { name: 'Full name' }), 'Manual signer');
+    expect(screen.getByRole('textbox', { name: 'Email address' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add recipient' }));
+
+    expect(onAddRecipient).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Manual signer',
+      email: null,
+      accessMode: 'MANUAL_LINK',
+    }));
   });
 
   it('adds the current user with manual link access', async () => {

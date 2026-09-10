@@ -398,7 +398,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     setEditingRecipientId(recipientId);
     setRecipientForm({
       name: recipient.name,
-      email: recipient.email,
+      email: recipient.email ?? '',
       type: recipient.type,
       signingOrder: recipient.signingOrder?.toString() ?? '',
       accessMode: recipient.accessMode,
@@ -414,7 +414,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       if (editingRecipientId) {
         const payload: UpdateEsigningRecipientInput = {
           name: recipientForm.name.trim(),
-          email: recipientForm.email.trim(),
+          email: recipientForm.email.trim() || null,
           type: recipientForm.type,
           signingOrder:
             recipientForm.type === 'CC' || signingOrderValue === 'PARALLEL'
@@ -431,7 +431,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       } else {
         const payload: EsigningRecipientInput = {
           name: recipientForm.name.trim(),
-          email: recipientForm.email.trim(),
+          email: recipientForm.email.trim() || null,
           type: recipientForm.type,
           signingOrder:
             recipientForm.type === 'CC' || signingOrderValue === 'PARALLEL'
@@ -524,7 +524,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       (recipient) =>
         recipient.type === 'SIGNER' &&
         currentUserEmail &&
-        recipient.email.trim().toLowerCase() === currentUserEmail
+        recipient.email?.trim().toLowerCase() === currentUserEmail
     );
     const selfSigningLink = selfSigner
       ? result.manualLinks.find((link) => link.recipientId === selfSigner.id)
@@ -616,6 +616,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   }
 
   // ——— Recipient modal (shared between DRAFT wizard and read-only view) ———
+  const recipientRequiresEmail = recipientForm.type === 'CC' || recipientForm.accessMode !== 'MANUAL_LINK';
   const recipientModal = (
     <Modal
       isOpen={isRecipientModalOpen}
@@ -639,11 +640,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               required
             />
             <FormInput
-              label="Email"
+              label={recipientRequiresEmail ? 'Email' : 'Email (optional)'}
               type="email"
               value={recipientForm.email}
               onChange={(e) => setRecipientForm((prev) => ({ ...prev, email: e.target.value }))}
-              required
+              required={recipientRequiresEmail}
             />
           </div>
           {envelope.status === 'DRAFT' ? (
@@ -743,7 +744,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         {manualLinks.map((link) => (
           <div key={link.recipientId} className="min-w-0 rounded-2xl border border-border-primary bg-background-primary p-4">
             <div className="text-sm font-semibold text-text-primary">{link.recipientName}</div>
-            <div className="mt-1 text-xs text-text-secondary">{link.recipientEmail}</div>
+            <div className="mt-1 text-xs text-text-secondary">{link.recipientEmail || 'No email — manual link only'}</div>
             <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
               <a
                 href={link.signingUrl}

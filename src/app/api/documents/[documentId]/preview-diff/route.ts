@@ -1,7 +1,8 @@
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { extractBizFileWithVision, generateBizFileDiff, normalizeExtractedData } from '@/services/bizfile';
+import { extractBizFileWithVision, generateBizFileDiff, normalizeExtractedData, prepareBizFileImportCommand } from '@/services/bizfile';
 import { mapEntityType } from '@/services/bizfile/types';
 import { AI_MODELS, calculateUsageCost, formatCost } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
@@ -111,6 +112,7 @@ export async function POST(
       }
       const fileBuffer = await storage.download(document.storageKey);
       const base64Data = fileBuffer.toString('base64');
+      const originalSourceHash = createHash('sha256').update(fileBuffer).digest('hex');
 
       // Extract data using AI vision (connector-aware for tenant)
       const extractionResult = await extractBizFileWithVision(
@@ -156,6 +158,15 @@ export async function POST(
       // Normalize extracted data before comparing
       const normalizedData = normalizeExtractedData(extractionResult.data);
 
+      const prepared = await prepareBizFileImportCommand({
+        tenantId: document.tenantId,
+        documentId,
+        reviewedData: normalizedData,
+        targetCompanyId: companyId,
+        sourceVersion: document.sourceRevision,
+        sourceHash: originalSourceHash,
+      });
+
       // Generate diff against existing company
       const diffResult = await generateBizFileDiff(
         companyId,
@@ -198,6 +209,11 @@ export async function POST(
         },
         // Include company updatedAt for optimistic locking (concurrent update detection)
         companyUpdatedAt: company.updatedAt.toISOString(),
+        plan: prepared.plan,
+        source: prepared.source,
+        contactCandidates: prepared.contactCandidates,
+        preparationToken: prepared.plan.canonicalHash,
+        expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
         aiMetadata: {
           modelUsed: extractionResult.modelUsed,
           modelName,

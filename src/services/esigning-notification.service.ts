@@ -164,9 +164,15 @@ async function safeSendEmail(
   const attemptedAt = new Date().toISOString();
   const result = await sendEmail(input);
   if (!result.success) {
-    log.error('Failed to send e-signing email', { to: input.to, subject: input.subject, error: result.error });
+    log.error('Failed to send e-signing email', {
+      recipientType: input.to ? 'to' : 'bcc',
+      subject: input.subject,
+      error: result.error,
+    });
   }
-  const recipientLabel = Array.isArray(input.to) ? input.to.join(', ') : input.to;
+  const recipientLabel = input.to
+    ? (Array.isArray(input.to) ? input.to.join(', ') : input.to)
+    : 'Undisclosed recipient';
   return {
     ok: result.success,
     kind,
@@ -267,7 +273,8 @@ export async function sendEsigningRequestEmail(input: {
 }
 
 export async function sendEsigningCompletionEmail(input: {
-  to: string;
+  to?: string;
+  bcc?: string;
   recipientName: string;
   envelopeTitle: string;
   certificateId: string;
@@ -364,6 +371,7 @@ export async function sendEsigningCompletionEmail(input: {
 
   return safeSendEmail('completion', {
     to: input.to,
+    bcc: input.bcc,
     subject: subject(`Completed: "${input.envelopeTitle}"`),
     attachments: input.attachments,
     html: shell(body, footerContent),

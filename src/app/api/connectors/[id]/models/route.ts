@@ -17,12 +17,14 @@ import {
 } from '@/lib/ai/connector-model-settings';
 import { Prisma } from '@/generated/prisma';
 import { z } from 'zod';
+import { getOpenRouterReasoningCatalog } from '@/lib/ai/openrouter-reasoning';
+import { readReasoningDefaults } from '@/lib/ai/reasoning-settings';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-const MODEL_DEFAULT_GROUPS = ['general', 'ocr', 'research'] as const;
+const MODEL_DEFAULT_GROUPS = ['general', 'ocr', 'research', 'businessAssistant', 'bizfileExtraction'] as const;
 
 const modelSchema = z.object({
   modelId: z.string().trim().min(1),
@@ -82,7 +84,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     })) ?? [];
     const models = readEditableModels(connector, overrides);
 
-    return NextResponse.json(models.map(toResponseModel));
+    const catalog = connector.provider === 'OPENROUTER' ? await getOpenRouterReasoningCatalog() : null;
+    return NextResponse.json(models.map((model) => ({
+      ...toResponseModel(model),
+      ...(connector.provider === 'OPENROUTER' ? { reasoningEfforts: catalog?.get(model.providerModelId) ?? (catalog ? [] : null) } : {}),
+    })));
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
@@ -210,6 +216,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       models: models.filter((model) => model.modelId !== modelId).map((model) => normalizeModel(model)),
     };
     delete nextSettings.customModels;
+    if (nextSettings.reasoningDefaults) {
+      nextSettings.reasoningDefaults = Object.fromEntries(Object.entries(readReasoningDefaults(nextSettings.reasoningDefaults))
+        .filter(([, choice]) => choice.modelId !== modelId));
+    }
 
     if (
       nextSettings.modelDefaults &&

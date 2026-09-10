@@ -20,6 +20,7 @@ export const ESIGNING_LIMITS = {
   MAX_DECLINE_REASON_LENGTH: 1000,
   MAX_ACCESS_CODE_LENGTH: 32,
   MIN_ACCESS_CODE_LENGTH: 4,
+  MAX_COMPLETION_COPY_EMAILS: 20,
 } as const;
 
 export const ESIGNING_RECIPIENT_COLORS = [
@@ -101,12 +102,29 @@ const hexColorSchema = z
   .string()
   .regex(/^#(?:[0-9a-fA-F]{6})$/, 'Expected a 6-digit hex color');
 
+const emailAddressSchema = z.string().trim().toLowerCase().email().max(320);
+const optionalRecipientEmailSchema = emptyStringToNull(emailAddressSchema).optional();
+
+export const ESIGNING_COMPLETION_BCC_PREFERENCE_KEY = 'esigning.completion-bcc.v1';
+
+export const esigningCompletionBccPreferenceSchema = z.object({
+  version: z.literal(1),
+  emails: z.array(emailAddressSchema).max(ESIGNING_LIMITS.MAX_COMPLETION_COPY_EMAILS),
+});
+
+export type EsigningCompletionBccPreference = z.infer<typeof esigningCompletionBccPreferenceSchema>;
+
+export function parseEsigningCompletionBccPreference(value: unknown): EsigningCompletionBccPreference {
+  const parsed = esigningCompletionBccPreferenceSchema.safeParse(value);
+  return parsed.success ? parsed.data : { version: 1, emails: [] };
+}
+
 export const esigningRecipientInputSchema = z
   .object({
     id: z.string().uuid().optional(),
     type: esigningRecipientTypeSchema,
     name: z.string().trim().min(1).max(160),
-    email: z.string().trim().toLowerCase().email().max(320),
+    email: optionalRecipientEmailSchema,
     signingOrder: z.number().int().min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional().nullable(),
     accessMode: esigningRecipientAccessModeSchema.default('MANUAL_LINK'),
     accessCode: emptyStringToUndefined(
@@ -115,6 +133,14 @@ export const esigningRecipientInputSchema = z
     colorTag: hexColorSchema.optional(),
   })
   .superRefine((recipient, ctx) => {
+    if ((recipient.type === 'CC' || recipient.accessMode !== 'MANUAL_LINK') && !recipient.email) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['email'],
+        message: 'Email is required for this recipient method',
+      });
+    }
+
     if (recipient.type === 'CC' && recipient.signingOrder !== null && recipient.signingOrder !== undefined) {
       ctx.addIssue({
         code: 'custom',
@@ -142,6 +168,7 @@ export const createEsigningEnvelopeSchema = z.object({
   reminderFrequencyDays: z.number().int().min(1).max(30).optional().nullable(),
   reminderStartDays: z.number().int().min(0).max(90).optional().nullable(),
   expiryWarningDays: z.number().int().min(0).max(30).optional().nullable(),
+  completionCopyEmails: z.array(emailAddressSchema).max(ESIGNING_LIMITS.MAX_COMPLETION_COPY_EMAILS).default([]),
 });
 
 export const updateEsigningEnvelopeSchema = createEsigningEnvelopeSchema.partial();
@@ -202,7 +229,7 @@ export const saveEsigningFieldDefinitionsSchema = z.object({
 
 export const updateEsigningRecipientSchema = z.object({
   name: z.string().trim().min(1).max(160).optional(),
-  email: z.string().trim().toLowerCase().email().max(320).optional(),
+  email: optionalRecipientEmailSchema,
   type: esigningRecipientTypeSchema.optional(),
   signingOrder: z.number().int().min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional().nullable(),
   accessMode: esigningRecipientAccessModeSchema.optional(),

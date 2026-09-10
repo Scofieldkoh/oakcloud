@@ -30,7 +30,7 @@ Start with [Documentation Index](./INDEX.md) for the current docs map.
 
 ### Feature And Rollout Docs
 
-- [AI Helpbot Specification](./features/ai-helpbot/SPECIFICATION.md) - Current feature specification under `docs/features/`
+- [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) - Proposed general assistant; BizFile reference integration, with [implementation handover](./plans/2026-09-05-business-assistant-implementation.md)
 - [Forms Improvements](./plans/2026-03-04-forms-improvements.md) - Main Forms rollout plan
 - [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) - Public and internal response PDF export
 - [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) - Draft save and resume flow

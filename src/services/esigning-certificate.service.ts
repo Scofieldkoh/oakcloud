@@ -157,7 +157,11 @@ export async function getEsigningVerificationData(certificateId: string) {
   };
 }
 
-function maskEmailAddress(email: string): string {
+function maskEmailAddress(email: string | null): string | null {
+  if (!email) {
+    return null;
+  }
+
   const [localPart, domainPart] = email.split('@');
   if (!localPart || !domainPart) {
     return email;

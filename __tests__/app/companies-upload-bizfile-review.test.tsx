@@ -4,6 +4,7 @@ import UploadBizFilePage from '@/app/(dashboard)/companies/upload/page';
 
 const mocks = vi.hoisted(() => ({
   fetch: vi.fn(),
+  prepare: vi.fn(),
   upload: vi.fn(),
   push: vi.fn(),
   searchParams: new URLSearchParams(),
@@ -94,13 +95,31 @@ async function reachPreview(updateMode = false) {
   return view;
 }
 
+async function approvePrepared(updateMode = false) {
+  const approval = await screen.findByLabelText('I have reviewed these changes and contact decisions.');
+  fireEvent.click(approval);
+  fireEvent.click(screen.getByRole('button', { name: updateMode ? 'Confirm & Save Document' : 'Confirm & Save Company' }));
+}
+
 describe('companies upload BizFile review integration', () => {
   beforeEach(() => {
     mocks.fetch.mockReset();
+    mocks.prepare.mockReset();
     mocks.upload.mockReset();
     mocks.push.mockReset();
     mocks.searchParams = new URLSearchParams();
-    vi.stubGlobal('fetch', mocks.fetch);
+    mocks.prepare.mockImplementation((_url: string, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body));
+        return Promise.resolve(jsonResponse({ preparationToken: 'prepared-hash', plan: {
+          schemaVersion: 1, mode: body.mode, tenantId: 'tenant-1', documentId: 'doc-1', targetCompanyId: body.targetCompanyId,
+          aggregateRevision: 'aggregate', expectedAggregateRevision: 1, baseline: { company: {} },
+          reviewedData: body.extractedData, changes: [], selectedChangeIds: [], contactDecisions: {}, canonicalHash: 'prepared-hash',
+        } }));
+    });
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (String(url).endsWith('/prepare-import')) return mocks.prepare(url, init);
+      return init === undefined ? mocks.fetch(url) : mocks.fetch(url, init);
+    });
     Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:preview') });
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
   });
@@ -146,7 +165,8 @@ describe('companies upload BizFile review integration', () => {
     );
 
     mocks.fetch.mockResolvedValueOnce(jsonResponse({ companyId: 'company-new' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
+
 
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(
       '/tasks?taskId=00000000-0000-4000-8000-000000000001&taskStageId=00000000-0000-4000-8000-000000000002&returnTo=%2Ftasks',
@@ -162,14 +182,33 @@ describe('companies upload BizFile review integration', () => {
     fireEvent.change(screen.getByLabelText('Company name'), { target: { value: 'Corrected Pte. Ltd.' } });
     mocks.fetch.mockResolvedValueOnce(jsonResponse({ companyId: 'company-new' }));
     fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+    expect(screen.queryByText('Review company creation')).not.toBeInTheDocument();
+
+
 
     await screen.findByText('Company Created Successfully!');
+    expect(screen.queryByText('Review company creation')).not.toBeInTheDocument();
+    expect(mocks.prepare).toHaveBeenCalledTimes(1);
     const confirmCalls = mocks.fetch.mock.calls.filter(([url]) => String(url).endsWith('/confirm'));
     expect(confirmCalls).toHaveLength(1);
     expect(JSON.parse(String(confirmCalls[0][1]?.body))).toMatchObject({
       extractedData: { entityDetails: { name: 'Corrected Pte. Ltd.' } },
+      preparationToken: 'prepared-hash', operationId: expect.any(String),
+      plan: { canonicalHash: 'prepared-hash', reviewedData: { entityDetails: { name: 'Corrected Pte. Ltd.' } } },
     });
     expect(screen.getByRole('link', { name: 'View Company' })).toHaveAttribute('href', '/companies/company-new');
+  });
+
+  it('keeps the reviewed draft when preparation fails and does not create the company', async () => {
+    await reachPreview();
+    fireEvent.change(screen.getByLabelText('Company name'), { target: { value: 'Reviewed Pte. Ltd.' } });
+    mocks.prepare.mockResolvedValueOnce(jsonResponse({ error: 'Please review the company details' }, 400));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
+
+    expect(await screen.findByText('Please review the company details')).toBeVisible();
+    expect(screen.getByLabelText('Company name')).toHaveValue('Reviewed Pte. Ltd.');
+    expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/confirm'))).toBe(false);
+    expect(screen.getByRole('button', { name: /Confirm & Save/i })).toBeEnabled();
   });
 
   it('keeps the edited draft mounted and renders structured route issues for retry', async () => {
@@ -180,7 +219,8 @@ describe('companies upload BizFile review integration', () => {
       error: 'Please correct the highlighted fields',
       issues: [{ path: 'entityDetails.name', message: 'Name conflicts with UEN', section: 'entity' }],
     }, 400));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
+
 
     expect(await screen.findByText('Name conflicts with UEN')).toBeVisible();
     expect(screen.getByLabelText('Company name')).toHaveValue('Corrected Pte. Ltd.');
@@ -191,7 +231,8 @@ describe('companies upload BizFile review integration', () => {
     await reachPreview();
     fireEvent.change(screen.getByLabelText('Company name'), { target: { value: 'Still Here Pte. Ltd.' } });
     mocks.fetch.mockResolvedValueOnce(new Response('<html>failure</html>', { status: 500 }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
+
 
     expect(await screen.findByText('Failed to save data (HTTP 500)')).toBeVisible();
     expect(screen.getByLabelText('Company name')).toHaveValue('Still Here Pte. Ltd.');
@@ -200,7 +241,8 @@ describe('companies upload BizFile review integration', () => {
   it('reports the exact JSON 400 error when no structured issues are returned', async () => {
     await reachPreview();
     mocks.fetch.mockResolvedValueOnce(jsonResponse({ error: 'The submitted company is no longer available' }, 400));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
+
 
     expect(await screen.findByText('The submitted company is no longer available')).toBeVisible();
     expect(screen.queryByText('Failed to save data (HTTP 400)')).not.toBeInTheDocument();
@@ -213,8 +255,10 @@ describe('companies upload BizFile review integration', () => {
     await reachPreview();
     const request = deferred<Response>();
     mocks.fetch.mockReturnValueOnce(request.promise);
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
 
+
+    await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/confirm'))).toBe(true));
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Upload Different File' })).toBeDisabled();
     fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true });
@@ -232,9 +276,24 @@ describe('companies upload BizFile review integration', () => {
     await reachPreview(true);
     expect(screen.getByText('Changes to Apply')).toBeVisible();
     mocks.fetch.mockResolvedValueOnce(jsonResponse({ updatedFields: ['name'] }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save Document/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Review document approval/i }));
+    await approvePrepared(true);
     await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/apply-update'))).toBe(true));
     expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/confirm'))).toBe(false);
+  });
+
+  it.each(['resolve', 'reject'])('ignores a late preparation %s after resetting the draft', async (outcome) => {
+    await reachPreview();
+    const pending = deferred<Response>();
+    mocks.prepare.mockReturnValueOnce(pending.promise);
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Save/i }));
+    fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true });
+    await screen.findByRole('button', { name: 'Upload & Extract' });
+    if (outcome === 'resolve') pending.resolve(jsonResponse({ plan: { documentId: 'doc-1' }, preparationToken: 'stale' }));
+    else pending.reject(new Error('stale preparation'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByText('stale preparation')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload & Extract' })).toBeVisible();
   });
 
   it('shows the nominee flag for an added shareholder in update mode', async () => {
@@ -300,10 +359,11 @@ describe('companies upload BizFile review integration', () => {
     expect(await screen.findByText('Existing contact match')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Use existing' }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /Apply 1 Change/i })).toBeVisible());
+    await waitFor(() => expect(screen.getByRole('button', { name: /Review proposed changes/i })).toBeVisible());
     mocks.fetch.mockResolvedValueOnce(jsonResponse(previewBody));
     mocks.fetch.mockResolvedValueOnce(jsonResponse({ updatedFields: [] }));
-    fireEvent.click(screen.getByRole('button', { name: /Apply 1 Change/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Review proposed changes/i }));
+    await approvePrepared(true);
     await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/apply-update'))).toBe(true));
     const applyCall = mocks.fetch.mock.calls.find(([url]) => String(url).endsWith('/apply-update'))!;
     expect(JSON.parse(String(applyCall[1]?.body))).toMatchObject({
@@ -360,7 +420,8 @@ describe('companies upload BizFile review integration', () => {
 
     mocks.fetch.mockResolvedValueOnce(jsonResponse(previewBody));
     mocks.fetch.mockResolvedValueOnce(jsonResponse({ updatedFields: [] }));
-    fireEvent.click(screen.getByRole('button', { name: /Apply 2 Changes/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Review proposed changes/i }));
+    await approvePrepared(true);
     await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/apply-update'))).toBe(true));
     const applyCall = mocks.fetch.mock.calls.find(([url]) => String(url).endsWith('/apply-update'))!;
     const body = JSON.parse(String(applyCall[1]?.body));

@@ -45,6 +45,7 @@ const mocks = vi.hoisted(() => ({
     esigningEnvelopeId: null,
     lastError: null,
   })),
+  completionBccEmails: [] as string[],
 }));
 
 const navigationMocks = vi.hoisted(() => ({
@@ -75,6 +76,12 @@ vi.mock('@/hooks/use-permissions', () => ({
       readEsigning: true,
       createEsigning: true,
     },
+  }),
+}));
+
+vi.mock('@/hooks/use-user-preferences', () => ({
+  useUserPreference: () => ({
+    data: { value: { version: 1, emails: mocks.completionBccEmails } },
   }),
 }));
 
@@ -304,6 +311,7 @@ describe('EsigningListPage initial upload compensation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     navigationMocks.searchParams = new URLSearchParams();
+    mocks.completionBccEmails = [];
     mocks.createEnvelope.mockResolvedValue({ id: 'new-envelope-id' });
     mocks.deleteEnvelope.mockResolvedValue(undefined);
     mocks.uploadDocument.mockRejectedValue(new Error('storage failure'));
@@ -359,6 +367,16 @@ describe('EsigningListPage initial upload compensation', () => {
     await waitFor(() => expect(mocks.createEnvelope).toHaveBeenCalled());
     expect(mocks.deleteEnvelope).not.toHaveBeenCalled();
     expect(mocks.locationSpy).not.toHaveBeenCalled();
+  });
+
+  it('prefills a new envelope with the saved Completion BCC default', async () => {
+    mocks.completionBccEmails = ['ops@example.com'];
+    render(<EsigningListPage />);
+    dropStartFile();
+
+    await waitFor(() => expect(mocks.createEnvelope).toHaveBeenCalledWith(
+      expect.objectContaining({ completionCopyEmails: ['ops@example.com'] })
+    ));
   });
 });
 

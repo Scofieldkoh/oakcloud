@@ -20,6 +20,7 @@ export interface BizFileReviewWorkspaceProps {
   initialData: ExtractedBizFileData;
   sourcePanel: React.ReactNode;
   isSaving?: boolean;
+  confirmationStage?: 'SAVE' | 'PREPARE';
   serverIssues?: BizFileReviewIssue[];
   tenantId?: string;
   extractionMetadata?: React.ReactNode;
@@ -238,7 +239,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
 }
 
 export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = false,
-  serverIssues = EMPTY_SERVER_ISSUES, tenantId, extractionMetadata, sharePointSetup, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
+  serverIssues = EMPTY_SERVER_ISSUES, confirmationStage = 'SAVE', tenantId, extractionMetadata, sharePointSetup, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Partial<Record<BizFileReviewSectionId, HTMLButtonElement | null>>>({});
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -373,11 +374,12 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
     }
     saveInFlightRef.current = true;
     setLocallySaving(true);
-    setSaveSummary("Saving reviewed information…");
+    setSaveSummary(confirmationStage === 'PREPARE' ? "Preparing proposed changes…" : "Saving reviewed information…");
     historyGuard.disarm();
     try {
       await onConfirm(normalizeBizFileReviewDraft(draftForSave));
-      setSaveSummary("Save completed.");
+      if (confirmationStage === 'PREPARE') historyGuard.rearm();
+      setSaveSummary(confirmationStage === 'PREPARE' ? "Proposed changes are ready for approval." : "Save completed.");
     } catch {
       historyGuard.rearm();
       setSaveSummary("Save failed. Please try again.");
@@ -385,7 +387,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
       saveInFlightRef.current = false;
       setLocallySaving(false);
     }
-  }, [busy, draft, focusIssue, historyGuard, issues, matchPreviews, onConfirm, requestMatchPreviews]);
+  }, [busy, confirmationStage, draft, focusIssue, historyGuard, issues, matchPreviews, onConfirm, requestMatchPreviews]);
 
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
@@ -447,6 +449,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
         <main id="review-section-panel" role={isLarge ? "tabpanel" : undefined} aria-labelledby={isLarge ? `review-tab-${activeSection}` : undefined}
           tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto p-4">
           <BizFileReviewSections activeSection={activeSection} draft={draft} onChange={changeDraft} issues={issues} matchPreviews={matchPreviews} />
+          <div hidden={activeSection !== "entity"} className="mt-6"><OptionalSetupBoundary>{sharePointSetup}</OptionalSetupBoundary></div>
         </main>
       </div>
     </div>
@@ -454,14 +457,15 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
 
   const actionFooter = (
     <footer role="contentinfo" className="flex min-h-14 flex-wrap items-center justify-end gap-2 border-t border-border-primary bg-background-primary p-3">
-      {(extractionMetadata || saveSummary) && <div className="mr-auto space-y-0.5 text-xs text-text-secondary">
+      {(extractionMetadata || saveSummary || confirmationStage === 'PREPARE') && <div className="mr-auto space-y-0.5 text-xs text-text-secondary">
         {extractionMetadata}
+        {confirmationStage === 'PREPARE' && <p>Next: confirm the proposed changes and save your reviewed information.</p>}
         {saveSummary && <p role="status" data-review-summary tabIndex={-1}>{saveSummary}</p>}
       </div>}
       <button type="button" disabled={busy} onClick={() => exit(onCancel)} className="btn-ghost btn-sm">Cancel</button>
       <button type="button" disabled={busy} onClick={() => exit(onReset)} className="btn-secondary btn-sm">Upload Different File</button>
       <button type="button" disabled={busy} onClick={() => void confirm()} className="btn-primary btn-sm">
-        {busy ? "Saving…" : "Confirm & Save"}
+        {confirmationStage === 'PREPARE' ? (busy ? "Preparing…" : "Review proposed changes") : (busy ? "Saving…" : "Confirm & Save")}
       </button>
     </footer>
   );
@@ -481,11 +485,10 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
           leftPanelClassName="!overflow-hidden" rightPanelClassName="min-w-0 !overflow-hidden"
           defaultLeftWidth={70} minLeftWidth={40} maxLeftWidth={80} />
       </div>
-      <OptionalSetupBoundary>{sharePointSetup}</OptionalSetupBoundary>
       {actionFooter}
     </> : <div data-testid="mobile-workspace" className="min-h-0 flex-1">
       {mobilePanel === "document" ? <div className="h-full overflow-hidden">{sourcePanel}</div>
-        : <div className="flex h-full min-h-0 flex-col"><div className="min-h-0 flex-1">{editorContent}</div><OptionalSetupBoundary>{sharePointSetup}</OptionalSetupBoundary>{actionFooter}</div>}
+        : <div className="flex h-full min-h-0 flex-col"><div className="min-h-0 flex-1">{editorContent}</div>{actionFooter}</div>}
     </div>}
   </section>;
 }

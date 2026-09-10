@@ -199,6 +199,7 @@ function makeEnvelope(): EsigningEnvelopeDetailDto {
     tenantId: 'tenant-1',
     title: 'NDA',
     message: null,
+    completionCopyEmails: [],
     status: 'DRAFT',
     signingOrder: 'PARALLEL',
     expiresAt: null,

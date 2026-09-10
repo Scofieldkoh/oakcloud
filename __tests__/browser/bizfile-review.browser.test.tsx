@@ -6,6 +6,12 @@ import { screen } from '@testing-library/react';
 import { BizFileReviewWorkspace } from '@/components/companies/bizfile-review/bizfile-review-workspace';
 import type { ExtractedBizFileData } from '@/services/bizfile';
 import '@/app/globals.css';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { CompanyCreateSharePointField } from '@/components/companies/company-create-sharepoint-field';
+
+vi.mock('@/hooks/use-connectors', () => ({ useConnectors: () => ({ data: { connectors: [{ id: 'connector-1', workspaceId: 'workspace-1' }] } }) }));
+vi.mock('@/hooks/use-sharepoint-folders', () => ({ useSharePointFilingSettings: () => ({ data: { clientDocumentsRoot: { id: 'root', name: 'Client Documents' } } }) }));
+vi.mock('@/components/connectors/sharepoint/sharepoint-folder-picker', () => ({ SharePointFolderPicker: () => null }));
 
 const fixture: ExtractedBizFileData = {
   entityDetails: {
@@ -56,6 +62,7 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
       root.render(
         <BizFileReviewWorkspace
           initialData={fixture}
+          sharePointSetup={<QueryClientProvider client={new QueryClient()}><CompanyCreateSharePointField onChange={vi.fn()} /></QueryClientProvider>}
           sourcePanel={<div aria-label="Source document">BizFile source viewer</div>}
           onConfirm={onConfirm}
           onCancel={vi.fn()}
@@ -69,6 +76,29 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
   async function click(element: HTMLElement) {
     await act(async () => userEvent.click(element));
   }
+
+  it.each([1440, 390])('keeps the company folder in Entity details at %s pixels', async (width) => {
+    await page.viewport(width, 900);
+    await mount();
+    const folder = screen.getByRole('region', { name: 'Company folder' });
+    expect(folder.closest('#review-section-panel')).not.toBeNull();
+    expect(screen.queryByText(/A failure here will not roll back/)).toBeNull();
+    await click(screen.getByRole('button', { name: 'New folder' }));
+    await fill(screen.getByLabelText('Folder name'), 'Example company');
+    await click(screen.getByRole('button', { name: 'Use new folder' }));
+    await expect.element(screen.getByText('Example company')).toBeVisible();
+    if (width > 1000) {
+      await click(screen.getByRole('tab', { name: /^Addresses,/ }));
+      await expect.element(folder).not.toBeVisible();
+      await click(screen.getByRole('tab', { name: /^Entity,/ }));
+    } else {
+      await act(async () => userEvent.selectOptions(screen.getByRole('combobox', { name: 'Review section' }), 'addresses'));
+      await expect.element(folder).not.toBeVisible();
+      await act(async () => userEvent.selectOptions(screen.getByRole('combobox', { name: 'Review section' }), 'entity'));
+    }
+    await expect.element(screen.getByText('Example company')).toBeVisible();
+    folder.scrollIntoView();
+  });
 
   async function fill(element: HTMLElement, value: string) {
     await act(async () => userEvent.fill(element, value));

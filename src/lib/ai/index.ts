@@ -468,6 +468,10 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
     throw new Error(`Model "${options.model}" is not configured for any connector.`);
   }
   const requestOptions = { ...options, modelConfig };
+  if (provider === 'openrouter' && resolved && !requestOptions.reasoningEffort) {
+    const { getConfiguredReasoningEffort } = await import('./reasoning-settings');
+    requestOptions.reasoningEffort = getConfiguredReasoningEffort(resolved.connector.settings, options.model, options.operation);
+  }
 
   // Start debug logging if enabled
   const debugContext = logAIRequestStart(
@@ -704,7 +708,9 @@ function readEnabledConnectorModelIds(settings: unknown): string[] | null {
  * Checks both connector and environment configurations
  */
 export async function getBestAvailableModelForWorkspace(
-  tenantId: string | null
+  tenantId: string | null,
+  defaultGroup?: 'businessAssistant' | 'bizfileExtraction',
+  options?: { configuredOnly?: boolean }
 ): Promise<AIModel | string | null> {
   const availableProviders = await getAvailableProvidersForWorkspace(tenantId);
 
@@ -722,6 +728,14 @@ export async function getBestAvailableModelForWorkspace(
       if (!provider) continue;
 
       const connectorModelIds = readEnabledConnectorModelIds(resolved.connector.settings);
+      if (defaultGroup && availableProviders.includes(provider)) {
+        const settings = resolved.connector.settings as Record<string, unknown> | null;
+        const defaults = settings?.modelDefaults as Record<string, unknown> | undefined;
+        const configured = defaults?.[defaultGroup];
+        if (typeof configured === 'string' && connectorModelIds?.includes(configured.trim())) {
+          return configured.trim();
+        }
+      }
       if (connectorModelIds && connectorModelIds.length > 0) {
         connectorModelsByProvider.set(provider, connectorModelIds);
       }
@@ -729,6 +743,8 @@ export async function getBestAvailableModelForWorkspace(
   } catch (error) {
     log.error('Error getting connector models for tenant:', error);
   }
+
+  if (options?.configuredOnly) return null;
 
   // First, try the default model if its provider is available
   const defaultModel = getDefaultModel();

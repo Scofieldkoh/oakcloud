@@ -158,6 +158,107 @@ export function getEsigningPostCompletionSummary(
   };
 }
 
+type EsigningCompletionDeliveryTargetInput = {
+  tenantId: string;
+  envelopeId: string;
+  completedAt: Date;
+  title: string;
+  createdById: string;
+  senderEmail: string;
+  copyEmails: string[];
+  recipients: Array<{
+    id: string;
+    email: string | null;
+    type: 'SIGNER' | 'CC';
+    accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
+  }>;
+};
+
+export function buildEsigningCompletionDeliveryTargets(
+  input: EsigningCompletionDeliveryTargetInput
+) {
+  const subject = `Completed: ${input.title}`;
+  const seenEmails = new Set<string>();
+  const normalizeEmail = (email: string) => email.trim().toLowerCase();
+  const targets: Array<{
+    tenantId: string;
+    envelopeId: string;
+    recipientId: string | null;
+    audience: 'RECIPIENT' | 'SENDER' | 'COPY';
+    kind: 'COMPLETION';
+    targetKey: string;
+    toEmail: string;
+    subject: string;
+    status: 'PENDING';
+    attemptCount: number;
+    availableAt: Date;
+  }> = [];
+
+  const addTarget = (target: {
+    recipientId: string | null;
+    audience: 'RECIPIENT' | 'SENDER' | 'COPY';
+    targetKey: string;
+    email: string | null;
+  }) => {
+    if (!target.email?.trim()) {
+      return;
+    }
+
+    const normalizedEmail = normalizeEmail(target.email);
+    if (seenEmails.has(normalizedEmail)) {
+      return;
+    }
+    seenEmails.add(normalizedEmail);
+    targets.push({
+      tenantId: input.tenantId,
+      envelopeId: input.envelopeId,
+      recipientId: target.recipientId,
+      audience: target.audience,
+      kind: 'COMPLETION',
+      targetKey: target.targetKey,
+      toEmail: normalizedEmail,
+      subject,
+      status: 'PENDING',
+      attemptCount: 0,
+      availableAt: input.completedAt,
+    });
+  };
+
+  addTarget({
+    recipientId: null,
+    audience: 'SENDER',
+    targetKey: `sender:${input.createdById}`,
+    email: input.senderEmail,
+  });
+
+  [...input.recipients]
+    .filter((recipient) => recipient.accessMode !== 'MANUAL_LINK')
+    .sort((left, right) => Number(left.type === 'CC') - Number(right.type === 'CC'))
+    .forEach((recipient) => {
+      addTarget({
+        recipientId: recipient.id,
+        audience: 'RECIPIENT',
+        targetKey: `recipient:${recipient.id}`,
+        email: recipient.email,
+      });
+    });
+
+  for (const email of input.copyEmails ?? []) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) {
+      continue;
+    }
+    addTarget({
+      recipientId: null,
+      audience: 'COPY',
+      targetKey: `copy:${normalizedEmail}`,
+      email: normalizedEmail,
+    });
+  }
+
+  return targets;
+}
+
 export async function queueEsigningCompletionWork(
   tx: Prisma.TransactionClient,
   input: {
@@ -174,10 +275,12 @@ export async function queueEsigningCompletionWork(
       title: true,
       companyId: true,
       createdById: true,
+      completionCopyEmails: true,
       recipients: {
         select: {
           id: true,
           email: true,
+          type: true,
           accessMode: true,
         },
       },
@@ -193,39 +296,19 @@ export async function queueEsigningCompletionWork(
     throw new Error('Envelope not found for completion queueing');
   }
 
-  const completionSubject = `Completed: ${envelope.title}`;
-  const recipientDeliveries = envelope.recipients
-    .filter((recipient) => recipient.accessMode !== 'MANUAL_LINK')
-    .map((recipient) => ({
-      tenantId: input.tenantId,
-      envelopeId: input.envelopeId,
-      recipientId: recipient.id,
-      audience: 'RECIPIENT' as const,
-      kind: 'COMPLETION' as const,
-      targetKey: `recipient:${recipient.id}`,
-      toEmail: recipient.email,
-      subject: completionSubject,
-      status: 'PENDING' as const,
-      attemptCount: 0,
-      availableAt: input.completedAt,
-    }));
-
-  const senderDeliveries = [{
+  const deliveries = buildEsigningCompletionDeliveryTargets({
     tenantId: input.tenantId,
     envelopeId: input.envelopeId,
-    recipientId: null,
-    audience: 'SENDER' as const,
-    kind: 'COMPLETION' as const,
-    targetKey: `sender:${envelope.createdById}`,
-    toEmail: envelope.createdBy.email,
-    subject: completionSubject,
-    status: 'PENDING' as const,
-    attemptCount: 0,
-    availableAt: input.completedAt,
-  }];
+    completedAt: input.completedAt,
+    title: envelope.title,
+    createdById: envelope.createdById,
+    senderEmail: envelope.createdBy.email,
+    copyEmails: envelope.completionCopyEmails ?? [],
+    recipients: envelope.recipients,
+  });
 
   await tx.esigningEmailDelivery.createMany({
-    data: [...recipientDeliveries, ...senderDeliveries],
+    data: deliveries,
     skipDuplicates: true,
   });
 
@@ -850,9 +933,10 @@ export async function processEsigningCompletionDelivery(
       }))
     );
     const attachments = buildEmailAttachments({ documents: signedBuffers });
-    const actorType = delivery.audience === 'SENDER' ? 'sender' : 'recipient';
+    const isRecipientDelivery = delivery.audience === 'RECIPIENT';
+    const actorType = isRecipientDelivery ? 'recipient' : 'sender';
     const recipientId =
-      delivery.audience === 'RECIPIENT' ? delivery.recipientId ?? undefined : undefined;
+      isRecipientDelivery ? delivery.recipientId ?? undefined : undefined;
     const documentLinks = await buildDeliveryDocumentLinks({
       envelopeId: delivery.envelope.id,
       actorType,
@@ -869,11 +953,15 @@ export async function processEsigningCompletionDelivery(
             .filter(Boolean)
             .join(' ')
             .trim() || delivery.envelope.createdBy.email
-        : delivery.envelope.recipients.find((recipient) => recipient.id === delivery.recipientId)?.name
-          ?? 'there';
+        : delivery.audience === 'COPY'
+          ? 'there'
+          : delivery.envelope.recipients.find((recipient) => recipient.id === delivery.recipientId)?.name
+            ?? 'there';
 
+    const isBccDelivery = delivery.audience === 'COPY';
     const result = await sendEsigningCompletionEmail({
-      to: delivery.toEmail,
+      to: isBccDelivery ? undefined : delivery.toEmail,
+      bcc: isBccDelivery ? delivery.toEmail : undefined,
       recipientName,
       envelopeTitle: delivery.envelope.title,
       certificateId: delivery.envelope.certificateId,

@@ -37,7 +37,7 @@ const log = createLogger('email');
 // ============================================================================
 
 export interface EmailOptions {
-  to: string | string[];
+  to?: string | string[];
   subject: string;
   html: string;
   text?: string;
@@ -148,9 +148,11 @@ async function sendViaGraph(options: EmailOptions): Promise<SendEmailResult> {
   const fromName = process.env.EMAIL_FROM_NAME || 'Oakcloud';
 
   // Build recipients
-  const toRecipients = (Array.isArray(options.to) ? options.to : [options.to]).map((email) => ({
-    emailAddress: { address: email },
-  }));
+  const toRecipients = options.to
+    ? (Array.isArray(options.to) ? options.to : [options.to]).map((email) => ({
+        emailAddress: { address: email },
+      }))
+    : [];
 
   const ccRecipients = options.cc
     ? (Array.isArray(options.cc) ? options.cc : [options.cc]).map((email) => ({

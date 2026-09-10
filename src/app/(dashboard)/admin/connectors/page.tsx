@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ReasoningEffortSelect } from '@/components/connectors/reasoning-effort-select';
+import { readReasoningDefaults, type ReasoningDefaults } from '@/lib/ai/reasoning-settings';
 import { useSession } from '@/hooks/use-auth';
 import {
   useConnectors,
@@ -97,6 +99,8 @@ const MODEL_DEFAULT_GROUPS = [
   { key: 'general', label: 'General default' },
   { key: 'ocr', label: 'OCR default' },
   { key: 'research', label: 'Research default' },
+  { key: 'businessAssistant', label: 'Business Assistant default' },
+  { key: 'bizfileExtraction', label: 'BizFile extraction default' },
 ] as const;
 
 type ModelDefaultGroup = (typeof MODEL_DEFAULT_GROUPS)[number]['key'];
@@ -106,6 +110,8 @@ const EMPTY_MODEL_DEFAULTS: ModelDefaults = {
   general: '',
   ocr: '',
   research: '',
+  businessAssistant: '',
+  bizfileExtraction: '',
 };
 
 function parseMailboxUserIdsInput(raw: string): {
@@ -213,6 +219,7 @@ interface EditFormData {
   credentials: Record<string, string>;
   mailboxUserIdsText: string;
   modelDefaults: ModelDefaults;
+  reasoningDefaults: ReasoningDefaults;
   isEnabled: boolean;
 }
 
@@ -291,6 +298,7 @@ export default function ConnectorsPage() {
     credentials: {},
     mailboxUserIdsText: '',
     modelDefaults: { ...EMPTY_MODEL_DEFAULTS },
+    reasoningDefaults: {},
     isEnabled: true,
   });
   const [formError, setFormError] = useState('');
@@ -515,6 +523,13 @@ export default function ConnectorsPage() {
           delete nextSettings.modelDefaults;
           delete nextSettings.defaultModel;
         }
+        nextSettings.reasoningDefaults = editingConnector.provider === 'OPENROUTER'
+          ? Object.fromEntries(Object.entries(editForm.reasoningDefaults).filter(([group, choice]) => {
+            const model = connectorModels?.find((item) => item.modelId === choice.modelId && item.isEnabled);
+            return nextModelDefaults[group] === choice.modelId && model &&
+              (model.reasoningEfforts == null || model.reasoningEfforts.includes(choice.effort));
+          }))
+          : {};
       }
 
       updateData.settings = nextSettings;
@@ -650,6 +665,7 @@ export default function ConnectorsPage() {
       credentials: {}, // Don't pre-fill credentials
       mailboxUserIdsText: mailboxUserIds.join(', '),
       modelDefaults: extractModelDefaultsFromSettings(connector.settings),
+      reasoningDefaults: readReasoningDefaults(connector.settings?.reasoningDefaults),
       isEnabled: connector.isEnabled,
     });
     setShowCredentials({});
@@ -1421,11 +1437,12 @@ export default function ConnectorsPage() {
                     </div>
                   ) : connectorModels && connectorModels.length > 0 ? (
                     <div className="space-y-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {MODEL_DEFAULT_GROUPS.map((group) => (
                           <div key={group.key}>
                             <label className="label">{group.label}</label>
                             <select
+                              aria-label={group.label}
                               value={editForm.modelDefaults[group.key]}
                               onChange={(e) =>
                                 setEditForm({
@@ -1434,6 +1451,7 @@ export default function ConnectorsPage() {
                                     ...editForm.modelDefaults,
                                     [group.key]: e.target.value,
                                   },
+                                  reasoningDefaults: Object.fromEntries(Object.entries(editForm.reasoningDefaults).filter(([key]) => key !== group.key)),
                                 })
                               }
                               className="input input-sm w-full"
@@ -1447,6 +1465,17 @@ export default function ConnectorsPage() {
                                   </option>
                                 ))}
                             </select>
+                            {editingConnector.provider === 'OPENROUTER' && <ReasoningEffortSelect
+                              label={group.label}
+                              efforts={connectorModels.find((model) => model.modelId === editForm.modelDefaults[group.key] && model.isEnabled)?.reasoningEfforts}
+                              value={editForm.reasoningDefaults[group.key]?.modelId === editForm.modelDefaults[group.key] ? editForm.reasoningDefaults[group.key]?.effort : undefined}
+                              onChange={(effort) => setEditForm((previous) => {
+                                const reasoningDefaults = { ...previous.reasoningDefaults };
+                                if (effort) reasoningDefaults[group.key] = { modelId: previous.modelDefaults[group.key], effort };
+                                else delete reasoningDefaults[group.key];
+                                return { ...previous, reasoningDefaults };
+                              })}
+                            />}
                           </div>
                         ))}
                       </div>

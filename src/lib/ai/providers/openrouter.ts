@@ -7,6 +7,7 @@
 
 import type { AIRequestOptions, AIResponse, AICredentials, AIModel } from '../types';
 import { getModelConfig } from '../models';
+import { getOpenRouterReasoningCatalog } from '../openrouter-reasoning';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
@@ -170,6 +171,13 @@ export async function callOpenRouter(
 
   if (modelConfig.supportsTemperature !== false) {
     requestOptions.temperature = options.temperature ?? 0.1;
+  }
+
+  if (options.reasoningEffort) {
+    const catalog = await getOpenRouterReasoningCatalog();
+    if (catalog?.get(modelConfig.providerModelId)?.includes(options.reasoningEffort)) {
+      requestOptions.reasoning = { effort: options.reasoningEffort };
+    }
   }
 
   let response;

@@ -62,7 +62,7 @@ export interface EsigningEnvelopeListItem {
   recipients: Array<{
     id: string;
     name: string;
-    email: string;
+    email: string | null;
     type: EsigningRecipientType;
     status: EsigningRecipientStatus;
     signingOrder: number | null;
@@ -110,7 +110,7 @@ export interface EsigningEnvelopeDocumentDto {
 export interface EsigningEnvelopeRecipientDto {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   type: EsigningRecipientType;
   status: EsigningRecipientStatus;
   signingOrder: number | null;
@@ -179,6 +179,7 @@ export interface EsigningEnvelopeDetailDto {
   /** Nullable for responses produced before the email-subject migration. */
   emailSubject?: string | null;
   message: string | null;
+  completionCopyEmails: string[];
   status: EsigningEnvelopeStatus;
   signingOrder: EsigningSigningOrder;
   expiresAt: string | null;
@@ -220,7 +221,7 @@ export interface EsigningEnvelopeDetailDto {
 export interface EsigningManualLinkDto {
   recipientId: string;
   recipientName: string;
-  recipientEmail: string;
+  recipientEmail: string | null;
   signingUrl: string;
 }
 
@@ -244,7 +245,7 @@ export interface EsigningSigningSessionDto {
   recipient: {
     id: string;
     name: string;
-    email: string;
+    email: string | null;
     type: EsigningRecipientType;
     status: EsigningRecipientStatus;
     accessMode: EsigningRecipientAccessMode;

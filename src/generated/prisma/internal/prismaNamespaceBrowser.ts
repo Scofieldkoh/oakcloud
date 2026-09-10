@@ -174,7 +174,24 @@ export const ModelName = {
   TaskEsigningPreparation: 'TaskEsigningPreparation',
   TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext',
   AcraEntity: 'AcraEntity',
-  AcraSyncState: 'AcraSyncState'
+  AcraSyncState: 'AcraSyncState',
+  BusinessAssistantConversation: 'BusinessAssistantConversation',
+  BusinessAssistantMessage: 'BusinessAssistantMessage',
+  BusinessAssistantRun: 'BusinessAssistantRun',
+  BusinessAssistantRunItem: 'BusinessAssistantRunItem',
+  BusinessAssistantRunStep: 'BusinessAssistantRunStep',
+  BusinessAssistantProposal: 'BusinessAssistantProposal',
+  BusinessAssistantApproval: 'BusinessAssistantApproval',
+  BusinessAssistantReview: 'BusinessAssistantReview',
+  BusinessAssistantFeedback: 'BusinessAssistantFeedback',
+  BusinessAssistantMemory: 'BusinessAssistantMemory',
+  BusinessAssistantLearningChange: 'BusinessAssistantLearningChange',
+  BusinessAssistantLearningActiveTarget: 'BusinessAssistantLearningActiveTarget',
+  BusinessAssistantActionRequest: 'BusinessAssistantActionRequest',
+  BusinessAssistantCapacitySlot: 'BusinessAssistantCapacitySlot',
+  BizFileOperationReceipt: 'BizFileOperationReceipt',
+  BizFileOperationEvidence: 'BizFileOperationEvidence',
+  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -369,6 +386,7 @@ export const CompanyScalarFieldEnum = {
   annualReceiptsOrExpenditure: 'annualReceiptsOrExpenditure',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  aggregateRevision: 'aggregateRevision',
   deletedAt: 'deletedAt',
   deletedReason: 'deletedReason',
   taskIntegrationContext: 'taskIntegrationContext'
@@ -611,6 +629,7 @@ export const DocumentScalarFieldEnum = {
   extractionError: 'extractionError',
   extractedData: 'extractedData',
   version: 'version',
+  sourceRevision: 'sourceRevision',
   isLatest: 'isLatest',
   previousVersionId: 'previousVersionId',
   deletedAt: 'deletedAt',
@@ -1435,6 +1454,7 @@ export const EsigningEnvelopeScalarFieldEnum = {
   title: 'title',
   emailSubject: 'emailSubject',
   message: 'message',
+  completionCopyEmails: 'completionCopyEmails',
   status: 'status',
   signingOrder: 'signingOrder',
   expiresAt: 'expiresAt',
@@ -2723,6 +2743,372 @@ export const AcraSyncStateScalarFieldEnum = {
 } as const
 
 export type AcraSyncStateScalarFieldEnum = (typeof AcraSyncStateScalarFieldEnum)[keyof typeof AcraSyncStateScalarFieldEnum]
+
+
+export const BusinessAssistantConversationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  title: 'title',
+  status: 'status',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantConversationScalarFieldEnum = (typeof BusinessAssistantConversationScalarFieldEnum)[keyof typeof BusinessAssistantConversationScalarFieldEnum]
+
+
+export const BusinessAssistantMessageScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  conversationId: 'conversationId',
+  ownerId: 'ownerId',
+  sequence: 'sequence',
+  role: 'role',
+  type: 'type',
+  status: 'status',
+  content: 'content',
+  payload: 'payload',
+  resources: 'resources',
+  operationKind: 'operationKind',
+  clientRequestId: 'clientRequestId',
+  bodyHash: 'bodyHash',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  leaseExpiresAt: 'leaseExpiresAt',
+  availableAt: 'availableAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantMessageScalarFieldEnum = (typeof BusinessAssistantMessageScalarFieldEnum)[keyof typeof BusinessAssistantMessageScalarFieldEnum]
+
+
+export const BusinessAssistantRunScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  conversationId: 'conversationId',
+  ownerId: 'ownerId',
+  capabilityId: 'capabilityId',
+  capabilityVersion: 'capabilityVersion',
+  contractVersion: 'contractVersion',
+  schemaVersion: 'schemaVersion',
+  input: 'input',
+  resources: 'resources',
+  status: 'status',
+  activeProposalId: 'activeProposalId',
+  cancellationRequestedAt: 'cancellationRequestedAt',
+  cancellationReason: 'cancellationReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  conversationTenantId: 'conversationTenantId'
+} as const
+
+export type BusinessAssistantRunScalarFieldEnum = (typeof BusinessAssistantRunScalarFieldEnum)[keyof typeof BusinessAssistantRunScalarFieldEnum]
+
+
+export const BusinessAssistantRunItemScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runId: 'runId',
+  itemKey: 'itemKey',
+  ordinal: 'ordinal',
+  input: 'input',
+  resources: 'resources',
+  lifecycleState: 'lifecycleState',
+  executionOutcome: 'executionOutcome',
+  reviewOutcome: 'reviewOutcome',
+  requiredEffectStatus: 'requiredEffectStatus',
+  dispositionReason: 'dispositionReason',
+  operationId: 'operationId',
+  receiptRef: 'receiptRef',
+  output: 'output',
+  activeStage: 'activeStage',
+  activeAttempt: 'activeAttempt',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  leaseExpiresAt: 'leaseExpiresAt',
+  availableAt: 'availableAt',
+  retryCount: 'retryCount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantRunItemScalarFieldEnum = (typeof BusinessAssistantRunItemScalarFieldEnum)[keyof typeof BusinessAssistantRunItemScalarFieldEnum]
+
+
+export const BusinessAssistantRunStepScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runItemId: 'runItemId',
+  stage: 'stage',
+  attemptNumber: 'attemptNumber',
+  status: 'status',
+  inputArtifact: 'inputArtifact',
+  outputArtifact: 'outputArtifact',
+  error: 'error',
+  providerRef: 'providerRef',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  nextRetryAt: 'nextRetryAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantRunStepScalarFieldEnum = (typeof BusinessAssistantRunStepScalarFieldEnum)[keyof typeof BusinessAssistantRunStepScalarFieldEnum]
+
+
+export const BusinessAssistantProposalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runId: 'runId',
+  revision: 'revision',
+  status: 'status',
+  preparedArtifact: 'preparedArtifact',
+  preparedHash: 'preparedHash',
+  eligibleItems: 'eligibleItems',
+  effectManifest: 'effectManifest',
+  policyVersion: 'policyVersion',
+  serializerVersion: 'serializerVersion',
+  schemaVersion: 'schemaVersion',
+  expiresAt: 'expiresAt',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantProposalScalarFieldEnum = (typeof BusinessAssistantProposalScalarFieldEnum)[keyof typeof BusinessAssistantProposalScalarFieldEnum]
+
+
+export const BusinessAssistantApprovalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runId: 'runId',
+  proposalId: 'proposalId',
+  revision: 'revision',
+  selectedItems: 'selectedItems',
+  selectedBindings: 'selectedBindings',
+  decision: 'decision',
+  policyVersion: 'policyVersion',
+  approverId: 'approverId',
+  actionKey: 'actionKey',
+  actionBodyHash: 'actionBodyHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type BusinessAssistantApprovalScalarFieldEnum = (typeof BusinessAssistantApprovalScalarFieldEnum)[keyof typeof BusinessAssistantApprovalScalarFieldEnum]
+
+
+export const BusinessAssistantReviewScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runItemId: 'runItemId',
+  attemptNumber: 'attemptNumber',
+  verdict: 'verdict',
+  executionConformance: 'executionConformance',
+  sourceAlignment: 'sourceAlignment',
+  evidence: 'evidence',
+  findings: 'findings',
+  coverage: 'coverage',
+  schemaVersion: 'schemaVersion',
+  promptVersion: 'promptVersion',
+  providerVersion: 'providerVersion',
+  createdAt: 'createdAt'
+} as const
+
+export type BusinessAssistantReviewScalarFieldEnum = (typeof BusinessAssistantReviewScalarFieldEnum)[keyof typeof BusinessAssistantReviewScalarFieldEnum]
+
+
+export const BusinessAssistantFeedbackScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  targetType: 'targetType',
+  targetId: 'targetId',
+  eventType: 'eventType',
+  comment: 'comment',
+  bodyHash: 'bodyHash',
+  provenance: 'provenance',
+  adjudication: 'adjudication',
+  clientEventId: 'clientEventId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantFeedbackScalarFieldEnum = (typeof BusinessAssistantFeedbackScalarFieldEnum)[keyof typeof BusinessAssistantFeedbackScalarFieldEnum]
+
+
+export const BusinessAssistantMemoryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  scope: 'scope',
+  conversationId: 'conversationId',
+  capabilityId: 'capabilityId',
+  capabilityVersion: 'capabilityVersion',
+  key: 'key',
+  value: 'value',
+  provenance: 'provenance',
+  evidenceCount: 'evidenceCount',
+  risk: 'risk',
+  state: 'state',
+  version: 'version',
+  effectiveAt: 'effectiveAt',
+  expiresAt: 'expiresAt',
+  supersedesId: 'supersedesId',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantMemoryScalarFieldEnum = (typeof BusinessAssistantMemoryScalarFieldEnum)[keyof typeof BusinessAssistantMemoryScalarFieldEnum]
+
+
+export const BusinessAssistantLearningChangeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  targetKey: 'targetKey',
+  targetKind: 'targetKind',
+  risk: 'risk',
+  baselineVersion: 'baselineVersion',
+  candidateVersion: 'candidateVersion',
+  candidateValue: 'candidateValue',
+  evidence: 'evidence',
+  evaluation: 'evaluation',
+  state: 'state',
+  expectedVersion: 'expectedVersion',
+  approvedById: 'approvedById',
+  approvedAt: 'approvedAt',
+  promotedAt: 'promotedAt',
+  rollbackTarget: 'rollbackTarget',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantLearningChangeScalarFieldEnum = (typeof BusinessAssistantLearningChangeScalarFieldEnum)[keyof typeof BusinessAssistantLearningChangeScalarFieldEnum]
+
+
+export const BusinessAssistantLearningActiveTargetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  targetKey: 'targetKey',
+  activeVersion: 'activeVersion',
+  activeValue: 'activeValue',
+  previousVersion: 'previousVersion',
+  previousValue: 'previousValue',
+  activeChangeId: 'activeChangeId',
+  revision: 'revision',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantLearningActiveTargetScalarFieldEnum = (typeof BusinessAssistantLearningActiveTargetScalarFieldEnum)[keyof typeof BusinessAssistantLearningActiveTargetScalarFieldEnum]
+
+
+export const BusinessAssistantActionRequestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  conversationId: 'conversationId',
+  runId: 'runId',
+  actionKind: 'actionKind',
+  clientRequestId: 'clientRequestId',
+  bodyHash: 'bodyHash',
+  response: 'response',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantActionRequestScalarFieldEnum = (typeof BusinessAssistantActionRequestScalarFieldEnum)[keyof typeof BusinessAssistantActionRequestScalarFieldEnum]
+
+
+export const BusinessAssistantCapacitySlotScalarFieldEnum = {
+  id: 'id',
+  slotKey: 'slotKey',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  runItemId: 'runItemId',
+  stage: 'stage',
+  leaseExpiresAt: 'leaseExpiresAt',
+  heartbeatAt: 'heartbeatAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantCapacitySlotScalarFieldEnum = (typeof BusinessAssistantCapacitySlotScalarFieldEnum)[keyof typeof BusinessAssistantCapacitySlotScalarFieldEnum]
+
+
+export const BizFileOperationReceiptScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  operationId: 'operationId',
+  capabilityId: 'capabilityId',
+  capabilityVersion: 'capabilityVersion',
+  schemaVersion: 'schemaVersion',
+  mode: 'mode',
+  companyId: 'companyId',
+  documentId: 'documentId',
+  payloadHash: 'payloadHash',
+  expectedAggregateRevision: 'expectedAggregateRevision',
+  beforeRevision: 'beforeRevision',
+  afterRevision: 'afterRevision',
+  status: 'status',
+  effectStatus: 'effectStatus',
+  safeError: 'safeError',
+  committedAt: 'committedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BizFileOperationReceiptScalarFieldEnum = (typeof BizFileOperationReceiptScalarFieldEnum)[keyof typeof BizFileOperationReceiptScalarFieldEnum]
+
+
+export const BizFileOperationEvidenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  receiptId: 'receiptId',
+  kind: 'kind',
+  artifact: 'artifact',
+  artifactHash: 'artifactHash',
+  sourceRef: 'sourceRef',
+  createdAt: 'createdAt'
+} as const
+
+export type BizFileOperationEvidenceScalarFieldEnum = (typeof BizFileOperationEvidenceScalarFieldEnum)[keyof typeof BizFileOperationEvidenceScalarFieldEnum]
+
+
+export const BizFileOperationEffectIntentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  receiptId: 'receiptId',
+  effectKind: 'effectKind',
+  target: 'target',
+  payload: 'payload',
+  payloadHash: 'payloadHash',
+  state: 'state',
+  attemptCount: 'attemptCount',
+  nextAttemptAt: 'nextAttemptAt',
+  lastError: 'lastError',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  leaseExpiresAt: 'leaseExpiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BizFileOperationEffectIntentScalarFieldEnum = (typeof BizFileOperationEffectIntentScalarFieldEnum)[keyof typeof BizFileOperationEffectIntentScalarFieldEnum]
 
 
 export const SortOrder = {

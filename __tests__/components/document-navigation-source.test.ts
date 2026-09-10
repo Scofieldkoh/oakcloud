@@ -35,11 +35,8 @@ describe('document navigation source', () => {
     const companyProfile = readSource(
       'src/components/companies/company-detail/company-profile-sections.tsx',
     );
-    const helpbot = readSource('src/services/ai-helpbot.service.ts');
 
     expect(companyProfile).toContain('href={`/processing?companyId=${companyId}`}');
-    expect(helpbot).toContain('target: { path: `/processing?companyId=${companyId}` }');
     expect(companyProfile).not.toContain('href={`/companies/${companyId}/documents`}');
-    expect(helpbot).not.toContain('target: { path: `/companies/${companyId}/documents` }');
   });
 });
