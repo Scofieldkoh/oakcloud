@@ -6,6 +6,13 @@ import { ArtifactView } from '@/components/ui/structured-data-view';
 import { useAssistantCorrection, type AssistantCorrectionResult } from '@/hooks/use-business-assistant';
 import { BIZFILE_CORRECTION_FIELDS, eligibleBizFileCorrectionFindings } from './correction-fields';
 
+const correctionFieldGroups = BIZFILE_CORRECTION_FIELDS.reduce<Array<{ group: string; fields: typeof BIZFILE_CORRECTION_FIELDS[number][] }>>((groups, field) => {
+  const existing = groups.find((group) => group.group === field.group);
+  if (existing) existing.fields.push(field);
+  else groups.push({ group: field.group, fields: [field] });
+  return groups;
+}, []);
+
 export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings }: {
   workspaceId: string;
   runId: string;
@@ -47,10 +54,13 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
     <p className="mt-1 text-xs text-text-secondary">Only deterministic values from this independent review can be corrected here. Creating a correction makes a new proposal; stored company data does not change until that proposal is reviewed and approved.</p>
     <details className="mt-3 text-xs">
       <summary className="cursor-pointer font-medium text-text-secondary">Supported correction fields ({BIZFILE_CORRECTION_FIELDS.length})</summary>
-      <div className="mt-2 grid gap-x-4 gap-y-1 sm:grid-cols-2">
-        {BIZFILE_CORRECTION_FIELDS.map((field) => <span key={field.path}>{field.label}</span>)}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {correctionFieldGroups.map((group) => <section key={group.group}>
+          <h6 className="font-medium text-text-secondary">{group.group}</h6>
+          <ul className="mt-1 space-y-1 text-text-muted">{group.fields.map((field) => <li key={field.path}>{field.label}</li>)}</ul>
+        </section>)}
       </div>
-      <p className="mt-2 text-text-muted">Collection rows such as officers, shareholders, charges, share-capital rows, and former-name rows are not supported by this correction flow.</p>
+      <p className="mt-3 text-text-muted">Collection rows such as officers, shareholders, charges, share-capital rows, and former-name rows are not supported by this correction flow.</p>
     </details>
 
     {eligible.length > 0 ? <div className="mt-3 space-y-2">
@@ -73,7 +83,7 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
       </Button>
     </div> : <p className="mt-3 text-xs text-text-secondary">This review has no supported deterministic field corrections.</p>}
 
-    {created ? <p role="status" className="mt-3 text-xs">Correction proposal created. Review and approve the new proposal before any stored company data changes.</p> : null}
+    {created ? <p role="status" className="mt-3 text-xs">Correction proposal created. A new approval card has been added to this conversation; review and approve it before any stored company data changes.</p> : null}
     {correction.error ? <p role="alert" className="mt-3 text-xs text-status-error">{correction.error.message}</p> : null}
   </section>;
 }
