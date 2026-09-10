@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { LocalStorageAdapter } from '@/lib/storage/local.adapter';
 import { hashBizFileValue } from '@/services/bizfile/change-plan';
 import { drainBizFileOperationEffects } from '@/services/bizfile/application/effect-executor';
+import { createBizFileOperationRepository } from '@/services/bizfile/application/operation-repository';
 
 const connectionString = process.env.BUSINESS_ASSISTANT_TEST_DATABASE_URL;
 const databaseUrl = process.env.DATABASE_URL;
@@ -151,27 +152,24 @@ suite('Business Assistant BizFile correction retained-source storage E2E', () =>
       sourceRevision,
       finalizedSourceRevision: sourceRevision + 1,
     };
-    await prisma.bizFileOperationEffectIntent.createMany({
-      data: [
-        {
-          tenantId,
-          receiptId,
-          effectKind: 'STORAGE_FINALIZE',
-          target: `document:${documentId}`,
-          payload: storagePayload,
-          payloadHash: hashBizFileValue(storagePayload),
-          state: 'PENDING',
-        },
-        {
-          tenantId,
-          receiptId,
-          effectKind: 'PAGE_PREPARATION',
-          target: `document:${documentId}`,
-          payload: pagePayload,
-          payloadHash: hashBizFileValue(pagePayload),
-          state: 'PENDING',
-        },
-      ],
+    const repository = createBizFileOperationRepository();
+    await prisma.$transaction(async (tx) => {
+      await repository.effect(tx, {
+        tenantId,
+        receiptId,
+        effectKind: 'STORAGE_FINALIZE',
+        target: `document:${documentId}`,
+        payload: storagePayload,
+        payloadHash: hashBizFileValue(storagePayload),
+      });
+      await repository.effect(tx, {
+        tenantId,
+        receiptId,
+        effectKind: 'PAGE_PREPARATION',
+        target: `document:${documentId}`,
+        payload: pagePayload,
+        payloadHash: hashBizFileValue(pagePayload),
+      });
     });
   });
 
@@ -194,9 +192,17 @@ suite('Business Assistant BizFile correction retained-source storage E2E', () =>
     await prisma.$disconnect();
   });
 
-  it('completes same-pointer finalization and page preparation against filesystem storage', async () => {
+  it('orders required effects and completes same-pointer finalization against filesystem storage', async () => {
     const before = await storage.download(sourceKey);
     expect(before).toEqual(sourceBytes);
+
+    const queued = await prisma.bizFileOperationEffectIntent.findMany({
+      where: { tenantId, receiptId },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { effectKind: true, createdAt: true },
+    });
+    expect(queued.map((effect) => effect.effectKind)).toEqual(['STORAGE_FINALIZE', 'PAGE_PREPARATION']);
+    expect(queued[1].createdAt.getTime()).toBeGreaterThan(queued[0].createdAt.getTime());
 
     const drained = await drainBizFileOperationEffects({
       db: prisma,
