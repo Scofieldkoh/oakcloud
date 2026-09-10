@@ -32,6 +32,7 @@ export function LinkedCompanySignerQuickAdd({
   const [pendingContactId, setPendingContactId] = useState<string | null>(null);
   const { data, isLoading } = useContacts({
     companyId,
+    contactType: 'INDIVIDUAL',
     limit: 50,
     sortBy: 'fullName',
     sortOrder: 'asc',
@@ -73,7 +74,7 @@ export function LinkedCompanySignerQuickAdd({
       </div>
 
       {!isLoading && contacts.length === 0 ? (
-        <p className="text-xs text-text-muted">No contacts are linked to this company.</p>
+        <p className="text-xs text-text-muted">No individual contacts are linked to this company.</p>
       ) : null}
 
       {contacts.length > 0 ? (
