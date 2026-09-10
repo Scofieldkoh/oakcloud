@@ -7,8 +7,8 @@ export function ReasoningEffortSelect({ label, efforts, value, onChange }: {
   onChange: (value: ReasoningEffort | undefined) => void;
 }) {
   const supported = Boolean(efforts?.length);
-  return <div className="mt-2">
-    <label className="label">Reasoning effort</label>
+  return <div className="mt-2 md:mt-0">
+    <label className="label md:sr-only">Reasoning effort</label>
     <select aria-label={`${label} reasoning effort`} className="input input-sm w-full"
       disabled={!supported} value={value && efforts?.includes(value) ? value : ''}
       onChange={(event) => onChange(event.target.value ? event.target.value as ReasoningEffort : undefined)}>
