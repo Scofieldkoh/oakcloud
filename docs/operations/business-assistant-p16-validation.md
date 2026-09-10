@@ -226,4 +226,4 @@ Stop P16 and leave the candidate not-ready when any of the following occurs:
 - backup/restore or retention behavior cannot be reproduced;
 - operator evidence contains secrets or customer data that cannot be safely retained.
 
-A stopped run should be sealed only as an archival record outside the readiness workflow; do not mark missing work PASS. Start a fresh evidence run after the defect or environmental blocker is resolved.
+A stopped/incomplete run must remain unsealed because sealing is reserved for a fully passing readiness record. Preserve the incomplete manifest and referenced evidence in the approved archival location with its own immutable storage/versioning controls, then start a fresh P16 evidence run after the defect or environmental blocker is resolved. Never mark missing work PASS merely to obtain a seal.
