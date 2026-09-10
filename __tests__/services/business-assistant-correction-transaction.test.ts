@@ -13,7 +13,6 @@ describe('correction serializable transaction bounds', () => {
         return work({ marker: 'tx' });
       }),
     };
-
     await expect(runCorrectionSerializableTransaction(client as never, async (tx) => tx)).resolves.toEqual({ marker: 'tx' });
     expect(calls).toEqual([{
       isolationLevel: 'Serializable',
@@ -31,16 +30,22 @@ describe('correction serializable transaction bounds', () => {
         return work({ attempt: attempts });
       }),
     };
-
     await expect(runCorrectionSerializableTransaction(client as never, async (tx) => tx)).resolves.toEqual({ attempt: 3 });
     expect(client.$transaction).toHaveBeenCalledTimes(3);
   });
 
-  it('stops after the configured retry budget when every attempt conflicts', async () => {
-    const conflict = { code: 'P2034' };
+  it('fails after the bounded retry budget without a fourth transaction attempt', async () => {
+    const conflict = Object.assign(new Error('write conflict'), { code: 'P2034' });
     const client = { $transaction: vi.fn().mockRejectedValue(conflict) };
     await expect(runCorrectionSerializableTransaction(client as never, async () => undefined)).rejects.toBe(conflict);
     expect(client.$transaction).toHaveBeenCalledTimes(BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.maxAttempts);
+    for (const call of client.$transaction.mock.calls) {
+      expect(call[1]).toEqual({
+        isolationLevel: 'Serializable',
+        maxWait: BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.maxWaitMs,
+        timeout: BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.timeoutMs,
+      });
+    }
   });
 
   it('does not retry a timeout or other non-serialization failure', async () => {

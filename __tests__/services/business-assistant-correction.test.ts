@@ -4,13 +4,13 @@ import { z } from 'zod';
 const mocks = vi.hoisted(() => ({
   barrier: vi.fn(), actor: vi.fn(), access: vi.fn(), registry: vi.fn(), prepare: vi.fn(), prefetch: vi.fn(), proposal: vi.fn(),
   transaction: vi.fn(), preflightRun: vi.fn(), preflightExisting: vi.fn(), run: vi.fn(), review: vi.fn(), item: vi.fn(), existing: vi.fn(), backups: vi.fn(),
-  createRun: vi.fn(), createItem: vi.fn(), action: vi.fn(),
+  createRun: vi.fn(), createItem: vi.fn(), action: vi.fn(), updateRun: vi.fn(), updateItem: vi.fn(), updateReview: vi.fn(), deleteRun: vi.fn(), deleteItem: vi.fn(), deleteReview: vi.fn(),
 }));
 vi.mock('@/lib/prisma', () => ({ prisma: {
   businessAssistantRun: { findFirst: mocks.preflightRun },
   businessAssistantActionRequest: { findFirst: mocks.preflightExisting },
 } }));
-vi.mock('@/services/business-assistant/correction-transaction', () => ({ runCorrectionSerializableTransaction: mocks.transaction }));
+vi.mock('@/lib/prisma-transaction', () => ({ runSerializableTransaction: mocks.transaction }));
 vi.mock('@/lib/business-operation-backup-barrier', () => ({ acquireBusinessOperationBarrier: mocks.barrier }));
 vi.mock('@/lib/fresh-authorization', () => ({ resolveFreshActor: mocks.actor }));
 vi.mock('@/services/business-assistant/policy.service', () => ({ assertAssistantMutationAccess: mocks.access }));
@@ -28,8 +28,9 @@ const item = { id: 'old-item', tenantId: 'tenant', runId: 'old-run', operationId
   lifecycleState: 'NEEDS_REVIEW', activeStage: null,
   executionOutcome: 'COMMITTED', receiptRef: { receiptId: 'old-receipt' }, reviews: [{ id: 'review' }] };
 const tx = {
-  workspaceBackup: { findMany: mocks.backups }, businessAssistantRun: { findFirst: mocks.run, create: mocks.createRun },
-  businessAssistantRunItem: { findFirst: mocks.item, create: mocks.createItem }, businessAssistantReview: { findFirst: mocks.review },
+  workspaceBackup: { findMany: mocks.backups }, businessAssistantRun: { findFirst: mocks.run, create: mocks.createRun, update: mocks.updateRun, delete: mocks.deleteRun },
+  businessAssistantRunItem: { findFirst: mocks.item, create: mocks.createItem, update: mocks.updateItem, delete: mocks.deleteItem },
+  businessAssistantReview: { findFirst: mocks.review, update: mocks.updateReview, delete: mocks.deleteReview },
   businessAssistantActionRequest: { findFirst: mocks.existing, create: mocks.action },
 };
 
@@ -83,6 +84,30 @@ describe('module-neutral correction proposals', () => {
     expect(mocks.prefetch.mock.invocationCallOrder[0]).toBeLessThan(mocks.barrier.mock.invocationCallOrder[0]);
     expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.actor.mock.invocationCallOrder[0]);
     expect(mocks.actor.mock.invocationCallOrder[0]).toBeLessThan(mocks.prepare.mock.invocationCallOrder[0]);
+  });
+
+  it('preserves the historical source lifecycle, operation, receipt, review, and evidence while creating correction lineage', async () => {
+    const sourceRunBefore = structuredClone(run);
+    const sourceItemBefore = structuredClone(item);
+    const sourceReview = { id: 'review', runItemId: 'old-item', attemptNumber: 1, verdict: 'FAIL', evidence: { immutable: true } };
+    mocks.review.mockResolvedValue(sourceReview);
+    const reviewBefore = structuredClone(sourceReview);
+
+    const result = await createCorrectionProposal(input);
+
+    expect(run).toEqual(sourceRunBefore);
+    expect(item).toEqual(sourceItemBefore);
+    expect(sourceReview).toEqual(reviewBefore);
+    expect(item.operationId).toBe('old-operation');
+    expect(item.receiptRef).toEqual({ receiptId: 'old-receipt' });
+    expect(mocks.updateRun).not.toHaveBeenCalled();
+    expect(mocks.updateItem).not.toHaveBeenCalled();
+    expect(mocks.updateReview).not.toHaveBeenCalled();
+    expect(mocks.deleteRun).not.toHaveBeenCalled();
+    expect(mocks.deleteItem).not.toHaveBeenCalled();
+    expect(mocks.deleteReview).not.toHaveBeenCalled();
+    expect(mocks.createRun).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ id: result.runId }) }));
+    expect(mocks.createItem).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ id: result.runItemId }) }));
   });
 
   it('keeps existing correction handlers compatible when they have no prefetch stage', async () => {
