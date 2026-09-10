@@ -106,6 +106,8 @@ jobs:
         run: npx prisma migrate deploy
       - name: Test durable worker and concurrent authorization changes
         run: npm run test:business-assistant:postgres
+      - name: Test correction transaction lock and timeout hardening
+        run: npx vitest run __tests__/integration/business-assistant-correction-concurrency.postgres.test.ts --maxWorkers=1
       - name: Test canonical revisions, reconciliation, and effects
         run: npx vitest run __tests__/integration/bizfile --maxWorkers=1
 
