@@ -10,7 +10,7 @@ vi.mock('@/lib/prisma', () => ({ prisma: {
   businessAssistantRun: { findFirst: mocks.preflightRun },
   businessAssistantActionRequest: { findFirst: mocks.preflightExisting },
 } }));
-vi.mock('@/lib/prisma-transaction', () => ({ runSerializableTransaction: mocks.transaction }));
+vi.mock('@/services/business-assistant/correction-transaction', () => ({ runCorrectionSerializableTransaction: mocks.transaction }));
 vi.mock('@/lib/business-operation-backup-barrier', () => ({ acquireBusinessOperationBarrier: mocks.barrier }));
 vi.mock('@/lib/fresh-authorization', () => ({ resolveFreshActor: mocks.actor }));
 vi.mock('@/services/business-assistant/policy.service', () => ({ assertAssistantMutationAccess: mocks.access }));
