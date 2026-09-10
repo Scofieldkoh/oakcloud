@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 const mocks = vi.hoisted(() => ({
-  barrier: vi.fn(), actor: vi.fn(), access: vi.fn(), registry: vi.fn(), prepare: vi.fn(), proposal: vi.fn(),
-  transaction: vi.fn(), run: vi.fn(), review: vi.fn(), item: vi.fn(), existing: vi.fn(), backups: vi.fn(),
+  barrier: vi.fn(), actor: vi.fn(), access: vi.fn(), registry: vi.fn(), prepare: vi.fn(), prefetch: vi.fn(), proposal: vi.fn(),
+  transaction: vi.fn(), preflightRun: vi.fn(), run: vi.fn(), review: vi.fn(), item: vi.fn(), existing: vi.fn(), backups: vi.fn(),
   createRun: vi.fn(), createItem: vi.fn(), action: vi.fn(),
 }));
-vi.mock('@/lib/prisma', () => ({ prisma: {} }));
+vi.mock('@/lib/prisma', () => ({ prisma: { businessAssistantRun: { findFirst: mocks.preflightRun } } }));
 vi.mock('@/lib/prisma-transaction', () => ({ runSerializableTransaction: mocks.transaction }));
 vi.mock('@/lib/business-operation-backup-barrier', () => ({ acquireBusinessOperationBarrier: mocks.barrier }));
 vi.mock('@/lib/fresh-authorization', () => ({ resolveFreshActor: mocks.actor }));
@@ -30,6 +30,12 @@ const tx = {
   businessAssistantActionRequest: { findFirst: mocks.existing, create: mocks.action },
 };
 
+function capability(withPrefetch = true) {
+  const prepareCorrection = withPrefetch ? Object.assign(mocks.prepare, { prefetch: mocks.prefetch }) : mocks.prepare;
+  return { id: run.capabilityId, version: '1.0', contractVersion: '1', approvalPolicyVersion: '1',
+    executionKind: 'CANONICAL_WRITE', reviewPolicy: 'REQUIRED', preparedSchema: z.unknown(), prepareCorrection };
+}
+
 describe('module-neutral correction proposals', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,13 +44,14 @@ describe('module-neutral correction proposals', () => {
     mocks.access.mockResolvedValue({ allowed: true });
     mocks.actor.mockResolvedValue({ userId: 'user' });
     mocks.backups.mockResolvedValue([]);
+    mocks.preflightRun.mockResolvedValue(run);
     mocks.run.mockResolvedValue(run);
     mocks.item.mockResolvedValue(item);
     mocks.review.mockResolvedValue({ id: 'review', runItemId: 'old-item', attemptNumber: 1 });
     mocks.existing.mockResolvedValue(null);
     mocks.transaction.mockImplementation(async (_db: unknown, work: (client: unknown) => unknown) => work(tx));
-    mocks.registry.mockReturnValue({ id: run.capabilityId, version: '1.0', contractVersion: '1', approvalPolicyVersion: '1',
-      executionKind: 'CANONICAL_WRITE', reviewPolicy: 'REQUIRED', preparedSchema: z.unknown(), prepareCorrection: mocks.prepare });
+    mocks.registry.mockImplementation(() => capability());
+    mocks.prefetch.mockResolvedValue({ sourceHash: 'prefetched-hash' });
     mocks.prepare.mockImplementation(async (context) => ({ status: 'PREPARED',
       preparedItem: { itemId: context.nextItemId, itemKey: 'correction', input: { corrected: 'value' }, status: 'ELIGIBLE', resources: [] },
       resources: [], lineage: { originalReceiptId: 'old-receipt' },
@@ -53,18 +60,31 @@ describe('module-neutral correction proposals', () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
-  it('dispatches a non-BizFile capability and creates a fresh unapproved item in the same transaction', async () => {
+  it('prefetches before the transaction, rechecks state, and creates a fresh unapproved item', async () => {
     const result = await createCorrectionProposal(input);
     expect(result.runId).not.toBe('old-run');
     expect(result.runItemId).not.toBe('old-item');
     expect(result).not.toHaveProperty('operationId');
-    expect(mocks.prepare).toHaveBeenCalledWith(expect.objectContaining({ db: tx, sourceRunId: 'old-run', sourceItem: expect.objectContaining({ operationId: 'old-operation' }) }));
+    expect(mocks.prefetch).toHaveBeenCalledWith(expect.objectContaining({ actor, sourceRunId: 'old-run' }));
+    expect(mocks.prepare).toHaveBeenCalledWith(
+      expect.objectContaining({ db: tx, sourceRunId: 'old-run', sourceItem: expect.objectContaining({ operationId: 'old-operation' }) }),
+      { sourceHash: 'prefetched-hash' },
+    );
     const created = mocks.createItem.mock.calls[0][0].data;
     expect(created).toMatchObject({ lifecycleState: 'WAITING_CONFIRMATION', executionOutcome: 'NOT_STARTED' });
     expect(created).not.toHaveProperty('operationId');
     expect(mocks.proposal).toHaveBeenCalledWith(expect.objectContaining({ runId: result.runId }), tx);
+    expect(mocks.access.mock.invocationCallOrder[0]).toBeLessThan(mocks.prefetch.mock.invocationCallOrder[0]);
+    expect(mocks.prefetch.mock.invocationCallOrder[0]).toBeLessThan(mocks.barrier.mock.invocationCallOrder[0]);
     expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.actor.mock.invocationCallOrder[0]);
     expect(mocks.actor.mock.invocationCallOrder[0]).toBeLessThan(mocks.prepare.mock.invocationCallOrder[0]);
+  });
+
+  it('keeps existing correction handlers compatible when they have no prefetch stage', async () => {
+    mocks.registry.mockImplementation(() => capability(false));
+    await createCorrectionProposal(input);
+    expect(mocks.prefetch).not.toHaveBeenCalled();
+    expect(mocks.prepare).toHaveBeenCalledWith(expect.any(Object), undefined);
   });
 
   it('replays only the same request without creating another proposal', async () => {
@@ -78,9 +98,11 @@ describe('module-neutral correction proposals', () => {
   });
 
   it('rejects a run outside the current owner scope', async () => {
+    mocks.preflightRun.mockResolvedValue(null);
     mocks.run.mockResolvedValue(null);
     await expect(createCorrectionProposal(input)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(mocks.run).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'old-run', tenantId: 'tenant', ownerId: 'user' } }));
+    expect(mocks.prefetch).not.toHaveBeenCalled();
     expect(mocks.prepare).not.toHaveBeenCalled();
   });
 
@@ -106,6 +128,7 @@ describe('module-neutral correction proposals', () => {
     if (reason === 'revocation') mocks.actor.mockResolvedValue(null);
     else mocks.backups.mockResolvedValue([{ status: 'COMPLETED', errorDetails: { businessAssistantDispatchPaused: true } }]);
     await expect(createCorrectionProposal(input)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(mocks.prefetch).toHaveBeenCalledOnce();
     expect(mocks.createRun).not.toHaveBeenCalled();
     expect(mocks.prepare).not.toHaveBeenCalled();
   });
@@ -118,6 +141,7 @@ describe('module-neutral correction proposals', () => {
 
   it('rejects mismatched explicit workspace context', async () => {
     await expect(createCorrectionProposal({ ...input, rawInput: { ...rawInput, workspaceId: 'other' } })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(mocks.preflightRun).not.toHaveBeenCalled();
     expect(mocks.transaction).not.toHaveBeenCalled();
   });
 });
