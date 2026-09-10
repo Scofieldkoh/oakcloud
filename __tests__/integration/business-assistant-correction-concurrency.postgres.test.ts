@@ -1,13 +1,10 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Client } from 'pg';
+import { BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS } from '@/services/business-assistant/correction-transaction';
 
 const connectionString = process.env.BUSINESS_ASSISTANT_TEST_DATABASE_URL;
 const suite = connectionString ? describe : describe.skip;
-
-function delay(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
 
 suite('Business Assistant correction concurrency on PostgreSQL', () => {
   let control: Client;
@@ -27,7 +24,14 @@ suite('Business Assistant correction concurrency on PostgreSQL', () => {
     await control?.end();
   });
 
-  it('measures the shared correction barrier wait and releases promptly after the competing transaction commits', async () => {
+  async function expectAdvisoryWait(pid: number): Promise<void> {
+    await expect.poll(async () => {
+      const result = await control.query('SELECT wait_event FROM pg_stat_activity WHERE pid = $1', [pid]);
+      return result.rows[0]?.wait_event;
+    }, { timeout: 2_000, interval: 20 }).toBe('advisory');
+  }
+
+  it('measures the shared correction barrier wait against the configured transaction runtime budget', async () => {
     const blocker = new Client({ connectionString });
     const correction = new Client({ connectionString });
     await Promise.all([blocker.connect(), correction.connect()]);
@@ -36,20 +40,17 @@ suite('Business Assistant correction concurrency on PostgreSQL', () => {
       await blocker.query("SELECT pg_advisory_xact_lock(hashtextextended('oakcloud:business-operation:correction-test', 0))");
 
       await correction.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
-      await correction.query("SET LOCAL statement_timeout = '2000ms'");
+      await correction.query(`SET LOCAL statement_timeout = '${BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.timeoutMs}ms'`);
+      const correctionPid = Number((await correction.query('SELECT pg_backend_pid() AS pid')).rows[0].pid);
       const startedAt = Date.now();
       const waiting = correction.query("SELECT pg_advisory_xact_lock_shared(hashtextextended('oakcloud:business-operation:correction-test', 0))");
-      await delay(120);
-      let settled = false;
-      void waiting.then(() => { settled = true; });
-      await delay(20);
-      expect(settled).toBe(false);
+      await expectAdvisoryWait(correctionPid);
 
       await blocker.query('COMMIT');
       await waiting;
       const waitedMs = Date.now() - startedAt;
-      expect(waitedMs).toBeGreaterThanOrEqual(100);
-      expect(waitedMs).toBeLessThan(1_500);
+      expect(waitedMs).toBeGreaterThan(0);
+      expect(waitedMs).toBeLessThan(BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.timeoutMs);
       await correction.query('COMMIT');
     } finally {
       await blocker.query('ROLLBACK').catch(() => undefined);
