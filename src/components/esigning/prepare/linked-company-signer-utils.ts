@@ -36,14 +36,17 @@ export function getLinkedCompanyQuickAddState(
   const email = normalizeSignerEmail(contact.defaultEmail);
   const isAdded = Boolean(email) && signerEmails.has(email);
   const isPending = pendingContactId === contact.id;
-  const isDisabled = !email || isAdded || Boolean(pendingContactId);
+  const isBlockedByPending = Boolean(pendingContactId) && !isPending;
+  const isDisabled = !email || isAdded || isPending || isBlockedByPending;
   const stateLabel = !email
     ? `${contact.fullName} has no default email`
     : isAdded
       ? `${contact.fullName} is already added as a signer`
       : isPending
         ? `Adding ${contact.fullName} as signer`
-        : `Add ${contact.fullName} as signer`;
+        : isBlockedByPending
+          ? `Wait for the current signer to finish adding before adding ${contact.fullName}`
+          : `Add ${contact.fullName} as signer`;
 
   return {
     email,
