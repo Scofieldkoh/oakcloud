@@ -5,6 +5,7 @@ import { Check, Loader2, UserPlus } from 'lucide-react';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { EsigningRecipientInput } from '@/lib/validations/esigning';
 import { useContacts } from '@/hooks/use-contacts';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
 interface LinkedCompanySignerQuickAddProps {
@@ -26,6 +27,7 @@ export function LinkedCompanySignerQuickAdd({
   canEdit,
   onAddRecipient,
 }: LinkedCompanySignerQuickAddProps) {
+  const toast = useToast();
   const [pendingContactId, setPendingContactId] = useState<string | null>(null);
   const { data, isLoading } = useContacts({
     companyId,
@@ -61,6 +63,9 @@ export function LinkedCompanySignerQuickAdd({
         signingOrder: null,
         accessMode: 'EMAIL_LINK',
       });
+      toast.success(`${contact.fullName} added as a signer`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Failed to add ${contact.fullName} as a signer`);
     } finally {
       setPendingContactId(null);
     }
