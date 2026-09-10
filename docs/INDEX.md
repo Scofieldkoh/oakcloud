@@ -51,7 +51,7 @@
 |----------|-------------|
 | [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | General assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
 | [Business Assistant BizFile Correction Workflow](./features/business-assistant/CORRECTION_WORKFLOW.md) | Implemented P12 deterministic-field correction UI, shared contract, API semantics, safety gates, and remaining correction work |
-| [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Current implementation checkpoint, review findings, 16 work packages, validation evidence, and next-session scope |
+| [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Current implementation checkpoint, completed correction UI review record, active P12-P16 work, validation evidence, and next-session scope |
 | [SharePoint Signed-Document Filing](./superpowers/specs/2026-09-01-sharepoint-signed-document-filing-design.md) | Company folder mapping, template-relative routing, durable filing, and orphan recovery |
 | [SharePoint Signed-Document Filing Implementation Plan](./superpowers/plans/2026-09-01-sharepoint-signed-document-filing.md) | Single-phase, test-first implementation tasks and completion gate |
 
