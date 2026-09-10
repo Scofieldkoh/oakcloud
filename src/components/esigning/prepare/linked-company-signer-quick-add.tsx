@@ -76,7 +76,7 @@ export function LinkedCompanySignerQuickAdd({
   }
 
   return (
-    <div className="rounded-xl border border-border-primary bg-background-secondary p-3">
+    <div className="rounded-xl border border-border-primary bg-background-secondary p-3" aria-busy={isLoading || Boolean(pendingContactId)}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-text-secondary">Quick add from linked company</p>
@@ -84,7 +84,9 @@ export function LinkedCompanySignerQuickAdd({
             <p className="truncate text-xs text-text-muted">{companyName}</p>
           ) : null}
         </div>
-        {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" /> : null}
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" />
+        ) : null}
       </div>
 
       {!isLoading && contacts.length === 0 ? (
@@ -92,12 +94,19 @@ export function LinkedCompanySignerQuickAdd({
       ) : null}
 
       {contacts.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" aria-label="Linked company contacts">
           {contacts.map((contact) => {
             const email = normalizeEmail(contact.defaultEmail);
             const isAdded = Boolean(email) && signerEmails.has(email);
             const isPending = pendingContactId === contact.id;
             const isDisabled = !email || isAdded || Boolean(pendingContactId);
+            const stateLabel = !email
+              ? 'No default email'
+              : isAdded
+                ? 'Already added as signer'
+                : isPending
+                  ? 'Adding as signer'
+                  : `Add ${contact.fullName} as signer`;
 
             return (
               <button
@@ -105,6 +114,8 @@ export function LinkedCompanySignerQuickAdd({
                 type="button"
                 onClick={() => void handleAddContact(contact)}
                 disabled={isDisabled}
+                title={stateLabel}
+                aria-label={stateLabel}
                 className={cn(
                   'inline-flex min-h-10 items-center gap-2 rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary transition-colors',
                   !isDisabled && 'hover:border-oak-primary/40 hover:bg-background-tertiary',
@@ -112,11 +123,11 @@ export function LinkedCompanySignerQuickAdd({
                 )}
               >
                 {isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+                  <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-hidden="true" />
                 ) : isAdded ? (
-                  <Check className="h-4 w-4 text-green-600" />
+                  <Check className="h-4 w-4 text-green-600" aria-hidden="true" />
                 ) : (
-                  <UserPlus className="h-4 w-4 text-text-muted" />
+                  <UserPlus className="h-4 w-4 text-text-muted" aria-hidden="true" />
                 )}
                 <span className="max-w-52 truncate">{contact.fullName}</span>
                 {!email ? <span className="text-xs text-text-muted">No email</span> : null}
