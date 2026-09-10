@@ -3,7 +3,7 @@
 Date: 2026-09-10
 Branch: `feat/p16-integrated-validation-20260910`
 Baseline: reconciled `main` after PR #25
-Status: implementation tooling complete through review cycle 16; production gates remain disabled
+Status: implementation tooling complete through review cycle 18; production gates remain disabled
 
 ## Purpose
 
@@ -26,6 +26,10 @@ Readiness is fail-closed. The manifest is eligible only for **separate productio
 Evidence is canonicalized before SHA-256 calculation. The integrity envelope is excluded from its own checksum; every other manifest field is covered. Once sealed, the evidence API refuses subsequent mutation. Any post-seal payload edit invalidates the checksum.
 
 The library and CLI both refuse to seal a manifest unless every P16 gate is PASS and all safety assertions are true. This prevents a direct library caller from bypassing CLI readiness rules and avoids turning an incomplete manifest into an immutable dead end.
+
+### Typed module contract
+
+`scripts/lib/business-assistant-p16-evidence.d.mts` supplies the TypeScript contract for the JavaScript evidence implementation. It deliberately types run identifiers as general strings and evidence collections as `P16EvidenceRef[]`, avoiding TypeScript's over-narrow inference from `randomUUID()` defaults and empty array literals while preserving the runtime validation rules in the implementation.
 
 ### Operator CLI
 
@@ -110,7 +114,9 @@ The first ten cycles satisfy the requested minimum. Additional review/fix/commit
 13. **Cycle 13 — seal regression coverage.** Added tests proving incomplete gates and false safety assertions cannot be sealed through the library.
 14. **Cycle 14 — handover reconciliation.** Updated this implementation record to reflect the completed post-ten review cycles and their safety fixes.
 15. **Cycle 15 — stopped-run archival consistency.** Review found the runbook still suggested sealing incomplete stopped runs. Corrected it so incomplete runs remain unsealed and are archived using external immutable storage/versioning controls.
-16. **Cycle 16 — final handover reconciliation.** Updated this implementation record to match the final extended review history before freezing the branch for exact-SHA CI.
+16. **Cycle 16 — exact-SHA CI freeze.** Reconciled the handover and froze the branch for the authoritative workflow run.
+17. **Cycle 17 — TypeScript module contract.** Exact-SHA CI exposed over-narrow TypeScript inference from the JavaScript evidence module (`randomUUID()` template type and `never[]` evidence arrays). Added an adjacent `.d.mts` declaration with the intended public contract rather than weakening tests or runtime validation.
+18. **Cycle 18 — final handover reconciliation.** Updated this implementation record to include the CI-found type defect and its typed-contract fix before the final exact-SHA validation run.
 
 ## Completion semantics
 
