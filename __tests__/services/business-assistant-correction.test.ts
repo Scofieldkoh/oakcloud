@@ -3,10 +3,13 @@ import { z } from 'zod';
 
 const mocks = vi.hoisted(() => ({
   barrier: vi.fn(), actor: vi.fn(), access: vi.fn(), registry: vi.fn(), prepare: vi.fn(), prefetch: vi.fn(), proposal: vi.fn(),
-  transaction: vi.fn(), preflightRun: vi.fn(), run: vi.fn(), review: vi.fn(), item: vi.fn(), existing: vi.fn(), backups: vi.fn(),
+  transaction: vi.fn(), preflightRun: vi.fn(), preflightExisting: vi.fn(), run: vi.fn(), review: vi.fn(), item: vi.fn(), existing: vi.fn(), backups: vi.fn(),
   createRun: vi.fn(), createItem: vi.fn(), action: vi.fn(),
 }));
-vi.mock('@/lib/prisma', () => ({ prisma: { businessAssistantRun: { findFirst: mocks.preflightRun } } }));
+vi.mock('@/lib/prisma', () => ({ prisma: {
+  businessAssistantRun: { findFirst: mocks.preflightRun },
+  businessAssistantActionRequest: { findFirst: mocks.preflightExisting },
+} }));
 vi.mock('@/lib/prisma-transaction', () => ({ runSerializableTransaction: mocks.transaction }));
 vi.mock('@/lib/business-operation-backup-barrier', () => ({ acquireBusinessOperationBarrier: mocks.barrier }));
 vi.mock('@/lib/fresh-authorization', () => ({ resolveFreshActor: mocks.actor }));
@@ -46,6 +49,7 @@ describe('module-neutral correction proposals', () => {
     mocks.actor.mockResolvedValue({ userId: 'user' });
     mocks.backups.mockResolvedValue([]);
     mocks.preflightRun.mockResolvedValue(run);
+    mocks.preflightExisting.mockResolvedValue(null);
     mocks.run.mockResolvedValue(run);
     mocks.item.mockResolvedValue(item);
     mocks.review.mockResolvedValue({ id: 'review', runItemId: 'old-item', attemptNumber: 1 });
@@ -88,14 +92,17 @@ describe('module-neutral correction proposals', () => {
     expect(mocks.prepare).toHaveBeenCalledWith(expect.any(Object), undefined);
   });
 
-  it('replays only the same request without creating another proposal', async () => {
+  it('replays only the same request and skips external prefetch for replay candidates', async () => {
     const first = await createCorrectionProposal(input);
     const saved = mocks.action.mock.calls[0][0].data;
+    mocks.preflightExisting.mockResolvedValue({ id: 'existing-action' });
     mocks.existing.mockResolvedValue({ bodyHash: saved.bodyHash, response: saved.response });
     expect(await createCorrectionProposal(input)).toEqual({ ...first, duplicate: true });
+    expect(mocks.prefetch).toHaveBeenCalledOnce();
     expect(mocks.createRun).toHaveBeenCalledOnce();
     expect(mocks.prepare).toHaveBeenCalledOnce();
     await expect(createCorrectionProposal({ ...input, rawInput: { ...rawInput, corrections: [{ findingId: 'finding', value: 'changed' }] } })).rejects.toMatchObject({ code: 'ACTION_CONFLICT' });
+    expect(mocks.prefetch).toHaveBeenCalledOnce();
   });
 
   it('rejects a run outside the current owner scope', async () => {
