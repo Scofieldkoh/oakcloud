@@ -3,6 +3,7 @@ import {
   type FullStateIndependentReviewInput,
   type FullStateIndependentReviewResult,
 } from './full-state-independent-review';
+import { assertIndependentReviewerContext } from './reviewer-independence';
 
 export interface FullStateReviewContract {
   id: string;
@@ -43,6 +44,7 @@ export function evaluateFullStateReviewAgainstContract(
   if (contract.canonicalPaths.length === 0 || new Set(contract.canonicalPaths).size !== contract.canonicalPaths.length) {
     throw new Error('Full-state review contract must declare a non-empty unique canonical path set.');
   }
+  assertIndependentReviewerContext(input.context);
 
   // Deliberately discard evidence-supplied canonicalPaths. Completeness is a
   // reviewer contract concern and must not be controlled by planner/mutation input.
