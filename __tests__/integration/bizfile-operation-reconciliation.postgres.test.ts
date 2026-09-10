@@ -74,6 +74,9 @@ suite('BizFile operation reconciliation on PostgreSQL', () => {
   }, 15_000);
 
   afterAll(async () => {
+    await prisma.bizFileOperationEvidence.deleteMany({ where: { tenantId } });
+    await prisma.bizFileOperationEffectIntent.deleteMany({ where: { tenantId } });
+    await prisma.bizFileOperationReceipt.deleteMany({ where: { tenantId } });
     await prisma.businessAssistantRunItem.deleteMany({ where: { tenantId } });
     await prisma.businessAssistantRun.deleteMany({ where: { tenantId } });
     await prisma.businessAssistantConversation.deleteMany({ where: { tenantId } });
@@ -104,5 +107,36 @@ suite('BizFile operation reconciliation on PostgreSQL', () => {
     await expect(writerFailure).resolves.toMatchObject({ message: 'intentional precommit rollback' });
     expect(reconciled).toEqual({ status: 'NO_COMMIT', receipt: null });
     await expect(prisma.bizFileOperationReceipt.findUnique({ where: { tenantId_operationId: { tenantId, operationId } } })).resolves.toBeNull();
+  });
+
+  it('reconciles a durable commit repeatedly to the original operation identity without duplicating the canonical receipt', async () => {
+    const committedOperationId = randomUUID();
+    const receiptId = randomUUID();
+    await prisma.bizFileOperationReceipt.create({ data: {
+      id: receiptId,
+      tenantId,
+      operationId: committedOperationId,
+      capabilityId: 'bizfile.import_and_review',
+      capabilityVersion: '1.0',
+      schemaVersion: '1',
+      mode: 'UPDATE',
+      payloadHash: 'a'.repeat(64),
+      expectedAggregateRevision: 0,
+      status: 'COMMITTED',
+      effectStatus: 'COMPLETE',
+    } });
+
+    const input = { tenantId, operationId: committedOperationId, maxWaitMs: 500, pollIntervalMs: 10 };
+    const first = await reconcileBizFileOperation(input, prisma as never);
+    const second = await reconcileBizFileOperation(input, prisma as never);
+
+    expect(first.status).toBe('COMMITTED');
+    expect(second.status).toBe('COMMITTED');
+    if (first.status !== 'COMMITTED' || second.status !== 'COMMITTED' || !first.receipt || !second.receipt) {
+      throw new Error('Expected committed reconciliation with durable receipts.');
+    }
+    expect(first.receipt.operationId).toBe(committedOperationId);
+    expect(second.receipt.id).toBe(first.receipt.id);
+    await expect(prisma.bizFileOperationReceipt.count({ where: { tenantId, operationId: committedOperationId } })).resolves.toBe(1);
   });
 });
