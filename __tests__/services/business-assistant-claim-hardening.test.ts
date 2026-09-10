@@ -13,6 +13,9 @@ const tx = {
     findFirst: mocks.itemFindFirst,
     updateMany: mocks.itemUpdateMany,
   },
+  businessAssistantCapacitySlot: {
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+  },
   businessAssistantRunStep: {
     count: mocks.stepCount,
     findFirst: mocks.stepFindFirst,
@@ -30,7 +33,8 @@ vi.mock('@/lib/prisma-transaction', () => ({
   runSerializableTransaction: vi.fn(async (_db: unknown, callback: (client: typeof tx) => unknown) => callback(tx)),
 }));
 
-import { startStageAttempt, updateClaimedItem } from '@/services/business-assistant/claim.repository';
+import { releaseItemClaim, startStageAttempt, updateClaimedItem } from '@/services/business-assistant/claim.repository';
+import { aggregateRun } from '@/services/business-assistant/contracts';
 import { BUSINESS_ASSISTANT_OPERATIONAL_LIMITS } from '@/services/business-assistant/operational-policy';
 
 const claim = {
@@ -76,9 +80,34 @@ describe('Business Assistant claim hardening', () => {
     }));
   });
 
+  it('preserves a scheduled retry delay while releasing a kept claim', async () => {
+    await expect(releaseItemClaim(claim, { keepState: true })).resolves.toBe(true);
+    const call = mocks.itemUpdateMany.mock.calls.at(-1)?.[0];
+    expect(call?.data).toEqual(expect.objectContaining({ claimToken: null, leaseExpiresAt: null }));
+    expect(call?.data).not.toHaveProperty('availableAt');
+    expect(call?.data).not.toHaveProperty('lifecycleState');
+  });
+
   it('rejects a new stage attempt when the durable total-stage budget is exhausted', async () => {
     mocks.stepCount.mockResolvedValue(BUSINESS_ASSISTANT_OPERATIONAL_LIMITS.maxTotalStageAttemptsPerItem);
     await expect(startStageAttempt(claim, 'EXECUTION', { operationId: 'op-1' })).rejects.toThrow(/stage budget exhausted/i);
     expect(mocks.stepCreate).not.toHaveBeenCalled();
+  });
+
+  it('keeps 1-10 item partial outcomes isolated in aggregate state', () => {
+    for (let size = 1; size <= 10; size += 1) {
+      const items = Array.from({ length: size }, (_, index) => ({
+        selected: true,
+        lifecycleState: index === size - 1 && size > 1 ? 'FAILED' : 'SUCCEEDED',
+        executionOutcome: index === size - 1 && size > 1 ? 'FAILED_NO_COMMIT' : 'SUCCEEDED_READ',
+        reviewOutcome: 'NOT_REQUIRED',
+        requiredEffectStatus: 'NOT_REQUIRED',
+      }));
+      const aggregate = aggregateRun(items);
+      expect(aggregate.counts.total).toBe(size);
+      expect(aggregate.counts.readSucceeded).toBe(size === 1 ? 1 : size - 1);
+      expect(aggregate.counts.failed).toBe(size === 1 ? 0 : 1);
+      expect(aggregate.status).toBe(size === 1 ? 'COMPLETED' : 'COMPLETED_WITH_EXCEPTIONS');
+    }
   });
 });
