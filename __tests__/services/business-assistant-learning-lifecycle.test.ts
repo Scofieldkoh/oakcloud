@@ -40,6 +40,7 @@ const activeTarget = {
   activeVersion: '2', activeValue: activeEnvelope, previousVersion: '1', previousValue: 'concise',
   activeChangeId: 'change-1', revision: 7, updatedById: 'admin-1', createdAt: activatedAt, updatedAt: activatedAt,
 };
+const activeClock = new Date('2026-01-02T00:00:00.000Z');
 
 describe('Business Assistant learning target lifecycle', () => {
   beforeEach(() => {
@@ -57,7 +58,7 @@ describe('Business Assistant learning target lifecycle', () => {
   });
 
   it('deactivates with revision CAS and removes the runtime value from the active pointer', async () => {
-    const result = await deactivateLearningConfiguration(actor, 'assistant.response_detail', 7, new Date('2026-01-02T00:00:00.000Z'));
+    const result = await deactivateLearningConfiguration(actor, 'assistant.response_detail', 7, activeClock);
     expect(result).toMatchObject({ state: 'DEACTIVATED', revision: 8, activeChangeId: null });
     const update = mocks.activeUpdateMany.mock.calls[0][0];
     expect(update.where).toMatchObject({ id: 'target-1', tenantId: 'workspace-1', targetKey: 'assistant.response_detail', activeVersion: '2', revision: 7 });
@@ -68,7 +69,7 @@ describe('Business Assistant learning target lifecycle', () => {
   });
 
   it('does not allow expiry before the source-controlled activation TTL has elapsed', async () => {
-    await expect(expireLearningConfiguration(actor, 'assistant.response_detail', 7, new Date('2026-01-02T00:00:00.000Z')))
+    await expect(expireLearningConfiguration(actor, 'assistant.response_detail', 7, activeClock))
       .rejects.toThrow('has not reached');
     expect(mocks.activeUpdateMany).not.toHaveBeenCalled();
   });
@@ -82,14 +83,14 @@ describe('Business Assistant learning target lifecycle', () => {
   });
 
   it('fails closed on a stale lifecycle revision', async () => {
-    await expect(deactivateLearningConfiguration(actor, 'assistant.response_detail', 6)).rejects.toThrow('changed; refresh');
+    await expect(deactivateLearningConfiguration(actor, 'assistant.response_detail', 6, activeClock)).rejects.toThrow('changed; refresh');
     expect(mocks.activeUpdateMany).not.toHaveBeenCalled();
     expect(mocks.auditCreate).not.toHaveBeenCalled();
   });
 
   it('prevents a CAS loser from recording a lifecycle event', async () => {
     mocks.activeUpdateMany.mockResolvedValue({ count: 0 });
-    await expect(deactivateLearningConfiguration(actor, 'assistant.response_detail', 7)).rejects.toThrow('changed during');
+    await expect(deactivateLearningConfiguration(actor, 'assistant.response_detail', 7, activeClock)).rejects.toThrow('changed during');
     expect(mocks.auditCreate).not.toHaveBeenCalled();
   });
 
@@ -128,12 +129,12 @@ describe('Business Assistant learning target lifecycle', () => {
 
   it('rechecks administrator authority inside the same barrier-protected transaction', async () => {
     mocks.resolveFreshActor.mockResolvedValue({ isWorkspaceAdmin: false, isSuperAdmin: false, internalRole: 'STAFF' });
-    await expect(deactivateLearningConfiguration(actor, 'assistant.response_detail', 7)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(deactivateLearningConfiguration(actor, 'assistant.response_detail', 7, activeClock)).rejects.toMatchObject({ code: 'FORBIDDEN' });
     expect(mocks.activeUpdateMany).not.toHaveBeenCalled();
   });
 
   it('never crosses workspace boundaries in lifecycle reads or writes', async () => {
-    await deactivateLearningConfiguration(actor, 'assistant.response_detail', 7);
+    await deactivateLearningConfiguration(actor, 'assistant.response_detail', 7, activeClock);
     expect(mocks.activeFindUnique).toHaveBeenCalledWith({ where: { tenantId_targetKey: { tenantId: 'workspace-1', targetKey: 'assistant.response_detail' } } });
     expect(mocks.activeUpdateMany.mock.calls[0][0].where.tenantId).toBe('workspace-1');
     expect(mocks.auditCreate.mock.calls[0][0].data.tenantId).toBe('workspace-1');
