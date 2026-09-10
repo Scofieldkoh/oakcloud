@@ -36,8 +36,8 @@ function CompanyCreateSharePointFieldWithQuery({ onChange }: { onChange: (select
       <span className="text-xs text-text-secondary">SharePoint</span>
     </div>
     {selection.kind === 'selected' ? (
-      <div role="status" className="flex flex-col gap-3 rounded-xl border border-status-success/30 bg-status-success/10 p-3 text-sm shadow-elevation-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-status-success/30 bg-status-success/10 p-3 text-sm shadow-elevation-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3" role="status">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-status-success/15 text-status-success" aria-hidden="true">
             <FolderOpen className="h-4 w-4" />
           </span>
