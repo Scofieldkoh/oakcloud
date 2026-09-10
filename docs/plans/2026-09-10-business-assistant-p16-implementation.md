@@ -3,7 +3,7 @@
 Date: 2026-09-10
 Branch: `feat/p16-integrated-validation-20260910`
 Baseline: reconciled `main` after PR #25
-Status: implementation tooling complete through review cycle 9; production gates remain disabled
+Status: implementation tooling complete through review cycle 14; production gates remain disabled
 
 ## Purpose
 
@@ -25,6 +25,8 @@ Readiness is fail-closed. The manifest is eligible only for **separate productio
 
 Evidence is canonicalized before SHA-256 calculation. The integrity envelope is excluded from its own checksum; every other manifest field is covered. Once sealed, the evidence API refuses subsequent mutation. Any post-seal payload edit invalidates the checksum.
 
+The library and CLI both refuse to seal a manifest unless every P16 gate is PASS and all safety assertions are true. This prevents a direct library caller from bypassing CLI readiness rules and avoids turning an incomplete manifest into an immutable dead end.
+
 ### Operator CLI
 
 `scripts/business-assistant-p16-evidence.mjs` supports:
@@ -33,7 +35,7 @@ Evidence is canonicalized before SHA-256 calculation. The integrity envelope is 
 - `record` — record PASS/FAIL/BLOCKED with immutable evidence references;
 - `safety` — record explicit rollout safety assertions;
 - `status` — validate structure, SHA binding, gate status, safety and integrity;
-- `seal` — complete and checksum the manifest;
+- `seal` — complete and checksum the manifest only after all readiness prerequisites are satisfied;
 - `checks` — print the authoritative top-level gate inventory.
 
 Writes use an atomic temporary-file/rename sequence and create evidence files with owner-only permissions where supported.
@@ -46,6 +48,8 @@ Writes use an atomic temporary-file/rename sequence and create evidence files wi
 - mandatory evidence for PASS;
 - staging-vs-CI source restrictions;
 - mandatory blocker notes;
+- rejection of incomplete sealing;
+- rejection of sealing while any safety assertion is false;
 - incomplete/unsealed non-readiness;
 - all-gates-plus-safety-plus-seal readiness;
 - checksum tamper detection;
@@ -59,7 +63,7 @@ Writes use an atomic temporary-file/rename sequence and create evidence files wi
 
 `scripts/check-business-assistant-p16-production-gates.mjs` inspects the PR three-dot diff. It fails if P16 changes protected deployment/configuration paths such as environment, compose, deployment, infrastructure, Kubernetes, or Helm surfaces. It also fails on executable-code additions that appear to set known Business Assistant production gates to enabled values.
 
-The Node 24 workflow checks out full history and passes the exact pull-request base/head SHAs to the guard. Documentation/tests and the guard's own pattern definitions are excluded from assignment scanning so explanatory text cannot create false positives.
+The Node 24 workflow checks out full history and passes the exact pull-request base/head SHAs to the guard. The guard is scoped to `feat/p16-*` pull requests so it cannot accidentally block unrelated future deployment/configuration PRs. Documentation/tests and the guard's own pattern definitions are excluded from assignment scanning so explanatory text cannot create false positives.
 
 ### Integrated staging runbook
 
@@ -87,7 +91,7 @@ Those remain external P16 evidence and the manifest remains not-ready until they
 
 ## Review-cycle audit trail
 
-The branch intentionally uses one commit per requested review cycle.
+The first ten cycles satisfy the requested minimum. Additional review/fix/commit cycles were performed after the maintainer explicitly authorized going beyond ten when needed.
 
 1. **Cycle 1 — evidence contract.** Implemented the immutable, SHA-bound manifest and fail-closed readiness evaluation. Review emphasized checksum coverage and post-seal immutability.
 2. **Cycle 2 — integrity tests.** Added tests for missing evidence, wrong evidence source, blocked status, SHA mismatch, tampering, sealing, and deterministic checksums. Review reconciled top-level gates with grouped P16 sub-scenarios.
@@ -97,12 +101,16 @@ The branch intentionally uses one commit per requested review cycle.
 6. **Cycle 6 — Node 24 CI.** Added the P16 evidence-contract test to mandatory compatibility checks. Review ensured the new release contract cannot regress unnoticed.
 7. **Cycle 7 — production-gate guard.** Added an automated PR diff guard for deployment surfaces and known gate enablement. Review kept documentation/tests from producing false positives.
 8. **Cycle 8 — exact PR diff wiring.** Updated checkout depth and supplied exact PR base/head SHAs. Review fixed shallow-clone ambiguity for three-dot diff validation.
-9. **Cycle 9 — integrated handover.** Recorded implementation boundaries, external evidence, and audit trail. Review keeps P16 completion claims separate from staging evidence not available to repository CI.
-10. **Cycle 10 — final review/fix.** Reserved for PR/CI review and final defect correction before marking the PR ready.
+9. **Cycle 9 — integrated handover.** Recorded implementation boundaries, external evidence, and audit trail. Review kept P16 completion claims separate from staging evidence not available to repository CI.
+10. **Cycle 10 — incomplete-seal CLI fix.** Final requested-cycle review found the CLI could seal an incomplete manifest before returning non-ready. Fixed it to refuse writing a sealed manifest until every gate and safety assertion is satisfied.
+11. **Cycle 11 — P16-only gate guard.** Static PR review found the production-gate guard would run on every future PR. Scoped it to `feat/p16-*` pull requests so unrelated deployment work is not blocked.
+12. **Cycle 12 — library seal invariant.** Review found direct library callers could still seal incomplete evidence. Moved the complete-evidence/safety prerequisite into the evidence library itself.
+13. **Cycle 13 — seal regression coverage.** Added tests proving incomplete gates and false safety assertions cannot be sealed through the library.
+14. **Cycle 14 — handover reconciliation.** Updated this implementation record to reflect the completed post-ten review cycles and their safety fixes.
 
 ## Completion semantics
 
-This P16 implementation is complete when the branch tooling/tests/docs are green and the tenth review/fix commit is present. That means Oakcloud has a controlled process to collect the final staging/release evidence. It does **not** mean the external evidence has already been executed in this repository session.
+This P16 implementation is complete when the branch tooling/tests/docs are green after the final review/fix cycle. That means Oakcloud has a controlled process to collect the final staging/release evidence. It does **not** mean the external evidence has already been executed in this repository session.
 
 After staging operators execute the runbook against the exact candidate SHA, a sealed manifest whose `readyForSeparateProductionGateReview` value is true is the artifact to attach to a separate explicit production-gate proposal.
 
