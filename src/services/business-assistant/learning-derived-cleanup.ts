@@ -10,7 +10,9 @@ function jsonInput(value: unknown): Prisma.InputJsonValue {
 /**
  * Erase candidates derived from a confirmed memory when that source memory is
  * deleted. This runs inside the memory deletion transaction so source deletion
- * and descendant cleanup are atomic.
+ * and descendant cleanup are atomic. Both the active slot and the hidden
+ * rollback slot are inspected so supersession cannot preserve data that a
+ * later rollback would resurrect.
  */
 export async function eraseLearningDerivedFromMemory(
   tx: Prisma.TransactionClient,
@@ -30,44 +32,79 @@ export async function eraseLearningDerivedFromMemory(
   });
   if (changes.length === 0) return { removedCandidates: 0, deactivatedTargets: 0 };
 
-  const ids = changes.map((change) => change.id);
+  const ids = new Set(changes.map((change) => change.id));
+  // There are only a small, source-controlled number of learning targets. Read
+  // the tenant set so a derived envelope restored from previousValue can be
+  // found even when activeChangeId was intentionally cleared by rollback.
   const activeTargets = await tx.businessAssistantLearningActiveTarget.findMany({
-    where: { tenantId: actor.tenantId, activeChangeId: { in: ids } },
+    where: { tenantId: actor.tenantId },
   });
   let deactivatedTargets = 0;
+  let scrubbedRollbackSlots = 0;
   for (const target of activeTargets) {
+    const directPointerMatches = Boolean(target.activeChangeId && ids.has(target.activeChangeId));
     const definition = learningTargetDefinition(target.targetKey);
-    if (!definition) throw new DerivedLearningCleanupError('ACTION_CONFLICT', 'A derived active learning target is no longer allowlisted.');
-    const decoded = decodeLearningActiveValue(definition.targetKey, target.activeValue);
-    if (!decoded) throw new DerivedLearningCleanupError('ACTION_CONFLICT', 'A derived active learning target is unreadable.');
-    const marker = createLearningLifecycleMarker(definition, 'DEACTIVATED', {
-      changeId: null,
-      valueDigest: null,
-    });
+    if (!definition) {
+      if (directPointerMatches) {
+        throw new DerivedLearningCleanupError('ACTION_CONFLICT', 'A derived active learning target is no longer allowlisted.');
+      }
+      continue;
+    }
+    const activeDecoded = decodeLearningActiveValue(definition.targetKey, target.activeValue);
+    if (!activeDecoded && directPointerMatches) {
+      throw new DerivedLearningCleanupError('ACTION_CONFLICT', 'A derived active learning target is unreadable.');
+    }
+    const previousDecoded = target.previousValue === null
+      ? null
+      : decodeLearningActiveValue(definition.targetKey, target.previousValue);
+    const activeEnvelopeMatches = Boolean(activeDecoded?.changeId && ids.has(activeDecoded.changeId));
+    const previousEnvelopeMatches = Boolean(previousDecoded?.changeId && ids.has(previousDecoded.changeId));
+    const activeDerived = directPointerMatches || activeEnvelopeMatches;
+    if (!activeDerived && !previousEnvelopeMatches) continue;
+
+    const update: Prisma.BusinessAssistantLearningActiveTargetUpdateManyMutationInput = {
+      revision: { increment: 1 },
+      updatedById: actor.userId,
+    };
+    if (activeDerived) {
+      update.activeValue = jsonInput(createLearningLifecycleMarker(definition, 'DEACTIVATED', {
+        changeId: null,
+        valueDigest: null,
+      }));
+      update.activeChangeId = null;
+      // The active derived version is no longer rollback-eligible. Remove the
+      // slot entirely so stale lineage cannot be traversed after source erase.
+      update.previousVersion = null;
+      update.previousValue = Prisma.JsonNull;
+      deactivatedTargets += 1;
+      if (previousEnvelopeMatches) scrubbedRollbackSlots += 1;
+    } else if (previousEnvelopeMatches) {
+      // Keep the current unrelated active configuration, but replace its
+      // rollback slot with the source-controlled default rather than deleted
+      // derived data. A later rollback can therefore never restore the source.
+      update.previousVersion = definition.defaultVersion;
+      update.previousValue = jsonInput(definition.defaultValue);
+      scrubbedRollbackSlots += 1;
+    }
+
     const cas = await tx.businessAssistantLearningActiveTarget.updateMany({
       where: {
         id: target.id,
         tenantId: actor.tenantId,
         targetKey: definition.targetKey,
-        activeChangeId: target.activeChangeId,
         activeVersion: target.activeVersion,
+        activeChangeId: target.activeChangeId,
         revision: target.revision,
       },
-      data: {
-        activeValue: jsonInput(marker),
-        previousVersion: null,
-        previousValue: Prisma.JsonNull,
-        activeChangeId: null,
-        revision: { increment: 1 },
-        updatedById: actor.userId,
-      },
+      data: update,
     });
-    if (cas.count !== 1) throw new DerivedLearningCleanupError('ACTION_CONFLICT', 'A derived active target changed during source deletion.');
-    deactivatedTargets += 1;
+    if (cas.count !== 1) {
+      throw new DerivedLearningCleanupError('ACTION_CONFLICT', 'A derived learning target changed during source deletion.');
+    }
   }
 
   const scrubbed = await tx.businessAssistantLearningChange.updateMany({
-    where: { tenantId: actor.tenantId, ownerId: actor.userId, id: { in: ids } },
+    where: { tenantId: actor.tenantId, ownerId: actor.userId, id: { in: [...ids] } },
     data: {
       candidateValue: Prisma.JsonNull,
       evidence: jsonInput({ redacted: true, source: 'SOURCE_MEMORY_DELETION' }),
@@ -94,8 +131,15 @@ export async function eraseLearningDerivedFromMemory(
       summary: 'Erased learning candidates derived from a deleted preference memory',
       metadata: jsonInput({
         memoryId,
-        removedCandidates: changes.map(({ id, targetKey, baselineVersion, candidateVersion, state }) => ({ id, targetKey, baselineVersion, candidateVersion, state })),
+        removedCandidates: changes.map(({ id, targetKey, baselineVersion, candidateVersion, state }) => ({
+          id,
+          targetKey,
+          baselineVersion,
+          candidateVersion,
+          state,
+        })),
         deactivatedTargets,
+        scrubbedRollbackSlots,
       }),
       requestId: actor.requestId,
     },
