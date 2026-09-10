@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BIZFILE_CORRECTION_MAX_ITEMS } from '@/lib/bizfile-correction-contract';
 
 export const businessAssistantResourceRefSchema = z.object({
   resourceType: z.string().trim().min(1).max(100),
@@ -74,7 +75,7 @@ export const businessAssistantCorrectionRequestSchema = z.object({
   corrections: z.array(z.object({
     findingId: z.string().trim().min(1).max(300),
     value: z.unknown(),
-  }).strict()).min(1).max(20),
+  }).strict()).min(1).max(BIZFILE_CORRECTION_MAX_ITEMS),
 }).strict().superRefine((value, ctx) => {
   const findingIds = value.corrections.map((correction) => correction.findingId);
   if (new Set(findingIds).size !== findingIds.length) {
