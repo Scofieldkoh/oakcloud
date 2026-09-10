@@ -3,6 +3,7 @@ import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import {
   buildLinkedCompanySignerInput,
   buildSignerEmailSet,
+  getEligibleLinkedCompanyContacts,
   getLinkedCompanyQuickAddState,
   normalizeSignerEmail,
 } from '@/components/esigning/prepare/linked-company-signer-utils';
@@ -88,5 +89,30 @@ describe('linked company signer quick-add rules', () => {
       fullName: '   ',
       defaultEmail: 'jane@example.com',
     })).toBeNull();
+  });
+
+  it('filters bulk candidates to contacts that can become new signers', () => {
+    const contacts = [
+      { id: 'contact-1', fullName: 'Existing Signer', defaultEmail: 'existing@example.com' },
+      { id: 'contact-2', fullName: 'No Email', defaultEmail: null },
+      { id: 'contact-3', fullName: 'New Signer', defaultEmail: 'new@example.com' },
+    ];
+
+    expect(getEligibleLinkedCompanyContacts(contacts, new Set(['existing@example.com']))).toEqual([
+      contacts[2],
+    ]);
+  });
+
+  it('deduplicates bulk candidates by normalized email and keeps the first contact', () => {
+    const contacts = [
+      { id: 'contact-1', fullName: 'Jane Primary', defaultEmail: 'JANE@example.com' },
+      { id: 'contact-2', fullName: 'Jane Duplicate', defaultEmail: ' jane@EXAMPLE.com ' },
+      { id: 'contact-3', fullName: 'John Example', defaultEmail: 'john@example.com' },
+    ];
+
+    expect(getEligibleLinkedCompanyContacts(contacts, new Set()).map((contact) => contact.id)).toEqual([
+      'contact-1',
+      'contact-3',
+    ]);
   });
 });
