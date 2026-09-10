@@ -1,17 +1,25 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, Loader2, RefreshCw, UserPlus, Users } from 'lucide-react';
+import { Check, Loader2, RefreshCw, UserRound } from 'lucide-react';
+import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { EsigningRecipientInput } from '@/lib/validations/esigning';
+import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
+import {
+  ESIGNING_ACCESS_MODE_LABELS,
+  ESIGNING_RECIPIENT_TYPE_LABELS,
+} from '@/components/esigning/esigning-shared';
+import { ContactSearchSelect, type SearchableContact } from '@/components/ui/contact-search-select';
+import { FormInput } from '@/components/ui/form-input';
+import { Button } from '@/components/ui/button';
 import { useContacts } from '@/hooks/use-contacts';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import {
-  buildLinkedCompanySignerInput,
   buildSignerEmailSet,
-  getEligibleLinkedCompanyContacts,
   getLinkedCompanyQuickAddState,
+  normalizeSignerEmail,
 } from './linked-company-signer-utils';
 
 interface LinkedCompanySignerQuickAddProps {
@@ -22,6 +30,37 @@ interface LinkedCompanySignerQuickAddProps {
   onAddRecipient: (data: EsigningRecipientInput) => Promise<void>;
 }
 
+interface RecipientDraft {
+  name: string;
+  email: string;
+  type: EsigningRecipientType;
+  accessMode: EsigningRecipientAccessMode;
+  accessCode: string;
+}
+
+const EMPTY_DRAFT: RecipientDraft = {
+  name: '',
+  email: '',
+  type: 'SIGNER',
+  accessMode: 'EMAIL_LINK',
+  accessCode: '',
+};
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function buildDraft(contact: SearchableContact): RecipientDraft {
+  const email = contact.defaultEmail?.trim() ?? '';
+  return {
+    name: contact.fullName.trim(),
+    email,
+    type: 'SIGNER',
+    accessMode: email ? 'EMAIL_LINK' : 'MANUAL_LINK',
+    accessCode: '',
+  };
+}
+
 export function LinkedCompanySignerQuickAdd({
   companyId,
   companyName,
@@ -30,158 +69,214 @@ export function LinkedCompanySignerQuickAdd({
   onAddRecipient,
 }: LinkedCompanySignerQuickAddProps) {
   const toast = useToast();
-  const [pendingContactId, setPendingContactId] = useState<string | null>(null);
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    refetch,
-  } = useContacts({
+  const [selectedContactId, setSelectedContactId] = useState('');
+  const [selectedContact, setSelectedContact] = useState<SearchableContact | null>(null);
+  const [draft, setDraft] = useState<RecipientDraft>(EMPTY_DRAFT);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useContacts({
     companyId,
     limit: 50,
     sortBy: 'fullName',
     sortOrder: 'asc',
   });
 
-  const signerEmails = useMemo(
-    () => buildSignerEmailSet(recipients),
-    [recipients],
-  );
+  const signerEmails = useMemo(() => buildSignerEmailSet(recipients), [recipients]);
   const contacts = data?.contacts ?? [];
-  const eligibleContacts = useMemo(
-    () => getEligibleLinkedCompanyContacts(contacts, signerEmails),
-    [contacts, signerEmails],
-  );
 
-  async function handleAddContact(contact: (typeof contacts)[number]) {
-    const input = buildLinkedCompanySignerInput(contact);
-    if (!input || signerEmails.has(input.email ?? '') || pendingContactId) {
+  function selectContact(contactId: string, contact: SearchableContact | null) {
+    setSelectedContactId(contactId);
+    setSelectedContact(contact);
+    if (!contact) {
+      setDraft(EMPTY_DRAFT);
+      return;
+    }
+    setDraft(buildDraft(contact));
+    setIsEditorOpen(true);
+  }
+
+  function handleCompanyContactClick(contact: (typeof contacts)[number]) {
+    selectContact(contact.id, contact);
+  }
+
+  function closeEditor() {
+    setIsEditorOpen(false);
+    setSelectedContactId('');
+    setSelectedContact(null);
+    setDraft(EMPTY_DRAFT);
+  }
+
+  async function handleConfirm() {
+    const name = draft.name.trim();
+    const email = normalizeSignerEmail(draft.email);
+    const requiresEmail = draft.type === 'CC' || draft.accessMode !== 'MANUAL_LINK';
+
+    if (!name) {
+      toast.error('Recipient name is required');
+      return;
+    }
+    if (requiresEmail && !email) {
+      toast.error('Recipient email is required for this access method');
+      return;
+    }
+    if (email && !isValidEmail(email)) {
+      toast.error('Enter a valid recipient email address');
+      return;
+    }
+    if (draft.accessMode === 'EMAIL_WITH_CODE' && draft.accessCode.trim().length < ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH) {
+      toast.error(`Access code must be at least ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`);
+      return;
+    }
+    if (draft.type === 'SIGNER' && email && signerEmails.has(email)) {
+      toast.error(`${draft.email.trim()} is already listed as a signer on this envelope`);
       return;
     }
 
-    setPendingContactId(contact.id);
+    setIsSubmitting(true);
     try {
-      await onAddRecipient(input);
-      toast.success(`${contact.fullName} added as a signer`);
-    } catch (addError) {
-      toast.error(addError instanceof Error ? addError.message : `Failed to add ${contact.fullName} as a signer`);
+      await onAddRecipient({
+        name,
+        email: email || null,
+        type: draft.type,
+        signingOrder: null,
+        accessMode: draft.accessMode,
+        accessCode: draft.accessCode.trim() || undefined,
+      });
+      toast.success(`${name} added as ${draft.type === 'SIGNER' ? 'a signer' : 'a copy recipient'}`);
+      closeEditor();
+    } catch (submitError) {
+      toast.error(submitError instanceof Error ? submitError.message : 'Failed to add recipient');
     } finally {
-      setPendingContactId(null);
+      setIsSubmitting(false);
     }
   }
 
-  async function handleAddAllAvailable() {
-    if (pendingContactId || eligibleContacts.length < 2) {
-      return;
-    }
-
-    let addedCount = 0;
-    try {
-      for (const contact of eligibleContacts) {
-        const input = buildLinkedCompanySignerInput(contact);
-        if (!input) continue;
-
-        setPendingContactId(contact.id);
-        await onAddRecipient(input);
-        addedCount += 1;
-      }
-      toast.success(`${addedCount} linked contacts added as signers`);
-    } catch (addError) {
-      const prefix = addedCount > 0 ? `${addedCount} signer${addedCount === 1 ? '' : 's'} added. ` : '';
-      toast.error(`${prefix}${addError instanceof Error ? addError.message : 'Could not add the remaining linked contacts.'}`);
-    } finally {
-      setPendingContactId(null);
-    }
-  }
-
-  if (!companyId || !canEdit) {
-    return null;
-  }
-
-  const isBusy = isLoading || isFetching || Boolean(pendingContactId);
+  if (!companyId || !canEdit) return null;
 
   return (
-    <div className="rounded-xl border border-border-primary bg-background-secondary p-3" aria-busy={isBusy}>
+    <div className="rounded-xl border border-border-primary bg-background-secondary p-3">
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-text-secondary">Quick add from linked company</p>
-          {companyName ? (
-            <p className="truncate text-xs text-text-muted">{companyName}</p>
-          ) : null}
+          <p className="text-xs font-medium text-text-secondary">Company contacts</p>
+          <p className="truncate text-xs text-text-muted">
+            {companyName ? `${companyName} · ` : ''}Select a contact to configure how they receive this document.
+          </p>
         </div>
-        <div className="flex flex-shrink-0 items-center gap-2">
-          {!isLoading && !isError && eligibleContacts.length >= 2 ? (
-            <button
-              type="button"
-              onClick={() => void handleAddAllAvailable()}
-              disabled={Boolean(pendingContactId)}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-oak-primary/40 hover:bg-background-tertiary disabled:cursor-wait disabled:opacity-60"
-            >
-              <Users className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
-              Add all available
-            </button>
-          ) : null}
-          {isLoading || isFetching ? (
-            <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" />
-          ) : null}
-        </div>
+        {isLoading || isFetching ? <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" /> : null}
       </div>
 
       {isError && contacts.length === 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300/50 bg-amber-50/50 px-3 py-2 dark:bg-amber-950/10">
-          <p className="min-w-0 flex-1 text-xs text-text-muted">
-            {error instanceof Error ? error.message : 'Could not load the linked company contacts.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            disabled={isFetching}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-wait disabled:opacity-60"
-          >
-            <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} aria-hidden="true" />
-            Retry
+        <div className="flex items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-2">
+          <p className="min-w-0 flex-1 text-xs text-text-muted">{error instanceof Error ? error.message : 'Could not load company contacts.'}</p>
+          <button type="button" onClick={() => void refetch()} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-primary px-2.5 text-xs">
+            <RefreshCw className="h-3.5 w-3.5" /> Retry
           </button>
         </div>
       ) : null}
 
-      {!isLoading && !isError && contacts.length === 0 ? (
-        <p className="text-xs text-text-muted">No contacts are linked to this company.</p>
-      ) : null}
+      {!isLoading && !isError && contacts.length === 0 ? <p className="text-xs text-text-muted">No contacts are linked to this company.</p> : null}
 
       {contacts.length > 0 ? (
         <div className="flex flex-wrap gap-2" aria-label="Linked company contacts">
           {contacts.map((contact) => {
-            const state = getLinkedCompanyQuickAddState(contact, signerEmails, pendingContactId);
-
+            const state = getLinkedCompanyQuickAddState(contact, signerEmails, null);
             return (
               <button
                 key={contact.id}
                 type="button"
-                onClick={() => void handleAddContact(contact)}
-                disabled={state.isDisabled}
-                title={state.stateLabel}
-                aria-label={state.stateLabel}
+                onClick={() => handleCompanyContactClick(contact)}
+                disabled={state.isAdded}
                 className={cn(
                   'inline-flex min-h-10 items-center gap-2 rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary transition-colors',
-                  !state.isDisabled && 'hover:border-oak-primary/40 hover:bg-background-tertiary',
-                  state.isDisabled && 'cursor-not-allowed opacity-60',
+                  !state.isAdded && 'hover:border-oak-primary/40 hover:bg-background-tertiary',
+                  state.isAdded && 'cursor-not-allowed opacity-60',
                 )}
               >
-                {state.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-hidden="true" />
-                ) : state.isAdded ? (
-                  <Check className="h-4 w-4 text-green-600" aria-hidden="true" />
-                ) : (
-                  <UserPlus className="h-4 w-4 text-text-muted" aria-hidden="true" />
-                )}
+                {state.isAdded ? <Check className="h-4 w-4 text-green-600" /> : <UserRound className="h-4 w-4 text-text-muted" />}
                 <span className="max-w-52 truncate">{contact.fullName}</span>
-                {!state.email ? <span className="text-xs text-text-muted">No email</span> : null}
                 {state.isAdded ? <span className="text-xs text-text-muted">Added</span> : null}
               </button>
             );
           })}
+        </div>
+      ) : null}
+
+      {isEditorOpen ? (
+        <div className="mt-3 overflow-hidden rounded-xl border border-border-primary bg-background-primary">
+          <div className="border-b border-border-primary px-4 py-3">
+            <p className="text-sm font-semibold text-text-primary">Configure recipient</p>
+            <p className="text-xs text-text-muted">Review the contact details, role, and delivery method before adding.</p>
+          </div>
+          <div className="space-y-3 p-4">
+            <ContactSearchSelect
+              key={`linked-company-contact-${selectedContactId || 'empty'}`}
+              label="Search Contact"
+              value={selectedContactId}
+              onChange={selectContact}
+              placeholder="Search contacts..."
+              controlClassName="!h-10 !min-h-0"
+            />
+
+            <FormInput
+              label="Full name"
+              inputSize="lg"
+              value={draft.name}
+              onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+            />
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <FormInput
+                label="Email address"
+                inputSize="lg"
+                type="email"
+                placeholder="Optional for manual link"
+                value={draft.email}
+                onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+                required={draft.type === 'CC' || draft.accessMode !== 'MANUAL_LINK'}
+                hint={draft.type === 'SIGNER' && draft.accessMode === 'MANUAL_LINK' ? 'Optional when using Manual Link.' : undefined}
+              />
+
+              <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
+                Role
+                <select
+                  value={draft.type}
+                  onChange={(event) => setDraft((current) => ({ ...current, type: event.target.value as EsigningRecipientType }))}
+                  className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                >
+                  {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
+                Access method
+                <select
+                  value={draft.accessMode}
+                  onChange={(event) => setDraft((current) => ({ ...current, accessMode: event.target.value as EsigningRecipientAccessMode }))}
+                  className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                >
+                  {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+            </div>
+
+            {draft.accessMode === 'EMAIL_WITH_CODE' ? (
+              <FormInput
+                label="Access code"
+                inputSize="lg"
+                value={draft.accessCode}
+                onChange={(event) => setDraft((current) => ({ ...current, accessCode: event.target.value }))}
+                placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`}
+              />
+            ) : null}
+
+            <div className="flex justify-end gap-2 border-t border-border-primary pt-3">
+              <Button type="button" variant="secondary" size="sm" onClick={closeEditor} disabled={isSubmitting}>Cancel</Button>
+              <Button type="button" size="sm" leftIcon={<Check className="h-4 w-4" />} onClick={() => void handleConfirm()} isLoading={isSubmitting} disabled={isSubmitting}>
+                Add recipient
+              </Button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
