@@ -12,10 +12,12 @@ suite('BizFile correction prefetch/transaction races on PostgreSQL', () => {
 
   beforeAll(async () => {
     const url = new URL(connectionString!);
-    if (!['postgres:', 'postgresql:'].includes(url.protocol)
-      || !/(?:^|[_-])test(?:[_-]|$)/i.test(url.pathname.slice(1))
-      || url.port === '5433') {
-      throw new Error('BizFile correction race tests require the isolated disposable PostgreSQL database.');
+    if (url.protocol !== 'postgresql:'
+      || url.hostname !== '127.0.0.1'
+      || url.port !== '55439'
+      || url.pathname !== '/business_assistant_test'
+      || url.username !== 'assistant_test') {
+      throw new Error('BizFile correction race tests require the dedicated PostgreSQL database on 127.0.0.1:55439.');
     }
     control = new Client({ connectionString });
     await control.connect();
