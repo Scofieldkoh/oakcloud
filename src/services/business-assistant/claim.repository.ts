@@ -225,7 +225,12 @@ export async function releaseItemClaim(claim: AssistantClaim & { id: string }, o
     const now = new Date();
     const updated = await tx.businessAssistantRunItem.updateMany({
       where: { id: claim.id, claimToken: claim.token, claimGeneration: claim.generation, ...leaseActive(now) },
-      data: { claimToken: null, leaseExpiresAt: null, availableAt: options.availableAt ?? new Date(), ...(options.keepState ? {} : { lifecycleState: 'PENDING' }) },
+      data: {
+        claimToken: null,
+        leaseExpiresAt: null,
+        ...(options.availableAt ? { availableAt: options.availableAt } : options.keepState ? {} : { availableAt: now }),
+        ...(options.keepState ? {} : { lifecycleState: 'PENDING' }),
+      },
     });
     if (claim.capacitySlotKey && claim.capacityGeneration !== undefined) {
       await tx.businessAssistantCapacitySlot.updateMany({ where: { slotKey: claim.capacitySlotKey, claimToken: claim.token, claimGeneration: claim.capacityGeneration, runItemId: claim.id, ...leaseActive(now) }, data: { claimToken: null, leaseExpiresAt: null, heartbeatAt: null, tenantId: null, userId: null, runItemId: null, stage: null } });
