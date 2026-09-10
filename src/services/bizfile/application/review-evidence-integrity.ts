@@ -1,5 +1,4 @@
 import type {
-  FullStateFieldEvidence,
   FullStateIndependentReviewInput,
   FullStateIndependentReviewResult,
 } from './full-state-independent-review';
