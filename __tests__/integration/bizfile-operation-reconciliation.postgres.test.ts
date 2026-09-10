@@ -132,7 +132,9 @@ suite('BizFile operation reconciliation on PostgreSQL', () => {
 
     expect(first.status).toBe('COMMITTED');
     expect(second.status).toBe('COMMITTED');
-    if (first.status !== 'COMMITTED' || second.status !== 'COMMITTED') throw new Error('Expected committed reconciliation.');
+    if (first.status !== 'COMMITTED' || second.status !== 'COMMITTED' || !first.receipt || !second.receipt) {
+      throw new Error('Expected committed reconciliation with durable receipts.');
+    }
     expect(first.receipt.operationId).toBe(committedOperationId);
     expect(second.receipt.id).toBe(first.receipt.id);
     await expect(prisma.bizFileOperationReceipt.count({ where: { tenantId, operationId: committedOperationId } })).resolves.toBe(1);
