@@ -74,6 +74,8 @@ function RunDetails({ workspaceId, run }: { workspaceId: string; run: BusinessAs
       </div>}
       <div className="space-y-2">{run.items.map((item) => {
         const eligible = proposal?.eligibleItems.includes(item.id) ?? false;
+        const correctionEligible = item.executionOutcome === 'COMMITTED'
+          && ['NEEDS_REVIEW', 'PASSED', 'PASSED_WITH_WARNINGS'].includes(item.lifecycleState);
         return <article key={item.id} className="rounded-lg border border-border-primary p-3">
           <div className="flex items-start gap-3">
             {run.allowedActions.includes('CONFIRM') && <input aria-label={`Select ${item.itemKey}`} type="checkbox"
@@ -102,7 +104,7 @@ function RunDetails({ workspaceId, run }: { workspaceId: string; run: BusinessAs
                   <section><h5 className="mb-1 font-medium">Findings</h5><ArtifactView value={review.findings} /></section>
                   <section><h5 className="mb-1 font-medium">Review coverage</h5><ArtifactView value={review.coverage} /></section>
                   <details><summary className="cursor-pointer text-text-secondary">Review evidence</summary><div className="mt-2"><ArtifactView value={review.evidence} /></div></details>
-                  {reviewIndex === 0 && run.capabilityId === 'bizfile.import_and_review' ? <BizFileCorrectionPanel
+                  {reviewIndex === 0 && correctionEligible && run.capabilityId === 'bizfile.import_and_review' ? <BizFileCorrectionPanel
                     workspaceId={workspaceId} runId={run.id} reviewId={review.id} findings={review.findings} /> : null}
                 </div>
               </details>)}
