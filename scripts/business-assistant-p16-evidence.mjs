@@ -117,11 +117,25 @@ async function status(values) {
 
 async function seal(values) {
   const path = required(values, 'manifest');
-  const next = sealEvidenceManifest(await readJson(path), { completedAt: values['completed-at'] });
-  await atomicWriteJson(path, next);
+  const manifest = await readJson(path);
+  const before = evaluateEvidenceManifest(manifest);
+  const allChecksPassed = before.valid
+    && before.pass.length === before.totalChecks
+    && before.fail.length === 0
+    && before.blocked.length === 0
+    && before.notRun.length === 0;
+
+  if (!allChecksPassed || !before.safetySatisfied) {
+    throw new Error('refusing to seal: every P16 gate must PASS and all safety assertions must be true first');
+  }
+
+  const next = sealEvidenceManifest(manifest, { completedAt: values['completed-at'] });
   const result = evaluateEvidenceManifest(next);
+  if (!result.readyForSeparateProductionGateReview) {
+    throw new Error('refusing to write sealed manifest: readiness invariants were not satisfied');
+  }
+  await atomicWriteJson(path, next);
   console.log(JSON.stringify(result, null, 2));
-  if (!result.readyForSeparateProductionGateReview) process.exitCode = 2;
 }
 
 async function main() {
