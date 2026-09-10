@@ -42,6 +42,7 @@ import { CompanyAccentSection } from '@/components/companies/company-accent-sect
 import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 import { GeneratedDocumentPicker } from './generated-document-picker';
+import { LinkedCompanySignerQuickAdd } from './linked-company-signer-quick-add';
 
 const RECIPIENT_ACCENT_COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316'];
 const SIGNING_ORDER_CYCLE: EsigningSigningOrder[] = ['PARALLEL', 'SEQUENTIAL', 'MIXED'];
@@ -561,6 +562,10 @@ export function EsigningStepUpload({
   const usesOrderedSigning = signingOrder !== 'PARALLEL';
   const hasSelectedContactEmailChanges = Boolean(
     selectedContact && normalizeEmail(newRecipient.email) !== normalizeEmail(selectedContact.defaultEmail ?? '')
+  );
+  const linkedCompany = useMemo(
+    () => companies.find((company) => company.id === companyId) ?? null,
+    [companies, companyId]
   );
 
   // Initialize from envelope
@@ -1321,6 +1326,37 @@ async function applyMixedGroupChange(
       >
         <div className="space-y-4 p-4 sm:p-5">
 
+        <div className="space-y-2">
+          <div>
+            <span className="text-xs font-medium text-text-secondary">Linked company</span>
+            <p className="mt-0.5 text-xs text-text-muted">
+              Select a company to surface its linked contacts for one-click signer selection.
+            </p>
+          </div>
+          <CompanySearchableSelect
+            companies={companies}
+            value={companyId}
+            onChange={(nextCompanyId) => {
+              setCompanyId(nextCompanyId);
+              setIsSettingsDirty(true);
+            }}
+            loading={companiesLoading}
+            disabled={!envelope.canEdit}
+            placeholder="Optional company link"
+            size="lg"
+          />
+        </div>
+
+        {companyId ? (
+          <LinkedCompanySignerQuickAdd
+            companyId={companyId}
+            companyName={linkedCompany?.name}
+            recipients={envelope.recipients}
+            canEdit={envelope.canEdit}
+            onAddRecipient={onAddRecipient}
+          />
+        ) : null}
+
         {/* Self-sign row — hidden if user is already a signer */}
         {currentUser && envelope.canEdit && !envelope.recipients.some(
           (r) => r.type === 'SIGNER' && normalizeEmail(r.email) === normalizeEmail(currentUser.email)
@@ -1878,22 +1914,6 @@ async function applyMixedGroupChange(
             disabled={!envelope.canEdit}
             error={settingsErrors.title}
           />
-
-          <div className="space-y-2">
-            <span className="text-xs font-medium text-text-secondary">Linked company</span>
-            <CompanySearchableSelect
-              companies={companies}
-              value={companyId}
-              onChange={(nextCompanyId) => {
-                setCompanyId(nextCompanyId);
-                setIsSettingsDirty(true);
-              }}
-              loading={companiesLoading}
-              disabled={!envelope.canEdit}
-              placeholder="Optional company link"
-              size="lg"
-            />
-          </div>
 
           <SingleDateInput
             label="Expiration"
