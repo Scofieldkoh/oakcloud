@@ -172,7 +172,7 @@ export function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-start justify-between p-4 border-b border-border-primary">
+          <div className="sticky top-0 z-20 flex items-start justify-between border-b border-border-primary bg-background-secondary p-4">
             <div>
               {(title || titleBadge) && (
                 <div className="flex flex-wrap items-center gap-2">
@@ -229,7 +229,7 @@ export function ModalFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('flex flex-wrap items-center justify-end gap-3 p-4 border-t border-border-primary', className)}
+      className={cn('sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t border-border-primary bg-background-secondary p-4', className)}
       {...props}
     >
       {children}
