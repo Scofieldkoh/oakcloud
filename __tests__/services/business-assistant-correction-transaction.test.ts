@@ -13,7 +13,7 @@ describe('correction serializable transaction bounds', () => {
         return work({ marker: 'tx' });
       }),
     };
-    await expect(runCorrectionSerializableTransaction(client, async (tx) => tx)).resolves.toEqual({ marker: 'tx' });
+    await expect(runCorrectionSerializableTransaction(client as never, async (tx) => tx)).resolves.toEqual({ marker: 'tx' });
     expect(calls).toEqual([{
       isolationLevel: 'Serializable',
       maxWait: BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.maxWaitMs,
@@ -30,14 +30,14 @@ describe('correction serializable transaction bounds', () => {
         return work({ attempt: attempts });
       }),
     };
-    await expect(runCorrectionSerializableTransaction(client, async (tx) => tx)).resolves.toEqual({ attempt: 3 });
+    await expect(runCorrectionSerializableTransaction(client as never, async (tx) => tx)).resolves.toEqual({ attempt: 3 });
     expect(client.$transaction).toHaveBeenCalledTimes(3);
   });
 
   it('fails after the bounded retry budget without a fourth transaction attempt', async () => {
     const conflict = Object.assign(new Error('write conflict'), { code: 'P2034' });
     const client = { $transaction: vi.fn().mockRejectedValue(conflict) };
-    await expect(runCorrectionSerializableTransaction(client, async () => undefined)).rejects.toBe(conflict);
+    await expect(runCorrectionSerializableTransaction(client as never, async () => undefined)).rejects.toBe(conflict);
     expect(client.$transaction).toHaveBeenCalledTimes(BUSINESS_ASSISTANT_CORRECTION_TRANSACTION_LIMITS.maxAttempts);
     for (const call of client.$transaction.mock.calls) {
       expect(call[1]).toEqual({
@@ -51,7 +51,7 @@ describe('correction serializable transaction bounds', () => {
   it('does not retry a timeout or other non-serialization failure', async () => {
     const timeout = Object.assign(new Error('Transaction API error: Transaction already closed'), { code: 'P2028' });
     const client = { $transaction: vi.fn().mockRejectedValue(timeout) };
-    await expect(runCorrectionSerializableTransaction(client, async () => undefined)).rejects.toBe(timeout);
+    await expect(runCorrectionSerializableTransaction(client as never, async () => undefined)).rejects.toBe(timeout);
     expect(client.$transaction).toHaveBeenCalledOnce();
   });
 });
