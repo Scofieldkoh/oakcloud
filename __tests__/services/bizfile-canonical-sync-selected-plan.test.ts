@@ -224,6 +224,43 @@ describe('selected BizFile change plans', () => {
     expect(tx.company.create).not.toHaveBeenCalled();
   });
 
+  it('acquires the CREATE advisory lock without returning PostgreSQL void', async () => {
+    const createPlan = buildBizFileChangePlan({
+      mode: 'CREATE',
+      tenantId,
+      documentId,
+      reviewedData: reviewedData('New Company Pte. Ltd.'),
+    });
+    const queryRawUnsafe = vi.fn(async (query: string) => {
+      if (/^SELECT pg_advisory_xact_lock/.test(query)) {
+        throw new Error("Failed to deserialize column of type 'void'");
+      }
+      return [{ locked: 1 }];
+    });
+    const tx = {
+      ...transaction(),
+      $executeRaw: vi.fn().mockResolvedValue(0),
+      $queryRawUnsafe: queryRawUnsafe,
+    };
+    tx.company.findFirst.mockResolvedValue(null);
+
+    await expect(applyBizFileChangePlanInTransaction({
+      data: createPlan.reviewedData,
+      documentId,
+      tenantId,
+      userId: 'user-1',
+      plan: createPlan,
+    }, tx as unknown as PrismaTransactionClient)).resolves.toMatchObject({
+      companyId: 'company-created',
+      created: true,
+    });
+
+    expect(queryRawUnsafe).toHaveBeenCalledWith(
+      expect.stringMatching(/^SELECT 1 AS locked FROM/),
+      `oakcloud:bizfile:create:${tenantId}:${uen}`,
+    );
+  });
+
   it('rejects selecting a change without its declared dependency', () => {
     const initial = planFor(reviewedData('Renamed Pte. Ltd.', 'NEW'));
     const nameChange = initial.changes.find((change) => change.path === 'entityDetails.name');
