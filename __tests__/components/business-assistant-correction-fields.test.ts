@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BIZFILE_CORRECTION_FIELDS, eligibleBizFileCorrectionFindings } from '@/components/business-assistant/correction-fields';
 
@@ -11,6 +13,17 @@ describe('BizFile correction fields', () => {
     expect(paths).not.toContain('shareholders');
     expect(paths).not.toContain('charges');
     expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it('keeps the presented fields aligned with the canonical server allowlist', () => {
+    const serverSource = readFileSync(join(process.cwd(), 'src/services/bizfile/application/prepare-correction.ts'), 'utf8');
+    const sourcePathsBlock = serverSource.match(/const SOURCE_PATHS:[\s\S]*?= \{([\s\S]*?)\n\};/)?.[1];
+    expect(sourcePathsBlock, 'SOURCE_PATHS allowlist should remain discoverable for contract parity').toBeTruthy();
+    for (const field of BIZFILE_CORRECTION_FIELDS) {
+      expect(sourcePathsBlock).toContain(field.path);
+    }
+    const canonicalEntryCount = sourcePathsBlock?.split('\n').filter((line) => line.trim() && line.includes(':')).length ?? 0;
+    expect(canonicalEntryCount).toBe(BIZFILE_CORRECTION_FIELDS.length);
   });
 
   it('returns only allowlisted findings with immutable expected values', () => {
