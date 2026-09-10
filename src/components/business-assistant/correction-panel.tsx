@@ -67,20 +67,21 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
     </details>
 
     {eligible.length > 0 ? <div className="mt-3 space-y-2">
-      {eligible.map((finding) => <label key={finding.id} className="block rounded-md border border-border-primary bg-background-primary p-3">
-        <span className="flex items-start gap-2">
-          <input type="checkbox" className="mt-0.5 h-4 w-4 accent-oak-primary" checked={selected.includes(finding.id)} disabled={correction.isPending}
+      {eligible.map((finding) => <div key={finding.id} className="rounded-md border border-border-primary bg-background-primary p-3">
+        <div className="flex items-start gap-2">
+          <input type="checkbox" aria-label={`Select correction for ${finding.label}`} className="mt-0.5 h-4 w-4 accent-oak-primary"
+            checked={selected.includes(finding.id)} disabled={correction.isPending}
             onChange={(event) => toggle(finding.id, event.target.checked)} />
-          <span className="min-w-0 flex-1">
-            <span className="font-medium">{finding.label}</span>
-            {finding.message ? <span className="mt-1 block text-text-secondary">{finding.message}</span> : null}
-          </span>
-        </span>
-        <span className="mt-2 grid gap-2 sm:grid-cols-2">
-          <span><span className="block text-text-muted">Recorded value</span><ArtifactView value={finding.actual ?? null} /></span>
-          <span><span className="block text-text-muted">Reviewed correction</span><ArtifactView value={finding.expected} /></span>
-        </span>
-      </label>)}
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">{finding.label}</p>
+            {finding.message ? <p className="mt-1 text-text-secondary">{finding.message}</p> : null}
+          </div>
+        </div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div><p className="text-text-muted">Recorded value</p><ArtifactView value={finding.actual ?? null} /></div>
+          <div><p className="text-text-muted">Reviewed correction</p><ArtifactView value={finding.expected} /></div>
+        </div>
+      </div>)}
       <Button variant="secondary" size="xs" disabled={selectedFindings.length === 0 || correction.isPending} isLoading={correction.isPending} onClick={submit}>
         Create correction proposal
       </Button>
