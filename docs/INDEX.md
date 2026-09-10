@@ -42,7 +42,7 @@
 | Reference | Description |
 |-----------|-------------|
 | [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums, [Tasks and Pipelines](./reference/DATABASE_SCHEMA.md#tasks-and-pipelines-module-tables), and contact identity operations |
-| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [Tasks and Pipelines](./reference/API_REFERENCE.md#tasks-and-pipelines-endpoints), Business Assistant, and contact matching |
+| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [Business Assistant](./reference/API_REFERENCE.md#business-assistant-endpoints), [Tasks and Pipelines](./reference/API_REFERENCE.md#tasks-and-pipelines-endpoints), and contact matching |
 | [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) | Runtime and deployment configuration |
 
 ## Feature Specifications
