@@ -31,7 +31,7 @@ interface RecipientDraft {
   accessCode: string;
 }
 
-const EMPTY_DRAFT: RecipientDraft = { name: '', email: '', type: 'SIGNER', accessMode: 'EMAIL_LINK', accessCode: '' };
+const EMPTY_DRAFT: RecipientDraft = { name: '', email: '', type: 'SIGNER', accessMode: 'MANUAL_LINK', accessCode: '' };
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -39,7 +39,7 @@ function isValidEmail(value: string): boolean {
 
 function buildDraft(contact: SearchableContact): RecipientDraft {
   const email = contact.defaultEmail?.trim() ?? '';
-  return { name: contact.fullName.trim(), email, type: 'SIGNER', accessMode: email ? 'EMAIL_LINK' : 'MANUAL_LINK', accessCode: '' };
+  return { name: contact.fullName.trim(), email, type: 'SIGNER', accessMode: 'MANUAL_LINK', accessCode: '' };
 }
 
 export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients, canEdit, onAddRecipient }: LinkedCompanySignerQuickAddProps) {
