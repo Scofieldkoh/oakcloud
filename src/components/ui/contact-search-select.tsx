@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User } from 'lucide-react';
 import { useContacts } from '@/hooks/use-contacts';
 import { AsyncSearchSelect, type AsyncSearchSelectOption } from './async-search-select';
@@ -11,7 +11,6 @@ export type SearchableContact = Contact & {
   defaultPhone?: string | null;
 };
 
-// Extend the base option interface with Contact-specific fields
 interface ContactOption extends AsyncSearchSelectOption {
   contact: SearchableContact;
 }
@@ -20,6 +19,7 @@ interface ContactSearchSelectProps {
   label?: string;
   value: string;
   onChange: (contactId: string, contact: SearchableContact | null) => void;
+  selectedContact?: SearchableContact | null;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -30,6 +30,7 @@ export function ContactSearchSelect({
   label,
   value,
   onChange,
+  selectedContact = null,
   placeholder = 'Search contacts...',
   disabled = false,
   className,
@@ -38,7 +39,6 @@ export function ContactSearchSelect({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -46,7 +46,6 @@ export function ContactSearchSelect({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch contacts with server-side search
   const { data: contactsData, isLoading } = useContacts({
     query: debouncedQuery || undefined,
     limit: 50,
@@ -54,13 +53,26 @@ export function ContactSearchSelect({
     sortOrder: 'asc',
   });
 
-  // Transform contacts to options format
-  const options: ContactOption[] = (contactsData?.contacts || []).map((contact) => ({
-    id: contact.id,
-    label: contact.fullName,
-    description: contact.defaultEmail || contact.identificationNumber || undefined,
-    contact,
-  }));
+  const options: ContactOption[] = useMemo(() => {
+    const contacts = contactsData?.contacts || [];
+    const nextOptions = contacts.map((contact) => ({
+      id: contact.id,
+      label: contact.fullName,
+      description: contact.defaultEmail || contact.identificationNumber || undefined,
+      contact,
+    }));
+
+    if (selectedContact && !nextOptions.some((option) => option.id === selectedContact.id)) {
+      nextOptions.unshift({
+        id: selectedContact.id,
+        label: selectedContact.fullName,
+        description: selectedContact.defaultEmail || selectedContact.identificationNumber || undefined,
+        contact: selectedContact,
+      });
+    }
+
+    return nextOptions;
+  }, [contactsData?.contacts, selectedContact]);
 
   const handleChange = (id: string, option: ContactOption | null) => {
     onChange(id, option?.contact || null);
