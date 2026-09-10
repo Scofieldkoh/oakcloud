@@ -1,3 +1,7 @@
+import { BIZFILE_CORRECTION_FINDING_CODES, BIZFILE_CORRECTION_SOURCE_PATHS } from '@/lib/bizfile-correction-contract';
+
+export { BIZFILE_CORRECTION_FINDING_CODES };
+
 export const BIZFILE_CORRECTION_FIELDS = [
   { path: 'entityDetails.name', label: 'Company name', group: 'Entity details' },
   { path: 'entityDetails.displayAlias', label: 'Display alias', group: 'Entity details' },
@@ -27,14 +31,9 @@ export const BIZFILE_CORRECTION_FIELDS = [
   { path: 'auditor', label: 'Auditor', group: 'Addresses and auditor' },
 ] as const;
 
-export const BIZFILE_CORRECTION_FINDING_CODES = [
-  'SELECTED_FIELD_MISMATCH',
-  'PERSISTED_FIELD_MISSING',
-  'APPROVED_FIELD_MISMATCH',
-] as const;
-
 const allowedFindingCodes = new Set<string>(BIZFILE_CORRECTION_FINDING_CODES);
 const fieldByPath = new Map<string, (typeof BIZFILE_CORRECTION_FIELDS)[number]>(BIZFILE_CORRECTION_FIELDS.map((field) => [field.path, field]));
+const correctionPaths = new Set<string>(Object.keys(BIZFILE_CORRECTION_SOURCE_PATHS));
 
 export interface EligibleBizFileCorrectionFinding {
   id: string;
@@ -61,7 +60,7 @@ export function eligibleBizFileCorrectionFindings(value: unknown): EligibleBizFi
       || typeof candidate.path !== 'string' || typeof candidate.changeId !== 'string'
       || !allowedFindingCodes.has(candidate.code) || candidate.expected === undefined) continue;
     const field = fieldByPath.get(candidate.path);
-    if (!field || seenPaths.has(candidate.path)) continue;
+    if (!field || !correctionPaths.has(candidate.path) || seenPaths.has(candidate.path)) continue;
     seenPaths.add(candidate.path);
     eligible.push({
       id: candidate.id,

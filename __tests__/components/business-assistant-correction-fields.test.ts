@@ -1,10 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BIZFILE_CORRECTION_FIELDS, BIZFILE_CORRECTION_FINDING_CODES, eligibleBizFileCorrectionFindings } from '@/components/business-assistant/correction-fields';
+import { BIZFILE_CORRECTION_SOURCE_PATHS } from '@/lib/bizfile-correction-contract';
 
 describe('BizFile correction fields', () => {
-  it('presents only deterministic scalar or one-to-one correction paths', () => {
+  it('presents exactly the deterministic scalar or one-to-one correction paths', () => {
     const paths = BIZFILE_CORRECTION_FIELDS.map((field) => field.path);
     expect(paths).toContain('entityDetails.name');
     expect(paths).toContain('addresses.registered');
@@ -13,20 +12,15 @@ describe('BizFile correction fields', () => {
     expect(paths).not.toContain('shareholders');
     expect(paths).not.toContain('charges');
     expect(new Set(paths).size).toBe(paths.length);
+    expect([...paths].sort()).toEqual(Object.keys(BIZFILE_CORRECTION_SOURCE_PATHS).sort());
   });
 
-  it('keeps the presented fields and finding codes aligned with the canonical server allowlist', () => {
-    const serverSource = readFileSync(join(process.cwd(), 'src/services/bizfile/application/prepare-correction.ts'), 'utf8');
-    const sourcePathsBlock = serverSource.match(/const SOURCE_PATHS:[\s\S]*?= \{([\s\S]*?)\n\};/)?.[1];
-    expect(sourcePathsBlock, 'SOURCE_PATHS allowlist should remain discoverable for contract parity').toBeTruthy();
-    for (const field of BIZFILE_CORRECTION_FIELDS) expect(sourcePathsBlock).toContain(field.path);
-    const canonicalEntryCount = sourcePathsBlock?.split('\n').filter((line) => line.trim() && line.includes(':')).length ?? 0;
-    expect(canonicalEntryCount).toBe(BIZFILE_CORRECTION_FIELDS.length);
-
-    const findingCodesLine = serverSource.match(/const ALLOWED_FINDING_CODES = new Set\(\[([^\]]+)\]\)/)?.[1] ?? '';
-    for (const code of BIZFILE_CORRECTION_FINDING_CODES) expect(findingCodesLine).toContain(code);
-    const canonicalCodes = findingCodesLine.match(/[A-Z_]+/g) ?? [];
-    expect(new Set(canonicalCodes).size).toBe(BIZFILE_CORRECTION_FINDING_CODES.length);
+  it('keeps the correction finding contract explicit', () => {
+    expect(BIZFILE_CORRECTION_FINDING_CODES).toEqual([
+      'SELECTED_FIELD_MISMATCH',
+      'PERSISTED_FIELD_MISSING',
+      'APPROVED_FIELD_MISMATCH',
+    ]);
   });
 
   it('returns only allowlisted findings with immutable expected values', () => {
