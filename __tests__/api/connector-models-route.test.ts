@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+vi.mock('@/lib/ai/openrouter-reasoning', () => ({ getOpenRouterReasoningCatalog: vi.fn(async () => new Map()) }));
 
 vi.mock('@/lib/auth', () => ({
   requireAuth: vi.fn(),

@@ -161,7 +161,7 @@ export interface BizFileVisionInput {
  */
 export interface BizFileExtractionOptions {
   /** AI model to use for extraction (optional, uses best available if not specified) */
-  modelId?: AIModel;
+  modelId?: AIModel | string;
   /** Original document bytes for OCR-first extraction when available */
   documentInput?: BizFileVisionInput;
   /** Additional context to provide to the AI for better extraction */
@@ -322,6 +322,7 @@ export interface SelectiveProcessingResult {
 export interface ProcessingResult {
   companyId: string;
   created: boolean;
+  operationReceiptId?: string;
 }
 
 // ============================================================================

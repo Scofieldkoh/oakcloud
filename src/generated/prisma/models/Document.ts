@@ -29,11 +29,13 @@ export type AggregateDocument = {
 export type DocumentAvgAggregateOutputType = {
   fileSize: number | null
   version: number | null
+  sourceRevision: number | null
 }
 
 export type DocumentSumAggregateOutputType = {
   fileSize: number | null
   version: number | null
+  sourceRevision: number | null
 }
 
 export type DocumentMinAggregateOutputType = {
@@ -51,6 +53,7 @@ export type DocumentMinAggregateOutputType = {
   extractionStatus: string | null
   extractionError: string | null
   version: number | null
+  sourceRevision: number | null
   isLatest: boolean | null
   previousVersionId: string | null
   deletedAt: Date | null
@@ -75,6 +78,7 @@ export type DocumentMaxAggregateOutputType = {
   extractionStatus: string | null
   extractionError: string | null
   version: number | null
+  sourceRevision: number | null
   isLatest: boolean | null
   previousVersionId: string | null
   deletedAt: Date | null
@@ -100,6 +104,7 @@ export type DocumentCountAggregateOutputType = {
   extractionError: number
   extractedData: number
   version: number
+  sourceRevision: number
   isLatest: number
   previousVersionId: number
   deletedAt: number
@@ -114,11 +119,13 @@ export type DocumentCountAggregateOutputType = {
 export type DocumentAvgAggregateInputType = {
   fileSize?: true
   version?: true
+  sourceRevision?: true
 }
 
 export type DocumentSumAggregateInputType = {
   fileSize?: true
   version?: true
+  sourceRevision?: true
 }
 
 export type DocumentMinAggregateInputType = {
@@ -136,6 +143,7 @@ export type DocumentMinAggregateInputType = {
   extractionStatus?: true
   extractionError?: true
   version?: true
+  sourceRevision?: true
   isLatest?: true
   previousVersionId?: true
   deletedAt?: true
@@ -160,6 +168,7 @@ export type DocumentMaxAggregateInputType = {
   extractionStatus?: true
   extractionError?: true
   version?: true
+  sourceRevision?: true
   isLatest?: true
   previousVersionId?: true
   deletedAt?: true
@@ -185,6 +194,7 @@ export type DocumentCountAggregateInputType = {
   extractionError?: true
   extractedData?: true
   version?: true
+  sourceRevision?: true
   isLatest?: true
   previousVersionId?: true
   deletedAt?: true
@@ -297,6 +307,7 @@ export type DocumentGroupByOutputType = {
   extractionError: string | null
   extractedData: runtime.JsonValue | null
   version: number
+  sourceRevision: number
   isLatest: boolean
   previousVersionId: string | null
   deletedAt: Date | null
@@ -345,6 +356,7 @@ export type DocumentWhereInput = {
   extractionError?: Prisma.StringNullableFilter<"Document"> | string | null
   extractedData?: Prisma.JsonNullableFilter<"Document">
   version?: Prisma.IntFilter<"Document"> | number
+  sourceRevision?: Prisma.IntFilter<"Document"> | number
   isLatest?: Prisma.BoolFilter<"Document"> | boolean
   previousVersionId?: Prisma.StringNullableFilter<"Document"> | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
@@ -381,6 +393,7 @@ export type DocumentOrderByWithRelationInput = {
   extractionError?: Prisma.SortOrderInput | Prisma.SortOrder
   extractedData?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
   isLatest?: Prisma.SortOrder
   previousVersionId?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -420,6 +433,7 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   extractionError?: Prisma.StringNullableFilter<"Document"> | string | null
   extractedData?: Prisma.JsonNullableFilter<"Document">
   version?: Prisma.IntFilter<"Document"> | number
+  sourceRevision?: Prisma.IntFilter<"Document"> | number
   isLatest?: Prisma.BoolFilter<"Document"> | boolean
   previousVersionId?: Prisma.StringNullableFilter<"Document"> | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
@@ -456,6 +470,7 @@ export type DocumentOrderByWithAggregationInput = {
   extractionError?: Prisma.SortOrderInput | Prisma.SortOrder
   extractedData?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
   isLatest?: Prisma.SortOrder
   previousVersionId?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -489,6 +504,7 @@ export type DocumentScalarWhereWithAggregatesInput = {
   extractionError?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   extractedData?: Prisma.JsonNullableWithAggregatesFilter<"Document">
   version?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  sourceRevision?: Prisma.IntWithAggregatesFilter<"Document"> | number
   isLatest?: Prisma.BoolWithAggregatesFilter<"Document"> | boolean
   previousVersionId?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Document"> | Date | string | null
@@ -511,6 +527,7 @@ export type DocumentCreateInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -547,6 +564,7 @@ export type DocumentUncheckedCreateInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -577,6 +595,7 @@ export type DocumentUpdateInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -613,6 +632,7 @@ export type DocumentUncheckedUpdateInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -646,6 +666,7 @@ export type DocumentCreateManyInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -668,6 +689,7 @@ export type DocumentUpdateManyMutationInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -693,6 +715,7 @@ export type DocumentUncheckedUpdateManyInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -733,6 +756,7 @@ export type DocumentCountOrderByAggregateInput = {
   extractionError?: Prisma.SortOrder
   extractedData?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
   isLatest?: Prisma.SortOrder
   previousVersionId?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -745,6 +769,7 @@ export type DocumentCountOrderByAggregateInput = {
 export type DocumentAvgOrderByAggregateInput = {
   fileSize?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
 }
 
 export type DocumentMaxOrderByAggregateInput = {
@@ -762,6 +787,7 @@ export type DocumentMaxOrderByAggregateInput = {
   extractionStatus?: Prisma.SortOrder
   extractionError?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
   isLatest?: Prisma.SortOrder
   previousVersionId?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -786,6 +812,7 @@ export type DocumentMinOrderByAggregateInput = {
   extractionStatus?: Prisma.SortOrder
   extractionError?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
   isLatest?: Prisma.SortOrder
   previousVersionId?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -798,6 +825,7 @@ export type DocumentMinOrderByAggregateInput = {
 export type DocumentSumOrderByAggregateInput = {
   fileSize?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  sourceRevision?: Prisma.SortOrder
 }
 
 export type DocumentScalarRelationFilter = {
@@ -1070,6 +1098,7 @@ export type DocumentCreateWithoutTenantInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1104,6 +1133,7 @@ export type DocumentUncheckedCreateWithoutTenantInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1166,6 +1196,7 @@ export type DocumentScalarWhereInput = {
   extractionError?: Prisma.StringNullableFilter<"Document"> | string | null
   extractedData?: Prisma.JsonNullableFilter<"Document">
   version?: Prisma.IntFilter<"Document"> | number
+  sourceRevision?: Prisma.IntFilter<"Document"> | number
   isLatest?: Prisma.BoolFilter<"Document"> | boolean
   previousVersionId?: Prisma.StringNullableFilter<"Document"> | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
@@ -1188,6 +1219,7 @@ export type DocumentCreateWithoutUploadedByInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1222,6 +1254,7 @@ export type DocumentUncheckedCreateWithoutUploadedByInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1278,6 +1311,7 @@ export type DocumentCreateWithoutCompanyInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1312,6 +1346,7 @@ export type DocumentUncheckedCreateWithoutCompanyInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1368,6 +1403,7 @@ export type DocumentCreateWithoutFormerNamesInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1403,6 +1439,7 @@ export type DocumentUncheckedCreateWithoutFormerNamesInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1448,6 +1485,7 @@ export type DocumentUpdateWithoutFormerNamesInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1483,6 +1521,7 @@ export type DocumentUncheckedUpdateWithoutFormerNamesInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1512,6 +1551,7 @@ export type DocumentCreateWithoutAddressesInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1547,6 +1587,7 @@ export type DocumentUncheckedCreateWithoutAddressesInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1592,6 +1633,7 @@ export type DocumentUpdateWithoutAddressesInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1627,6 +1669,7 @@ export type DocumentUncheckedUpdateWithoutAddressesInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1656,6 +1699,7 @@ export type DocumentCreateWithoutOfficersInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1691,6 +1735,7 @@ export type DocumentUncheckedCreateWithoutOfficersInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1736,6 +1781,7 @@ export type DocumentUpdateWithoutOfficersInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1771,6 +1817,7 @@ export type DocumentUncheckedUpdateWithoutOfficersInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1800,6 +1847,7 @@ export type DocumentCreateWithoutShareCapitalInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1835,6 +1883,7 @@ export type DocumentUncheckedCreateWithoutShareCapitalInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1880,6 +1929,7 @@ export type DocumentUpdateWithoutShareCapitalInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1915,6 +1965,7 @@ export type DocumentUncheckedUpdateWithoutShareCapitalInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1944,6 +1995,7 @@ export type DocumentCreateWithoutAuditorsInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -1979,6 +2031,7 @@ export type DocumentUncheckedCreateWithoutAuditorsInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2024,6 +2077,7 @@ export type DocumentUpdateWithoutAuditorsInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2059,6 +2113,7 @@ export type DocumentUncheckedUpdateWithoutAuditorsInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2088,6 +2143,7 @@ export type DocumentCreateWithoutShareholdersInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2123,6 +2179,7 @@ export type DocumentUncheckedCreateWithoutShareholdersInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2168,6 +2225,7 @@ export type DocumentUpdateWithoutShareholdersInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2203,6 +2261,7 @@ export type DocumentUncheckedUpdateWithoutShareholdersInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2232,6 +2291,7 @@ export type DocumentCreateWithoutChargesInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2267,6 +2327,7 @@ export type DocumentUncheckedCreateWithoutChargesInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2312,6 +2373,7 @@ export type DocumentUpdateWithoutChargesInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2347,6 +2409,7 @@ export type DocumentUncheckedUpdateWithoutChargesInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2376,6 +2439,7 @@ export type DocumentCreateWithoutProcessingDocumentInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2411,6 +2475,7 @@ export type DocumentUncheckedCreateWithoutProcessingDocumentInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2456,6 +2521,7 @@ export type DocumentUpdateWithoutProcessingDocumentInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2491,6 +2557,7 @@ export type DocumentUncheckedUpdateWithoutProcessingDocumentInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2522,6 +2589,7 @@ export type DocumentCreateManyTenantInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2544,6 +2612,7 @@ export type DocumentUpdateWithoutTenantInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2578,6 +2647,7 @@ export type DocumentUncheckedUpdateWithoutTenantInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2610,6 +2680,7 @@ export type DocumentUncheckedUpdateManyWithoutTenantInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2634,6 +2705,7 @@ export type DocumentCreateManyUploadedByInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2656,6 +2728,7 @@ export type DocumentUpdateWithoutUploadedByInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2690,6 +2763,7 @@ export type DocumentUncheckedUpdateWithoutUploadedByInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2722,6 +2796,7 @@ export type DocumentUncheckedUpdateManyWithoutUploadedByInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2746,6 +2821,7 @@ export type DocumentCreateManyCompanyInput = {
   extractionError?: string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: number
+  sourceRevision?: number
   isLatest?: boolean
   previousVersionId?: string | null
   deletedAt?: Date | string | null
@@ -2768,6 +2844,7 @@ export type DocumentUpdateWithoutCompanyInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2802,6 +2879,7 @@ export type DocumentUncheckedUpdateWithoutCompanyInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2834,6 +2912,7 @@ export type DocumentUncheckedUpdateManyWithoutCompanyInput = {
   extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
   isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2944,6 +3023,7 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   extractionError?: boolean
   extractedData?: boolean
   version?: boolean
+  sourceRevision?: boolean
   isLatest?: boolean
   previousVersionId?: boolean
   deletedAt?: boolean
@@ -2981,6 +3061,7 @@ export type DocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   extractionError?: boolean
   extractedData?: boolean
   version?: boolean
+  sourceRevision?: boolean
   isLatest?: boolean
   previousVersionId?: boolean
   deletedAt?: boolean
@@ -3009,6 +3090,7 @@ export type DocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   extractionError?: boolean
   extractedData?: boolean
   version?: boolean
+  sourceRevision?: boolean
   isLatest?: boolean
   previousVersionId?: boolean
   deletedAt?: boolean
@@ -3037,6 +3119,7 @@ export type DocumentSelectScalar = {
   extractionError?: boolean
   extractedData?: boolean
   version?: boolean
+  sourceRevision?: boolean
   isLatest?: boolean
   previousVersionId?: boolean
   deletedAt?: boolean
@@ -3046,7 +3129,7 @@ export type DocumentSelectScalar = {
   updatedAt?: boolean
 }
 
-export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "uploadedById" | "documentType" | "fileName" | "originalFileName" | "storageKey" | "fileSize" | "mimeType" | "extractedAt" | "extractionStatus" | "extractionError" | "extractedData" | "version" | "isLatest" | "previousVersionId" | "deletedAt" | "deletedReason" | "deletedById" | "createdAt" | "updatedAt", ExtArgs["result"]["document"]>
+export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "uploadedById" | "documentType" | "fileName" | "originalFileName" | "storageKey" | "fileSize" | "mimeType" | "extractedAt" | "extractionStatus" | "extractionError" | "extractedData" | "version" | "sourceRevision" | "isLatest" | "previousVersionId" | "deletedAt" | "deletedReason" | "deletedById" | "createdAt" | "updatedAt", ExtArgs["result"]["document"]>
 export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   addresses?: boolean | Prisma.Document$addressesArgs<ExtArgs>
   auditors?: boolean | Prisma.Document$auditorsArgs<ExtArgs>
@@ -3103,6 +3186,7 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     extractionError: string | null
     extractedData: runtime.JsonValue | null
     version: number
+    sourceRevision: number
     isLatest: boolean
     previousVersionId: string | null
     deletedAt: Date | null
@@ -3559,6 +3643,7 @@ export interface DocumentFieldRefs {
   readonly extractionError: Prisma.FieldRef<"Document", 'String'>
   readonly extractedData: Prisma.FieldRef<"Document", 'Json'>
   readonly version: Prisma.FieldRef<"Document", 'Int'>
+  readonly sourceRevision: Prisma.FieldRef<"Document", 'Int'>
   readonly isLatest: Prisma.FieldRef<"Document", 'Boolean'>
   readonly previousVersionId: Prisma.FieldRef<"Document", 'String'>
   readonly deletedAt: Prisma.FieldRef<"Document", 'DateTime'>

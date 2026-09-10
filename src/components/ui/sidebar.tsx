@@ -34,6 +34,7 @@ import {
   PenSquare,
   Signature,
   Database,
+  Sparkles,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
@@ -63,6 +64,7 @@ interface NavGroup {
 }
 
 const primaryNavigation: NavItem[] = [
+  { name: 'Business Assistant', href: '/business-assistant', icon: Sparkles },
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Tasks', href: '/tasks', icon: ListTodo },

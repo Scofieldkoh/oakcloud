@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     if (
       authenticatedUser &&
-      authenticatedUser.email.trim().toLowerCase() === result.recipient.email.trim().toLowerCase()
+      authenticatedUser.email.trim().toLowerCase() === result.recipient.email?.trim().toLowerCase()
     ) {
       const preference = await prisma.userPreference.findUnique({
         where: {

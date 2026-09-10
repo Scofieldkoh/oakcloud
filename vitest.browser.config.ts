@@ -6,7 +6,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    include: ['react', 'react-dom', '@testing-library/user-event', 'react-dropzone'],
+    include: ['react', 'react-dom', '@testing-library/user-event', 'react-dropzone', 'use-debounce'],
   },
   define: {
     'process.env': '{}',

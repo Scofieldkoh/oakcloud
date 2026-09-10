@@ -38,6 +38,7 @@ import {
 } from '@/components/esigning/esigning-upload-files';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useUserPreference } from '@/hooks/use-user-preferences';
 import {
   useCreateEsigningEnvelope,
   useDeleteEsigningEnvelope,
@@ -55,6 +56,11 @@ import {
   formatEsigningDateTime,
 } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
+import {
+  ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
+  parseEsigningCompletionBccPreference,
+  type EsigningCompletionBccPreference,
+} from '@/lib/validations/esigning';
 import {
   readTaskLaunchContext,
   withTaskLaunchContext,
@@ -268,6 +274,13 @@ export function EsigningListPage() {
   const toast = useToast();
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const completionBccPreference = useUserPreference<EsigningCompletionBccPreference>(
+    ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
+  );
+  const defaultCompletionBccEmails = useMemo(
+    () => parseEsigningCompletionBccPreference(completionBccPreference.data?.value).emails,
+    [completionBccPreference.data?.value],
+  );
   const wordUploadEnabled = useEsigningWordUploadAvailability(activeTenantId);
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
@@ -371,6 +384,7 @@ export function EsigningListPage() {
         : undefined;
       createdEnvelope = await createEnvelope.mutateAsync({
         title,
+        completionCopyEmails: defaultCompletionBccEmails,
         signingOrder,
         expiresAt,
         taskContext,
@@ -420,6 +434,7 @@ export function EsigningListPage() {
   }, [
     activeTenantId,
     createEnvelope,
+    defaultCompletionBccEmails,
     deleteEnvelope,
     expiresInDays,
     generatedDocumentId,
@@ -1056,7 +1071,7 @@ export function EsigningListPage() {
               <div className="min-w-0">
                 <div className="min-w-0">
                   <div className="font-medium text-text-primary">{link.recipientName}</div>
-                  <div className="break-all text-sm text-text-secondary">{link.recipientEmail}</div>
+                  <div className="break-all text-sm text-text-secondary">{link.recipientEmail || 'No email — manual link only'}</div>
                   <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                     <a
                       href={link.signingUrl}

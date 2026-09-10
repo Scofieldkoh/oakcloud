@@ -19,17 +19,22 @@ export interface BatchGenerationResultsProps {
   onRetry: (itemId: string) => void | Promise<void>;
   /** Retries every failed item in sequence. */
   onRetryAll?: () => void | Promise<void>;
+  /** Downloads every successfully generated document as one ZIP archive. */
+  onDownloadAll?: () => void | Promise<void>;
   /** Returns to the review stage without leaving the batch. */
   onBackToBatch?: () => void;
   pending?: boolean;
+  downloadAllPending?: boolean;
 }
 
 export function BatchGenerationResults({
   items,
   onRetry,
   onRetryAll,
+  onDownloadAll,
   onBackToBatch,
   pending = false,
+  downloadAllPending = false,
 }: BatchGenerationResultsProps) {
   const generated = items.filter((item) => item.status === 'GENERATED').length;
   const failedItems = items.filter((item) => item.status === 'FAILED');
@@ -85,6 +90,19 @@ export function BatchGenerationResults({
                 leftIcon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
               >
                 Retry all failed ({failedItems.length})
+              </Button>
+            )}
+            {generated > 0 && onDownloadAll && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void onDownloadAll()}
+                disabled={pending || downloadAllPending}
+                isLoading={downloadAllPending}
+                aria-label={`Download all ${generated} generated documents`}
+                leftIcon={<Download className="h-4 w-4" aria-hidden="true" />}
+              >
+                Download all ({generated})
               </Button>
             )}
             <Link href="/generated-documents">

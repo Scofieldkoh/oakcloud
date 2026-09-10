@@ -14,7 +14,10 @@ import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/doc
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
 import { TemplateEditorPanel } from '@/components/documents/template-editor/template-editor-panel';
-import { commitTemplateFormChange } from '@/components/documents/template-editor/template-editor-state';
+import {
+  commitTemplateFormChange,
+  removeCustomPlaceholderReferences,
+} from '@/components/documents/template-editor/template-editor-state';
 import { insertTemplateSnippet } from '@/components/documents/template-editor/template-insertion';
 import type { TemplateEditorPartialForm, TemplateEditorTemplateForm } from '@/components/documents/template-editor/template-details-panel';
 import { validateTemplate, validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
@@ -1347,6 +1350,35 @@ function TemplateEditorContent() {
     setIsDirty(true);
   }, []);
 
+  const handleCustomPlaceholdersChange = useCallback((placeholders: CustomPlaceholderDefinition[]) => {
+    if (isPartialMode) {
+      setPartialFormData((previous) => {
+        const removedKeys = previous.customPlaceholders
+          .filter((field) => !placeholders.some((nextField) => nextField.id === field.id))
+          .map((field) => field.key);
+
+        return {
+          ...previous,
+          customPlaceholders: placeholders,
+          content: removeCustomPlaceholderReferences(previous.content, removedKeys),
+        };
+      });
+    } else {
+      setFormData((previous) => {
+        const removedKeys = previous.customPlaceholders
+          .filter((field) => !placeholders.some((nextField) => nextField.id === field.id))
+          .map((field) => field.key);
+
+        return {
+          ...previous,
+          customPlaceholders: placeholders,
+          content: removeCustomPlaceholderReferences(previous.content, removedKeys),
+        };
+      });
+    }
+    setIsDirty(true);
+  }, [isPartialMode]);
+
   // Handle placeholder insertion at cursor position
   const handleInsertPlaceholder = useCallback((placeholder: string) => {
     insertTemplateSnippet(editorRef.current, placeholder);
@@ -1768,11 +1800,7 @@ function TemplateEditorContent() {
                 partials={partials}
                 isLoadingPartials={isLoadingPartials}
                 customPlaceholders={isPartialMode ? partialFormData.customPlaceholders : formData.customPlaceholders}
-                onCustomPlaceholdersChange={(placeholders) => {
-                  if (isPartialMode) setPartialFormData((previous) => ({ ...previous, customPlaceholders: placeholders }));
-                  else setFormData((previous) => ({ ...previous, customPlaceholders: placeholders }));
-                  setIsDirty(true);
-                }}
+                onCustomPlaceholdersChange={handleCustomPlaceholdersChange}
                 mergedPlaceholders={mergedPlaceholders}
                 templateBooleanPlaceholders={templateBooleanPlaceholders}
                 partialPlaceholderLinkings={partialPlaceholderLinkings}

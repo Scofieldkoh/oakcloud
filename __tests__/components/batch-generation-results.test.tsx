@@ -104,6 +104,19 @@ describe('BatchGenerationResults', () => {
     unmount();
   });
 
+  it('offers one download for all generated documents', async () => {
+    const user = userEvent.setup();
+    const onDownloadAll = vi.fn();
+    const { unmount } = render(
+      <BatchGenerationResults {...props({ onDownloadAll })} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /download all 1 generated document/i }));
+
+    expect(onDownloadAll).toHaveBeenCalledOnce();
+    unmount();
+  });
+
   it('explains why untouched items did not run', () => {
     const { unmount } = render(<BatchGenerationResults {...props({
       items: [item({ status: 'BLOCKED' })],

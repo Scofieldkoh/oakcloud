@@ -507,7 +507,24 @@ export const ModelName = {
   TaskEsigningPreparation: 'TaskEsigningPreparation',
   TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext',
   AcraEntity: 'AcraEntity',
-  AcraSyncState: 'AcraSyncState'
+  AcraSyncState: 'AcraSyncState',
+  BusinessAssistantConversation: 'BusinessAssistantConversation',
+  BusinessAssistantMessage: 'BusinessAssistantMessage',
+  BusinessAssistantRun: 'BusinessAssistantRun',
+  BusinessAssistantRunItem: 'BusinessAssistantRunItem',
+  BusinessAssistantRunStep: 'BusinessAssistantRunStep',
+  BusinessAssistantProposal: 'BusinessAssistantProposal',
+  BusinessAssistantApproval: 'BusinessAssistantApproval',
+  BusinessAssistantReview: 'BusinessAssistantReview',
+  BusinessAssistantFeedback: 'BusinessAssistantFeedback',
+  BusinessAssistantMemory: 'BusinessAssistantMemory',
+  BusinessAssistantLearningChange: 'BusinessAssistantLearningChange',
+  BusinessAssistantLearningActiveTarget: 'BusinessAssistantLearningActiveTarget',
+  BusinessAssistantActionRequest: 'BusinessAssistantActionRequest',
+  BusinessAssistantCapacitySlot: 'BusinessAssistantCapacitySlot',
+  BizFileOperationReceipt: 'BizFileOperationReceipt',
+  BizFileOperationEvidence: 'BizFileOperationEvidence',
+  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -523,7 +540,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -9703,6 +9720,1264 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    BusinessAssistantConversation: {
+      payload: Prisma.$BusinessAssistantConversationPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantConversationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantConversationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantConversationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantConversationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantConversationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantConversationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantConversationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantConversationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantConversationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantConversationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantConversationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantConversationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantConversationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantConversationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantConversationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantConversationPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantConversationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantConversation>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantConversationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantConversationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantConversationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantConversationCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantMessage: {
+      payload: Prisma.$BusinessAssistantMessagePayload<ExtArgs>
+      fields: Prisma.BusinessAssistantMessageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantMessageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantMessageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantMessageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantMessageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantMessageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantMessageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantMessageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantMessageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantMessageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantMessageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantMessageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantMessageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantMessageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantMessageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMessagePayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantMessageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantMessage>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantMessageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantMessageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantMessageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantMessageCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantRun: {
+      payload: Prisma.$BusinessAssistantRunPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantRunFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantRunFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantRunFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantRunFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantRunFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantRunFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantRunCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantRunCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantRunCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantRunDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantRunUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantRunDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantRunUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantRunUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantRunUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantRunAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantRun>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantRunGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantRunGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantRunCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantRunCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantRunItem: {
+      payload: Prisma.$BusinessAssistantRunItemPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantRunItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantRunItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantRunItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantRunItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantRunItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantRunItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantRunItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantRunItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantRunItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantRunItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantRunItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantRunItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantRunItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantRunItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantRunItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunItemPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantRunItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantRunItem>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantRunItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantRunItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantRunItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantRunItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantRunStep: {
+      payload: Prisma.$BusinessAssistantRunStepPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantRunStepFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantRunStepFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantRunStepFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantRunStepFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantRunStepFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantRunStepFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantRunStepCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantRunStepCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantRunStepCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantRunStepDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantRunStepUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantRunStepDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantRunStepUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantRunStepUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantRunStepUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantRunStepPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantRunStepAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantRunStep>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantRunStepGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantRunStepGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantRunStepCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantRunStepCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantProposal: {
+      payload: Prisma.$BusinessAssistantProposalPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantProposalFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantProposalFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantProposalFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantProposalFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantProposalFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantProposalFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantProposalCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantProposalCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantProposalCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantProposalDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantProposalUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantProposalDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantProposalUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantProposalUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantProposalUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantProposalPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantProposalAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantProposal>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantProposalGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantProposalGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantProposalCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantProposalCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantApproval: {
+      payload: Prisma.$BusinessAssistantApprovalPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantApprovalFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantApprovalFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantApprovalFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantApprovalFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantApprovalFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantApprovalFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantApprovalCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantApprovalCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantApprovalCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantApprovalDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantApprovalUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantApprovalDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantApprovalUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantApprovalUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantApprovalUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantApprovalPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantApprovalAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantApproval>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantApprovalGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantApprovalGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantApprovalCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantApprovalCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantReview: {
+      payload: Prisma.$BusinessAssistantReviewPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantReviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantReviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantReviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantReviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantReviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantReviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantReviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantReviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantReviewCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantReviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantReviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantReviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantReviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantReviewUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantReviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantReviewPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantReviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantReview>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantReviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantReviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantReviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantReviewCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantFeedback: {
+      payload: Prisma.$BusinessAssistantFeedbackPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantFeedbackFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantFeedbackFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantFeedbackFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantFeedbackFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantFeedbackFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantFeedbackFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantFeedbackCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantFeedbackCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantFeedbackCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantFeedbackDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantFeedbackUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantFeedbackDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantFeedbackUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantFeedbackUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantFeedbackUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantFeedbackPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantFeedbackAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantFeedback>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantFeedbackGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantFeedbackGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantFeedbackCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantFeedbackCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantMemory: {
+      payload: Prisma.$BusinessAssistantMemoryPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantMemoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantMemoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantMemoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantMemoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantMemoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantMemoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantMemoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantMemoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantMemoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantMemoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantMemoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantMemoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantMemoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantMemoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantMemoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantMemoryPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantMemoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantMemory>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantMemoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantMemoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantMemoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantMemoryCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantLearningChange: {
+      payload: Prisma.$BusinessAssistantLearningChangePayload<ExtArgs>
+      fields: Prisma.BusinessAssistantLearningChangeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantLearningChangeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantLearningChangeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantLearningChangeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantLearningChangeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantLearningChangeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantLearningChangeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantLearningChangeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantLearningChangeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantLearningChangeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantLearningChangeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantLearningChangeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantLearningChangeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantLearningChangeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantLearningChangeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningChangePayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantLearningChangeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantLearningChange>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantLearningChangeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantLearningChangeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantLearningChangeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantLearningChangeCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantLearningActiveTarget: {
+      payload: Prisma.$BusinessAssistantLearningActiveTargetPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantLearningActiveTargetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantLearningActiveTargetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantLearningActiveTargetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantLearningActiveTargetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantLearningActiveTargetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantLearningActiveTargetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantLearningActiveTargetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantLearningActiveTargetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantLearningActiveTargetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantLearningActiveTargetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantLearningActiveTargetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantLearningActiveTargetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantLearningActiveTargetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantLearningActiveTargetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantLearningActiveTargetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantLearningActiveTargetPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantLearningActiveTargetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantLearningActiveTarget>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantLearningActiveTargetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantLearningActiveTargetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantLearningActiveTargetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantLearningActiveTargetCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantActionRequest: {
+      payload: Prisma.$BusinessAssistantActionRequestPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantActionRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantActionRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantActionRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantActionRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantActionRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantActionRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantActionRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantActionRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantActionRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantActionRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantActionRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantActionRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantActionRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantActionRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantActionRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantActionRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantActionRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantActionRequest>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantActionRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantActionRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantActionRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantActionRequestCountAggregateOutputType> | number
+        }
+      }
+    }
+    BusinessAssistantCapacitySlot: {
+      payload: Prisma.$BusinessAssistantCapacitySlotPayload<ExtArgs>
+      fields: Prisma.BusinessAssistantCapacitySlotFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BusinessAssistantCapacitySlotFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BusinessAssistantCapacitySlotFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>
+        }
+        findFirst: {
+          args: Prisma.BusinessAssistantCapacitySlotFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BusinessAssistantCapacitySlotFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>
+        }
+        findMany: {
+          args: Prisma.BusinessAssistantCapacitySlotFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>[]
+        }
+        create: {
+          args: Prisma.BusinessAssistantCapacitySlotCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>
+        }
+        createMany: {
+          args: Prisma.BusinessAssistantCapacitySlotCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BusinessAssistantCapacitySlotCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>[]
+        }
+        delete: {
+          args: Prisma.BusinessAssistantCapacitySlotDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>
+        }
+        update: {
+          args: Prisma.BusinessAssistantCapacitySlotUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>
+        }
+        deleteMany: {
+          args: Prisma.BusinessAssistantCapacitySlotDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BusinessAssistantCapacitySlotUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BusinessAssistantCapacitySlotUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>[]
+        }
+        upsert: {
+          args: Prisma.BusinessAssistantCapacitySlotUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BusinessAssistantCapacitySlotPayload>
+        }
+        aggregate: {
+          args: Prisma.BusinessAssistantCapacitySlotAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBusinessAssistantCapacitySlot>
+        }
+        groupBy: {
+          args: Prisma.BusinessAssistantCapacitySlotGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantCapacitySlotGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BusinessAssistantCapacitySlotCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BusinessAssistantCapacitySlotCountAggregateOutputType> | number
+        }
+      }
+    }
+    BizFileOperationReceipt: {
+      payload: Prisma.$BizFileOperationReceiptPayload<ExtArgs>
+      fields: Prisma.BizFileOperationReceiptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BizFileOperationReceiptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BizFileOperationReceiptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>
+        }
+        findFirst: {
+          args: Prisma.BizFileOperationReceiptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BizFileOperationReceiptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>
+        }
+        findMany: {
+          args: Prisma.BizFileOperationReceiptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>[]
+        }
+        create: {
+          args: Prisma.BizFileOperationReceiptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>
+        }
+        createMany: {
+          args: Prisma.BizFileOperationReceiptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BizFileOperationReceiptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>[]
+        }
+        delete: {
+          args: Prisma.BizFileOperationReceiptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>
+        }
+        update: {
+          args: Prisma.BizFileOperationReceiptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>
+        }
+        deleteMany: {
+          args: Prisma.BizFileOperationReceiptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BizFileOperationReceiptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BizFileOperationReceiptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>[]
+        }
+        upsert: {
+          args: Prisma.BizFileOperationReceiptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationReceiptPayload>
+        }
+        aggregate: {
+          args: Prisma.BizFileOperationReceiptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBizFileOperationReceipt>
+        }
+        groupBy: {
+          args: Prisma.BizFileOperationReceiptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BizFileOperationReceiptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BizFileOperationReceiptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BizFileOperationReceiptCountAggregateOutputType> | number
+        }
+      }
+    }
+    BizFileOperationEvidence: {
+      payload: Prisma.$BizFileOperationEvidencePayload<ExtArgs>
+      fields: Prisma.BizFileOperationEvidenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BizFileOperationEvidenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BizFileOperationEvidenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>
+        }
+        findFirst: {
+          args: Prisma.BizFileOperationEvidenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BizFileOperationEvidenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>
+        }
+        findMany: {
+          args: Prisma.BizFileOperationEvidenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>[]
+        }
+        create: {
+          args: Prisma.BizFileOperationEvidenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>
+        }
+        createMany: {
+          args: Prisma.BizFileOperationEvidenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BizFileOperationEvidenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>[]
+        }
+        delete: {
+          args: Prisma.BizFileOperationEvidenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>
+        }
+        update: {
+          args: Prisma.BizFileOperationEvidenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>
+        }
+        deleteMany: {
+          args: Prisma.BizFileOperationEvidenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BizFileOperationEvidenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BizFileOperationEvidenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>[]
+        }
+        upsert: {
+          args: Prisma.BizFileOperationEvidenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEvidencePayload>
+        }
+        aggregate: {
+          args: Prisma.BizFileOperationEvidenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBizFileOperationEvidence>
+        }
+        groupBy: {
+          args: Prisma.BizFileOperationEvidenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BizFileOperationEvidenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BizFileOperationEvidenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BizFileOperationEvidenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    BizFileOperationEffectIntent: {
+      payload: Prisma.$BizFileOperationEffectIntentPayload<ExtArgs>
+      fields: Prisma.BizFileOperationEffectIntentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BizFileOperationEffectIntentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BizFileOperationEffectIntentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>
+        }
+        findFirst: {
+          args: Prisma.BizFileOperationEffectIntentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BizFileOperationEffectIntentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>
+        }
+        findMany: {
+          args: Prisma.BizFileOperationEffectIntentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>[]
+        }
+        create: {
+          args: Prisma.BizFileOperationEffectIntentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>
+        }
+        createMany: {
+          args: Prisma.BizFileOperationEffectIntentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BizFileOperationEffectIntentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>[]
+        }
+        delete: {
+          args: Prisma.BizFileOperationEffectIntentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>
+        }
+        update: {
+          args: Prisma.BizFileOperationEffectIntentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>
+        }
+        deleteMany: {
+          args: Prisma.BizFileOperationEffectIntentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BizFileOperationEffectIntentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BizFileOperationEffectIntentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>[]
+        }
+        upsert: {
+          args: Prisma.BizFileOperationEffectIntentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BizFileOperationEffectIntentPayload>
+        }
+        aggregate: {
+          args: Prisma.BizFileOperationEffectIntentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBizFileOperationEffectIntent>
+        }
+        groupBy: {
+          args: Prisma.BizFileOperationEffectIntentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BizFileOperationEffectIntentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BizFileOperationEffectIntentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BizFileOperationEffectIntentCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -9918,6 +11193,7 @@ export const CompanyScalarFieldEnum = {
   annualReceiptsOrExpenditure: 'annualReceiptsOrExpenditure',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  aggregateRevision: 'aggregateRevision',
   deletedAt: 'deletedAt',
   deletedReason: 'deletedReason',
   taskIntegrationContext: 'taskIntegrationContext'
@@ -10160,6 +11436,7 @@ export const DocumentScalarFieldEnum = {
   extractionError: 'extractionError',
   extractedData: 'extractedData',
   version: 'version',
+  sourceRevision: 'sourceRevision',
   isLatest: 'isLatest',
   previousVersionId: 'previousVersionId',
   deletedAt: 'deletedAt',
@@ -10984,6 +12261,7 @@ export const EsigningEnvelopeScalarFieldEnum = {
   title: 'title',
   emailSubject: 'emailSubject',
   message: 'message',
+  completionCopyEmails: 'completionCopyEmails',
   status: 'status',
   signingOrder: 'signingOrder',
   expiresAt: 'expiresAt',
@@ -12272,6 +13550,372 @@ export const AcraSyncStateScalarFieldEnum = {
 } as const
 
 export type AcraSyncStateScalarFieldEnum = (typeof AcraSyncStateScalarFieldEnum)[keyof typeof AcraSyncStateScalarFieldEnum]
+
+
+export const BusinessAssistantConversationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  title: 'title',
+  status: 'status',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantConversationScalarFieldEnum = (typeof BusinessAssistantConversationScalarFieldEnum)[keyof typeof BusinessAssistantConversationScalarFieldEnum]
+
+
+export const BusinessAssistantMessageScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  conversationId: 'conversationId',
+  ownerId: 'ownerId',
+  sequence: 'sequence',
+  role: 'role',
+  type: 'type',
+  status: 'status',
+  content: 'content',
+  payload: 'payload',
+  resources: 'resources',
+  operationKind: 'operationKind',
+  clientRequestId: 'clientRequestId',
+  bodyHash: 'bodyHash',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  leaseExpiresAt: 'leaseExpiresAt',
+  availableAt: 'availableAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantMessageScalarFieldEnum = (typeof BusinessAssistantMessageScalarFieldEnum)[keyof typeof BusinessAssistantMessageScalarFieldEnum]
+
+
+export const BusinessAssistantRunScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  conversationId: 'conversationId',
+  ownerId: 'ownerId',
+  capabilityId: 'capabilityId',
+  capabilityVersion: 'capabilityVersion',
+  contractVersion: 'contractVersion',
+  schemaVersion: 'schemaVersion',
+  input: 'input',
+  resources: 'resources',
+  status: 'status',
+  activeProposalId: 'activeProposalId',
+  cancellationRequestedAt: 'cancellationRequestedAt',
+  cancellationReason: 'cancellationReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  conversationTenantId: 'conversationTenantId'
+} as const
+
+export type BusinessAssistantRunScalarFieldEnum = (typeof BusinessAssistantRunScalarFieldEnum)[keyof typeof BusinessAssistantRunScalarFieldEnum]
+
+
+export const BusinessAssistantRunItemScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runId: 'runId',
+  itemKey: 'itemKey',
+  ordinal: 'ordinal',
+  input: 'input',
+  resources: 'resources',
+  lifecycleState: 'lifecycleState',
+  executionOutcome: 'executionOutcome',
+  reviewOutcome: 'reviewOutcome',
+  requiredEffectStatus: 'requiredEffectStatus',
+  dispositionReason: 'dispositionReason',
+  operationId: 'operationId',
+  receiptRef: 'receiptRef',
+  output: 'output',
+  activeStage: 'activeStage',
+  activeAttempt: 'activeAttempt',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  leaseExpiresAt: 'leaseExpiresAt',
+  availableAt: 'availableAt',
+  retryCount: 'retryCount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantRunItemScalarFieldEnum = (typeof BusinessAssistantRunItemScalarFieldEnum)[keyof typeof BusinessAssistantRunItemScalarFieldEnum]
+
+
+export const BusinessAssistantRunStepScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runItemId: 'runItemId',
+  stage: 'stage',
+  attemptNumber: 'attemptNumber',
+  status: 'status',
+  inputArtifact: 'inputArtifact',
+  outputArtifact: 'outputArtifact',
+  error: 'error',
+  providerRef: 'providerRef',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  nextRetryAt: 'nextRetryAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantRunStepScalarFieldEnum = (typeof BusinessAssistantRunStepScalarFieldEnum)[keyof typeof BusinessAssistantRunStepScalarFieldEnum]
+
+
+export const BusinessAssistantProposalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runId: 'runId',
+  revision: 'revision',
+  status: 'status',
+  preparedArtifact: 'preparedArtifact',
+  preparedHash: 'preparedHash',
+  eligibleItems: 'eligibleItems',
+  effectManifest: 'effectManifest',
+  policyVersion: 'policyVersion',
+  serializerVersion: 'serializerVersion',
+  schemaVersion: 'schemaVersion',
+  expiresAt: 'expiresAt',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantProposalScalarFieldEnum = (typeof BusinessAssistantProposalScalarFieldEnum)[keyof typeof BusinessAssistantProposalScalarFieldEnum]
+
+
+export const BusinessAssistantApprovalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runId: 'runId',
+  proposalId: 'proposalId',
+  revision: 'revision',
+  selectedItems: 'selectedItems',
+  selectedBindings: 'selectedBindings',
+  decision: 'decision',
+  policyVersion: 'policyVersion',
+  approverId: 'approverId',
+  actionKey: 'actionKey',
+  actionBodyHash: 'actionBodyHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type BusinessAssistantApprovalScalarFieldEnum = (typeof BusinessAssistantApprovalScalarFieldEnum)[keyof typeof BusinessAssistantApprovalScalarFieldEnum]
+
+
+export const BusinessAssistantReviewScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  runItemId: 'runItemId',
+  attemptNumber: 'attemptNumber',
+  verdict: 'verdict',
+  executionConformance: 'executionConformance',
+  sourceAlignment: 'sourceAlignment',
+  evidence: 'evidence',
+  findings: 'findings',
+  coverage: 'coverage',
+  schemaVersion: 'schemaVersion',
+  promptVersion: 'promptVersion',
+  providerVersion: 'providerVersion',
+  createdAt: 'createdAt'
+} as const
+
+export type BusinessAssistantReviewScalarFieldEnum = (typeof BusinessAssistantReviewScalarFieldEnum)[keyof typeof BusinessAssistantReviewScalarFieldEnum]
+
+
+export const BusinessAssistantFeedbackScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  targetType: 'targetType',
+  targetId: 'targetId',
+  eventType: 'eventType',
+  comment: 'comment',
+  bodyHash: 'bodyHash',
+  provenance: 'provenance',
+  adjudication: 'adjudication',
+  clientEventId: 'clientEventId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantFeedbackScalarFieldEnum = (typeof BusinessAssistantFeedbackScalarFieldEnum)[keyof typeof BusinessAssistantFeedbackScalarFieldEnum]
+
+
+export const BusinessAssistantMemoryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  scope: 'scope',
+  conversationId: 'conversationId',
+  capabilityId: 'capabilityId',
+  capabilityVersion: 'capabilityVersion',
+  key: 'key',
+  value: 'value',
+  provenance: 'provenance',
+  evidenceCount: 'evidenceCount',
+  risk: 'risk',
+  state: 'state',
+  version: 'version',
+  effectiveAt: 'effectiveAt',
+  expiresAt: 'expiresAt',
+  supersedesId: 'supersedesId',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantMemoryScalarFieldEnum = (typeof BusinessAssistantMemoryScalarFieldEnum)[keyof typeof BusinessAssistantMemoryScalarFieldEnum]
+
+
+export const BusinessAssistantLearningChangeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  targetKey: 'targetKey',
+  targetKind: 'targetKind',
+  risk: 'risk',
+  baselineVersion: 'baselineVersion',
+  candidateVersion: 'candidateVersion',
+  candidateValue: 'candidateValue',
+  evidence: 'evidence',
+  evaluation: 'evaluation',
+  state: 'state',
+  expectedVersion: 'expectedVersion',
+  approvedById: 'approvedById',
+  approvedAt: 'approvedAt',
+  promotedAt: 'promotedAt',
+  rollbackTarget: 'rollbackTarget',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantLearningChangeScalarFieldEnum = (typeof BusinessAssistantLearningChangeScalarFieldEnum)[keyof typeof BusinessAssistantLearningChangeScalarFieldEnum]
+
+
+export const BusinessAssistantLearningActiveTargetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  targetKey: 'targetKey',
+  activeVersion: 'activeVersion',
+  activeValue: 'activeValue',
+  previousVersion: 'previousVersion',
+  previousValue: 'previousValue',
+  activeChangeId: 'activeChangeId',
+  revision: 'revision',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantLearningActiveTargetScalarFieldEnum = (typeof BusinessAssistantLearningActiveTargetScalarFieldEnum)[keyof typeof BusinessAssistantLearningActiveTargetScalarFieldEnum]
+
+
+export const BusinessAssistantActionRequestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  ownerId: 'ownerId',
+  conversationId: 'conversationId',
+  runId: 'runId',
+  actionKind: 'actionKind',
+  clientRequestId: 'clientRequestId',
+  bodyHash: 'bodyHash',
+  response: 'response',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantActionRequestScalarFieldEnum = (typeof BusinessAssistantActionRequestScalarFieldEnum)[keyof typeof BusinessAssistantActionRequestScalarFieldEnum]
+
+
+export const BusinessAssistantCapacitySlotScalarFieldEnum = {
+  id: 'id',
+  slotKey: 'slotKey',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  runItemId: 'runItemId',
+  stage: 'stage',
+  leaseExpiresAt: 'leaseExpiresAt',
+  heartbeatAt: 'heartbeatAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessAssistantCapacitySlotScalarFieldEnum = (typeof BusinessAssistantCapacitySlotScalarFieldEnum)[keyof typeof BusinessAssistantCapacitySlotScalarFieldEnum]
+
+
+export const BizFileOperationReceiptScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  operationId: 'operationId',
+  capabilityId: 'capabilityId',
+  capabilityVersion: 'capabilityVersion',
+  schemaVersion: 'schemaVersion',
+  mode: 'mode',
+  companyId: 'companyId',
+  documentId: 'documentId',
+  payloadHash: 'payloadHash',
+  expectedAggregateRevision: 'expectedAggregateRevision',
+  beforeRevision: 'beforeRevision',
+  afterRevision: 'afterRevision',
+  status: 'status',
+  effectStatus: 'effectStatus',
+  safeError: 'safeError',
+  committedAt: 'committedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BizFileOperationReceiptScalarFieldEnum = (typeof BizFileOperationReceiptScalarFieldEnum)[keyof typeof BizFileOperationReceiptScalarFieldEnum]
+
+
+export const BizFileOperationEvidenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  receiptId: 'receiptId',
+  kind: 'kind',
+  artifact: 'artifact',
+  artifactHash: 'artifactHash',
+  sourceRef: 'sourceRef',
+  createdAt: 'createdAt'
+} as const
+
+export type BizFileOperationEvidenceScalarFieldEnum = (typeof BizFileOperationEvidenceScalarFieldEnum)[keyof typeof BizFileOperationEvidenceScalarFieldEnum]
+
+
+export const BizFileOperationEffectIntentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  receiptId: 'receiptId',
+  effectKind: 'effectKind',
+  target: 'target',
+  payload: 'payload',
+  payloadHash: 'payloadHash',
+  state: 'state',
+  attemptCount: 'attemptCount',
+  nextAttemptAt: 'nextAttemptAt',
+  lastError: 'lastError',
+  claimToken: 'claimToken',
+  claimGeneration: 'claimGeneration',
+  leaseExpiresAt: 'leaseExpiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BizFileOperationEffectIntentScalarFieldEnum = (typeof BizFileOperationEffectIntentScalarFieldEnum)[keyof typeof BizFileOperationEffectIntentScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -13860,6 +15504,440 @@ export type EnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel> = Field
 export type ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskEsigningPreparationStatus[]'>
 
 
+
+/**
+ * Reference to a field of type 'BusinessAssistantConversationStatus'
+ */
+export type EnumBusinessAssistantConversationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantConversationStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantConversationStatus[]'
+ */
+export type ListEnumBusinessAssistantConversationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantConversationStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMessageRole'
+ */
+export type EnumBusinessAssistantMessageRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMessageRole'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMessageRole[]'
+ */
+export type ListEnumBusinessAssistantMessageRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMessageRole[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMessageType'
+ */
+export type EnumBusinessAssistantMessageTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMessageType'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMessageType[]'
+ */
+export type ListEnumBusinessAssistantMessageTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMessageType[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMessageStatus'
+ */
+export type EnumBusinessAssistantMessageStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMessageStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMessageStatus[]'
+ */
+export type ListEnumBusinessAssistantMessageStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMessageStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantRunStatus'
+ */
+export type EnumBusinessAssistantRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantRunStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantRunStatus[]'
+ */
+export type ListEnumBusinessAssistantRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantRunStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantItemState'
+ */
+export type EnumBusinessAssistantItemStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantItemState'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantItemState[]'
+ */
+export type ListEnumBusinessAssistantItemStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantItemState[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantExecutionOutcome'
+ */
+export type EnumBusinessAssistantExecutionOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantExecutionOutcome'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantExecutionOutcome[]'
+ */
+export type ListEnumBusinessAssistantExecutionOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantExecutionOutcome[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantReviewOutcome'
+ */
+export type EnumBusinessAssistantReviewOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantReviewOutcome'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantReviewOutcome[]'
+ */
+export type ListEnumBusinessAssistantReviewOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantReviewOutcome[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantEffectStatus'
+ */
+export type EnumBusinessAssistantEffectStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantEffectStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantEffectStatus[]'
+ */
+export type ListEnumBusinessAssistantEffectStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantEffectStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantStage'
+ */
+export type EnumBusinessAssistantStageFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantStage'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantStage[]'
+ */
+export type ListEnumBusinessAssistantStageFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantStage[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantAttemptStatus'
+ */
+export type EnumBusinessAssistantAttemptStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantAttemptStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantAttemptStatus[]'
+ */
+export type ListEnumBusinessAssistantAttemptStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantAttemptStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantProposalStatus'
+ */
+export type EnumBusinessAssistantProposalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantProposalStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantProposalStatus[]'
+ */
+export type ListEnumBusinessAssistantProposalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantProposalStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantApprovalDecision'
+ */
+export type EnumBusinessAssistantApprovalDecisionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantApprovalDecision'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantApprovalDecision[]'
+ */
+export type ListEnumBusinessAssistantApprovalDecisionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantApprovalDecision[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantReviewVerdict'
+ */
+export type EnumBusinessAssistantReviewVerdictFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantReviewVerdict'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantReviewVerdict[]'
+ */
+export type ListEnumBusinessAssistantReviewVerdictFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantReviewVerdict[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantConformance'
+ */
+export type EnumBusinessAssistantConformanceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantConformance'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantConformance[]'
+ */
+export type ListEnumBusinessAssistantConformanceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantConformance[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantSourceAlignment'
+ */
+export type EnumBusinessAssistantSourceAlignmentFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantSourceAlignment'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantSourceAlignment[]'
+ */
+export type ListEnumBusinessAssistantSourceAlignmentFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantSourceAlignment[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantFeedbackTarget'
+ */
+export type EnumBusinessAssistantFeedbackTargetFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantFeedbackTarget'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantFeedbackTarget[]'
+ */
+export type ListEnumBusinessAssistantFeedbackTargetFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantFeedbackTarget[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantFeedbackEvent'
+ */
+export type EnumBusinessAssistantFeedbackEventFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantFeedbackEvent'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantFeedbackEvent[]'
+ */
+export type ListEnumBusinessAssistantFeedbackEventFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantFeedbackEvent[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantAdjudicationStatus'
+ */
+export type EnumBusinessAssistantAdjudicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantAdjudicationStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantAdjudicationStatus[]'
+ */
+export type ListEnumBusinessAssistantAdjudicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantAdjudicationStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMemoryScope'
+ */
+export type EnumBusinessAssistantMemoryScopeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMemoryScope'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMemoryScope[]'
+ */
+export type ListEnumBusinessAssistantMemoryScopeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMemoryScope[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMemoryRisk'
+ */
+export type EnumBusinessAssistantMemoryRiskFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMemoryRisk'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMemoryRisk[]'
+ */
+export type ListEnumBusinessAssistantMemoryRiskFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMemoryRisk[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMemoryState'
+ */
+export type EnumBusinessAssistantMemoryStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMemoryState'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantMemoryState[]'
+ */
+export type ListEnumBusinessAssistantMemoryStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantMemoryState[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantLearningTarget'
+ */
+export type EnumBusinessAssistantLearningTargetFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantLearningTarget'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantLearningTarget[]'
+ */
+export type ListEnumBusinessAssistantLearningTargetFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantLearningTarget[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantLearningState'
+ */
+export type EnumBusinessAssistantLearningStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantLearningState'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantLearningState[]'
+ */
+export type ListEnumBusinessAssistantLearningStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantLearningState[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantActionKind'
+ */
+export type EnumBusinessAssistantActionKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantActionKind'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantActionKind[]'
+ */
+export type ListEnumBusinessAssistantActionKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantActionKind[]'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantActionStatus'
+ */
+export type EnumBusinessAssistantActionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantActionStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessAssistantActionStatus[]'
+ */
+export type ListEnumBusinessAssistantActionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessAssistantActionStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationMode'
+ */
+export type EnumBizFileOperationModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationMode'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationMode[]'
+ */
+export type ListEnumBizFileOperationModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationMode[]'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationStatus'
+ */
+export type EnumBizFileOperationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationStatus[]'
+ */
+export type ListEnumBizFileOperationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationEffectStatus'
+ */
+export type EnumBizFileOperationEffectStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEffectStatus'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationEffectStatus[]'
+ */
+export type ListEnumBizFileOperationEffectStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEffectStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationEvidenceKind'
+ */
+export type EnumBizFileOperationEvidenceKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEvidenceKind'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationEvidenceKind[]'
+ */
+export type ListEnumBizFileOperationEvidenceKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEvidenceKind[]'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationEffectState'
+ */
+export type EnumBizFileOperationEffectStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEffectState'>
+
+
+
+/**
+ * Reference to a field of type 'BizFileOperationEffectState[]'
+ */
+export type ListEnumBizFileOperationEffectStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEffectState[]'>
+
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -14079,6 +16157,23 @@ export type GlobalOmitConfig = {
   taskCompanyRecoveryContext?: Prisma.TaskCompanyRecoveryContextOmit
   acraEntity?: Prisma.AcraEntityOmit
   acraSyncState?: Prisma.AcraSyncStateOmit
+  businessAssistantConversation?: Prisma.BusinessAssistantConversationOmit
+  businessAssistantMessage?: Prisma.BusinessAssistantMessageOmit
+  businessAssistantRun?: Prisma.BusinessAssistantRunOmit
+  businessAssistantRunItem?: Prisma.BusinessAssistantRunItemOmit
+  businessAssistantRunStep?: Prisma.BusinessAssistantRunStepOmit
+  businessAssistantProposal?: Prisma.BusinessAssistantProposalOmit
+  businessAssistantApproval?: Prisma.BusinessAssistantApprovalOmit
+  businessAssistantReview?: Prisma.BusinessAssistantReviewOmit
+  businessAssistantFeedback?: Prisma.BusinessAssistantFeedbackOmit
+  businessAssistantMemory?: Prisma.BusinessAssistantMemoryOmit
+  businessAssistantLearningChange?: Prisma.BusinessAssistantLearningChangeOmit
+  businessAssistantLearningActiveTarget?: Prisma.BusinessAssistantLearningActiveTargetOmit
+  businessAssistantActionRequest?: Prisma.BusinessAssistantActionRequestOmit
+  businessAssistantCapacitySlot?: Prisma.BusinessAssistantCapacitySlotOmit
+  bizFileOperationReceipt?: Prisma.BizFileOperationReceiptOmit
+  bizFileOperationEvidence?: Prisma.BizFileOperationEvidenceOmit
+  bizFileOperationEffectIntent?: Prisma.BizFileOperationEffectIntentOmit
 }
 
 /* Types for Logging */

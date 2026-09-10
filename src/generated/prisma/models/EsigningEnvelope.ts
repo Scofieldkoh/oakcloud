@@ -119,6 +119,7 @@ export type EsigningEnvelopeCountAggregateOutputType = {
   title: number
   emailSubject: number
   message: number
+  completionCopyEmails: number
   status: number
   signingOrder: number
   expiresAt: number
@@ -244,6 +245,7 @@ export type EsigningEnvelopeCountAggregateInputType = {
   title?: true
   emailSubject?: true
   message?: true
+  completionCopyEmails?: true
   status?: true
   signingOrder?: true
   expiresAt?: true
@@ -368,6 +370,7 @@ export type EsigningEnvelopeGroupByOutputType = {
   title: string
   emailSubject: string | null
   message: string | null
+  completionCopyEmails: string[]
   status: $Enums.EsigningEnvelopeStatus
   signingOrder: $Enums.EsigningSigningOrder
   expiresAt: Date | null
@@ -428,6 +431,7 @@ export type EsigningEnvelopeWhereInput = {
   title?: Prisma.StringFilter<"EsigningEnvelope"> | string
   emailSubject?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   message?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
+  completionCopyEmails?: Prisma.StringNullableListFilter<"EsigningEnvelope">
   status?: Prisma.EnumEsigningEnvelopeStatusFilter<"EsigningEnvelope"> | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFilter<"EsigningEnvelope"> | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
@@ -476,6 +480,7 @@ export type EsigningEnvelopeOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   emailSubject?: Prisma.SortOrderInput | Prisma.SortOrder
   message?: Prisma.SortOrderInput | Prisma.SortOrder
+  completionCopyEmails?: Prisma.SortOrder
   status?: Prisma.SortOrder
   signingOrder?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -528,6 +533,7 @@ export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"EsigningEnvelope"> | string
   emailSubject?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   message?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
+  completionCopyEmails?: Prisma.StringNullableListFilter<"EsigningEnvelope">
   status?: Prisma.EnumEsigningEnvelopeStatusFilter<"EsigningEnvelope"> | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFilter<"EsigningEnvelope"> | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
@@ -575,6 +581,7 @@ export type EsigningEnvelopeOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   emailSubject?: Prisma.SortOrderInput | Prisma.SortOrder
   message?: Prisma.SortOrderInput | Prisma.SortOrder
+  completionCopyEmails?: Prisma.SortOrder
   status?: Prisma.SortOrder
   signingOrder?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -620,6 +627,7 @@ export type EsigningEnvelopeScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"EsigningEnvelope"> | string
   emailSubject?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelope"> | string | null
   message?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelope"> | string | null
+  completionCopyEmails?: Prisma.StringNullableListFilter<"EsigningEnvelope">
   status?: Prisma.EnumEsigningEnvelopeStatusWithAggregatesFilter<"EsigningEnvelope"> | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderWithAggregatesFilter<"EsigningEnvelope"> | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EsigningEnvelope"> | Date | string | null
@@ -655,6 +663,7 @@ export type EsigningEnvelopeCreateInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -702,6 +711,7 @@ export type EsigningEnvelopeUncheckedCreateInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -745,6 +755,7 @@ export type EsigningEnvelopeUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -792,6 +803,7 @@ export type EsigningEnvelopeUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -837,6 +849,7 @@ export type EsigningEnvelopeCreateManyInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -872,6 +885,7 @@ export type EsigningEnvelopeUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -908,6 +922,7 @@ export type EsigningEnvelopeUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -955,6 +970,7 @@ export type EsigningEnvelopeCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   emailSubject?: Prisma.SortOrder
   message?: Prisma.SortOrder
+  completionCopyEmails?: Prisma.SortOrder
   status?: Prisma.SortOrder
   signingOrder?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -1207,6 +1223,15 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput = {
   deleteMany?: Prisma.EsigningEnvelopeScalarWhereInput | Prisma.EsigningEnvelopeScalarWhereInput[]
 }
 
+export type EsigningEnvelopeCreatecompletionCopyEmailsInput = {
+  set: string[]
+}
+
+export type EsigningEnvelopeUpdatecompletionCopyEmailsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
 export type EnumEsigningEnvelopeStatusFieldUpdateOperationsInput = {
   set?: $Enums.EsigningEnvelopeStatus
 }
@@ -1344,6 +1369,7 @@ export type EsigningEnvelopeCreateWithoutTenantInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1389,6 +1415,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTenantInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1463,6 +1490,7 @@ export type EsigningEnvelopeScalarWhereInput = {
   title?: Prisma.StringFilter<"EsigningEnvelope"> | string
   emailSubject?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
   message?: Prisma.StringNullableFilter<"EsigningEnvelope"> | string | null
+  completionCopyEmails?: Prisma.StringNullableListFilter<"EsigningEnvelope">
   status?: Prisma.EnumEsigningEnvelopeStatusFilter<"EsigningEnvelope"> | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFilter<"EsigningEnvelope"> | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
@@ -1498,6 +1526,7 @@ export type EsigningEnvelopeCreateWithoutCreatedByInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1543,6 +1572,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCreatedByInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1612,6 +1642,7 @@ export type EsigningEnvelopeCreateWithoutCompanyInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1658,6 +1689,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCompanyInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1726,6 +1758,7 @@ export type EsigningEnvelopeCreateWithoutDocumentsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1772,6 +1805,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutDocumentsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1830,6 +1864,7 @@ export type EsigningEnvelopeUpdateWithoutDocumentsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1876,6 +1911,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1918,6 +1954,7 @@ export type EsigningEnvelopeCreateWithoutSharePointFilingsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -1964,6 +2001,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutSharePointFilingsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2022,6 +2060,7 @@ export type EsigningEnvelopeUpdateWithoutSharePointFilingsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2068,6 +2107,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutSharePointFilingsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2110,6 +2150,7 @@ export type EsigningEnvelopeCreateWithoutRecipientsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2156,6 +2197,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutRecipientsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2214,6 +2256,7 @@ export type EsigningEnvelopeUpdateWithoutRecipientsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2260,6 +2303,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutRecipientsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2302,6 +2346,7 @@ export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2348,6 +2393,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutFieldDefinitionsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2406,6 +2452,7 @@ export type EsigningEnvelopeUpdateWithoutFieldDefinitionsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2452,6 +2499,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutFieldDefinitionsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2494,6 +2542,7 @@ export type EsigningEnvelopeCreateWithoutEventsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2540,6 +2589,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEventsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2598,6 +2648,7 @@ export type EsigningEnvelopeUpdateWithoutEventsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2644,6 +2695,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEventsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2686,6 +2738,7 @@ export type EsigningEnvelopeCreateWithoutEmailDeliveriesInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2732,6 +2785,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEmailDeliveriesInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2790,6 +2844,7 @@ export type EsigningEnvelopeUpdateWithoutEmailDeliveriesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2836,6 +2891,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEmailDeliveriesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2878,6 +2934,7 @@ export type EsigningEnvelopeCreateWithoutTaskStageOutcomesInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2924,6 +2981,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -2982,6 +3040,7 @@ export type EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3028,6 +3087,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3070,6 +3130,7 @@ export type EsigningEnvelopeCreateWithoutTaskEsigningPreparationsInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -3116,6 +3177,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTaskEsigningPreparationsInput 
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -3174,6 +3236,7 @@ export type EsigningEnvelopeUpdateWithoutTaskEsigningPreparationsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3220,6 +3283,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTaskEsigningPreparationsInput 
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3263,6 +3327,7 @@ export type EsigningEnvelopeCreateManyTenantInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -3298,6 +3363,7 @@ export type EsigningEnvelopeUpdateWithoutTenantInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3343,6 +3409,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTenantInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3387,6 +3454,7 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutTenantInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3423,6 +3491,7 @@ export type EsigningEnvelopeCreateManyCreatedByInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -3458,6 +3527,7 @@ export type EsigningEnvelopeUpdateWithoutCreatedByInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3503,6 +3573,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCreatedByInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3547,6 +3618,7 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3584,6 +3656,7 @@ export type EsigningEnvelopeCreateManyCompanyInput = {
   title: string
   emailSubject?: string | null
   message?: string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeCreatecompletionCopyEmailsInput | string[]
   status?: $Enums.EsigningEnvelopeStatus
   signingOrder?: $Enums.EsigningSigningOrder
   expiresAt?: Date | string | null
@@ -3618,6 +3691,7 @@ export type EsigningEnvelopeUpdateWithoutCompanyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3664,6 +3738,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCompanyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3708,6 +3783,7 @@ export type EsigningEnvelopeUncheckedUpdateManyWithoutCompanyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  completionCopyEmails?: Prisma.EsigningEnvelopeUpdatecompletionCopyEmailsInput | string[]
   status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
   signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3838,6 +3914,7 @@ export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.Inte
   title?: boolean
   emailSubject?: boolean
   message?: boolean
+  completionCopyEmails?: boolean
   status?: boolean
   signingOrder?: boolean
   expiresAt?: boolean
@@ -3887,6 +3964,7 @@ export type EsigningEnvelopeSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   title?: boolean
   emailSubject?: boolean
   message?: boolean
+  completionCopyEmails?: boolean
   status?: boolean
   signingOrder?: boolean
   expiresAt?: boolean
@@ -3927,6 +4005,7 @@ export type EsigningEnvelopeSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   title?: boolean
   emailSubject?: boolean
   message?: boolean
+  completionCopyEmails?: boolean
   status?: boolean
   signingOrder?: boolean
   expiresAt?: boolean
@@ -3967,6 +4046,7 @@ export type EsigningEnvelopeSelectScalar = {
   title?: boolean
   emailSubject?: boolean
   message?: boolean
+  completionCopyEmails?: boolean
   status?: boolean
   signingOrder?: boolean
   expiresAt?: boolean
@@ -3997,7 +4077,7 @@ export type EsigningEnvelopeSelectScalar = {
   deletedAt?: boolean
 }
 
-export type EsigningEnvelopeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "createdById" | "title" | "emailSubject" | "message" | "status" | "signingOrder" | "expiresAt" | "reminderFrequencyDays" | "reminderStartDays" | "expiryWarningDays" | "companyId" | "certificateId" | "completedAt" | "voidedAt" | "voidReason" | "pdfGenerationStatus" | "pdfGenerationAttempts" | "pdfGenerationClaimedAt" | "pdfGenerationError" | "autoFilingStatus" | "autoFilingAttempts" | "autoFilingAvailableAt" | "autoFilingClaimedAt" | "autoFilingLeaseExpiresAt" | "autoFilingClaimToken" | "autoFilingError" | "consentVersion" | "consentDisclosureSnapshot" | "metadata" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["esigningEnvelope"]>
+export type EsigningEnvelopeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "createdById" | "title" | "emailSubject" | "message" | "completionCopyEmails" | "status" | "signingOrder" | "expiresAt" | "reminderFrequencyDays" | "reminderStartDays" | "expiryWarningDays" | "companyId" | "certificateId" | "completedAt" | "voidedAt" | "voidReason" | "pdfGenerationStatus" | "pdfGenerationAttempts" | "pdfGenerationClaimedAt" | "pdfGenerationError" | "autoFilingStatus" | "autoFilingAttempts" | "autoFilingAvailableAt" | "autoFilingClaimedAt" | "autoFilingLeaseExpiresAt" | "autoFilingClaimToken" | "autoFilingError" | "consentVersion" | "consentDisclosureSnapshot" | "metadata" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["esigningEnvelope"]>
 export type EsigningEnvelopeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -4045,6 +4125,7 @@ export type $EsigningEnvelopePayload<ExtArgs extends runtime.Types.Extensions.In
     title: string
     emailSubject: string | null
     message: string | null
+    completionCopyEmails: string[]
     status: $Enums.EsigningEnvelopeStatus
     signingOrder: $Enums.EsigningSigningOrder
     expiresAt: Date | null
@@ -4513,6 +4594,7 @@ export interface EsigningEnvelopeFieldRefs {
   readonly title: Prisma.FieldRef<"EsigningEnvelope", 'String'>
   readonly emailSubject: Prisma.FieldRef<"EsigningEnvelope", 'String'>
   readonly message: Prisma.FieldRef<"EsigningEnvelope", 'String'>
+  readonly completionCopyEmails: Prisma.FieldRef<"EsigningEnvelope", 'String[]'>
   readonly status: Prisma.FieldRef<"EsigningEnvelope", 'EsigningEnvelopeStatus'>
   readonly signingOrder: Prisma.FieldRef<"EsigningEnvelope", 'EsigningSigningOrder'>
   readonly expiresAt: Prisma.FieldRef<"EsigningEnvelope", 'DateTime'>

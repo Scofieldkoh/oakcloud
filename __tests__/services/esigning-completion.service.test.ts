@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getEsigningPostCompletionSummary,
+  buildEsigningCompletionDeliveryTargets,
   processEsigningAutoFileJob,
   processEsigningCompletionDelivery,
   processQueuedEsigningCompletionWork,
@@ -249,6 +250,32 @@ describe('e-signing completion worker', () => {
       artifactsSkipped: 0,
       processed: 2,
     });
+  });
+
+  it('sends configured completion copies as BCC recipients', async () => {
+    mocks.findFirstDelivery.mockImplementation(async ({ select }: { select?: Record<string, unknown> }) => {
+      if (select?.attemptCount) {
+        return { attemptCount: 0, toEmail: 'ops@example.com', subject: 'Completed: NDA' };
+      }
+      return makeDelivery({
+        recipientId: null,
+        audience: 'COPY',
+        targetKey: 'copy:ops@example.com',
+        toEmail: 'ops@example.com',
+      });
+    });
+
+    await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'claim-1',
+    });
+
+    expect(mocks.sendCompletion).toHaveBeenCalledWith(expect.objectContaining({
+      to: undefined,
+      bcc: 'ops@example.com',
+    }));
   });
 
   it('artifact repair never marks delivery complete or sends email', async () => {
@@ -608,5 +635,45 @@ describe('e-signing post-completion summary scoping', () => {
     expect(getEsigningPostCompletionSummary(envelope, [
       { kind: 'COMPLETION', status: 'SUCCEEDED' },
     ]).completionDeliveryStatus).toBe('COMPLETED');
+  });
+});
+
+describe('e-signing completion copy delivery targets', () => {
+  it('deduplicates copy emails against the sender and recipient deliveries', () => {
+    const targets = buildEsigningCompletionDeliveryTargets({
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      completedAt: new Date('2026-09-09T00:00:00.000Z'),
+      title: 'NDA',
+      createdById: 'user-1',
+      senderEmail: 'Owner@Example.com',
+      copyEmails: ['signer@example.com', 'ops@example.com', 'OPS@example.com'],
+      recipients: [
+        {
+          id: 'recipient-1',
+          email: 'Signer@Example.com',
+          type: 'SIGNER',
+          accessMode: 'EMAIL_LINK',
+        },
+        {
+          id: 'recipient-2',
+          email: 'signer@example.com',
+          type: 'CC',
+          accessMode: 'EMAIL_LINK',
+        },
+        {
+          id: 'recipient-3',
+          email: null,
+          type: 'SIGNER',
+          accessMode: 'MANUAL_LINK',
+        },
+      ],
+    });
+
+    expect(targets.map((target) => [target.audience, target.toEmail])).toEqual([
+      ['SENDER', 'owner@example.com'],
+      ['RECIPIENT', 'signer@example.com'],
+      ['COPY', 'ops@example.com'],
+    ]);
   });
 });

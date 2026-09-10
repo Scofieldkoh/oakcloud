@@ -267,6 +267,7 @@ export function serializeEnvelopeDetail(input: {
     title: envelope.title,
     emailSubject: envelope.emailSubject ?? envelope.title,
     message: envelope.message,
+    completionCopyEmails: envelope.completionCopyEmails ?? [],
     status: envelope.status,
     signingOrder: envelope.signingOrder,
     expiresAt: toIsoString(envelope.expiresAt),
@@ -414,13 +415,17 @@ export function buildRecipientSigningOrder(input: {
 }
 
 export function ensureDuplicateSignerEmails(
-  recipients: Array<{ id: string; email: string; type: 'SIGNER' | 'CC' }>,
+  recipients: Array<{ id: string; email: string | null; type: 'SIGNER' | 'CC' }>,
   excludingRecipientId?: string
 ): void {
   const signerEmails = new Map<string, string>();
 
   for (const recipient of recipients) {
     if (recipient.type !== 'SIGNER' || recipient.id === excludingRecipientId) {
+      continue;
+    }
+
+    if (!recipient.email?.trim()) {
       continue;
     }
 
@@ -458,7 +463,7 @@ export function validateEnvelopeSendReadiness(input: {
   recipients: Array<{
     id: string;
     name: string;
-    email: string;
+    email: string | null;
     type: 'SIGNER' | 'CC';
     accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
     accessCodeHash: string | null;
@@ -514,6 +519,19 @@ export function validateEnvelopeSendReadiness(input: {
 
     if (signer.accessMode === 'EMAIL_WITH_CODE' && !signer.accessCodeHash) {
       throw new Error(`${signer.name} requires an access code`);
+    }
+
+    if (signer.accessMode !== 'MANUAL_LINK' && !signer.email?.trim()) {
+      throw new Error(`${signer.name} requires an email address for this recipient method`);
+    }
+  }
+
+  const emailRecipients = input.recipients.filter(
+    (recipient) => recipient.type === 'CC' || recipient.accessMode !== 'MANUAL_LINK'
+  );
+  for (const recipient of emailRecipients) {
+    if (!recipient.email?.trim()) {
+      throw new Error(`${recipient.name} requires an email address for this recipient method`);
     }
   }
 }

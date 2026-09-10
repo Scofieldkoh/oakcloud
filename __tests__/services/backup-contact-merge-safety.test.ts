@@ -40,6 +40,13 @@ vi.mock('@/lib/prisma', () => ({
 }));
 vi.mock('@/lib/audit', () => ({ createAuditLog: mocks.audit }));
 vi.mock('@/lib/encryption', () => ({ hashBlake3: () => 'checksum' }));
+// Assistant restore behavior has its own tests. Keep this suite's lock simulator
+// focused on the existing contact-merge barrier and transaction ordering.
+vi.mock('@/lib/business-operation-backup-barrier', () => ({ acquireBusinessOperationBarrier: vi.fn() }));
+vi.mock('@/services/business-assistant-backup.service', () => ({
+  assertAssistantRestoreSafety: vi.fn(), invalidateRestoredAssistantDispatch: vi.fn(),
+  preserveBusinessAssistantHistory: (name: string) => name.startsWith('businessAssistant') || name.startsWith('bizFileOperation'),
+}));
 
 import { BackupService, type BackupManifest } from '@/services/backup.service';
 
@@ -87,6 +94,32 @@ describe('contact merge backup restore safety', () => {
   });
 
   afterEach(() => vi.useRealTimers());
+
+  it('keeps assistant dispatch paused if file restoration fails after the database commits', async () => {
+    const service = new BackupService();
+    const internals = service as unknown as { restoreDatabaseData: ReturnType<typeof vi.fn> };
+    internals.restoreDatabaseData = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(service, 'getBackupDetails').mockResolvedValue({ status: 'COMPLETED', tenantId: 'tenant-1' } as never);
+    vi.spyOn(service, 'validateBackupIntegrity').mockResolvedValue(manifest({ files: [{ key: 'backup/source', originalStorageKey: 'tenant-1/source', size: 10 }] }));
+    mocks.copy.mockRejectedValue(new Error('Storage unavailable'));
+    await expect(service.restoreWorkspaceBackup('backup-1', 'user-1')).rejects.toThrow(/1 backup file/);
+    expect(internals.restoreDatabaseData).toHaveBeenCalledOnce();
+    expect(mocks.workspaceUpdate).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({
+      status: 'COMPLETED', errorDetails: { businessAssistantDispatchPaused: true, phase: 'FILES_OR_COMPLETION' },
+    }) }));
+    expect(mocks.deletePrefix).not.toHaveBeenCalled();
+  });
+
+  it('does not clear a previous dispatch pause when a restore retry fails before database restoration', async () => {
+    const service = new BackupService();
+    vi.spyOn(service, 'getBackupDetails').mockResolvedValue({ status: 'COMPLETED', tenantId: 'tenant-1', errorDetails: { businessAssistantDispatchPaused: true } } as never);
+    vi.spyOn(service, 'validateBackupIntegrity').mockResolvedValue(manifest());
+    mocks.download.mockRejectedValue(new Error('Storage unavailable'));
+    await expect(service.restoreWorkspaceBackup('backup-1', 'user-1')).rejects.toThrow('Storage unavailable');
+    expect(mocks.workspaceUpdate).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({
+      errorDetails: { businessAssistantDispatchPaused: true, phase: 'FILES_OR_COMPLETION' },
+    }) }));
+  });
 
   it('captures the snapshot cutoff before database export even when manifest creation is later', async () => {
     const service = new BackupService();

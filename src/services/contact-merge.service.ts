@@ -5,6 +5,8 @@ import {
   CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS,
   readDatabaseClock,
 } from '@/lib/contact-merge-backup-barrier';
+import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup-barrier';
+import { acquireAuthorizationMutationGate } from '@/lib/authorization-mutation-gate';
 import {
   buildContactIdentityFingerprint,
   canonicalizeContactAlias,
@@ -380,12 +382,14 @@ export async function mergeContacts(
 
   try {
     return await prisma.$transaction(async tx => {
-    await acquireContactMergeBackupBarrier(tx, params.tenantId);
-    const approvedAt = await readDatabaseClock(tx);
-    const alreadyStarted = await tx.contactMergeOperation.findUnique({
-      where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
-    });
-    if (alreadyStarted) return completedResult(alreadyStarted, input);
+      await acquireBusinessOperationBarrier(tx, params.tenantId, 'shared');
+      await acquireContactMergeBackupBarrier(tx, params.tenantId);
+      await acquireAuthorizationMutationGate(tx);
+      const approvedAt = await readDatabaseClock(tx);
+      const alreadyStarted = await tx.contactMergeOperation.findUnique({
+        where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
+      });
+      if (alreadyStarted) return completedResult(alreadyStarted, input);
 
     const sortedIds = [input.masterContactId, ...input.sourceContactIds].sort();
     const locked = await tx.$queryRaw<Array<{ id: string; updatedAt: Date }>>(

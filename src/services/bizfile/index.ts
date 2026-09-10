@@ -5,7 +5,7 @@
  *
  * Module Structure:
  * - types.ts: Type definitions and entity mapping functions
- * - extractor.ts: AI-based extraction (extractBizFileWithVision, extractBizFileData)
+ * - extractor.ts: AI-based extraction (extractBizFileWithVision)
  * - normalizer.ts: Data normalization (normalizeExtractedData, buildFullAddress)
  * - diff.ts: Change detection (generateBizFileDiff)
  * - processor.ts: Database updates (processBizFileExtraction, processBizFileExtractionSelective)
@@ -28,6 +28,27 @@ export type {
   ProcessingResult,
 } from './types';
 
+export type {
+  BizFileChangeOperation,
+  BizFileCommandMode,
+  BizFileContactDecisionBinding,
+  BizFileChange,
+  BizFileBaselineSnapshot,
+  BizFileChangePlan,
+  BuildBizFileChangePlanInput,
+} from './change-plan';
+
+export {
+  BizFileChangePlanError,
+  hashBizFileValue,
+  stableBizFileChangeId,
+  computeBizFileAggregateRevision,
+  buildBizFileChangePlan,
+  assertBizFileChangePlan,
+  selectedBizFileChanges,
+  assertSafeBizFileNumbers,
+} from './change-plan';
+
 // Re-export mapping functions
 export {
   mapEntityType,
@@ -40,7 +61,6 @@ export {
 // Re-export extraction functions
 export {
   extractBizFileWithVision,
-  extractBizFileData,
 } from './extractor';
 
 // Re-export normalization functions
@@ -72,7 +92,54 @@ export {
 export {
   syncCompanyFromBizfileInTransaction,
 } from './company-sync';
+export {
+  applyBizFileChangePlanInTransaction,
+} from './canonical-sync';
+
+export { assistantCapabilities } from './assistant-capabilities';
+export { prepareBizFileImportCommand, baselineFromCompany } from './application/prepare-import';
+export type {
+  PrepareBizFileImportArgs,
+  BizFilePreparedSource,
+  BizFileContactCandidate,
+  PreparedBizFileImport,
+} from './application/prepare-import';
+export {
+  assertFreshBizFileSourceRevision,
+  BizFileSourceRevisionError,
+} from './application/source-revision';
+export type {
+  BizFileSourceRevisionCheck,
+} from './application/source-revision';
+export {
+  createBizFileOperationRepository,
+} from './application/operation-repository';
+export type {
+  BizFileOperationReceiptInput,
+  BizFileOperationReceipt,
+  BizFileOperationCommitInput,
+  BizFileOperationEvidenceInput,
+  BizFileOperationEffectInput,
+  BizFileOperationRepository,
+} from './application/operation-repository';
+export {
+  acquireBizFileOperationLock,
+  bizFileOperationAdvisoryKey,
+  reconcileBizFileOperation,
+} from './application/operation-reconciliation';
+export type {
+  BizFileOperationClaimFence,
+  BizFileOperationReceiptSnapshot,
+  BizFileOperationReconciliationReason,
+  BizFileOperationReconciliationResult,
+  ReconcileBizFileOperationInput,
+} from './application/operation-reconciliation';
 export type {
   SyncCompanyFromBizfileArgs,
   SyncCompanyFromBizfileResult,
 } from './company-sync';
+export type {
+  CanonicalBizFileSyncArgs,
+  CanonicalBizFileSyncDependencies,
+  CanonicalBizFileSyncResult,
+} from './canonical-sync';

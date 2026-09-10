@@ -188,6 +188,21 @@ describe('PlaceholderPanel', () => {
     ]);
   });
 
+  it('removes an existing custom field from the field catalogue', () => {
+    const onCustomPlaceholdersChange = vi.fn();
+    render(
+      <PlaceholderPanel
+        {...defaultProps}
+        customPlaceholders={[existingField]}
+        onCustomPlaceholdersChange={onCustomPlaceholdersChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Reference number' }));
+
+    expect(onCustomPlaceholdersChange).toHaveBeenCalledWith([]);
+  });
+
   it('inserts and copies stable service agreement blocks', async () => {
     const onInsert = vi.fn();
     const writeText = vi.fn().mockResolvedValue(undefined);

@@ -549,7 +549,7 @@ export async function buildCertificatePdf(input: {
     const nameText = truncate(rec.name, headingFont, 9.5, CW * 0.45);
     page.drawText(nameText, { x: ML + 13, y: cursorY, size: 9.5, font: headingFont, color: rMain });
     const emailX = ML + 13 + widthOf(nameText, headingFont, 9.5) + 8;
-    page.drawText(truncate(rec.email, bodyFont, 8.5, PW - MR - emailX - 70), {
+    page.drawText(truncate(rec.email || 'Manual link only', bodyFont, 8.5, PW - MR - emailX - 70), {
       x: emailX, y: cursorY, size: 8.5, font: bodyFont, color: cTextSec,
     });
     drawRight(page, `#${ri + 1}`, PW - MR - 10, cursorY, 8, headingFont, cTextMuted);

@@ -1,6 +1,7 @@
 import type { PrismaTransactionClient } from '@/services/contact.service';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
 import type { ExtractedBizFileData, OfficerAction } from './types';
+import type { BizFileChange, BizFileChangePlan, BizFileCommandMode } from './change-plan';
 import {
   mapCompanyStatus,
   mapContactType,
@@ -19,6 +20,12 @@ export interface SyncCompanyFromBizfileArgs {
   userId: string;
   existingCompanyId?: string;
   officerActions?: OfficerAction[];
+  /** A canonical reviewed plan. Omitted only for the compatibility processor. */
+  changePlan?: BizFileChangePlan;
+  /** Explicit command mode used by the canonical adapter. */
+  mode?: BizFileCommandMode;
+  /** Prevent a plan from being applied to a different operation transaction. */
+  operationId?: string;
 }
 
 export interface SyncCompanyFromBizfileResult {
@@ -37,6 +44,11 @@ export interface BizfileSyncDependencies {
     sourceIndex: number,
     companyId: string,
   ) => Promise<string | null>;
+}
+
+export interface CanonicalBizFileSyncResult extends SyncCompanyFromBizfileResult {
+  selectedChanges: BizFileChange[];
+  operationStatus: 'COMMITTED' | 'NO_CHANGE';
 }
 
 const changedSections: CompanyProfileSectionId[] = [

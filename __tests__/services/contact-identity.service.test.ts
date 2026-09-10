@@ -613,7 +613,16 @@ describe('contact identity service', () => {
       params,
     );
 
-    const lockKeys = tx.$executeRaw.mock.calls.map(([query]) => query.values[0]);
+    const lockKeys = tx.$executeRaw.mock.calls
+      .map(([query]) => query.values[0])
+      .filter((key): key is string => String(key).startsWith('contact-identity:'));
+    const gateKeys = tx.$executeRaw.mock.calls
+      .map(([query]) => query.values[0]);
+    expect(gateKeys.slice(0, 2)).toEqual([
+      'oakcloud:business-operation:tenant-1',
+      'oakcloud:authorization:global',
+    ]);
+    expect(gateKeys.findIndex((key) => String(key).startsWith('contact-identity:'))).toBeGreaterThan(1);
     expect(lockKeys).toEqual([...lockKeys].sort());
     expect(lockKeys).toEqual(
       expect.arrayContaining([
@@ -663,7 +672,9 @@ describe('contact identity service', () => {
       params,
     );
 
-    const lockKeys = tx.$executeRaw.mock.calls.map(([query]) => query.values[0]);
+    const lockKeys = tx.$executeRaw.mock.calls
+      .map(([query]) => query.values[0])
+      .filter((key): key is string => String(key).startsWith('contact-identity:'));
     expect(lockKeys.some((key) => key.includes(':id:'))).toBe(false);
     expect(tx.contact.update).not.toHaveBeenCalled();
     expect(result.enrichedFields).toEqual([]);
@@ -826,7 +837,9 @@ describe('contact identity service', () => {
       params,
     );
 
-    const lockKeys = tx.$executeRaw.mock.calls.map(([query]) => query.values[0]);
+    const lockKeys = tx.$executeRaw.mock.calls
+      .map(([query]) => query.values[0])
+      .filter((key): key is string => String(key).startsWith('contact-identity:'));
     expect(lockKeys).toContain('contact-identity:tenant-1:INDIVIDUAL:contact:selected');
     expect(lockKeys).toEqual([...lockKeys].sort());
     expect(tx.contact.findFirst).toHaveBeenCalledWith(expect.objectContaining({
