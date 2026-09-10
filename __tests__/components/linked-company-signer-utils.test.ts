@@ -35,6 +35,15 @@ describe('linked company recipient shortcut rules', () => {
     expect(state.stateLabel).toContain('configured as a recipient');
   });
 
+  it('keeps a company contact with email available for configuration', () => {
+    const state = getLinkedCompanyQuickAddState(
+      { id: 'contact-1', fullName: 'Jane Example', defaultEmail: 'jane@example.com' },
+      new Set(),
+    );
+    expect(state.isAdded).toBe(false);
+    expect(state.email).toBe('jane@example.com');
+  });
+
   it('recognizes an existing signer case-insensitively', () => {
     const state = getLinkedCompanyQuickAddState(
       { id: 'contact-1', fullName: 'Jane Example', defaultEmail: 'JANE@EXAMPLE.COM' },
