@@ -5,11 +5,11 @@ import {
   type BizFileOperationReceiptSnapshot,
 } from '@/services/bizfile/application/operation-reconciliation';
 
-function receipt(status: BizFileOperationReceiptSnapshot['status']): BizFileOperationReceiptSnapshot {
+function receipt(status: BizFileOperationReceiptSnapshot['status'], operationId = 'operation-1'): BizFileOperationReceiptSnapshot {
   return {
-    id: 'receipt-1',
+    id: `receipt-${operationId}`,
     tenantId: 'tenant-1',
-    operationId: 'operation-1',
+    operationId,
     status,
     mode: 'UPDATE',
     companyId: 'company-1',
@@ -115,6 +115,27 @@ describe('BizFile operation reconciliation', () => {
       evidence: [{ kind: 'AFTER' }],
       effects: [{ effectKind: 'PAGE_PREPARATION', state: 'PENDING' }],
     });
+    expect(db.findClaim).not.toHaveBeenCalled();
+  });
+
+  it('reconciles a correction by its new operation identity on every recovery attempt', async () => {
+    const correctionOperationId = 'correction-operation';
+    const sourceOperationId = 'source-operation';
+    const db = database({ operationReceipt: receipt('COMMITTED', correctionOperationId) });
+
+    const first = await reconcileBizFileOperation({ tenantId: 'tenant-1', operationId: correctionOperationId, claim, maxWaitMs: 0 }, db.client as never);
+    const second = await reconcileBizFileOperation({ tenantId: 'tenant-1', operationId: correctionOperationId, claim, maxWaitMs: 0 }, db.client as never);
+
+    expect(first).toEqual(second);
+    expect(first.receipt).toMatchObject({ operationId: correctionOperationId, id: `receipt-${correctionOperationId}` });
+    expect(first.receipt?.operationId).not.toBe(sourceOperationId);
+    expect(db.findReceipt).toHaveBeenCalledTimes(2);
+    for (const call of db.findReceipt.mock.calls) {
+      expect(call[0]).toEqual({
+        where: { tenantId_operationId: { tenantId: 'tenant-1', operationId: correctionOperationId } },
+        select: expect.any(Object),
+      });
+    }
     expect(db.findClaim).not.toHaveBeenCalled();
   });
 
