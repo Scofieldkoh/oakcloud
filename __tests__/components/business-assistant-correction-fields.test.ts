@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BIZFILE_CORRECTION_FIELDS, eligibleBizFileCorrectionFindings } from '@/components/business-assistant/correction-fields';
+import { BIZFILE_CORRECTION_FIELDS, BIZFILE_CORRECTION_FINDING_CODES, eligibleBizFileCorrectionFindings } from '@/components/business-assistant/correction-fields';
 
 describe('BizFile correction fields', () => {
   it('presents only deterministic scalar or one-to-one correction paths', () => {
@@ -15,15 +15,18 @@ describe('BizFile correction fields', () => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it('keeps the presented fields aligned with the canonical server allowlist', () => {
+  it('keeps the presented fields and finding codes aligned with the canonical server allowlist', () => {
     const serverSource = readFileSync(join(process.cwd(), 'src/services/bizfile/application/prepare-correction.ts'), 'utf8');
     const sourcePathsBlock = serverSource.match(/const SOURCE_PATHS:[\s\S]*?= \{([\s\S]*?)\n\};/)?.[1];
     expect(sourcePathsBlock, 'SOURCE_PATHS allowlist should remain discoverable for contract parity').toBeTruthy();
-    for (const field of BIZFILE_CORRECTION_FIELDS) {
-      expect(sourcePathsBlock).toContain(field.path);
-    }
+    for (const field of BIZFILE_CORRECTION_FIELDS) expect(sourcePathsBlock).toContain(field.path);
     const canonicalEntryCount = sourcePathsBlock?.split('\n').filter((line) => line.trim() && line.includes(':')).length ?? 0;
     expect(canonicalEntryCount).toBe(BIZFILE_CORRECTION_FIELDS.length);
+
+    const findingCodesLine = serverSource.match(/const ALLOWED_FINDING_CODES = new Set\(\[([^\]]+)\]\)/)?.[1] ?? '';
+    for (const code of BIZFILE_CORRECTION_FINDING_CODES) expect(findingCodesLine).toContain(code);
+    const canonicalCodes = findingCodesLine.match(/[A-Z_]+/g) ?? [];
+    expect(new Set(canonicalCodes).size).toBe(BIZFILE_CORRECTION_FINDING_CODES.length);
   });
 
   it('returns only allowlisted findings with immutable expected values', () => {
