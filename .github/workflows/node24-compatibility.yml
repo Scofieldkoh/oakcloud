@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Node 24
         uses: actions/setup-node@v6
@@ -37,6 +39,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Guard P16 production gates
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/p16-')
+        run: >-
+          node scripts/check-business-assistant-p16-production-gates.mjs
+          --base "${{ github.event.pull_request.base.sha }}"
+          --head "${{ github.event.pull_request.head.sha }}"
 
       - name: Verify runtime major
         run: node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1)"
@@ -52,6 +61,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Test P16 evidence contract
+        run: npm run test:p16:evidence
 
       - name: Test Chromium path resolution
         run: npm run test:run -- __tests__/lib/chrome-executable.test.ts --reporter=dot
