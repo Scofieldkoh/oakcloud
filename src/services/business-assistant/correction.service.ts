@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import { businessAssistantCorrectionRequestSchema } from '@/lib/validations/business-assistant';
 import { CapabilityCorrectionError, sha256, type CanonicalActorContext, type PreparedCapabilityArtifact } from './contracts';
+import { asPrefetchableCorrectionHandler } from './correction-prefetch';
 import { assertAssistantMutationAccess } from './policy.service';
 import { persistProposal } from './proposal.service';
 
@@ -20,6 +21,12 @@ const responseSchema = z.object({
 }).strict();
 export type CorrectionProposalResult = z.infer<typeof responseSchema>;
 export interface CreateCorrectionProposalInput { actor: CanonicalActorContext; runId: string; rawInput: unknown }
+interface CorrectionPrefetchEnvelope {
+  capabilityId: string;
+  capabilityVersion: string;
+  contractVersion: string;
+  evidence: unknown;
+}
 function json(value: unknown): Prisma.InputJsonValue { return value as Prisma.InputJsonValue; }
 
 /** Prepare only: the existing confirmation flow creates a new operation ID. */
@@ -30,6 +37,32 @@ export async function createCorrectionProposal(input: CreateCorrectionProposalIn
   if (request.workspaceId && request.workspaceId !== input.actor.tenantId) throw new CapabilityCorrectionError('FORBIDDEN', 'The correction workspace does not match the current actor.');
   await assertAssistantMutationAccess(input.actor.userId, input.actor.tenantId);
   const bodyHash = sha256({ kind: KIND, runId: input.runId, request });
+
+  // External source verification must not extend the serializable write
+  // transaction. This preflight is evidence only; every authoritative record,
+  // authorization decision, revision and binding is re-read below before any
+  // correction proposal is persisted.
+  let correctionPrefetch: CorrectionPrefetchEnvelope | null = null;
+  const preflightRun = await prisma.businessAssistantRun.findFirst({
+    where: { id: input.runId, tenantId: input.actor.tenantId, ownerId: input.actor.userId },
+    select: { id: true, capabilityId: true, capabilityVersion: true, contractVersion: true },
+  });
+  if (preflightRun) {
+    const preflightCapability = businessAssistantCapabilityRegistry.get(preflightRun.capabilityId, preflightRun.capabilityVersion);
+    if (preflightCapability?.executionKind === 'CANONICAL_WRITE' && preflightCapability.prepareCorrection
+      && preflightCapability.contractVersion === preflightRun.contractVersion) {
+      const prefetchable = asPrefetchableCorrectionHandler(preflightCapability.prepareCorrection);
+      if (prefetchable.prefetch) {
+        correctionPrefetch = {
+          capabilityId: preflightCapability.id,
+          capabilityVersion: preflightCapability.version,
+          contractVersion: preflightCapability.contractVersion,
+          evidence: await prefetchable.prefetch({ actor: input.actor, request, sourceRunId: preflightRun.id, db: prisma }),
+        };
+      }
+    }
+  }
+
   return runSerializableTransaction(prisma, async (tx) => {
     await acquireBusinessOperationBarrier(tx, input.actor.tenantId, 'shared');
     const actor = await resolveFreshActor({ userId: input.actor.userId, workspaceId: input.actor.tenantId }, tx);
@@ -67,6 +100,11 @@ export async function createCorrectionProposal(input: CreateCorrectionProposalIn
       throw new CapabilityCorrectionError('VALIDATION_FAILED', 'This capability does not support correction proposals.');
     }
     if (capability.contractVersion !== run.contractVersion) throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The source capability contract has changed.');
+    if (correctionPrefetch && (correctionPrefetch.capabilityId !== capability.id
+      || correctionPrefetch.capabilityVersion !== capability.version
+      || correctionPrefetch.contractVersion !== capability.contractVersion)) {
+      throw new CapabilityCorrectionError('PROPOSAL_STALE', 'The correction capability changed after source prefetch.');
+    }
     const review = await tx.businessAssistantReview.findFirst({
       where: { id: request.reviewId, tenantId: input.actor.tenantId },
       select: { id: true, tenantId: true, runItemId: true, attemptNumber: true, verdict: true, executionConformance: true, sourceAlignment: true, findings: true, coverage: true, evidence: true },
@@ -84,9 +122,10 @@ export async function createCorrectionProposal(input: CreateCorrectionProposalIn
     }
     const nextRunId = randomUUID();
     const nextItemId = randomUUID();
-    const result = await capability.prepareCorrection({
+    const correctionHandler = asPrefetchableCorrectionHandler(capability.prepareCorrection);
+    const result = await correctionHandler({
       actor: input.actor, request, sourceRunId: run.id, sourceReview: review, sourceItem: { ...item, run }, nextRunId, nextItemId, db: tx,
-    });
+    }, correctionPrefetch?.evidence);
     if (result.status === 'BLOCKED') throw new CapabilityCorrectionError('PROPOSAL_STALE', result.reason);
     if (result.preparedItem.itemId !== nextItemId || result.preparedItem.status !== 'ELIGIBLE') {
       throw new CapabilityCorrectionError('VALIDATION_FAILED', 'The capability returned an invalid correction item.');
