@@ -1,4 +1,4 @@
-export interface IndependentReviewerContext {
+export interface IndependentReviewerContext extends Record<string, unknown> {
   reviewRunId?: string;
   workspaceId?: string;
   reviewerVersion?: string;
