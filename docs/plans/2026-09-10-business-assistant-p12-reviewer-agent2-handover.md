@@ -87,19 +87,51 @@ The evaluation test emits `P12_HELD_OUT_REVIEWER_REPORT=<json>` to CI logs. Resu
 | 9 | Modifying the legacy selected-change reviewer directly would couple this work to correction-runtime ownership; it also intentionally cannot set full-state complete. | Added a read-only final combiner requiring both selected-change conformance and the independent full-state gate; added the held-out evaluation test without changing stabilized reviewer logic. |
 | 10 | The Node 24 workflow targets `__tests__/services/bizfile`, while isolated reviewer tests live beside their modules, so CI could miss them. | Added a CI-visible BizFile reviewer suite shim that imports the complete isolated reviewer suite, including held-out evaluation, into the existing Node 24 BizFile test target. |
 
-The branch must contain exactly ten workstream commits after the base. The final commit SHA is intentionally recorded in PR/final-delivery metadata rather than self-referenced inside this commit, because a Git commit cannot contain its own final hash without changing that hash.
+The first ten commits after the base are the exact ten-cycle workstream. After the owner explicitly requested continued verification and fixes, two post-cycle verification commits were added before final documentation: `651aaf4dbd2697327afbb46c2d94513e0d1e0f40` fixes the TypeScript assertion-predicate compatibility issue found by CI, and `ebcf1b7a3246e6a0c60ce828a28dd77dcdb5c9d4` removes the remaining reviewer lint warning. These do not alter the historical ten-cycle record.
 
 ## Known limitations / outstanding gaps
 
 - The new final full-state gate is read-only and intentionally does not alter correction/canonical mutation behaviour.
 - Collection-row correction identity semantics remain outside this workstream.
 - Full real-storage correction execution/recovery and transaction timing/race work remain owned by Parallel Agent 1.
-- Reviewer quality is acceptable only if the final CI-held-out report reaches every predeclared threshold. If CI fails or the report is unavailable, status remains **not quality-verified**.
 - These synthetic/annotated source fixtures validate deterministic reviewer semantics. They do not substitute for P16 real-provider/storage release verification.
 - No user acceptance, provider confidence, static schema validation, planner conclusion, assistant memory, or persona is treated as reviewer-quality evidence.
 
-## Verification required on final head
+## Held-out reviewer evaluation result
 
-Use the repository's existing Node 24 compatibility workflow and require all applicable jobs to pass. Relevant checks include lint, assistant capability registry freshness, Prisma generation, TypeScript, reviewer unit/annotated/held-out tests via the BizFile CI shim, existing Business Assistant/BizFile contracts, PostgreSQL recovery/authorization and BizFile integration suites, application build, and production image/runtime compatibility.
+Node 24 compatibility run #67 (`34475012085`) executed the held-out reviewer only after the implementation and thresholds had stabilised. All predeclared thresholds were met.
 
-If the final workflow does not run or does not expose a held-out report, record that limitation rather than reporting a PASS.
+| Metric | Threshold | Actual | Result |
+|---|---:|---:|---|
+| Factual PASS precision | 1.00 | 1.00 (2/2) | PASS |
+| Factual PASS recall | >= 0.95 | 1.00 (2/2) | PASS |
+| Defect recall | >= 0.95 | 1.00 (3/3) | PASS |
+| Required-abstention recall | >= 0.95 | 1.00 (8/8) | PASS |
+| Attribution accuracy | >= 0.90 | 1.00 (10/10) | PASS |
+| False-PASS rate | 0.00 | 0.00 (0/13) | PASS |
+| PASS evidence coverage | 1.00 | 1.00 (20/20) | PASS |
+| Overall evidence coverage | reported only | 0.9692307692 (126/130) | informational |
+
+Held-out corpus size: 13. Confusion matrix: expected PASS 2/2 correctly PASS; expected FAIL 3/3 correctly FAIL; expected ABSTAIN 8/8 correctly ABSTAIN. `mismatchesByCategory` was empty, `failedThresholds` was empty, and `accepted` was `true`.
+
+The encompassing Business Assistant/BizFile contract run reported 35 test files passed and 337 tests passed.
+
+## Verification result
+
+Node 24 compatibility run #67 on head `ebcf1b7a3246e6a0c60ce828a28dd77dcdb5c9d4` was green before this documentation-only update:
+
+- Node 24 runtime major: PASS;
+- lint: PASS;
+- committed assistant registry freshness: PASS;
+- Prisma generation: PASS;
+- TypeScript: PASS;
+- Chromium path resolution: PASS;
+- Business Assistant/BizFile contracts, including reviewer unit, annotated fixture, independence, integrity, held-out isolation, and held-out evaluation tests: PASS;
+- application build: PASS;
+- PostgreSQL disposable database migrations: PASS;
+- durable worker/concurrent authorization tests: PASS;
+- canonical revisions/reconciliation/effects: PASS;
+- production image build: PASS;
+- production runtime and Chromium verification: PASS.
+
+Because this handover update changes the branch head, the PR must still receive a final clean CI run on the documentation-updated head before it is marked ready for review. Do not merge until that final head is green and the repository owner authorises merge.
