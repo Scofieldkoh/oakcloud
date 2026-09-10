@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import {
-  buildLinkedCompanySignerInput,
   buildSignerEmailSet,
-  getEligibleLinkedCompanyContacts,
   getLinkedCompanyQuickAddState,
   normalizeSignerEmail,
 } from '@/components/esigning/prepare/linked-company-signer-utils';
@@ -12,7 +10,7 @@ function recipient(type: 'SIGNER' | 'CC', email: string | null): EsigningEnvelop
   return { type, email } as EsigningEnvelopeRecipientDto;
 }
 
-describe('linked company signer quick-add rules', () => {
+describe('linked company recipient shortcut rules', () => {
   it('normalizes signer email addresses for duplicate detection', () => {
     expect(normalizeSignerEmail('  Jane.Example@Example.COM  ')).toBe('jane.example@example.com');
     expect(normalizeSignerEmail(null)).toBe('');
@@ -24,95 +22,33 @@ describe('linked company signer quick-add rules', () => {
       recipient('CC', 'copy@example.com'),
       recipient('SIGNER', null),
     ]);
-
     expect([...emails]).toEqual(['signer@example.com']);
   });
 
-  it('disables a company contact that has no default email', () => {
+  it('keeps a company contact without email available for configuration', () => {
     const state = getLinkedCompanyQuickAddState(
       { id: 'contact-1', fullName: 'No Email', defaultEmail: null },
       new Set(),
-      null,
     );
-
-    expect(state.isDisabled).toBe(true);
+    expect(state.isAdded).toBe(false);
     expect(state.email).toBe('');
-    expect(state.stateLabel).toContain('no default email');
+    expect(state.stateLabel).toContain('configured as a recipient');
   });
 
   it('recognizes an existing signer case-insensitively', () => {
     const state = getLinkedCompanyQuickAddState(
       { id: 'contact-1', fullName: 'Jane Example', defaultEmail: 'JANE@EXAMPLE.COM' },
       new Set(['jane@example.com']),
-      null,
     );
-
     expect(state.isAdded).toBe(true);
-    expect(state.isDisabled).toBe(true);
     expect(state.stateLabel).toContain('already added');
   });
 
-  it('explains when another contact add is in progress', () => {
+  it('does not mark a contact without email as already added just because another manual-link signer has no email', () => {
     const state = getLinkedCompanyQuickAddState(
-      { id: 'contact-2', fullName: 'John Example', defaultEmail: 'john@example.com' },
+      { id: 'contact-1', fullName: 'Manual Recipient', defaultEmail: null },
       new Set(),
-      'contact-1',
     );
-
-    expect(state.isPending).toBe(false);
-    expect(state.isDisabled).toBe(true);
-    expect(state.stateLabel).toContain('Wait for the current signer');
-  });
-
-  it('builds an email-link signer payload for an eligible company contact', () => {
-    expect(buildLinkedCompanySignerInput({
-      id: 'contact-1',
-      fullName: '  Jane Example  ',
-      defaultEmail: ' Jane@Example.COM ',
-    })).toEqual({
-      name: 'Jane Example',
-      email: 'jane@example.com',
-      type: 'SIGNER',
-      signingOrder: null,
-      accessMode: 'EMAIL_LINK',
-    });
-  });
-
-  it('does not build a signer payload without both a name and email', () => {
-    expect(buildLinkedCompanySignerInput({
-      id: 'contact-1',
-      fullName: 'Jane Example',
-      defaultEmail: null,
-    })).toBeNull();
-    expect(buildLinkedCompanySignerInput({
-      id: 'contact-2',
-      fullName: '   ',
-      defaultEmail: 'jane@example.com',
-    })).toBeNull();
-  });
-
-  it('filters bulk candidates to contacts that can become new signers', () => {
-    const contacts = [
-      { id: 'contact-1', fullName: 'Existing Signer', defaultEmail: 'existing@example.com' },
-      { id: 'contact-2', fullName: 'No Email', defaultEmail: null },
-      { id: 'contact-3', fullName: 'New Signer', defaultEmail: 'new@example.com' },
-    ];
-
-    expect(getEligibleLinkedCompanyContacts(contacts, new Set(['existing@example.com']))).toEqual([
-      contacts[2],
-    ]);
-  });
-
-  it('deduplicates bulk candidates by normalized email and keeps the first contact', () => {
-    const contacts = [
-      { id: 'contact-1', fullName: 'Jane Primary', defaultEmail: 'JANE@example.com' },
-      { id: 'contact-2', fullName: 'Jane Duplicate', defaultEmail: ' jane@EXAMPLE.com ' },
-      { id: 'contact-3', fullName: 'John Example', defaultEmail: 'john@example.com' },
-    ];
-
-    expect(getEligibleLinkedCompanyContacts(contacts, new Set()).map((contact) => contact.id)).toEqual([
-      'contact-1',
-      'contact-3',
-    ]);
+    expect(state.isAdded).toBe(false);
   });
 });
