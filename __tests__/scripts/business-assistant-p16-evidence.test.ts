@@ -95,7 +95,11 @@ describe('Business Assistant P16 evidence contract', () => {
   });
 
   it('refuses to seal while required gates remain incomplete', () => {
-    const manifest = createEvidenceManifest({ appSha: APP_SHA, operator: 'operator' });
+    const manifest = createEvidenceManifest({
+      appSha: APP_SHA,
+      operator: 'operator',
+      startedAt: OBSERVED_AT,
+    });
     expect(() => sealEvidenceManifest(manifest, { completedAt: COMPLETED_AT })).toThrow(/cannot seal incomplete evidence/);
   });
 
