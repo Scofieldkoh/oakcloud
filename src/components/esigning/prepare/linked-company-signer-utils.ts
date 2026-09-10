@@ -1,5 +1,4 @@
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
-import type { EsigningRecipientInput } from '@/lib/validations/esigning';
 
 export interface LinkedCompanyQuickAddContact {
   id: string;
@@ -10,8 +9,6 @@ export interface LinkedCompanyQuickAddContact {
 export interface LinkedCompanyQuickAddState {
   email: string;
   isAdded: boolean;
-  isPending: boolean;
-  isDisabled: boolean;
   stateLabel: string;
 }
 
@@ -31,65 +28,14 @@ export function buildSignerEmailSet(recipients: EsigningEnvelopeRecipientDto[]):
 export function getLinkedCompanyQuickAddState(
   contact: LinkedCompanyQuickAddContact,
   signerEmails: Set<string>,
-  pendingContactId: string | null,
 ): LinkedCompanyQuickAddState {
   const email = normalizeSignerEmail(contact.defaultEmail);
   const isAdded = Boolean(email) && signerEmails.has(email);
-  const isPending = pendingContactId === contact.id;
-  const isBlockedByPending = Boolean(pendingContactId) && !isPending;
-  const isDisabled = !email || isAdded || isPending || isBlockedByPending;
-  const stateLabel = !email
-    ? `${contact.fullName} has no default email`
-    : isAdded
-      ? `${contact.fullName} is already added as a signer`
-      : isPending
-        ? `Adding ${contact.fullName} as signer`
-        : isBlockedByPending
-          ? `Wait for the current signer to finish adding before adding ${contact.fullName}`
-          : `Add ${contact.fullName} as signer`;
-
   return {
     email,
     isAdded,
-    isPending,
-    isDisabled,
-    stateLabel,
+    stateLabel: isAdded
+      ? `${contact.fullName} is already added as a signer`
+      : `${contact.fullName} can be configured as a recipient`,
   };
-}
-
-export function buildLinkedCompanySignerInput(
-  contact: LinkedCompanyQuickAddContact,
-): EsigningRecipientInput | null {
-  const name = contact.fullName.trim();
-  const email = normalizeSignerEmail(contact.defaultEmail);
-
-  if (!name || !email) {
-    return null;
-  }
-
-  return {
-    name,
-    email,
-    type: 'SIGNER',
-    signingOrder: null,
-    accessMode: 'EMAIL_LINK',
-  };
-}
-
-export function getEligibleLinkedCompanyContacts<T extends LinkedCompanyQuickAddContact>(
-  contacts: T[],
-  signerEmails: Set<string>,
-): T[] {
-  const seenEmails = new Set(signerEmails);
-
-  return contacts.filter((contact) => {
-    const input = buildLinkedCompanySignerInput(contact);
-    const email = normalizeSignerEmail(input?.email);
-    if (!input || !email || seenEmails.has(email)) {
-      return false;
-    }
-
-    seenEmails.add(email);
-    return true;
-  });
 }
