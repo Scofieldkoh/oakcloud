@@ -243,6 +243,27 @@ export function createBizFileOperationRepository(): BizFileOperationRepository {
         return;
       }
 
+      let createdAt: Date | undefined;
+      if (input.effectKind === 'PAGE_PREPARATION') {
+        const predecessor = await tx.bizFileOperationEffectIntent.findFirst({
+          where: {
+            tenantId: input.tenantId,
+            receiptId: input.receiptId,
+            effectKind: 'STORAGE_FINALIZE',
+            target: input.target,
+          },
+          select: { createdAt: true },
+        });
+        if (!predecessor) {
+          throw new Error('BizFile PAGE_PREPARATION requires a durable STORAGE_FINALIZE predecessor');
+        }
+        // PostgreSQL `now()` is transaction-stable. Required effects inserted
+        // in one canonical transaction can otherwise tie on created_at and be
+        // claimed by random UUID order. Give the dependent effect a strictly
+        // later durable timestamp while preserving normal receipt fairness.
+        createdAt = new Date(predecessor.createdAt.getTime() + 1);
+      }
+
       await tx.bizFileOperationEffectIntent.create({
         data: {
           tenantId: input.tenantId,
@@ -252,6 +273,7 @@ export function createBizFileOperationRepository(): BizFileOperationRepository {
           payload: input.payload === undefined ? undefined : jsonValue(input.payload),
           payloadHash: input.payloadHash ?? null,
           state: 'PENDING',
+          ...(createdAt ? { createdAt } : {}),
         },
       });
 
