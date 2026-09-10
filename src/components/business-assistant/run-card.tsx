@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArtifactView, humanize } from '@/components/ui/structured-data-view';
 import { useAssistantAction, useAssistantRun } from '@/hooks/use-business-assistant';
 import type { BusinessAssistantAction, BusinessAssistantRunDto } from '@/lib/validations/business-assistant';
+import { BizFileCorrectionPanel } from './correction-panel';
 
 const presentationSchema = z.object({ sections: z.array(z.object({ id: z.string(), title: z.string(), kind: z.string(), value: z.unknown() })) });
 const proposalEvidenceSchema = z.object({ presentation: presentationSchema.nullable().optional(), preparedArtifact: z.unknown().optional() });
@@ -91,7 +92,7 @@ function RunDetails({ workspaceId, run }: { workspaceId: string; run: BusinessAs
                 <div className="mt-2 text-xs"><ArtifactView value={item.output} /></div></details>}
               {item.receipt != null && <details className="mt-2"><summary className="cursor-pointer text-xs text-text-secondary">Recorded operation</summary>
                 <div className="mt-2 text-xs"><ArtifactView value={item.receipt} /></div></details>}
-              {item.reviews?.map((review) => <details key={review.id} className="mt-3 rounded-lg border border-border-primary p-3" open={review.verdict !== 'PASS'}>
+              {item.reviews?.map((review, reviewIndex) => <details key={review.id} className="mt-3 rounded-lg border border-border-primary p-3" open={review.verdict !== 'PASS'}>
                 <summary className="cursor-pointer text-xs font-medium">Review {review.attemptNumber} · {humanize(review.verdict)}</summary>
                 <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
                   <div><dt className="text-text-muted">Approved changes followed</dt><dd>{humanize(review.executionConformance)}</dd></div>
@@ -101,6 +102,8 @@ function RunDetails({ workspaceId, run }: { workspaceId: string; run: BusinessAs
                   <section><h5 className="mb-1 font-medium">Findings</h5><ArtifactView value={review.findings} /></section>
                   <section><h5 className="mb-1 font-medium">Review coverage</h5><ArtifactView value={review.coverage} /></section>
                   <details><summary className="cursor-pointer text-text-secondary">Review evidence</summary><div className="mt-2"><ArtifactView value={review.evidence} /></div></details>
+                  {reviewIndex === 0 && run.capabilityId === 'bizfile.import_and_review' ? <BizFileCorrectionPanel
+                    workspaceId={workspaceId} runId={run.id} reviewId={review.id} findings={review.findings} /> : null}
                 </div>
               </details>)}
             </div>
