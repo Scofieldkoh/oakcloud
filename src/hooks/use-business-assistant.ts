@@ -45,6 +45,26 @@ const listSchema = z.object({
   enabled: z.boolean().default(false), mutationsEnabled: z.boolean().default(false),
 });
 
+const correctionResponseSchema = z.object({
+  correction: z.object({
+    kind: z.literal('CORRECTION_PROPOSAL'),
+    correctionOfReviewId: z.string().min(1),
+    sourceRunId: z.string().min(1),
+    runId: z.string().min(1),
+    runItemId: z.string().min(1),
+    proposalId: z.string().min(1),
+    revision: z.number().int().positive(),
+    duplicate: z.boolean(),
+  }).strict(),
+}).strict();
+
+export type AssistantCorrectionResult = z.infer<typeof correctionResponseSchema>['correction'];
+export interface AssistantCorrectionRequest {
+  clientRequestId: string;
+  reviewId: string;
+  corrections: Array<{ findingId: string; value: unknown }>;
+}
+
 export function useAssistantConversations(workspaceId: string) {
   return useQuery({ queryKey: ['business-assistant', workspaceId, 'conversations'],
     queryFn: async ({ signal }) => listSchema.parse(await assistantRequest('/conversations', workspaceId, undefined, signal)),
@@ -81,6 +101,16 @@ export function useAssistantAction(workspaceId: string, runId: string) {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: (action: BusinessAssistantAction) => assistantRequest(`/runs/${encodeURIComponent(runId)}/actions`, workspaceId, action),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['business-assistant', workspaceId] }), retry: false });
+}
+
+export function useAssistantCorrection(workspaceId: string, runId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (request: AssistantCorrectionRequest) => correctionResponseSchema.parse(
+      await assistantRequest(`/runs/${encodeURIComponent(runId)}/corrections`, workspaceId, { ...request, workspaceId })).correction,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['business-assistant', workspaceId] }),
+    retry: false,
+  });
 }
 
 export function useAssistantConversationAction(workspaceId: string) {

@@ -60,6 +60,9 @@ jobs:
         run: npm run test:run -- __tests__/services/business-assistant __tests__/api/business-assistant __tests__/services/bizfile __tests__/api/bizfile __tests__/lib/fresh-authorization.test.ts __tests__/middleware.test.ts --reporter=dot
 
       - name: Build application
+        env:
+          # The production Next build is known to exceed Node's default ~4 GB heap during validation.
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build
 
   assistant-authorization:
@@ -130,7 +133,7 @@ jobs:
       - name: Verify final runtime and Chromium
         run: |
           docker run --rm --entrypoint sh oakcloud:node24-ci -lc '
-            node --version | grep -E "^v24\." &&
+            node --version | grep -E "^v24\\." &&
             test "$CHROME_PATH" = "/usr/local/bin/oakcloud-chromium" &&
             test -x "$CHROME_PATH" &&
             "$CHROME_PATH" --version &&

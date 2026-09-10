@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { PrismaClient } from '@/generated/prisma';
 import { evaluateFreshAuthorization, type FreshAuthorizationTransactionClient } from '@/lib/fresh-authorization';
+import { BIZFILE_CORRECTION_FINDING_CODES, BIZFILE_CORRECTION_SOURCE_PATHS } from '@/lib/bizfile-correction-contract';
 import { storage } from '@/lib/storage';
 import { StorageKeys } from '@/lib/storage/config';
 import { getFileExtension } from '@/lib/storage/filename';
@@ -19,41 +20,14 @@ import { baselineFromCompany } from './prepare-import';
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
 type AnyRecord = Record<string, unknown>;
 
-const ALLOWED_FINDING_CODES = new Set(['SELECTED_FIELD_MISMATCH', 'PERSISTED_FIELD_MISSING', 'APPROVED_FIELD_MISMATCH']);
+const ALLOWED_FINDING_CODES = new Set<string>(BIZFILE_CORRECTION_FINDING_CODES);
 
 /**
  * These paths have a single scalar or one-to-one target in the canonical
  * writer. Collection rows remain unavailable until they have an
  * identity-aware correction contract.
  */
-const SOURCE_PATHS: Readonly<Record<string, string>> = {
-  'entityDetails.name': 'entityDetails.name',
-  'entityDetails.displayAlias': 'entityDetails.displayAlias',
-  'entityDetails.formerName': 'entityDetails.formerName',
-  'entityDetails.dateOfNameChange': 'entityDetails.dateOfNameChange',
-  'entityDetails.entityType': 'entityDetails.entityType',
-  'entityDetails.status': 'entityDetails.status',
-  'entityDetails.statusDate': 'entityDetails.statusDate',
-  'entityDetails.incorporationDate': 'entityDetails.incorporationDate',
-  'entityDetails.registrationDate': 'entityDetails.registrationDate',
-  'ssicActivities.primary.code': 'ssicActivities.primary.code',
-  'ssicActivities.primary.description': 'ssicActivities.primary.description',
-  'ssicActivities.secondary.code': 'ssicActivities.secondary.code',
-  'ssicActivities.secondary.description': 'ssicActivities.secondary.description',
-  'financialYear.endDay': 'financialYear.endDay',
-  'financialYear.endMonth': 'financialYear.endMonth',
-  'compliance.lastAgmDate': 'compliance.lastAgmDate',
-  'compliance.lastArFiledDate': 'compliance.lastArFiledDate',
-  'compliance.accountsDueDate': 'compliance.accountsDueDate',
-  'compliance.fyeAsAtLastAr': 'compliance.fyeAsAtLastAr',
-  homeCurrency: 'homeCurrency',
-  paidUpCapital: 'paidUpCapital',
-  issuedCapital: 'issuedCapital',
-  'addresses.registered': 'registeredAddress',
-  'addresses.mailing': 'mailingAddress',
-  auditor: 'auditor',
-  treasuryShares: 'treasuryShares',
-};
+const SOURCE_PATHS: Readonly<Record<string, string>> = BIZFILE_CORRECTION_SOURCE_PATHS;
 
 const effectManifest = [
   { effectKind: 'STORAGE_FINALIZE', target: 'document', required: true, description: 'Finalize the immutable source document pointer after the canonical operation.' },
