@@ -91,12 +91,13 @@ export async function deriveLearningCandidateFromFeedback(
     if (!parsedValue.success) throw new LearningDerivationError('VALIDATION_FAILED', 'The confirmed preference value is outside the learning target schema.');
     const target = await tx.businessAssistantLearningActiveTarget.findUnique({
       where: { tenantId_targetKey: { tenantId: actor.tenantId, targetKey: definition.targetKey } },
-      select: { activeVersion: true, activeValue: true },
+      select: { activeVersion: true, activeValue: true, revision: true },
     });
     if (target && isDeletedLearningTarget(definition.targetKey, target.activeValue)) {
       throw new LearningDerivationError('ACTION_CONFLICT', 'The learning target was deleted and cannot be recreated from derived data.');
     }
     const baselineVersion = target?.activeVersion ?? definition.defaultVersion;
+    const baselineTargetRevision = target?.revision ?? 0;
     if (candidateVersion === baselineVersion) throw new LearningDerivationError('VALIDATION_FAILED', 'The candidate version must differ from the active baseline.');
 
     const prior = await tx.businessAssistantLearningChange.findFirst({
@@ -134,8 +135,13 @@ export async function deriveLearningCandidateFromFeedback(
       memoryId: memory.id,
       memoryVersion: memory.version,
       memoryScope: memory.scope,
-      capabilityId: definition.capabilityId,
-      capabilityVersion: definition.capabilityVersion,
+      governance: {
+        schemaVersion: '1',
+        targetKey: definition.targetKey,
+        capabilityId: definition.capabilityId,
+        capabilityVersion: definition.capabilityVersion,
+        baselineTargetRevision,
+      },
     });
     const created = await tx.businessAssistantLearningChange.create({
       data: {
@@ -164,6 +170,7 @@ export async function deriveLearningCandidateFromFeedback(
         metadata: jsonInput({
           targetKey: definition.targetKey,
           baselineVersion,
+          baselineTargetRevision,
           candidateVersion,
           candidateDigest: learningCandidateDigest(created),
           sourceMemoryId: memory.id,

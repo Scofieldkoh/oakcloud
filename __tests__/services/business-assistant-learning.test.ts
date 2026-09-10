@@ -1,20 +1,33 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn(), actionCreate: vi.fn(),
-  activeUpdateMany: vi.fn(), activeCreate: vi.fn(), activeFindUnique: vi.fn(), learningCreate: vi.fn(),
-  auditCreate: vi.fn(), backupFindMany: vi.fn(), access: vi.fn(), operationBarrier: vi.fn(), resolveFreshActor: vi.fn(),
+  current: null as any,
+  findMany: vi.fn(),
+  findFirst: vi.fn(),
+  learningUpdateMany: vi.fn(),
+  actionFindFirst: vi.fn(),
+  actionCreate: vi.fn(),
+  activeUpdateMany: vi.fn(),
+  activeCreate: vi.fn(),
+  activeFindUnique: vi.fn(),
+  learningCreate: vi.fn(),
+  auditCreate: vi.fn(),
+  backupFindMany: vi.fn(),
+  access: vi.fn(),
+  operationBarrier: vi.fn(),
+  resolveFreshActor: vi.fn(),
   events: [] as string[],
 }));
+
 vi.mock('@/lib/prisma', () => ({ prisma: {
-  businessAssistantActionRequest: { findFirst: vi.fn() },
+  businessAssistantActionRequest: { findFirst: mocks.actionFindFirst },
   workspaceBackup: { findMany: mocks.backupFindMany },
   businessAssistantLearningActiveTarget: { findUnique: mocks.activeFindUnique },
   businessAssistantLearningChange: { findMany: mocks.findMany, findFirst: mocks.findFirst, create: mocks.learningCreate },
 } }));
 vi.mock('@/lib/prisma-transaction', () => ({ runSerializableTransaction: async (_db: unknown, run: (tx: unknown) => unknown) => run({
-  businessAssistantLearningChange: { findFirst: mocks.findFirst, update: mocks.update, create: mocks.learningCreate },
-  businessAssistantActionRequest: { findFirst: vi.fn().mockResolvedValue(null), create: mocks.actionCreate },
+  businessAssistantLearningChange: { findFirst: mocks.findFirst, updateMany: mocks.learningUpdateMany, create: mocks.learningCreate },
+  businessAssistantActionRequest: { findFirst: mocks.actionFindFirst, create: mocks.actionCreate },
   businessAssistantLearningActiveTarget: { findUnique: mocks.activeFindUnique, updateMany: mocks.activeUpdateMany, create: mocks.activeCreate },
   workspaceBackup: { findMany: mocks.backupFindMany },
   auditLog: { create: mocks.auditCreate },
@@ -35,14 +48,33 @@ import { learningTargetDefinition, resolveLearningTarget } from '@/services/busi
 import { setLearningPromotionTestGateForTests } from '@/services/business-assistant/learning-release-gate';
 
 const actor = { userId: 'user', tenantId: 'workspace', requestId: 'request' };
+const governedEvidence = (baselineTargetRevision = 0) => ({
+  source: 'DIRECT_REQUEST',
+  sourceEvidence: {},
+  governance: {
+    schemaVersion: '1', targetKey: 'assistant.response_detail', capabilityId: 'assistant.answer',
+    capabilityVersion: '1.0', baselineTargetRevision,
+  },
+});
 const candidate = {
   id: 'change', targetKey: 'assistant.response_detail', targetKind: 'PREFERENCE',
-  risk: 'LOW', baselineVersion: '1', candidateVersion: '2', candidateValue: 'concise',
-  evidence: {}, evaluation: null, state: 'CANDIDATE', expectedVersion: 1,
+  risk: 'LOW', baselineVersion: '1', candidateVersion: '2', candidateValue: 'detailed',
+  evidence: governedEvidence(), evaluation: null, state: 'CANDIDATE', expectedVersion: 1,
   approvedById: null, approvedAt: null, promotedAt: null, rollbackTarget: null,
   createdAt: new Date('2026-09-10T10:00:00.000Z'), updatedAt: new Date('2026-09-10T10:00:00.000Z'),
 };
-const request = (action: string) => ({ action, expectedVersion: 1, clientRequestId: '1d0fd7b2-16ec-4111-a0f9-6319cc5f9e75' });
+const request = (action: string, expectedVersion = 1) => ({
+  action,
+  expectedVersion,
+  clientRequestId: '1d0fd7b2-16ec-4111-a0f9-6319cc5f9e75',
+});
+
+function applyMutation(row: any, data: Record<string, any>): any {
+  const expectedVersion = data.expectedVersion && typeof data.expectedVersion === 'object' && 'increment' in data.expectedVersion
+    ? row.expectedVersion + Number(data.expectedVersion.increment)
+    : data.expectedVersion ?? row.expectedVersion;
+  return { ...row, ...data, expectedVersion, updatedAt: new Date() };
+}
 
 describe('governed Business Assistant learning', () => {
   beforeEach(() => {
@@ -51,6 +83,7 @@ describe('governed Business Assistant learning', () => {
     vi.stubEnv('NODE_ENV', 'test');
     setLearningPromotionTestGateForTests(false);
     mocks.events.length = 0;
+    mocks.current = { ...candidate, evidence: governedEvidence() };
     mocks.access.mockResolvedValue({ isAdmin: true });
     mocks.operationBarrier.mockResolvedValue(undefined);
     mocks.resolveFreshActor.mockResolvedValue({ isWorkspaceAdmin: true, isSuperAdmin: false, internalRole: 'ADMIN' });
@@ -59,9 +92,13 @@ describe('governed Business Assistant learning', () => {
     mocks.activeCreate.mockImplementation(({ data }) => ({ id: 'target', revision: 1, ...data }));
     mocks.backupFindMany.mockResolvedValue([]);
     mocks.findMany.mockResolvedValue([]);
-    mocks.findFirst.mockResolvedValue(candidate);
-    mocks.update.mockImplementation(({ data }) => ({ ...candidate, ...data, expectedVersion: candidate.expectedVersion + 1, updatedAt: new Date() }));
+    mocks.findFirst.mockImplementation(async () => mocks.current);
+    mocks.learningUpdateMany.mockImplementation(async ({ data }) => {
+      mocks.current = applyMutation(mocks.current, data);
+      return { count: 1 };
+    });
     mocks.learningCreate.mockImplementation(({ data }) => ({ ...candidate, ...data }));
+    mocks.actionFindFirst.mockResolvedValue(null);
     mocks.actionCreate.mockResolvedValue({ id: 'audit-request' });
     mocks.auditCreate.mockResolvedValue({ id: 'audit-log' });
   });
@@ -79,28 +116,37 @@ describe('governed Business Assistant learning', () => {
       releaseState: 'GATED_PENDING_RELEASE_REQUIREMENTS', passed: true, cases: 6, passedChecks: 6,
     });
     expect(result.allowedActions).toEqual(['EVALUATE', 'APPROVE', 'REJECT']);
+    expect(mocks.learningUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'change', tenantId: 'workspace', ownerId: 'user', expectedVersion: 1 },
+    }));
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+      summary: 'Applied governed learning action EVALUATE',
+      metadata: expect.objectContaining({ lifecycleAction: 'EVALUATE', candidateExpectedVersion: 1, resultingExpectedVersion: 2 }),
+    }) }));
   });
 
   it('authorizes approval only when the evaluation is cryptographically bound to this candidate', async () => {
     const evaluation = evaluateLearningCandidateBehavior(candidate);
-    mocks.findFirst.mockResolvedValue({ ...candidate, state: 'EVALUATED', evaluation });
-    mocks.update.mockImplementation(({ data }) => ({ ...candidate, state: 'EVALUATED', evaluation, ...data, expectedVersion: 2, updatedAt: new Date() }));
+    mocks.current = { ...candidate, state: 'EVALUATED', evaluation };
     const result = await applyLearningAction(actor, 'change', request('APPROVE'));
     expect(result.state).toBe('APPROVED');
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ approvedById: 'user', approvedAt: expect.any(Date) }) }));
+    expect(mocks.learningUpdateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ approvedById: 'user', approvedAt: expect.any(Date) }),
+    }));
   });
 
   it('rejects schema-only or copied evaluation evidence', async () => {
-    mocks.findFirst.mockResolvedValue({ ...candidate, state: 'EVALUATED', evaluation: { source: 'STATIC_VALIDATION', staticChecksPassed: true, passed: true } });
+    mocks.current = { ...candidate, state: 'EVALUATED', evaluation: { source: 'STATIC_VALIDATION', staticChecksPassed: true, passed: true } };
     await expect(applyLearningAction(actor, 'change', request('APPROVE'))).rejects.toThrow('held-out behavioral evaluation');
     const evaluation = evaluateLearningCandidateBehavior(candidate);
-    mocks.findFirst.mockResolvedValue({ ...candidate, state: 'EVALUATED', candidateValue: 'detailed', evaluation });
+    mocks.current = { ...candidate, state: 'EVALUATED', candidateValue: 'concise', evaluation };
     await expect(applyLearningAction(actor, 'change', request('APPROVE'))).rejects.toThrow('held-out behavioral evaluation');
+    expect(mocks.learningUpdateMany).not.toHaveBeenCalled();
   });
 
   it('keeps production promotion blocked after valid behavioral evaluation and approval', async () => {
     const evaluation = evaluateLearningCandidateBehavior(candidate);
-    mocks.findFirst.mockResolvedValue({ ...candidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() });
+    mocks.current = { ...candidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() };
     await expect(applyLearningAction(actor, 'change', request('PROMOTE'))).rejects.toThrow('remains gated');
     expect(mocks.activeUpdateMany).not.toHaveBeenCalled();
     expect(mocks.activeCreate).not.toHaveBeenCalled();
@@ -109,9 +155,7 @@ describe('governed Business Assistant learning', () => {
   it('exercises authorized activation only through the test harness and records immutable lineage', async () => {
     setLearningPromotionTestGateForTests(true);
     const evaluation = evaluateLearningCandidateBehavior(candidate);
-    const approved = { ...candidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() };
-    mocks.findFirst.mockResolvedValue(approved);
-    mocks.update.mockImplementation(({ data }) => ({ ...approved, ...data, expectedVersion: 2, updatedAt: new Date() }));
+    mocks.current = { ...candidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() };
 
     const result = await applyLearningAction(actor, 'change', request('PROMOTE'));
     expect(result.state).toBe('PROMOTED');
@@ -121,33 +165,92 @@ describe('governed Business Assistant learning', () => {
     }) }));
     expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
       tenantId: 'workspace', userId: 'user', action: 'UPDATE', entityType: 'BUSINESS_ASSISTANT_LEARNING', entityId: 'change',
-      metadata: expect.objectContaining({ lifecycleAction: 'PROMOTE', testOnlyActivation: true }),
+      metadata: expect.objectContaining({ lifecycleAction: 'PROMOTE', baselineTargetRevision: 0, activeRevision: 1, testOnlyActivation: true }),
     }) }));
   });
 
-  it('rejects a stale active version before a test-only promotion', async () => {
+  it('rejects ABA stale promotion even when the version string returned to the original baseline', async () => {
     setLearningPromotionTestGateForTests(true);
     const evaluation = evaluateLearningCandidateBehavior(candidate);
-    mocks.findFirst.mockResolvedValue({ ...candidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() });
-    mocks.activeFindUnique.mockResolvedValue({ id: 'target', activeVersion: '3', activeValue: 'detailed', activeChangeId: 'older', revision: 4, previousVersion: '2', previousValue: 'standard' });
-    await expect(applyLearningAction(actor, 'change', request('PROMOTE'))).rejects.toThrow('promotion is stale');
+    mocks.current = { ...candidate, state: 'APPROVED', evidence: governedEvidence(4), evaluation, approvedById: 'user', approvedAt: new Date() };
+    mocks.activeFindUnique.mockResolvedValue({
+      id: 'target', activeVersion: '1', activeValue: 'concise', activeChangeId: null,
+      revision: 6, previousVersion: '3', previousValue: 'standard',
+    });
+    await expect(applyLearningAction(actor, 'change', request('PROMOTE'))).rejects.toThrow('changed since candidate creation');
     expect(mocks.activeUpdateMany).not.toHaveBeenCalled();
   });
 
-  it('rejects a revision race when compare-and-swap loses after the active read', async () => {
+  it('rejects a target revision race when compare-and-swap loses after the bound active read', async () => {
     setLearningPromotionTestGateForTests(true);
-    const evaluation = evaluateLearningCandidateBehavior(candidate);
-    mocks.findFirst.mockResolvedValue({ ...candidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() });
-    mocks.activeFindUnique.mockResolvedValue({ id: 'target', activeVersion: '1', activeValue: 'concise', activeChangeId: null, revision: 4, previousVersion: null, previousValue: null });
+    const bound = { ...candidate, evidence: governedEvidence(4) };
+    const evaluation = evaluateLearningCandidateBehavior(bound);
+    mocks.current = { ...bound, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() };
+    mocks.activeFindUnique.mockResolvedValue({
+      id: 'target', activeVersion: '1', activeValue: 'concise', activeChangeId: null,
+      revision: 4, previousVersion: null, previousValue: null,
+    });
     mocks.activeUpdateMany.mockResolvedValue({ count: 0 });
     await expect(applyLearningAction(actor, 'change', request('PROMOTE'))).rejects.toThrow('changed during promotion');
-    expect(mocks.auditCreate).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ summary: 'Activated governed learning configuration' }) }));
+    expect(mocks.learningUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects candidates created before target-revision lineage binding', async () => {
+    setLearningPromotionTestGateForTests(true);
+    const oldCandidate = { ...candidate, evidence: {} };
+    const evaluation = evaluateLearningCandidateBehavior(oldCandidate);
+    mocks.current = { ...oldCandidate, state: 'APPROVED', evaluation, approvedById: 'user', approvedAt: new Date() };
+    await expect(applyLearningAction(actor, 'change', request('PROMOTE'))).rejects.toThrow('predates governed target-revision binding');
+    expect(mocks.activeCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects an action-level expected-version race with an explicit candidate CAS', async () => {
+    mocks.learningUpdateMany.mockResolvedValue({ count: 0 });
+    await expect(applyLearningAction(actor, 'change', request('EVALUATE'))).rejects.toThrow('changed during this action');
+    expect(mocks.auditCreate).not.toHaveBeenCalled();
+    expect(mocks.actionCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a stale expected version before attempting any action mutation', async () => {
+    mocks.current = { ...candidate, expectedVersion: 2 };
+    await expect(applyLearningAction(actor, 'change', request('EVALUATE', 1))).rejects.toThrow('refresh before applying');
+    expect(mocks.learningUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it('does not let rollback bypass deactivation, expiry, or deletion of the active pointer', async () => {
+    const definition = learningTargetDefinition('assistant.response_detail')!;
+    mocks.current = { ...candidate, state: 'PROMOTED', rollbackTarget: '1', expectedVersion: 2 };
+    for (const lifecycleState of ['DEACTIVATED', 'EXPIRED', 'DELETED'] as const) {
+      mocks.activeFindUnique.mockResolvedValue({
+        id: 'target', activeVersion: '2', activeValue: createLearningLifecycleMarker(definition, lifecycleState),
+        activeChangeId: null, revision: 3, previousVersion: '1', previousValue: 'concise',
+      });
+      await expect(applyLearningAction(actor, 'change', request('ROLLBACK', 2))).rejects.toThrow('rollback is stale');
+    }
+    expect(mocks.activeUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it('wraps caller evidence with server-owned baseline revision and prevents governance-field injection', async () => {
+    mocks.activeFindUnique.mockResolvedValue({ activeVersion: '1', activeValue: 'concise', revision: 9 });
+    const result = await createLearningCandidate(actor, {
+      targetKey: 'assistant.response_detail', targetKind: 'PREFERENCE', baselineVersion: '1', candidateVersion: '2',
+      candidateValue: 'detailed', evidence: { governance: { baselineTargetRevision: 999, targetKey: 'database.url' }, note: 'source evidence' },
+    });
+    const data = mocks.learningCreate.mock.calls[0][0].data;
+    expect(data.evidence).toMatchObject({
+      source: 'DIRECT_REQUEST',
+      sourceEvidence: { governance: { baselineTargetRevision: 999, targetKey: 'database.url' }, note: 'source evidence' },
+      governance: { baselineTargetRevision: 9, targetKey: 'assistant.response_detail', capabilityId: 'assistant.answer', capabilityVersion: '1.0' },
+    });
+    expect(result.targetKey).toBe('assistant.response_detail');
   });
 
   it('rejects arbitrary runtime, code, and database learning targets', async () => {
     for (const targetKey of ['runtime.provider.model', 'database.url', 'code.worker.dispatch']) {
-      await expect(createLearningCandidate(actor, { targetKey, targetKind: 'PREFERENCE', baselineVersion: '1', candidateVersion: '2', candidateValue: 'concise', evidence: {} }))
-        .rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+      await expect(createLearningCandidate(actor, {
+        targetKey, targetKind: 'PREFERENCE', baselineVersion: '1', candidateVersion: '2', candidateValue: 'concise', evidence: {},
+      })).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     }
     expect(mocks.learningCreate).not.toHaveBeenCalled();
   });
@@ -175,7 +278,7 @@ describe('governed Business Assistant learning', () => {
 
   it('prevents deleted target resurrection during candidate creation', async () => {
     const definition = learningTargetDefinition('assistant.response_detail')!;
-    mocks.activeFindUnique.mockResolvedValue({ activeVersion: '2', activeValue: createLearningLifecycleMarker(definition, 'DELETED') });
+    mocks.activeFindUnique.mockResolvedValue({ activeVersion: '2', revision: 5, activeValue: createLearningLifecycleMarker(definition, 'DELETED') });
     await expect(createLearningCandidate(actor, {
       targetKey: 'assistant.response_detail', targetKind: 'PREFERENCE', baselineVersion: '2', candidateVersion: '3', candidateValue: 'detailed', evidence: {},
     })).rejects.toThrow('cannot be recreated');
@@ -212,12 +315,14 @@ describe('governed Business Assistant learning', () => {
     expect(mocks.learningCreate).not.toHaveBeenCalled();
   });
 
-  it('reads legacy direct active values and hides expired/deleted envelopes behind defaults', async () => {
+  it('reads legacy direct active values and hides expired/deleted envelopes behind source-controlled defaults', async () => {
     mocks.activeFindUnique.mockResolvedValue({ activeVersion: '2', activeValue: 'detailed' });
     await expect(getActiveLearningConfiguration('workspace', 'assistant.preference.response_detail'))
       .resolves.toEqual({ version: '2', value: 'detailed' });
     const definition = learningTargetDefinition('assistant.response_detail')!;
     mocks.activeFindUnique.mockResolvedValue({ activeVersion: '2', activeValue: createLearningLifecycleMarker(definition, 'EXPIRED') });
+    await expect(getActiveLearningConfiguration('workspace', 'assistant.response_detail')).resolves.toEqual({ version: '1', value: 'concise' });
+    mocks.activeFindUnique.mockResolvedValue({ activeVersion: '2', activeValue: createLearningLifecycleMarker(definition, 'DELETED') });
     await expect(getActiveLearningConfiguration('workspace', 'assistant.response_detail')).resolves.toEqual({ version: '1', value: 'concise' });
   });
 });
