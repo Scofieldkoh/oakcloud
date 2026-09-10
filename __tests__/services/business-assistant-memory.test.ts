@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   freshActor: vi.fn(),
   backups: vi.fn(),
   barrier: vi.fn(),
+  cleanupDerived: vi.fn(),
 }));
 vi.mock('@/lib/prisma', () => ({ prisma: {
   businessAssistantMemory: { findFirst: mocks.findFirst, findUnique: mocks.findFirst },
@@ -24,6 +25,7 @@ vi.mock('@/lib/prisma-transaction', () => ({ runSerializableTransaction: async (
 vi.mock('@/lib/business-operation-backup-barrier', () => ({ acquireBusinessOperationBarrier: mocks.barrier }));
 vi.mock('@/lib/fresh-authorization', () => ({ resolveFreshActor: mocks.freshActor }));
 vi.mock('@/services/business-assistant/policy.service', () => ({ assertAssistantAdministrativeAccess: mocks.access }));
+vi.mock('@/services/business-assistant/learning-derived-cleanup', () => ({ eraseLearningDerivedFromMemory: mocks.cleanupDerived }));
 
 import { applyMemoryAction, createMemoryCandidate } from '@/services/business-assistant/memory.service';
 import { sha256 } from '@/services/business-assistant/contracts';
@@ -51,6 +53,7 @@ describe('deleted assistant preference boundary', () => {
     mocks.freshActor.mockResolvedValue(freshUser);
     mocks.backups.mockResolvedValue([]);
     mocks.barrier.mockResolvedValue(undefined);
+    mocks.cleanupDerived.mockResolvedValue({ removedCandidates: 0, deactivatedTargets: 0 });
   });
 
   it('creates a personal candidate for an ordinary authorized user inside the transaction', async () => {
@@ -85,6 +88,7 @@ describe('deleted assistant preference boundary', () => {
 
     expect(mocks.access).toHaveBeenCalledTimes(1);
     expect(mocks.barrier).toHaveBeenCalledTimes(1);
+    expect(mocks.cleanupDerived).not.toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.updateMany).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
@@ -98,6 +102,7 @@ describe('deleted assistant preference boundary', () => {
 
     expect(mocks.access).toHaveBeenCalledTimes(1);
     expect(mocks.barrier).toHaveBeenCalledTimes(1);
+    expect(mocks.cleanupDerived).not.toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.updateMany).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
@@ -132,20 +137,48 @@ describe('deleted assistant preference boundary', () => {
     expect(supersededIds).toEqual(['matching-capability']);
   });
 
-  it.each(['REVISE', 'CONFIRM', 'DEACTIVATE', 'DELETE'])('rejects a new %s action without rewriting the tombstone', async (kind) => {
-    const action = { ...request(kind), ...(kind === 'REVISE' ? { value: 'zh' } : {}) };
-    await expect(applyMemoryAction(actor, 'memory', action)).rejects.toThrow('A deleted preference cannot be changed');
+  it('cleans all learning descendants before deleting the confirmed source preference', async () => {
+    const deleted = { ...activeMemory, state: 'DELETED', value: { deleted: true }, version: 3, deletedAt: new Date(), updatedAt: new Date() };
+    mocks.findFirst.mockResolvedValue(activeMemory);
+    mocks.update.mockResolvedValue(deleted);
+    mocks.create.mockResolvedValue({ id: 'action-request' });
+    const events: string[] = [];
+    mocks.cleanupDerived.mockImplementation(async () => { events.push('derived-cleanup'); return { removedCandidates: 2, deactivatedTargets: 1 }; });
+    mocks.update.mockImplementation(async () => { events.push('memory-delete'); return deleted; });
+
+    const result = await applyMemoryAction(actor, 'memory', request('DELETE'));
+
+    expect(result).toMatchObject({ state: 'DELETED', value: { deleted: true }, version: 3 });
+    expect(mocks.cleanupDerived).toHaveBeenCalledWith(expect.anything(), actor, 'memory');
+    expect(events).toEqual(['derived-cleanup', 'memory-delete']);
+  });
+
+  it('aborts source deletion if derived learning cleanup cannot safely complete', async () => {
+    mocks.findFirst.mockResolvedValue(activeMemory);
+    mocks.cleanupDerived.mockRejectedValue(new Error('descendant CAS conflict'));
+
+    await expect(applyMemoryAction(actor, 'memory', request('DELETE'))).rejects.toThrow('descendant CAS conflict');
+
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
-  it('allows an exact retry of the successful delete without another write', async () => {
+  it.each(['REVISE', 'CONFIRM', 'DEACTIVATE', 'DELETE'])('rejects a new %s action without rewriting the tombstone', async (kind) => {
+    const action = { ...request(kind), ...(kind === 'REVISE' ? { value: 'zh' } : {}) };
+    await expect(applyMemoryAction(actor, 'memory', action)).rejects.toThrow('A deleted preference cannot be changed');
+    expect(mocks.cleanupDerived).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('allows an exact retry of the successful delete without another cleanup or write', async () => {
     const action = { ...request('DELETE'), expectedVersion: 1 };
     mocks.replay.mockResolvedValue({ bodyHash: sha256({ memoryId: 'memory', action }) });
     const result = await applyMemoryAction(actor, 'memory', action);
     expect(result.state).toBe('DELETED');
     expect(result.value).toEqual({ deleted: true });
     expect(result.allowedActions).toEqual([]);
+    expect(mocks.cleanupDerived).not.toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
@@ -153,6 +186,7 @@ describe('deleted assistant preference boundary', () => {
     mocks.findFirst.mockResolvedValue({ ...tombstone, scope: 'TENANT', state: 'ACTIVE', value: 'en' });
     await expect(applyMemoryAction(actor, 'memory', request('DELETE'))).rejects.toThrow('Only a workspace administrator');
     expect(mocks.replay).not.toHaveBeenCalled();
+    expect(mocks.cleanupDerived).not.toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });

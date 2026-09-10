@@ -8,6 +8,7 @@ import { getAssistantPreferenceDefinition } from '@/lib/business-assistant-prefe
 import { sha256 } from './contracts';
 import { assertAssistantActor, assertAssistantAdministrativeAccess } from './policy.service';
 import type { AssistantActor } from './conversation.service';
+import { eraseLearningDerivedFromMemory } from './learning-derived-cleanup';
 
 const MEMORY_ADMIN_FORBIDDEN_MESSAGE = 'Only a workspace administrator can change tenant preferences.';
 const MEMORY_WORKSPACE_PAUSED_MESSAGE = 'The workspace is restoring and cannot accept new assistant work.';
@@ -150,7 +151,7 @@ export async function applyMemoryAction(actor: AssistantActor, memoryId: string,
   const bodyHash = sha256({ memoryId, action });
   const result = await runSerializableTransaction(prisma, async (tx) => {
     const isAdmin = await freshMemoryActorInTransaction(actor, tx);
-    const current = await tx.businessAssistantMemory.findFirst({ where: { id: memoryId, tenantId: actor.tenantId, ownerId: actor.userId }, });
+    const current = await tx.businessAssistantMemory.findFirst({ where: { id: memoryId, tenantId: actor.tenantId, ownerId: actor.userId } });
     if (!current) throw new MemoryServiceError('NOT_FOUND', 'The preference is unavailable.');
     await assertMemoryScopeAndWorkspaceOperationalInTransaction(actor, tx, current.scope, isAdmin);
     const existing = await tx.businessAssistantActionRequest.findFirst({ where: { tenantId: actor.tenantId, ownerId: actor.userId, actionKind, clientRequestId: action.clientRequestId }, select: { bodyHash: true } });
@@ -194,6 +195,9 @@ export async function applyMemoryAction(actor: AssistantActor, memoryId: string,
         },
         data: { state: 'SUPERSEDED' },
       });
+    }
+    if (action.action === 'DELETE') {
+      await eraseLearningDerivedFromMemory(tx, actor, current.id);
     }
     const updated = await tx.businessAssistantMemory.update({ where: { id: memoryId }, data: { state: nextState, value, effectiveAt: action.action === 'CONFIRM' ? new Date() : undefined, version: { increment: 1 }, ...(action.action === 'REVISE' && action.key ? { key: action.key } : {}), ...(action.action === 'DELETE' ? { deletedAt: new Date(), provenance: jsonInput({ deletedAt: new Date().toISOString(), source: 'USER_REQUEST' }) } : {}) } });
     await tx.businessAssistantActionRequest.create({ data: { tenantId: actor.tenantId, ownerId: actor.userId, actionKind, clientRequestId: action.clientRequestId, bodyHash, status: 'APPLIED', response: jsonInput({ memoryId: updated.id, version: updated.version }) } });
