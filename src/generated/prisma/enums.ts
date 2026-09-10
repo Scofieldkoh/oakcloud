@@ -1110,7 +1110,8 @@ export type EsigningEmailDeliveryKind = (typeof EsigningEmailDeliveryKind)[keyof
 
 export const EsigningEmailDeliveryAudience = {
   RECIPIENT: 'RECIPIENT',
-  SENDER: 'SENDER'
+  SENDER: 'SENDER',
+  COPY: 'COPY'
 } as const
 
 export type EsigningEmailDeliveryAudience = (typeof EsigningEmailDeliveryAudience)[keyof typeof EsigningEmailDeliveryAudience]
@@ -1204,3 +1205,353 @@ export const AccountStatus = {
 } as const
 
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus]
+
+
+export const BusinessAssistantConversationStatus = {
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+  DELETED: 'DELETED'
+} as const
+
+export type BusinessAssistantConversationStatus = (typeof BusinessAssistantConversationStatus)[keyof typeof BusinessAssistantConversationStatus]
+
+
+export const BusinessAssistantMessageRole = {
+  USER: 'USER',
+  ASSISTANT: 'ASSISTANT',
+  SYSTEM: 'SYSTEM'
+} as const
+
+export type BusinessAssistantMessageRole = (typeof BusinessAssistantMessageRole)[keyof typeof BusinessAssistantMessageRole]
+
+
+export const BusinessAssistantMessageType = {
+  INPUT: 'INPUT',
+  ANSWER: 'ANSWER',
+  CLARIFICATION: 'CLARIFICATION',
+  PROPOSAL: 'PROPOSAL',
+  RESULT: 'RESULT',
+  ERROR: 'ERROR'
+} as const
+
+export type BusinessAssistantMessageType = (typeof BusinessAssistantMessageType)[keyof typeof BusinessAssistantMessageType]
+
+
+export const BusinessAssistantMessageStatus = {
+  ACCEPTED: 'ACCEPTED',
+  PROCESSING: 'PROCESSING',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED'
+} as const
+
+export type BusinessAssistantMessageStatus = (typeof BusinessAssistantMessageStatus)[keyof typeof BusinessAssistantMessageStatus]
+
+
+export const BusinessAssistantRunStatus = {
+  DRAFT: 'DRAFT',
+  PREPARING: 'PREPARING',
+  WAITING_CONFIRMATION: 'WAITING_CONFIRMATION',
+  READY: 'READY',
+  RUNNING: 'RUNNING',
+  REVIEWING: 'REVIEWING',
+  RECOVERING: 'RECOVERING',
+  CANCEL_REQUESTED: 'CANCEL_REQUESTED',
+  COMPLETED: 'COMPLETED',
+  COMPLETED_WITH_EXCEPTIONS: 'COMPLETED_WITH_EXCEPTIONS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type BusinessAssistantRunStatus = (typeof BusinessAssistantRunStatus)[keyof typeof BusinessAssistantRunStatus]
+
+
+export const BusinessAssistantItemState = {
+  PENDING: 'PENDING',
+  PREPARING: 'PREPARING',
+  BLOCKED: 'BLOCKED',
+  WAITING_CONFIRMATION: 'WAITING_CONFIRMATION',
+  READY: 'READY',
+  EXECUTING: 'EXECUTING',
+  RECOVERING: 'RECOVERING',
+  READING_BACK: 'READING_BACK',
+  REVIEWING: 'REVIEWING',
+  SUCCEEDED: 'SUCCEEDED',
+  PASSED: 'PASSED',
+  PASSED_WITH_WARNINGS: 'PASSED_WITH_WARNINGS',
+  NEEDS_REVIEW: 'NEEDS_REVIEW',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type BusinessAssistantItemState = (typeof BusinessAssistantItemState)[keyof typeof BusinessAssistantItemState]
+
+
+export const BusinessAssistantExecutionOutcome = {
+  NOT_STARTED: 'NOT_STARTED',
+  SUCCEEDED_READ: 'SUCCEEDED_READ',
+  COMMITTED: 'COMMITTED',
+  NO_CHANGE: 'NO_CHANGE',
+  FAILED_NO_COMMIT: 'FAILED_NO_COMMIT',
+  OUTCOME_UNKNOWN: 'OUTCOME_UNKNOWN'
+} as const
+
+export type BusinessAssistantExecutionOutcome = (typeof BusinessAssistantExecutionOutcome)[keyof typeof BusinessAssistantExecutionOutcome]
+
+
+export const BusinessAssistantReviewOutcome = {
+  NOT_REQUIRED: 'NOT_REQUIRED',
+  NOT_STARTED: 'NOT_STARTED',
+  RUNNING: 'RUNNING',
+  PASS: 'PASS',
+  PASS_WITH_WARNINGS: 'PASS_WITH_WARNINGS',
+  NEEDS_REVIEW: 'NEEDS_REVIEW',
+  REVIEW_FAILED: 'REVIEW_FAILED',
+  NOT_RUN: 'NOT_RUN'
+} as const
+
+export type BusinessAssistantReviewOutcome = (typeof BusinessAssistantReviewOutcome)[keyof typeof BusinessAssistantReviewOutcome]
+
+
+export const BusinessAssistantEffectStatus = {
+  NOT_REQUIRED: 'NOT_REQUIRED',
+  PENDING: 'PENDING',
+  COMPLETE: 'COMPLETE',
+  FAILED: 'FAILED'
+} as const
+
+export type BusinessAssistantEffectStatus = (typeof BusinessAssistantEffectStatus)[keyof typeof BusinessAssistantEffectStatus]
+
+
+export const BusinessAssistantStage = {
+  CLASSIFICATION: 'CLASSIFICATION',
+  PREPARATION: 'PREPARATION',
+  EXECUTION: 'EXECUTION',
+  EFFECTS: 'EFFECTS',
+  READ_BACK: 'READ_BACK',
+  REVIEW: 'REVIEW'
+} as const
+
+export type BusinessAssistantStage = (typeof BusinessAssistantStage)[keyof typeof BusinessAssistantStage]
+
+
+export const BusinessAssistantAttemptStatus = {
+  RUNNING: 'RUNNING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT',
+  SKIPPED: 'SKIPPED'
+} as const
+
+export type BusinessAssistantAttemptStatus = (typeof BusinessAssistantAttemptStatus)[keyof typeof BusinessAssistantAttemptStatus]
+
+
+export const BusinessAssistantProposalStatus = {
+  ACTIVE: 'ACTIVE',
+  SUPERSEDED: 'SUPERSEDED',
+  EXPIRED: 'EXPIRED',
+  CONFIRMED: 'CONFIRMED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type BusinessAssistantProposalStatus = (typeof BusinessAssistantProposalStatus)[keyof typeof BusinessAssistantProposalStatus]
+
+
+export const BusinessAssistantApprovalDecision = {
+  APPROVED: 'APPROVED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED',
+  SUPERSEDED: 'SUPERSEDED'
+} as const
+
+export type BusinessAssistantApprovalDecision = (typeof BusinessAssistantApprovalDecision)[keyof typeof BusinessAssistantApprovalDecision]
+
+
+export const BusinessAssistantReviewVerdict = {
+  PASS: 'PASS',
+  PASS_WITH_WARNINGS: 'PASS_WITH_WARNINGS',
+  NEEDS_REVIEW: 'NEEDS_REVIEW',
+  REVIEW_FAILED: 'REVIEW_FAILED'
+} as const
+
+export type BusinessAssistantReviewVerdict = (typeof BusinessAssistantReviewVerdict)[keyof typeof BusinessAssistantReviewVerdict]
+
+
+export const BusinessAssistantConformance = {
+  PASS: 'PASS',
+  FAIL: 'FAIL',
+  UNVERIFIABLE: 'UNVERIFIABLE'
+} as const
+
+export type BusinessAssistantConformance = (typeof BusinessAssistantConformance)[keyof typeof BusinessAssistantConformance]
+
+
+export const BusinessAssistantSourceAlignment = {
+  NO_UNEXPLAINED_DIFFERENCE: 'NO_UNEXPLAINED_DIFFERENCE',
+  DIFFERENCES_PRESENT: 'DIFFERENCES_PRESENT',
+  INCOMPLETE: 'INCOMPLETE'
+} as const
+
+export type BusinessAssistantSourceAlignment = (typeof BusinessAssistantSourceAlignment)[keyof typeof BusinessAssistantSourceAlignment]
+
+
+export const BusinessAssistantFeedbackTarget = {
+  MESSAGE: 'MESSAGE',
+  RUN: 'RUN',
+  ITEM: 'ITEM',
+  PROPOSAL: 'PROPOSAL',
+  REVIEW: 'REVIEW',
+  MEMORY: 'MEMORY'
+} as const
+
+export type BusinessAssistantFeedbackTarget = (typeof BusinessAssistantFeedbackTarget)[keyof typeof BusinessAssistantFeedbackTarget]
+
+
+export const BusinessAssistantFeedbackEvent = {
+  OUTCOME: 'OUTCOME',
+  SENTIMENT: 'SENTIMENT',
+  REVIEW_FINDING: 'REVIEW_FINDING',
+  CORRECTNESS: 'CORRECTNESS'
+} as const
+
+export type BusinessAssistantFeedbackEvent = (typeof BusinessAssistantFeedbackEvent)[keyof typeof BusinessAssistantFeedbackEvent]
+
+
+export const BusinessAssistantAdjudicationStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type BusinessAssistantAdjudicationStatus = (typeof BusinessAssistantAdjudicationStatus)[keyof typeof BusinessAssistantAdjudicationStatus]
+
+
+export const BusinessAssistantMemoryScope = {
+  SESSION: 'SESSION',
+  USER: 'USER',
+  TENANT: 'TENANT'
+} as const
+
+export type BusinessAssistantMemoryScope = (typeof BusinessAssistantMemoryScope)[keyof typeof BusinessAssistantMemoryScope]
+
+
+export const BusinessAssistantMemoryRisk = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH'
+} as const
+
+export type BusinessAssistantMemoryRisk = (typeof BusinessAssistantMemoryRisk)[keyof typeof BusinessAssistantMemoryRisk]
+
+
+export const BusinessAssistantMemoryState = {
+  CANDIDATE: 'CANDIDATE',
+  ACTIVE: 'ACTIVE',
+  REJECTED: 'REJECTED',
+  DEACTIVATED: 'DEACTIVATED',
+  SUPERSEDED: 'SUPERSEDED',
+  EXPIRED: 'EXPIRED',
+  DELETED: 'DELETED'
+} as const
+
+export type BusinessAssistantMemoryState = (typeof BusinessAssistantMemoryState)[keyof typeof BusinessAssistantMemoryState]
+
+
+export const BusinessAssistantLearningTarget = {
+  PREFERENCE: 'PREFERENCE',
+  PROMPT_PROFILE: 'PROMPT_PROFILE'
+} as const
+
+export type BusinessAssistantLearningTarget = (typeof BusinessAssistantLearningTarget)[keyof typeof BusinessAssistantLearningTarget]
+
+
+export const BusinessAssistantLearningState = {
+  CANDIDATE: 'CANDIDATE',
+  EVALUATING: 'EVALUATING',
+  EVALUATED: 'EVALUATED',
+  APPROVED: 'APPROVED',
+  PROMOTED: 'PROMOTED',
+  ROLLED_BACK: 'ROLLED_BACK',
+  REJECTED: 'REJECTED'
+} as const
+
+export type BusinessAssistantLearningState = (typeof BusinessAssistantLearningState)[keyof typeof BusinessAssistantLearningState]
+
+
+export const BusinessAssistantActionKind = {
+  REVISE: 'REVISE',
+  CONFIRM: 'CONFIRM',
+  CANCEL: 'CANCEL',
+  RETRY: 'RETRY',
+  ARCHIVE_CONVERSATION: 'ARCHIVE_CONVERSATION',
+  DELETE_CONVERSATION: 'DELETE_CONVERSATION',
+  MEMORY_CONFIRM: 'MEMORY_CONFIRM',
+  MEMORY_REVISE: 'MEMORY_REVISE',
+  MEMORY_DEACTIVATE: 'MEMORY_DEACTIVATE',
+  MEMORY_DELETE: 'MEMORY_DELETE',
+  LEARNING_EVALUATE: 'LEARNING_EVALUATE',
+  LEARNING_APPROVE: 'LEARNING_APPROVE',
+  LEARNING_PROMOTE: 'LEARNING_PROMOTE',
+  LEARNING_ROLLBACK: 'LEARNING_ROLLBACK',
+  LEARNING_REJECT: 'LEARNING_REJECT'
+} as const
+
+export type BusinessAssistantActionKind = (typeof BusinessAssistantActionKind)[keyof typeof BusinessAssistantActionKind]
+
+
+export const BusinessAssistantActionStatus = {
+  ACCEPTED: 'ACCEPTED',
+  APPLIED: 'APPLIED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type BusinessAssistantActionStatus = (typeof BusinessAssistantActionStatus)[keyof typeof BusinessAssistantActionStatus]
+
+
+export const BizFileOperationMode = {
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE'
+} as const
+
+export type BizFileOperationMode = (typeof BizFileOperationMode)[keyof typeof BizFileOperationMode]
+
+
+export const BizFileOperationStatus = {
+  COMMITTED: 'COMMITTED',
+  NO_COMMIT: 'NO_COMMIT',
+  UNKNOWN: 'UNKNOWN'
+} as const
+
+export type BizFileOperationStatus = (typeof BizFileOperationStatus)[keyof typeof BizFileOperationStatus]
+
+
+export const BizFileOperationEffectStatus = {
+  NOT_REQUIRED: 'NOT_REQUIRED',
+  PENDING: 'PENDING',
+  COMPLETE: 'COMPLETE',
+  FAILED: 'FAILED'
+} as const
+
+export type BizFileOperationEffectStatus = (typeof BizFileOperationEffectStatus)[keyof typeof BizFileOperationEffectStatus]
+
+
+export const BizFileOperationEvidenceKind = {
+  BEFORE: 'BEFORE',
+  AFTER: 'AFTER',
+  SOURCE: 'SOURCE',
+  READBACK: 'READBACK'
+} as const
+
+export type BizFileOperationEvidenceKind = (typeof BizFileOperationEvidenceKind)[keyof typeof BizFileOperationEvidenceKind]
+
+
+export const BizFileOperationEffectState = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETE: 'COMPLETE',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT'
+} as const
+
+export type BizFileOperationEffectState = (typeof BizFileOperationEffectState)[keyof typeof BizFileOperationEffectState]

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { processBizFileExtraction } from '@/services/bizfile';
+import { verifyPreparedBizFileRequest } from '@/services/bizfile/application/verify-prepared-request';
+import { BizFilePreparationTokenError } from '@/services/bizfile/application/preparation-token';
+import { normalizeExtractedData } from '@/services/bizfile/normalizer';
+import { hashBizFileValue, processBizFileExtraction } from '@/services/bizfile';
 import {
   bizFileReviewSchema,
   issuesFromZodError,
@@ -49,43 +52,9 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (document.extractionStatus !== 'EXTRACTED') {
-      // Backwards compatibility: accept already-confirmed documents
-      if (document.extractionStatus === 'COMPLETED' && document.companyId) {
-        const completedBody = await request.json().catch(() => undefined);
-        const taskContext = parseTaskLaunchContext(
-          typeof completedBody === 'object'
-            && completedBody !== null
-            && 'taskContext' in completedBody
-            ? (completedBody as { taskContext: unknown }).taskContext
-            : undefined,
-        );
-        if (taskContext) {
-          await preflightTaskLaunchContext(
-            document.tenantId,
-            taskContext,
-            'COMPANY_PROFILE',
-            session,
-          );
-          await safelyLinkCompanyTaskOutcome({
-            tenantId: document.tenantId,
-            context: taskContext,
-            authoritativeId: document.companyId,
-            userId: session.id,
-            session,
-          });
-        }
-        return NextResponse.json({
-          success: true,
-          companyId: document.companyId,
-        });
-      }
-      return NextResponse.json(
-        { error: 'Document extraction not ready for confirmation' },
-        { status: 400 }
-      );
+    if (!document.extractionStatus || !['EXTRACTED', 'COMPLETED'].includes(document.extractionStatus)) {
+      return NextResponse.json({ error: 'Document extraction not ready for confirmation' }, { status: 400 });
     }
-
     if (!document.extractedData) {
       return NextResponse.json(
         { error: 'No extracted data found on document' },
@@ -117,6 +86,15 @@ export async function POST(
         ? (body as { taskContext: unknown }).taskContext
         : undefined,
     );
+    const rawPlan = typeof body === 'object' && body !== null && 'plan' in body
+      ? (body as { plan: unknown }).plan
+      : undefined;
+    const operationId = typeof body === 'object' && body !== null && 'operationId' in body && typeof (body as { operationId?: unknown }).operationId === 'string'
+      ? (body as { operationId: string }).operationId
+      : undefined;
+    const preparationToken = typeof body === 'object' && body !== null && 'preparationToken' in body && typeof (body as { preparationToken?: unknown }).preparationToken === 'string'
+      ? (body as { preparationToken: string }).preparationToken
+      : undefined;
     const parsed = bizFileReviewSchema.safeParse(candidate);
 
     if (!parsed.success) {
@@ -136,24 +114,73 @@ export async function POST(
     }
 
     const correctedData = normalizeBizFileReviewDraft(parsed.data);
-    const result = taskContext
-      ? await processBizFileExtraction(
+    const { plan, operationId: canonicalOperationId } = await verifyPreparedBizFileRequest({
+      plan: rawPlan, token: preparationToken, operationId, actorId: session.id,
+      tenantId: document.tenantId, documentId, taskContext,
+    });
+    if (plan.mode !== 'CREATE' || plan.targetCompanyId) return NextResponse.json({ error: 'Confirm requires a CREATE BizFile plan for this source document' }, { status: 409 });
+    if (hashBizFileValue(normalizeExtractedData(correctedData)) !== hashBizFileValue(plan.reviewedData)) return NextResponse.json({ error: 'Reviewed data changed after preparation. Prepare it again.' }, { status: 409 });
+    if (document.extractionStatus === 'COMPLETED') {
+      const committed = await prisma.bizFileOperationReceipt.findFirst({ where: {
+        tenantId: document.tenantId, operationId: canonicalOperationId, documentId,
+        payloadHash: plan.canonicalHash, status: 'COMMITTED',
+      }, select: { id: true } });
+      if (!committed) return NextResponse.json({ error: 'This document has already been confirmed by a different operation.' }, { status: 409 });
+    }
+    const operationContext = {
+      operationId: canonicalOperationId,
+      capabilityId: 'bizfile.import_and_review',
+      capabilityVersion: '1.0',
+      schemaVersion: '1',
+      sourceEvidence: {
         documentId,
-        correctedData,
-        session.id,
-        document.tenantId,
-        document.storageKey || undefined,
-        document.mimeType,
-        taskContext,
-      )
-      : await processBizFileExtraction(
-        documentId,
-        correctedData,
-        session.id,
-        document.tenantId,
-        document.storageKey || undefined,
-        document.mimeType,
-      );
+        sourceVersion: plan.sourceVersion ?? 0,
+        sourceHash: plan.sourceHash ?? null,
+        storageKey: document.storageKey,
+        mimeType: document.mimeType,
+      },
+      effectIntents: [
+        {
+          tenantId: document.tenantId,
+          effectKind: 'STORAGE_FINALIZE',
+          target: `document:${documentId}`,
+          payload: { documentId, storageKey: document.storageKey, sourceHash: plan.sourceHash ?? null, sourceRevision: plan.sourceVersion ?? 0 },
+          payloadHash: hashBizFileValue({ documentId, storageKey: document.storageKey, sourceHash: plan.sourceHash ?? null, sourceRevision: plan.sourceVersion ?? 0 }),
+        },
+        {
+          tenantId: document.tenantId,
+          effectKind: 'PAGE_PREPARATION',
+          target: `document:${documentId}`,
+          payload: {
+            documentId,
+            storageKey: document.storageKey,
+            mimeType: document.mimeType,
+            sourceHash: plan.sourceHash ?? null,
+            sourceRevision: plan.sourceVersion ?? 0,
+            finalizedSourceRevision: (plan.sourceVersion ?? 0) + 1,
+          },
+          payloadHash: hashBizFileValue({
+            documentId,
+            storageKey: document.storageKey,
+            mimeType: document.mimeType,
+            sourceHash: plan.sourceHash ?? null,
+            sourceRevision: plan.sourceVersion ?? 0,
+            finalizedSourceRevision: (plan.sourceVersion ?? 0) + 1,
+          }),
+        },
+      ],
+    };
+    const result = await processBizFileExtraction(
+      documentId,
+      correctedData,
+      session.id,
+      document.tenantId,
+      document.storageKey || undefined,
+      document.mimeType,
+      taskContext,
+      plan,
+      operationContext,
+    );
     if (taskContext) {
       await safelyLinkCompanyTaskOutcome({
         tenantId: document.tenantId,
@@ -168,8 +195,11 @@ export async function POST(
       success: true,
       companyId: result.companyId,
       created: result.created,
+      operationId: canonicalOperationId,
+      operationReceiptId: result.operationReceiptId,
     });
   } catch (error) {
+    if (error instanceof BizFilePreparationTokenError) return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid task context', details: error.errors },

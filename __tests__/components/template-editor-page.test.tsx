@@ -11,7 +11,10 @@ import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
   type A4DocumentLayout,
 } from '@/components/documents/a4-pagination/layout';
-import { commitTemplateFormChange } from '@/components/documents/template-editor/template-editor-state';
+import {
+  commitTemplateFormChange,
+  removeCustomPlaceholderReferences,
+} from '@/components/documents/template-editor/template-editor-state';
 import {
   installDeterministicA4Measurement,
   waitForA4EditorIdle,
@@ -111,6 +114,15 @@ vi.mock('@tanstack/react-query', () => ({
 import TemplateEditorPage from '@/app/(dashboard)/template-partials/editor/page';
 
 describe('template editor page panel integration', () => {
+  it('removes deleted custom field references from template content', () => {
+    expect(
+      removeCustomPlaceholderReferences(
+        '<p>{{custom.reference_number}}</p><p>{{ custom.reference_number }}</p><p>{{custom.keep}}</p>',
+        ['reference_number'],
+      ),
+    ).toBe('<p></p><p></p><p>{{custom.keep}}</p>');
+  });
+
   it('applies a panel layout change to production form state and marks it dirty', () => {
     type Form = {
       name: string;

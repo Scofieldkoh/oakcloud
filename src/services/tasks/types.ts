@@ -273,7 +273,7 @@ export type TaskSignerLinkState = 'available' | 'waiting' | 'finished';
 export interface TaskEsigningSignerResource {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   status: string;
   signingOrder: number | null;
   linkState: TaskSignerLinkState;

@@ -13,7 +13,10 @@ vi.mock('@/lib/logger', () => ({
   createLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
 }));
 
-import { sendEsigningRequestEmail } from '@/services/esigning-notification.service';
+import {
+  sendEsigningCompletionEmail,
+  sendEsigningRequestEmail,
+} from '@/services/esigning-notification.service';
 
 describe('e-signing email subject', () => {
   beforeEach(() => {
@@ -44,6 +47,21 @@ describe('e-signing email subject', () => {
 
     expect(sendEmail).toHaveBeenLastCalledWith(expect.objectContaining({
       subject: '[Oakcloud] Reminder: "Please sign the client agreement" awaits your signature',
+    }));
+  });
+
+  it('passes completion BCC recipients to the email transport without a visible To recipient', async () => {
+    await sendEsigningCompletionEmail({
+      bcc: 'ops@example.com',
+      recipientName: 'there',
+      envelopeTitle: 'NDA',
+      certificateId: 'certificate-1',
+      documentLinks: [],
+    });
+
+    expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: undefined,
+      bcc: 'ops@example.com',
     }));
   });
 });

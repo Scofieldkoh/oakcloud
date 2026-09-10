@@ -8,6 +8,8 @@ import { createAuditLog } from '@/lib/audit';
 import { scoreContactIdentityMatch, rankContactMaster } from '@/lib/contact-identity-matching';
 import { buildContactIdentityFingerprint } from '@/lib/contact-identity-normalization';
 import { prisma } from '@/lib/prisma';
+import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup-barrier';
+import { acquireAuthorizationMutationGate } from '@/lib/authorization-mutation-gate';
 import type {
   ContactIdentityConflict,
   ContactIdentityRecord,
@@ -663,6 +665,8 @@ export async function rejectContactDuplicatePair(
   const [leftContactId, rightContactId] = sortedPair(input.leftContactId, input.rightContactId);
   try {
     return await prisma.$transaction(async (tx) => {
+      await acquireBusinessOperationBarrier(tx, params.tenantId, 'shared');
+      await acquireAuthorizationMutationGate(tx);
       await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
         SELECT id
         FROM contacts

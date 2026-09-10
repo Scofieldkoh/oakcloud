@@ -52,6 +52,7 @@ export interface AIImageInput {
 
 // AI request options
 export interface AIRequestOptions {
+  reasoningEffort?: import('./reasoning-settings').ReasoningEffort;
   model: AIModel | string;
   modelConfig?: AIModelConfig;
   systemPrompt?: string;

@@ -85,6 +85,7 @@ export interface UpdateConnectorData {
 }
 
 export interface ConnectorModelConfig {
+  reasoningEfforts?: import('@/lib/ai/reasoning-settings').ReasoningEffort[] | null;
   modelId: string;
   name: string;
   description: string;

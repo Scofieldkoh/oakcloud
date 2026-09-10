@@ -4,6 +4,7 @@ const prismaMock = vi.hoisted(() => ({
   workspace: { findUnique: vi.fn() },
   workspaceBackup: { update: vi.fn() },
   contactMergeOperation: { findFirst: vi.fn() },
+  bizFileOperationReceipt: { findFirst: vi.fn() },
   $transaction: vi.fn(),
 }));
 const storageMock = vi.hoisted(() => ({ deletePrefix: vi.fn().mockResolvedValue(0), download: vi.fn() }));
@@ -19,6 +20,7 @@ describe('service agreement backup data', () => {
     vi.clearAllMocks();
     prismaMock.workspace.findUnique.mockResolvedValue(null);
     prismaMock.contactMergeOperation.findFirst.mockResolvedValue(null);
+    prismaMock.bizFileOperationReceipt.findFirst.mockResolvedValue(null);
   });
 
   it('exports every catalog, agreement, and operational service table', async () => {

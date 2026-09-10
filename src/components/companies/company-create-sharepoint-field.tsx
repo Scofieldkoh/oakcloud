@@ -22,16 +22,17 @@ export function CompanyCreateSharePointField({ onChange }: { onChange: (selectio
 function CompanyCreateSharePointFieldWithQuery({ onChange }: { onChange: (selection: PendingSharePointSelection) => void }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [requestedName, setRequestedName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
   const [selection, setSelection] = useState<PendingSharePointSelection>({ kind: 'unmapped' });
   const connectorsQuery = useConnectors({ provider: 'SHAREPOINT', isEnabled: true, includeSystem: false, limit: 100 });
   const connector = connectorsQuery.data?.connectors.find((item) => item.workspaceId);
   const settingsQuery = useSharePointFilingSettings(connector?.id);
   const settings = settingsQuery.data as { clientDocumentsRoot?: SharePointFolderPickerValue | null } | undefined;
   const update = (next: PendingSharePointSelection) => { setSelection(next); onChange(next); };
-  return <section className="space-y-3 rounded-lg border border-border-primary bg-background-secondary p-4">
-    <div>
-      <h3 className="text-sm font-semibold text-text-primary">SharePoint company folder (optional)</h3>
-      <p className="mt-1 text-xs text-text-secondary">This is saved after the company is created. A failure here will not roll back the company.</p>
+  return <section aria-label="Company folder" className="space-y-3 border-t border-border-primary pt-4">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="text-sm font-semibold text-text-primary">Company folder <span className="font-normal text-text-tertiary">(optional)</span></h3>
+      <span className="text-xs text-text-secondary">SharePoint</span>
     </div>
     {selection.kind === 'selected' ? (
       <div className="flex items-center justify-between gap-3 rounded-lg bg-background-primary p-3 text-sm">
@@ -41,12 +42,27 @@ function CompanyCreateSharePointFieldWithQuery({ onChange }: { onChange: (select
           <Button variant="ghost" size="sm" onClick={() => update({ kind: 'unmapped' })}>Clear</Button>
         </div>
       </div>
-    ) : <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)} disabled={!connector?.id || !settings?.clientDocumentsRoot}>Select existing folder</Button>}
-    <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
-      <FormInput label="Or request a new folder" value={requestedName} onChange={(event) => setRequestedName(event.target.value)} placeholder="Company folder name" inputSize="md" />
-      <Button variant="ghost" size="sm" onClick={() => requestedName.trim() && connector && update({ kind: 'requested', connectorId: connector.id, name: requestedName.trim() })} disabled={!requestedName.trim() || !connector}>Use new folder</Button>
+    ) : selection.kind === 'requested' ? (
+      <div className="flex items-center justify-between gap-2 rounded-md bg-background-secondary p-3 text-xs">
+        <span className="min-w-0 break-words text-text-primary">{selection.name}<span className="ml-2 text-text-secondary">New folder</span></span>
+        <Button variant="ghost" size="xs" onClick={() => update({ kind: 'unmapped' })}>Clear</Button>
+      </div>
+    ) : null}
+    <div className="flex flex-wrap gap-2">
+      {selection.kind !== 'selected' && <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)} disabled={!connector?.id || !settings?.clientDocumentsRoot}>Select existing</Button>}
+      <Button variant="secondary" size="sm" onClick={() => setCreatingFolder(true)} disabled={!connector} aria-expanded={creatingFolder}>New folder</Button>
     </div>
-    {selection.kind === 'requested' && <div className="flex items-center justify-between gap-2 text-xs text-text-secondary"><span>New folder “{selection.name}” will be created under Client Documents after save.</span><Button variant="ghost" size="xs" onClick={() => update({ kind: 'unmapped' })}>Clear</Button></div>}
-    <SharePointFolderPicker isOpen={pickerOpen} onCancel={() => setPickerOpen(false)} connectorId={connector?.id ?? ''} mode="client-folder" fixedRoot={settings?.clientDocumentsRoot} onConfirm={(folder) => { update({ kind: 'selected', connectorId: connector!.id, folder }); setPickerOpen(false); }} />
+    {creatingFolder && <div className="space-y-2">
+      <FormInput label="Folder name" value={requestedName} onChange={(event) => setRequestedName(event.target.value)} placeholder="Company folder name" inputSize="sm" />
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" size="sm" onClick={() => {
+          if (!requestedName.trim() || !connector) return;
+          update({ kind: 'requested', connectorId: connector.id, name: requestedName.trim() });
+          setCreatingFolder(false);
+        }} disabled={!requestedName.trim() || !connector}>Use new folder</Button>
+        <Button variant="ghost" size="sm" onClick={() => setCreatingFolder(false)}>Cancel</Button>
+      </div>
+    </div>}
+    <SharePointFolderPicker isOpen={pickerOpen} onCancel={() => setPickerOpen(false)} connectorId={connector?.id ?? ''} mode="client-folder" fixedRoot={settings?.clientDocumentsRoot} onConfirm={(folder) => { update({ kind: 'selected', connectorId: connector!.id, folder }); setPickerOpen(false); setCreatingFolder(false); }} />
   </section>;
 }

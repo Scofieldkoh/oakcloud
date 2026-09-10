@@ -125,6 +125,7 @@ export function DocumentGenerationBatchWorkspace({
     { done: number; total: number } | null
   >(null);
   const [showPreflight, setShowPreflight] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   const partyOptions = useDocumentPartyOptions(state.batch.primaryCompanyId);
   const activeItem = state.batch.items.find(
@@ -453,6 +454,41 @@ export function DocumentGenerationBatchWorkspace({
     }
     if (recovered > 0) {
       success(`${recovered} document${recovered === 1 ? '' : 's'} generated after retry`);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    const documentIds = state.batch.items.flatMap((item) => (
+      item.status === 'GENERATED' && item.generatedDocumentId
+        ? [item.generatedDocumentId]
+        : []
+    ));
+    if (documentIds.length === 0) return;
+
+    setIsDownloadingAll(true);
+    try {
+      const response = await fetch('/api/generated-documents/bulk-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to download documents');
+      }
+
+      const blobUrl = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = `documents-${new Date().toISOString().split('T')[0]}.zip`;
+      anchor.click();
+      URL.revokeObjectURL(blobUrl);
+      success(`Downloaded ${documentIds.length} document${documentIds.length === 1 ? '' : 's'}`);
+    } catch (caught) {
+      console.error('Bulk download error:', caught);
+      toastError(caught instanceof Error ? caught.message : 'Failed to download documents');
+    } finally {
+      setIsDownloadingAll(false);
     }
   };
 
@@ -846,8 +882,10 @@ export function DocumentGenerationBatchWorkspace({
               items={state.batch.items}
               onRetry={handleRetry}
               onRetryAll={() => void handleRetryAll()}
+              onDownloadAll={() => void handleDownloadAll()}
               onBackToBatch={() => setResults(null)}
               pending={state.pending !== null}
+              downloadAllPending={isDownloadingAll}
             />
           ) : (
             <BatchReviewWorkspace

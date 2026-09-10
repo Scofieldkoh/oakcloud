@@ -281,7 +281,7 @@ export function EsigningStepReview({
                   className="rounded-2xl border border-border-primary bg-background-secondary p-4"
                 >
                   <div className="text-sm font-semibold text-text-primary">{link.recipientName}</div>
-                  <div className="mt-0.5 text-xs text-text-secondary">{link.recipientEmail}</div>
+                  <div className="mt-0.5 text-xs text-text-secondary">{link.recipientEmail || 'No email — manual link only'}</div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <a
                       href={link.signingUrl}

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { processBizFileExtractionSelective, type ExtractedBizFileData, type OfficerAction } from '@/services/bizfile';
+import { verifyPreparedBizFileRequest } from '@/services/bizfile/application/verify-prepared-request';
+import { BizFilePreparationTokenError } from '@/services/bizfile/application/preparation-token';
+import { normalizeExtractedData } from '@/services/bizfile/normalizer';
+import { hashBizFileValue, processBizFileExtractionSelective, type ExtractedBizFileData, type OfficerAction } from '@/services/bizfile';
 import { bizFileReviewSchema, normalizeBizFileReviewDraft } from '@/lib/validations/bizfile-review';
 import {
   parseTaskLaunchContext,
@@ -35,11 +38,14 @@ export async function POST(
     // Parse request body
     const body = await request.json();
     const taskContext = parseTaskLaunchContext(body.taskContext);
-    const { companyId, extractedData: rawExtractedData, officerActions, expectedUpdatedAt } = body as {
+    const { companyId, extractedData: rawExtractedData, officerActions, plan: rawPlan, operationId, preparationToken } = body as {
       companyId: string;
       extractedData: unknown;
       officerActions?: OfficerAction[];
       expectedUpdatedAt?: string; // ISO string from preview-diff for concurrent update detection
+      plan?: unknown;
+      operationId?: string;
+      preparationToken?: string;
     };
 
     if (!companyId) {
@@ -76,29 +82,15 @@ export async function POST(
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    // Check for concurrent updates (optimistic locking)
-    let concurrentUpdateWarning: string | null = null;
-    if (expectedUpdatedAt) {
-      const expectedTime = new Date(expectedUpdatedAt).getTime();
-      const actualTime = company.updatedAt.getTime();
-      if (actualTime > expectedTime) {
-        concurrentUpdateWarning = `This company was modified by another user at ${company.updatedAt.toISOString()}. Your changes may overwrite their updates.`;
-      }
-    }
-
-    // Verify UEN matches
-    if (company.uen !== extractedData.entityDetails.uen) {
-      return NextResponse.json(
-        { error: `UEN mismatch: expected ${company.uen}, got ${extractedData.entityDetails.uen}` },
-        { status: 400 }
-      );
-    }
-
     // Check tenant access
+    if (document.tenantId !== company.tenantId || document.deletedAt) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     if (!session.isSuperAdmin) {
       if (document.tenantId !== session.tenantId || company.tenantId !== session.tenantId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
+    }
+    if (company.uen !== extractedData.entityDetails.uen) {
+      return NextResponse.json({ error: 'The reviewed UEN does not match the target company.' }, { status: 400 });
     }
 
     // Verify user can update this company
@@ -120,16 +112,59 @@ export async function POST(
       );
     }
 
+    const { plan, operationId: canonicalOperationId } = await verifyPreparedBizFileRequest({
+      plan: rawPlan, token: preparationToken, operationId, actorId: session.id,
+      tenantId: company.tenantId, documentId, taskContext,
+    });
+    if (plan.targetCompanyId !== companyId || plan.mode !== 'UPDATE') return NextResponse.json({ error: 'BizFile plan target or source mismatch' }, { status: 409 });
+    if (hashBizFileValue(normalizeExtractedData(extractedData)) !== hashBizFileValue(plan.reviewedData)) return NextResponse.json({ error: 'Reviewed data changed after preparation. Prepare it again.' }, { status: 409 });
+    if (hashBizFileValue(officerActions ?? []) !== hashBizFileValue(plan.officerActions ?? [])) return NextResponse.json({ error: 'Officer choices changed after preparation. Prepare them again.' }, { status: 409 });
+    const operationContext = {
+      operationId: canonicalOperationId,
+      capabilityId: 'bizfile.import_and_review',
+      capabilityVersion: '1.0',
+      schemaVersion: '1',
+      sourceEvidence: {
+        documentId,
+        sourceVersion: plan.sourceVersion ?? 0,
+        sourceHash: plan.sourceHash ?? null,
+        storageKey: document.storageKey,
+        mimeType: document.mimeType,
+      },
+      effectIntents: [
+        {
+          tenantId: company.tenantId,
+          effectKind: 'STORAGE_FINALIZE',
+          target: `document:${documentId}`,
+          payload: { documentId, storageKey: document.storageKey, sourceHash: plan.sourceHash ?? null, sourceRevision: plan.sourceVersion ?? 0 },
+          payloadHash: hashBizFileValue({ documentId, storageKey: document.storageKey, sourceHash: plan.sourceHash ?? null, sourceRevision: plan.sourceVersion ?? 0 }),
+        },
+        {
+          tenantId: company.tenantId,
+          effectKind: 'PAGE_PREPARATION',
+          target: `document:${documentId}`,
+          payload: {
+            documentId,
+            storageKey: document.storageKey,
+            mimeType: document.mimeType,
+            sourceHash: plan.sourceHash ?? null,
+            sourceRevision: plan.sourceVersion ?? 0,
+            finalizedSourceRevision: (plan.sourceVersion ?? 0) + 1,
+          },
+          payloadHash: hashBizFileValue({
+            documentId,
+            storageKey: document.storageKey,
+            mimeType: document.mimeType,
+            sourceHash: plan.sourceHash ?? null,
+            sourceRevision: plan.sourceVersion ?? 0,
+            finalizedSourceRevision: (plan.sourceVersion ?? 0) + 1,
+          }),
+        },
+      ],
+    };
+
     // Apply selective update
-    const result = await processBizFileExtractionSelective(
-      documentId,
-      extractedData,
-      session.id,
-      company.tenantId,
-      companyId,
-      officerActions,
-      taskContext,
-    );
+    const result = await processBizFileExtractionSelective(documentId, extractedData, session.id, company.tenantId, companyId, officerActions, taskContext, plan, operationContext);
     if (taskContext) {
       await safelyLinkCompanyTaskOutcome({
         tenantId: company.tenantId,
@@ -171,11 +206,11 @@ export async function POST(
       updatedFields: result.updatedFields,
       officerChanges: result.officerChanges,
       shareholderChanges: result.shareholderChanges,
+      operationId: canonicalOperationId,
       message,
-      // Include warning if concurrent update was detected
-      ...(concurrentUpdateWarning && { concurrentUpdateWarning }),
     });
   } catch (error) {
+    if (error instanceof BizFilePreparationTokenError) return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
     console.error('BizFile apply-update error:', error);
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
@@ -184,7 +219,6 @@ export async function POST(
       if (error.message === 'Forbidden') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
-      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

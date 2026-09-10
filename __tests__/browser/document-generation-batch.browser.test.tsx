@@ -139,6 +139,7 @@ describe('document generation batch browser workflow', () => {
   let host: HTMLDivElement;
   let root: Root;
   let queryClient: QueryClient;
+  let fetchMock: ReturnType<typeof vi.fn>;
   const actEnvironment = globalThis as typeof globalThis & {
     IS_REACT_ACT_ENVIRONMENT?: boolean;
   };
@@ -156,7 +157,7 @@ describe('document generation batch browser workflow', () => {
     vi.clearAllMocks();
     // A fresh Response per call: option endpoints are queried alongside the
     // party options and a Response body can only be read once.
-    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+    fetchMock = vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/options')) {
         return Promise.resolve(new Response(
@@ -164,11 +165,18 @@ describe('document generation batch browser workflow', () => {
           { status: 200 },
         ));
       }
+      if (url.includes('/bulk-download')) {
+        return Promise.resolve(new Response('zip-content', {
+          status: 200,
+          headers: { 'Content-Type': 'application/zip' },
+        }));
+      }
       return Promise.resolve(new Response(
         JSON.stringify({ directors: [], shareholders: [], contacts: [] }),
         { status: 200 },
       ));
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -294,6 +302,13 @@ describe('document generation batch browser workflow', () => {
     await waitUntil(() => host.textContent?.includes('conversion failed') ?? false);
     expect(host.textContent).toContain('2 generated, 1 failed');
     expect(host.querySelector('a[href="/generated-documents/child-item-1"]')).toBeTruthy();
+
+    await act(async () => button(host, 'Download all').click());
+    await waitUntil(() => fetchMock.mock.calls.some(([input]) => String(input).includes('/bulk-download')));
+    const bulkDownloadCall = fetchMock.mock.calls.find(([input]) => String(input).includes('/bulk-download'));
+    expect(JSON.parse(String(bulkDownloadCall?.[1] && (bulkDownloadCall[1] as RequestInit).body))).toEqual({
+      documentIds: ['child-item-1', 'child-item-3'],
+    });
 
     await act(async () => button(host, 'Retry').click());
     await waitUntil(() => host.textContent?.includes('Batch complete') ?? false);

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isValidOrigin } from '@/lib/request-origin';
+
+export { getAllowedOrigins, isValidOrigin } from '@/lib/request-origin';
 
 /**
  * CSRF Protection Middleware
@@ -33,46 +36,6 @@ const CSRF_EXEMPT_PATHS = [
  */
 function isExemptPath(pathname: string): boolean {
   return CSRF_EXEMPT_PATHS.some((exemptPath) => pathname.startsWith(exemptPath));
-}
-
-/**
- * Get allowed origins from environment or use defaults
- */
-function getAllowedOrigins(host: string): string[] {
-  const origins: string[] = [];
-
-  // Allow same origin (both http and https for local development)
-  origins.push(`http://${host}`);
-  origins.push(`https://${host}`);
-
-  // Allow localhost variants for development
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    origins.push('http://localhost:3000');
-    origins.push('http://127.0.0.1:3000');
-    origins.push('https://localhost:3000');
-  }
-
-  // Add any additional allowed origins from environment
-  const additionalOrigins = process.env.ALLOWED_ORIGINS;
-  if (additionalOrigins) {
-    origins.push(...additionalOrigins.split(',').map((o) => o.trim()));
-  }
-
-  return origins;
-}
-
-/**
- * Validate origin for CSRF protection
- */
-function isValidOrigin(origin: string | null, host: string): boolean {
-  // No origin header - likely same-site navigation or non-browser client
-  // This is acceptable as browsers always send Origin for cross-origin requests
-  if (!origin) {
-    return true;
-  }
-
-  const allowedOrigins = getAllowedOrigins(host);
-  return allowedOrigins.some((allowed) => origin === allowed || origin.startsWith(allowed));
 }
 
 export function middleware(request: NextRequest) {

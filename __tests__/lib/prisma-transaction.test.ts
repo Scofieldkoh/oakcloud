@@ -1,8 +1,23 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runSerializableTransaction } from '@/lib/prisma-transaction';
+import { isSerializationConflict, runSerializableTransaction } from '@/lib/prisma-transaction';
 
 describe('runSerializableTransaction', () => {
+  it('recognizes the nested PrismaPg transaction conflict shape', () => {
+    expect(isSerializationConflict({ name: 'DriverAdapterError', cause: { kind: 'TransactionWriteConflict' } })).toBe(true);
+    expect(isSerializationConflict({ originalCode: '40001', kind: 'Unknown' })).toBe(true);
+  });
+
+  it('does not classify an ordinary conflict message as serializable', () => {
+    expect(isSerializationConflict(new Error('transaction write conflict'))).toBe(false);
+  });
+
+  it('handles cyclic error causes without recursing forever', () => {
+    const error: { cause?: unknown } = {};
+    error.cause = error;
+    expect(isSerializationConflict(error)).toBe(false);
+  });
+
   it('retries serialization conflicts and returns the successful result', async () => {
     const transaction = vi.fn()
       .mockRejectedValueOnce(Object.assign(new Error('write conflict'), { code: 'P2034' }))

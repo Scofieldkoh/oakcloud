@@ -18,6 +18,7 @@ function makeEnvelope(): EsigningEnvelopeDetailDto {
     title: 'NDA',
     emailSubject: 'Please sign the NDA',
     message: 'Please review this document.',
+    completionCopyEmails: [],
     status: 'DRAFT',
     signingOrder: 'PARALLEL',
     expiresAt: null,

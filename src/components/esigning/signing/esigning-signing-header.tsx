@@ -16,7 +16,7 @@ interface EsigningSigningHeaderProps {
   onFinishLater: () => void;
   onDownloadOriginal: () => void;
   recipientName: string;
-  recipientEmail: string;
+  recipientEmail: string | null;
   envelopeId: string;
   isFinishing: boolean;
 }
@@ -141,7 +141,7 @@ export function EsigningSigningHeader({
                         <span className="font-medium text-text-primary">Name:</span> {recipientName}
                       </div>
                       <div className="break-all">
-                        <span className="font-medium text-text-primary">Email:</span> {recipientEmail}
+                        <span className="font-medium text-text-primary">Email:</span> {recipientEmail || 'Not provided'}
                       </div>
                       <div className="break-all">
                         <span className="font-medium text-text-primary">Envelope ID:</span>{' '}
