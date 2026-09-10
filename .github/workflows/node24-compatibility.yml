@@ -53,6 +53,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Test P16 evidence contract
+        run: npm run test:p16:evidence
+
       - name: Test Chromium path resolution
         run: npm run test:run -- __tests__/lib/chrome-executable.test.ts --reporter=dot
 
