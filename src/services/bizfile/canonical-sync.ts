@@ -236,7 +236,10 @@ async function lockAggregate(tx: PrismaTransactionClient, tenantId: string, comp
   if (typeof raw.$queryRawUnsafe === 'function' && companyId) {
     await raw.$queryRawUnsafe('SELECT id FROM companies WHERE "tenantId" = $1 AND id = $2 FOR UPDATE', tenantId, companyId);
   } else if (typeof raw.$queryRawUnsafe === 'function') {
-    await raw.$queryRawUnsafe('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', `oakcloud:bizfile:create:${tenantId}:${uen}`);
+    await raw.$queryRawUnsafe(
+      'SELECT 1 AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended($1, 0))) AS aggregate_lock',
+      `oakcloud:bizfile:create:${tenantId}:${uen}`,
+    );
   }
 }
 
