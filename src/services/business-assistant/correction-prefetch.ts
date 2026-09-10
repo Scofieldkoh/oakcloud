@@ -17,21 +17,25 @@ export type CapabilityCorrectionPrefetchHandler = (
   context: CapabilityCorrectionPrefetchContext,
 ) => Promise<unknown>;
 
+type CapabilityCorrectionHandlerResult = ReturnType<CapabilityCorrectionHandler>;
+
 /**
  * A correction handler may accept prefetched evidence as an optional second
  * argument while remaining assignable to the canonical one-argument handler
- * contract used by existing capabilities.
+ * contract used by existing capabilities. Preserve a wrapped handler's
+ * narrower return type so capability-specific callers do not lose useful type
+ * information merely by opting into prefetch.
  */
-export type PrefetchableCapabilityCorrectionHandler = (
-  (context: CapabilityCorrectionContext, prefetched?: unknown) => ReturnType<CapabilityCorrectionHandler>
-) & {
+export type PrefetchableCapabilityCorrectionHandler<
+  TResult extends CapabilityCorrectionHandlerResult = CapabilityCorrectionHandlerResult,
+> = ((context: CapabilityCorrectionContext, prefetched?: unknown) => TResult) & {
   prefetch?: CapabilityCorrectionPrefetchHandler;
 };
 
-export function withCorrectionPrefetch(
-  handler: (context: CapabilityCorrectionContext, prefetched?: unknown) => ReturnType<CapabilityCorrectionHandler>,
+export function withCorrectionPrefetch<TResult extends CapabilityCorrectionHandlerResult>(
+  handler: (context: CapabilityCorrectionContext, prefetched?: unknown) => TResult,
   prefetch: CapabilityCorrectionPrefetchHandler,
-): PrefetchableCapabilityCorrectionHandler {
+): PrefetchableCapabilityCorrectionHandler<TResult> {
   return Object.assign(handler, { prefetch });
 }
 
