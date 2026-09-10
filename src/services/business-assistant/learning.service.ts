@@ -57,6 +57,10 @@ function jsonInput(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
 function boundedJson(value: unknown, field: string): JsonValue {
   let canonical: JsonValue;
   try {
@@ -73,13 +77,44 @@ function boundedJson(value: unknown, field: string): JsonValue {
 function candidateValueFromInput(definition: LearningTargetDefinition, candidateValue: unknown, evidence: unknown): JsonValue {
   const supplied = candidateValue !== undefined
     ? candidateValue
-    : evidence && typeof evidence === 'object' && !Array.isArray(evidence)
-      ? (evidence as Record<string, unknown>).candidateValue
+    : isRecord(evidence)
+      ? evidence.candidateValue
       : undefined;
   if (supplied === undefined) throw new LearningServiceError('VALIDATION_FAILED', 'A bounded candidate value is required for this target.');
   const parsed = definition.valueSchema.safeParse(supplied);
   if (!parsed.success) throw new LearningServiceError('VALIDATION_FAILED', 'The candidate value is not allowed for this target.');
   return canonicalizeJson(parsed.data);
+}
+
+function directCandidateEvidence(
+  definition: LearningTargetDefinition,
+  sourceEvidence: JsonValue,
+  baselineTargetRevision: number,
+): JsonValue {
+  return canonicalizeJson({
+    source: 'DIRECT_REQUEST',
+    sourceEvidence,
+    governance: {
+      schemaVersion: '1',
+      targetKey: definition.targetKey,
+      capabilityId: definition.capabilityId,
+      capabilityVersion: definition.capabilityVersion,
+      baselineTargetRevision,
+    },
+  });
+}
+
+function baselineRevisionFromEvidence(evidence: unknown, definition: LearningTargetDefinition): number | null {
+  if (!isRecord(evidence) || !isRecord(evidence.governance)) return null;
+  const governance = evidence.governance;
+  if (governance.schemaVersion !== '1'
+    || governance.targetKey !== definition.targetKey
+    || governance.capabilityId !== definition.capabilityId
+    || governance.capabilityVersion !== definition.capabilityVersion
+    || typeof governance.baselineTargetRevision !== 'number'
+    || !Number.isSafeInteger(governance.baselineTargetRevision)
+    || governance.baselineTargetRevision < 0) return null;
+  return governance.baselineTargetRevision;
 }
 
 async function writeLearningAudit(
@@ -103,6 +138,32 @@ async function writeLearningAudit(
       requestId: actor.requestId,
     },
   });
+}
+
+async function updateLearningChangeCas(
+  tx: Prisma.TransactionClient,
+  actor: AssistantActor,
+  changeId: string,
+  expectedVersion: number,
+  data: Prisma.BusinessAssistantLearningChangeUpdateManyMutationInput,
+) {
+  const cas = await tx.businessAssistantLearningChange.updateMany({
+    where: {
+      id: changeId,
+      tenantId: actor.tenantId,
+      ownerId: actor.userId,
+      expectedVersion,
+    },
+    data,
+  });
+  if (cas.count !== 1) {
+    throw new LearningServiceError('ACTION_CONFLICT', 'The learning change changed during this action; refresh before retrying.');
+  }
+  const updated = await tx.businessAssistantLearningChange.findFirst({
+    where: { id: changeId, tenantId: actor.tenantId, ownerId: actor.userId },
+  });
+  if (!updated) throw new LearningServiceError('NOT_FOUND', 'The learning change is unavailable.');
+  return updated;
 }
 
 export interface LearningChangeDto {
@@ -152,13 +213,13 @@ export async function createLearningCandidate(actor: AssistantActor, input: {
   if (input.targetKind && input.targetKind !== definition.targetKind) {
     throw new LearningServiceError('VALIDATION_FAILED', 'The learning target kind does not match its allowlisted definition.');
   }
-  const evidence = boundedJson(input.evidence, 'Learning evidence');
-  const candidateValue = candidateValueFromInput(definition, input.candidateValue, evidence);
+  const sourceEvidence = boundedJson(input.evidence, 'Learning evidence');
+  const candidateValue = candidateValueFromInput(definition, input.candidateValue, sourceEvidence);
   const change = await runSerializableTransaction(prisma, async (tx) => {
     await assertLearningAdministratorInTransaction(actor, tx);
     const existingTarget = await tx.businessAssistantLearningActiveTarget.findUnique({
       where: { tenantId_targetKey: { tenantId: actor.tenantId, targetKey: definition.targetKey } },
-      select: { activeVersion: true, activeValue: true },
+      select: { activeVersion: true, activeValue: true, revision: true },
     });
     if (existingTarget && isDeletedLearningTarget(definition.targetKey, existingTarget.activeValue)) {
       throw new LearningServiceError('ACTION_CONFLICT', 'The learning target was deleted and cannot be recreated from retained or derived data.');
@@ -167,6 +228,8 @@ export async function createLearningCandidate(actor: AssistantActor, input: {
     if (effectiveBaseline !== input.baselineVersion) {
       throw new LearningServiceError('ACTION_CONFLICT', 'The baseline version is stale; refresh the active target first.');
     }
+    const baselineTargetRevision = existingTarget?.revision ?? 0;
+    const evidence = directCandidateEvidence(definition, sourceEvidence, baselineTargetRevision);
     const created = await tx.businessAssistantLearningChange.create({
       data: {
         tenantId: actor.tenantId,
@@ -186,6 +249,7 @@ export async function createLearningCandidate(actor: AssistantActor, input: {
       targetKey: definition.targetKey,
       targetKind: definition.targetKind,
       baselineVersion: input.baselineVersion,
+      baselineTargetRevision,
       candidateVersion: input.candidateVersion,
       candidateDigest: learningCandidateDigest(created),
       legacyAlias: resolved.aliasUsed ? resolved.requestedKey : null,
@@ -258,6 +322,7 @@ export async function applyLearningAction(actor: AssistantActor, changeId: strin
     let promotedAt = current.promotedAt;
     let rollbackTarget = current.rollbackTarget;
     let activeRevision: number | null = null;
+    let baselineTargetRevision: number | null = null;
 
     if (action.action === 'EVALUATE') {
       if (!['CANDIDATE', 'EVALUATED'].includes(current.state)) throw new LearningServiceError('ACTION_CONFLICT', 'Only a candidate can be evaluated.');
@@ -278,6 +343,10 @@ export async function applyLearningAction(actor: AssistantActor, changeId: strin
       }
       const definition = learningTargetDefinition(current.targetKey);
       if (!definition) throw new LearningServiceError('VALIDATION_FAILED', 'The learning target is no longer allowlisted.');
+      baselineTargetRevision = baselineRevisionFromEvidence(current.evidence, definition);
+      if (baselineTargetRevision === null) {
+        throw new LearningServiceError('ACTION_CONFLICT', 'The candidate predates governed target-revision binding and must be recreated before promotion.');
+      }
       const target = await tx.businessAssistantLearningActiveTarget.findUnique({
         where: { tenantId_targetKey: { tenantId: actor.tenantId, targetKey: definition.targetKey } },
       });
@@ -285,12 +354,21 @@ export async function applyLearningAction(actor: AssistantActor, changeId: strin
         throw new LearningServiceError('ACTION_CONFLICT', 'A deleted learning target cannot be promoted from retained candidate data.');
       }
       const activeVersion = target?.activeVersion ?? definition.defaultVersion;
-      if (activeVersion !== current.baselineVersion) throw new LearningServiceError('ACTION_CONFLICT', 'The active target changed; this promotion is stale.');
+      const currentTargetRevision = target?.revision ?? 0;
+      if (activeVersion !== current.baselineVersion || currentTargetRevision !== baselineTargetRevision) {
+        throw new LearningServiceError('ACTION_CONFLICT', 'The active target changed since candidate creation; this promotion is stale.');
+      }
       const activatedAt = new Date();
       const envelope = createLearningActiveEnvelope(definition, current.candidateValue, current.id, activatedAt);
       if (target) {
         const cas = await tx.businessAssistantLearningActiveTarget.updateMany({
-          where: { id: target.id, tenantId: actor.tenantId, targetKey: definition.targetKey, activeVersion: current.baselineVersion, revision: target.revision },
+          where: {
+            id: target.id,
+            tenantId: actor.tenantId,
+            targetKey: definition.targetKey,
+            activeVersion: current.baselineVersion,
+            revision: baselineTargetRevision,
+          },
           data: {
             activeVersion: current.candidateVersion,
             activeValue: jsonInput(envelope),
@@ -302,9 +380,11 @@ export async function applyLearningAction(actor: AssistantActor, changeId: strin
           },
         });
         if (cas.count !== 1) throw new LearningServiceError('ACTION_CONFLICT', 'The active target changed during promotion; refresh and re-evaluate.');
-        activeRevision = target.revision + 1;
+        activeRevision = baselineTargetRevision + 1;
       } else {
-        if (current.baselineVersion !== definition.defaultVersion) throw new LearningServiceError('ACTION_CONFLICT', 'The promotion baseline does not match the source-controlled default.');
+        if (current.baselineVersion !== definition.defaultVersion || baselineTargetRevision !== 0) {
+          throw new LearningServiceError('ACTION_CONFLICT', 'The promotion baseline no longer matches the source-controlled default.');
+        }
         const created = await tx.businessAssistantLearningActiveTarget.create({
           data: {
             tenantId: actor.tenantId,
@@ -335,7 +415,14 @@ export async function applyLearningAction(actor: AssistantActor, changeId: strin
         throw new LearningServiceError('ACTION_CONFLICT', 'The active target has changed; this rollback is stale.');
       }
       const cas = await tx.businessAssistantLearningActiveTarget.updateMany({
-        where: { id: target.id, tenantId: actor.tenantId, targetKey: definition.targetKey, activeVersion: current.candidateVersion, revision: target.revision },
+        where: {
+          id: target.id,
+          tenantId: actor.tenantId,
+          targetKey: definition.targetKey,
+          activeVersion: current.candidateVersion,
+          activeChangeId: current.id,
+          revision: target.revision,
+        },
         data: {
           activeVersion: target.previousVersion ?? current.rollbackTarget,
           activeValue: target.previousValue ?? Prisma.JsonNull,
@@ -356,31 +443,32 @@ export async function applyLearningAction(actor: AssistantActor, changeId: strin
       state = 'REJECTED';
     }
 
-    const result = await tx.businessAssistantLearningChange.update({
-      where: { id: changeId },
-      data: {
-        state,
-        evaluation: evaluation === null ? Prisma.JsonNull : evaluation,
-        approvedById,
-        approvedAt,
-        promotedAt,
-        rollbackTarget,
-        expectedVersion: { increment: 1 },
-      },
+    const result = await updateLearningChangeCas(tx, actor, changeId, action.expectedVersion, {
+      state,
+      evaluation: evaluation === null ? Prisma.JsonNull : evaluation,
+      approvedById,
+      approvedAt,
+      promotedAt,
+      rollbackTarget,
+      expectedVersion: { increment: 1 },
     });
-    if (action.action === 'PROMOTE' || action.action === 'ROLLBACK') {
-      await writeLearningAudit(tx, actor, 'UPDATE', current.id, action.action === 'PROMOTE' ? 'Activated governed learning configuration' : 'Rolled back governed learning configuration', {
-        lifecycleAction: action.action,
-        targetKey: current.targetKey,
-        baselineVersion: current.baselineVersion,
-        candidateVersion: current.candidateVersion,
-        candidateDigest: learningCandidateDigest(current),
-        candidateExpectedVersion: action.expectedVersion,
-        targetRevision: activeRevision,
-        releaseGateVersion: learningPromotionReleaseGate().gateVersion,
-        testOnlyActivation: learningPromotionReleaseGate().testOnlyOverride,
-      });
-    }
+    const gate = learningPromotionReleaseGate();
+    await writeLearningAudit(tx, actor, 'UPDATE', current.id, `Applied governed learning action ${action.action}`, {
+      lifecycleAction: action.action,
+      fromState: current.state,
+      toState: result.state,
+      targetKey: current.targetKey,
+      baselineVersion: current.baselineVersion,
+      baselineTargetRevision,
+      candidateVersion: current.candidateVersion,
+      candidateDigest: learningCandidateDigest(current),
+      candidateExpectedVersion: action.expectedVersion,
+      resultingExpectedVersion: result.expectedVersion,
+      evaluationDigest: sha256(result.evaluation ?? null),
+      activeRevision,
+      releaseGateVersion: gate.gateVersion,
+      testOnlyActivation: gate.testOnlyOverride,
+    });
     await tx.businessAssistantActionRequest.create({
       data: {
         tenantId: actor.tenantId,
