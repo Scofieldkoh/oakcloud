@@ -242,6 +242,16 @@ export function sealEvidenceManifest(manifest, { completedAt = new Date().toISOS
   next.run.completedAt = completedAt;
   const preSeal = validateEvidenceManifest(next);
   if (!preSeal.valid) throw new Error(`cannot seal invalid evidence: ${preSeal.errors.join('; ')}`);
+
+  const readiness = evaluateEvidenceManifest(next);
+  const allChecksPassed = readiness.pass.length === P16_CHECKS.length
+    && readiness.fail.length === 0
+    && readiness.blocked.length === 0
+    && readiness.notRun.length === 0;
+  if (!allChecksPassed || !readiness.safetySatisfied) {
+    throw new Error('cannot seal incomplete evidence: every P16 gate must PASS and all safety assertions must be true');
+  }
+
   next.integrity = {
     algorithm: 'sha256',
     manifestSha256: calculateManifestChecksum(next),
