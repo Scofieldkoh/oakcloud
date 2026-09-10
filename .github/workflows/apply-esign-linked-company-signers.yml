@@ -1,0 +1,39 @@
+name: Apply e-sign linked company signer patch
+
+on:
+  push:
+    branches:
+      - feat/esign-linked-company-signers
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[esign-linked-company-patch]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/esign-linked-company-signers
+          fetch-depth: 0
+
+      - name: Apply asserted signer preparation patch
+        run: node scripts/apply-esign-linked-company-signers.mjs
+
+      - name: Validate patch whitespace
+        run: git diff --check
+
+      - name: Commit patched preparation page
+        run: |
+          if git diff --quiet; then
+            echo "No patch changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/esigning/prepare/esigning-step-upload.tsx
+          git commit -m "feat(esigning): place linked company before signer selection [esign-linked-company-patch]"
+          git push origin HEAD:feat/esign-linked-company-signers
