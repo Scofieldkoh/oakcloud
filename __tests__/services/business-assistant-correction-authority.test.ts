@@ -75,6 +75,7 @@ describe('correction prefetch transaction authority', () => {
     mocks.run.mockResolvedValue(transactionalRun);
     if (transactionalRun.contractVersion === '2') {
       mocks.registry.mockImplementation((id: string, version: string) => capability(id, version, '2'));
+      mocks.registry.mockImplementationOnce((id: string, version: string) => capability(id, version, '1'));
     }
 
     await expect(createCorrectionProposal({ actor, runId: sourceRun.id, rawInput: request }))
