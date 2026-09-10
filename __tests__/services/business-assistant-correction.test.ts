@@ -31,9 +31,10 @@ const tx = {
 };
 
 function capability(withPrefetch = true) {
-  const prepareCorrection = withPrefetch ? Object.assign(mocks.prepare, { prefetch: mocks.prefetch }) : mocks.prepare;
+  const prepareCorrection = (context: unknown, prefetched?: unknown) => mocks.prepare(context, prefetched);
+  const handler = withPrefetch ? Object.assign(prepareCorrection, { prefetch: mocks.prefetch }) : prepareCorrection;
   return { id: run.capabilityId, version: '1.0', contractVersion: '1', approvalPolicyVersion: '1',
-    executionKind: 'CANONICAL_WRITE', reviewPolicy: 'REQUIRED', preparedSchema: z.unknown(), prepareCorrection };
+    executionKind: 'CANONICAL_WRITE', reviewPolicy: 'REQUIRED', preparedSchema: z.unknown(), prepareCorrection: handler };
 }
 
 describe('module-neutral correction proposals', () => {
