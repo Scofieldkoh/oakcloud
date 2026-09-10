@@ -83,19 +83,25 @@ const log = createLogger('esigning-envelope');
 type NotificationRecipient = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
 };
 
 type PreparedRecipientNotification = {
   recipientId: string;
   recipientName: string;
-  recipientEmail: string;
+  recipientEmail: string | null;
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
   accessTokenHash: string | null;
   rawToken: string | null;
   signingUrl: string;
 };
+
+function hasRecipientEmail<T extends { email: string | null }>(
+  recipient: T
+): recipient is T & { email: string } {
+  return Boolean(recipient.email?.trim());
+}
 
 function assertGeneratedDocumentCompanyMatchesEnvelope(
   envelopeCompanyId: string | null,
@@ -246,7 +252,7 @@ async function deliverPreparedNotifications(input: {
 }): Promise<void> {
   const deliveryResults: RecordedEsigningEmailDeliveryResult[] = [];
   for (const notification of input.notifications) {
-    if (notification.accessMode === 'MANUAL_LINK') {
+    if (notification.accessMode === 'MANUAL_LINK' || !notification.recipientEmail) {
       continue;
     }
 
@@ -641,6 +647,7 @@ export async function createEsigningEnvelope(
       title: input.title,
       emailSubject: input.emailSubject?.trim() || input.title,
       message: input.message ?? null,
+      completionCopyEmails: input.completionCopyEmails ?? [],
       signingOrder: input.signingOrder,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
       reminderFrequencyDays: input.reminderFrequencyDays ?? null,
@@ -772,6 +779,7 @@ export async function updateDraftEsigningEnvelope(
         reminderFrequencyDays: input.reminderFrequencyDays,
         reminderStartDays: input.reminderStartDays,
         expiryWarningDays: input.expiryWarningDays,
+        completionCopyEmails: input.completionCopyEmails,
       },
     });
 
@@ -926,6 +934,7 @@ export async function duplicateEsigningEnvelope(
           reminderFrequencyDays: sourceEnvelope.reminderFrequencyDays,
           reminderStartDays: sourceEnvelope.reminderStartDays,
           expiryWarningDays: sourceEnvelope.expiryWarningDays,
+          completionCopyEmails: sourceEnvelope.completionCopyEmails,
           companyId: sourceEnvelope.companyId,
           certificateId,
         },
@@ -1128,6 +1137,10 @@ export async function addEsigningEnvelopeRecipient(
     throw new Error(`An envelope can have at most ${ESIGNING_LIMITS.MAX_RECIPIENTS} recipients`);
   }
 
+  if ((input.type === 'CC' || input.accessMode !== 'MANUAL_LINK') && !input.email?.trim()) {
+    throw new Error(`${input.name} requires an email address for this recipient method`);
+  }
+
   const signingOrder = buildRecipientSigningOrder({
     envelopeSigningOrder: envelope.signingOrder,
     requestedSigningOrder: input.signingOrder ?? null,
@@ -1146,8 +1159,8 @@ export async function addEsigningEnvelopeRecipient(
         type: recipient.type,
       })),
       {
-        id: input.id ?? `new:${input.email}`,
-        email: input.email,
+        id: input.id ?? `new:${input.email ?? input.name}`,
+        email: input.email ?? null,
         type: input.type,
       },
     ],
@@ -1161,7 +1174,7 @@ export async function addEsigningEnvelopeRecipient(
       envelopeId,
       type: input.type,
       name: input.name,
-      email: input.email,
+      email: input.email ?? null,
       signingOrder,
       accessMode: input.accessMode,
       accessCodeHash: input.accessCode ? hashPassword(input.accessCode) : null,
@@ -1180,7 +1193,7 @@ export async function addEsigningEnvelopeRecipient(
     entityName: envelope.title,
     summary: `Added recipient "${input.name}" to e-signing envelope "${envelope.title}"`,
     metadata: {
-      recipientEmail: input.email,
+      recipientEmail: input.email ?? null,
       recipientType: input.type,
       accessMode: input.accessMode,
     },
@@ -1229,8 +1242,13 @@ export async function updateEsigningEnvelopeRecipient(
   }
 
   const nextType = input.type ?? recipient.type;
-  const nextEmail = input.email ?? recipient.email;
+  const nextEmail = input.email === undefined ? recipient.email : input.email;
   const nextName = input.name ?? recipient.name;
+  const nextAccessMode = input.accessMode ?? recipient.accessMode;
+
+  if ((nextType === 'CC' || nextAccessMode !== 'MANUAL_LINK') && !nextEmail?.trim()) {
+    throw new Error(`${nextName} requires an email address for this recipient method`);
+  }
 
   if (envelope.status !== 'DRAFT') {
     if (recipient.status === 'SIGNED' || recipient.status === 'DECLINED') {
@@ -1294,7 +1312,7 @@ export async function updateEsigningEnvelopeRecipient(
           id: recipient.id,
           name: nextName,
           email: nextEmail,
-          accessMode: recipient.accessMode,
+          accessMode: nextAccessMode,
         },
       ]);
       manualLinks = prepared.manualLinks;
@@ -1310,7 +1328,7 @@ export async function updateEsigningEnvelopeRecipient(
         email: nextEmail,
         type: envelope.status === 'DRAFT' ? nextType : undefined,
         signingOrder: envelope.status === 'DRAFT' ? nextSigningOrder : undefined,
-        accessMode: envelope.status === 'DRAFT' ? input.accessMode ?? recipient.accessMode : undefined,
+        accessMode: envelope.status === 'DRAFT' ? nextAccessMode : undefined,
         accessCodeHash:
           envelope.status === 'DRAFT'
             ? input.accessCode === undefined
@@ -2803,9 +2821,9 @@ export async function voidEsigningEnvelope(
     envelope.createdBy.email
   );
 
-  const recipientsToNotify = envelope.recipients.filter((recipient) =>
-    ['QUEUED', 'NOTIFIED', 'VIEWED'].includes(recipient.status)
-  );
+  const recipientsToNotify = envelope.recipients
+    .filter((recipient) => ['QUEUED', 'NOTIFIED', 'VIEWED'].includes(recipient.status))
+    .filter(hasRecipientEmail);
 
   const deliveryResults: RecordedEsigningEmailDeliveryResult[] = [];
   for (const recipient of recipientsToNotify) {
@@ -3026,6 +3044,7 @@ export async function processExpiredEsigningEnvelopes(input?: {
     const senderName = getEnvelopeSenderName(envelope.createdBy);
     const pendingRecipients = envelope.recipients
       .filter((recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED')
+      .filter(hasRecipientEmail)
       .map((recipient) => ({
         name: recipient.name,
         email: recipient.email,
@@ -3141,6 +3160,7 @@ export async function processEsigningReminderNotifications(input?: {
       ) {
         const pendingRecipients = envelope.recipients
           .filter((recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED')
+          .filter(hasRecipientEmail)
           .map((recipient) => ({
             name: recipient.name,
             email: recipient.email,
@@ -3194,6 +3214,9 @@ export async function processEsigningReminderNotifications(input?: {
         return false;
       }
       if (recipient.accessMode === 'MANUAL_LINK') {
+        return false;
+      }
+      if (!recipient.email) {
         return false;
       }
 

@@ -8,7 +8,12 @@ import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/gener
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
 import type { EsigningRecipientInput } from '@/lib/validations/esigning';
-import { updateEsigningEnvelopeSchema } from '@/lib/validations/esigning';
+import {
+  ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
+  parseEsigningCompletionBccPreference,
+  updateEsigningEnvelopeSchema,
+  type EsigningCompletionBccPreference,
+} from '@/lib/validations/esigning';
 import type { PDFPageProxy } from 'pdfjs-dist';
 import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
 import {
@@ -30,6 +35,7 @@ import { ContactSearchSelect, type SearchableContact } from '@/components/ui/con
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { useCreateContact } from '@/hooks/use-contacts';
+import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-preferences';
 import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
@@ -97,8 +103,8 @@ function parseOptionalWholeNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function normalizeEmail(value: string): string {
-  return value.trim().toLowerCase();
+function normalizeEmail(value: string | null | undefined): string {
+  return value?.trim().toLowerCase() ?? '';
 }
 
 function arraysEqual(left: string[], right: string[]): boolean {
@@ -117,6 +123,28 @@ function getNextSigningOrder(current: EsigningSigningOrder): EsigningSigningOrde
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function parseCompletionCopyEmails(value: string): { emails: string[]; invalid: string[] } {
+  const emails: string[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of value.split(/[\s,;]+/).map((item) => item.trim()).filter(Boolean)) {
+    const normalized = normalizeEmail(entry);
+    if (!isValidEmail(normalized)) {
+      if (!invalid.includes(entry)) {
+        invalid.push(entry);
+      }
+      continue;
+    }
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      emails.push(normalized);
+    }
+  }
+
+  return { emails, invalid };
 }
 
 function splitFullName(value: string): { firstName: string; lastName: string | null } {
@@ -401,7 +429,7 @@ function RecipientRow({
       )}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-text-primary truncate">{recipient.name}</div>
-        <div className="text-xs text-text-muted truncate">{recipient.email}</div>
+        <div className="text-xs text-text-muted truncate">{recipient.email || 'No email — manual link only'}</div>
       </div>
       <span className="flex-shrink-0 rounded-full border border-border-primary px-2 py-0.5 text-[10px] text-text-muted">
         {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
@@ -476,6 +504,14 @@ export function EsigningStepUpload({
   const createContactMutation = useCreateContact();
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const completionBccPreference = useUserPreference<EsigningCompletionBccPreference>(
+    ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
+  );
+  const saveCompletionBccPreference = useUpsertUserPreference<EsigningCompletionBccPreference>();
+  const defaultCompletionBccEmails = useMemo(
+    () => parseEsigningCompletionBccPreference(completionBccPreference.data?.value).emails,
+    [completionBccPreference.data?.value],
+  );
   const wordUploadEnabled = useEsigningWordUploadAvailability(activeTenantId);
   const uploadAccept = getEsigningUploadAccept(wordUploadEnabled);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -488,6 +524,7 @@ export function EsigningStepUpload({
   // Settings form local state
   const [title, setTitle] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
+  const [completionCopyEmailsText, setCompletionCopyEmailsText] = useState('');
   const [message, setMessage] = useState('');
   const [signingOrder, setSigningOrder] = useState<EsigningSigningOrder>('PARALLEL');
   const [expiresAt, setExpiresAt] = useState('');
@@ -498,12 +535,19 @@ export function EsigningStepUpload({
   const [isSettingsDirty, setIsSettingsDirty] = useState(false);
   const [settingsErrors, setSettingsErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const parsedCompletionBcc = useMemo(
+    () => parseCompletionCopyEmails(completionCopyEmailsText),
+    [completionCopyEmailsText],
+  );
+  const completionBccMatchesDefault = parsedCompletionBcc.invalid.length === 0
+    && arraysEqual(parsedCompletionBcc.emails, defaultCompletionBccEmails);
   const titleRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const emailSubjectRef = useRef<HTMLInputElement>(null);
   const reminderFrequencyRef = useRef<HTMLInputElement>(null);
   const reminderStartRef = useRef<HTMLInputElement>(null);
   const expiryWarningRef = useRef<HTMLInputElement>(null);
+  const completionCopyEmailsRef = useRef<HTMLTextAreaElement>(null);
 
   // Recipient state
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
@@ -528,6 +572,7 @@ export function EsigningStepUpload({
 
     setTitle(envelope.title);
     setEmailSubject(envelope.emailSubject || envelope.title);
+    setCompletionCopyEmailsText((envelope.completionCopyEmails ?? []).join(', '));
     setMessage(envelope.message ?? '');
     setSigningOrder(envelope.signingOrder);
     setExpiresAt(toDateInputValue(envelope.expiresAt));
@@ -593,6 +638,7 @@ export function EsigningStepUpload({
   const hasSigner = signerRecipients.length > 0;
   const hasDocument = envelope.documents.length > 0;
   const canProceed = hasDocument && hasSigner;
+  const newRecipientRequiresEmail = newRecipient.type === 'CC' || newRecipient.accessMode !== 'MANUAL_LINK';
   const signerStructureSignature = useMemo(
     () =>
       `${envelope.signingOrder}:${signerRecipients
@@ -639,6 +685,15 @@ export function EsigningStepUpload({
   }
 
   async function handleNext() {
+    const completionCopyEmailParse = parsedCompletionBcc;
+    if (completionCopyEmailParse.invalid.length > 0) {
+      const message = `Enter valid email addresses: ${completionCopyEmailParse.invalid.join(', ')}`;
+      setSettingsErrors({ completionCopyEmails: message });
+      setSubmitError('Please correct the highlighted settings before continuing.');
+      requestAnimationFrame(() => completionCopyEmailsRef.current?.focus());
+      return;
+    }
+
     const payload: UpdateEsigningEnvelopeInput = {
       title: title.trim(),
       emailSubject: emailSubject.trim(),
@@ -649,6 +704,7 @@ export function EsigningStepUpload({
       reminderFrequencyDays: parseOptionalWholeNumber(reminderFrequencyDays),
       reminderStartDays: parseOptionalWholeNumber(reminderStartDays),
       expiryWarningDays: parseOptionalWholeNumber(expiryWarningDays),
+      completionCopyEmails: completionCopyEmailParse.emails,
     };
 
     const parsed = updateEsigningEnvelopeSchema.safeParse(payload);
@@ -663,7 +719,7 @@ export function EsigningStepUpload({
       setSettingsErrors(fieldErrors);
       setSubmitError('Please correct the highlighted settings before continuing.');
       requestAnimationFrame(() => {
-        const firstInvalidField = ['title', 'emailSubject', 'message', 'reminderFrequencyDays', 'reminderStartDays', 'expiryWarningDays']
+        const firstInvalidField = ['title', 'emailSubject', 'message', 'completionCopyEmails', 'reminderFrequencyDays', 'reminderStartDays', 'expiryWarningDays']
           .find((key) => fieldErrors[key]);
         if (firstInvalidField === 'title') {
           titleRef.current?.focus();
@@ -671,6 +727,8 @@ export function EsigningStepUpload({
           emailSubjectRef.current?.focus();
         } else if (firstInvalidField === 'message') {
           messageRef.current?.focus();
+        } else if (firstInvalidField === 'completionCopyEmails') {
+          completionCopyEmailsRef.current?.focus();
         } else if (firstInvalidField === 'reminderFrequencyDays') {
           reminderFrequencyRef.current?.focus();
         } else if (firstInvalidField === 'reminderStartDays') {
@@ -703,6 +761,28 @@ export function EsigningStepUpload({
       setSubmitError(
         error instanceof Error ? error.message : 'Failed to save settings. Please try again.'
       );
+    }
+  }
+
+  async function handleSetCompletionBccDefault() {
+    const parsed = parsedCompletionBcc;
+    if (parsed.invalid.length > 0) {
+      const message = `Enter valid email addresses: ${parsed.invalid.join(', ')}`;
+      setSettingsErrors((current) => ({ ...current, completionCopyEmails: message }));
+      completionCopyEmailsRef.current?.focus();
+      return;
+    }
+
+    try {
+      await saveCompletionBccPreference.mutateAsync({
+        key: ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
+        value: { version: 1, emails: parsed.emails },
+      });
+      toast.success(parsed.emails.length > 0
+        ? 'Completion BCC default saved'
+        : 'Completion BCC default cleared');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save Completion BCC default');
     }
   }
 
@@ -888,8 +968,15 @@ async function applyMixedGroupChange(
       return;
     }
 
-    if (!newRecipient.email.trim()) {
-      toast.error('Recipient email is required');
+    const requiresEmail = newRecipient.type === 'CC' || newRecipient.accessMode !== 'MANUAL_LINK';
+    const trimmedEmail = newRecipient.email.trim();
+    if (requiresEmail && !trimmedEmail) {
+      toast.error('Recipient email is required for this access method');
+      return;
+    }
+
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+      toast.error('Enter a valid recipient email address');
       return;
     }
 
@@ -901,9 +988,10 @@ async function applyMixedGroupChange(
       return;
     }
 
-    const normalizedEmail = normalizeEmail(newRecipient.email);
+    const normalizedEmail = normalizeEmail(trimmedEmail);
     const isDuplicateSigner =
       newRecipient.type === 'SIGNER' &&
+      Boolean(normalizedEmail) &&
       envelope.recipients.some(
         (recipient) => recipient.type === 'SIGNER' && normalizeEmail(recipient.email) === normalizedEmail
       );
@@ -915,7 +1003,7 @@ async function applyMixedGroupChange(
 
     const payload: EsigningRecipientInput = {
       name: newRecipient.name.trim(),
-      email: newRecipient.email.trim(),
+      email: normalizedEmail || null,
       type: newRecipient.type,
       signingOrder: null,
       accessMode: newRecipient.accessMode,
@@ -969,7 +1057,7 @@ async function applyMixedGroupChange(
       email: contact.defaultEmail || prev.email,
     }));
 
-    if (!contact.defaultEmail) {
+    if (!contact.defaultEmail && (newRecipient.type === 'CC' || newRecipient.accessMode !== 'MANUAL_LINK')) {
       toast.error('This contact does not have a default email. Add one in Contacts or enter it manually.');
     }
 
@@ -1059,8 +1147,12 @@ async function applyMixedGroupChange(
       return;
     }
 
-    if (!isValidEmail(contactEmail)) {
+    if (contactEmail && !isValidEmail(contactEmail)) {
       toast.error('Enter a valid signer email before creating a contact');
+      return;
+    }
+    if (!contactEmail && (newRecipient.type !== 'SIGNER' || newRecipient.accessMode !== 'MANUAL_LINK')) {
+      toast.error('Enter a signer email before creating a contact');
       return;
     }
 
@@ -1080,20 +1172,15 @@ async function applyMixedGroupChange(
         contactType: 'INDIVIDUAL',
         firstName,
         lastName,
-        contactDetails: [
-          {
-            detailType: 'EMAIL',
-            value: contactEmail,
-            isPrimary: true,
-            purposes: [],
-          },
-        ],
+        contactDetails: contactEmail
+          ? [{ detailType: 'EMAIL', value: contactEmail, isPrimary: true, purposes: [] }]
+          : [],
         tenantId: activeTenantId || undefined,
       });
 
       handleContactSelect(createdContact.id, {
         ...createdContact,
-        defaultEmail: contactEmail,
+        defaultEmail: contactEmail || null,
         defaultPhone: null,
       });
       toast.success('Contact created and selected for this signer');
@@ -1372,7 +1459,7 @@ async function applyMixedGroupChange(
                                   </span>
                                   <div className="min-w-0 flex-1">
                                     <div className="truncate text-sm font-medium text-text-primary">{recipient.name}</div>
-                                    <div className="truncate text-xs text-text-muted">{recipient.email}</div>
+                                    <div className="truncate text-xs text-text-muted">{recipient.email || 'No email — manual link only'}</div>
                                   </div>
                                   <span className="flex-shrink-0 rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] text-oak-primary">
                                     {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
@@ -1486,7 +1573,7 @@ async function applyMixedGroupChange(
                           </span>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-text-primary truncate">{recipient.name}</div>
-                            <div className="text-xs text-text-muted truncate">{recipient.email}</div>
+                            <div className="text-xs text-text-muted truncate">{recipient.email || 'No email — manual link only'}</div>
                           </div>
                           <span className="flex-shrink-0 rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] text-oak-primary">
                             {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
@@ -1622,6 +1709,8 @@ async function applyMixedGroupChange(
                 placeholder="e.g. jane@example.com"
                 value={newRecipient.email}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, email: e.target.value }))}
+                required={newRecipientRequiresEmail}
+                hint={newRecipientRequiresEmail ? undefined : 'Optional for manual-link recipients.'}
               />
               <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
                 Role
@@ -1816,6 +1905,48 @@ async function applyMixedGroupChange(
             disabled={!envelope.canEdit}
             placeholder="dd mmm yyyy"
           />
+
+          <div className="space-y-2">
+            <label htmlFor="completion-bcc-emails" className="block text-xs font-medium text-text-secondary">
+              Completion BCC (optional)
+            </label>
+            <textarea
+              id="completion-bcc-emails"
+              ref={completionCopyEmailsRef}
+              value={completionCopyEmailsText}
+              onChange={(event) => {
+                setCompletionCopyEmailsText(event.target.value);
+                setIsSettingsDirty(true);
+              }}
+              disabled={!envelope.canEdit}
+              placeholder="ops@example.com, legal@example.com"
+              aria-label="Completion BCC"
+              rows={3}
+              className="w-full resize-y rounded-xl border border-border-primary bg-background-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <span className="block text-xs leading-5 text-text-muted">
+                These addresses receive the completed envelope and signed PDFs by BCC. Their addresses are hidden from signers, the sender, and one another.
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                size="xs"
+                className="shrink-0 self-start"
+                onClick={() => void handleSetCompletionBccDefault()}
+                isLoading={saveCompletionBccPreference.isPending}
+                disabled={
+                  !envelope.canEdit
+                  || completionBccMatchesDefault
+                }
+              >
+                {defaultCompletionBccEmails.length > 0 ? 'Update default' : 'Set as default'}
+              </Button>
+            </div>
+            {settingsErrors.completionCopyEmails ? (
+              <span className="block text-xs text-red-400">{settingsErrors.completionCopyEmails}</span>
+            ) : null}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
               <FormInput

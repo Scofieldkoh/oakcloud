@@ -13,6 +13,8 @@ import {
 import { prisma } from '@/lib/prisma';
 import { createContactDetail, updateContactDetail } from '@/services/contact-detail.service';
 import type { PrismaTransactionClient, TenantAwareParams } from '@/services/contact.service';
+import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup-barrier';
+import { acquireAuthorizationMutationGate } from '@/lib/authorization-mutation-gate';
 import type {
   ContactIdentityCandidate,
   ContactIdentityConflict,
@@ -685,6 +687,12 @@ async function resolveInTransaction(
   params: TenantAwareParams,
   tx: PrismaTransactionClient,
 ): Promise<ResolveContactIdentityResult> {
+  // Keep identity locks after the shared backup and authorization gates. A
+  // canonical company write owns those gates before it resolves contacts;
+  // acquiring them here first prevents an identity writer from holding a
+  // contact key while waiting for the canonical mutation boundary.
+  await acquireBusinessOperationBarrier(tx, params.tenantId, 'shared');
+  await acquireAuthorizationMutationGate(tx);
   for (const lockKey of buildLockKeys(candidate, params.tenantId, decision)) {
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
   }

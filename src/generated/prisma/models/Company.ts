@@ -36,6 +36,7 @@ export type CompanyAvgAggregateOutputType = {
   activeChargeCount: number | null
   documentCount: number | null
   annualReceiptsOrExpenditure: runtime.Decimal | null
+  aggregateRevision: number | null
 }
 
 export type CompanySumAggregateOutputType = {
@@ -48,6 +49,7 @@ export type CompanySumAggregateOutputType = {
   activeChargeCount: number | null
   documentCount: number | null
   annualReceiptsOrExpenditure: runtime.Decimal | null
+  aggregateRevision: number | null
 }
 
 export type CompanyMinAggregateOutputType = {
@@ -97,6 +99,7 @@ export type CompanyMinAggregateOutputType = {
   annualReceiptsOrExpenditure: runtime.Decimal | null
   createdAt: Date | null
   updatedAt: Date | null
+  aggregateRevision: number | null
   deletedAt: Date | null
   deletedReason: string | null
 }
@@ -148,6 +151,7 @@ export type CompanyMaxAggregateOutputType = {
   annualReceiptsOrExpenditure: runtime.Decimal | null
   createdAt: Date | null
   updatedAt: Date | null
+  aggregateRevision: number | null
   deletedAt: Date | null
   deletedReason: string | null
 }
@@ -199,6 +203,7 @@ export type CompanyCountAggregateOutputType = {
   annualReceiptsOrExpenditure: number
   createdAt: number
   updatedAt: number
+  aggregateRevision: number
   deletedAt: number
   deletedReason: number
   taskIntegrationContext: number
@@ -216,6 +221,7 @@ export type CompanyAvgAggregateInputType = {
   activeChargeCount?: true
   documentCount?: true
   annualReceiptsOrExpenditure?: true
+  aggregateRevision?: true
 }
 
 export type CompanySumAggregateInputType = {
@@ -228,6 +234,7 @@ export type CompanySumAggregateInputType = {
   activeChargeCount?: true
   documentCount?: true
   annualReceiptsOrExpenditure?: true
+  aggregateRevision?: true
 }
 
 export type CompanyMinAggregateInputType = {
@@ -277,6 +284,7 @@ export type CompanyMinAggregateInputType = {
   annualReceiptsOrExpenditure?: true
   createdAt?: true
   updatedAt?: true
+  aggregateRevision?: true
   deletedAt?: true
   deletedReason?: true
 }
@@ -328,6 +336,7 @@ export type CompanyMaxAggregateInputType = {
   annualReceiptsOrExpenditure?: true
   createdAt?: true
   updatedAt?: true
+  aggregateRevision?: true
   deletedAt?: true
   deletedReason?: true
 }
@@ -379,6 +388,7 @@ export type CompanyCountAggregateInputType = {
   annualReceiptsOrExpenditure?: true
   createdAt?: true
   updatedAt?: true
+  aggregateRevision?: true
   deletedAt?: true
   deletedReason?: true
   taskIntegrationContext?: true
@@ -518,6 +528,7 @@ export type CompanyGroupByOutputType = {
   annualReceiptsOrExpenditure: runtime.Decimal | null
   createdAt: Date
   updatedAt: Date
+  aggregateRevision: number
   deletedAt: Date | null
   deletedReason: string | null
   taskIntegrationContext: runtime.JsonValue | null
@@ -593,6 +604,7 @@ export type CompanyWhereInput = {
   annualReceiptsOrExpenditure?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
+  aggregateRevision?: Prisma.IntFilter<"Company"> | number
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
   taskIntegrationContext?: Prisma.JsonNullableFilter<"Company">
@@ -678,6 +690,7 @@ export type CompanyOrderByWithRelationInput = {
   annualReceiptsOrExpenditure?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
   taskIntegrationContext?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -768,6 +781,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   annualReceiptsOrExpenditure?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
+  aggregateRevision?: Prisma.IntFilter<"Company"> | number
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
   taskIntegrationContext?: Prisma.JsonNullableFilter<"Company">
@@ -853,6 +867,7 @@ export type CompanyOrderByWithAggregationInput = {
   annualReceiptsOrExpenditure?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
   taskIntegrationContext?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -913,6 +928,7 @@ export type CompanyScalarWhereWithAggregatesInput = {
   annualReceiptsOrExpenditure?: Prisma.DecimalNullableWithAggregatesFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Company"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Company"> | Date | string
+  aggregateRevision?: Prisma.IntWithAggregatesFilter<"Company"> | number
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   taskIntegrationContext?: Prisma.JsonNullableWithAggregatesFilter<"Company">
@@ -964,6 +980,7 @@ export type CompanyCreateInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1049,6 +1066,7 @@ export type CompanyUncheckedCreateInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1132,6 +1150,7 @@ export type CompanyUpdateInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1217,6 +1236,7 @@ export type CompanyUncheckedUpdateInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1301,6 +1321,7 @@ export type CompanyCreateManyInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1352,6 +1373,7 @@ export type CompanyUpdateManyMutationInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1404,6 +1426,7 @@ export type CompanyUncheckedUpdateManyInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1486,6 +1509,7 @@ export type CompanyCountOrderByAggregateInput = {
   annualReceiptsOrExpenditure?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
   taskIntegrationContext?: Prisma.SortOrder
@@ -1501,6 +1525,7 @@ export type CompanyAvgOrderByAggregateInput = {
   activeChargeCount?: Prisma.SortOrder
   documentCount?: Prisma.SortOrder
   annualReceiptsOrExpenditure?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
 }
 
 export type CompanyMaxOrderByAggregateInput = {
@@ -1550,6 +1575,7 @@ export type CompanyMaxOrderByAggregateInput = {
   annualReceiptsOrExpenditure?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
 }
@@ -1601,6 +1627,7 @@ export type CompanyMinOrderByAggregateInput = {
   annualReceiptsOrExpenditure?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
 }
@@ -1615,6 +1642,7 @@ export type CompanySumOrderByAggregateInput = {
   activeChargeCount?: Prisma.SortOrder
   documentCount?: Prisma.SortOrder
   annualReceiptsOrExpenditure?: Prisma.SortOrder
+  aggregateRevision?: Prisma.SortOrder
 }
 
 export type CompanyCreateNestedManyWithoutTenantInput = {
@@ -2205,6 +2233,7 @@ export type CompanyCreateWithoutTenantInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2288,6 +2317,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2401,6 +2431,7 @@ export type CompanyScalarWhereInput = {
   annualReceiptsOrExpenditure?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
+  aggregateRevision?: Prisma.IntFilter<"Company"> | number
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
   taskIntegrationContext?: Prisma.JsonNullableFilter<"Company">
@@ -2452,6 +2483,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2536,6 +2568,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2634,6 +2667,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2718,6 +2752,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2800,6 +2835,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2884,6 +2920,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -2982,6 +3019,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3066,6 +3104,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3148,6 +3187,7 @@ export type CompanyCreateWithoutSharePointFolderMappingInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3232,6 +3272,7 @@ export type CompanyUncheckedCreateWithoutSharePointFolderMappingInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3330,6 +3371,7 @@ export type CompanyUpdateWithoutSharePointFolderMappingInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3414,6 +3456,7 @@ export type CompanyUncheckedUpdateWithoutSharePointFolderMappingInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3496,6 +3539,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3580,6 +3624,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3678,6 +3723,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3762,6 +3808,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3844,6 +3891,7 @@ export type CompanyCreateWithoutAddressesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -3928,6 +3976,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4026,6 +4075,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4110,6 +4160,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4192,6 +4243,7 @@ export type CompanyCreateWithoutContactsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4276,6 +4328,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4374,6 +4427,7 @@ export type CompanyUpdateWithoutContactsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4458,6 +4512,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4540,6 +4595,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4624,6 +4680,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4722,6 +4779,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4806,6 +4864,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4888,6 +4947,7 @@ export type CompanyCreateWithoutOfficersInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -4972,6 +5032,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5070,6 +5131,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5154,6 +5216,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5236,6 +5299,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5320,6 +5384,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5418,6 +5483,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5502,6 +5568,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5584,6 +5651,7 @@ export type CompanyCreateWithoutAuditorInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5668,6 +5736,7 @@ export type CompanyUncheckedCreateWithoutAuditorInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5766,6 +5835,7 @@ export type CompanyUpdateWithoutAuditorInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5850,6 +5920,7 @@ export type CompanyUncheckedUpdateWithoutAuditorInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -5932,6 +6003,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6016,6 +6088,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6114,6 +6187,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6198,6 +6272,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6280,6 +6355,7 @@ export type CompanyCreateWithoutChargesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6364,6 +6440,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6462,6 +6539,7 @@ export type CompanyUpdateWithoutChargesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6546,6 +6624,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6628,6 +6707,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6712,6 +6792,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6810,6 +6891,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6894,6 +6976,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -6976,6 +7059,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7060,6 +7144,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7158,6 +7243,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7242,6 +7328,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7324,6 +7411,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7408,6 +7496,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7506,6 +7595,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7590,6 +7680,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7672,6 +7763,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7756,6 +7848,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7854,6 +7947,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -7938,6 +8032,7 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8020,6 +8115,7 @@ export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8104,6 +8200,7 @@ export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8202,6 +8299,7 @@ export type CompanyUpdateWithoutPrimaryGenerationBatchesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8286,6 +8384,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8368,6 +8467,7 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8452,6 +8552,7 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8550,6 +8651,7 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8634,6 +8736,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8716,6 +8819,7 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8800,6 +8904,7 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8898,6 +9003,7 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -8982,6 +9088,7 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9064,6 +9171,7 @@ export type CompanyCreateWithoutClientServicesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9148,6 +9256,7 @@ export type CompanyUncheckedCreateWithoutClientServicesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9246,6 +9355,7 @@ export type CompanyUpdateWithoutClientServicesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9330,6 +9440,7 @@ export type CompanyUncheckedUpdateWithoutClientServicesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9412,6 +9523,7 @@ export type CompanyCreateWithoutBillingOccurrencesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9496,6 +9608,7 @@ export type CompanyUncheckedCreateWithoutBillingOccurrencesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9594,6 +9707,7 @@ export type CompanyUpdateWithoutBillingOccurrencesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9678,6 +9792,7 @@ export type CompanyUncheckedUpdateWithoutBillingOccurrencesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9760,6 +9875,7 @@ export type CompanyCreateWithoutBillingCoverageIssuesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9844,6 +9960,7 @@ export type CompanyUncheckedCreateWithoutBillingCoverageIssuesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -9942,6 +10059,7 @@ export type CompanyUpdateWithoutBillingCoverageIssuesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10026,6 +10144,7 @@ export type CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10108,6 +10227,7 @@ export type CompanyCreateWithoutServiceCyclesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10192,6 +10312,7 @@ export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10290,6 +10411,7 @@ export type CompanyUpdateWithoutServiceCyclesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10374,6 +10496,7 @@ export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10456,6 +10579,7 @@ export type CompanyCreateWithoutDeadlineOccurrencesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10540,6 +10664,7 @@ export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10638,6 +10763,7 @@ export type CompanyUpdateWithoutDeadlineOccurrencesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10722,6 +10848,7 @@ export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10804,6 +10931,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10888,6 +11016,7 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -10986,6 +11115,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11070,6 +11200,7 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11152,6 +11283,7 @@ export type CompanyCreateWithoutEsigningSharePointFilingsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11236,6 +11368,7 @@ export type CompanyUncheckedCreateWithoutEsigningSharePointFilingsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11334,6 +11467,7 @@ export type CompanyUpdateWithoutEsigningSharePointFilingsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11418,6 +11552,7 @@ export type CompanyUncheckedUpdateWithoutEsigningSharePointFilingsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11500,6 +11635,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11584,6 +11720,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11682,6 +11819,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11766,6 +11904,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11848,6 +11987,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -11932,6 +12072,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12030,6 +12171,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12114,6 +12256,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12196,6 +12339,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12280,6 +12424,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12378,6 +12523,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12462,6 +12608,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12544,6 +12691,7 @@ export type CompanyCreateWithoutTasksInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12628,6 +12776,7 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12726,6 +12875,7 @@ export type CompanyUpdateWithoutTasksInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12810,6 +12960,7 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12892,6 +13043,7 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -12976,6 +13128,7 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13074,6 +13227,7 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13158,6 +13312,7 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13240,6 +13395,7 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13324,6 +13480,7 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13422,6 +13579,7 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13506,6 +13664,7 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13588,6 +13747,7 @@ export type CompanyCreateManyTenantInput = {
   annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  aggregateRevision?: number
   deletedAt?: Date | string | null
   deletedReason?: string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13639,6 +13799,7 @@ export type CompanyUpdateWithoutTenantInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13722,6 +13883,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -13805,6 +13967,7 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
   annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -14149,6 +14312,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   annualReceiptsOrExpenditure?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  aggregateRevision?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
   taskIntegrationContext?: boolean
@@ -14235,6 +14399,7 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   annualReceiptsOrExpenditure?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  aggregateRevision?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
   taskIntegrationContext?: boolean
@@ -14288,6 +14453,7 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   annualReceiptsOrExpenditure?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  aggregateRevision?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
   taskIntegrationContext?: boolean
@@ -14341,12 +14507,13 @@ export type CompanySelectScalar = {
   annualReceiptsOrExpenditure?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  aggregateRevision?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
   taskIntegrationContext?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "displayAlias" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "displayAlias" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "aggregateRevision" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
@@ -14474,6 +14641,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     annualReceiptsOrExpenditure: runtime.Decimal | null
     createdAt: Date
     updatedAt: Date
+    aggregateRevision: number
     deletedAt: Date | null
     deletedReason: string | null
     taskIntegrationContext: runtime.JsonValue | null
@@ -14979,6 +15147,7 @@ export interface CompanyFieldRefs {
   readonly annualReceiptsOrExpenditure: Prisma.FieldRef<"Company", 'Decimal'>
   readonly createdAt: Prisma.FieldRef<"Company", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Company", 'DateTime'>
+  readonly aggregateRevision: Prisma.FieldRef<"Company", 'Int'>
   readonly deletedAt: Prisma.FieldRef<"Company", 'DateTime'>
   readonly deletedReason: Prisma.FieldRef<"Company", 'String'>
   readonly taskIntegrationContext: Prisma.FieldRef<"Company", 'Json'>

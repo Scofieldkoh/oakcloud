@@ -5,6 +5,30 @@ vi.mock('@/services/connector.service', () => ({
 }));
 
 describe('workspace AI model selection', () => {
+  it.each([
+    ['businessAssistant', true], ['businessAssistant', false],
+    ['bizfileExtraction', true], ['bizfileExtraction', false],
+  ] as const)('honors the %s default only when enabled (%s)', async (group, isEnabled) => {
+    const { getAvailableConnectors } = await import('@/services/connector.service');
+    const { getBestAvailableModelForWorkspace } = await import('@/lib/ai');
+    vi.mocked(getAvailableConnectors).mockResolvedValue([{
+      source: 'tenant', connector: {
+        id: 'openrouter-connector', provider: 'OPENROUTER', settings: {
+          models: [
+            { modelId: 'general-model', isEnabled: true },
+            { modelId: 'assistant-model', isEnabled },
+          ],
+          modelDefaults: { general: 'general-model', [group]: 'assistant-model' },
+        },
+      },
+    }] as never);
+    await expect(getBestAvailableModelForWorkspace('workspace-1', group))
+      .resolves.toBe(isEnabled ? 'assistant-model' : 'general-model');
+    await expect(getBestAvailableModelForWorkspace('workspace-1', group, { configuredOnly: true }))
+      .resolves.toBe(isEnabled ? 'assistant-model' : null);
+    await expect(getBestAvailableModelForWorkspace('workspace-1')).resolves.toBe('general-model');
+  });
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

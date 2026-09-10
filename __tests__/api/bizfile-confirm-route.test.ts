@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildBizFileChangePlan, hashBizFileValue } from '@/services/bizfile/change-plan';
+import { issueBizFilePreparationToken } from '@/services/bizfile/application/preparation-token';
+import { bizFileReviewSchema, normalizeBizFileReviewDraft } from '@/lib/validations/bizfile-review';
 
 const { mockRequireAuth, mockDocumentFindUnique, mockDocumentUpdate, mockProcess } = vi.hoisted(() => ({
   mockRequireAuth: vi.fn(),
@@ -11,7 +14,8 @@ vi.mock('@/lib/auth', () => ({ requireAuth: mockRequireAuth }));
 vi.mock('@/lib/prisma', () => ({
   prisma: { document: { findUnique: mockDocumentFindUnique, update: mockDocumentUpdate } },
 }));
-vi.mock('@/services/bizfile', () => ({ processBizFileExtraction: mockProcess }));
+vi.mock('@/services/bizfile', async () => ({ processBizFileExtraction: mockProcess,
+  hashBizFileValue: (await import('@/services/bizfile/change-plan')).hashBizFileValue }));
 
 import { POST } from '@/app/api/documents/[documentId]/confirm/route';
 
@@ -37,6 +41,14 @@ const extractedDocument = {
 };
 
 function request(body: unknown = { extractedData: validPayload }) {
+  const input = body as { extractedData?: unknown; taskContext?: unknown };
+  const parsed = bizFileReviewSchema.safeParse(input.extractedData);
+  if (parsed.success) {
+    const reviewedData = normalizeBizFileReviewDraft(parsed.data);
+    const plan = buildBizFileChangePlan({ mode: 'CREATE', tenantId: 'tenant-1', documentId: 'doc-1', reviewedData });
+    const { token } = issueBizFilePreparationToken({ actorId: 'user-1', tenantId: 'tenant-1', documentId: 'doc-1', planHash: plan.canonicalHash, contextHash: hashBizFileValue(input.taskContext ?? null) });
+    body = { ...input, plan, preparationToken: token, operationId: 'test-operation' };
+  }
   return new Request('http://localhost/api/documents/doc-1/confirm', {
     method: 'POST',
     body: JSON.stringify(body),
@@ -59,7 +71,9 @@ async function postRaw(body: string) {
 }
 
 describe('POST /api/documents/:documentId/confirm', () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
+    vi.stubEnv('BUSINESS_ASSISTANT_PREPARATION_SECRET', 'test-only-preparation-signing-secret-32-characters');
     vi.clearAllMocks();
     mockRequireAuth.mockResolvedValue({
       id: 'user-1', tenantId: 'tenant-1', isSuperAdmin: false, isWorkspaceAdmin: false,
@@ -72,14 +86,15 @@ describe('POST /api/documents/:documentId/confirm', () => {
   it('normalizes, saves, and processes the corrected request payload', async () => {
     const response = await post();
 
-    expect(response.status).toBe(200);
+    expect(response.status, JSON.stringify(await response.clone().json())).toBe(200);
     expect(mockDocumentUpdate).not.toHaveBeenCalled();
     expect(mockProcess).toHaveBeenCalledWith(
       'doc-1',
       expect.objectContaining({ entityDetails: expect.objectContaining({ name: 'Corrected Pte. Ltd.' }) }),
-      'user-1', 'tenant-1', 'pending/doc.pdf', 'application/pdf'
+      'user-1', 'tenant-1', 'pending/doc.pdf', 'application/pdf', undefined,
+      expect.objectContaining({ mode: 'CREATE' }), expect.objectContaining({ operationId: 'test-operation' })
     );
-    await expect(response.json()).resolves.toEqual({ success: true, companyId: 'company-1', created: true });
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({ success: true, companyId: 'company-1', created: true, operationId: 'test-operation' }));
   });
 
   it('returns field issues and makes no writes for a malformed payload', async () => {
@@ -171,14 +186,20 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(mockProcess).not.toHaveBeenCalled();
   });
 
-  it('returns the existing company for a completed document without parsing the body', async () => {
+  it('does not bypass the reviewed request contract for a completed document', async () => {
     mockDocumentFindUnique.mockResolvedValue({
       ...extractedDocument, extractionStatus: 'COMPLETED', companyId: 'company-existing',
     });
     const response = await post({ malformed: true });
 
-    await expect(response.json()).resolves.toEqual({ success: true, companyId: 'company-existing' });
+    expect(response.status).toBe(400);
     expect(mockDocumentUpdate).not.toHaveBeenCalled();
+    expect(mockProcess).not.toHaveBeenCalled();
+  });
+
+  it('rejects a legacy direct-save request without a prepared plan', async () => {
+    const response = await postRaw(JSON.stringify({ extractedData: validPayload }));
+    expect(response.status).toBe(409);
     expect(mockProcess).not.toHaveBeenCalled();
   });
 

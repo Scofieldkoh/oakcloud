@@ -6,12 +6,18 @@ interface SerializableTransactionClient<TTransaction> {
 }
 
 export function isSerializationConflict(error: unknown): boolean {
-  return Boolean(
-    error
-    && typeof error === 'object'
-    && 'code' in error
-    && error.code === 'P2034',
-  );
+  const seen = new Set<object>();
+  let current: unknown = error;
+  while (current && typeof current === 'object' && !seen.has(current)) {
+    seen.add(current);
+    const candidate = current as { code?: unknown; originalCode?: unknown; kind?: unknown; cause?: unknown };
+    const code = typeof candidate.code === 'string'
+      ? candidate.code
+      : typeof candidate.originalCode === 'string' ? candidate.originalCode : '';
+    if (code === 'P2034' || code === '40001' || code === '40P01' || candidate.kind === 'TransactionWriteConflict') return true;
+    current = candidate.cause;
+  }
+  return false;
 }
 
 export async function runSerializableTransaction<TTransaction, TResult>(

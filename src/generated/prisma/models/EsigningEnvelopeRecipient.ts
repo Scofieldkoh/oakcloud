@@ -309,7 +309,7 @@ export type EsigningEnvelopeRecipientGroupByOutputType = {
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email: string | null
   signingOrder: number | null
   status: $Enums.EsigningRecipientStatus
   accessMode: $Enums.EsigningRecipientAccessMode
@@ -360,7 +360,7 @@ export type EsigningEnvelopeRecipientWhereInput = {
   envelopeId?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
   type?: Prisma.EnumEsigningRecipientTypeFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientType
   name?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
-  email?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
+  email?: Prisma.StringNullableFilter<"EsigningEnvelopeRecipient"> | string | null
   signingOrder?: Prisma.IntNullableFilter<"EsigningEnvelopeRecipient"> | number | null
   status?: Prisma.EnumEsigningRecipientStatusFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientAccessMode
@@ -393,7 +393,7 @@ export type EsigningEnvelopeRecipientOrderByWithRelationInput = {
   envelopeId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  email?: Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
   signingOrder?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   accessMode?: Prisma.SortOrder
@@ -430,7 +430,7 @@ export type EsigningEnvelopeRecipientWhereUniqueInput = Prisma.AtLeast<{
   envelopeId?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
   type?: Prisma.EnumEsigningRecipientTypeFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientType
   name?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
-  email?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
+  email?: Prisma.StringNullableFilter<"EsigningEnvelopeRecipient"> | string | null
   signingOrder?: Prisma.IntNullableFilter<"EsigningEnvelopeRecipient"> | number | null
   status?: Prisma.EnumEsigningRecipientStatusFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientAccessMode
@@ -463,7 +463,7 @@ export type EsigningEnvelopeRecipientOrderByWithAggregationInput = {
   envelopeId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  email?: Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
   signingOrder?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   accessMode?: Prisma.SortOrder
@@ -499,7 +499,7 @@ export type EsigningEnvelopeRecipientScalarWhereWithAggregatesInput = {
   envelopeId?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeRecipient"> | string
   type?: Prisma.EnumEsigningRecipientTypeWithAggregatesFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientType
   name?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeRecipient"> | string
-  email?: Prisma.StringWithAggregatesFilter<"EsigningEnvelopeRecipient"> | string
+  email?: Prisma.StringNullableWithAggregatesFilter<"EsigningEnvelopeRecipient"> | string | null
   signingOrder?: Prisma.IntNullableWithAggregatesFilter<"EsigningEnvelopeRecipient"> | number | null
   status?: Prisma.EnumEsigningRecipientStatusWithAggregatesFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeWithAggregatesFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientAccessMode
@@ -526,7 +526,7 @@ export type EsigningEnvelopeRecipientCreateInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -559,7 +559,7 @@ export type EsigningEnvelopeRecipientUncheckedCreateInput = {
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -590,7 +590,7 @@ export type EsigningEnvelopeRecipientUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -623,7 +623,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateInput = {
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -655,7 +655,7 @@ export type EsigningEnvelopeRecipientCreateManyInput = {
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -682,7 +682,7 @@ export type EsigningEnvelopeRecipientUpdateManyMutationInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -710,7 +710,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateManyInput = {
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -971,7 +971,7 @@ export type EsigningEnvelopeRecipientCreateWithoutEnvelopeInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1002,7 +1002,7 @@ export type EsigningEnvelopeRecipientUncheckedCreateWithoutEnvelopeInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1063,7 +1063,7 @@ export type EsigningEnvelopeRecipientScalarWhereInput = {
   envelopeId?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
   type?: Prisma.EnumEsigningRecipientTypeFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientType
   name?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
-  email?: Prisma.StringFilter<"EsigningEnvelopeRecipient"> | string
+  email?: Prisma.StringNullableFilter<"EsigningEnvelopeRecipient"> | string | null
   signingOrder?: Prisma.IntNullableFilter<"EsigningEnvelopeRecipient"> | number | null
   status?: Prisma.EnumEsigningRecipientStatusFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFilter<"EsigningEnvelopeRecipient"> | $Enums.EsigningRecipientAccessMode
@@ -1090,7 +1090,7 @@ export type EsigningEnvelopeRecipientCreateWithoutFieldDefinitionsInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1122,7 +1122,7 @@ export type EsigningEnvelopeRecipientUncheckedCreateWithoutFieldDefinitionsInput
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1168,7 +1168,7 @@ export type EsigningEnvelopeRecipientUpdateWithoutFieldDefinitionsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1200,7 +1200,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateWithoutFieldDefinitionsInput
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1230,7 +1230,7 @@ export type EsigningEnvelopeRecipientCreateWithoutFieldValuesInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1262,7 +1262,7 @@ export type EsigningEnvelopeRecipientUncheckedCreateWithoutFieldValuesInput = {
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1308,7 +1308,7 @@ export type EsigningEnvelopeRecipientUpdateWithoutFieldValuesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1340,7 +1340,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateWithoutFieldValuesInput = {
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1370,7 +1370,7 @@ export type EsigningEnvelopeRecipientCreateWithoutEventsInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1402,7 +1402,7 @@ export type EsigningEnvelopeRecipientUncheckedCreateWithoutEventsInput = {
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1448,7 +1448,7 @@ export type EsigningEnvelopeRecipientUpdateWithoutEventsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1480,7 +1480,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateWithoutEventsInput = {
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1510,7 +1510,7 @@ export type EsigningEnvelopeRecipientCreateWithoutEmailDeliveriesInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1542,7 +1542,7 @@ export type EsigningEnvelopeRecipientUncheckedCreateWithoutEmailDeliveriesInput 
   envelopeId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1588,7 +1588,7 @@ export type EsigningEnvelopeRecipientUpdateWithoutEmailDeliveriesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1620,7 +1620,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateWithoutEmailDeliveriesInput 
   envelopeId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1650,7 +1650,7 @@ export type EsigningEnvelopeRecipientCreateManyEnvelopeInput = {
   tenantId: string
   type: $Enums.EsigningRecipientType
   name: string
-  email: string
+  email?: string | null
   signingOrder?: number | null
   status?: $Enums.EsigningRecipientStatus
   accessMode?: $Enums.EsigningRecipientAccessMode
@@ -1677,7 +1677,7 @@ export type EsigningEnvelopeRecipientUpdateWithoutEnvelopeInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1708,7 +1708,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateWithoutEnvelopeInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1739,7 +1739,7 @@ export type EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumEsigningRecipientTypeFieldUpdateOperationsInput | $Enums.EsigningRecipientType
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   signingOrder?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumEsigningRecipientStatusFieldUpdateOperationsInput | $Enums.EsigningRecipientStatus
   accessMode?: Prisma.EnumEsigningRecipientAccessModeFieldUpdateOperationsInput | $Enums.EsigningRecipientAccessMode
@@ -1970,7 +1970,7 @@ export type $EsigningEnvelopeRecipientPayload<ExtArgs extends runtime.Types.Exte
     envelopeId: string
     type: $Enums.EsigningRecipientType
     name: string
-    email: string
+    email: string | null
     signingOrder: number | null
     status: $Enums.EsigningRecipientStatus
     accessMode: $Enums.EsigningRecipientAccessMode

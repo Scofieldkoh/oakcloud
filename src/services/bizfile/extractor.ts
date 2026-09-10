@@ -331,6 +331,12 @@ export async function extractBizFileWithVision(
   fileInput: BizFileVisionInput,
   options?: BizFileExtractionOptions
 ): Promise<BizFileExtractionResult> {
+  if (!options?.modelId) {
+    const configuredModel = await getBestAvailableModelForWorkspace(
+      options?.tenantId ?? null, 'bizfileExtraction', { configuredOnly: true },
+    );
+    if (configuredModel) options = { ...options, modelId: configuredModel };
+  }
   const mistralResult = await tryExtractBizFileWithMistral(fileInput, options, 'vision');
   if (mistralResult) {
     return mistralResult;
@@ -391,78 +397,6 @@ export async function extractBizFileWithVision(
       systemPrompt: EXTRACTION_SYSTEM_PROMPT,
       userPrompt,
       images,
-      jsonMode: true,
-      temperature: 0.1,
-    });
-  }
-
-  // Parse and validate the response
-  const parsed = parseExtractionResponse(response.content);
-
-  return finalizeExtractionResult(parsed, modelId, response.provider, response.usage);
-}
-
-/**
- * Extract data from BizFile PDF text using AI (legacy method)
- *
- * @deprecated Use extractBizFileWithVision for better accuracy
- * @param pdfText - The text content extracted from the BizFile PDF
- * @param options - Optional extraction options including model selection and tenant ID
- * @returns Extracted data with model metadata
- */
-export async function extractBizFileData(
-  pdfText: string,
-  options?: BizFileExtractionOptions
-): Promise<BizFileExtractionResult> {
-  if (options?.documentInput && !options.modelId) {
-    const mistralResult = await tryExtractBizFileWithMistral(options.documentInput, options, 'text');
-    if (mistralResult) {
-      return mistralResult;
-    }
-  }
-
-  // Determine which model to use based on tenant context
-  const modelId = await resolveBizFileModel(options);
-
-  if (!modelId) {
-    throw new Error(NO_AI_PROVIDER_ERROR);
-  }
-
-  const staticModelConfig = getStaticModelConfig(modelId);
-  const modelName = staticModelConfig?.name || modelId;
-  const modelProvider = staticModelConfig?.provider || 'connector';
-
-  log.info(`Using AI model (text mode): ${modelName} (${modelProvider})`);
-
-  // Build user prompt with optional context
-  const basePrompt = buildUserPrompt(options?.additionalContext);
-  const userPrompt = `${basePrompt}\n\nDocument text content:\n\n${pdfText}`;
-
-  // Call the appropriate AI service (connector-aware or direct)
-  let response;
-  if (options?.tenantId !== undefined) {
-    // Use connector-aware AI call
-    response = await callAIWithConnector({
-      model: modelId,
-      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
-      userPrompt,
-      jsonMode: true,
-      temperature: 0.1,
-      tenantId: options.tenantId,
-      userId: options.userId,
-      operation: 'bizfile_extraction',
-      usageMetadata: {
-        companyId: options.companyId,
-        documentId: options.documentId,
-        extractionType: 'text',
-      },
-    });
-  } else {
-    // Use direct AI call (environment variables)
-    response = await callAI({
-      model: modelId,
-      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
-      userPrompt,
       jsonMode: true,
       temperature: 0.1,
     });

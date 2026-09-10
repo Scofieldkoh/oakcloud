@@ -1,6 +1,6 @@
 # API Reference
 
-> **Last Updated**: 2026-03-11
+> **Last Updated**: 2026-09-07
 > **Audience**: Developers
 
 This document provides a comprehensive reference for all API endpoints in the Oakcloud application.
@@ -47,6 +47,7 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 17. [Admin](#admin-endpoints)
 18. [User Preferences](#user-preference-endpoints)
 19. [Document Tags](#document-tags-endpoints)
+20. [Business Assistant](#business-assistant-endpoints)
 
 ---
 
@@ -1235,11 +1236,6 @@ Apply extracted data to company.
 
 ---
 
-### GET /api/companies/[id]/documents/[documentId]/extract
-Extract data from a specific company's document.
-
----
-
 ## Processing Document Endpoints
 
 ### GET /api/processing-documents
@@ -2326,9 +2322,71 @@ the source of record.
 ---
 
 **Changelog:**
+- Added the Business Assistant implementation-preview API and reviewed BizFile preparation flow.
 - Added Document Tags endpoints with hybrid scope support (tenant + company tags)
 - Added Processing Documents section with bulk download ZIP and Excel export endpoints
 - Added single document export endpoint with linked documents option
 - Added sorting parameters (`sortBy`, `sortOrder`) to Users endpoint
 - Added Exchange Rates endpoints with sorting support
 - Added Forms endpoints covering builder CRUD, public runtime, drafts, exports, uploads, and AI review routes
+
+## Business Assistant Endpoints
+
+**Implementation preview; not released.** Read [the specification](../features/business-assistant/SPECIFICATION.md) and [implementation checkpoint](../plans/2026-09-05-business-assistant-implementation.md) for remaining validation gates. BizFile is one registered capability of the general assistant.
+
+Authenticated routes use explicit workspace context and owner-scoped assistant records. Pass `workspaceId` as a query parameter for reads/actions and in the body for turn acceptance. Responses are private and not cached. Workspace membership does not grant access to every company or document; module capabilities must enforce their own resource permissions.
+
+| Method | Path | Purpose / response envelope |
+|---|---|---|
+| GET | `/api/business-assistant/conversations` | Conversation history and available capability descriptors: `{ conversations, capabilities, enabled, mutationsEnabled, nextCursor }` |
+| POST | `/api/business-assistant/turns` | Persist a request for worker processing; `202` with `{ type: "accepted", conversationId, messageId, runId, duplicate }`, or `200` for an identical replay |
+| GET | `/api/business-assistant/conversations/:id` | Owner-visible messages and run references: `{ conversation }` |
+| POST | `/api/business-assistant/conversations/:id/actions` | `ARCHIVE` or `DELETE`; preserve required business-operation audit/recovery records |
+| GET | `/api/business-assistant/runs/:id` | Items, proposal, allowed actions, execution/effect/review outcomes: `{ run }` |
+| POST | `/api/business-assistant/runs/:id/actions` | `REVISE`, `CONFIRM`, `CANCEL`, or stage-specific `RETRY` |
+| POST | `/api/business-assistant/runs/:id/corrections` | Prepare a linked correction proposal from review findings: `{ correction }` |
+| GET | `/api/business-assistant/resources` | Search accessible resource attachments using `query`: `{ resources }` |
+| POST | `/api/business-assistant/feedback` | Record feedback with `clientEventId`, target, event type, and optional comment |
+| GET | `/api/business-assistant/memories` | Visible structured preference records: `{ memories }` |
+| POST | `/api/business-assistant/memories/:id/actions` | `CONFIRM`, `REVISE`, `DEACTIVATE`, or `DELETE` with `expectedVersion` |
+| GET | `/api/business-assistant/learning-changes` | Governed candidate changes and evaluation evidence: `{ changes }` |
+| POST | `/api/business-assistant/learning-changes/:id/actions` | `EVALUATE`, `APPROVE`, `PROMOTE`, `ROLLBACK`, or `REJECT` with `expectedVersion` |
+
+Turn requests include a stable `clientRequestId`, optional `conversationId`, `workspaceId`, `message`, optional typed `resources`, and optional `context`. Resource references contain `resourceType`, `resourceId`, and a `source`, `target`, or `context` role. Reuse the same request identity after an uncertain network response; changed content requires a new identity. An identity reused for different content returns a conflict.
+
+Approval submits the exact server proposal and a nonempty selected item subset:
+
+```json
+{
+  "action": "CONFIRM",
+  "clientRequestId": "stable-client-request-id",
+  "proposalId": "prepared-proposal-id",
+  "revision": 2,
+  "itemIds": ["selected-item-id"]
+}
+```
+
+`REVISE` sends `proposalId`, `revision`, `itemId`, and a module-supported `patch`. The resulting proposal must be reviewed again. Do not treat a failed effect or review as permission to rerun a committed mutation. `OUTCOME_UNKNOWN` requires reconciliation using the original operation identity.
+
+### Reviewed BizFile preparation
+
+Correction preparation uses `POST /api/business-assistant/runs/:id/corrections` with the source run ID and this body:
+
+```json
+{
+  "workspaceId": "current-workspace-id",
+  "clientRequestId": "stable-correction-request-id",
+  "reviewId": "latest-settled-review-id",
+  "corrections": [{ "findingId": "factual-finding-id", "value": "reviewed correction value" }]
+}
+```
+
+The general service delegates validation to the registered capability's optional correction handler. Unsupported capabilities are rejected. Requests must reference an owned, committed item and its latest settled review; a queued review retry makes the earlier finding stale. An identical request returns the same new proposal; changed content with the same request ID returns a conflict. The response includes `correctionOfReviewId`, `sourceRunId`, new `runId`, `runItemId`, `proposalId`, `revision`, and `duplicate`. There is no operation ID until the new proposal passes the existing `CONFIRM` action.
+
+The BizFile handler supports a bounded allowlist of factual scalar and single-record fields. It validates the finding value, approval/receipt/source hashes, retained bytes, current source pointer, and current company revision. A legitimate finalized pointer is accepted. Collection-row corrections and stale findings are rejected. The prior approval, operation receipt and review remain unchanged. This is a preparation API; it does not apply a company update.
+
+The existing upload UI uses `POST /api/documents/:documentId/prepare-import` before `confirm` or `apply-update`. Preparation accepts reviewed `extractedData`, explicit CREATE/UPDATE mode, an UPDATE `targetCompanyId`, and optional `selectedChangeIds` and contact decisions. It returns a canonical plan and signed preparation token for exact-change review. The token binds requester, workspace, document, plan hash, task context, and a 30-minute expiration. Save requests carry that plan, token, and stable `operationId`; local selection changes require fresh preparation before approval. Direct-save requests without a prepared plan are rejected. An expired token permits only recovery of an identical already-committed operation, never a new mutation.
+
+Preparation signatures use `BUSINESS_ASSISTANT_PREPARATION_SECRET` (at least 32 characters), falling back to the configured `JWT_SECRET` with a separate signing purpose. Replicas must share the key. Rotating it invalidates outstanding preparations; users must prepare those proposals again.
+
+The unused legacy `/api/companies/:id/documents/:documentId/extract` route and deprecated text extractor have been removed. Current `/api/documents/:documentId/extract` vision extraction remains available. See the implementation checkpoint for canonical transaction, migration, and independent-review validation still outstanding.

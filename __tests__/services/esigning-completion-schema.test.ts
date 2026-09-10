@@ -21,6 +21,7 @@ describe('e-signing completion and delivery schema', () => {
     expect(schema).toContain('enum EsigningPostCompletionStatus');
     expect(schema).toContain('enum EsigningEmailDeliveryKind');
     expect(schema).toContain('enum EsigningEmailDeliveryAudience');
+    expect(schema).toMatch(/enum EsigningEmailDeliveryAudience\s+\{[\s\S]*COPY/);
     expect(schema).toContain('enum EsigningEmailDeliveryStatus');
     expect(schema).toContain('model EsigningEmailDelivery');
     expect(schema).toContain('model EsigningEmailDeliveryAttempt');
@@ -30,6 +31,11 @@ describe('e-signing completion and delivery schema', () => {
     expect(schema).toMatch(/autoFilingClaimedAt\s+DateTime\?/);
     expect(schema).toMatch(/autoFilingLeaseExpiresAt\s+DateTime\?/);
     expect(schema).toMatch(/autoFilingError\s+String\?/);
+  });
+
+  it('supports optional manual-link emails and completion copy addresses', () => {
+    expect(schema).toMatch(/email\s+String\?/);
+    expect(schema).toMatch(/completionCopyEmails\s+String\[\]/);
   });
 
   it('does not backfill completion deliveries for artifact-complete envelopes', () => {

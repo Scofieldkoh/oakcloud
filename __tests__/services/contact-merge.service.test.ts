@@ -94,11 +94,15 @@ describe('contact merge service', () => {
     const result = await mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' });
 
     expect(result).toMatchObject({ ledgerId: 'ledger-1', survivingContactId: 'master', alreadyCompleted: false });
-    const barrier = mocks.barrier.mock.calls[0][0] as { sql: string; values: unknown[] };
-    expect(barrier.sql).toMatch(/pg_advisory_xact_lock/);
-    expect(barrier.values).toEqual(['contact-merge-backup:tenant-1']);
-    expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.ledgerFind.mock.invocationCallOrder[1]);
-    expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.lock.mock.invocationCallOrder[0]);
+    const barrierCalls = mocks.barrier.mock.calls.map(([query]) => query as { sql: string; values: unknown[] });
+    expect(barrierCalls[0].sql).toMatch(/pg_advisory_xact_lock_shared/);
+    expect(barrierCalls[0].values).toEqual(['oakcloud:business-operation:tenant-1']);
+    expect(barrierCalls[1].sql).toMatch(/pg_advisory_xact_lock/);
+    expect(barrierCalls[1].values).toEqual(['contact-merge-backup:tenant-1']);
+    expect(barrierCalls[2].sql).toMatch(/pg_advisory_xact_lock/);
+    expect(barrierCalls[2].values).toEqual(['oakcloud:authorization:global']);
+    expect(mocks.barrier.mock.invocationCallOrder[2]).toBeLessThan(mocks.ledgerFind.mock.invocationCallOrder[1]);
+    expect(mocks.barrier.mock.invocationCallOrder[2]).toBeLessThan(mocks.lock.mock.invocationCallOrder[0]);
     expect(mocks.transaction).toHaveBeenCalledWith(expect.any(Function), {
       isolationLevel: 'Serializable',
       timeout: 300_000,

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const tx = {
+  $executeRaw: vi.fn(),
   company: { upsert: vi.fn(), update: vi.fn() },
   document: { update: vi.fn() },
   companyFormerName: { deleteMany: vi.fn(), create: vi.fn() },
@@ -74,6 +75,7 @@ describe('BizFile contact identity resolution', () => {
     mocks.companyFindFirst.mockResolvedValue(null);
     mocks.previewContactIdentity.mockResolvedValue(null);
     tx.company.upsert.mockResolvedValue({ id: 'company-1' });
+    tx.$executeRaw.mockResolvedValue(0);
     tx.companyAddress.findFirst.mockResolvedValue(null);
     tx.processingDocument.create.mockResolvedValue({ id: 'processing-1' });
     tx.documentRevision.create.mockResolvedValue({ id: 'revision-1' });
@@ -232,6 +234,9 @@ describe('BizFile contact identity resolution', () => {
     mocks.companyFindFirst
       .mockResolvedValueOnce({ id: 'company-a' })
       .mockResolvedValueOnce({ id: 'company-b' });
+    tx.company.upsert
+      .mockResolvedValueOnce({ id: 'company-a' })
+      .mockResolvedValueOnce({ id: 'company-b' });
     mocks.resolveOrCreateContact.mockResolvedValue({ contact: { id: 'contact-existing' } });
     const { processBizFileExtraction } = await import('@/services/bizfile/processor');
 
@@ -278,6 +283,22 @@ describe('BizFile contact identity resolution', () => {
       }),
       shareholder.contactResolution,
       expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1', tx }),
+    );
+  });
+
+  it('takes the shared business barrier before the legacy company upsert', async () => {
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+
+    await processBizFileExtraction('doc-1', extractedData, 'user-1', 'tenant-1');
+
+    const barrierQuery = tx.$executeRaw.mock.calls[0][0] as { sql: string; values: unknown[] };
+    expect(barrierQuery.sql).toContain('pg_advisory_xact_lock_shared');
+    expect(barrierQuery.values).toEqual(['oakcloud:business-operation:tenant-1']);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.company.upsert.mock.invocationCallOrder[0],
+    );
+    expect(tx.company.upsert.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.resolveOrCreateContact.mock.invocationCallOrder[0],
     );
   });
 

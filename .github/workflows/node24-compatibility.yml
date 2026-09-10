@@ -44,14 +44,67 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check committed assistant registry freshness
+        run: npm run check:assistant-capabilities
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
       - name: Typecheck
         run: npm run typecheck
 
       - name: Test Chromium path resolution
         run: npm run test:run -- __tests__/lib/chrome-executable.test.ts --reporter=dot
 
+      - name: Test business assistant and BizFile contracts
+        run: npm run test:run -- __tests__/services/business-assistant __tests__/api/business-assistant __tests__/services/bizfile __tests__/api/bizfile __tests__/lib/fresh-authorization.test.ts __tests__/middleware.test.ts --reporter=dot
+
       - name: Build application
         run: npm run build
+
+  assistant-authorization:
+    name: Business Assistant PostgreSQL recovery and authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: assistant_test
+          POSTGRES_PASSWORD: assistant-test-only
+          POSTGRES_DB: business_assistant_test
+        ports:
+          - 55439:5432
+        options: >-
+          --health-cmd "pg_isready -U assistant_test -d business_assistant_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://assistant_test:assistant-test-only@127.0.0.1:55439/business_assistant_test
+      BUSINESS_ASSISTANT_TEST_DATABASE_URL: postgresql://assistant_test:assistant-test-only@127.0.0.1:55439/business_assistant_test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check committed assistant registry freshness
+        run: npm run check:assistant-capabilities
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: Verify isolated test database configuration
+        run: node scripts/require-business-assistant-test-env.mjs
+      - name: Apply migrations to the disposable test database
+        run: npx prisma migrate deploy
+      - name: Test durable worker and concurrent authorization changes
+        run: npm run test:business-assistant:postgres
+      - name: Test canonical revisions, reconciliation, and effects
+        run: npx vitest run __tests__/integration/bizfile --maxWorkers=1
 
   docker:
     name: Production image compatibility

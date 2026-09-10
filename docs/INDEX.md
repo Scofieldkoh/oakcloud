@@ -49,7 +49,8 @@
 
 | Document | Description |
 |----------|-------------|
-| [AI Helpbot Specification](./features/ai-helpbot/SPECIFICATION.md) | Current feature specification under `docs/features/` |
+| [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | Proposed general assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
+| [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Review findings, duplicate BizFile path assessment, 16 implementation work packages, validation and next-session scope |
 | [SharePoint Signed-Document Filing](./superpowers/specs/2026-09-01-sharepoint-signed-document-filing-design.md) | Company folder mapping, template-relative routing, durable filing, and orphan recovery |
 | [SharePoint Signed-Document Filing Implementation Plan](./superpowers/plans/2026-09-01-sharepoint-signed-document-filing.md) | Single-phase, test-first implementation tasks and completion gate |
 

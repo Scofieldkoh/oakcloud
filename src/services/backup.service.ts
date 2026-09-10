@@ -15,6 +15,12 @@ import { createLogger } from '@/lib/logger';
 import { getNextCronOccurrence } from '@/lib/cron-utils';
 import { Prisma } from '@/generated/prisma';
 import type { BackupStatus } from '@/generated/prisma';
+import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup-barrier';
+import {
+  assertAssistantRestoreSafety,
+  invalidateRestoredAssistantDispatch,
+  preserveBusinessAssistantHistory,
+} from '@/services/business-assistant-backup.service';
 import {
   acquireContactMergeBackupBarrier,
   CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS,
@@ -93,7 +99,8 @@ const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
 // Immutable security/audit ledgers are intentionally outside tenant backup mutation.
 // Restores must never delete, export, or recreate merge history.
 const EXCLUDED_DYNAMIC_DELEGATES = new Set([
-  'permission', 'WorkspaceBackup', 'backupSchedule', 'contactMergeOperation',
+  'permission', 'workspaceBackup', 'backupSchedule', 'contactMergeOperation',
+  'businessAssistantCapacitySlot',
 ]);
 
 // ============================================================================
@@ -307,7 +314,7 @@ export class BackupService {
     tenantId: string
   ): Promise<void> {
     const delegates = await this.getDynamicTenantScopedModelDelegates();
-    let pending = [...delegates];
+    let pending = delegates.filter((delegate) => !preserveBusinessAssistantHistory(delegate));
 
     while (pending.length > 0) {
       let progress = false;
@@ -497,6 +504,7 @@ export class BackupService {
       // 1. Export database data and compress (30% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 5, 'Exporting database...');
       const { snapshotCutoff, data, stats } = await prisma.$transaction(async (tx) => {
+        await acquireBusinessOperationBarrier(tx, tenantId, 'exclusive');
         await acquireContactMergeBackupBarrier(tx, tenantId);
         const cutoff = await readDatabaseClock(tx);
         const exported = await this.exportTenantData(tenantId, options, tx);
@@ -1035,6 +1043,7 @@ export class BackupService {
     // they were merged. Post-merge backups are safe because their snapshot already
     // reflects every merge completed before the backup timestamp.
     await assertRestoreMergeSafety(prisma, backup.tenantId, manifest.snapshotCutoff);
+    await assertAssistantRestoreSafety(prisma, backup.tenantId, manifest.snapshotCutoff);
 
     if (options.dryRun) {
       return {
@@ -1060,6 +1069,8 @@ export class BackupService {
       changeSource: 'MANUAL',
     });
 
+    let databaseRestored = !!(backup.errorDetails && typeof backup.errorDetails === 'object'
+      && !Array.isArray(backup.errorDetails) && backup.errorDetails.businessAssistantDispatchPaused === true);
     try {
       // 1. Download, decompress, and parse data.json.gz
       const compressedBuffer = await storage.download(StorageKeys.backupData(backupId));
@@ -1067,8 +1078,10 @@ export class BackupService {
       const data = JSON.parse(dataBuffer.toString('utf-8')) as Record<string, unknown>;
 
       await prisma.$transaction(async (tx) => {
+        await acquireBusinessOperationBarrier(tx, backup.tenantId, 'exclusive');
         await acquireContactMergeBackupBarrier(tx, backup.tenantId);
         await assertRestoreMergeSafety(tx, backup.tenantId, manifest.snapshotCutoff);
+        await assertAssistantRestoreSafety(tx, backup.tenantId, manifest.snapshotCutoff);
 
         // 2. If overwriting, delete existing tenant data first
         if (existingTenant && !existingTenant.deletedAt && options.overwriteExisting) {
@@ -1077,7 +1090,9 @@ export class BackupService {
 
         // 3. Restore database data using the same barrier-owning transaction
         await this.restoreDatabaseData(data, backup.tenantId, tx);
+        await invalidateRestoredAssistantDispatch(tx, backup.tenantId);
       }, { timeout: CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS });
+      databaseRestored = true;
 
       // 4. Restore files
       await this.restoreFiles(backupId, backup.tenantId, manifest.files);
@@ -1090,6 +1105,8 @@ export class BackupService {
           restoredAt: new Date(),
           restoredById: userId,
           currentStep: 'Completed',
+          errorMessage: null,
+          errorDetails: Prisma.DbNull,
         },
       });
 
@@ -1115,6 +1132,11 @@ export class BackupService {
           status: 'COMPLETED', // Revert to COMPLETED so it can be retried
           errorMessage: `Restore failed: ${errorMessage}`,
           currentStep: 'Restore failed',
+          // Keep dispatch paused if database restoration succeeded but files or
+          // completion bookkeeping failed. A successful retry clears this flag.
+          errorDetails: databaseRestored
+            ? { businessAssistantDispatchPaused: true, phase: 'FILES_OR_COMPLETION' }
+            : Prisma.DbNull,
         },
       });
 
@@ -1180,7 +1202,8 @@ export class BackupService {
 
   /**
    * Delete all data for a tenant (used before restore)
-   * Deletes both database records and S3 files
+   * Replaces database records. Existing files are retained so immutable evidence
+   * and completed follow-up artifacts cannot be erased by an older snapshot.
    */
   private async deleteWorkspaceData(
     tenantId: string,
@@ -1188,17 +1211,9 @@ export class BackupService {
   ): Promise<void> {
     log.info(`Deleting existing data for tenant ${tenantId} before restore`);
 
-    // 1. Delete all tenant files from storage first
-    try {
-      const tenantPrefix = StorageKeys.tenantPrefix(tenantId);
-      const deletedFilesCount = await storage.deletePrefix(tenantPrefix);
-      log.info(`Deleted ${deletedFilesCount} files for tenant ${tenantId}`);
-    } catch (error) {
-      log.warn(`Failed to delete some storage files for tenant ${tenantId}:`, error);
-      // Continue with database cleanup even if storage cleanup partially fails
-    }
-
-    // 2. Delete database records in reverse order of dependencies
+    // Storage work happens after commit. Unreferenced files are subject to the
+    // separate retention policy, never destructive transaction-side I/O.
+    // Delete database records in reverse order of dependencies.
       // Delete processing module data
       await tx.matchGroupItem.deleteMany({ where: { matchGroup: { tenantId } } });
       await tx.matchGroup.deleteMany({ where: { tenantId } });
@@ -1872,15 +1887,17 @@ export class BackupService {
   ): Promise<void> {
     log.info(`Restoring ${files.length} files from backup ${backupId}`);
 
+    let failures = 0;
     for (const file of files) {
       try {
         // Copy from backup location to original location
         await storage.copy(file.key, file.originalStorageKey);
       } catch (error) {
-        log.warn(`Failed to restore file ${file.originalStorageKey}:`, error);
-        // Continue with other files
+        failures += 1;
+        log.warn('A backup file could not be restored', { backupId, tenantId, error: error instanceof Error ? error.name : 'UnknownError' });
       }
     }
+    if (failures > 0) throw new Error(`${failures} backup file(s) could not be restored. Dispatch remains paused until a successful restore retry.`);
   }
 
   /**

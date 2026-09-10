@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   decisionFindMany: vi.fn(),
   decisionUpsert: vi.fn(),
   transaction: vi.fn(),
-  txQueryRaw: vi.fn(),
+  txQueryRaw: vi.fn(), txGate: vi.fn(),
   txFindMany: vi.fn(),
   txDecisionUpsert: vi.fn(),
   createAuditLog: vi.fn(),
@@ -100,6 +100,7 @@ describe('contact duplicate service', () => {
     mocks.queryRaw.mockResolvedValue([]);
     mocks.decisionFindMany.mockResolvedValue([]);
     mocks.txQueryRaw.mockResolvedValue([]);
+    mocks.txGate.mockResolvedValue(0);
     mocks.txFindMany.mockResolvedValue([]);
     mocks.txDecisionUpsert.mockResolvedValue({ id: 'decision-1' });
     mocks.createAuditLog.mockResolvedValue({ id: 'audit-1' });
@@ -107,6 +108,7 @@ describe('contact duplicate service', () => {
     mocks.vendorAliasFindMany.mockResolvedValue([]);
     mocks.customerAliasFindMany.mockResolvedValue([]);
     mocks.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
+      $executeRaw: mocks.txGate,
       $queryRaw: mocks.txQueryRaw,
       contact: { findMany: mocks.txFindMany },
       contactDuplicateDecision: { upsert: mocks.txDecisionUpsert },
@@ -516,6 +518,14 @@ describe('contact duplicate service', () => {
     expect(lockQuery.sql).toMatch(/ORDER BY id\s+FOR UPDATE/);
     expect(lockQuery.values).toEqual(expect.arrayContaining(['tenant-1', 'c1', 'c2']));
     expect(lockQuery.values.indexOf('c1')).toBeLessThan(lockQuery.values.indexOf('c2'));
+    const gateKeys = mocks.txGate.mock.calls.map(([query]) => query.values[0]);
+    expect(gateKeys).toEqual([
+      'oakcloud:business-operation:tenant-1',
+      'oakcloud:authorization:global',
+    ]);
+    expect(mocks.txGate.mock.invocationCallOrder.at(-1)!).toBeLessThan(
+      mocks.txQueryRaw.mock.invocationCallOrder[0],
+    );
     expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       tenantId: 'tenant-1',
       userId: 'user-1',

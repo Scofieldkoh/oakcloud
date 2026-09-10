@@ -659,3 +659,90 @@ export type AcraEntity = Prisma.AcraEntityModel
  *
  */
 export type AcraSyncState = Prisma.AcraSyncStateModel
+/**
+ * Model BusinessAssistantConversation
+ *
+ */
+export type BusinessAssistantConversation = Prisma.BusinessAssistantConversationModel
+/**
+ * Model BusinessAssistantMessage
+ *
+ */
+export type BusinessAssistantMessage = Prisma.BusinessAssistantMessageModel
+/**
+ * Model BusinessAssistantRun
+ *
+ */
+export type BusinessAssistantRun = Prisma.BusinessAssistantRunModel
+/**
+ * Model BusinessAssistantRunItem
+ *
+ */
+export type BusinessAssistantRunItem = Prisma.BusinessAssistantRunItemModel
+/**
+ * Model BusinessAssistantRunStep
+ *
+ */
+export type BusinessAssistantRunStep = Prisma.BusinessAssistantRunStepModel
+/**
+ * Model BusinessAssistantProposal
+ *
+ */
+export type BusinessAssistantProposal = Prisma.BusinessAssistantProposalModel
+/**
+ * Model BusinessAssistantApproval
+ *
+ */
+export type BusinessAssistantApproval = Prisma.BusinessAssistantApprovalModel
+/**
+ * Model BusinessAssistantReview
+ *
+ */
+export type BusinessAssistantReview = Prisma.BusinessAssistantReviewModel
+/**
+ * Model BusinessAssistantFeedback
+ *
+ */
+export type BusinessAssistantFeedback = Prisma.BusinessAssistantFeedbackModel
+/**
+ * Model BusinessAssistantMemory
+ *
+ */
+export type BusinessAssistantMemory = Prisma.BusinessAssistantMemoryModel
+/**
+ * Model BusinessAssistantLearningChange
+ *
+ */
+export type BusinessAssistantLearningChange = Prisma.BusinessAssistantLearningChangeModel
+/**
+ * Model BusinessAssistantLearningActiveTarget
+ * * Durable active version pointer for bounded, allowlisted preference and
+ *  * prompt-profile changes. Promotion and rollback update this row atomically;
+ *  * callers never mutate executable code or arbitrary provider configuration.
+ */
+export type BusinessAssistantLearningActiveTarget = Prisma.BusinessAssistantLearningActiveTargetModel
+/**
+ * Model BusinessAssistantActionRequest
+ *
+ */
+export type BusinessAssistantActionRequest = Prisma.BusinessAssistantActionRequestModel
+/**
+ * Model BusinessAssistantCapacitySlot
+ *
+ */
+export type BusinessAssistantCapacitySlot = Prisma.BusinessAssistantCapacitySlotModel
+/**
+ * Model BizFileOperationReceipt
+ *
+ */
+export type BizFileOperationReceipt = Prisma.BizFileOperationReceiptModel
+/**
+ * Model BizFileOperationEvidence
+ *
+ */
+export type BizFileOperationEvidence = Prisma.BizFileOperationEvidenceModel
+/**
+ * Model BizFileOperationEffectIntent
+ *
+ */
+export type BizFileOperationEffectIntent = Prisma.BizFileOperationEffectIntentModel
