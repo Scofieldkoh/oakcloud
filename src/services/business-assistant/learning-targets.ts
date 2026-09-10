@@ -21,6 +21,7 @@ export interface LearningTargetDefinition {
   readonly valueSchema: z.ZodTypeAny;
   readonly defaultValue: JsonValue;
   readonly defaultVersion: string;
+  readonly activationTtlDays: number;
 }
 
 function preferenceTarget(key: 'language' | 'response_detail' | 'playfulness'): LearningTargetDefinition {
@@ -34,6 +35,7 @@ function preferenceTarget(key: 'language' | 'response_detail' | 'playfulness'): 
     valueSchema: definition.schema,
     defaultValue: definition.options[0]?.value ?? null,
     defaultVersion: '1',
+    activationTtlDays: 90,
   };
 }
 
@@ -49,6 +51,7 @@ const TARGETS = {
     valueSchema: promptProfileSchema,
     defaultValue: { tone: 'direct', maxSentences: 4, includeCitations: false },
     defaultVersion: '1',
+    activationTtlDays: 30,
   },
 } as const satisfies Record<string, LearningTargetDefinition>;
 
