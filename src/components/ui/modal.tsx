@@ -163,6 +163,7 @@ export function Modal({
         className={cn(
           'w-full bg-background-secondary border border-border-primary rounded-2xl shadow-elevation-3 outline-none',
           'transform transition-all duration-150',
+          placement === 'center' && 'max-h-[calc(100vh-2rem)] overflow-y-auto',
           placement === 'bottom' &&
             'max-h-[80vh] overflow-y-auto rounded-b-none border-b-0',
           sizeClasses[size],
