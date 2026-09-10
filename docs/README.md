@@ -1,6 +1,6 @@
 # Oakcloud - Practice Management System
 
-> **Last Updated**: 2026-07-27
+> **Last Updated**: 2026-09-10
 
 Oakcloud is a modular practice management system for accounting firms. It is local-first, multi-tenant, and includes versioned Tasks and Pipelines alongside the Company, Document Generation, E-signing, and Forms modules.
 
@@ -30,7 +30,7 @@ Start with [Documentation Index](./INDEX.md) for the current docs map.
 
 ### Feature And Rollout Docs
 
-- [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) - Proposed general assistant; BizFile reference integration, with [implementation handover](./plans/2026-09-05-business-assistant-implementation.md)
+- [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) - General assistant architecture; BizFile is the reference integration, with [implementation handover](./plans/2026-09-05-business-assistant-implementation.md) and [BizFile correction workflow](./features/business-assistant/CORRECTION_WORKFLOW.md)
 - [Forms Improvements](./plans/2026-03-04-forms-improvements.md) - Main Forms rollout plan
 - [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) - Public and internal response PDF export
 - [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) - Draft save and resume flow
@@ -96,26 +96,31 @@ npm install
 # 2. Copy environment file
 cp .env.example .env
 
-# 3. Start PostgreSQL + MinIO
+# 3. Set local credentials and secrets in .env
+#    Do not commit real credentials.
+
+# 4. Start PostgreSQL + MinIO
 npm run docker:db:up
 
-# 4. Generate client, push schema, and seed
+# 5. Generate client, push schema, and seed
 npm run db:generate
 npm run db:push
 npm run db:seed
 
-# 5. Start the local Next.js dev server
+# 6. Start the local Next.js dev server
 npm run dev
 ```
 
-If you use the bundled MinIO stack from `oakcloud_db.yml`, set these values in your local `.env` before starting the app:
+For the bundled MinIO stack from `oakcloud_db.yml`, keep the endpoint and bucket configuration in your local `.env` and set your own access credentials:
 
 ```env
 S3_ENDPOINT="http://localhost:9000"
-S3_ACCESS_KEY="oakcloud"
-S3_SECRET_KEY="Preparefortrouble!"
+S3_ACCESS_KEY="<local-minio-access-key>"
+S3_SECRET_KEY="<local-minio-secret-key>"
 S3_BUCKET="oakcloud"
 ```
+
+Use `.env.example` as the configuration template. Keep real passwords, API keys, signing secrets, and storage credentials only in local/deployment secret storage; do not commit them to repository documentation.
 
 **Access**
 
@@ -123,14 +128,13 @@ S3_BUCKET="oakcloud"
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
 
-**Default Login**
+**Application Login**
 
-- Super Admin: `admin@oaktreesolutions.com.sg` / `Preparefortrouble!`
+The README intentionally does not publish application credentials. Use the credentials configured or provisioned for your local development environment. If credentials need to be shared across a team, store them in the approved password/secret manager rather than in Git-tracked files.
 
 **Local MinIO Console Login**
 
-- Username: `oakcloud`
-- Password: `Preparefortrouble!`
+Use the `S3_ACCESS_KEY` and `S3_SECRET_KEY` values from your local `.env`. Do not place working MinIO credentials in this README.
 
 `npm run docker:up` starts the containerized app stack from `docker-compose.yml` and is optional for local development. Do not run it at the same time as `npm run dev` unless you intentionally want the app running in Docker on port `3000`.
 

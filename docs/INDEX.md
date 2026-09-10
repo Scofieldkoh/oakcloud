@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-09-05
+> **Last Updated**: 2026-09-10
 > Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
@@ -42,15 +42,16 @@
 | Reference | Description |
 |-----------|-------------|
 | [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums, [Tasks and Pipelines](./reference/DATABASE_SCHEMA.md#tasks-and-pipelines-module-tables), and contact identity operations |
-| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [Tasks and Pipelines](./reference/API_REFERENCE.md#tasks-and-pipelines-endpoints) and contact matching |
+| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [Business Assistant](./reference/API_REFERENCE.md#business-assistant-endpoints), [Tasks and Pipelines](./reference/API_REFERENCE.md#tasks-and-pipelines-endpoints), and contact matching |
 | [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) | Runtime and deployment configuration |
 
 ## Feature Specifications
 
 | Document | Description |
 |----------|-------------|
-| [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | Proposed general assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
-| [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Review findings, duplicate BizFile path assessment, 16 implementation work packages, validation and next-session scope |
+| [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | General assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
+| [Business Assistant BizFile Correction Workflow](./features/business-assistant/CORRECTION_WORKFLOW.md) | Implemented P12 deterministic-field correction UI, shared contract, API semantics, safety gates, and remaining correction work |
+| [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Current implementation checkpoint, completed correction UI review record, active P12-P16 work, validation evidence, and next-session scope |
 | [SharePoint Signed-Document Filing](./superpowers/specs/2026-09-01-sharepoint-signed-document-filing-design.md) | Company folder mapping, template-relative routing, durable filing, and orphan recovery |
 | [SharePoint Signed-Document Filing Implementation Plan](./superpowers/plans/2026-09-01-sharepoint-signed-document-filing.md) | Single-phase, test-first implementation tasks and completion gate |
 
@@ -83,4 +84,5 @@ When working in this repo:
 1. Start with this index.
 2. Check [RBAC Guideline](./guides/RBAC_GUIDELINE.md) before changing protected routes or permissions.
 3. Use [Service Patterns](./guides/SERVICE_PATTERNS.md) for backend work and [Design Guideline](./guides/DESIGN_GUIDELINE.md) for UI changes.
-4. Use the Forms rollout docs above for historical implementation context until a dedicated Forms feature spec exists.
+4. Use the Business Assistant implementation handover plus correction workflow for ongoing Business Assistant work.
+5. Use the Forms rollout docs above for historical implementation context until a dedicated Forms feature spec exists.
