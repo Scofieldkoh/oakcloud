@@ -75,3 +75,21 @@ export function buildLinkedCompanySignerInput(
     accessMode: 'EMAIL_LINK',
   };
 }
+
+export function getEligibleLinkedCompanyContacts<T extends LinkedCompanyQuickAddContact>(
+  contacts: T[],
+  signerEmails: Set<string>,
+): T[] {
+  const seenEmails = new Set(signerEmails);
+
+  return contacts.filter((contact) => {
+    const input = buildLinkedCompanySignerInput(contact);
+    const email = normalizeSignerEmail(input?.email);
+    if (!input || !email || seenEmails.has(email)) {
+      return false;
+    }
+
+    seenEmails.add(email);
+    return true;
+  });
+}
