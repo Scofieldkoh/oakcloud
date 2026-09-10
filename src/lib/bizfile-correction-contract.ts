@@ -4,6 +4,8 @@ export const BIZFILE_CORRECTION_FINDING_CODES = [
   'APPROVED_FIELD_MISMATCH',
 ] as const;
 
+export const BIZFILE_CORRECTION_MAX_ITEMS = 20;
+
 /**
  * Factual review paths that have a deterministic scalar or one-to-one target
  * in the canonical BizFile writer. Collection rows stay excluded until an

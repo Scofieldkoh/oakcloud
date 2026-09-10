@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArtifactView } from '@/components/ui/structured-data-view';
 import { useAssistantCorrection, type AssistantCorrectionResult } from '@/hooks/use-business-assistant';
+import { BIZFILE_CORRECTION_MAX_ITEMS } from '@/lib/bizfile-correction-contract';
 import { BIZFILE_CORRECTION_FIELDS, eligibleBizFileCorrectionFindings } from './correction-fields';
 
 const correctionFieldGroups = BIZFILE_CORRECTION_FIELDS.reduce<Array<{ group: string; fields: typeof BIZFILE_CORRECTION_FIELDS[number][] }>>((groups, field) => {
@@ -25,17 +26,18 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
   const [created, setCreated] = useState<AssistantCorrectionResult | null>(null);
   const requestIds = useRef(new Map<string, string>());
   const selectedFindings = eligible.filter((finding) => selected.includes(finding.id));
+  const selectionLimitReached = selectedFindings.length >= BIZFILE_CORRECTION_MAX_ITEMS;
 
   function toggle(findingId: string, checked: boolean) {
     correction.reset();
     setCreated(null);
     setSelected((current) => checked
-      ? (current.includes(findingId) ? current : [...current, findingId])
+      ? (current.includes(findingId) || current.length >= BIZFILE_CORRECTION_MAX_ITEMS ? current : [...current, findingId])
       : current.filter((id) => id !== findingId));
   }
 
   function submit() {
-    if (selectedFindings.length === 0) return;
+    if (selectedFindings.length === 0 || selectedFindings.length > BIZFILE_CORRECTION_MAX_ITEMS) return;
     const fingerprint = selectedFindings.map((finding) => finding.id).sort().join('|');
     const key = `${reviewId}:${fingerprint}`;
     const clientRequestId = requestIds.current.get(key) ?? crypto.randomUUID();
@@ -67,21 +69,25 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
     </details>
 
     {eligible.length > 0 ? <div className="mt-3 space-y-2">
-      {eligible.map((finding) => <div key={finding.id} className="rounded-md border border-border-primary bg-background-primary p-3">
-        <div className="flex items-start gap-2">
-          <input type="checkbox" aria-label={`Select correction for ${finding.label}`} className="mt-0.5 h-4 w-4 accent-oak-primary"
-            checked={selected.includes(finding.id)} disabled={correction.isPending}
-            onChange={(event) => toggle(finding.id, event.target.checked)} />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">{finding.label}</p>
-            {finding.message ? <p className="mt-1 text-text-secondary">{finding.message}</p> : null}
+      <p className="text-xs text-text-secondary">Select up to {BIZFILE_CORRECTION_MAX_ITEMS} fields per correction proposal.</p>
+      {eligible.map((finding) => {
+        const checked = selected.includes(finding.id);
+        return <div key={finding.id} className="rounded-md border border-border-primary bg-background-primary p-3">
+          <div className="flex items-start gap-2">
+            <input type="checkbox" aria-label={`Select correction for ${finding.label}`} className="mt-0.5 h-4 w-4 accent-oak-primary"
+              checked={checked} disabled={correction.isPending || (!checked && selectionLimitReached)}
+              onChange={(event) => toggle(finding.id, event.target.checked)} />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{finding.label}</p>
+              {finding.message ? <p className="mt-1 text-text-secondary">{finding.message}</p> : null}
+            </div>
           </div>
-        </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <div><p className="text-text-muted">Recorded value</p><ArtifactView value={finding.actual ?? null} /></div>
-          <div><p className="text-text-muted">Reviewed correction</p><ArtifactView value={finding.expected} /></div>
-        </div>
-      </div>)}
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div><p className="text-text-muted">Recorded value</p><ArtifactView value={finding.actual ?? null} /></div>
+            <div><p className="text-text-muted">Reviewed correction</p><ArtifactView value={finding.expected} /></div>
+          </div>
+        </div>;
+      })}
       <Button variant="secondary" size="xs" disabled={selectedFindings.length === 0 || correction.isPending} isLoading={correction.isPending} onClick={submit}>
         Create correction proposal
       </Button>
