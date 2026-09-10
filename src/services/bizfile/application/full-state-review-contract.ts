@@ -3,6 +3,7 @@ import {
   type FullStateIndependentReviewInput,
   type FullStateIndependentReviewResult,
 } from './full-state-independent-review';
+import { stripUnprovenLaterHumanEditAttribution } from './review-evidence-provenance';
 import { assertIndependentReviewerContext } from './reviewer-independence';
 
 export interface FullStateReviewContract {
@@ -46,10 +47,17 @@ export function evaluateFullStateReviewAgainstContract(
   }
   assertIndependentReviewerContext(input.context);
 
+  const fields = input.fields.map((field) => stripUnprovenLaterHumanEditAttribution(
+    field,
+    input.verifiedSource,
+    input.operationCompletedAt,
+  ));
+
   // Deliberately discard evidence-supplied canonicalPaths. Completeness is a
   // reviewer contract concern and must not be controlled by planner/mutation input.
   return evaluateFullStateIndependentReview({
     ...input,
+    fields,
     canonicalPaths: [...contract.canonicalPaths],
   });
 }
