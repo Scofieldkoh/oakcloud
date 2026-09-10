@@ -86,7 +86,9 @@ export function BizFileCorrectionPanel({ workspaceId, runId, reviewId, findings 
       </Button>
     </div> : <p className="mt-3 text-xs text-text-secondary">This review has no supported deterministic field corrections.</p>}
 
-    {created ? <p role="status" className="mt-3 text-xs">Correction proposal created. A new approval card has been added to this conversation; review and approve it before any stored company data changes.</p> : null}
+    {created ? <p role="status" className="mt-3 text-xs">{created.duplicate
+      ? 'Existing correction proposal recovered. Its approval card is available in this conversation; review and approve it before any stored company data changes.'
+      : 'Correction proposal created. A new approval card has been added to this conversation; review and approve it before any stored company data changes.'}</p> : null}
     {correction.error ? <p role="alert" className="mt-3 text-xs text-status-error">{correction.error.message}</p> : null}
   </section>;
 }
