@@ -48,7 +48,13 @@ The existing document source-revision trigger increments only when a source fiel
 
 Fix: split storage-key revision handling from the general source-state guard. A same-value storage-key assignment advances the source revision only while an exact, live, receipt-bound `STORAGE_FINALIZE` effect is `PROCESSING`, with matching tenant, receipt, document, target, storage key, source revision, claim token and unexpired lease. Ordinary same-value updates remain no-ops. Actual storage-key changes continue to advance exactly once.
 
-### 3. Correction PostgreSQL coverage was fragmented outside the authoritative command
+### 3. Required-effect dependency order was not durable
+
+The BizFile effect worker orders runnable work by retry time, creation time, then effect ID. `STORAGE_FINALIZE` and `PAGE_PREPARATION` are created in the same canonical transaction; PostgreSQL transaction timestamps can therefore tie, leaving a random UUID to decide which required effect is claimed first. `PAGE_PREPARATION` is not safe to run before finalization because it expects the finalized source revision.
+
+Fix: enforce the dependency at the canonical effect repository boundary. `PAGE_PREPARATION` now requires a durable same-receipt/same-target `STORAGE_FINALIZE` predecessor and receives a strictly later durable creation timestamp. This preserves the worker's global fairness ordering while making the required per-receipt sequence deterministic.
+
+### 4. Correction PostgreSQL coverage was fragmented outside the authoritative command
 
 `test:business-assistant:postgres` previously omitted the correction-concurrency fixture and the BizFile correction-race fixture even though CI ran them separately. This made it possible to run the advertised Business Assistant PostgreSQL suite without correction hardening evidence.
 
@@ -73,12 +79,13 @@ A new PostgreSQL + `LocalStorageAdapter` integration fixture covers the storage 
 1. create real workspace/user/company/document rows;
 2. write a valid PDF through the real filesystem storage adapter;
 3. model the retained source at its already-finalized deterministic key;
-4. persist a real committed BizFile receipt, immutable SOURCE evidence and required effect intents;
-5. claim and execute the real `STORAGE_FINALIZE` and `PAGE_PREPARATION` effect handlers;
-6. verify receipt effect completion;
-7. verify same-pointer source revision advances exactly once;
-8. verify page rows are prepared from the retained PDF;
-9. verify retained source bytes are unchanged.
+4. persist a real committed BizFile receipt and immutable SOURCE evidence;
+5. create required effects through the canonical effect repository and verify durable `STORAGE_FINALIZE` -> `PAGE_PREPARATION` ordering;
+6. claim and execute the real required-effect handlers;
+7. verify receipt effect completion;
+8. verify same-pointer source revision advances exactly once;
+9. verify page rows are prepared from the retained PDF;
+10. verify retained source bytes are unchanged.
 
 The existing SQL correction-proposal/confirmation fixture remains responsible for new-operation identity, immutable source lifecycle preservation and approval semantics. The new filesystem fixture closes the storage/effect half that the previous synthetic race tests could not prove. P16 staging should additionally exercise the configured production object-storage provider; that is environment validation, not a reason to enable production dispatch.
 
