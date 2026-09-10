@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, Loader2, RefreshCw, UserPlus } from 'lucide-react';
+import { Check, Loader2, RefreshCw, UserPlus, Users } from 'lucide-react';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { EsigningRecipientInput } from '@/lib/validations/esigning';
 import { useContacts } from '@/hooks/use-contacts';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import {
   buildLinkedCompanySignerInput,
   buildSignerEmailSet,
+  getEligibleLinkedCompanyContacts,
   getLinkedCompanyQuickAddState,
 } from './linked-company-signer-utils';
 
@@ -49,6 +50,10 @@ export function LinkedCompanySignerQuickAdd({
     [recipients],
   );
   const contacts = data?.contacts ?? [];
+  const eligibleContacts = useMemo(
+    () => getEligibleLinkedCompanyContacts(contacts, signerEmails),
+    [contacts, signerEmails],
+  );
 
   async function handleAddContact(contact: (typeof contacts)[number]) {
     const input = buildLinkedCompanySignerInput(contact);
@@ -62,6 +67,30 @@ export function LinkedCompanySignerQuickAdd({
       toast.success(`${contact.fullName} added as a signer`);
     } catch (addError) {
       toast.error(addError instanceof Error ? addError.message : `Failed to add ${contact.fullName} as a signer`);
+    } finally {
+      setPendingContactId(null);
+    }
+  }
+
+  async function handleAddAllAvailable() {
+    if (pendingContactId || eligibleContacts.length < 2) {
+      return;
+    }
+
+    let addedCount = 0;
+    try {
+      for (const contact of eligibleContacts) {
+        const input = buildLinkedCompanySignerInput(contact);
+        if (!input) continue;
+
+        setPendingContactId(contact.id);
+        await onAddRecipient(input);
+        addedCount += 1;
+      }
+      toast.success(`${addedCount} linked contacts added as signers`);
+    } catch (addError) {
+      const prefix = addedCount > 0 ? `${addedCount} signer${addedCount === 1 ? '' : 's'} added. ` : '';
+      toast.error(`${prefix}${addError instanceof Error ? addError.message : 'Could not add the remaining linked contacts.'}`);
     } finally {
       setPendingContactId(null);
     }
@@ -82,9 +111,22 @@ export function LinkedCompanySignerQuickAdd({
             <p className="truncate text-xs text-text-muted">{companyName}</p>
           ) : null}
         </div>
-        {isLoading || isFetching ? (
-          <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" />
-        ) : null}
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {!isLoading && !isError && eligibleContacts.length >= 2 ? (
+            <button
+              type="button"
+              onClick={() => void handleAddAllAvailable()}
+              disabled={Boolean(pendingContactId)}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-oak-primary/40 hover:bg-background-tertiary disabled:cursor-wait disabled:opacity-60"
+            >
+              <Users className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
+              Add all available
+            </button>
+          ) : null}
+          {isLoading || isFetching ? (
+            <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" />
+          ) : null}
+        </div>
       </div>
 
       {isError && contacts.length === 0 ? (
