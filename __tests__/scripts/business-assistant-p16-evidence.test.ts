@@ -94,6 +94,16 @@ describe('Business Assistant P16 evidence contract', () => {
     })).toThrow(/BLOCKED requires a note/);
   });
 
+  it('refuses to seal while required gates remain incomplete', () => {
+    const manifest = createEvidenceManifest({ appSha: APP_SHA, operator: 'operator' });
+    expect(() => sealEvidenceManifest(manifest, { completedAt: COMPLETED_AT })).toThrow(/cannot seal incomplete evidence/);
+  });
+
+  it('refuses to seal all-PASS evidence until every safety assertion is true', () => {
+    const manifest = setSafetyAssertions(completeManifest(), { rollbackRehearsed: false });
+    expect(() => sealEvidenceManifest(manifest, { completedAt: COMPLETED_AT })).toThrow(/cannot seal incomplete evidence/);
+  });
+
   it('never treats a complete unsealed manifest as release-review ready', () => {
     const status = evaluateEvidenceManifest(completeManifest());
     expect(status.complete).toBe(false);
