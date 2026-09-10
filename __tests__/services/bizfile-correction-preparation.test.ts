@@ -10,7 +10,7 @@ vi.mock('@/lib/storage', () => ({ storage: { download: mocks.download } }));
 vi.mock('@/lib/prisma', () => ({ prisma: {} }));
 
 import { hashBizFileValue, buildBizFileChangePlan } from '@/services/bizfile/change-plan';
-import { prepareBizFileCorrection } from '@/services/bizfile/application/prepare-correction';
+import { prepareBizFileCorrection, prefetchBizFileCorrection } from '@/services/bizfile/application/prepare-correction';
 import { assistantCapabilities } from '@/services/bizfile/assistant-capabilities';
 import { sha256, type CapabilityCorrectionContext } from '@/services/business-assistant/contracts';
 
@@ -98,18 +98,25 @@ function fixture(currentPointer = currentStorageKey(), artifactHash = hashBizFil
     mode: 'UPDATE', companyId, documentId, payloadHash: plan.canonicalHash, beforeRevision: 3, afterRevision: 4, status: 'COMMITTED', effectStatus: 'PENDING',
     evidence: [{ kind: 'SOURCE', artifact: sourceArtifact(), artifactHash, sourceRef: { documentId, sourceVersion: 1, sourceRevision: 1 } }],
   };
+  const currentDocument = { id: documentId, tenantId, companyId, version: 1, sourceRevision: 2, storageKey: currentPointer, mimeType: 'application/pdf', originalFileName: 'document.pdf', fileName: 'document.pdf', isLatest: true, deletedAt: null };
   const tx = {
     businessAssistantProposal: { findMany: vi.fn().mockResolvedValue([sourceProposal]) },
     businessAssistantApproval: { findFirst: vi.fn().mockResolvedValue({ id: 'source-approval', selectedItems: [sourceItem.id], selectedBindings: [{ itemId: sourceItem.id, preparedHash: sha256(preparedItem) }] }) },
+    businessAssistantReview: { findFirst: vi.fn().mockResolvedValue(sourceReview) },
+    businessAssistantRunItem: { findFirst: vi.fn().mockResolvedValue({ ...sourceItem, executionOutcome: 'COMMITTED', lifecycleState: 'NEEDS_REVIEW', activeStage: null, reviews: [{ id: sourceReview.id }] }) },
     bizFileOperationReceipt: { findFirst: vi.fn().mockResolvedValue(receipt) },
-    document: { findFirst: vi.fn().mockResolvedValue({ id: documentId, tenantId, companyId, version: 1, sourceRevision: 2, storageKey: currentPointer, mimeType: 'application/pdf', originalFileName: 'document.pdf', fileName: 'document.pdf', isLatest: true, deletedAt: null }) },
+    document: { findFirst: vi.fn().mockResolvedValue(currentDocument) },
     company: { findFirst: vi.fn().mockResolvedValue(companyRow()) },
   };
   const context: CapabilityCorrectionContext = {
     actor: { tenantId, userId, requestId: 'request', source: 'BUSINESS_ASSISTANT' }, request: { reviewId: sourceReview.id, corrections: [{ findingId: 'finding-name', value: 'New Name' }] },
     sourceRunId, sourceReview, sourceItem: { ...sourceItem, run: { schemaVersion: '1' } }, nextRunId: 'next-run', nextItemId: 'next-item', db: tx,
   };
-  return { context, tx, plan, sourceItem, receipt };
+  return { context, tx, plan, sourceItem, sourceReview, receipt, currentDocument };
+}
+
+async function prefetch(context: CapabilityCorrectionContext) {
+  return prefetchBizFileCorrection({ actor: context.actor, request: context.request, sourceRunId: context.sourceRunId, db: context.db });
 }
 
 beforeEach(() => {
@@ -119,78 +126,98 @@ beforeEach(() => {
 });
 
 describe('BizFile correction preparation', () => {
-  it('is wired through the canonical capability and accepts a finalized source pointer after byte verification', async () => {
+  it('is wired through the canonical capability and verifies bytes only before transactional preparation', async () => {
     const capability = assistantCapabilities[0];
     expect(capability.prepareCorrection).toBe(prepareBizFileCorrection);
+    expect(prepareBizFileCorrection.prefetch).toBe(prefetchBizFileCorrection);
     const { context } = fixture();
-    const result = await capability.prepareCorrection!(context);
+    const evidence = await prefetch(context);
+    expect(mocks.download).toHaveBeenNthCalledWith(1, `${tenantId}/pending/${documentId}/original.pdf`);
+    expect(mocks.download).toHaveBeenNthCalledWith(2, currentStorageKey());
+    expect(evidence).toMatchObject({ documentId, companyId, currentStorageKey: currentStorageKey(), currentSourceRevision: 2 });
+
+    mocks.download.mockClear();
+    const result = await prepareBizFileCorrection(context, evidence);
     expect(result.status).toBe('PREPARED');
     expect(result.preparedItem.itemId).toBe('next-item');
     expect(result.preparedItem.input).toMatchObject({ source: { storageKey: currentStorageKey(), sourceRevision: 2, sourceHash } });
     expect(result.lineage).toMatchObject({ sourceReceiptId: receiptId, sourceOperationId, correctionOfReviewId: 'source-review' });
-    expect(mocks.download).toHaveBeenNthCalledWith(1, `${tenantId}/pending/${documentId}/original.pdf`);
-    expect(mocks.download).toHaveBeenNthCalledWith(2, currentStorageKey());
+    expect(mocks.download).not.toHaveBeenCalled();
   });
 
-  it('fails closed when receipt source evidence hash is tampered', async () => {
+  it('fails closed when receipt source evidence hash is tampered before reading bytes', async () => {
     const { context } = fixture(currentStorageKey(), 'f'.repeat(64));
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    await expect(prefetch(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 
   it('rechecks source authorization before reading retained bytes', async () => {
     mocks.authorize.mockResolvedValue({ allowed: false });
     const { context } = fixture();
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(prefetch(context)).rejects.toMatchObject({ code: 'FORBIDDEN' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 
   it('rechecks target authorization before reading retained bytes', async () => {
     mocks.authorize.mockResolvedValueOnce({ allowed: true }).mockResolvedValueOnce({ allowed: false });
     const { context } = fixture();
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(prefetch(context)).rejects.toMatchObject({ code: 'FORBIDDEN' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 
   it('rejects a review report whose source hash is not the committed receipt hash', async () => {
-    const { context } = fixture();
-    ((context.sourceReview as Record<string, unknown>).coverage as Record<string, unknown>).source = {
-      expectedHash: 'f'.repeat(64), observedHash: sourceHash, hashVerified: true,
-    };
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    const { context, sourceReview } = fixture();
+    sourceReview.coverage.source = { expectedHash: 'f'.repeat(64), observedHash: sourceHash, hashVerified: true };
+    await expect(prefetch(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 
-  it('rejects a submitted value that does not equal the immutable finding value', async () => {
+  it('rejects a submitted value that does not equal the immutable finding value without transactional storage I/O', async () => {
     const { context } = fixture();
+    const evidence = await prefetch(context);
+    mocks.download.mockClear();
     (context.request as { corrections: Array<{ value: unknown }> }).corrections[0].value = 'Another Name';
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    await expect(prepareBizFileCorrection(context, evidence)).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 
-  it('rejects a finding path outside the capability allowlist', async () => {
+  it('rejects a finding path outside the capability allowlist without transactional storage I/O', async () => {
     const { context } = fixture();
+    const evidence = await prefetch(context);
+    mocks.download.mockClear();
     (((context.sourceReview as Record<string, unknown>).findings as Array<Record<string, unknown>>)[0]).path = 'officers.0.name';
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    await expect(prepareBizFileCorrection(context, evidence)).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 
-  it('rejects retained bytes whose hash differs from committed evidence', async () => {
+  it('rejects retained bytes whose hash differs from committed evidence during prefetch', async () => {
     mocks.download.mockResolvedValue(Buffer.from('different retained bytes'));
     const { context } = fixture();
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    await expect(prefetch(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
     expect(mocks.download).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects a current company baseline that advanced after the reviewed snapshot', async () => {
+  it('rejects a current company baseline that advanced after prefetch', async () => {
     const { context, tx } = fixture();
+    const evidence = await prefetch(context);
+    mocks.download.mockClear();
     tx.company.findFirst.mockResolvedValue({ ...companyRow(), aggregateRevision: 5 });
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    await expect(prepareBizFileCorrection(context, evidence)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    expect(mocks.download).not.toHaveBeenCalled();
+  });
+
+  it('rejects source revision drift between prefetch and the transaction', async () => {
+    const { context, tx, currentDocument } = fixture();
+    const evidence = await prefetch(context);
+    mocks.download.mockClear();
+    tx.document.findFirst.mockResolvedValue({ ...currentDocument, sourceRevision: 3 });
+    await expect(prepareBizFileCorrection(context, evidence)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    expect(mocks.download).not.toHaveBeenCalled();
   });
 
   it('rejects a current pointer that is neither the retained original nor its deterministic finalized destination', async () => {
     const { context } = fixture('tenant/companies/company/documents/document/unrelated.pdf');
-    await expect(prepareBizFileCorrection(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
+    await expect(prefetch(context)).rejects.toMatchObject({ code: 'PROPOSAL_STALE' });
     expect(mocks.download).not.toHaveBeenCalled();
   });
 });
