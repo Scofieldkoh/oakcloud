@@ -88,10 +88,7 @@ export function storagePlaceholdersToEditorResult(
   options: StoragePlaceholderAdapterOptions = {},
 ): StoragePlaceholdersToEditorResult {
   const scope = options.scope ?? DEFAULT_LEGACY_SCOPE;
-  const registry = loadStoredFieldRegistry({
-    scope,
-    definitions: placeholders,
-  });
+  const registry = loadStoredFieldRegistry({ scope, definitions: placeholders });
 
   return {
     placeholders: registry.definitions.map((definition) => {
@@ -117,6 +114,7 @@ export function storagePlaceholdersToEditorResult(
         ...(definition.linkedTo ? { linkedTo: definition.linkedTo } : {}),
         ...(definition.sourcePartial ? { sourcePartial: definition.sourcePartial } : {}),
         ...(source ? { storageSource: source } : {}),
+        ...(definition.source ? { storageRawSource: definition.source } : {}),
         ...(definition.path ? { storagePath: definition.path } : {}),
         ...(definition.category ? { storageCategory: definition.category } : {}),
         storageDefinition: { ...definition.original },
@@ -137,14 +135,11 @@ export function storagePlaceholdersToEditor(
 function serializeEditorPlaceholder(
   placeholder: CustomPlaceholderDefinition,
 ): StoredEditorPlaceholder {
-  const original = placeholder.storageDefinition
-    ? { ...placeholder.storageDefinition }
-    : {};
+  const original = placeholder.storageDefinition ? { ...placeholder.storageDefinition } : {};
   const originalType = typeof original.type === 'string' ? original.type : undefined;
   const originalEditorType = editorType(originalType);
   const preserveOriginalType = Boolean(
-    originalType
-    && (placeholder.preserveOnly || placeholder.type === originalEditorType),
+    originalType && (placeholder.preserveOnly || placeholder.type === originalEditorType),
   );
   const type = preserveOriginalType
     ? originalType!
@@ -152,8 +147,9 @@ function serializeEditorPlaceholder(
       ? placeholder.storedType
       : placeholder.type);
 
-  const source = placeholder.storageSource
-    ?? normalizeSource(typeof original.source === 'string' ? original.source : undefined)
+  const source = placeholder.storageRawSource
+    ?? placeholder.storageSource
+    ?? (typeof original.source === 'string' ? original.source : undefined)
     ?? 'custom';
   const storedKey = source === 'custom'
     ? ensureCustomPrefix(placeholder.key)
@@ -177,7 +173,12 @@ function serializeEditorPlaceholder(
 
   const requiredWasExplicit = placeholder.storageRequiredWasExplicit
     ?? hasOwn(original, 'required');
-  if (requiredWasExplicit || placeholder.required) {
+  const originalRequiredWasMalformed = requiredWasExplicit
+    && hasOwn(original, 'required')
+    && typeof original.required !== 'boolean';
+  if (originalRequiredWasMalformed) {
+    result.required = original.required;
+  } else if (requiredWasExplicit || placeholder.required) {
     result.required = placeholder.required;
   } else {
     delete result.required;
