@@ -38,6 +38,7 @@ jobs:
         run: |
           python scripts/a4-c1-review-fix.py
           python scripts/a4-c1-review-fix-2.py
+          python scripts/a4-c1-review-fix-3.py
       - name: C1 canonical session tests
         run: npx vitest run __tests__/components/a4-editor-session.test.ts
       - name: A4 page editor component tests
@@ -55,10 +56,13 @@ jobs:
           ! grep -n "const liveContent = sanitizeHtml(pageContent.innerHTML)" src/components/documents/a4-page-editor.tsx
           ! grep -n "historyRef" src/components/documents/a4-page-editor.tsx
           ! grep -n "reassemblePageFragments(.*pagesRef.current" src/components/documents/a4-page-editor.tsx
+          ! grep -n "textContent = 'Start typed'" __tests__/components/a4-page-editor.test.tsx
+          ! grep -n "firstPage.querySelector('p')!.setAttribute('style', 'color: red')" __tests__/components/a4-page-editor.test.tsx
       - name: Commit validated review fixes
         run: |
           rm scripts/a4-c1-review-fix.py
           rm scripts/a4-c1-review-fix-2.py
+          rm scripts/a4-c1-review-fix-3.py
           rm .github/workflows/a4-c1-review-fix.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
