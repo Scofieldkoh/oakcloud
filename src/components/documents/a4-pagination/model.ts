@@ -36,7 +36,6 @@ const RUNTIME_SEMANTIC_IDENTITY_SELECTOR = [
   'tr',
   'th',
   'td',
-  'br',
   '.page-break',
   '[data-a4-break="page"]',
   '[data-field-id]',
