@@ -9,12 +9,20 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import {
-  resolvePlaceholders,
   prepareCompanyContext,
-  extractPartialReferences,
   type PlaceholderContext,
   type ContactData,
 } from '@/lib/placeholder-resolver';
+import { resolveTemplateFields } from '@/lib/template-field-runtime';
+import { loadStoredFieldRegistry } from '@/lib/template-field-registry';
+import {
+  normalizeStoredFieldDefinitionInput,
+  resolveTopLevelCustomValues,
+} from '@/lib/document-editor/template-field-workflow';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
 import {
@@ -24,6 +32,7 @@ import {
 import { addSectionAnchors, extractSections } from '@/services/document-validation.service';
 import {
   analyzeTemplateContent,
+  extractPartialReferences,
   getRequiredPartySelections,
   type TemplateDiagnostics,
 } from '@/lib/template-analysis';
@@ -61,7 +70,10 @@ import {
   assertGeneratedDocumentCanBeUnfinalized,
   queueTaskEsigningPreparationsForGeneratedDocument,
 } from '@/services/tasks/esigning-preparation.service';
-import { assertRevisionPrecondition } from '@/lib/document-editor/revision-concurrency';
+import {
+  assertRevisionPrecondition,
+  VersionConflictError,
+} from '@/lib/document-editor/revision-concurrency';
 import {
   claimGeneratedDocumentRevision,
   readGeneratedDocumentRevision,
@@ -280,6 +292,22 @@ export async function renderTemplateForGeneration(
 
   let renderContent = template?.content ?? templateContent;
   if (!renderContent) throw new Error('Template content is required for rendering');
+  readA4StoredDocument(renderContent, template?.contentJson);
+
+  const fieldScope = {
+    kind: 'template' as const,
+    id: template?.id ?? `ad-hoc:${templateName}`,
+  };
+  const storedFieldDefinitions = normalizeStoredFieldDefinitionInput(template?.placeholders);
+  const fieldRegistry = loadStoredFieldRegistry({
+    scope: fieldScope,
+    definitions: storedFieldDefinitions,
+  });
+  const effectiveCustomData = resolveTopLevelCustomValues({
+    scope: fieldScope,
+    definitions: storedFieldDefinitions,
+    itemValues: customData,
+  });
 
   const isServiceAgreement = template?.compositionType === 'SERVICE_AGREEMENT';
   if (!isServiceAgreement && serviceAgreementId) {
@@ -308,7 +336,7 @@ export async function renderTemplateForGeneration(
   let context: PlaceholderContext = contextOverride
     ? {
         ...contextOverride,
-        custom: { ...contextOverride.custom, ...customData },
+        custom: { ...contextOverride.custom, ...effectiveCustomData },
         system: {
           ...(contextOverride.system ?? {}),
           ...(generatedBy ? { preparerName: generatedBy, generatedBy } : {}),
@@ -316,7 +344,7 @@ export async function renderTemplateForGeneration(
         },
       }
     : {
-        custom: customData,
+        custom: effectiveCustomData,
         system: {
           currentDate: new Date(),
           ...(generatedBy ? { preparerName: generatedBy, generatedBy } : {}),
@@ -457,10 +485,20 @@ export async function renderTemplateForGeneration(
     }
   }
 
-  const { resolved, missing, missingPartials } = resolvePlaceholders(renderContent, context, {
-    missingPlaceholder: 'highlight',
-    partialsMap,
-  });
+  const fieldResolution = resolveTemplateFields(
+    renderContent,
+    context,
+    { missingPlaceholder: 'highlight', partialsMap },
+    {
+      registry: fieldRegistry.definitions,
+      partials: partials.map((partial) => ({
+        id: partial.id?.trim() || `legacy-partial:${partial.name}`,
+        name: partial.name,
+        content: partial.content ?? '',
+      })),
+    },
+  );
+  const { resolved, missing, missingPartials } = fieldResolution;
   const contentWithAnchors = addSectionAnchors(resolved);
   const sections = extractSections(contentWithAnchors);
 
@@ -480,7 +518,7 @@ export async function renderTemplateForGeneration(
     contextSummary: {
       hasCompany: Boolean(companyId || context.company),
       hasContacts: contacts.length > 0,
-      hasCustomData: Object.keys(customData).length > 0,
+      hasCustomData: Object.keys(effectiveCustomData).length > 0,
     },
     blockingErrors: [
       ...buildBlockingErrors(missing, missingPartials, diagnostics),
@@ -610,6 +648,10 @@ export async function materializeDocumentFromTemplate(
     });
   }
 
+  const canonicalContent = data.editedContent ?? rendered.content;
+  const canonicalContentJson = data.editedContentJson ?? template.contentJson ?? null;
+  assertA4WriterCanPreserve(canonicalContent, canonicalContentJson);
+
   const selectedParties = {
     ...(data.selectedDirectorId ? { directorId: data.selectedDirectorId } : {}),
     ...(data.selectedDirectorIds !== undefined ? { directorIds: data.selectedDirectorIds } : {}),
@@ -649,8 +691,8 @@ export async function materializeDocumentFromTemplate(
     templateVersion: template.version,
     company: data.companyId ? { connect: { id: data.companyId } } : { disconnect: true },
     title: data.title,
-    content: data.editedContent ?? rendered.content,
-    contentJson: data.editedContentJson ?? template.contentJson ?? Prisma.JsonNull,
+    content: canonicalContent,
+    contentJson: canonicalContentJson ?? Prisma.JsonNull,
     status: 'DRAFT',
     useLetterhead,
     placeholderData: rendered.context as Prisma.InputJsonValue,
@@ -684,8 +726,8 @@ export async function materializeDocumentFromTemplate(
         sharePointRelativeFolderPathSnapshot: template.sharePointRelativeFolderPath,
         companyId: data.companyId,
         title: data.title,
-        content: data.editedContent ?? rendered.content,
-        contentJson: data.editedContentJson ?? template.contentJson ?? undefined,
+        content: canonicalContent,
+        contentJson: canonicalContentJson ?? undefined,
         status: 'DRAFT',
         useLetterhead,
         placeholderData: rendered.context as Prisma.InputJsonValue,
@@ -751,6 +793,7 @@ export async function createBlankDocument(
   taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertA4WriterCanPreserve(data.content, data.contentJson);
   if (data.companyId) {
     const company = await prisma.company.findFirst({
       where: { id: data.companyId, tenantId, deletedAt: null },
@@ -811,6 +854,13 @@ export async function updateGeneratedDocument(
     throw new Error('Cannot update a finalized document. Unfinalize it first.');
   }
   if (existing.status === 'ARCHIVED') throw new Error('Cannot update an archived document');
+
+  if (data.content !== undefined || data.contentJson !== undefined) {
+    assertA4WriterCanPreserve(
+      data.content ?? existing.content,
+      data.contentJson === undefined ? existing.contentJson : data.contentJson,
+    );
+  }
 
   const updateData: Prisma.GeneratedDocumentUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
@@ -1116,6 +1166,7 @@ export async function cloneDocument(
     where: { id: data.id, tenantId, deletedAt: null },
   });
   if (!source) throw new NotFoundError('Document not found');
+  assertA4WriterCanPreserve(source.content, source.contentJson);
 
   let newTitle = data.title || `Copy of ${source.title}`;
   let counter = 1;
@@ -1214,6 +1265,7 @@ export async function getGeneratedDocumentById(
     },
   });
   if (!document) return null;
+  readA4StoredDocument(document.content, document.contentJson);
   const revision = await readGeneratedDocumentRevision(prisma, document.id, tenantId);
   return { ...document, revision } as GeneratedDocumentWithRelations;
 }
@@ -1302,6 +1354,9 @@ export async function searchGeneratedDocuments(
     }),
     prisma.generatedDocument.count({ where }),
   ]);
+  for (const document of documents) {
+    readA4StoredDocument(document.content, document.contentJson);
+  }
   const revisions = await readGeneratedDocumentRevisions(
     prisma,
     documents.map((document) => document.id),
@@ -1462,28 +1517,62 @@ export async function saveDraft(
     where: { id: data.documentId, tenantId, deletedAt: null },
   });
   if (!document) throw new NotFoundError('Document not found');
+  assertA4WriterCanPreserve(data.content, data.contentJson);
 
-  await prisma.documentDraft.deleteMany({ where: { documentId: data.documentId, userId } });
-  await prisma.documentDraft.create({
-    data: {
-      documentId: data.documentId,
-      userId,
-      content: data.content,
-      contentJson: data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : undefined,
-      metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined,
-    },
+  const canonicalRevision = await readGeneratedDocumentRevision(prisma, data.documentId, tenantId);
+  if (data.baseRevision !== undefined && data.baseRevision !== canonicalRevision) {
+    throw new VersionConflictError({
+      resource: 'generated-document',
+      expectedRevision: data.baseRevision,
+      revision: canonicalRevision,
+    });
+  }
+  const metadata = {
+    ...((data.metadata ?? {}) as Record<string, unknown>),
+    baseCanonicalRevision: data.baseRevision ?? canonicalRevision,
+  };
+
+  await prisma.$transaction(async (tx) => {
+    await tx.documentDraft.deleteMany({ where: { documentId: data.documentId, userId } });
+    await tx.documentDraft.create({
+      data: {
+        documentId: data.documentId,
+        userId,
+        content: data.content,
+        contentJson: data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : undefined,
+        metadata: metadata as Prisma.InputJsonValue,
+      },
+    });
   });
 }
 
 export async function getLatestDraft(
   documentId: string,
   userId: string,
-): Promise<{ content: string; contentJson: unknown | null; createdAt: Date } | null> {
-  return prisma.documentDraft.findFirst({
+): Promise<{
+  content: string;
+  contentJson: unknown | null;
+  createdAt: Date;
+  baseRevision: number | null;
+} | null> {
+  const draft = await prisma.documentDraft.findFirst({
     where: { documentId, userId },
     orderBy: { createdAt: 'desc' },
-    select: { content: true, contentJson: true, createdAt: true },
+    select: { content: true, contentJson: true, metadata: true, createdAt: true },
   });
+  if (!draft) return null;
+  const metadata = draft.metadata && typeof draft.metadata === 'object' && !Array.isArray(draft.metadata)
+    ? draft.metadata as Record<string, unknown>
+    : null;
+  const baseRevision = typeof metadata?.baseCanonicalRevision === 'number'
+    ? metadata.baseCanonicalRevision
+    : null;
+  return {
+    content: draft.content,
+    contentJson: draft.contentJson,
+    createdAt: draft.createdAt,
+    baseRevision,
+  };
 }
 
 export async function getDocumentStats(tenantId: string): Promise<{
