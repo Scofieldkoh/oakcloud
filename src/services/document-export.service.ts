@@ -1,8 +1,8 @@
 /**
  * Document Export Service
  *
- * Handles PDF and HTML export of generated documents.
- * Uses Puppeteer for high-fidelity PDF generation.
+ * Handles PDF and HTML export of generated documents. W1 routes all canonical
+ * content through the integrated S1 break reader and F1 C06 sanitizer policy.
  */
 
 import { prisma } from '@/lib/prisma';
@@ -15,35 +15,38 @@ import {
   type PageMargins,
 } from '@/services/letterhead.service';
 import { extractSections, type DocumentSection } from '@/services/document-validation.service';
-import { splitHardPageSections } from '@/lib/document-page-breaks';
-import {
-  extractA4DocumentLayout,
-} from '@/components/documents/a4-pagination/layout';
+import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import { createA4PageLayout } from '@/components/documents/a4-pagination/a4-page-layout';
 import { buildA4PageContentStyles } from '@/components/documents/a4-pagination/a4-page-content-css';
 import { buildA4FontFaceCssDataUris } from '@/components/documents/a4-pagination/a4-font-faces-server';
 import { A4_PAGINATION_BUNDLE } from '@/components/documents/a4-pagination/pagination-bundle.generated';
+import {
+  serializeA4CanonicalBreakDocument,
+} from '@/components/documents/a4-pagination/semantic-break-projection';
 import { buildA4PrintCss, PAGE_NUMBER_STRIP_MM } from '@/components/documents/a4-print-styles';
+import {
+  A4_EDITOR_DECORATION_ATTRIBUTES,
+  getA4SanitizerPolicy,
+} from '@/lib/a4-content-policy';
+import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
 import { generatedDocumentPdfFileName } from '@/lib/generated-document-filename';
 import { findChromePath } from '@/lib/chrome-executable';
-export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
-export { findChromePath };
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 import archiver from 'archiver';
 
-// ============================================================================
-// Types
-// ============================================================================
+export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
+export { findChromePath };
 
 export interface ExportPDFParams {
   documentId: string;
   tenantId: string;
-  userId?: string; // Optional for public share access
+  userId?: string;
   includeLetterhead?: boolean;
   format?: 'A4' | 'Letter';
   orientation?: 'portrait' | 'landscape';
   filename?: string;
+  signal?: AbortSignal;
 }
 
 export interface PDFResult {
@@ -78,7 +81,6 @@ export class ExportPaginationError extends ApiError {
   }
 }
 
-// Default page margins in mm (matches A4PageEditor's 20mm margins)
 const DEFAULT_MARGINS: PageMargins = {
   top: 20,
   right: 20,
@@ -87,101 +89,6 @@ const DEFAULT_MARGINS: PageMargins = {
 };
 
 const PDF_PAGE_TIMEOUT_MS = 30_000;
-
-// ============================================================================
-// PDF Export
-// ============================================================================
-
-/**
- * Export document to PDF using Puppeteer
- */
-export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
-  const {
-    documentId,
-    tenantId,
-    userId,
-    includeLetterhead = true,
-    format = 'A4',
-    orientation = 'portrait',
-    filename,
-  } = params;
-
-  // Fetch document
-  const document = await prisma.generatedDocument.findFirst({
-    where: { id: documentId, tenantId, deletedAt: null },
-    include: {
-      company: { select: { name: true, uen: true } },
-      template: { select: { name: true, category: true } },
-    },
-  });
-
-  if (!document) {
-    throw new Error('Document not found');
-  }
-
-  // Fetch letterhead if needed
-  const letterhead = includeLetterhead && document.useLetterhead
-    ? await getLetterhead(tenantId)
-    : null;
-
-  // Get page margins
-  const margins = letterhead?.pageMargins
-    ? parseMargins(letterhead.pageMargins)
-    : DEFAULT_MARGINS;
-
-  // Build HTML content
-  const htmlContent = buildPDFHtml(document, letterhead, margins);
-
-  // Paginate with the same engine as the editor so page boundaries match
-  // the on-screen preview exactly.
-  const layout = extractA4DocumentLayout(document.contentJson);
-  const pageLayout = createA4PageLayout(layout.marginsMm);
-
-  // Generate PDF. Failure is propagated before audit logging and cannot mutate
-  // the stored document or be mistaken for a successful clipped export.
-  const pdfBuffer = await generatePDF(htmlContent, {
-    format,
-    orientation,
-    margins,
-    headerHtml: buildHeaderHtml(letterhead),
-    footerHtml: buildFooterHtml(letterhead, { includePageNumbers: false }),
-    pagination: {
-      canonicalHtml: document.content,
-      layout: {
-        contentWidthPx: pageLayout.contentWidthPx,
-        contentHeightPx: pageLayout.contentHeightPx,
-        fontFamily: layout.fontFamily,
-        fontSize: layout.fontSize,
-        lineHeight: String(layout.lineHeight),
-        paragraphSpacing: layout.paragraphSpacing,
-      },
-    },
-  });
-
-  // Log only successful exports. No document HTML or resolved field values are
-  // included in the failure path or audit metadata.
-  await createAuditLog({
-    action: 'EXPORT',
-    entityType: 'GeneratedDocument',
-    entityId: documentId,
-    entityName: document.title,
-    summary: `Exported document "${document.title}" to PDF`,
-    metadata: { format: 'PDF', includeLetterhead, orientation },
-    userId,
-    tenantId,
-    companyId: document.companyId || undefined,
-  });
-
-  // Generate filename
-  const exportFilename = filename || generatedDocumentPdfFileName(document.title);
-
-  return {
-    buffer: pdfBuffer,
-    filename: exportFilename,
-    pageCount: await countPDFPages(pdfBuffer),
-    mimeType: 'application/pdf',
-  };
-}
 
 export interface ExportPaginationLayout {
   contentWidthPx: number;
@@ -203,12 +110,119 @@ interface ExportPageFragment {
   oversized?: boolean;
 }
 
+function canonicalOutputHtml(content: string, contentJson?: unknown): string {
+  const reader = readA4StoredDocument(content, contentJson);
+  return serializeA4CanonicalBreakDocument(reader.canonical);
+}
+
+function sanitizeA4Html(
+  window: Parameters<typeof DOMPurify>[0],
+  content: string,
+  options: { projection?: boolean } = {},
+): string {
+  const purify = DOMPurify(window);
+  const policy = getA4SanitizerPolicy();
+  const allowedAttributes = options.projection
+    ? [...policy.allowedAttributes, ...A4_EDITOR_DECORATION_ATTRIBUTES]
+    : policy.allowedAttributes;
+  return purify.sanitize(content, {
+    ALLOWED_TAGS: policy.allowedTags,
+    ALLOWED_ATTR: allowedAttributes,
+    FORBID_TAGS: policy.rejectedTags,
+  });
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new ExportPaginationError({ action: 'retry', reason: 'cancelled' });
+  }
+}
+
+export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
+  const {
+    documentId,
+    tenantId,
+    userId,
+    includeLetterhead = true,
+    format = 'A4',
+    orientation = 'portrait',
+    filename,
+    signal,
+  } = params;
+
+  throwIfAborted(signal);
+  const document = await prisma.generatedDocument.findFirst({
+    where: { id: documentId, tenantId, deletedAt: null },
+    include: {
+      company: { select: { name: true, uen: true } },
+      template: { select: { name: true, category: true } },
+    },
+  });
+  if (!document) throw new Error('Document not found');
+
+  const canonicalHtml = canonicalOutputHtml(document.content, document.contentJson);
+  const letterhead = includeLetterhead && document.useLetterhead
+    ? await getLetterhead(tenantId)
+    : null;
+  const margins = letterhead?.pageMargins
+    ? parseMargins(letterhead.pageMargins)
+    : DEFAULT_MARGINS;
+  const htmlContent = buildPDFHtml(
+    { ...document, content: canonicalHtml },
+    letterhead,
+    margins,
+  );
+  const layout = extractA4DocumentLayout(document.contentJson);
+  const pageLayout = createA4PageLayout(layout.marginsMm);
+
+  throwIfAborted(signal);
+  const pdfBuffer = await generatePDF(htmlContent, {
+    format,
+    orientation,
+    margins,
+    headerHtml: buildHeaderHtml(letterhead),
+    footerHtml: buildFooterHtml(letterhead, { includePageNumbers: false }),
+    signal,
+    pagination: {
+      canonicalHtml,
+      layout: {
+        contentWidthPx: pageLayout.contentWidthPx,
+        contentHeightPx: pageLayout.contentHeightPx,
+        fontFamily: layout.fontFamily,
+        fontSize: layout.fontSize,
+        lineHeight: String(layout.lineHeight),
+        paragraphSpacing: layout.paragraphSpacing,
+      },
+    },
+  });
+
+  // Audit only after PDF bytes exist. Failure/cancellation never records a
+  // successful export and never includes document HTML or field values in logs.
+  await createAuditLog({
+    action: 'EXPORT',
+    entityType: 'GeneratedDocument',
+    entityId: documentId,
+    entityName: document.title,
+    summary: `Exported document "${document.title}" to PDF`,
+    metadata: { format: 'PDF', includeLetterhead, orientation },
+    userId,
+    tenantId,
+    companyId: document.companyId || undefined,
+  });
+
+  return {
+    buffer: pdfBuffer,
+    filename: filename || generatedDocumentPdfFileName(document.title),
+    pageCount: await countPDFPages(pdfBuffer),
+    mimeType: 'application/pdf',
+  };
+}
+
 /**
- * Generate PDF using Puppeteer.
- *
- * W1 safety rule: when pagination is requested, pagination must succeed before
- * page.pdf() is allowed to run. The previous warning-and-fallback path could
- * return fixed-height sections whose content had been clipped.
+ * Generates a PDF only after the revision-compatible browser paginator has
+ * successfully returned and installed a complete fragment set. There is no
+ * clipped fixed-height fallback. Browser/page resources are closed in finally
+ * for success, error, cancellation and timeout paths.
  */
 export async function generatePDF(
   html: string,
@@ -219,10 +233,13 @@ export async function generatePDF(
     headerHtml: string;
     footerHtml: string;
     pagination?: ExportPaginationOptions;
-  }
+    signal?: AbortSignal;
+  },
 ): Promise<Buffer> {
+  throwIfAborted(options.signal);
   const puppeteer = await import('puppeteer-core');
   const executablePath = await findChromePath();
+  throwIfAborted(options.signal);
 
   const browser = await puppeteer.default.launch({
     headless: true,
@@ -240,41 +257,33 @@ export async function generatePDF(
     page = await browser.newPage();
     page.setDefaultTimeout(PDF_PAGE_TIMEOUT_MS);
     page.setDefaultNavigationTimeout(PDF_PAGE_TIMEOUT_MS);
+    throwIfAborted(options.signal);
 
     await page.setContent(html, {
       waitUntil: 'networkidle0',
       timeout: PDF_PAGE_TIMEOUT_MS,
     });
-
-    // Font metrics are part of pagination geometry. Never measure against a
-    // half-loaded font set and later print with different metrics.
     await page.evaluate(async () => {
-      if (document.fonts?.ready) {
-        await document.fonts.ready;
-      }
+      if (document.fonts?.ready) await document.fonts.ready;
     });
+    throwIfAborted(options.signal);
 
     if (options.pagination) {
       try {
         await page.addStyleTag({
-          content: buildA4PageContentStyles(
-            options.pagination.layout.paragraphSpacing,
-          ),
+          content: buildA4PageContentStyles(options.pagination.layout.paragraphSpacing),
         });
         await page.addScriptTag({ content: A4_PAGINATION_BUNDLE });
+        throwIfAborted(options.signal);
+
         const fragments = await page.evaluate((payload) => {
           const globalScope = window as unknown as {
             A4Pagination?: {
-              paginateA4Document: (
-                input: string,
-                layout: unknown,
-              ) => ExportPageFragment[];
+              paginateA4Document: (input: string, layout: unknown) => ExportPageFragment[];
             };
           };
           const paginate = globalScope.A4Pagination?.paginateA4Document;
-          if (!paginate) {
-            throw new Error('Pagination bundle did not expose paginateA4Document');
-          }
+          if (!paginate) throw new Error('Pagination bundle did not expose paginateA4Document');
           return paginate(payload.canonicalHtml, payload.layout);
         }, {
           canonicalHtml: options.pagination.canonicalHtml,
@@ -284,6 +293,9 @@ export async function generatePDF(
         if (!Array.isArray(fragments) || fragments.length === 0) {
           throw new Error('Pagination returned no printable fragments');
         }
+        if (fragments.some((fragment) => !fragment || typeof fragment.content !== 'string')) {
+          throw new Error('Pagination returned an invalid fragment');
+        }
 
         const sectionsHtml = buildPaginatedSectionsHtml(fragments);
         const replaced = await page.evaluate((replacement) => {
@@ -292,19 +304,14 @@ export async function generatePDF(
           container.innerHTML = replacement;
           return true;
         }, sectionsHtml);
-        if (!replaced) {
-          throw new Error('PDF pagination target was unavailable');
-        }
+        if (!replaced) throw new Error('PDF pagination target was unavailable');
       } catch (error) {
-        // Deliberately do not log the supplied HTML, canonical content, field
-        // values, or the raw browser exception. The caller receives a stable,
-        // recoverable typed error and no PDF bytes are produced.
+        if (error instanceof ExportPaginationError) throw error;
         throw new ExportPaginationError({ action: 'retry' });
       }
     }
 
-    // Use preferCSSPageSize to let CSS @page handle margins (matches browser print)
-    // This ensures PDF export looks identical to browser print dialog
+    throwIfAborted(options.signal);
     const pdfBuffer = await page.pdf({
       format: options.format,
       landscape: options.orientation === 'landscape',
@@ -313,62 +320,44 @@ export async function generatePDF(
       displayHeaderFooter: !!(options.headerHtml || options.footerHtml),
       headerTemplate: options.headerHtml || '<div></div>',
       footerTemplate: options.footerHtml || '<div></div>',
-      margin: {
-        top: '0mm',
-        right: '0mm',
-        bottom: '0mm',
-        left: '0mm',
-      },
+      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
       timeout: PDF_PAGE_TIMEOUT_MS,
     });
-
+    throwIfAborted(options.signal);
     return Buffer.from(pdfBuffer);
   } finally {
     if (page) {
       try {
         await page.close();
       } catch {
-        // Browser close below remains the final resource boundary.
+        // browser.close below is the final bounded resource boundary
       }
     }
     await browser.close();
   }
 }
 
-/**
- * Count pages in PDF buffer
- */
 async function countPDFPages(buffer: Buffer): Promise<number> {
-  // Simple page count by looking for PDF page markers
   const pdfString = buffer.toString('binary');
   const matches = pdfString.match(/\/Type\s*\/Page[^s]/g);
   return matches ? matches.length : 1;
 }
-
-// ============================================================================
-// Bulk ZIP Export
-// ============================================================================
 
 export interface ExportZipResult {
   buffer: Buffer;
   filename: string;
 }
 
-/**
- * Export multiple documents to a single ZIP archive of PDFs.
- */
 export async function exportDocumentsToZip(
   ids: string[],
-  params: { tenantId: string; userId?: string }
+  params: { tenantId: string; userId?: string },
 ): Promise<ExportZipResult> {
   const { tenantId, userId } = params;
-
   const documents = await prisma.generatedDocument.findMany({
     where: { id: { in: ids }, tenantId, deletedAt: null },
     select: { id: true },
   });
   const foundIds = new Set(documents.map((document) => document.id));
-
   const archive = archiver('zip', { zlib: { level: 5 } });
   const chunks: Buffer[] = [];
   archive.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -376,14 +365,11 @@ export async function exportDocumentsToZip(
     archive.on('end', () => resolve(Buffer.concat(chunks)));
     archive.on('error', reject);
   });
-
   const usedFilenames = new Map<string, number>();
 
   for (const id of ids) {
     if (!foundIds.has(id)) continue;
-
     const result = await exportToPDF({ documentId: id, tenantId, userId });
-
     let fileName = result.filename;
     const count = usedFilenames.get(result.filename) ?? 0;
     if (count > 0) {
@@ -393,88 +379,48 @@ export async function exportDocumentsToZip(
         : `${result.filename} (${count})`;
     }
     usedFilenames.set(result.filename, count + 1);
-
     archive.append(result.buffer, { name: fileName });
   }
 
   await archive.finalize();
   const buffer = await finalized;
-
   const dateStr = new Date().toISOString().split('T')[0];
   return { buffer, filename: `documents-${dateStr}.zip` };
 }
 
-// ============================================================================
-// HTML Export
-// ============================================================================
-
-/**
- * Export document to clean HTML
- */
 export async function exportToHTML(params: ExportHTMLParams): Promise<HTMLResult> {
   const { documentId, tenantId, includeStyles = true, includeSections = true } = params;
-
-  // Fetch document
   const document = await prisma.generatedDocument.findFirst({
     where: { id: documentId, tenantId, deletedAt: null },
   });
+  if (!document) throw new Error('Document not found');
 
-  if (!document) {
-    throw new Error('Document not found');
-  }
-
-  // Sanitizer semantics remain unchanged in the independent W1 slice. F1 owns
-  // the shared C06 policy; W1 will replace this adapter after F1 integration.
+  const canonicalHtml = canonicalOutputHtml(document.content, document.contentJson);
   const window = new JSDOM('').window;
-  const purify = DOMPurify(window);
-  const sanitizedContent = purify.sanitize(document.content, {
-    ALLOWED_TAGS: [
-      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-      'ul', 'ol', 'li', 'a', 'span', 'div', 'hr',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td',
-      'img',
-    ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class', 'id', 'src', 'alt'],
-  });
-
-  // Extract sections if needed
+  const sanitizedContent = sanitizeA4Html(window, canonicalHtml);
   const sections = includeSections ? extractSections(sanitizedContent) : [];
-
-  // Build HTML
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${escapeHtml(document.title)}</title>
-      ${includeStyles ? `<style>${buildA4PrintCss(extractA4DocumentLayout(document.contentJson))}</style>` : ''}
-    </head>
-    <body>
-      <div class="document-content">
-        ${sanitizedContent}
-      </div>
-    </body>
-    </html>
-  `;
+  const styles = includeStyles
+    ? buildA4PrintCss(extractA4DocumentLayout(document.contentJson))
+    : '';
 
   return {
-    html,
-    styles: includeStyles
-      ? buildA4PrintCss(extractA4DocumentLayout(document.contentJson))
-      : '',
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${escapeHtml(document.title)}</title>
+        ${includeStyles ? `<style>${styles}</style>` : ''}
+      </head>
+      <body><div class="document-content">${sanitizedContent}</div></body>
+      </html>
+    `,
+    styles,
     sections,
   };
 }
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Check if a page content should be removed (contains only [Remove Page])
- */
 function shouldRemovePage(content: string): boolean {
   const textContent = (content || '')
     .replace(/<[^>]*>/g, '')
@@ -483,72 +429,22 @@ function shouldRemovePage(content: string): boolean {
   return /^\[Remove\s*Page\]$/i.test(textContent);
 }
 
-/**
- * Parse content into hard page sections.
- * Legacy <!-- PAGE_BREAK --> comments are soft layout hints and are discarded;
- * class-based page-break elements remain explicit hard boundaries.
- */
-function parsePages(content: string): string[] {
-  return splitHardPageSections(content)
-    .map((page) => page.trim())
-    .filter((page) => page.length > 0);
-}
-
-function sanitizeExportPage(
-  window: Parameters<typeof DOMPurify>[0],
-  pageContent: string,
-): string {
-  const purify = DOMPurify(window);
-  return purify.sanitize(
-    pageContent,
-    {
-      ALLOWED_TAGS: [
-        'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-        'ul', 'ol', 'li', 'a', 'span', 'div', 'hr',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'table', 'thead', 'tbody', 'tr', 'th', 'td',
-        'img', 'sup', 'sub',
-      ],
-      ALLOWED_ATTR: [
-        'href', 'target', 'rel', 'style', 'class', 'id', 'src', 'alt',
-        'colspan', 'rowspan',
-        'data-flow-id',
-        'data-flow-continuation',
-        'data-flow-continuation-item',
-        'data-flow-oversized',
-        'data-flow-keep-together',
-      ],
-    },
-  );
-}
-
-/**
- * Renders engine-paginated fragments as print-page sections, mirroring the
- * editor's print frame (including oversized pages that flow naturally).
- */
 export function buildPaginatedSectionsHtml(fragments: ExportPageFragment[]): string {
   const window = new JSDOM('').window;
   const sections = fragments
     .filter((fragment) => !shouldRemovePage(fragment.content))
     .map((fragment, index) => {
-      const content = sanitizeExportPage(window, fragment.content) || '&nbsp;';
+      const content = sanitizeA4Html(window, fragment.content, { projection: true }) || '&nbsp;';
       const oversized = fragment.oversized ? ' data-oversized="true"' : '';
       return `<section class="print-page"${oversized}><div class="content">${content}</div><div class="print-page-number">${index + 1}</div></section>`;
     });
 
-  return sections.length > 0
-    ? sections.join('')
-    : '<section class="print-page"><div class="content">&nbsp;</div><div class="print-page-number">1</div></section>';
+  if (sections.length === 0) {
+    throw new ExportPaginationError({ action: 'retry', reason: 'no-printable-fragments' });
+  }
+  return sections.join('');
 }
 
-/**
- * Build complete HTML for PDF generation.
- *
- * Mirrors the A4 editor's print typography and margins via the shared A4
- * print stylesheet. Content taller than one page (e.g. long tables) is
- * allowed to flow onto following pages instead of being clipped, and page
- * numbers come from the PDF footer template so they never duplicate.
- */
 export function buildPDFHtml(
   document: {
     title: string;
@@ -557,27 +453,11 @@ export function buildPDFHtml(
     contentJson?: unknown;
   },
   _letterhead: Awaited<ReturnType<typeof getLetterhead>>,
-  _margins: PageMargins
+  _margins: PageMargins,
 ): string {
-  // Parse content into pages
-  const pages = parsePages(document.content);
-
-  // Filter out pages marked with [Remove Page]
-  const filteredPages = pages.filter(page => !shouldRemovePage(page));
-
+  const canonicalHtml = canonicalOutputHtml(document.content, document.contentJson);
   const window = new JSDOM('').window;
-
-  const pagesHtml = filteredPages.length > 0
-    ? filteredPages
-        .map((pageContent, index) => {
-          const content = sanitizeExportPage(window, pageContent) || '&nbsp;';
-          return `<section class="print-page"><div class="content">${content}</div><div class="print-page-number">${index + 1}</div></section>`;
-        })
-        .join('')
-    : '<section class="print-page"><div class="content">&nbsp;</div><div class="print-page-number">1</div></section>';
-
-  // Add draft watermark if not finalized (fixed so it overlays every page
-  // without shifting the printed page layout)
+  const content = sanitizeA4Html(window, canonicalHtml) || '&nbsp;';
   const watermark = document.status !== 'FINALIZED'
     ? '<div class="draft-watermark" style="position: fixed; top: 45%; left: 0; right: 0; z-index: 10; text-align: center; font-family: \'Times New Roman\', Times, serif; font-size: 60pt; color: rgba(128, 128, 128, 0.25);">DRAFT</div>'
     : '';
@@ -597,16 +477,13 @@ export function buildPDFHtml(
     <body>
       ${watermark}
       <div id="a4-paginated-sections">
-        ${pagesHtml}
+        <section class="print-page"><div class="content">${content}</div><div class="print-page-number">1</div></section>
       </div>
     </body>
     </html>
   `;
 }
 
-/**
- * Parse page margins from JSON
- */
 function parseMargins(margins: unknown): PageMargins {
   if (margins && typeof margins === 'object' && !Array.isArray(margins)) {
     const m = margins as Record<string, unknown>;
@@ -620,75 +497,32 @@ function parseMargins(margins: unknown): PageMargins {
   return DEFAULT_MARGINS;
 }
 
-/**
- * Escape HTML special characters
- */
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
   };
   return text.replace(/[&<>"']/g, (m) => map[m] || m);
 }
 
-// ============================================================================
-// Preview Generation (no Puppeteer required)
-// ============================================================================
-
-/**
- * Generate preview HTML for display in browser
- */
 export async function generatePreviewHtml(
   documentId: string,
   tenantId: string,
-  options: {
-    includeLetterhead?: boolean;
-    showDraftWatermark?: boolean;
-  } = {}
+  options: { includeLetterhead?: boolean; showDraftWatermark?: boolean } = {},
 ): Promise<string> {
   const { includeLetterhead = true, showDraftWatermark = true } = options;
-
-  // Fetch document
   const document = await prisma.generatedDocument.findFirst({
     where: { id: documentId, tenantId, deletedAt: null },
   });
+  if (!document) throw new Error('Document not found');
 
-  if (!document) {
-    throw new Error('Document not found');
-  }
-
-  // Fetch letterhead if needed
   const letterhead = includeLetterhead && document.useLetterhead
     ? await getLetterhead(tenantId)
     : null;
-
-  // Parse margins for future use (currently not used in preview)
-  const _margins = letterhead?.pageMargins
-    ? parseMargins(letterhead.pageMargins)
-    : DEFAULT_MARGINS;
-  void _margins; // Reserved for future use
-
-  // Build preview HTML (includes header/footer inline)
   const headerHtml = buildHeaderHtml(letterhead);
   const footerHtml = buildFooterHtml(letterhead);
-
-  // F1 will replace this local sanitizer with the shared C06 adapter during
-  // producer integration. Do not widen or duplicate that policy here.
+  const canonicalHtml = canonicalOutputHtml(document.content, document.contentJson);
   const window = new JSDOM('').window;
-  const purify = DOMPurify(window);
-  const sanitizedContent = purify.sanitize(document.content, {
-    ALLOWED_TAGS: [
-      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-      'ul', 'ol', 'li', 'a', 'span', 'div', 'hr',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td',
-    ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class', 'id'],
-  });
-
+  const sanitizedContent = sanitizeA4Html(window, canonicalHtml);
   const watermark = showDraftWatermark && document.status !== 'FINALIZED'
     ? '<div class="draft-watermark">DRAFT</div>'
     : '';
@@ -702,44 +536,16 @@ export async function generatePreviewHtml(
       <title>${escapeHtml(document.title)}</title>
       <style>
         ${buildA4PrintCss(extractA4DocumentLayout(document.contentJson))}
-
-        .preview-page {
-          background: white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          margin: 20px auto;
-          max-width: 210mm;
-          min-height: 297mm;
-          position: relative;
-          padding: 20mm;
-        }
-
-        .preview-page .document-content {
-          /* Content area within preview page */
-        }
-
-        .preview-header {
-          padding: 15mm 20mm 5mm;
-          border-bottom: 1px solid #eee;
-          margin: -20mm -20mm 20mm -20mm;
-        }
-
-        .preview-footer {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          padding: 5mm 20mm 15mm;
-          border-top: 1px solid #eee;
-        }
+        .preview-page { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 20px auto; max-width: 210mm; min-height: 297mm; position: relative; padding: 20mm; }
+        .preview-header { padding: 15mm 20mm 5mm; border-bottom: 1px solid #eee; margin: -20mm -20mm 20mm -20mm; }
+        .preview-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 5mm 20mm 15mm; border-top: 1px solid #eee; }
       </style>
     </head>
     <body style="background: #f5f5f5; padding: 20px;">
       <div class="preview-page">
         ${watermark}
         ${headerHtml ? `<div class="preview-header">${headerHtml}</div>` : ''}
-        <div class="document-content">
-          ${sanitizedContent}
-        </div>
+        <div class="document-content">${sanitizedContent}</div>
         ${footerHtml ? `<div class="preview-footer">${footerHtml}</div>` : ''}
       </div>
     </body>
