@@ -134,4 +134,16 @@ describe('W1 PDF fail-closed pagination', () => {
     expect(mocks.pageClose).toHaveBeenCalledOnce();
     expect(mocks.browserClose).toHaveBeenCalledOnce();
   });
+
+  it('closes page and browser when page loading times out before pagination', async () => {
+    mocks.setContent.mockRejectedValueOnce(new Error('synthetic navigation timeout'));
+
+    await expect(generatePDF(
+      '<html><body><div id="a4-paginated-sections"></div></body></html>',
+      options,
+    )).rejects.toThrow('synthetic navigation timeout');
+    expect(mocks.pdf).not.toHaveBeenCalled();
+    expect(mocks.pageClose).toHaveBeenCalledOnce();
+    expect(mocks.browserClose).toHaveBeenCalledOnce();
+  });
 });
