@@ -121,6 +121,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
     };
     case 'officers': return { officers: company.officers.map((officer) => ({
       id: officer.id,
+      contactId: officer.contactId,
       name: officer.name,
       role: officer.role,
       identificationType: officer.identificationType,
@@ -133,6 +134,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
     })) };
     case 'shareholders': return { shareholders: company.shareholders.map((shareholder) => ({
       id: shareholder.id,
+      contactId: shareholder.contactId,
       name: shareholder.name,
       shareholderType: shareholder.shareholderType,
       isNominee: shareholder.isNominee,
@@ -315,7 +317,7 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
       const data = companyProfileSectionSchemas.officers.parse(rawData);
       await tx.companyOfficer.deleteMany({ where: { companyId } });
       for (const officer of data.officers) await tx.companyOfficer.create({ data: {
-        companyId, name: officer.name, role: officer.role,
+        companyId, contactId: officer.contactId ?? null, name: officer.name, role: officer.role,
         identificationType: officer.identificationType, identificationNumber: officer.identificationNumber,
         nationality: officer.nationality, address: officer.address,
         appointmentDate: dateOrNull(officer.appointmentDate), cessationDate: dateOrNull(officer.cessationDate),
@@ -329,7 +331,7 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
       const data = companyProfileSectionSchemas.shareholders.parse(rawData);
       await tx.companyShareholder.deleteMany({ where: { companyId } });
       for (const shareholder of data.shareholders) await tx.companyShareholder.create({ data: {
-        companyId, name: shareholder.name, shareholderType: shareholder.shareholderType,
+        companyId, contactId: shareholder.contactId ?? null, name: shareholder.name, shareholderType: shareholder.shareholderType,
         isNominee: shareholder.isNominee ?? false,
         identificationType: shareholder.identificationType, identificationNumber: shareholder.identificationNumber,
         nationality: shareholder.nationality, placeOfOrigin: shareholder.placeOfOrigin, address: shareholder.address,
