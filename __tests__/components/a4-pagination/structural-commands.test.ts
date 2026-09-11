@@ -161,6 +161,23 @@ describe('A4 S1 structural commands', () => {
     expect(visibleText(deleted.document.internalHtml)).toBe('BeforeAfter');
   });
 
+  it('removes a legacy top-level hard break without deleting adjacent text', () => {
+    const canonical = createA4CommandDocument(
+      '<p data-flow-id="before">Before</p>' +
+        '<div class="page-break" data-break-type="hard"></div>' +
+        '<p data-flow-id="after">After</p>',
+    );
+    const deleted = deleteA4Selection(
+      canonical,
+      caret({ kind: 'children', nodeId: 'after', index: 0, affinity: 'before' }),
+      'backward',
+    );
+    expect(deleted.status).toBe('applied');
+    if (deleted.status !== 'applied') return;
+    expect(deleted.document.internalHtml).not.toContain('page-break');
+    expect(visibleText(deleted.document.internalHtml)).toBe('BeforeAfter');
+  });
+
   it('deletes a complete Unicode grapheme', () => {
     const family = '👨‍👩‍👧‍👦';
     const canonical = createA4CommandDocument(
