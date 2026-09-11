@@ -186,12 +186,37 @@ function boundaryAfter(element: HTMLElement): BoundaryPoint {
   return { node: parent, offset: childIndex(parent, element) + 1 };
 }
 
-function cloneRangeRoot(start: BoundaryPoint, end: BoundaryPoint): HTMLElement {
+function cloneRangeRoot(
+  root: HTMLElement,
+  start: BoundaryPoint,
+  end: BoundaryPoint,
+): HTMLElement {
   const range = document.createRange();
   range.setStart(start.node, start.offset);
   range.setEnd(end.node, end.offset);
+
+  const clonedContents = range.cloneContents();
   const wrapper = document.createElement('div');
-  wrapper.appendChild(range.cloneContents());
+  let commonAncestor: Node | null = range.commonAncestorContainer;
+  if (commonAncestor === root) {
+    wrapper.appendChild(clonedContents);
+    return wrapper;
+  }
+
+  if (commonAncestor.nodeType === Node.TEXT_NODE) {
+    commonAncestor = commonAncestor.parentNode;
+  }
+
+  let nested: Node = clonedContents;
+  while (commonAncestor && commonAncestor !== root) {
+    if (commonAncestor.nodeType === Node.ELEMENT_NODE) {
+      const ancestorClone = commonAncestor.cloneNode(false) as HTMLElement;
+      ancestorClone.appendChild(nested);
+      nested = ancestorClone;
+    }
+    commonAncestor = commonAncestor.parentNode;
+  }
+  wrapper.appendChild(nested);
   return wrapper;
 }
 
@@ -347,9 +372,6 @@ function markSplitSide(
           ? continuation.counterBeforeFirstItem
           : continuation.counterAfterSplitItem;
       const current = list.style.getPropertyValue('--flow-list-start');
-      // A middle fragment is already the continuation after the preceding
-      // break. Do not let the next break's start-side metadata reset it to the
-      // canonical list base and redisplay the same item number.
       if (side === 'end' || current === '') {
         if (counter > 0) {
           list.style.setProperty('--flow-list-start', String(counter));
@@ -464,11 +486,11 @@ export function projectA4SemanticBreaksForProof(
   const fragmentRoots: HTMLElement[] = [];
   let cursor: BoundaryPoint = { node: canonical, offset: 0 };
   contexts.forEach((context) => {
-    fragmentRoots.push(cloneRangeRoot(cursor, context.before));
+    fragmentRoots.push(cloneRangeRoot(canonical, cursor, context.before));
     cursor = context.after;
   });
   fragmentRoots.push(
-    cloneRangeRoot(cursor, {
+    cloneRangeRoot(canonical, cursor, {
       node: canonical,
       offset: canonical.childNodes.length,
     }),
@@ -543,12 +565,6 @@ export function mapProjectedTextOffsetToSource(
   };
 }
 
-/**
- * Mirrors the ordered-list counter rules in a4-page-content-css.ts and returns
- * the concrete marker labels a projected fragment displays. This turns the S0
- * numbering proof into observable values instead of merely asserting that a
- * CSS custom property exists.
- */
 export function projectedOrderedListMarkersForProof(
   fragmentHtml: string,
   listNodeId: string,
