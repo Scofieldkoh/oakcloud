@@ -39,9 +39,9 @@ const generatedDocumentModel = sourceSection(
   'model DocumentDraft {',
 );
 
-describe('A4 editor WORKFLOW W0 persistence and revision proofs', () => {
+describe('A4 editor WORKFLOW W1 persistence and revision proofs', () => {
   it.fails(
-    'W-SAVE-01 takes the canonical editor snapshot at submit time instead of delayed parent form content',
+    'W-SAVE-01 CORE submit-time snapshot remains outside WORKFLOW W1',
     () => {
       expect(templateSaveBlock).not.toContain('content: formData.content');
       expect(templateSaveBlock).not.toContain(
@@ -50,27 +50,25 @@ describe('A4 editor WORKFLOW W0 persistence and revision proofs', () => {
     },
   );
 
-  it.fails(
+  it(
     'W-SAVE-02 exposes expectedRevision and atomically maps it to DocumentTemplate.version',
     () => {
       expect(templateValidationSource).toContain('expectedRevision');
-      expect(templateServiceSource).toMatch(
-        /documentTemplate\.(?:update|updateMany)\(\{[\s\S]*?where:\s*\{[\s\S]*?id:\s*data\.id,[\s\S]*?version:\s*data\.expectedRevision/,
-      );
+      expect(templateServiceSource).toContain('version: data.expectedRevision');
+      expect(templateServiceSource).toContain('version: { increment: 1 }');
     },
   );
 
-  it.fails(
-    'W-SAVE-03 gives TemplatePartial the same expectedRevision compare-and-swap contract over its existing version',
+  it(
+    'W-SAVE-03 gives TemplatePartial the same expectedRevision compare-and-increment contract',
     () => {
       expect(partialServiceSource).toContain('expectedRevision');
-      expect(partialServiceSource).toMatch(
-        /templatePartial\.(?:update|updateMany)\(\{[\s\S]*?where:\s*\{[\s\S]*?id:\s*data\.id,[\s\S]*?version:\s*data\.expectedRevision/,
-      );
+      expect(partialServiceSource).toContain('version: data.expectedRevision');
+      expect(partialServiceSource).toContain('version: { increment: 1 }');
     },
   );
 
-  it.fails(
+  it(
     'W-SAVE-04 reserves a dedicated GeneratedDocument revision instead of reusing templateVersion provenance',
     () => {
       expect(generatedDocumentModel).toMatch(/\brevision\s+Int\s+@default\(0\)/);
@@ -79,7 +77,7 @@ describe('A4 editor WORKFLOW W0 persistence and revision proofs', () => {
   );
 
   it(
-    'W-SAVE-COMPAT-01 existing template and partial versions can back expectedRevision without rewriting old contentJson',
+    'W-SAVE-COMPAT-01 existing template and partial versions back public revision without rewriting old contentJson',
     () => {
       const templateModel = sourceSection(
         prismaSchemaSource,
@@ -92,9 +90,7 @@ describe('A4 editor WORKFLOW W0 persistence and revision proofs', () => {
         /model TemplatePartial \{[\s\S]*?version\s+Int\s+@default\(1\)/,
       );
       expect(templateServiceSource).toContain('version: { increment: 1 }');
-      expect(partialServiceSource).toContain(
-        'if (materialChanged) updateData.version = { increment: 1 };',
-      );
+      expect(partialServiceSource).toContain('version: { increment: 1 }');
       expect(templateValidationSource).toContain(
         'contentJson: contentJsonSchema.optional().nullable()',
       );
@@ -102,9 +98,10 @@ describe('A4 editor WORKFLOW W0 persistence and revision proofs', () => {
   );
 
   it(
-    'W-SAVE-COMPAT-02 keeps GeneratedDocument.templateVersion as generation provenance while an edit revision is added separately',
+    'W-SAVE-COMPAT-02 keeps GeneratedDocument.templateVersion as generation provenance while edit revision is separate',
     () => {
       expect(generatedDocumentModel).toMatch(/\btemplateVersion\s+Int\?/);
+      expect(generatedDocumentModel).toMatch(/\brevision\s+Int\s+@default\(0\)/);
     },
   );
 });
