@@ -100,16 +100,26 @@ function directBreakChildInterval(
   ownerNodeId: string,
   sourceChildCount: number,
 ): A4StructuralChildInterval {
-  const previousBreak = projection.breaks[fragmentIndex - 1]?.position ?? null;
-  const nextBreak = projection.breaks[fragmentIndex]?.position ?? null;
-  const start =
-    previousBreak?.kind === 'children' && previousBreak.nodeId === ownerNodeId
-      ? previousBreak.index + 1
-      : 0;
-  const end =
-    nextBreak?.kind === 'children' && nextBreak.nodeId === ownerNodeId
-      ? nextBreak.index
-      : sourceChildCount;
+  let start = 0;
+  for (let index = fragmentIndex - 1; index >= 0; index -= 1) {
+    const previousBreak = projection.breaks[index]?.position ?? null;
+    if (
+      previousBreak?.kind === 'children' &&
+      previousBreak.nodeId === ownerNodeId
+    ) {
+      start = previousBreak.index + 1;
+      break;
+    }
+  }
+
+  let end = sourceChildCount;
+  for (let index = fragmentIndex; index < projection.breaks.length; index += 1) {
+    const nextBreak = projection.breaks[index]?.position ?? null;
+    if (nextBreak?.kind === 'children' && nextBreak.nodeId === ownerNodeId) {
+      end = nextBreak.index;
+      break;
+    }
+  }
   return { start, end };
 }
 
