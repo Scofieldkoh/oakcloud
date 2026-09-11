@@ -146,6 +146,7 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
     ).join('');
     const canonicalSource = `${longContent}<p>END-OF-DOCUMENT-SENTINEL</p>`;
     const prePaginationHtml = buildRepresentativePdfHtml(canonicalSource);
+    let observedPaginationInput: string | null = null;
 
     expect(prePaginationHtml).toContain('Long pagination paragraph 1');
     expect(prePaginationHtml).toContain('Long pagination paragraph 240');
@@ -154,6 +155,9 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
     pdfMocks.evaluate.mockImplementation(async (_fn: unknown, arg?: unknown) => {
       if (arg === undefined) return undefined;
       if (typeof arg === 'string') return true;
+      if (arg && typeof arg === 'object' && 'canonicalHtml' in arg) {
+        observedPaginationInput = (arg as { canonicalHtml: string }).canonicalHtml;
+      }
       throw new Error('synthetic pagination failure');
     });
 
@@ -176,6 +180,8 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
       },
     })).rejects.toBeInstanceOf(ExportPaginationError);
 
+    expect(observedPaginationInput).toBe(canonicalSource);
+    expect(observedPaginationInput).toContain('END-OF-DOCUMENT-SENTINEL');
     expect(pdfMocks.pdf).not.toHaveBeenCalled();
     expect(pdfMocks.pageClose).toHaveBeenCalledOnce();
     expect(pdfMocks.browserClose).toHaveBeenCalledOnce();
