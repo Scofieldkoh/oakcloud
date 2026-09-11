@@ -1,0 +1,179 @@
+name: A4Editor W1 re-review validation
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-workflow-w1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a4-w1-rereview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  w1-rereview:
+    name: W1 focused Node 24, PostgreSQL and PDF proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: w1_test
+          POSTGRES_PASSWORD: w1-test-only
+          POSTGRES_DB: w1_test
+        ports:
+          - 55440:5432
+        options: >-
+          --health-cmd "pg_isready -U w1_test -d w1_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://w1_test:w1-test-only@127.0.0.1:55440/w1_test
+      TEST_DATABASE_URL: postgresql://w1_test:w1-test-only@127.0.0.1:55440/w1_test
+      JWT_SECRET: ci-only-w1-validation-secret-that-is-not-used-at-runtime
+      ENCRYPTION_KEY: ci-only-w1-validation-encryption-key
+
+    steps:
+      - name: Check out W1 branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Node 24
+        run: node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1)"
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations to isolated W1 database
+        run: npx prisma migrate deploy
+
+      - name: Regenerate pagination bundle under CORE integration lease
+        run: npm run generate:pagination-bundle
+
+      - name: Verify generated diff hygiene
+        run: git diff --check
+
+      - name: Run W1 focused Vitest suite
+        run: >-
+          npx vitest run
+          tests/lib/a4-editor-capabilities-w1.test.ts
+          tests/lib/a4-editor-producer-integration-w1.test.ts
+          tests/lib/a4-editor-server-reader-w1.test.ts
+          tests/services/document-export-w1.test.ts
+          tests/services/document-template-editor-save.test.ts
+          tests/services/document-template-editor-fields.test.ts
+          tests/services/document-template-editor-drafts.test.ts
+          tests/document-output/document-template-editor-output.test.ts
+
+      - name: Run W1 disposable PostgreSQL suites
+        run: >-
+          npx vitest run
+          __tests__/integration/a4-editor-workflow-w1.postgres.test.ts
+          __tests__/integration/document-generation-batch.postgres.test.ts
+          --maxWorkers=1
+
+      - name: Run TypeScript build-mode validation
+        run: npx tsc -b
+
+      - name: Install isolated Chromium for real PDF proof
+        run: |
+          npx playwright install --with-deps chromium
+          echo "CHROME_PATH=$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")" >> "$GITHUB_ENV"
+
+      - name: Run real PDF byte, page and sentinel proof
+        run: |
+          mkdir -p .tmp
+          cat > .tmp/a4-w1-real-pdf-proof.ts <<'EOF'
+          import pdfParse from 'pdf-parse';
+          import { generatePDF } from '../src/services/document-export.service';
+
+          async function main() {
+            const first = 'FIRST-W1-REAL-PDF-SENTINEL';
+            const last = 'LAST-W1-REAL-PDF-SENTINEL';
+            const filler = Array.from(
+              { length: 90 },
+              (_, i) => `<p>W1 synthetic filler paragraph ${i + 1}: pagination validation only.</p>`,
+            ).join('');
+            const canonicalHtml = [
+              `<h1>${first}</h1>`,
+              '<ol start="5"><li><p>Number five</p><ul><li>Nested item</li></ul></li><li>Number six</li></ol>',
+              '<blockquote>W1 synthetic quotation</blockquote>',
+              '<table><caption>W1 synthetic caption</caption><tbody><tr><td>Body cell</td></tr></tbody><tfoot><tr><td>Footer cell</td></tr></tfoot></table>',
+              '<p>Field: <span data-field-id="w1-proof-field" contenteditable="false">Synthetic field value</span></p>',
+              filler,
+              '<p>Before explicit break<span data-a4-break="page"></span>After explicit break</p>',
+              '<p>Legacy break follows</p><div class="page-break" data-break-type="hard"></div><p>After legacy break</p>',
+              `<p>${last}</p>`,
+            ].join('');
+
+            const shell = '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="a4-paginated-sections"><section class="print-page"><div class="content"></div></section></div></body></html>';
+            const buffer = await generatePDF(shell, {
+              format: 'A4',
+              orientation: 'portrait',
+              margins: { top: 20, right: 20, bottom: 20, left: 20 },
+              headerHtml: '',
+              footerHtml: '',
+              pagination: {
+                canonicalHtml,
+                layout: {
+                  contentWidthPx: 642,
+                  contentHeightPx: 971,
+                  fontFamily: 'Arial, sans-serif',
+                  fontSize: '12pt',
+                  lineHeight: '1.4',
+                  paragraphSpacing: '0.5em',
+                },
+              },
+            });
+
+            if (buffer.length < 1000) throw new Error(`PDF buffer unexpectedly small: ${buffer.length}`);
+            const parsed = await pdfParse(buffer);
+            if (parsed.numpages < 2) throw new Error(`Expected at least 2 pages, received ${parsed.numpages}`);
+            const firstIndex = parsed.text.indexOf(first);
+            const lastIndex = parsed.text.indexOf(last);
+            if (firstIndex < 0) throw new Error('First PDF sentinel missing');
+            if (lastIndex < 0) throw new Error('Last PDF sentinel missing');
+            if (lastIndex <= firstIndex) throw new Error('PDF sentinel text order is incorrect');
+            for (const expected of [
+              'Number five',
+              'Nested item',
+              'W1 synthetic quotation',
+              'W1 synthetic caption',
+              'Footer cell',
+              'Synthetic field value',
+              'After explicit break',
+              'After legacy break',
+            ]) {
+              if (!parsed.text.includes(expected)) throw new Error(`PDF text missing: ${expected}`);
+            }
+            console.log(JSON.stringify({ bytes: buffer.length, pages: parsed.numpages, firstIndex, lastIndex }));
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          EOF
+          npx tsx .tmp/a4-w1-real-pdf-proof.ts
+
+      - name: Upload regenerated bundle as CORE evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: a4-editor-w1-rereview-bundle
+          path: src/components/documents/a4-pagination/pagination-bundle.generated.ts
+          if-no-files-found: error
+          retention-days: 7
