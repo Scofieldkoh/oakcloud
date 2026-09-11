@@ -62,19 +62,19 @@ export function readA4BreakDocument(input: string): A4BreakReaderResult {
 /**
  * Production C03/C04 tree-aware partition. The implementation is the S0-proven
  * visitor promoted behind a production name; proof aliases remain for G0/S0
- * regression compatibility.
+ * regression compatibility. Runtime identity is hydrated before partitioning
+ * so zero-text nodes (br, empty cells, atomics) participate in C02 identity.
  */
 export function partitionA4SemanticBreaks(
   input: string | CanonicalEditorDocument,
   source: A4ProjectionSourceRevision,
 ): A4BreakProjectionProof {
-  const html = typeof input === 'string' ? input : input.internalHtml;
-  return projectA4SemanticBreaksForProof(html, source);
+  const canonical =
+    typeof input === 'string' ? createCanonicalEditorDocument(input) : input;
+  return projectA4SemanticBreaksForProof(canonical.internalHtml, source);
 }
 
-/**
- * Maps a projected text point back to its revision-qualified canonical source.
- */
+/** Maps a projected text point back to its revision-qualified canonical source. */
 export function mapA4ProjectedTextPoint(
   positionMap: A4ProjectionPositionMap,
   point: A4ProjectedTextPoint,
