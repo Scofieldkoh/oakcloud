@@ -1,13 +1,11 @@
 /**
- * F0 contract proof for C06. These definitions describe the document semantics
- * that browser/server sanitization adapters must converge on after G0. They are
- * deliberately not wired to DOMPurify in F0, so this packet changes no
- * sanitization, escaping, persistence or output behavior.
+ * F1 production boundary for the frozen C06 content policy. It defines the
+ * semantics sanitization adapters must share without activating F2 ordinary
+ * field escaping.
  */
 
 export const A4_CONTENT_POLICY_VERSION = 1 as const;
 
-/** Semantic document elements that must survive a compatible no-change pass. */
 export const A4_CANONICAL_TAGS = Object.freeze([
   'p', 'br', 'div', 'span',
   'strong', 'b', 'em', 'i', 'u', 's', 'strike',
@@ -16,14 +14,9 @@ export const A4_CANONICAL_TAGS = Object.freeze([
   'a', 'hr',
   'table', 'caption', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
   'sup', 'sub',
-  // Legacy image content is preserve-only until its trust/URL policy is frozen.
   'img',
 ] as const);
 
-/**
- * Canonical attributes with durable document meaning. Runtime flow metadata is
- * intentionally kept out of this set.
- */
 export const A4_CANONICAL_ATTRIBUTES = Object.freeze([
   'href', 'target', 'rel',
   'style', 'class', 'id',
@@ -35,7 +28,6 @@ export const A4_CANONICAL_ATTRIBUTES = Object.freeze([
   'data-template-each',
 ] as const);
 
-/** Projection-only attributes that must never become trusted persisted input. */
 export const A4_EDITOR_DECORATION_ATTRIBUTES = Object.freeze([
   'data-flow-id',
   'data-flow-continuation',
@@ -44,28 +36,58 @@ export const A4_EDITOR_DECORATION_ATTRIBUTES = Object.freeze([
   'data-flow-keep-together',
 ] as const);
 
-/** Attributes supplied by the SEMANTICS-owned break contract, not redefined here. */
 export const A4_STRUCTURAL_ATTRIBUTES = Object.freeze([
   'data-break-type',
   'data-a4-break',
   'data-template-each',
 ] as const);
 
+export const A4_SEMANTIC_PAGE_BREAK_HTML = '<span data-a4-break="page"></span>' as const;
 export const A4_LEGACY_PRESERVE_ONLY_TAGS = Object.freeze(['img'] as const);
-
 export const A4_ALWAYS_REJECTED_TAGS = Object.freeze([
   'script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select',
 ] as const);
+
+const CANONICAL_TAG_SET = new Set<string>(A4_CANONICAL_TAGS);
+const CANONICAL_ATTRIBUTE_SET = new Set<string>(A4_CANONICAL_ATTRIBUTES);
+const EDITOR_DECORATION_ATTRIBUTE_SET = new Set<string>(A4_EDITOR_DECORATION_ATTRIBUTES);
+const ALWAYS_REJECTED_TAG_SET = new Set<string>(A4_ALWAYS_REJECTED_TAGS);
+
+export function isA4CanonicalTag(tag: string): boolean {
+  return CANONICAL_TAG_SET.has(tag.toLowerCase());
+}
+
+export function isA4AlwaysRejectedTag(tag: string): boolean {
+  return ALWAYS_REJECTED_TAG_SET.has(tag.toLowerCase());
+}
+
+export function isA4CanonicalAttribute(attribute: string): boolean {
+  return CANONICAL_ATTRIBUTE_SET.has(attribute.toLowerCase());
+}
+
+export function isA4ProjectionOnlyAttribute(attribute: string): boolean {
+  const normalized = attribute.toLowerCase();
+  return EDITOR_DECORATION_ATTRIBUTE_SET.has(normalized) || normalized.startsWith('data-flow-');
+}
+
+/** Shared data for browser/server sanitizer adapters; callers receive mutable copies. */
+export function getA4SanitizerPolicy(): {
+  allowedTags: string[];
+  allowedAttributes: string[];
+  rejectedTags: string[];
+} {
+  return {
+    allowedTags: [...A4_CANONICAL_TAGS],
+    allowedAttributes: [...A4_CANONICAL_ATTRIBUTES],
+    rejectedTags: [...A4_ALWAYS_REJECTED_TAGS],
+  };
+}
 
 export type TrustedRichOriginName =
   | 'template-partial'
   | 'canonical-builder'
   | 'service-composition';
 
-/**
- * Private brand plus canonical singleton identity makes this an in-process C06
- * capability, not a JSON/client/token-declarable string flag.
- */
 const TRUSTED_RICH_ORIGIN_BRAND: unique symbol = Symbol('c06-trusted-rich-origin');
 
 export interface TrustedRichOrigin {
@@ -74,13 +96,9 @@ export interface TrustedRichOrigin {
 }
 
 function createTrustedRichOrigin(name: TrustedRichOriginName): TrustedRichOrigin {
-  return Object.freeze({
-    name,
-    [TRUSTED_RICH_ORIGIN_BRAND]: true as const,
-  });
+  return Object.freeze({ name, [TRUSTED_RICH_ORIGIN_BRAND]: true as const });
 }
 
-/** The only canonical C06 capabilities that may mint a trusted-rich fragment. */
 export const C06_TRUSTED_RICH_ORIGINS = Object.freeze({
   templatePartial: createTrustedRichOrigin('template-partial'),
   canonicalBuilder: createTrustedRichOrigin('canonical-builder'),
@@ -112,11 +130,6 @@ export type ResolvedContentFragment =
   | TrustedRichContentFragment
   | { kind: 'legacy-rich'; html: string; compatibilityBinding: string };
 
-/**
- * Declarative field input is always ordinary text at this trust boundary.
- * `renderMode`, pasted/client metadata and token decoration are retained inputs
- * only for compatibility/diagnostics; none can mint a TrustedRichOrigin.
- */
 export interface DeclarativeFieldContentInput {
   value: string;
   multiline?: boolean;
@@ -135,10 +148,6 @@ export function createDeclarativeFieldContentFragment(
   };
 }
 
-/**
- * Runtime trusted HTML can be minted only with one of the canonical singleton
- * capabilities above. A JSON object that merely names an origin is rejected.
- */
 export function createTrustedRichContentFragment(input: {
   html: string;
   origin: TrustedRichOrigin;
@@ -146,11 +155,7 @@ export function createTrustedRichContentFragment(input: {
   if (!isCanonicalTrustedRichOrigin(input.origin)) {
     throw new TypeError('Trusted rich content requires a canonical C06 origin capability');
   }
-  return {
-    kind: 'trusted-rich',
-    html: input.html,
-    origin: input.origin,
-  };
+  return { kind: 'trusted-rich', html: input.html, origin: input.origin };
 }
 
 export interface A4ContentPolicyContract {
@@ -161,6 +166,7 @@ export interface A4ContentPolicyContract {
   structuralAttributes: typeof A4_STRUCTURAL_ATTRIBUTES;
   legacyPreserveOnlyTags: typeof A4_LEGACY_PRESERVE_ONLY_TAGS;
   alwaysRejectedTags: typeof A4_ALWAYS_REJECTED_TAGS;
+  semanticPageBreakHtml: typeof A4_SEMANTIC_PAGE_BREAK_HTML;
   plainTextResolution: 'escape-at-interpolation-boundary';
   multilineResolution: 'single-canonical-newline-conversion';
   unknownLegacyRichValue: 'preserve-source-and-block-conversion';
@@ -176,6 +182,7 @@ export const A4_CONTENT_POLICY_CONTRACT: A4ContentPolicyContract = Object.freeze
   structuralAttributes: A4_STRUCTURAL_ATTRIBUTES,
   legacyPreserveOnlyTags: A4_LEGACY_PRESERVE_ONLY_TAGS,
   alwaysRejectedTags: A4_ALWAYS_REJECTED_TAGS,
+  semanticPageBreakHtml: A4_SEMANTIC_PAGE_BREAK_HTML,
   plainTextResolution: 'escape-at-interpolation-boundary',
   multilineResolution: 'single-canonical-newline-conversion',
   unknownLegacyRichValue: 'preserve-source-and-block-conversion',
