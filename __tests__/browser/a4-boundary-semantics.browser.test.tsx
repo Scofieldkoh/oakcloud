@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { paginateFlowHtml, type HtmlMeasurer } from '@/components/documents/a4-pagination/engine';
+import { hydrateFlowHtml, reassemblePageFragments, stripFlowMetadata } from '@/components/documents/a4-pagination/model';
 import {
   captureA4Position,
   captureA4SelectionFromDomPoints,
@@ -19,6 +21,43 @@ function rootFor(html: string): HTMLElement {
 }
 
 describe('A4 S0 structural semantics proof', () => {
+  it('keeps one logical long list item through ordinary soft pagination', () => {
+    const visibleText = (html: string): string => {
+      const root = rootFor(html);
+      return root.textContent ?? '';
+    };
+    const characterMeasurer: HtmlMeasurer = {
+      measure: (html) => visibleText(html).length,
+    };
+    const canonical = hydrateFlowHtml(
+      '<ol start="5"><li><p>alpha beta gamma delta epsilon zeta eta theta</p></li></ol>',
+    );
+    const source = rootFor(canonical);
+    const itemId = source.querySelector<HTMLElement>('li')!.dataset.flowId!;
+    const pages = paginateFlowHtml(canonical, characterMeasurer, 18);
+
+    expect(pages.length).toBeGreaterThan(1);
+    const projectedIds = pages.flatMap((page) =>
+      Array.from(rootFor(page.content).querySelectorAll<HTMLElement>('li'))
+        .map((item) => item.dataset.flowId)
+        .filter(Boolean),
+    );
+    expect(projectedIds.filter((id) => id === itemId).length).toBeGreaterThan(1);
+    expect(pages.slice(1).some((page) =>
+      page.content.includes('data-flow-continuation-item="true"'),
+    )).toBe(true);
+
+    const reassembled = rootFor(
+      stripFlowMetadata(reassemblePageFragments(pages)),
+    );
+    expect(reassembled.querySelectorAll('ol')).toHaveLength(1);
+    expect(reassembled.querySelectorAll('ol > li')).toHaveLength(1);
+    expect(reassembled.querySelector('ol')?.getAttribute('start')).toBe('5');
+    expect(reassembled.textContent).toBe(
+      'alpha beta gamma delta epsilon zeta eta theta',
+    );
+  });
+
   it('distinguishes zero-text structural positions and preserves reverse selection direction', () => {
     const root = rootFor(
       [
