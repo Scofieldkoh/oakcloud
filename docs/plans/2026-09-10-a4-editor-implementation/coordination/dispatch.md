@@ -2,12 +2,17 @@
 
 Coordinator: CORE
 Shared checkout: `C:\Users\Scofieldkoh\Documents\oakcloud`
-Integration branch (remote preparation): `codex/a4-editor-core-c0`
+Integration branch (remote preparation): `main`
 Starting baseline: `63aa75b6170766a3e3d1728feb5e5417f5632f20`
-Contract: proposed v1; **G0 NOT PASSED**
+Contract: **v1 frozen at G0**; see `coordination/g0.md`
+G0 integration base before freeze-record commit: `f5a103c85399a3e20d624140a963e19a79ced55a`
+G0 freeze-record commit: `475e54ea4ea4a7218bc0565fb337298c04190afa`
 Deployment: not authorized
+Stage 1: **NOT DISPATCHED**
 
 ## Shared resource reservations — Wave 0
+
+Wave 0 is complete and integrated. Historical reservations below remain the record of the completed assignments; they do not authorize Stage 1 work.
 
 - Git branch/index/commits, dependency installation, package/config changes, shared generated outputs: **CORE only**.
 - Shared full build / `.next` output: **CORE only; workers must not run `next build` in the shared checkout during Wave 0**.
@@ -21,70 +26,78 @@ Deployment: not authorized
 
 Dispatch ID: CORE-C0-20260911-01
 Role and packet: CORE / C0 — contract and input-routing proof
-State: DISPATCHED
+State: **INTEGRATED**
 Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
 Baseline commit: `63aa75b6170766a3e3d1728feb5e5417f5632f20`
-Contract version and status: proposed v1; G0 open
-Integrated prerequisites and published consumer APIs: planning documents only; no production C01/C02/C04 implementation frozen yet
-Exclusive writable production/test/document paths: `src/components/documents/a4-page-editor.tsx`, `src/components/documents/a4-editor-toolbar.tsx`, CORE-owned session/native-input/history modules including `src/components/documents/a4-pagination/editor-session.ts`, `__tests__/components/a4-page-editor.test.tsx`, `__tests__/components/a4-editor-toolbar.test.tsx`, `__tests__/components/a4-editor-session.test.ts`, `__tests__/browser/a4-page-editor.browser.test.tsx`, `__tests__/browser/a4-input-sequences.browser.test.tsx`, this `coordination/dispatch.md`, `coordination/core.md`, implementation README/contracts/gate documentation
-Allowed new files within that scope: CORE session/native-input/history proof modules and the two named C0 test files; coordination files
-Reserved validation resources and when they may be used: port 3410; browser/cache `.tmp/a4-c0-core`; shared build only when all other owners are not running source-dependent validation
-Required acceptance evidence: input mutation inventory; rapid Enter->typing regression; A->B->Undo regression; cross-page Enter regression; executable revision bridge proof for delayed projection, rapid delete, stale-pointer mapping/rejection and composition; exact test results or explicit environment block
-Allowed independent work if a producer is not yet available: C01/C04 proof types and compatibility adapter design only; do not implement S/F/W behavior
+Merged PR: #30
+Merge commit: `80056fb7ab6e410ef2d2ddc17a830b068d263671`
+Contract version and status: v1 frozen at G0
 Handoff path: `docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md`
-Completion boundary and next dependency: C0 evidence ready for G0 review; G0 remains blocked on S0/F0/W0 handoffs
+Completion boundary: C0 integrated; no C1 dispatch in this record.
 
 ## SEMANTICS-S0-20260911-01
 
 Dispatch ID: SEMANTICS-S0-20260911-01
 Role and packet: SEMANTICS / S0 — structural positions and nested break representation proof
-State: DISPATCHED
-Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+State: **INTEGRATED**
 Baseline commit: `63aa75b6170766a3e3d1728feb5e5417f5632f20`
-Contract version and status: proposed v1; G0 open
-Integrated prerequisites and published consumer APIs: contracts C02/C03/C04 are proposals only; CORE C0 proof may be read but is not frozen
-Exclusive writable production/test/document paths: `src/components/documents/a4-pagination/model.ts`, `selection.ts`, `document-actions.ts`, `formatting.ts`, `engine.ts`, `measure.ts`, `layout.ts`, `a4-page-layout.ts`, `a4-page-content-css.ts`, `a4-font-faces.ts`, `src/components/documents/a4-print-styles.ts`, `src/lib/document-page-breaks.ts`; existing S-owned pagination/break tests; new `__tests__/browser/a4-boundary-semantics.browser.test.tsx`; `coordination/semantics.md`
-Allowed new files within that scope: S-only codec/projection/position proof helpers and fixtures inside the listed ownership; the named boundary browser test
-Reserved validation resources and when they may be used: port 3411; browser/cache `.tmp/a4-s0-semantics`; no shared build, package install, Prisma generation or pagination-bundle generation
-Required acceptance evidence: old/v2 nested-break codec proof; one logical list item through projection and break deletion; after-`<br>`/empty structural position distinctions; reverse selection; old/new serialization compatibility; explicit table limitation
-Allowed independent work if a producer is not yet available: pure codec/position fixtures and tests; do not edit CORE/W/F files
+Merged PR: #34
+Merge commit: `f0238a954e7124819459266e19523419071d462a`
+Contract version and status: v1 frozen at G0
+Published interfaces: C02/C03/C04 structural positions, transaction result, nested break codec and revision-associated projection mapping.
 Handoff path: `docs/plans/2026-09-10-a4-editor-implementation/coordination/semantics.md`
-Completion boundary and next dependency: READY FOR INTEGRATION S0 handoff; wait for CORE G0 decision before S1
+Completion boundary: S0 integrated; S1 remains undispatched.
 
 ## FIELDS-F0-20260911-01
 
 Dispatch ID: FIELDS-F0-20260911-01
 Role and packet: FIELDS / F0 — grammar, legacy and trust-boundary inventory
-State: DISPATCHED
-Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+State: **INTEGRATED**
 Baseline commit: `63aa75b6170766a3e3d1728feb5e5417f5632f20`
-Contract version and status: proposed v1; G0 open
-Integrated prerequisites and published consumer APIs: C05/C06 proposals only; no protected-field or escaping writer enabled
-Exclusive writable production/test/document paths: `src/components/documents/template-editor/*` except route wrappers; `src/types/placeholders.ts`; `src/lib/template-placeholder-storage.ts`, `template-analysis.ts`, `placeholder-resolver.ts`, `document-generation-master-fields.ts`; proposed F-owned parser/registry/content-policy modules; existing F-owned component/lib tests and new grammar/scoped-field fixtures; `coordination/fields.md`
-Allowed new files within that scope: F-only parser/registry/policy proof modules and synthetic fixtures inside the listed ownership
-Reserved validation resources and when they may be used: port 3412; browser/cache `.tmp/a4-f0-fields`; no shared build, package install, Prisma generation or route/service edits
-Required acceptance evidence: supported/malformed grammar matrix; stored-type and unknown-metadata round trips; plain-text vs trusted-rich inventory; scoped collision proof; exact C05/C06 interface proposal and integration requests
-Allowed independent work if a producer is not yet available: parser/adapter fixtures and policy inventory only; server/API preservation requests go in handoff, not cross-owner edits
+Merged PR: #32
+Merge commit: `63028fe2f3479d469b7499e314aa0c1bbbbd63d9`
+Contract version and status: v1 frozen at G0
+Published interfaces: C05 scoped identity/lossless definitions/grammar and C06 content/trust policy.
 Handoff path: `docs/plans/2026-09-10-a4-editor-implementation/coordination/fields.md`
-Completion boundary and next dependency: READY FOR INTEGRATION F0 handoff; wait for CORE G0 decision before F1
+Completion boundary: F0 integrated; F1 remains undispatched.
 
 ## WORKFLOW-W0-20260911-01
 
 Dispatch ID: WORKFLOW-W0-20260911-01
 Role and packet: WORKFLOW / W0 — writer, reader and deployment inventory
-State: DISPATCHED
-Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+State: **INTEGRATED**
 Baseline commit: `63aa75b6170766a3e3d1728feb5e5417f5632f20`
-Contract version and status: proposed v1; G0 open
-Integrated prerequisites and published consumer APIs: C07/C08/C09 proposals only; no migration applied and no new writer enabled
-Exclusive writable production/test/document paths: template/partial and generated-document route files; `src/components/documents/generation-batch/*`; document template/partial/generator/export services and document-generation-batch service directory; related APIs/validation schemas; Prisma forward migration source; server font adapter; pagination bundle build source/generated bundle **source changes may be authored but generation is reserved to CORE**; W-owned route/batch/service/API/persistence/output tests; `coordination/workflow.md`
-Allowed new files within that scope: W-only synthetic writer/reader/output fixtures and proposed forward migration files; do not regenerate shared artifacts in Wave 0
-Reserved validation resources and when they may be used: port 3413; browser/cache `.tmp/a4-w0-workflow`; only explicitly disposable synthetic DB/schema; generation commands must be handed to CORE rather than run in shared checkout
-Required acceptance evidence: complete writer/consumer/reader matrix; capability design; expectedRevision/additive response and GeneratedDocument revision migration design; failing delayed-save/conflict/layout-loss fixtures; real synthetic two-page PDF/HTML baseline if environment permits; rollback notes
-Allowed independent work if a producer is not yet available: inventory, failing tests, capability/migration design; do not recreate S/F/CORE contracts
+Merged PR: #33
+Merge commit: `f5a103c85399a3e20d624140a963e19a79ced55a`
+Contract version and status: v1 frozen at G0
+Published interfaces/design: C07 `expectedRevision` mapping, GeneratedDocument dedicated revision design, C08 save/draft/preview semantics, C09 output compatibility, and C10 capability negotiation design.
 Handoff path: `docs/plans/2026-09-10-a4-editor-implementation/coordination/workflow.md`
-Completion boundary and next dependency: READY FOR INTEGRATION W0 handoff; wait for CORE G0 decision before W1
+Completion boundary: W0 integrated; W1 remains undispatched.
+
+## G0 contract freeze
+
+G0 passed after CORE review of the actual merged C0/S0/F0/W0 evidence. The authoritative freeze record is:
+
+`docs/plans/2026-09-10-a4-editor-implementation/coordination/g0.md`
+
+Frozen high-level decisions include:
+
+- CORE owns the only local editor revision authority and canonical session snapshot.
+- SEMANTICS structural positions use text/children positions plus before/after affinity.
+- Canonical nested page break is `<span data-a4-break="page"></span>`; legacy top-level hard breaks remain readable.
+- Projection maps copy CORE `sessionKey`/`documentRevision`; they do not create another revision authority.
+- Field identity is stable and owner-scoped; lossless definitions preserve legacy/unknown metadata.
+- Client/stored field metadata cannot grant trusted-rich authority.
+- Public persistence precondition is `expectedRevision`; Template/Partial map to existing `version`, GeneratedDocument gets a dedicated future `revision` while `templateVersion` remains provenance.
+- Capability negotiation uses reader format level, allowed writer format level and revision-precondition mode, with conservative legacy fallback.
+- No production v2 writer, strict revision enforcement, changed escaping behavior, migration, deployment or Stage 1 implementation was enabled by G0.
+
+## Validation carried forward
+
+Final Wave-0 PR heads passed the repository's Node-24 compatibility workflow. Worker environments did not execute every focused packet-specific Vitest command or actual Puppeteer PDF-byte/page-image validation. Those checks remain explicit later integration/output evidence and must not be claimed as passes merely because G0 is frozen.
 
 ## Integration freeze
 
-Wave 0 may run only under the leases above. G0 cannot be marked passed until all four packet handoffs are present and CORE has reviewed the actual changes and evidence. No production v2 writer, strict revision enforcement, changed escaping behavior, deployment or merge-to-main is authorized by this dispatch.
+**Wave 0 is complete. G0 PASSED.**
+
+This file does not dispatch C1, S1, F1 or W1. A fresh Stage-1 dispatch must start from the G0 frozen common base recorded in `coordination/g0.md` and preserve the ownership/contracts frozen there.
