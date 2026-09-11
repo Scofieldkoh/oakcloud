@@ -1,9 +1,35 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
 import { getA4SanitizerPolicy } from '@/lib/a4-content-policy';
-import { buildPDFHtml, buildPaginatedSectionsHtml } from '@/services/document-export.service';
+
+const pdfMocks = vi.hoisted(() => ({
+  launch: vi.fn(),
+  newPage: vi.fn(),
+  setContent: vi.fn(),
+  addStyleTag: vi.fn(),
+  addScriptTag: vi.fn(),
+  evaluate: vi.fn(),
+  pdf: vi.fn(),
+  pageClose: vi.fn(),
+  browserClose: vi.fn(),
+}));
+
+vi.mock('@/lib/chrome-executable', () => ({
+  findChromePath: vi.fn(async () => '/synthetic/chrome'),
+}));
+
+vi.mock('puppeteer-core', () => ({
+  default: { launch: pdfMocks.launch },
+}));
+
+import {
+  ExportPaginationError,
+  buildPDFHtml,
+  buildPaginatedSectionsHtml,
+  generatePDF,
+} from '@/services/document-export.service';
 
 const readRepoFile = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const exportServiceSource = readRepoFile('src/services/document-export.service.ts');
@@ -40,6 +66,37 @@ const buildRepresentativePdfHtml = (content: string) => buildPDFHtml(
   { top: 20, right: 20, bottom: 20, left: 20 },
 );
 
+beforeEach(() => {
+  vi.clearAllMocks();
+  const page = {
+    setDefaultTimeout: vi.fn(),
+    setDefaultNavigationTimeout: vi.fn(),
+    setContent: pdfMocks.setContent,
+    addStyleTag: pdfMocks.addStyleTag,
+    addScriptTag: pdfMocks.addScriptTag,
+    evaluate: pdfMocks.evaluate,
+    pdf: pdfMocks.pdf,
+    close: pdfMocks.pageClose,
+  };
+  const browser = { newPage: pdfMocks.newPage, close: pdfMocks.browserClose };
+  pdfMocks.newPage.mockResolvedValue(page);
+  pdfMocks.launch.mockResolvedValue(browser);
+  pdfMocks.setContent.mockResolvedValue(undefined);
+  pdfMocks.addStyleTag.mockResolvedValue(undefined);
+  pdfMocks.addScriptTag.mockResolvedValue(undefined);
+  pdfMocks.pdf.mockResolvedValue(new Uint8Array([37, 80, 68, 70]));
+  pdfMocks.pageClose.mockResolvedValue(undefined);
+  pdfMocks.browserClose.mockResolvedValue(undefined);
+  pdfMocks.evaluate.mockImplementation(async (_fn: unknown, arg?: unknown) => {
+    if (arg === undefined) return undefined;
+    if (typeof arg === 'string') return true;
+    return [
+      { content: '<p>FIRST-W1-SENTINEL</p>', hardBreakBefore: false },
+      { content: '<p>LAST-W1-SENTINEL</p>', hardBreakBefore: false },
+    ];
+  });
+});
+
 describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () => {
   it('W-OUTPUT-FIXTURE-00 defines the complete synthetic multi-page candidate and retains ordered sentinels in PDF HTML', () => {
     expect(representativeRichContent).toContain('<h1>');
@@ -66,6 +123,7 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
     expect(html).toContain('<caption>');
     expect(html).toContain('<tfoot>');
     expect(html).toContain('start="5"');
+    expect(html).toContain('Synthetic field/reference: REF-W0-001');
   });
 
   it('W-OUTPUT-02 consumes the single F1 C06 sanitizer policy instead of a W-owned allowlist', () => {
@@ -75,15 +133,53 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
     expect(policy.allowedAttributes).toContain('data-a4-break');
     expect(exportServiceSource).toContain('getA4SanitizerPolicy');
     expect(exportServiceSource).toContain('A4_EDITOR_DECORATION_ATTRIBUTES');
+    expect(exportServiceSource).toContain('ALLOW_DATA_ATTR: false');
+    expect(exportServiceSource).toContain('ALLOW_ARIA_ATTR: false');
     expect(exportServiceSource).toContain('serializeA4CanonicalBreakDocument');
     expect(exportServiceSource).toContain('readA4StoredDocument');
   });
 
-  it('W-OUTPUT-03 retains the full source candidate in pre-pagination HTML without fixed-height clipping', () => {
-    const longContent = Array.from({ length: 240 }, (_, index) => `<p>Long pagination paragraph ${index + 1}</p>`).join('');
-    const html = buildRepresentativePdfHtml(`${longContent}<p>END-OF-DOCUMENT-SENTINEL</p>`);
-    expect(html).toContain('END-OF-DOCUMENT-SENTINEL');
-    expect(html).not.toContain('overflow: hidden;');
+  it('W-OUTPUT-03 retains the tall canonical source and fails closed before PDF creation when pagination fails', async () => {
+    const longContent = Array.from(
+      { length: 240 },
+      (_, index) => `<p>Long pagination paragraph ${index + 1}</p>`,
+    ).join('');
+    const canonicalSource = `${longContent}<p>END-OF-DOCUMENT-SENTINEL</p>`;
+    const prePaginationHtml = buildRepresentativePdfHtml(canonicalSource);
+
+    expect(prePaginationHtml).toContain('Long pagination paragraph 1');
+    expect(prePaginationHtml).toContain('Long pagination paragraph 240');
+    expect(prePaginationHtml).toContain('END-OF-DOCUMENT-SENTINEL');
+
+    pdfMocks.evaluate.mockImplementation(async (_fn: unknown, arg?: unknown) => {
+      if (arg === undefined) return undefined;
+      if (typeof arg === 'string') return true;
+      throw new Error('synthetic pagination failure');
+    });
+
+    await expect(generatePDF(prePaginationHtml, {
+      format: 'A4',
+      orientation: 'portrait',
+      margins: { top: 20, right: 20, bottom: 20, left: 20 },
+      headerHtml: '',
+      footerHtml: '',
+      pagination: {
+        canonicalHtml: canonicalSource,
+        layout: {
+          contentWidthPx: 640,
+          contentHeightPx: 900,
+          fontFamily: 'Arial',
+          fontSize: '12pt',
+          lineHeight: '1.4',
+          paragraphSpacing: '0.5em',
+        },
+      },
+    })).rejects.toBeInstanceOf(ExportPaginationError);
+
+    expect(pdfMocks.pdf).not.toHaveBeenCalled();
+    expect(pdfMocks.pageClose).toHaveBeenCalledOnce();
+    expect(pdfMocks.browserClose).toHaveBeenCalledOnce();
+    expect(canonicalSource).toContain('END-OF-DOCUMENT-SENTINEL');
   });
 
   it('W-OUTPUT-04 makes pagination failure explicit rather than warning and producing a clipped PDF', () => {
@@ -92,14 +188,60 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
     expect(exportServiceSource).not.toContain('falling back to natural page flow');
   });
 
-  it('W-OUTPUT-05 preserves canonical structural attributes while stripping unsupported authored authority', () => {
-    const content = `<p class="outer" style="text-align:right">Before<span class="manual-marker" style="break-before:page" data-source="fixture" data-a4-break="page"></span>After</p>${LEGACY_BREAK}`;
+  it('W-OUTPUT-05 makes the F1 canonical attribute policy authoritative', () => {
+    const content = [
+      '<blockquote><p>Quoted governance text</p></blockquote>',
+      '<table><caption>Approval matrix</caption><tbody><tr><td>Body</td></tr></tbody><tfoot><tr><td>Footer</td></tr></tfoot></table>',
+      '<ol start="5"><li>Fifth resolution</li></ol>',
+      '<p><span data-field-reference="field-canonical-001">Synthetic field/reference: REF-W0-001</span></p>',
+      '<p class="outer" style="text-align:right">',
+      'Before',
+      '<span class="manual-marker" style="break-before:page" data-source="fixture" data-whatever="nope" data-trusted="false" aria-label="client-authority" onclick="alert(1)" data-flow-id="canonical-must-strip" data-a4-break="page"></span>',
+      'After</p>',
+      LEGACY_BREAK,
+    ].join('');
     const html = buildRepresentativePdfHtml(content);
+
+    expect(html).toContain('<blockquote>');
+    expect(html).toContain('<caption>Approval matrix</caption>');
+    expect(html).toContain('<tfoot>');
+    expect(html).toContain('start="5"');
     expect(html).toContain('data-a4-break="page"');
+    expect(html).toContain('data-break-type="hard"');
     expect(html).toContain('class="manual-marker"');
     expect(html).toContain('class="outer"');
-    expect(html).toContain('data-break-type="hard"');
+    expect(html).toContain('Synthetic field/reference: REF-W0-001');
     expect(html).not.toContain('data-source="fixture"');
+    expect(html).not.toContain('data-whatever="nope"');
+    expect(html).not.toContain('data-trusted="false"');
+    expect(html).not.toContain('aria-label="client-authority"');
+    expect(html).not.toContain('onclick=');
+    expect(html).not.toContain('data-flow-id="canonical-must-strip"');
+    expect(html).not.toContain('data-field-reference="field-canonical-001"');
+  });
+
+  it('W-OUTPUT-05P retains approved projection flow metadata only in projection output', () => {
+    const projected = buildPaginatedSectionsHtml([
+      {
+        content: `<ol start="5"><li data-flow-continuation-item="true" data-flow-id="flow-1" data-source="fixture" data-whatever="nope" aria-label="client-authority" onclick="alert(1)"><p>Before${CANONICAL_BREAK}After</p></li></ol>${LEGACY_BREAK}`,
+        hardBreakBefore: false,
+      },
+    ]);
+    expect(projected).toContain('data-flow-continuation-item="true"');
+    expect(projected).toContain('data-flow-id="flow-1"');
+    expect(projected).toContain('data-a4-break="page"');
+    expect(projected).toContain('data-break-type="hard"');
+    expect(projected).toContain('start="5"');
+    expect(projected).not.toContain('data-source="fixture"');
+    expect(projected).not.toContain('data-whatever="nope"');
+    expect(projected).not.toContain('aria-label="client-authority"');
+    expect(projected).not.toContain('onclick=');
+
+    const canonical = buildRepresentativePdfHtml(
+      '<p data-flow-continuation-item="true" data-flow-id="flow-1">Canonical source</p>',
+    );
+    expect(canonical).not.toContain('data-flow-continuation-item="true"');
+    expect(canonical).not.toContain('data-flow-id="flow-1"');
   });
 
   it('W-OUTPUT-FIXTURE-01 resolves a canonical nested partial path without flattening the C03 break', () => {
