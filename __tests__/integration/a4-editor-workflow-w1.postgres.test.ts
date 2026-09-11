@@ -7,6 +7,7 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
   let prisma: Awaited<ReturnType<typeof import('@/lib/prisma')['getPrisma']>>;
   let createDocumentTemplate: typeof import('@/services/document-template.service')['createDocumentTemplate'];
   let updateDocumentTemplate: typeof import('@/services/document-template.service')['updateDocumentTemplate'];
+  let getDocumentTemplateById: typeof import('@/services/document-template.service')['getDocumentTemplateById'];
   let createTemplatePartial: typeof import('@/services/template-partial.service')['createTemplatePartial'];
   let updateTemplatePartial: typeof import('@/services/template-partial.service')['updateTemplatePartial'];
   let updateGeneratedDocument: typeof import('@/services/document-generator.service')['updateGeneratedDocument'];
@@ -15,13 +16,18 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
   let saveDraft: typeof import('@/services/document-generator.service')['saveDraft'];
   let getLatestDraft: typeof import('@/services/document-generator.service')['getLatestDraft'];
   let createDocumentTemplateSchema: typeof import('@/lib/validations/document-template')['createDocumentTemplateSchema'];
+  let updateDocumentTemplateSchema: typeof import('@/lib/validations/document-template')['updateDocumentTemplateSchema'];
   const tenantIds: string[] = [];
 
   beforeAll(async () => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const prismaModule = await import('@/lib/prisma');
     prisma = prismaModule.getPrisma();
-    ({ createDocumentTemplate, updateDocumentTemplate } = await import('@/services/document-template.service'));
+    ({
+      createDocumentTemplate,
+      updateDocumentTemplate,
+      getDocumentTemplateById,
+    } = await import('@/services/document-template.service'));
     ({ createTemplatePartial, updateTemplatePartial } = await import('@/services/template-partial.service'));
     ({
       updateGeneratedDocument,
@@ -30,7 +36,10 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
       saveDraft,
       getLatestDraft,
     } = await import('@/services/document-generator.service'));
-    ({ createDocumentTemplateSchema } = await import('@/lib/validations/document-template'));
+    ({
+      createDocumentTemplateSchema,
+      updateDocumentTemplateSchema,
+    } = await import('@/lib/validations/document-template'));
   });
 
   afterEach(async () => {
@@ -104,7 +113,7 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
     expect(['<p>client-a</p>', '<p>client-b</p>']).toContain(stored.content);
   });
 
-  it('preserves F1 field metadata through validation, persistence and read-back', async () => {
+  it('preserves F1 field metadata through API schema, persistence and GET service read-back', async () => {
     const actor = await seedTenant('Fields');
     const field = {
       id: 'synthetic-field-1',
@@ -133,13 +142,20 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
     expect(persisted[0]).toEqual(field);
     expect(Object.prototype.hasOwnProperty.call(persisted[0], 'required')).toBe(false);
 
-    const acknowledged = await updateDocumentTemplate({
-      id: template.id,
-      expectedRevision: template.version,
-      placeholders: persisted,
-    }, actor);
+    const acknowledged = await updateDocumentTemplate(
+      updateDocumentTemplateSchema.parse({
+        id: template.id,
+        expectedRevision: template.version,
+        placeholders: persisted,
+      }),
+      actor,
+    );
     expect(acknowledged.version).toBe(template.version + 1);
     expect((acknowledged.placeholders as unknown as Array<Record<string, unknown>>)[0]).toEqual(field);
+
+    const reloaded = await getDocumentTemplateById(template.id, actor.tenantId);
+    expect(reloaded?.version).toBe(acknowledged.version);
+    expect((reloaded?.placeholders as unknown as Array<Record<string, unknown>>)[0]).toEqual(field);
   });
 
   it('rejects a stale partial revision without changing the accepted value', async () => {
