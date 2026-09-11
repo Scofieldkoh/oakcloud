@@ -13,103 +13,98 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/**
- * GET /api/generated-documents/[id]/draft
- * Get the latest draft for a document
- */
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson((value as Record<string, unknown>)[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
-
-    // Check read permission
     await requirePermission(session, 'document', 'read');
-
     const tenantId = requireSessionWorkspaceId(session);
 
-    // Verify document exists and belongs to the current workspace.
     const document = await getGeneratedDocumentById(id, tenantId);
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // Get the latest draft for this user
     const draft = await getLatestDraft(id, session.id);
-
     if (!draft) {
-      return NextResponse.json({ draft: null });
+      return NextResponse.json({ draft: null, revision: document.revision });
     }
 
+    const revisionChanged = draft.baseRevision !== null && draft.baseRevision !== document.revision;
+    const jsonChanged = stableJson(draft.contentJson) !== stableJson(document.contentJson);
     return NextResponse.json({
       draft: {
         content: draft.content,
         contentJson: draft.contentJson,
         savedAt: draft.createdAt,
+        baseRevision: draft.baseRevision,
       },
       document: {
         content: document.content,
         contentJson: document.contentJson,
         updatedAt: document.updatedAt,
+        revision: document.revision,
       },
-      hasDifferentContent: draft.content !== document.content,
+      revision: document.revision,
+      hasDifferentContent: revisionChanged || jsonChanged || draft.content !== document.content,
     });
   } catch (error) {
     return createErrorResponse(error);
   }
 }
 
-/**
- * POST /api/generated-documents/[id]/draft
- * Save a draft (auto-save)
- */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
-
-    // Check update permission
     await requirePermission(session, 'document', 'update');
 
     const body = await request.json();
     const data = saveDraftSchema.parse({ ...body, documentId: id });
-
     const tenantId = requireSessionWorkspaceId(session);
 
     await saveDraft(data, { tenantId, userId: session.id });
+    const acknowledgedDraft = await getLatestDraft(id, session.id);
 
-    return NextResponse.json({ success: true, savedAt: new Date().toISOString() });
+    return NextResponse.json({
+      success: true,
+      savedAt: acknowledgedDraft?.createdAt ?? new Date().toISOString(),
+      baseRevision: acknowledgedDraft?.baseRevision ?? data.baseRevision ?? null,
+    });
   } catch (error) {
     return createErrorResponse(error);
   }
 }
 
-/**
- * DELETE /api/generated-documents/[id]/draft
- * Discard the current draft
- */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
-
-    // Check update permission
     await requirePermission(session, 'document', 'update');
-
     const tenantId = requireSessionWorkspaceId(session);
 
-    // Verify document exists
     const document = await getGeneratedDocumentById(id, tenantId);
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // Import prisma to delete draft
     const { prisma } = await import('@/lib/prisma');
     await prisma.documentDraft.deleteMany({
       where: { documentId: id, userId: session.id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, revision: document.revision });
   } catch (error) {
     return createErrorResponse(error);
   }
