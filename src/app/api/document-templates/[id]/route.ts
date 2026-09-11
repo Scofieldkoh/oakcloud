@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
+import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import { updateDocumentTemplateSchema } from '@/lib/validations/document-template';
 import {
   getDocumentTemplateById,
@@ -98,6 +99,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
+    if (data.content !== undefined || data.contentJson !== undefined) {
+      const current = await prisma.documentTemplate.findFirst({
+        where: { id, tenantId, deletedAt: null },
+        select: { content: true, contentJson: true },
+      });
+      if (!current) {
+        return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+      }
+      assertA4WriterCanPreserve(
+        data.content ?? current.content,
+        data.contentJson === undefined ? current.contentJson : data.contentJson,
+      );
     }
 
     const template = await updateDocumentTemplate(
