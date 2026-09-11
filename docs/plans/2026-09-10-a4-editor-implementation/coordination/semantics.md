@@ -29,7 +29,7 @@ Contract consumed: proposed v1 C02/C03/C04/C09; G0 remains OPEN
 
 2. **Multiple semantic breaks in one logical list item**
    - Added the ordered-list fixture `Before [break1] Middle [break2] After` with `start="5"` and a following item 6.
-   - Projection still produces one canonical OL/LI/P chain; all three projected fragments retain the source `list` -> `item-5` -> `paragraph` ancestry.
+   - Projection still produces one canonical OL/LI/P chain; all three projected fragments retain the source `list` -> `item-5` -> `paragraph` ancestry. When a between-break DOM Range has a common ancestor below the canonical root, the proof reconstructs that shallow ancestor chain around the cloned contents.
    - Source-range constraints now intersect. The middle paragraph/item range is exactly `[7,14]` for `Middle ` rather than being overwritten to `[0,14]` or `[7,end]`.
    - Continuation metadata composes across adjacent break boundaries. A fragment that is after break 1 and before break 2 receives `data-flow-continuation="both"`; its ordered-list counter is not reset back to the canonical list base.
    - Removing either `break-1` or `break-2` leaves one logical item 5, retains all `Before Middle After` text, retains the other break, and preserves `start="5"`.
@@ -191,8 +191,8 @@ A manual page break inside `td`/`th` remains explicitly unsupported by S0 and re
 
 ### Supported Node 24 repository CI
 
-PR #34 head after the correction code/test commits: `6a3bb5c86b1927862163be6b7b9ac3cebb77a10b`.
-GitHub Actions run: `Node 24 compatibility` run `#136` (`34570491465`).
+PR #34 code/test head after the final S0 logic review: `91b215415b440f394326d4ac4c120f2a6526f0c5`.
+GitHub Actions run: `Node 24 compatibility` run `#139` (`34571059005`).
 
 At the time this handoff text was prepared, the supported runner had already recorded:
 
