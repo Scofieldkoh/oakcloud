@@ -25,6 +25,10 @@ import {
 } from '@/lib/template-analysis';
 import { assertValidTemplateComposition } from '@/lib/service-agreement-template';
 import { parseSharePointRelativeFolderPath } from '@/lib/sharepoint/relative-folder-path';
+import {
+  assertRevisionPrecondition,
+  classifyRevisionMiss,
+} from '@/lib/document-editor/revision-concurrency';
 
 // ============================================================================
 // Types
@@ -61,6 +65,39 @@ function normalizeSharePointRelativeFolderPath(value: string | null | undefined)
   return parseSharePointRelativeFolderPath(value).normalized;
 }
 
+async function classifyTemplateRevisionMiss(
+  tx: Prisma.TransactionClient,
+  id: string,
+  tenantId: string,
+  expectedRevision: number | undefined,
+  options: { expectDeleted?: boolean } = {},
+): Promise<never> {
+  const state = await tx.documentTemplate.findFirst({
+    where: { id, tenantId },
+    select: { version: true, deletedAt: true },
+  });
+
+  if (options.expectDeleted) {
+    classifyRevisionMiss(
+      state
+        ? {
+            revision: state.version,
+            deleted: false,
+            locked: state.deletedAt === null,
+          }
+        : null,
+      { resource: 'document-template', expectedRevision },
+    );
+  }
+
+  classifyRevisionMiss(
+    state
+      ? { revision: state.version, deleted: state.deletedAt !== null, locked: false }
+      : null,
+    { resource: 'document-template', expectedRevision },
+  );
+}
+
 // ============================================================================
 // Create Template
 // ============================================================================
@@ -72,7 +109,6 @@ export async function createDocumentTemplate(
   const { tenantId, userId } = params;
   assertValidTemplateComposition(data.compositionType, data.content);
 
-  // Check for duplicate name within tenant
   const existingName = await prisma.documentTemplate.findFirst({
     where: { tenantId, name: data.name, deletedAt: null },
   });
@@ -122,6 +158,7 @@ export async function updateDocumentTemplate(
   reason?: string
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(data.expectedRevision, 'document-template');
 
   const existing = await prisma.documentTemplate.findFirst({
     where: { id: data.id, tenantId, deletedAt: null },
@@ -136,7 +173,6 @@ export async function updateDocumentTemplate(
     data.content ?? existing.content,
   );
 
-  // Check for duplicate name if being changed
   if (data.name && data.name !== existing.name) {
     const existingName = await prisma.documentTemplate.findFirst({
       where: {
@@ -152,8 +188,8 @@ export async function updateDocumentTemplate(
     }
   }
 
-  const updateData: Prisma.DocumentTemplateUpdateInput = {
-    version: { increment: 1 }, // Increment version on each update
+  const updateData: Prisma.DocumentTemplateUpdateManyMutationInput = {
+    version: { increment: 1 },
   };
 
   if (data.name !== undefined) updateData.name = data.name;
@@ -172,9 +208,20 @@ export async function updateDocumentTemplate(
     updateData.sharePointRelativeFolderPath = normalizeSharePointRelativeFolderPath(data.sharePointRelativeFolderPath);
   }
 
-  const template = await prisma.documentTemplate.update({
-    where: { id: data.id },
-    data: updateData,
+  const template = await prisma.$transaction(async (tx) => {
+    const result = await tx.documentTemplate.updateMany({
+      where: {
+        id: data.id,
+        tenantId,
+        deletedAt: null,
+        ...(data.expectedRevision !== undefined ? { version: data.expectedRevision } : {}),
+      },
+      data: updateData,
+    });
+    if (result.count !== 1) {
+      return classifyTemplateRevisionMiss(tx, data.id, tenantId, data.expectedRevision);
+    }
+    return tx.documentTemplate.findFirstOrThrow({ where: { id: data.id, tenantId } });
   });
 
   const changes = computeChanges(
@@ -209,9 +256,11 @@ export async function updateDocumentTemplate(
 export async function deleteDocumentTemplate(
   id: string,
   params: TenantAwareParams,
-  reason: string
+  reason: string,
+  expectedRevision?: number,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'document-template');
 
   const existing = await prisma.documentTemplate.findFirst({
     where: { id, tenantId },
@@ -230,12 +279,24 @@ export async function deleteDocumentTemplate(
     throw new Error('Template is already deleted');
   }
 
-  const template = await prisma.documentTemplate.update({
-    where: { id },
-    data: {
-      deletedAt: new Date(),
-      isActive: false,
-    },
+  const template = await prisma.$transaction(async (tx) => {
+    const result = await tx.documentTemplate.updateMany({
+      where: {
+        id,
+        tenantId,
+        deletedAt: null,
+        ...(expectedRevision !== undefined ? { version: expectedRevision } : {}),
+      },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+        version: { increment: 1 },
+      },
+    });
+    if (result.count !== 1) {
+      return classifyTemplateRevisionMiss(tx, id, tenantId, expectedRevision);
+    }
+    return tx.documentTemplate.findFirstOrThrow({ where: { id, tenantId } });
   });
 
   await createAuditLog({
@@ -264,9 +325,11 @@ export async function deleteDocumentTemplate(
 
 export async function restoreDocumentTemplate(
   id: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
+  expectedRevision?: number,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'document-template');
 
   const existing = await prisma.documentTemplate.findFirst({
     where: { id, tenantId },
@@ -280,7 +343,6 @@ export async function restoreDocumentTemplate(
     throw new Error('Template is not deleted');
   }
 
-  // Check for name conflict with active templates
   const conflicting = await prisma.documentTemplate.findFirst({
     where: {
       tenantId,
@@ -294,12 +356,24 @@ export async function restoreDocumentTemplate(
     throw new Error('Cannot restore: a template with this name already exists');
   }
 
-  const template = await prisma.documentTemplate.update({
-    where: { id },
-    data: {
-      deletedAt: null,
-      isActive: true,
-    },
+  const template = await prisma.$transaction(async (tx) => {
+    const result = await tx.documentTemplate.updateMany({
+      where: {
+        id,
+        tenantId,
+        deletedAt: { not: null },
+        ...(expectedRevision !== undefined ? { version: expectedRevision } : {}),
+      },
+      data: {
+        deletedAt: null,
+        isActive: true,
+        version: { increment: 1 },
+      },
+    });
+    if (result.count !== 1) {
+      return classifyTemplateRevisionMiss(tx, id, tenantId, expectedRevision, { expectDeleted: true });
+    }
+    return tx.documentTemplate.findFirstOrThrow({ where: { id, tenantId } });
   });
 
   await createAuditLog({
@@ -337,10 +411,7 @@ export async function duplicateDocumentTemplate(
 
   assertValidTemplateComposition(existing.compositionType, existing.content);
 
-  // Generate new name
   let newName = data.name || `Copy of ${existing.name}`;
-
-  // Ensure name is unique
   let counter = 1;
   while (true) {
     const existingName = await prisma.documentTemplate.findFirst({
@@ -365,7 +436,7 @@ export async function duplicateDocumentTemplate(
       sharePointRelativeFolderPath: existing.sharePointRelativeFolderPath,
       isActive: true,
       createdById: userId,
-      version: 1, // Reset version for duplicated template
+      version: 1,
     },
   });
 
@@ -402,28 +473,14 @@ export async function getDocumentTemplateById(
   options: GetTemplateOptions = {}
 ): Promise<DocumentTemplateWithRelations | null> {
   const { includeDeleted = false } = options;
-
   const where: Prisma.DocumentTemplateWhereInput = { id, tenantId };
-
-  if (!includeDeleted) {
-    where.deletedAt = null;
-  }
+  if (!includeDeleted) where.deletedAt = null;
 
   return prisma.documentTemplate.findFirst({
     where,
     include: {
-      createdBy: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
-      _count: {
-        select: {
-          generatedDocuments: true,
-        },
-      },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+      _count: { select: { generatedDocuments: true } },
     },
   });
 }
@@ -442,12 +499,8 @@ export async function searchDocumentTemplates(
   limit: number;
   totalPages: number;
 }> {
-  const where: Prisma.DocumentTemplateWhereInput = {
-    tenantId,
-    deletedAt: null,
-  };
+  const where: Prisma.DocumentTemplateWhereInput = { tenantId, deletedAt: null };
 
-  // Text search
   if (params.query) {
     const searchTerm = params.query.trim();
     where.OR = [
@@ -455,39 +508,19 @@ export async function searchDocumentTemplates(
       { description: { contains: searchTerm, mode: 'insensitive' } },
     ];
   }
+  if (params.category) where.category = params.category;
+  if (params.isActive !== undefined) where.isActive = params.isActive;
 
-  // Filters
-  if (params.category) {
-    where.category = params.category;
-  }
-
-  if (params.isActive !== undefined) {
-    where.isActive = params.isActive;
-  }
-
-  // Sorting
   const orderBy: Prisma.DocumentTemplateOrderByWithRelationInput = {};
   orderBy[params.sortBy] = params.sortOrder;
-
-  // Pagination
   const skip = (params.page - 1) * params.limit;
 
   const [templates, total] = await Promise.all([
     prisma.documentTemplate.findMany({
       where,
       include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        _count: {
-          select: {
-            generatedDocuments: true,
-          },
-        },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        _count: { select: { generatedDocuments: true } },
       },
       orderBy,
       skip,
@@ -544,12 +577,8 @@ export async function getTemplateStats(tenantId: string): Promise<{
   };
 }> {
   const [total, active, byCategory, recentlyCreated, mostUsed, templatesForHealth, partials] = await Promise.all([
-    prisma.documentTemplate.count({
-      where: { tenantId, deletedAt: null },
-    }),
-    prisma.documentTemplate.count({
-      where: { tenantId, deletedAt: null, isActive: true },
-    }),
+    prisma.documentTemplate.count({ where: { tenantId, deletedAt: null } }),
+    prisma.documentTemplate.count({ where: { tenantId, deletedAt: null, isActive: true } }),
     prisma.documentTemplate.groupBy({
       by: ['category'],
       where: { tenantId, deletedAt: null },
@@ -559,34 +588,18 @@ export async function getTemplateStats(tenantId: string): Promise<{
       where: {
         tenantId,
         deletedAt: null,
-        createdAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-        },
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
     }),
     prisma.documentTemplate.findMany({
       where: { tenantId, deletedAt: null },
-      include: {
-        _count: {
-          select: { generatedDocuments: true },
-        },
-      },
-      orderBy: {
-        generatedDocuments: {
-          _count: 'desc',
-        },
-      },
+      include: { _count: { select: { generatedDocuments: true } } },
+      orderBy: { generatedDocuments: { _count: 'desc' } },
       take: 5,
     }),
     prisma.documentTemplate.findMany({
       where: { tenantId, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        content: true,
-        placeholders: true,
-        isActive: true,
-      },
+      select: { id: true, name: true, content: true, placeholders: true, isActive: true },
       orderBy: { name: 'asc' },
     }),
     prisma.templatePartial.findMany({
@@ -663,9 +676,7 @@ export async function getTemplateStats(tenantId: string): Promise<{
   return {
     total,
     active,
-    byCategory: Object.fromEntries(
-      byCategory.map((c) => [c.category, c._count])
-    ),
+    byCategory: Object.fromEntries(byCategory.map((c) => [c.category, c._count])),
     recentlyCreated,
     mostUsed: mostUsed.map((t) => ({
       id: t.id,
@@ -804,17 +815,14 @@ export async function getTemplatesByCategory(
 export function extractPlaceholdersFromContent(content: string): string[] {
   const placeholders = new Set<string>();
 
-  // Match simple placeholders: {{company.name}}, {{date}}
   const simpleRegex = /\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}/g;
   let match;
   while ((match = simpleRegex.exec(content)) !== null) {
-    // Skip block helpers (if, each, unless)
     if (!['if', 'each', 'unless', 'with', '/if', '/each', '/unless', '/with'].includes(match[1])) {
       placeholders.add(match[1]);
     }
   }
 
-  // Match block helpers: {{#each directors}}
   const blockRegex = /\{\{#(each|with)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\}\}/g;
   while ((match = blockRegex.exec(content)) !== null) {
     placeholders.add(match[2]);
@@ -834,14 +842,12 @@ export function extractPlaceholdersFromContent(content: string): string[] {
 export function validateTemplateContent(content: string): string[] {
   const errors: string[] = [];
 
-  // Check for unclosed placeholders
   const openCount = (content.match(/\{\{/g) || []).length;
   const closeCount = (content.match(/\}\}/g) || []).length;
   if (openCount !== closeCount) {
     errors.push('Mismatched placeholder brackets: ensure all {{ have matching }}');
   }
 
-  // Check for unclosed block helpers
   const eachOpens = (content.match(/\{\{#each\s/g) || []).length;
   const eachCloses = (content.match(/\{\{\/each\}\}/g) || []).length;
   if (eachOpens !== eachCloses) {
