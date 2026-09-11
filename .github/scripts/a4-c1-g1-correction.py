@@ -256,13 +256,12 @@ replace_once(
         }
         commitDocumentSurface();""",
     """        if (session) {
-          const nativeInput = event.nativeEvent as InputEvent;
           const paired = pairedCanonicalInputRef.current;
           pairedCanonicalInputRef.current = null;
           if (
             paired &&
-            paired.inputType === nativeInput.inputType &&
-            paired.data === nativeInput.data &&
+            paired.inputType === inputEvent.inputType &&
+            paired.data === inputEvent.data &&
             paired.revision === session.getState().revision
           ) {
             return;
@@ -274,66 +273,179 @@ replace_once(
     "bounded paired input reconciliation",
 )
 
-old_insert = """          const result = pendingTyping
-            ? insertTextWithFormat(
-                canonical,
-                bookmark,
-                inputEvent.data ?? '',
-                pendingTyping,
-              )
-            : replaceLogicalSelection(
-                canonical,
-                bookmark,
-                escapeTextForHtml(inputEvent.data ?? ''),
-              );
+replace_once(
+    """      (inputEvent: InputEvent) => {
+        if (effectivePreviewMode) return;
+        const surface = documentSurfaceRef.current;""",
+    """      (inputEvent: InputEvent) => {
+        if (effectivePreviewMode) return;
+        pairedCanonicalInputRef.current = null;
+        const surface = documentSurfaceRef.current;""",
+    "bound paired input marker to one beforeinput sequence",
+)
+
+replace_once(
+    """        if (inputType === 'insertText' || inputType === 'insertReplacementText') {
+          inputEvent.preventDefault();
+          const data = inputEvent.data ?? '';
+          const pendingFormat = pendingTypingFormatRef.current;
+          const result = pendingFormat
+            ? insertTextWithFormat(canonical, bookmark, data, pendingFormat)
+            : (() => {
+                const replacement = document.createElement('div');
+                replacement.textContent = data;
+                return replaceLogicalSelection(canonical, bookmark, replacement.innerHTML);
+              })();
+          if (result.changed && result.selection) {
+            pendingTypingPointRef.current = result.selection.anchor;
+          }
           commitUserTransaction(result, 'insert-text');
-          return;"""
-new_insert = """          const insertedText = inputEvent.data ?? '';
-          const result = pendingTyping
-            ? insertTextWithFormat(
-                canonical,
-                bookmark,
-                insertedText,
-                pendingTyping,
-              )
-            : replaceLogicalSelection(
-                canonical,
-                bookmark,
-                escapeTextForHtml(insertedText),
-              );
+          return;
+        }""",
+    """        if (inputType === 'insertText' || inputType === 'insertReplacementText') {
+          inputEvent.preventDefault();
+          const data = inputEvent.data ?? '';
+          const pendingFormat = pendingTypingFormatRef.current;
+          const result = pendingFormat
+            ? insertTextWithFormat(canonical, bookmark, data, pendingFormat)
+            : (() => {
+                const replacement = document.createElement('div');
+                replacement.textContent = data;
+                return replaceLogicalSelection(canonical, bookmark, replacement.innerHTML);
+              })();
           const repaired = repairCollapsedNativeTextSelection(
             result,
             bookmark,
-            insertedText,
+            data,
           );
+          if (repaired.changed && repaired.selection) {
+            pendingTypingPointRef.current = repaired.selection.anchor;
+          }
           const beforeRevision = session.getState().revision;
           commitUserTransaction(repaired, 'insert-text');
           if (session.getState().revision !== beforeRevision) {
             pairedCanonicalInputRef.current = {
-              inputType: inputEvent.inputType,
+              inputType,
               data: inputEvent.data,
               revision: session.getState().revision,
             };
           }
-          return;"""
-replace_once(old_insert, new_insert, "collapsed insert-text caret repair")
+          return;
+        }""",
+    "collapsed insert-text caret repair",
+)
 
-for label, old_call in [
-    ("paragraph", "commitUserTransaction(result, 'insert-paragraph');"),
-    ("line break", "commitUserTransaction(result, 'insert-line-break');"),
-    ("delete backward", "commitUserTransaction(result, 'delete-backward');"),
-    ("delete forward", "commitUserTransaction(result, 'delete-forward');"),
-]:
-    new_call = f"""const beforeRevision = session.getState().revision;
-          {old_call}
-          if (session.getState().revision !== beforeRevision) {{
-            pairedCanonicalInputRef.current = {{
-              inputType: inputEvent.inputType,
+replace_once(
+    """        if (inputType === 'insertParagraph') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            insertParagraphAtSelection(canonical, bookmark),
+            'insert-paragraph',
+          );
+          return;
+        }""",
+    """        if (inputType === 'insertParagraph') {
+          inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
+          commitUserTransaction(
+            insertParagraphAtSelection(canonical, bookmark),
+            'insert-paragraph',
+          );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
               data: inputEvent.data,
               revision: session.getState().revision,
-            }};
-          }}"""
-    replace_once(old_call, new_call, f"paired canonical {label}")
+            };
+          }
+          return;
+        }""",
+    "paired paragraph input",
+)
+
+replace_once(
+    """        if (inputType === 'insertLineBreak') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            replaceLogicalSelection(canonical, bookmark, '<br>'),
+            'insert-line-break',
+          );
+          return;
+        }""",
+    """        if (inputType === 'insertLineBreak') {
+          inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
+          commitUserTransaction(
+            replaceLogicalSelection(canonical, bookmark, '<br>'),
+            'insert-line-break',
+          );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
+          return;
+        }""",
+    "paired line-break input",
+)
+
+replace_once(
+    """        if (inputType === 'deleteContentBackward') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            applyLogicalDelete(canonical, bookmark, 'backward'),
+            'delete-backward',
+          );
+          return;
+        }""",
+    """        if (inputType === 'deleteContentBackward') {
+          inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
+          commitUserTransaction(
+            applyLogicalDelete(canonical, bookmark, 'backward'),
+            'delete-backward',
+          );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
+          return;
+        }""",
+    "paired backward-delete input",
+)
+
+replace_once(
+    """        if (inputType === 'deleteContentForward') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            applyLogicalDelete(canonical, bookmark, 'forward'),
+            'delete-forward',
+          );
+          return;
+        }""",
+    """        if (inputType === 'deleteContentForward') {
+          inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
+          commitUserTransaction(
+            applyLogicalDelete(canonical, bookmark, 'forward'),
+            'delete-forward',
+          );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
+          return;
+        }""",
+    "paired forward-delete input",
+)
 
 replace_once(
     """        const target = getTableColumnResizeTarget(
