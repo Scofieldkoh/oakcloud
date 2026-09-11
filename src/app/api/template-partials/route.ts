@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
+import { ApiError } from '@/lib/errors';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
 import {
   createTemplatePartialSchema,
   searchTemplatePartialsSchema,
@@ -8,13 +14,33 @@ import {
 import {
   createTemplatePartial,
   searchTemplatePartials,
-  getAllTemplatePartials,
 } from '@/services/template-partial.service';
 
-// ============================================================================
-// GET /api/template-partials
-// List/search template partials
-// ============================================================================
+function withRevision<T extends { version: number }>(value: T) {
+  return { ...value, revision: value.version };
+}
+
+function apiError(error: unknown) {
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code, ...(error.details === undefined ? {} : { details: error.details }) },
+      { status: error.statusCode },
+    );
+  }
+  if (error instanceof Error) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (error.message === 'A partial with this name already exists') {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error.message.includes('must start with a letter')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+  }
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,8 +48,6 @@ export async function GET(request: NextRequest) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-
-    // For SUPER_ADMIN, allow specifying tenantId via query param
     const tenantIdParam = searchParams.get('tenantId');
     const effectiveTenantId =
       session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
@@ -32,13 +56,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
-    // Check if requesting all partials (for dropdown)
     if (searchParams.get('all') === 'true') {
-      const partials = await getAllTemplatePartials(effectiveTenantId);
-      return NextResponse.json({ partials });
+      const partials = await prisma.templatePartial.findMany({
+        where: { tenantId: effectiveTenantId, deletedAt: null },
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          description: true,
+          content: true,
+          placeholders: true,
+          version: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+      partials.forEach((partial) => readA4StoredDocument(partial.content));
+      return NextResponse.json({ partials: partials.map(withRevision) });
     }
 
-    // Parse search parameters
     const input = searchTemplatePartialsSchema.parse({
       search: searchParams.get('search') || undefined,
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : 1,
@@ -52,25 +87,14 @@ export async function GET(request: NextRequest) {
       userId: session.id,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      partials: result.partials.map(withRevision),
+    });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('Get template partials error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(error);
   }
 }
-
-// ============================================================================
-// POST /api/template-partials
-// Create a new template partial
-// ============================================================================
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,8 +103,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { tenantId: bodyTenantId, ...partialData } = body;
-
-    // For SUPER_ADMIN, allow specifying tenantId in body
     const effectiveTenantId =
       session.isSuperAdmin && bodyTenantId ? bodyTenantId : session.tenantId;
 
@@ -89,29 +111,14 @@ export async function POST(request: NextRequest) {
     }
 
     const input = createTemplatePartialSchema.parse(partialData);
-
+    assertA4WriterCanPreserve(input.content);
     const partial = await createTemplatePartial(input, {
       tenantId: effectiveTenantId,
       userId: session.id,
     });
 
-    return NextResponse.json(partial, { status: 201 });
+    return NextResponse.json(withRevision(partial), { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'A partial with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      if (error.message.includes('must start with a letter')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-    }
-    console.error('Create template partial error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(error);
   }
 }

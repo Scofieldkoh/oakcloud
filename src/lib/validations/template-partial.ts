@@ -40,6 +40,7 @@ export type CreateTemplatePartialInput = z.infer<typeof createTemplatePartialSch
 
 export const updateTemplatePartialSchema = z.object({
   id: z.string().uuid(),
+  expectedRevision: z.number().int().nonnegative().optional(),
   name: partialNameSchema.optional(),
   displayName: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional().nullable(),

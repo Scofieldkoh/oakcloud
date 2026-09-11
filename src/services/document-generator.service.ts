@@ -9,12 +9,20 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import {
-  resolvePlaceholders,
   prepareCompanyContext,
-  extractPartialReferences,
   type PlaceholderContext,
   type ContactData,
 } from '@/lib/placeholder-resolver';
+import { resolveTemplateFields } from '@/lib/template-field-runtime';
+import { loadStoredFieldRegistry } from '@/lib/template-field-registry';
+import {
+  normalizeStoredFieldDefinitionInput,
+  resolveTopLevelCustomValues,
+} from '@/lib/document-editor/template-field-workflow';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
 import {
@@ -24,6 +32,7 @@ import {
 import { addSectionAnchors, extractSections } from '@/services/document-validation.service';
 import {
   analyzeTemplateContent,
+  extractPartialReferences,
   getRequiredPartySelections,
   type TemplateDiagnostics,
 } from '@/lib/template-analysis';
@@ -45,7 +54,7 @@ import type {
 } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
-import { NotFoundError, ValidationError } from '@/lib/errors';
+import { ApiError, ErrorCodes, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import { metadataHasUnresolvedTemplateData } from '@/lib/document-finalization';
@@ -61,34 +70,26 @@ import {
   assertGeneratedDocumentCanBeUnfinalized,
   queueTaskEsigningPreparationsForGeneratedDocument,
 } from '@/services/tasks/esigning-preparation.service';
+import {
+  assertRevisionPrecondition,
+  VersionConflictError,
+} from '@/lib/document-editor/revision-concurrency';
+import {
+  claimGeneratedDocumentRevision,
+  readGeneratedDocumentRevision,
+  readGeneratedDocumentRevisions,
+} from '@/lib/document-editor/generated-document-revision';
 
 const log = createLogger('document-generator');
 
-// ============================================================================
-// Types
-// ============================================================================
+export type GeneratedDocumentWithRevision = GeneratedDocument & { revision: number };
 
 export interface GeneratedDocumentWithRelations extends GeneratedDocument {
-  template?: {
-    id: string;
-    name: string;
-    category: string;
-  } | null;
-  company?: {
-    id: string;
-    name: string;
-    uen: string;
-  } | null;
-  createdBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  finalizedBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
+  revision: number;
+  template?: { id: string; name: string; category: string } | null;
+  company?: { id: string; name: string; uen: string } | null;
+  createdBy?: { id: string; firstName: string; lastName: string };
+  finalizedBy?: { id: string; firstName: string; lastName: string } | null;
   esigningEnvelopeDocuments?: Array<{
     envelope: {
       id: string;
@@ -98,18 +99,11 @@ export interface GeneratedDocumentWithRelations extends GeneratedDocument {
     };
   }>;
   comments?: DocumentCommentWithReplies[];
-  _count?: {
-    comments: number;
-    drafts: number;
-  };
+  _count?: { comments: number; drafts: number };
 }
 
 export interface DocumentCommentWithReplies extends DocumentComment {
-  user?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
+  user?: { id: string; firstName: string; lastName: string } | null;
   replies?: DocumentCommentWithReplies[];
   parent?: DocumentComment | null;
 }
@@ -137,23 +131,14 @@ export interface RenderTemplateForGenerationParams {
 }
 
 export interface RenderTemplateForGenerationResult {
-  template: {
-    id: string;
-    name: string;
-    category: string;
-    version: number;
-  };
+  template: { id: string; name: string; category: string; version: number };
   content: string;
   contentHtml: string;
   rawResolvedContent: string;
   sections: ReturnType<typeof extractSections>;
   missingPlaceholders: string[];
   missingPartials: string[];
-  contextSummary: {
-    hasCompany: boolean;
-    hasContacts: boolean;
-    hasCustomData: boolean;
-  };
+  contextSummary: { hasCompany: boolean; hasContacts: boolean; hasCustomData: boolean };
   blockingErrors: string[];
   context: PlaceholderContext;
   diagnostics: TemplateDiagnostics;
@@ -173,12 +158,7 @@ export interface RenderTemplateForGenerationResult {
         itemId: string;
         variantVersion: number;
         partialVersion: number;
-        dependencies: Array<{
-          id: string;
-          name: string;
-          version: number;
-          updatedAt: string;
-        }>;
+        dependencies: Array<{ id: string; name: string; version: number; updatedAt: string }>;
       }>;
     };
   };
@@ -189,21 +169,14 @@ function canonicalJson(value: unknown): string {
   if (value && typeof value === 'object') {
     return `{${Object.keys(value as Record<string, unknown>)
       .sort()
-      .map(
-        (key) =>
-          `${JSON.stringify(key)}:${canonicalJson(
-            (value as Record<string, unknown>)[key],
-          )}`,
-      )
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`)
       .join(',')}}`;
   }
   return JSON.stringify(value);
 }
 
-// Re-export shared type for backwards compatibility
 export type { TenantAwareParams } from '@/lib/types';
 
-// Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof GeneratedDocument)[] = [
   'title',
   'content',
@@ -211,13 +184,29 @@ const TRACKED_FIELDS: (keyof GeneratedDocument)[] = [
   'useLetterhead',
 ];
 
+function withRevision<T extends GeneratedDocument>(document: T, revision: number): T & { revision: number } {
+  return { ...document, revision };
+}
+
+function generatedDocumentStateConflict(deleted = false): ApiError {
+  return new ApiError(
+    ErrorCodes.CONFLICT,
+    deleted
+      ? 'This resource is deleted.'
+      : 'This resource is not editable in its current state.',
+    409,
+    {
+      resourceType: 'GeneratedDocument',
+      action: 'reload-read-only',
+    },
+  );
+}
+
 async function buildContactsContext(
   contactIds: string[] | undefined,
-  tenantId: string
+  tenantId: string,
 ): Promise<{ firstContact?: ContactData; contacts: ContactData[] }> {
-  if (!contactIds || contactIds.length === 0) {
-    return { contacts: [] };
-  }
+  if (!contactIds || contactIds.length === 0) return { contacts: [] };
 
   const contacts = await prisma.contact.findMany({
     where: { id: { in: contactIds }, tenantId, deletedAt: null },
@@ -258,40 +247,32 @@ async function buildContactsContext(
     } satisfies ContactData;
   });
 
-  return {
-    firstContact: mappedContacts[0],
-    contacts: mappedContacts,
-  };
+  return { firstContact: mappedContacts[0], contacts: mappedContacts };
 }
 
 function buildBlockingErrors(
   missingPlaceholders: string[],
   missingPartials: string[],
-  diagnostics?: Pick<TemplateDiagnostics, 'circularPartials' | 'syntaxErrors'>
+  diagnostics?: Pick<TemplateDiagnostics, 'circularPartials' | 'syntaxErrors'>,
 ): string[] {
   const errors: string[] = [];
-
   if (missingPlaceholders.length > 0) {
     errors.push(`Unresolved placeholders: ${missingPlaceholders.join(', ')}`);
   }
-
   if (missingPartials.length > 0) {
     errors.push(`Missing partials: ${missingPartials.join(', ')}`);
   }
-
   if (diagnostics?.circularPartials.length) {
     errors.push(`Circular partial references: ${diagnostics.circularPartials.join(', ')}`);
   }
-
   if (diagnostics?.syntaxErrors.length) {
     errors.push(`Template syntax errors: ${diagnostics.syntaxErrors.join('; ')}`);
   }
-
   return errors;
 }
 
 export async function renderTemplateForGeneration(
-  params: RenderTemplateForGenerationParams
+  params: RenderTemplateForGenerationParams,
 ): Promise<RenderTemplateForGenerationResult> {
   const {
     templateId,
@@ -315,28 +296,32 @@ export async function renderTemplateForGeneration(
     generatedDocumentId,
   } = params;
 
-  if (!tenantId) {
-    throw new Error('Tenant ID is required for template rendering');
-  }
+  if (!tenantId) throw new Error('Tenant ID is required for template rendering');
 
   const template = templateId
-    ? await prisma.documentTemplate.findFirst({
-        where: { id: templateId, tenantId, deletedAt: null },
-      })
+    ? await prisma.documentTemplate.findFirst({ where: { id: templateId, tenantId, deletedAt: null } })
     : null;
-
-  if (templateId && !template) {
-    throw new NotFoundError('Template not found');
-  }
-
-  if (template && mode !== 'test' && !template.isActive) {
-    throw new Error('Template is not active');
-  }
+  if (templateId && !template) throw new NotFoundError('Template not found');
+  if (template && mode !== 'test' && !template.isActive) throw new Error('Template is not active');
 
   let renderContent = template?.content ?? templateContent;
-  if (!renderContent) {
-    throw new Error('Template content is required for rendering');
-  }
+  if (!renderContent) throw new Error('Template content is required for rendering');
+  readA4StoredDocument(renderContent, template?.contentJson);
+
+  const fieldScope = {
+    kind: 'template' as const,
+    id: template?.id ?? `ad-hoc:${templateName}`,
+  };
+  const storedFieldDefinitions = normalizeStoredFieldDefinitionInput(template?.placeholders);
+  const fieldRegistry = loadStoredFieldRegistry({
+    scope: fieldScope,
+    definitions: storedFieldDefinitions,
+  });
+  const effectiveCustomData = resolveTopLevelCustomValues({
+    scope: fieldScope,
+    definitions: storedFieldDefinitions,
+    itemValues: customData,
+  });
 
   const isServiceAgreement = template?.compositionType === 'SERVICE_AGREEMENT';
   if (!isServiceAgreement && serviceAgreementId) {
@@ -347,15 +332,10 @@ export async function renderTemplateForGeneration(
   }
   const agreement = isServiceAgreement
     ? serviceAgreementId
-      ? await getServiceAgreementDraftById(
-          serviceAgreementId,
-          userId ? { tenantId, userId } : tenantId,
-        )
+      ? await getServiceAgreementDraftById(serviceAgreementId, userId ? { tenantId, userId } : tenantId)
       : null
     : null;
-  if (isServiceAgreement && !agreement) {
-    throw new Error('A saved Service Agreement draft is required');
-  }
+  if (isServiceAgreement && !agreement) throw new Error('A saved Service Agreement draft is required');
   if (agreement && agreement.primaryCompanyId !== companyId) {
     throw new Error('Service Agreement primary company does not match the selected company');
   }
@@ -370,10 +350,7 @@ export async function renderTemplateForGeneration(
   let context: PlaceholderContext = contextOverride
     ? {
         ...contextOverride,
-        custom: {
-          ...contextOverride.custom,
-          ...customData,
-        },
+        custom: { ...contextOverride.custom, ...effectiveCustomData },
         system: {
           ...(contextOverride.system ?? {}),
           ...(generatedBy ? { preparerName: generatedBy, generatedBy } : {}),
@@ -381,7 +358,7 @@ export async function renderTemplateForGeneration(
         },
       }
     : {
-        custom: customData,
+        custom: effectiveCustomData,
         system: {
           currentDate: new Date(),
           ...(generatedBy ? { preparerName: generatedBy, generatedBy } : {}),
@@ -390,43 +367,27 @@ export async function renderTemplateForGeneration(
 
   if (companyId && !context.company) {
     const company = await getCompanyById(companyId, tenantId);
-    if (!company) {
-      throw new NotFoundError('Company not found');
-    }
+    if (!company) throw new NotFoundError('Company not found');
     const partyOptions = await getDocumentPartyOptions(companyId, tenantId);
-    const directorFieldsById = new Map(
-      partyOptions.directors.map((party) => [party.id, party]),
-    );
-    const shareholderFieldsById = new Map(
-      partyOptions.shareholders.map((party) => [party.id, party]),
-    );
+    const directorFieldsById = new Map(partyOptions.directors.map((party) => [party.id, party]));
+    const shareholderFieldsById = new Map(partyOptions.shareholders.map((party) => [party.id, party]));
     const companyWithPartyFields = {
       ...company,
       officers: (company.officers ?? []).map((officer) => {
         const party = directorFieldsById.get(officer.id);
         return party
-          ? {
-              ...officer,
-              email: party.email,
-              phone: party.phone,
-              letterAddress: party.address.letter,
-            }
+          ? { ...officer, email: party.email, phone: party.phone, letterAddress: party.address.letter }
           : officer;
       }),
       shareholders: (company.shareholders ?? []).map((shareholder) => {
         const party = shareholderFieldsById.get(shareholder.id);
         return party
-          ? {
-              ...shareholder,
-              email: party.email,
-              phone: party.phone,
-              letterAddress: party.address.letter,
-            }
+          ? { ...shareholder, email: party.email, phone: party.phone, letterAddress: party.address.letter }
           : shareholder;
       }),
     };
     const companyContext = prepareCompanyContext(
-      companyWithPartyFields as unknown as Parameters<typeof prepareCompanyContext>[0]
+      companyWithPartyFields as unknown as Parameters<typeof prepareCompanyContext>[0],
     );
     context = {
       ...context,
@@ -436,16 +397,10 @@ export async function renderTemplateForGeneration(
         ...context.system,
         currentDate: context.system?.currentDate ?? companyContext.system?.currentDate ?? new Date(),
       },
-      custom: {
-        ...companyContext.custom,
-        ...context.custom,
-      },
+      custom: { ...companyContext.custom, ...context.custom },
     };
   }
 
-  // A Service Agreement pins its authorised representative. Retain a stale
-  // selectedContactId for session compatibility, but never resolve it from the
-  // current company/contact graph: the snapshot below is the authority.
   const selectedContactRequiresResolution = Boolean(selectedContactId && !agreement);
   if (
     selectedDirectorIds !== undefined
@@ -453,23 +408,16 @@ export async function renderTemplateForGeneration(
     || selectedShareholderId
     || selectedContactRequiresResolution
   ) {
-    if (!companyId) {
-      throw new Error('Company selection is required for selected parties');
-    }
+    if (!companyId) throw new Error('Company selection is required for selected parties');
     const selections = await resolveDocumentPartySelections({
       companyId,
       tenantId,
       selectedDirectorId,
       ...(selectedDirectorIds !== undefined ? { selectedDirectorIds } : {}),
       selectedShareholderId,
-      selectedContactId: selectedContactRequiresResolution
-        ? selectedContactId
-        : undefined,
+      selectedContactId: selectedContactRequiresResolution ? selectedContactId : undefined,
     });
-    context = {
-      ...context,
-      ...selections,
-    };
+    context = { ...context, ...selections };
     if (selectedDirectorIds !== undefined) {
       const selectedDirectorIdSet = new Set(selectedDirectorIds);
       context.directors = (context.directors ?? []).filter(
@@ -477,6 +425,7 @@ export async function renderTemplateForGeneration(
       );
     }
   }
+
   if (agreement) {
     const authorizedRepresentatives = agreement.authorizedRepresentativeSnapshots.map(
       (representative) => ({
@@ -492,8 +441,7 @@ export async function renderTemplateForGeneration(
       }),
     );
     const signerIdSet = new Set(agreement.signerContactIds);
-    const signers = authorizedRepresentatives.filter((representative) =>
-      signerIdSet.has(representative.id));
+    const signers = authorizedRepresentatives.filter((representative) => signerIdSet.has(representative.id));
     context = {
       ...context,
       selectedContact: signers[0] ?? authorizedRepresentatives[0],
@@ -504,10 +452,7 @@ export async function renderTemplateForGeneration(
 
   const legacyContactContext = await buildContactsContext(contactIds, tenantId);
   const seenContactIds = new Set<string>();
-  const contacts = [
-    ...(context.contacts ?? []),
-    ...legacyContactContext.contacts,
-  ].filter((contact) => {
+  const contacts = [...(context.contacts ?? []), ...legacyContactContext.contacts].filter((contact) => {
     if (seenContactIds.has(contact.id)) return false;
     seenContactIds.add(contact.id);
     return true;
@@ -517,10 +462,7 @@ export async function renderTemplateForGeneration(
       ...context,
       contact: contacts[0],
       contacts,
-      custom: {
-        ...context.custom,
-        contacts,
-      },
+      custom: { ...context.custom, contacts },
     };
   }
   if (agreement) {
@@ -538,11 +480,11 @@ export async function renderTemplateForGeneration(
   const partialRefs = extractPartialReferences(renderContent);
   let partials: Awaited<ReturnType<typeof getPartialsUsedInTemplate>> = [];
   let partialsMap = new Map<string, string>();
-
   if (partialRefs.length > 0) {
     partials = await getPartialsUsedInTemplate(renderContent, tenantId);
     partialsMap = new Map(partials.map((partial) => [partial.name, partial.content]));
   }
+
   const diagnostics = analyzeTemplateContent({
     content: renderContent,
     placeholders: template?.placeholders,
@@ -550,26 +492,27 @@ export async function renderTemplateForGeneration(
   });
   if (mode !== 'test') {
     const partyRequirements = getRequiredPartySelections(renderContent, partials);
-    if (partyRequirements.director && !selectedDirectorId) {
-      throw new Error('Select a director for this template.');
-    }
-    if (partyRequirements.shareholder && !selectedShareholderId) {
-      throw new Error('Select a shareholder for this template.');
-    }
+    if (partyRequirements.director && !selectedDirectorId) throw new Error('Select a director for this template.');
+    if (partyRequirements.shareholder && !selectedShareholderId) throw new Error('Select a shareholder for this template.');
     if (partyRequirements.contact && !selectedContactId && !agreement) {
       throw new Error('Select a company contact for this template.');
     }
   }
 
-  const {
-    resolved,
-    missing,
-    missingPartials,
-  } = resolvePlaceholders(renderContent, context, {
-    missingPlaceholder: 'highlight',
-    partialsMap,
-  });
-
+  const fieldResolution = resolveTemplateFields(
+    renderContent,
+    context,
+    { missingPlaceholder: 'highlight', partialsMap },
+    {
+      registry: fieldRegistry.definitions,
+      partials: partials.map((partial) => ({
+        id: partial.id?.trim() || `legacy-partial:${partial.name}`,
+        name: partial.name,
+        content: partial.content ?? '',
+      })),
+    },
+  );
+  const { resolved, missing, missingPartials } = fieldResolution;
   const contentWithAnchors = addSectionAnchors(resolved);
   const sections = extractSections(contentWithAnchors);
 
@@ -589,14 +532,13 @@ export async function renderTemplateForGeneration(
     contextSummary: {
       hasCompany: Boolean(companyId || context.company),
       hasContacts: contacts.length > 0,
-      hasCustomData: Object.keys(customData).length > 0,
+      hasCustomData: Object.keys(effectiveCustomData).length > 0,
     },
     blockingErrors: [
       ...buildBlockingErrors(missing, missingPartials, diagnostics),
       ...(agreementAssembly?.itemDiagnostics.flatMap((item) =>
         item.missingPlaceholders.map(
-          (placeholder) =>
-            `Service item ${item.itemId} is missing required field ${placeholder}`,
+          (placeholder) => `Service item ${item.itemId} is missing required field ${placeholder}`,
         ),
       ) ?? []),
     ],
@@ -629,32 +571,25 @@ export async function renderTemplateForGeneration(
   };
 }
 
-// ============================================================================
-// Create Document from Template
-// ============================================================================
-
 export interface MaterializeDocumentTarget {
   generatedDocumentId?: string;
   expectedBatchItemId?: string;
   serviceAgreementId?: string;
 }
 
-/**
- * Materialize a template into an authorized generated-document record.
- *
- * Shared by the legacy single-document path (which creates a child) and batch
- * generation (which updates the hidden child owned by a batch item). For
- * batch targets the exact item/child ownership is verified before writing.
- */
 export async function materializeDocumentFromTemplate(
   data: CreateDocumentFromTemplateInput,
   params: TenantAwareParams,
   target: MaterializeDocumentTarget = {},
   taskIntegrationContext?: TaskLaunchContext,
-): Promise<GeneratedDocument> {
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
   const contactIds = data.contactIds ?? [];
   const useLetterhead = data.useLetterhead ?? true;
+  if (target.generatedDocumentId) {
+    assertRevisionPrecondition(data.expectedRevision, 'generated-document');
+  }
+
   const creator = await prisma.user.findFirst({
     where: { id: userId, tenantId },
     select: { firstName: true, lastName: true },
@@ -668,6 +603,7 @@ export async function materializeDocumentFromTemplate(
       where: { id: target.generatedDocumentId, tenantId, deletedAt: null },
     });
     if (!existingChild) throw new NotFoundError('Document draft not found');
+    if (existingChild.status !== 'DRAFT') throw generatedDocumentStateConflict();
     if (target.expectedBatchItemId) {
       const batchItem = await prisma.documentGenerationBatchItem.findFirst({
         where: {
@@ -679,29 +615,18 @@ export async function materializeDocumentFromTemplate(
       if (!batchItem) throw new NotFoundError('Batch item not found');
     }
   }
-  // Get template
+
   const template = await prisma.documentTemplate.findFirst({
     where: { id: data.templateId, tenantId, deletedAt: null },
   });
+  if (!template) throw new NotFoundError('Template not found');
+  if (!template.isActive) throw new Error('Template is not active');
 
-  if (!template) {
-    throw new NotFoundError('Template not found');
-  }
-
-  if (!template.isActive) {
-    throw new Error('Template is not active');
-  }
   const attachedAgreement = target.generatedDocumentId
     ? await getServiceAgreementDraft(target.generatedDocumentId, params)
     : null;
-  if (
-    template.compositionType === 'STANDARD'
-    && attachedAgreement
-    && !data.discardServiceAgreement
-  ) {
-    throw new ValidationError(
-      'Discard the attached Service Agreement before switching templates',
-    );
+  if (template.compositionType === 'STANDARD' && attachedAgreement && !data.discardServiceAgreement) {
+    throw new ValidationError('Discard the attached Service Agreement before switching templates');
   }
   if (
     template.compositionType === 'STANDARD'
@@ -710,13 +635,8 @@ export async function materializeDocumentFromTemplate(
   ) {
     throw new ValidationError('Only draft Service Agreements can be discarded');
   }
-  const linkedAgreement = template.compositionType === 'SERVICE_AGREEMENT'
-    ? attachedAgreement
-    : null;
-  if (
-    data.serviceAgreementId &&
-    linkedAgreement?.id !== data.serviceAgreementId
-  ) {
+  const linkedAgreement = template.compositionType === 'SERVICE_AGREEMENT' ? attachedAgreement : null;
+  if (data.serviceAgreementId && linkedAgreement?.id !== data.serviceAgreementId) {
     throw new Error('Service Agreement does not match the document draft');
   }
 
@@ -727,9 +647,7 @@ export async function materializeDocumentFromTemplate(
     companyId: data.companyId,
     contactIds,
     selectedDirectorId: data.selectedDirectorId,
-    ...(data.selectedDirectorIds !== undefined
-      ? { selectedDirectorIds: data.selectedDirectorIds }
-      : {}),
+    ...(data.selectedDirectorIds !== undefined ? { selectedDirectorIds: data.selectedDirectorIds } : {}),
     selectedShareholderId: data.selectedShareholderId,
     selectedContactId: data.selectedContactId,
     customData: data.customData,
@@ -744,15 +662,16 @@ export async function materializeDocumentFromTemplate(
     });
   }
 
+  const canonicalContent = data.editedContent ?? rendered.content;
+  const canonicalContentJson = data.editedContentJson ?? template.contentJson ?? null;
+  assertA4WriterCanPreserve(canonicalContent, canonicalContentJson);
+
   const selectedParties = {
     ...(data.selectedDirectorId ? { directorId: data.selectedDirectorId } : {}),
-    ...(data.selectedDirectorIds !== undefined
-      ? { directorIds: data.selectedDirectorIds }
-      : {}),
+    ...(data.selectedDirectorIds !== undefined ? { directorIds: data.selectedDirectorIds } : {}),
     ...(data.selectedShareholderId ? { shareholderId: data.selectedShareholderId } : {}),
     ...(data.selectedContactId ? { contactId: data.selectedContactId } : {}),
   };
-
   const generatedMetadata = {
     missingPlaceholders: rendered.missingPlaceholders,
     missingPartials: rendered.missingPartials,
@@ -767,48 +686,53 @@ export async function materializeDocumentFromTemplate(
           serviceAgreementStructuredHash: createHash('sha256')
             .update(canonicalJson(canonicalServiceAgreementData(linkedAgreement)))
             .digest('hex'),
-          serviceAgreementContentEdited: Boolean(
-            data.editedContent && data.editedContent !== rendered.content,
-          ),
+          serviceAgreementContentEdited: Boolean(data.editedContent && data.editedContent !== rendered.content),
         }
       : {}),
-    ...(taskIntegrationContext ? {
-      taskIntegrationContext: {
-        taskId: taskIntegrationContext.taskId,
-        taskStageId: taskIntegrationContext.taskStageId,
-        ...(taskIntegrationContext.returnTo
-          ? { returnTo: taskIntegrationContext.returnTo }
-          : {}),
-      },
-    } : {}),
+    ...(taskIntegrationContext
+      ? {
+          taskIntegrationContext: {
+            taskId: taskIntegrationContext.taskId,
+            taskStageId: taskIntegrationContext.taskStageId,
+            ...(taskIntegrationContext.returnTo ? { returnTo: taskIntegrationContext.returnTo } : {}),
+          },
+        }
+      : {}),
   };
 
-  const updateData = {
-    templateId: template.id,
+  const updateData: Prisma.GeneratedDocumentUpdateInput = {
+    template: { connect: { id: template.id } },
     templateVersion: template.version,
-    companyId: data.companyId ?? null,
+    company: data.companyId ? { connect: { id: data.companyId } } : { disconnect: true },
     title: data.title,
-    content: data.editedContent ?? rendered.content,
-    contentJson: data.editedContentJson ?? template.contentJson ?? Prisma.JsonNull,
-    status: 'DRAFT' as const,
+    content: canonicalContent,
+    contentJson: canonicalContentJson ?? Prisma.JsonNull,
+    status: 'DRAFT',
     useLetterhead,
     placeholderData: rendered.context as Prisma.InputJsonValue,
     metadata: generatedMetadata as Prisma.InputJsonValue,
   };
-  const document = target.generatedDocumentId && attachedAgreement && template.compositionType === 'STANDARD'
-    ? await prisma.$transaction(async (tx) => {
+
+  let document: GeneratedDocumentWithRevision;
+  if (target.generatedDocumentId) {
+    document = await prisma.$transaction(async (tx) => {
+      const claim = await claimGeneratedDocumentRevision(tx, {
+        id: target.generatedDocumentId!,
+        tenantId,
+        expectedRevision: data.expectedRevision,
+        allowedStatuses: ['DRAFT'],
+      });
+      if (attachedAgreement && template.compositionType === 'STANDARD') {
         await tx.serviceAgreement.delete({ where: { id: attachedAgreement.id } });
-        return tx.generatedDocument.update({
-          where: { id: target.generatedDocumentId! },
-          data: updateData,
-        });
-      })
-    : target.generatedDocumentId
-      ? await prisma.generatedDocument.update({
-      where: { id: target.generatedDocumentId },
-      data: updateData,
-    })
-    : await prisma.generatedDocument.create({
+      }
+      const updated = await tx.generatedDocument.update({
+        where: { id: target.generatedDocumentId! },
+        data: updateData,
+      });
+      return withRevision(updated, claim.revision);
+    });
+  } else {
+    const created = await prisma.generatedDocument.create({
       data: {
         tenantId,
         templateId: template.id,
@@ -816,8 +740,8 @@ export async function materializeDocumentFromTemplate(
         sharePointRelativeFolderPathSnapshot: template.sharePointRelativeFolderPath,
         companyId: data.companyId,
         title: data.title,
-        content: data.editedContent ?? rendered.content,
-        contentJson: data.editedContentJson ?? template.contentJson ?? undefined,
+        content: canonicalContent,
+        contentJson: canonicalContentJson ?? undefined,
         status: 'DRAFT',
         useLetterhead,
         placeholderData: rendered.context as Prisma.InputJsonValue,
@@ -825,6 +749,8 @@ export async function materializeDocumentFromTemplate(
         createdById: userId,
       },
     });
+    document = withRevision(created, 0);
+  }
 
   await createAuditLog({
     tenantId,
@@ -843,23 +769,18 @@ export async function materializeDocumentFromTemplate(
       missingPartials: rendered.missingPartials,
       dependencySnapshot: rendered.dependencySnapshot,
       selectedParties,
+      revision: document.revision,
     },
   });
 
   return document;
 }
 
-/**
- * Backward-compatible single-document creation.
- *
- * Validates the legacy generation-session draft when supplied and delegates
- * rendering/writing to the shared materialization path.
- */
 export async function createDocumentFromTemplate(
   data: CreateDocumentFromTemplateInput,
   params: TenantAwareParams,
   taskIntegrationContext?: TaskLaunchContext,
-): Promise<GeneratedDocument> {
+): Promise<GeneratedDocumentWithRevision> {
   if (data.draftId) {
     const generationDraft = await prisma.generatedDocument.findFirst({
       where: { id: data.draftId, tenantId: params.tenantId, deletedAt: null },
@@ -875,36 +796,26 @@ export async function createDocumentFromTemplate(
   return materializeDocumentFromTemplate(
     data,
     params,
-    {
-      generatedDocumentId: data.draftId,
-      serviceAgreementId: data.serviceAgreementId,
-    },
+    { generatedDocumentId: data.draftId, serviceAgreementId: data.serviceAgreementId },
     taskIntegrationContext,
   );
 }
-
-// ============================================================================
-// Create Blank Document
-// ============================================================================
 
 export async function createBlankDocument(
   data: CreateBlankDocumentInput,
   params: TenantAwareParams,
   taskIntegrationContext?: TaskLaunchContext,
-): Promise<GeneratedDocument> {
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
-
-  // Verify company if provided
+  assertA4WriterCanPreserve(data.content, data.contentJson);
   if (data.companyId) {
     const company = await prisma.company.findFirst({
       where: { id: data.companyId, tenantId, deletedAt: null },
     });
-    if (!company) {
-      throw new NotFoundError('Company not found');
-    }
+    if (!company) throw new NotFoundError('Company not found');
   }
 
-  const document = await prisma.generatedDocument.create({
+  const created = await prisma.generatedDocument.create({
     data: {
       tenantId,
       companyId: data.companyId,
@@ -915,18 +826,17 @@ export async function createBlankDocument(
       useLetterhead: data.useLetterhead,
       metadata: taskIntegrationContext
         ? {
-          taskIntegrationContext: {
-            taskId: taskIntegrationContext.taskId,
-            taskStageId: taskIntegrationContext.taskStageId,
-            ...(taskIntegrationContext.returnTo
-              ? { returnTo: taskIntegrationContext.returnTo }
-              : {}),
-          },
-        }
+            taskIntegrationContext: {
+              taskId: taskIntegrationContext.taskId,
+              taskStageId: taskIntegrationContext.taskStageId,
+              ...(taskIntegrationContext.returnTo ? { returnTo: taskIntegrationContext.returnTo } : {}),
+            },
+          }
         : undefined,
       createdById: userId,
     },
   });
+  const document = withRevision(created, 0);
 
   await createAuditLog({
     tenantId,
@@ -939,39 +849,33 @@ export async function createBlankDocument(
     summary: `Created blank document "${document.title}"`,
     changeSource: 'MANUAL',
   });
-
   return document;
 }
-
-// ============================================================================
-// Update Document
-// ============================================================================
 
 export async function updateGeneratedDocument(
   data: UpdateGeneratedDocumentInput,
   params: TenantAwareParams,
-  reason?: string
-): Promise<GeneratedDocument> {
+  reason?: string,
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(data.expectedRevision, 'generated-document');
 
   const existing = await prisma.generatedDocument.findFirst({
     where: { id: data.id, tenantId, deletedAt: null },
   });
-
-  if (!existing) {
-    throw new NotFoundError('Document not found');
+  if (!existing) throw new NotFoundError('Document not found');
+  if (existing.status === 'FINALIZED' || existing.status === 'ARCHIVED') {
+    throw generatedDocumentStateConflict();
   }
 
-  if (existing.status === 'FINALIZED') {
-    throw new Error('Cannot update a finalized document. Unfinalize it first.');
-  }
-
-  if (existing.status === 'ARCHIVED') {
-    throw new Error('Cannot update an archived document');
+  if (data.content !== undefined || data.contentJson !== undefined) {
+    assertA4WriterCanPreserve(
+      data.content ?? existing.content,
+      data.contentJson === undefined ? existing.contentJson : data.contentJson,
+    );
   }
 
   const updateData: Prisma.GeneratedDocumentUpdateInput = {};
-
   if (data.title !== undefined) updateData.title = data.title;
   if (data.content !== undefined) updateData.content = data.content;
   if (data.contentJson !== undefined) {
@@ -982,17 +886,18 @@ export async function updateGeneratedDocument(
     updateData.metadata = data.metadata ? (data.metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
   }
 
-  const document = await prisma.generatedDocument.update({
-    where: { id: data.id },
-    data: updateData,
+  const document = await prisma.$transaction(async (tx) => {
+    const claim = await claimGeneratedDocumentRevision(tx, {
+      id: data.id,
+      tenantId,
+      expectedRevision: data.expectedRevision,
+      allowedStatuses: ['DRAFT'],
+    });
+    const updated = await tx.generatedDocument.update({ where: { id: data.id }, data: updateData });
+    return withRevision(updated, claim.revision);
   });
 
-  const changes = computeChanges(
-    existing as Record<string, unknown>,
-    data,
-    TRACKED_FIELDS as string[]
-  );
-
+  const changes = computeChanges(existing as Record<string, unknown>, data, TRACKED_FIELDS as string[]);
   if (changes) {
     const changedFields = Object.keys(changes).join(', ');
     await createAuditLog({
@@ -1009,47 +914,40 @@ export async function updateGeneratedDocument(
       reason,
     });
   }
-
   return document;
 }
 
-// ============================================================================
-// Finalize Document
-// ============================================================================
-
 export async function finalizeDocument(
   id: string,
-  params: TenantAwareParams
-): Promise<GeneratedDocument> {
+  params: TenantAwareParams,
+  expectedRevision?: number,
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'generated-document');
 
   const existing = await prisma.generatedDocument.findFirst({
     where: { id, tenantId, deletedAt: null },
   });
-
-  if (!existing) {
-    throw new NotFoundError('Document not found');
+  if (!existing) throw new NotFoundError('Document not found');
+  if (existing.status === 'FINALIZED' || existing.status === 'ARCHIVED') {
+    throw generatedDocumentStateConflict();
   }
-
-  if (existing.status === 'FINALIZED') {
-    throw new Error('Document is already finalized');
-  }
-
-  if (existing.status === 'ARCHIVED') {
-    throw new Error('Cannot finalize an archived document');
-  }
-
   if (metadataHasUnresolvedTemplateData(existing.metadata)) {
     throw new Error('Cannot finalize document with unresolved placeholders or partials');
   }
 
-  const document = await prisma.generatedDocument.update({
-    where: { id },
-    data: {
-      status: 'FINALIZED',
-      finalizedAt: new Date(),
-      finalizedById: userId,
-    },
+  const document = await prisma.$transaction(async (tx) => {
+    const claim = await claimGeneratedDocumentRevision(tx, {
+      id,
+      tenantId,
+      expectedRevision,
+      allowedStatuses: ['DRAFT'],
+    });
+    const updated = await tx.generatedDocument.update({
+      where: { id },
+      data: { status: 'FINALIZED', finalizedAt: new Date(), finalizedById: userId },
+    });
+    return withRevision(updated, claim.revision);
   });
 
   await createAuditLog({
@@ -1065,52 +963,44 @@ export async function finalizeDocument(
   });
   await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
   try {
-    await queueTaskEsigningPreparationsForGeneratedDocument(
-      tenantId,
-      document.id,
-      userId,
-    );
+    await queueTaskEsigningPreparationsForGeneratedDocument(tenantId, document.id, userId);
   } catch (error) {
     log.warn('Failed to queue E-signing preparation after document finalization', {
       documentId: document.id,
       error,
     });
   }
-
   return document;
 }
-
-// ============================================================================
-// Unfinalize Document
-// ============================================================================
 
 export async function unfinalizeDocument(
   id: string,
   params: TenantAwareParams,
-  reason: string
-): Promise<GeneratedDocument> {
+  reason: string,
+  expectedRevision?: number,
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'generated-document');
 
   const existing = await prisma.generatedDocument.findFirst({
     where: { id, tenantId, deletedAt: null },
   });
-
-  if (!existing) {
-    throw new NotFoundError('Document not found');
-  }
-
-  if (existing.status !== 'FINALIZED') {
-    throw new Error('Document is not finalized');
-  }
-
+  if (!existing) throw new NotFoundError('Document not found');
+  if (existing.status !== 'FINALIZED') throw generatedDocumentStateConflict();
   await assertGeneratedDocumentCanBeUnfinalized(tenantId, existing.id);
 
-  const document = await prisma.generatedDocument.update({
-    where: { id },
-    data: {
-      status: 'DRAFT',
-      unfinalizedAt: new Date(),
-    },
+  const document = await prisma.$transaction(async (tx) => {
+    const claim = await claimGeneratedDocumentRevision(tx, {
+      id,
+      tenantId,
+      expectedRevision,
+      allowedStatuses: ['FINALIZED'],
+    });
+    const updated = await tx.generatedDocument.update({
+      where: { id },
+      data: { status: 'DRAFT', unfinalizedAt: new Date() },
+    });
+    return withRevision(updated, claim.revision);
   });
 
   await createAuditLog({
@@ -1127,49 +1017,38 @@ export async function unfinalizeDocument(
   });
   await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
   try {
-    await queueTaskEsigningPreparationsForGeneratedDocument(
-      tenantId,
-      document.id,
-      userId,
-    );
+    await queueTaskEsigningPreparationsForGeneratedDocument(tenantId, document.id, userId);
   } catch (error) {
     log.warn('Failed to queue E-signing detach after document unfinalization', {
       documentId: document.id,
       error,
     });
   }
-
   return document;
 }
-
-// ============================================================================
-// Archive Document
-// ============================================================================
 
 export async function archiveDocument(
   id: string,
   params: TenantAwareParams,
-  reason: string
-): Promise<GeneratedDocument> {
+  reason: string,
+  expectedRevision?: number,
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'generated-document');
 
-  const existing = await prisma.generatedDocument.findFirst({
-    where: { id, tenantId, deletedAt: null },
-  });
+  const existing = await prisma.generatedDocument.findFirst({ where: { id, tenantId, deletedAt: null } });
+  if (!existing) throw new NotFoundError('Document not found');
+  if (existing.status === 'ARCHIVED') throw generatedDocumentStateConflict();
 
-  if (!existing) {
-    throw new NotFoundError('Document not found');
-  }
-
-  if (existing.status === 'ARCHIVED') {
-    throw new Error('Document is already archived');
-  }
-
-  const document = await prisma.generatedDocument.update({
-    where: { id },
-    data: {
-      status: 'ARCHIVED',
-    },
+  const document = await prisma.$transaction(async (tx) => {
+    const claim = await claimGeneratedDocumentRevision(tx, {
+      id,
+      tenantId,
+      expectedRevision,
+      allowedStatuses: ['DRAFT', 'FINALIZED'],
+    });
+    const updated = await tx.generatedDocument.update({ where: { id }, data: { status: 'ARCHIVED' } });
+    return withRevision(updated, claim.revision);
   });
 
   await createAuditLog({
@@ -1184,43 +1063,27 @@ export async function archiveDocument(
     changeSource: 'MANUAL',
     reason,
   });
-  await safelyReconcileGeneratedDocumentTaskOutcomes(
-    tenantId,
-    document.id,
-    userId,
-  );
-
+  await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
   return document;
 }
-
-// ============================================================================
-// Delete Document (Soft Delete)
-// ============================================================================
 
 export async function deleteGeneratedDocument(
   id: string,
   params: TenantAwareParams,
-  reason: string
-): Promise<GeneratedDocument> {
+  reason: string,
+  expectedRevision?: number,
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'generated-document');
 
-  const existing = await prisma.generatedDocument.findFirst({
-    where: { id, tenantId },
-  });
+  const existing = await prisma.generatedDocument.findFirst({ where: { id, tenantId } });
+  if (!existing) throw new NotFoundError('Document not found');
+  if (existing.deletedAt) throw generatedDocumentStateConflict(true);
 
-  if (!existing) {
-    throw new NotFoundError('Document not found');
-  }
-
-  if (existing.deletedAt) {
-    throw new Error('Document is already deleted');
-  }
-
-  const document = await prisma.generatedDocument.update({
-    where: { id },
-    data: {
-      deletedAt: new Date(),
-    },
+  const document = await prisma.$transaction(async (tx) => {
+    const claim = await claimGeneratedDocumentRevision(tx, { id, tenantId, expectedRevision });
+    const updated = await tx.generatedDocument.update({ where: { id }, data: { deletedAt: new Date() } });
+    return withRevision(updated, claim.revision);
   });
 
   await createAuditLog({
@@ -1235,39 +1098,29 @@ export async function deleteGeneratedDocument(
     changeSource: 'MANUAL',
     reason,
   });
-  await safelyReconcileGeneratedDocumentTaskOutcomes(
-    tenantId,
-    document.id,
-    userId,
-  );
-
+  await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
   return document;
 }
 
-// ============================================================================
-// Bulk Delete Documents (Soft Delete)
-// ============================================================================
-
 export interface BulkDeleteGeneratedDocumentsResult {
   deleted: number;
-  failed: Array<{ id: string; error: string }>;
+  failed: Array<{ id: string; error: string; code?: string }>;
 }
 
 export async function bulkDeleteGeneratedDocuments(
   ids: string[],
   params: TenantAwareParams,
-  reason: string
+  reason: string,
+  expectedRevisions: Record<string, number> = {},
 ): Promise<BulkDeleteGeneratedDocumentsResult> {
   const { tenantId, userId } = params;
-
   const documents = await prisma.generatedDocument.findMany({
     where: { id: { in: ids }, tenantId },
     select: { id: true, title: true, companyId: true, deletedAt: true },
   });
 
-  const failed: Array<{ id: string; error: string }> = [];
+  const failed: Array<{ id: string; error: string; code?: string }> = [];
   let deleted = 0;
-
   for (const id of ids) {
     const document = documents.find((candidate) => candidate.id === id);
     if (!document) {
@@ -1275,58 +1128,60 @@ export async function bulkDeleteGeneratedDocuments(
       continue;
     }
     if (document.deletedAt) {
-      failed.push({ id, error: 'Document is already deleted' });
+      failed.push({ id, error: 'This resource is deleted.', code: ErrorCodes.CONFLICT });
       continue;
     }
 
-    await prisma.generatedDocument.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    const expectedRevision = expectedRevisions[id];
+    assertRevisionPrecondition(expectedRevision, 'generated-document');
+    try {
+      const deletedDocument = await prisma.$transaction(async (tx) => {
+        const claim = await claimGeneratedDocumentRevision(tx, { id, tenantId, expectedRevision });
+        const updated = await tx.generatedDocument.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+        });
+        return withRevision(updated, claim.revision);
+      });
 
-    await createAuditLog({
-      tenantId,
-      userId,
-      companyId: document.companyId ?? undefined,
-      action: 'DELETE',
-      entityType: 'GeneratedDocument',
-      entityId: document.id,
-      entityName: document.title,
-      summary: `Deleted document "${document.title}"`,
-      changeSource: 'MANUAL',
-      reason,
-    });
-    await safelyReconcileGeneratedDocumentTaskOutcomes(
-      tenantId,
-      document.id,
-      userId,
-    );
-
-    deleted += 1;
+      await createAuditLog({
+        tenantId,
+        userId,
+        companyId: document.companyId ?? undefined,
+        action: 'DELETE',
+        entityType: 'GeneratedDocument',
+        entityId: document.id,
+        entityName: document.title,
+        summary: `Deleted document "${document.title}"`,
+        changeSource: 'MANUAL',
+        reason,
+        metadata: { revision: deletedDocument.revision },
+      });
+      await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
+      deleted += 1;
+    } catch (error) {
+      failed.push({
+        id,
+        error: error instanceof Error ? error.message : 'Delete failed',
+        ...(error instanceof ApiError ? { code: error.code } : {}),
+      });
+    }
   }
 
   return { deleted, failed };
 }
 
-// ============================================================================
-// Clone Document
-// ============================================================================
-
 export async function cloneDocument(
   data: CloneDocumentInput,
-  params: TenantAwareParams
-): Promise<GeneratedDocument> {
+  params: TenantAwareParams,
+): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
-
   const source = await prisma.generatedDocument.findFirst({
     where: { id: data.id, tenantId, deletedAt: null },
   });
+  if (!source) throw new NotFoundError('Document not found');
+  assertA4WriterCanPreserve(source.content, source.contentJson);
 
-  if (!source) {
-    throw new NotFoundError('Document not found');
-  }
-
-  // Generate unique title
   let newTitle = data.title || `Copy of ${source.title}`;
   let counter = 1;
   while (true) {
@@ -1339,7 +1194,7 @@ export async function cloneDocument(
     if (counter > 100) throw new Error('Unable to generate unique title');
   }
 
-  const document = await prisma.generatedDocument.create({
+  const created = await prisma.generatedDocument.create({
     data: {
       tenantId,
       templateId: source.templateId,
@@ -1356,6 +1211,7 @@ export async function cloneDocument(
       createdById: userId,
     },
   });
+  const document = withRevision(created, 0);
 
   await createAuditLog({
     tenantId,
@@ -1369,13 +1225,8 @@ export async function cloneDocument(
     changeSource: 'MANUAL',
     metadata: { sourceDocumentId: source.id, sourceTitle: source.title },
   });
-
   return document;
 }
-
-// ============================================================================
-// Get Document by ID
-// ============================================================================
 
 export interface GetDocumentOptions {
   includeDeleted?: boolean;
@@ -1385,60 +1236,26 @@ export interface GetDocumentOptions {
 export async function getGeneratedDocumentById(
   id: string,
   tenantId: string,
-  options: GetDocumentOptions = {}
+  options: GetDocumentOptions = {},
 ): Promise<GeneratedDocumentWithRelations | null> {
   const { includeDeleted = false, includeComments = false } = options;
-
   const where: Prisma.GeneratedDocumentWhereInput = { id, tenantId };
-  if (!includeDeleted) {
-    where.deletedAt = null;
-  }
-  where.AND = [
-    { OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] },
-  ];
+  if (!includeDeleted) where.deletedAt = null;
+  where.AND = [{ OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] }];
 
-  return prisma.generatedDocument.findFirst({
+  const document = await prisma.generatedDocument.findFirst({
     where,
     include: {
-      template: {
-        select: {
-          id: true,
-          name: true,
-          category: true,
-        },
-      },
-      company: {
-        select: {
-          id: true,
-          name: true,
-          uen: true,
-        },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
-      finalizedBy: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
+      template: { select: { id: true, name: true, category: true } },
+      company: { select: { id: true, name: true, uen: true } },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+      finalizedBy: { select: { id: true, firstName: true, lastName: true } },
       esigningEnvelopeDocuments: {
         where: { envelope: { deletedAt: null } },
         orderBy: { createdAt: 'desc' },
         select: {
           envelope: {
-            select: {
-              id: true,
-              title: true,
-              status: true,
-              completedAt: true,
-            },
+            select: { id: true, title: true, status: true, completedAt: true },
           },
         },
       },
@@ -1448,47 +1265,28 @@ export async function getGeneratedDocumentById(
               where: { parentId: null, deletedAt: null, hiddenAt: null },
               orderBy: { createdAt: 'desc' as const },
               include: {
-                user: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                  },
-                },
+                user: { select: { id: true, firstName: true, lastName: true } },
                 replies: {
                   where: { deletedAt: null, hiddenAt: null },
                   orderBy: { createdAt: 'asc' as const },
-                  include: {
-                    user: {
-                      select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                      },
-                    },
-                  },
+                  include: { user: { select: { id: true, firstName: true, lastName: true } } },
                 },
               },
             },
           }
         : {}),
-      _count: {
-        select: {
-          comments: true,
-          drafts: true,
-        },
-      },
+      _count: { select: { comments: true, drafts: true } },
     },
   });
+  if (!document) return null;
+  readA4StoredDocument(document.content, document.contentJson);
+  const revision = await readGeneratedDocumentRevision(prisma, document.id, tenantId);
+  return { ...document, revision } as GeneratedDocumentWithRelations;
 }
-
-// ============================================================================
-// Search Documents
-// ============================================================================
 
 export async function searchGeneratedDocuments(
   params: SearchGeneratedDocumentsInput,
-  tenantId: string
+  tenantId: string,
 ): Promise<{
   documents: GeneratedDocumentWithRelations[];
   total: number;
@@ -1496,20 +1294,10 @@ export async function searchGeneratedDocuments(
   limit: number;
   totalPages: number;
 }> {
-  // SECURITY: Tenant ID is required to prevent cross-workspace data access.
-  if (!tenantId) {
-    throw new Error('Tenant ID is required for generated documents search');
-  }
+  if (!tenantId) throw new Error('Tenant ID is required for generated documents search');
 
-  const where: Prisma.GeneratedDocumentWhereInput = {
-    deletedAt: null,
-    tenantId,
-  };
-  where.AND = [
-    { OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] },
-  ];
-
-  // Text search
+  const where: Prisma.GeneratedDocumentWhereInput = { deletedAt: null, tenantId };
+  where.AND = [{ OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] }];
   if (params.query) {
     const searchTerm = params.query.trim();
     where.OR = [
@@ -1518,43 +1306,14 @@ export async function searchGeneratedDocuments(
       { template: { name: { contains: searchTerm, mode: 'insensitive' } } },
     ];
   }
-
-  // Title filter (independent of the global search)
-  if (params.title) {
-    where.title = {
-      contains: params.title.trim(),
-      mode: 'insensitive',
-    };
-  }
-
-  // Filters
-  if (params.companyId) {
-    where.companyId = params.companyId;
-  }
-
-  // Company name filter (free text search)
-  if (params.companyName) {
-    where.company = {
-      name: { contains: params.companyName, mode: 'insensitive' },
-    };
-  }
-
-  if (params.templateId) {
-    where.templateId = params.templateId;
-  }
-
-  // Template name filter (free text, works even when the template was deleted)
+  if (params.title) where.title = { contains: params.title.trim(), mode: 'insensitive' };
+  if (params.companyId) where.companyId = params.companyId;
+  if (params.companyName) where.company = { name: { contains: params.companyName, mode: 'insensitive' } };
+  if (params.templateId) where.templateId = params.templateId;
   if (params.templateName) {
-    where.template = {
-      name: { contains: params.templateName.trim(), mode: 'insensitive' },
-    };
+    where.template = { name: { contains: params.templateName.trim(), mode: 'insensitive' } };
   }
-
-  if (params.status) {
-    where.status = params.status;
-  }
-
-  // Created-by filter
+  if (params.status) where.status = params.status;
   if (params.createdBy) {
     const searchTerm = params.createdBy.trim();
     where.createdBy = {
@@ -1564,32 +1323,19 @@ export async function searchGeneratedDocuments(
       ],
     };
   }
-
-  // Signed date range
   if (params.signedFrom || params.signedTo) {
     where.signedAt = {
-      ...(params.signedFrom
-        ? { gte: new Date(`${params.signedFrom}T00:00:00.000`) }
-        : {}),
-      ...(params.signedTo
-        ? { lte: new Date(`${params.signedTo}T23:59:59.999`) }
-        : {}),
+      ...(params.signedFrom ? { gte: new Date(`${params.signedFrom}T00:00:00.000`) } : {}),
+      ...(params.signedTo ? { lte: new Date(`${params.signedTo}T23:59:59.999`) } : {}),
     };
   }
-
-  // Updated date range
   if (params.updatedFrom || params.updatedTo) {
     where.updatedAt = {
-      ...(params.updatedFrom
-        ? { gte: new Date(`${params.updatedFrom}T00:00:00.000`) }
-        : {}),
-      ...(params.updatedTo
-        ? { lte: new Date(`${params.updatedTo}T23:59:59.999`) }
-        : {}),
+      ...(params.updatedFrom ? { gte: new Date(`${params.updatedFrom}T00:00:00.000`) } : {}),
+      ...(params.updatedTo ? { lte: new Date(`${params.updatedTo}T23:59:59.999`) } : {}),
     };
   }
 
-  // Sorting
   const orderBy: Prisma.GeneratedDocumentOrderByWithRelationInput = {};
   switch (params.sortBy) {
     case 'companyName':
@@ -1606,40 +1352,15 @@ export async function searchGeneratedDocuments(
       break;
   }
 
-  // Pagination
   const skip = (params.page - 1) * params.limit;
-
   const [documents, total] = await Promise.all([
     prisma.generatedDocument.findMany({
       where,
       include: {
-        template: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
-        company: {
-          select: {
-            id: true,
-            name: true,
-            uen: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            drafts: true,
-          },
-        },
+        template: { select: { id: true, name: true, category: true } },
+        company: { select: { id: true, name: true, uen: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        _count: { select: { comments: true, drafts: true } },
       },
       orderBy,
       skip,
@@ -1647,9 +1368,21 @@ export async function searchGeneratedDocuments(
     }),
     prisma.generatedDocument.count({ where }),
   ]);
+  for (const document of documents) {
+    readA4StoredDocument(document.content, document.contentJson);
+  }
+  const revisions = await readGeneratedDocumentRevisions(
+    prisma,
+    documents.map((document) => document.id),
+    tenantId,
+  );
+  const documentsWithRevisions = documents.map((document) => ({
+    ...document,
+    revision: revisions.get(document.id) ?? 0,
+  })) as GeneratedDocumentWithRelations[];
 
   return {
-    documents,
+    documents: documentsWithRevisions,
     total,
     page: params.page,
     limit: params.limit,
@@ -1657,31 +1390,22 @@ export async function searchGeneratedDocuments(
   };
 }
 
-/**
- * Create a comment on a document
- */
 export async function createDocumentComment(
   data: CreateDocumentCommentInput,
   ipAddress: string | null,
-  params?: TenantAwareParams
+  params?: TenantAwareParams,
 ): Promise<DocumentComment> {
   const document = await prisma.generatedDocument.findFirst({
     where: { id: data.documentId, deletedAt: null },
     select: { tenantId: true, companyId: true, title: true },
   });
+  if (!document) throw new NotFoundError('Document not found');
 
-  if (!document) {
-    throw new NotFoundError('Document not found');
-  }
-
-  // Validate parent comment if this is a reply
   if (data.parentId) {
     const parent = await prisma.documentComment.findFirst({
       where: { id: data.parentId, documentId: data.documentId, deletedAt: null },
     });
-    if (!parent) {
-      throw new NotFoundError('Parent comment not found');
-    }
+    if (!parent) throw new NotFoundError('Parent comment not found');
   }
 
   const comment = await prisma.documentComment.create({
@@ -1697,15 +1421,7 @@ export async function createDocumentComment(
       parentId: data.parentId,
       ipAddress,
     },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
-    },
+    include: { user: { select: { id: true, firstName: true, lastName: true } } },
   });
 
   if (params) {
@@ -1726,41 +1442,25 @@ export async function createDocumentComment(
       },
     });
   }
-
   return comment;
 }
 
-/**
- * Resolve a comment
- */
 export async function resolveComment(
   commentId: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<DocumentComment> {
   const { tenantId, userId } = params;
-
   const comment = await prisma.documentComment.findFirst({
     where: { id: commentId },
     include: { document: { select: { tenantId: true, title: true, companyId: true } } },
   });
-
-  if (!comment || comment.document.tenantId !== tenantId) {
-    throw new NotFoundError('Comment not found');
-  }
-
-  if (comment.status === 'RESOLVED') {
-    throw new Error('Comment is already resolved');
-  }
+  if (!comment || comment.document.tenantId !== tenantId) throw new NotFoundError('Comment not found');
+  if (comment.status === 'RESOLVED') throw new Error('Comment is already resolved');
 
   const updated = await prisma.documentComment.update({
     where: { id: commentId },
-    data: {
-      status: 'RESOLVED',
-      resolvedById: userId,
-      resolvedAt: new Date(),
-    },
+    data: { status: 'RESOLVED', resolvedById: userId, resolvedAt: new Date() },
   });
-
   await createAuditLog({
     tenantId,
     userId,
@@ -1772,38 +1472,25 @@ export async function resolveComment(
     summary: `Resolved comment on document "${comment.document.title}"`,
     changeSource: 'MANUAL',
   });
-
   return updated;
 }
 
-/**
- * Hide a comment (moderation)
- */
 export async function hideComment(
   commentId: string,
   reason: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<DocumentComment> {
   const { tenantId, userId } = params;
-
   const comment = await prisma.documentComment.findFirst({
     where: { id: commentId },
     include: { document: { select: { tenantId: true, title: true, companyId: true } } },
   });
-
-  if (!comment || comment.document.tenantId !== tenantId) {
-    throw new NotFoundError('Comment not found');
-  }
+  if (!comment || comment.document.tenantId !== tenantId) throw new NotFoundError('Comment not found');
 
   const updated = await prisma.documentComment.update({
     where: { id: commentId },
-    data: {
-      hiddenAt: new Date(),
-      hiddenById: userId,
-      hiddenReason: reason,
-    },
+    data: { hiddenAt: new Date(), hiddenById: userId, hiddenReason: reason },
   });
-
   await createAuditLog({
     tenantId,
     userId,
@@ -1816,100 +1503,91 @@ export async function hideComment(
     changeSource: 'MANUAL',
     reason,
   });
-
   return updated;
 }
 
-/**
- * Unhide a comment
- */
 export async function unhideComment(
   commentId: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<DocumentComment> {
   const { tenantId } = params;
-
   const comment = await prisma.documentComment.findFirst({
     where: { id: commentId },
     include: { document: { select: { tenantId: true, title: true, companyId: true } } },
   });
-
-  if (!comment || comment.document.tenantId !== tenantId) {
-    throw new NotFoundError('Comment not found');
-  }
-
-  const updated = await prisma.documentComment.update({
+  if (!comment || comment.document.tenantId !== tenantId) throw new NotFoundError('Comment not found');
+  return prisma.documentComment.update({
     where: { id: commentId },
-    data: {
-      hiddenAt: null,
-      hiddenById: null,
-      hiddenReason: null,
-    },
+    data: { hiddenAt: null, hiddenById: null, hiddenReason: null },
   });
-
-  return updated;
 }
 
-// ============================================================================
-// Auto-save Drafts
-// ============================================================================
-
-/**
- * Save a draft (auto-save)
- */
 export async function saveDraft(
   data: SaveDraftInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<void> {
   const { tenantId, userId } = params;
-
   const document = await prisma.generatedDocument.findFirst({
     where: { id: data.documentId, tenantId, deletedAt: null },
   });
+  if (!document) throw new NotFoundError('Document not found');
+  assertA4WriterCanPreserve(data.content, data.contentJson);
 
-  if (!document) {
-    throw new NotFoundError('Document not found');
+  const canonicalRevision = await readGeneratedDocumentRevision(prisma, data.documentId, tenantId);
+  if (data.baseRevision !== undefined && data.baseRevision !== canonicalRevision) {
+    throw new VersionConflictError({
+      resource: 'generated-document',
+      expectedRevision: data.baseRevision,
+      revision: canonicalRevision,
+    });
   }
+  const metadata = {
+    ...((data.metadata ?? {}) as Record<string, unknown>),
+    baseCanonicalRevision: data.baseRevision ?? canonicalRevision,
+  };
 
-  // Delete old drafts for this user (keep only latest)
-  await prisma.documentDraft.deleteMany({
-    where: { documentId: data.documentId, userId },
-  });
-
-  await prisma.documentDraft.create({
-    data: {
-      documentId: data.documentId,
-      userId,
-      content: data.content,
-      contentJson: data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : undefined,
-      metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.documentDraft.deleteMany({ where: { documentId: data.documentId, userId } });
+    await tx.documentDraft.create({
+      data: {
+        documentId: data.documentId,
+        userId,
+        content: data.content,
+        contentJson: data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : undefined,
+        metadata: metadata as Prisma.InputJsonValue,
+      },
+    });
   });
 }
 
-/**
- * Get latest draft for a document
- */
 export async function getLatestDraft(
   documentId: string,
-  userId: string
-): Promise<{ content: string; contentJson: unknown | null; createdAt: Date } | null> {
+  userId: string,
+): Promise<{
+  content: string;
+  contentJson: unknown | null;
+  createdAt: Date;
+  baseRevision: number | null;
+} | null> {
   const draft = await prisma.documentDraft.findFirst({
     where: { documentId, userId },
     orderBy: { createdAt: 'desc' },
-    select: {
-      content: true,
-      contentJson: true,
-      createdAt: true,
-    },
+    select: { content: true, contentJson: true, metadata: true, createdAt: true },
   });
-
-  return draft;
+  if (!draft) return null;
+  const metadata = draft.metadata && typeof draft.metadata === 'object' && !Array.isArray(draft.metadata)
+    ? draft.metadata as Record<string, unknown>
+    : null;
+  const baseRevision = typeof metadata?.baseCanonicalRevision === 'number'
+    ? metadata.baseCanonicalRevision
+    : null;
+  return {
+    content: draft.content,
+    contentJson: draft.contentJson,
+    createdAt: draft.createdAt,
+    baseRevision,
+  };
 }
-
-// ============================================================================
-// Statistics
-// ============================================================================
 
 export async function getDocumentStats(tenantId: string): Promise<{
   total: number;
@@ -1918,53 +1596,37 @@ export async function getDocumentStats(tenantId: string): Promise<{
   recentlyFinalized: number;
   totalComments: number;
 }> {
-  const [total, byStatus, recentlyCreated, recentlyFinalized, totalComments] =
-    await Promise.all([
-      prisma.generatedDocument.count({
-        where: { tenantId, deletedAt: null },
-      }),
-      prisma.generatedDocument.groupBy({
-        by: ['status'],
-        where: { tenantId, deletedAt: null },
-        _count: true,
-      }),
-      prisma.generatedDocument.count({
-        where: {
-          tenantId,
-          deletedAt: null,
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-        },
-      }),
-      prisma.generatedDocument.count({
-        where: {
-          tenantId,
-          deletedAt: null,
-          finalizedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-        },
-      }),
-      prisma.documentComment.count({
-        where: {
-          document: { tenantId, deletedAt: null },
-          deletedAt: null,
-        },
-      }),
-    ]);
+  const [total, byStatus, recentlyCreated, recentlyFinalized, totalComments] = await Promise.all([
+    prisma.generatedDocument.count({ where: { tenantId, deletedAt: null } }),
+    prisma.generatedDocument.groupBy({
+      by: ['status'],
+      where: { tenantId, deletedAt: null },
+      _count: true,
+    }),
+    prisma.generatedDocument.count({
+      where: {
+        tenantId,
+        deletedAt: null,
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.generatedDocument.count({
+      where: {
+        tenantId,
+        deletedAt: null,
+        finalizedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.documentComment.count({
+      where: { document: { tenantId, deletedAt: null }, deletedAt: null },
+    }),
+  ]);
 
   const statusCounts: Record<GeneratedDocumentStatus, number> = {
     DRAFT: 0,
     FINALIZED: 0,
     ARCHIVED: 0,
   };
-
-  for (const s of byStatus) {
-    statusCounts[s.status] = s._count;
-  }
-
-  return {
-    total,
-    byStatus: statusCounts,
-    recentlyCreated,
-    recentlyFinalized,
-    totalComments,
-  };
+  for (const s of byStatus) statusCounts[s.status] = s._count;
+  return { total, byStatus: statusCounts, recentlyCreated, recentlyFinalized, totalComments };
 }

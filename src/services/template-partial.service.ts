@@ -6,6 +6,7 @@
  * using the {{> partial-name}} syntax.
  */
 
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import { Prisma } from '@/generated/prisma';
@@ -13,10 +14,18 @@ import type { TemplatePartial } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import { PARTIAL_REFERENCE_REGEX, extractPartialReferences } from '@/lib/template-analysis';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
-
-// ============================================================================
-// Types
-// ============================================================================
+import {
+  assertRevisionPrecondition,
+  classifyRevisionMiss,
+} from '@/lib/document-editor/revision-concurrency';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
+import {
+  normalizeStoredFieldDefinitionInput,
+  preserveStoredFieldDefinitions,
+} from '@/lib/document-editor/template-field-workflow';
 
 export interface TemplatePartialWithRelations extends TemplatePartial {
   createdBy?: {
@@ -29,7 +38,6 @@ export interface TemplatePartialWithRelations extends TemplatePartial {
   };
 }
 
-// Re-export shared type for backwards compatibility
 export type { TenantAwareParams } from '@/lib/types';
 
 export interface CreatePartialInput {
@@ -42,6 +50,7 @@ export interface CreatePartialInput {
 
 export interface UpdatePartialInput {
   id: string;
+  expectedRevision?: number;
   name?: string;
   displayName?: string;
   description?: string | null;
@@ -82,7 +91,6 @@ export interface PartialUsageResult {
   serviceVariants: PartialServiceVariantUsageInfo[];
 }
 
-// Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
   'name',
   'displayName',
@@ -96,9 +104,7 @@ export function normalizeMaterialContent(content: string): string {
 }
 
 export function stableSerialize(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map(stableSerialize).join(',')}]`;
-  }
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
   if (value && typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
       .sort(([left], [right]) => left.localeCompare(right))
@@ -108,40 +114,66 @@ export function stableSerialize(value: unknown): string {
   return JSON.stringify(value);
 }
 
-// ============================================================================
-// Create Partial
-// ============================================================================
+function preservePartialPlaceholders(value: unknown, partialId: string): Prisma.InputJsonValue {
+  if (!Array.isArray(value)) return (value ?? []) as Prisma.InputJsonValue;
+  const definitions = normalizeStoredFieldDefinitionInput(value);
+  return preserveStoredFieldDefinitions(
+    definitions,
+    { kind: 'partial', id: partialId },
+  ) as Prisma.InputJsonValue;
+}
+
+function assertReadablePartial<T extends { content: string }>(partial: T): T {
+  readA4StoredDocument(partial.content);
+  return partial;
+}
+
+async function classifyPartialRevisionMiss(
+  tx: Prisma.TransactionClient,
+  id: string,
+  tenantId: string,
+  expectedRevision: number | undefined,
+): Promise<never> {
+  const state = await tx.templatePartial.findFirst({
+    where: { id, tenantId },
+    select: { version: true, deletedAt: true },
+  });
+  classifyRevisionMiss(
+    state
+      ? { revision: state.version, deleted: state.deletedAt !== null, locked: false }
+      : null,
+    { resource: 'template-partial', expectedRevision },
+  );
+}
 
 export async function createTemplatePartial(
   data: CreatePartialInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<TemplatePartial> {
   const { tenantId, userId } = params;
 
-  // Validate partial name format (alphanumeric, hyphens, underscores only)
   if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(data.name)) {
     throw new Error(
-      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores'
+      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores',
     );
   }
+  assertA4WriterCanPreserve(data.content);
 
-  // Check for duplicate name within tenant
   const existingName = await prisma.templatePartial.findFirst({
     where: { tenantId, name: data.name, deletedAt: null },
   });
+  if (existingName) throw new Error('A partial with this name already exists');
 
-  if (existingName) {
-    throw new Error('A partial with this name already exists');
-  }
-
+  const id = randomUUID();
   const partial = await prisma.templatePartial.create({
     data: {
+      id,
       tenantId,
       name: data.name,
       displayName: data.displayName,
       description: data.description ?? null,
       content: data.content,
-      placeholders: data.placeholders ?? [],
+      placeholders: preservePartialPlaceholders(data.placeholders, id),
       createdById: userId,
     },
   });
@@ -161,21 +193,17 @@ export async function createTemplatePartial(
   return partial;
 }
 
-// ============================================================================
-// Update Partial
-// ============================================================================
-
 export async function updateTemplatePartial(
   data: UpdatePartialInput,
   params: TenantAwareParams,
-  reason?: string
+  reason?: string,
 ): Promise<TemplatePartial> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(data.expectedRevision, 'template-partial');
 
-  // Validate name format if being changed
   if (data.name && !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(data.name)) {
     throw new Error(
-      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores'
+      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores',
     );
   }
 
@@ -183,10 +211,9 @@ export async function updateTemplatePartial(
     const existing = await tx.templatePartial.findFirst({
       where: { id: data.id, tenantId, deletedAt: null },
     });
+    if (!existing) throw new Error('Partial not found');
 
-    if (!existing) {
-      throw new Error('Partial not found');
-    }
+    if (data.content !== undefined) assertA4WriterCanPreserve(data.content);
 
     if (data.name && data.name !== existing.name) {
       const existingName = await tx.templatePartial.findFirst({
@@ -197,31 +224,43 @@ export async function updateTemplatePartial(
           NOT: { id: data.id },
         },
       });
-      if (existingName) {
-        throw new Error('A partial with this name already exists');
-      }
+      if (existingName) throw new Error('A partial with this name already exists');
     }
 
-    const updateData: Prisma.TemplatePartialUpdateInput = {};
+    const updateData: Prisma.TemplatePartialUpdateManyMutationInput = {
+      version: { increment: 1 },
+    };
     if (data.name !== undefined) updateData.name = data.name;
     if (data.displayName !== undefined) updateData.displayName = data.displayName;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.content !== undefined) updateData.content = data.content;
-    if (data.placeholders !== undefined) updateData.placeholders = data.placeholders;
+    if (data.placeholders !== undefined) {
+      updateData.placeholders = preservePartialPlaceholders(data.placeholders, data.id);
+    }
 
     const contentChanged =
-      data.content !== undefined &&
-      normalizeMaterialContent(data.content) !== normalizeMaterialContent(existing.content);
+      data.content !== undefined
+      && normalizeMaterialContent(data.content) !== normalizeMaterialContent(existing.content);
     const placeholdersChanged =
-      data.placeholders !== undefined &&
-      stableSerialize(data.placeholders) !== stableSerialize(existing.placeholders);
+      data.placeholders !== undefined
+      && stableSerialize(updateData.placeholders) !== stableSerialize(existing.placeholders);
     const materialChanged = contentChanged || placeholdersChanged;
 
-    if (materialChanged) updateData.version = { increment: 1 };
-
-    const partial = await tx.templatePartial.update({
-      where: { id: data.id },
+    const result = await tx.templatePartial.updateMany({
+      where: {
+        id: data.id,
+        tenantId,
+        deletedAt: null,
+        ...(data.expectedRevision !== undefined ? { version: data.expectedRevision } : {}),
+      },
       data: updateData,
+    });
+    if (result.count !== 1) {
+      return classifyPartialRevisionMiss(tx, data.id, tenantId, data.expectedRevision);
+    }
+
+    const partial = await tx.templatePartial.findFirstOrThrow({
+      where: { id: data.id, tenantId },
     });
     const changes = computeChanges(existing, partial, TRACKED_FIELDS) ?? {};
     const changedFields = Object.keys(changes);
@@ -238,9 +277,11 @@ export async function updateTemplatePartial(
         changeSource: 'MANUAL',
         changes,
         reason,
-        metadata: materialChanged
-          ? { oldVersion: existing.version, newVersion: partial.version }
-          : undefined,
+        metadata: {
+          oldVersion: existing.version,
+          newVersion: partial.version,
+          materialChanged,
+        },
       }, tx);
     }
 
@@ -248,25 +289,20 @@ export async function updateTemplatePartial(
   });
 }
 
-// ============================================================================
-// Delete Partial
-// ============================================================================
-
 export async function deleteTemplatePartial(
   partialId: string,
   params: TenantAwareParams,
-  reason?: string
+  reason?: string,
+  expectedRevision?: number,
 ): Promise<void> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'template-partial');
 
   await runSerializableTransaction(prisma, async (tx) => {
     const partial = await tx.templatePartial.findFirst({
       where: { id: partialId, tenantId, deletedAt: null },
     });
-
-    if (!partial) {
-      throw new Error('Partial not found');
-    }
+    if (!partial) throw new Error('Partial not found');
 
     const usage = await getPartialUsageWithClient(partialId, params, tx, partial);
     if (usage.serviceVariants.length > 0) {
@@ -282,14 +318,22 @@ export async function deleteTemplatePartial(
       const templateNames = usage.templates.slice(0, 3).map((u) => u.templateName).join(', ');
       const moreText = usage.templates.length > 3 ? ` and ${usage.templates.length - 3} more` : '';
       throw new Error(
-        `Cannot delete partial: it is used in ${usage.templates.length} template(s) (${templateNames}${moreText})`
+        `Cannot delete partial: it is used in ${usage.templates.length} template(s) (${templateNames}${moreText})`,
       );
     }
 
-    await tx.templatePartial.update({
-      where: { id: partialId },
-      data: { deletedAt: new Date() },
+    const result = await tx.templatePartial.updateMany({
+      where: {
+        id: partialId,
+        tenantId,
+        deletedAt: null,
+        ...(expectedRevision !== undefined ? { version: expectedRevision } : {}),
+      },
+      data: { deletedAt: new Date(), version: { increment: 1 } },
     });
+    if (result.count !== 1) {
+      return classifyPartialRevisionMiss(tx, partialId, tenantId, expectedRevision);
+    }
 
     await createAuditLog({
       tenantId,
@@ -305,13 +349,9 @@ export async function deleteTemplatePartial(
   });
 }
 
-// ============================================================================
-// Get Single Partial
-// ============================================================================
-
 export async function getTemplatePartial(
   partialId: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<TemplatePartialWithRelations | null> {
   const { tenantId } = params;
 
@@ -325,36 +365,24 @@ export async function getTemplatePartial(
   });
 
   if (!partial) return null;
-
-  // Count usage in templates
+  assertReadablePartial(partial);
   const usageCount = await countPartialUsage(partialId, params);
-
-  return {
-    ...partial,
-    _count: { usedInTemplates: usageCount },
-  };
+  return { ...partial, _count: { usedInTemplates: usageCount } };
 }
-
-// ============================================================================
-// Get Partial by Name
-// ============================================================================
 
 export async function getTemplatePartialByName(
   name: string,
-  tenantId: string
+  tenantId: string,
 ): Promise<TemplatePartial | null> {
-  return prisma.templatePartial.findFirst({
+  const partial = await prisma.templatePartial.findFirst({
     where: { name, tenantId, deletedAt: null },
   });
+  return partial ? assertReadablePartial(partial) : null;
 }
-
-// ============================================================================
-// Search/List Partials
-// ============================================================================
 
 export async function searchTemplatePartials(
   input: SearchPartialsInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<SearchPartialsResult> {
   const { tenantId } = params;
   const {
@@ -365,11 +393,7 @@ export async function searchTemplatePartials(
     sortOrder = 'asc',
   } = input;
 
-  const where: Prisma.TemplatePartialWhereInput = {
-    tenantId,
-    deletedAt: null,
-  };
-
+  const where: Prisma.TemplatePartialWhereInput = { tenantId, deletedAt: null };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -380,11 +404,7 @@ export async function searchTemplatePartials(
   const [partials, total] = await Promise.all([
     prisma.templatePartial.findMany({
       where,
-      include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-      },
+      include: { createdBy: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * limit,
       take: limit,
@@ -392,15 +412,12 @@ export async function searchTemplatePartials(
     prisma.templatePartial.count({ where }),
   ]);
 
-  // Add usage counts
   const partialsWithCounts = await Promise.all(
     partials.map(async (partial) => {
+      assertReadablePartial(partial);
       const usageCount = await countPartialUsage(partial.id, params);
-      return {
-        ...partial,
-        _count: { usedInTemplates: usageCount },
-      };
-    })
+      return { ...partial, _count: { usedInTemplates: usageCount } };
+    }),
   );
 
   return {
@@ -412,30 +429,20 @@ export async function searchTemplatePartials(
   };
 }
 
-// ============================================================================
-// Get All Partials (for dropdown selection)
-// ============================================================================
-
 export async function getAllTemplatePartials(
-  tenantId: string
+  tenantId: string,
 ): Promise<Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders'>[]> {
-  return prisma.templatePartial.findMany({
+  const partials = await prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
     select: { id: true, name: true, displayName: true, description: true, content: true, placeholders: true },
     orderBy: { name: 'asc' },
   });
+  return partials.map(assertReadablePartial);
 }
 
-// ============================================================================
-// Usage Tracking
-// ============================================================================
-
-/**
- * Get list of templates that use a specific partial
- */
 export async function getPartialUsage(
   partialId: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<PartialUsageResult> {
   return getPartialUsageWithClient(partialId, params, prisma);
 }
@@ -451,23 +458,15 @@ async function getPartialUsageWithClient(
   const partial = knownPartial ?? await client.templatePartial.findFirst({
     where: { id: partialId, tenantId, deletedAt: null },
   });
-
   if (!partial) return { templates: [], serviceVariants: [] };
 
   const [templates, serviceVariants] = await Promise.all([
     client.documentTemplate.findMany({
-      where: {
-        tenantId,
-        deletedAt: null,
-      },
+      where: { tenantId, deletedAt: null },
       select: { id: true, name: true, category: true, content: true },
     }),
     client.serviceVariant.findMany({
-      where: {
-        tenantId,
-        sowPartialId: partialId,
-        deletedAt: null,
-      },
+      where: { tenantId, sowPartialId: partialId, deletedAt: null },
       select: { id: true, name: true, isActive: true },
       orderBy: { name: 'asc' },
     }),
@@ -477,41 +476,31 @@ async function getPartialUsageWithClient(
     templates: templates
       .filter((template) => extractPartialReferences(template.content).includes(partial.name))
       .map((template) => ({
-      templateId: template.id,
-      templateName: template.name,
-      category: template.category,
+        templateId: template.id,
+        templateName: template.name,
+        category: template.category,
       })),
     serviceVariants,
   };
 }
 
-/**
- * Count how many templates use a specific partial
- */
 async function countPartialUsage(
   partialId: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<number> {
   const usage = await getPartialUsage(partialId, params);
   return usage.templates.length;
 }
 
-/**
- * Get all partials used in a template's content
- */
 export async function getPartialsUsedInTemplate(
   templateContent: string,
-  tenantId: string
+  tenantId: string,
 ): Promise<TemplatePartial[]> {
   const initialPartialNames = extractPartialReferences(templateContent);
-
   if (initialPartialNames.length === 0) return [];
 
   const allPartials = await prisma.templatePartial.findMany({
-    where: {
-      tenantId,
-      deletedAt: null,
-    },
+    where: { tenantId, deletedAt: null },
   });
   const partialByName = new Map(allPartials.map((partial) => [partial.name, partial]));
   const resolvedNames = new Set<string>();
@@ -521,70 +510,49 @@ export async function getPartialsUsedInTemplate(
     resolvedNames.add(partialName);
     const partial = partialByName.get(partialName);
     if (!partial) return;
-    for (const nestedName of extractPartialReferences(partial.content)) {
-      visit(nestedName);
-    }
+    readA4StoredDocument(partial.content);
+    for (const nestedName of extractPartialReferences(partial.content)) visit(nestedName);
   };
 
   initialPartialNames.forEach(visit);
-
   return Array.from(resolvedNames)
     .map((partialName) => partialByName.get(partialName))
     .filter((partial): partial is TemplatePartial => Boolean(partial));
 }
 
-/**
- * Resolve all partial references in template content
- * Replaces {{> partial-name}} with actual partial content
- */
 export async function resolvePartials(
   content: string,
   tenantId: string,
-  resolvedPartials = new Set<string>()
+  resolvedPartials = new Set<string>(),
 ): Promise<string> {
-  // Find all partial references
   const matches = Array.from(content.matchAll(PARTIAL_REFERENCE_REGEX));
-
   if (matches.length === 0) return content;
 
-  // Get all referenced partials
   const partialNames = matches.map((m) => m[1]);
   const partials = await prisma.templatePartial.findMany({
-    where: {
-      tenantId,
-      name: { in: partialNames },
-      deletedAt: null,
-    },
+    where: { tenantId, name: { in: partialNames }, deletedAt: null },
   });
-
   const partialMap = new Map(partials.map((p) => [p.name, p.content]));
 
-  // Replace each partial reference with its content
   let resolved = content;
   for (const match of matches) {
     const partialName = match[1];
     const fullMatch = match[0];
-
-    // Check for circular reference
     if (resolvedPartials.has(partialName)) {
       throw new Error(`Circular partial reference detected: ${partialName}`);
     }
 
     const partialContent = partialMap.get(partialName);
     if (partialContent) {
-      // Mark as resolved to detect circular references
+      readA4StoredDocument(partialContent);
       resolvedPartials.add(partialName);
-
-      // Recursively resolve nested partials
       const resolvedPartialContent = await resolvePartials(
         partialContent,
         tenantId,
-        resolvedPartials
+        resolvedPartials,
       );
-
       resolved = resolved.replace(fullMatch, resolvedPartialContent);
     } else {
-      // Partial not found - leave placeholder or throw error
       throw new Error(`Template partial not found: ${partialName}`);
     }
   }
@@ -592,43 +560,34 @@ export async function resolvePartials(
   return resolved;
 }
 
-// ============================================================================
-// Duplicate Partial
-// ============================================================================
-
 export async function duplicateTemplatePartial(
   partialId: string,
   newName: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<TemplatePartial> {
   const { tenantId, userId } = params;
 
   const source = await prisma.templatePartial.findFirst({
     where: { id: partialId, tenantId, deletedAt: null },
   });
+  if (!source) throw new Error('Partial not found');
+  assertA4WriterCanPreserve(source.content);
 
-  if (!source) {
-    throw new Error('Partial not found');
-  }
-
-  // Validate new name format
   if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(newName)) {
     throw new Error(
-      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores'
+      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores',
     );
   }
 
-  // Check for duplicate name
   const existingName = await prisma.templatePartial.findFirst({
     where: { tenantId, name: newName, deletedAt: null },
   });
+  if (existingName) throw new Error('A partial with this name already exists');
 
-  if (existingName) {
-    throw new Error('A partial with this name already exists');
-  }
-
+  const id = randomUUID();
   const partial = await prisma.templatePartial.create({
     data: {
+      id,
       tenantId,
       name: newName,
       displayName: source.displayName
@@ -638,8 +597,9 @@ export async function duplicateTemplatePartial(
         ? `Copy of: ${source.description}`
         : `Copy of ${source.name}`,
       content: source.content,
-      placeholders: source.placeholders ?? [],
+      placeholders: preservePartialPlaceholders(source.placeholders, id),
       createdById: userId,
+      version: 1,
     },
   });
 

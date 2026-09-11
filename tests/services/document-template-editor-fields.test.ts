@@ -61,34 +61,18 @@ const fieldTypes = [
   'conditional',
 ] as const;
 
-function expectCurrentLossyDefinition(value: unknown) {
-  expect(value).toMatchObject({
-    key: completeDefinition.key,
-    label: completeDefinition.label,
-    type: completeDefinition.type,
-    source: completeDefinition.source,
-    category: completeDefinition.category,
-    path: completeDefinition.path,
-    required: true,
-    defaultValue: completeDefinition.defaultValue,
-    format: completeDefinition.format,
-    linkedTo: completeDefinition.linkedTo,
-    sourcePartial: completeDefinition.sourcePartial,
-  });
-  expect(value).not.toHaveProperty('id');
-  expect(value).not.toHaveProperty('options');
-  expect(value).not.toHaveProperty('futureMetadata');
+function expectLosslessDefinition(value: unknown) {
+  expect(value).toEqual(completeDefinition);
 }
 
-describe('A4 editor WORKFLOW W0 field server-boundary compatibility proofs', () => {
-  it('W-FIELD-01A records the current placeholderDefinitionSchema lossiness explicitly', () => {
-    const parsed = placeholderDefinitionSchema.parse(completeDefinition);
-    expectCurrentLossyDefinition(parsed);
+describe('A4 editor WORKFLOW W1 field server-boundary compatibility', () => {
+  it('W-FIELD-01A preserves the full F1 definition at placeholderDefinitionSchema', () => {
+    expectLosslessDefinition(placeholderDefinitionSchema.parse(completeDefinition));
   });
 
-  it('W-FIELD-01B records the same lossiness through real DocumentTemplate create/update request schemas', () => {
+  it('W-FIELD-01B preserves F1 definitions through DocumentTemplate create/update request schemas', () => {
     const created = createDocumentTemplateSchema.parse({
-      name: 'W0 field carrier template',
+      name: 'W1 field carrier template',
       content: '<p>{{custom.primary_use}}</p>',
       placeholders: [completeDefinition],
     });
@@ -97,14 +81,14 @@ describe('A4 editor WORKFLOW W0 field server-boundary compatibility proofs', () 
       placeholders: [completeDefinition],
     });
 
-    expectCurrentLossyDefinition(created.placeholders[0]);
-    expectCurrentLossyDefinition(updated.placeholders?.[0]);
+    expectLosslessDefinition(created.placeholders[0]);
+    expectLosslessDefinition(updated.placeholders?.[0]);
   });
 
-  it('W-FIELD-01C records the same lossiness through real TemplatePartial create/update request schemas', () => {
+  it('W-FIELD-01C preserves F1 definitions through TemplatePartial create/update request schemas', () => {
     const created = createTemplatePartialSchema.parse({
-      name: 'w0-field-carrier',
-      displayName: 'W0 field carrier partial',
+      name: 'w1-field-carrier',
+      displayName: 'W1 field carrier partial',
       content: '<p>{{custom.primary_use}}</p>',
       placeholders: [completeDefinition],
     });
@@ -113,41 +97,41 @@ describe('A4 editor WORKFLOW W0 field server-boundary compatibility proofs', () 
       placeholders: [completeDefinition],
     });
 
-    expectCurrentLossyDefinition(created.placeholders[0]);
-    expectCurrentLossyDefinition(updated.placeholders?.[0]);
+    expectLosslessDefinition(created.placeholders[0]);
+    expectLosslessDefinition(updated.placeholders?.[0]);
   });
 
-  it('W-FIELD-01D records current required-presence semantics: explicit true survives and omission defaults to false', () => {
+  it('W-FIELD-01D preserves required presence: explicit true survives and omission stays omitted', () => {
     const explicit = placeholderDefinitionSchema.parse(completeDefinition);
     const omitted = placeholderDefinitionSchema.parse(omittedRequiredDefinition);
 
     expect(explicit.required).toBe(true);
     expect(Object.prototype.hasOwnProperty.call(explicit, 'required')).toBe(true);
-    expect(omitted.required).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(omitted, 'required')).toBe(true);
+    expect(omitted.required).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(omitted, 'required')).toBe(false);
   });
 
-  it('W-FIELD-01E recognizes every current placeholder type, including legacy list and conditional values', () => {
-    for (const type of fieldTypes) {
+  it('W-FIELD-01E recognizes current and preserve-only future placeholder types', () => {
+    for (const type of [...fieldTypes, 'future-preserve-only-type']) {
       const parsed = placeholderDefinitionSchema.safeParse({
         key: `custom.type_${type}`,
         label: `Type ${type}`,
         type,
         source: 'custom',
       });
-      expect(parsed.success, `expected ${type} to remain recognized`).toBe(true);
+      expect(parsed.success, `expected ${type} to remain storable`).toBe(true);
     }
 
     expect(fieldTypes).toContain('list');
     expect(fieldTypes).toContain('conditional');
   });
 
-  it.fails('W-FIELD-01F future F0 lossless contract preserves stable id, options and unknown forward metadata', () => {
+  it('W-FIELD-01F preserves stable id, options and unknown forward metadata', () => {
     const parsed = placeholderDefinitionSchema.parse(completeDefinition);
     expect(parsed).toEqual(completeDefinition);
   });
 
-  it.fails('W-FIELD-01G future F0 lossless contract preserves omission of required instead of materializing a default', () => {
+  it('W-FIELD-01G preserves omission of required instead of materializing a default', () => {
     const parsed = placeholderDefinitionSchema.parse(omittedRequiredDefinition);
     expect(Object.prototype.hasOwnProperty.call(parsed, 'required')).toBe(false);
   });
@@ -163,7 +147,7 @@ describe('A4 editor WORKFLOW W0 field server-boundary compatibility proofs', () 
     expect(merged.unrelated).toEqual(contentJson.unrelated);
   });
 
-  it('W-FIELD-05A records current resolver behavior: ordinary text can presently introduce markup', () => {
+  it('W-FIELD-05A retains current resolver behavior until F2 escaping is authorized', () => {
     const resolved = resolvePlaceholders(
       '<p>{{custom.note}}</p><p>{{custom.missing}}</p>',
       { custom: { note: '<b>not trusted markup</b>' } },

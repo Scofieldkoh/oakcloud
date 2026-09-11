@@ -4,16 +4,19 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Bundles the A4 pagination engine for use inside the export Chromium page.
- * Regenerate with `npm run generate:pagination-bundle` after editing any of
- * the pagination modules.
+ * Bundles the W-owned PDF/output bridge. That bridge delegates pagination to
+ * the integrated SEMANTICS browser entry, so S1 engine/projection dependency
+ * changes are included without copying producer algorithms into WORKFLOW.
+ *
+ * Regeneration of the checked-in output is reserved to the CORE integration
+ * window. Exact command: npm run generate:pagination-bundle
  */
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 async function main() {
   const result = await build({
     entryPoints: [
-      join(root, 'src/components/documents/a4-pagination/paginate-in-browser.entry.ts'),
+      join(root, 'src/services/document-export-pagination-browser.entry.ts'),
     ],
     bundle: true,
     write: false,
