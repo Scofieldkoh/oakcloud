@@ -148,3 +148,132 @@ WORKFLOW stops after this W0 correction. No W1/W2/W3/Stage-1 implementation, mig
 CORE owns the final G0 decision and execution-only integration validation.
 
 **READY FOR INTEGRATION — W0 only**
+
+---
+
+## WORKFLOW-W1-20260911-01 — Reader safety and revision plumbing
+
+Role and packet: WORKFLOW / W1 only  
+Common Stage-1 baseline: `bfdc4f95594b73ce4d20bff45f320bdb53837c37`  
+Branch: `codex/a4-editor-workflow-w1`  
+PR: #37 — https://github.com/Scofieldkoh/oakcloud/pull/37 (draft; do not merge)  
+W2/W3: **NOT STARTED**
+
+### W1 status matrix
+
+| W1 requirement | Status | Evidence / remaining work |
+| --- | --- | --- |
+| CORE dispatch `WORKFLOW-W1-20260911-01` confirmed | **COMPLETE** | Read from `codex/a4-editor-core-c1`; branch remains based on common Stage-1 baseline, not CORE C1 implementation. |
+| GeneratedDocument forward SQL migration | **COMPLETE** | `prisma/migrations/20260911181700_add_generated_document_revision/migration.sql`; additive `revision INTEGER NOT NULL DEFAULT 0`; disposable PostgreSQL migration step passed in Node 24 CI. |
+| GeneratedDocument Prisma model declaration | **BLOCKED ENVIRONMENT** | Required exact declaration is `revision Int @default(0)` with no `@map`. The connected GitHub writer exposes whole-file replacement only for this large schema and no safe line patch; migration/runtime use the frozen physical column but the Prisma declaration must be added before integration. |
+| DocumentTemplate revision CAS / acknowledgement | **COMPLETE** | Public `expectedRevision`; existing `version` is compared in tenant/deleted predicate and incremented in accepted mutation; responses retain `version` and add `revision`. |
+| TemplatePartial revision CAS / acknowledgement | **COMPLETE** | Public `expectedRevision`; existing `version` is compared/incremented atomically; responses retain `version` and add `revision`. |
+| GeneratedDocument revision CAS / acknowledgement | **COMPLETE** | DB-side CAS claim updates `generated_documents.revision` by tenant/id/deleted/status/expected revision within the same transaction as canonical mutation. Create/clone return 0; get/search expose public `revision`. |
+| Existing-target materialization revision safety | **COMPLETE** | CAS occurs before canonical update; linked draft Service Agreement deletion moved behind accepted CAS so stale materialization cannot delete it. |
+| Finalize/unfinalize/archive/delete revision safety | **COMPLETE** | CAS before mutation; audit/task/e-sign effects run only after an accepted mutation. |
+| Bulk generated-document delete revision participation | **COMPLETE** | Additive `expectedRevisions` map; each canonical row is independently CAS-protected and returns per-item failure without stale success effects. |
+| Draft base-revision reconciliation | **NOT YET REQUIRED** | Draft rows do not increment canonical revision. Binding/reconciliation extension remains a later workflow/draft integration item; no W2 behavior was started. |
+| Existing batch revision | **NOT YET REQUIRED** | Existing `DocumentGenerationBatch.revision` is preserved. No new W2 batch UX/session work was begun in W1. |
+| Capability producer | **COMPLETE** | `src/lib/document-editor/a4-editor-capabilities.ts` + authenticated `GET /api/page-bootstrap/document-editor`; production/fallback is reader 1, writer 1, revision optional; client claims can only reduce authority. |
+| v2 writer activation | **NOT YET REQUIRED** | Explicitly disabled in W1. |
+| Independent PDF/export failure containment | **COMPLETE** | Pagination must succeed before `page.pdf`; no warning-and-clipped-success fallback; font readiness awaited; 30s bounds; page/browser cleanup in `finally`; stored document untouched; success audit only after PDF success. |
+| Old/new C03 break readers / nested pagination | **WAITING FOR S1** | Must consume final S1 exports; no duplicate parser/paginator created. |
+| Shared C06 content-policy adapters / sanitizer parity | **WAITING FOR F1** | Must consume final F1 policy exports; existing sanitizer allowlists were not independently widened/replaced. |
+| TemplatePartial markup-based v2 feature detection | **WAITING FOR F1** | Final parser/registry adapter required. |
+| Reader-before-writer level-2 content detection | **WAITING FOR S1** | Level-2 writer guard exists, but authoritative break-format detection must use S1 rather than a duplicate detector. |
+| Server/render/export reader compatibility | **WAITING FOR S1** | Final structural reader integration deferred. |
+| Pagination bundle regeneration/freshness | **WAITING FOR S1** | Regenerate only after S1 integration according to ownership procedure. |
+| Actual Puppeteer PDF byte/sentinel evidence | **BLOCKED ENVIRONMENT** | Standard CI validates Node/Chromium path but this session has no dependency-capable Node 24 checkout for the requested real PDF proof. HTML-only evidence is not treated as PDF proof. |
+| W2/W3 | **NOT YET REQUIRED** | Not started. |
+
+### Public API contract implemented
+
+Successful edit-capable responses preserve existing fields and acknowledge:
+
+```json
+{ "revision": 8 }
+```
+
+Template and partial responses also retain their native `version`; public `revision` mirrors it. GeneratedDocument public `revision` comes from the dedicated database column. Requests use additive:
+
+```json
+{ "expectedRevision": 7 }
+```
+
+Lifecycle DELETE endpoints accept `expectedRevision` as a query parameter where a request body is not already part of the route. Bulk generated-document delete accepts:
+
+```json
+{
+  "ids": ["..."],
+  "reason": "...",
+  "expectedRevisions": { "<document-id>": 7 }
+}
+```
+
+Transitional missing preconditions remain accepted only while server capability is `revisionPrecondition: "optional"`.
+
+Stale mutation response is frozen as HTTP 409:
+
+```json
+{
+  "error": "This document changed since you opened it. Reload or reconcile before saving.",
+  "code": "VERSION_CONFLICT",
+  "details": {
+    "resourceType": "GeneratedDocument",
+    "expectedRevision": 7,
+    "currentRevision": 8,
+    "action": "reload-or-reconcile"
+  }
+}
+```
+
+Future strict-mode missing precondition is HTTP 428:
+
+```json
+{
+  "error": "expectedRevision is required for this mutation.",
+  "code": "REVISION_PRECONDITION_REQUIRED",
+  "details": {
+    "resourceType": "GeneratedDocument",
+    "action": "reload-and-retry"
+  }
+}
+```
+
+Capability bootstrap response is exactly:
+
+```json
+{
+  "a4EditorCapabilities": {
+    "readerFormatLevel": 1,
+    "allowedWriterFormatLevel": 1,
+    "revisionPrecondition": "optional"
+  }
+}
+```
+
+### Writer coverage
+
+Independent W1 now covers the W0 inventory for document-template update/delete/restore, TemplatePartial update/delete, GeneratedDocument ordinary update, existing-target materialization, finalize, unfinalize, archive, soft delete and per-row bulk delete. Create/clone paths acknowledge their defined initial revision. Task/e-signing effects attached to finalize/unfinalize and task-outcome reconciliation are downstream of successful CAS and do not execute after a stale rejection. `templateVersion` remains generation provenance.
+
+### Export containment
+
+`generatePDF` now treats pagination as a correctness gate. When pagination is requested, failure to load the bundle, paginate, produce fragments, or install them into the print target throws typed recoverable `ExportPaginationError` before PDF bytes are returned. It does not log source document HTML or field values. Browser/page resources close in `finally`, and font readiness is awaited before pagination measurement. Existing HTML/preview sanitizers remain unchanged pending the F1 shared C06 policy.
+
+### Tests and CI
+
+Added focused capability tests for conservative fallback, non-elevation of authority and unsupported level-2 writer rejection. Existing W0 save/batch/draft/output fixtures remain the integration proof inventory. GitHub Actions `Node 24 compatibility` run `34590841516` completed **SUCCESS** on head `a6bac83b75673db9e0769e41817822c1e616f476`; its disposable PostgreSQL step successfully applied the new migration. Standard CI is useful compile/migration evidence but does not replace the requested real Puppeteer PDF-byte/sentinel validation.
+
+Focused real-PDF proof remains **BLOCKED ENVIRONMENT** and must not be inferred from HTML-string tests.
+
+### Producer integration dependencies
+
+After S1/F1 are integrated, resume this same W1 branch/PR and only consume their final exports for C03 old/new break readers, nested-break pagination semantics, shared C06 policy/sanitizer parity, TemplatePartial v2 feature detection, server/render/export compatibility and reader-before-writer format rejection. Then regenerate the pagination bundle after S1 integration and rerun the output/PDF gates. No S1/F1 source has been copied into W1.
+
+### Migration / rollback implications
+
+Forward migration is additive and existing rows become revision 0. Rollback ordering remains: keep writer level 1; keep revision precondition optional; roll back strict clients/writers before reader plumbing; retain `generated_documents.revision` while any deployed code reads it; drop the column last only as part of a coordinated full schema rollback. No production database was reset or touched.
+
+### Intermediate stop point
+
+S1/F1 are not integrated. The PR remains draft/open and unmerged. W2/W3 have not started. Before producer integration, the one-line Prisma schema declaration noted above must be applied safely and the producer-dependent reader/policy/bundle work must remain deferred until S1/F1 land.
