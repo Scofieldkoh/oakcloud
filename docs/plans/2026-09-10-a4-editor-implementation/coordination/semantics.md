@@ -5,30 +5,51 @@
 Dispatch ID: `SEMANTICS-S0-20260911-01`
 Role and packet: SEMANTICS / S0 — structural positions and nested manual-break proof
 Starting state: DISPATCHED
-Ending state: READY FOR INTEGRATION
+Ending state: READY FOR INTEGRATION — S0 ONLY
 Dispatched baseline commit: `63aa75b6170766a3e3d1728feb5e5417f5632f20`
 Remote branch integration base: `80056fb7ab6e410ef2d2ddc17a830b068d263671` (CORE C0 merge)
-Branch: `codex/a4-editor-semantics-s0`
-Contract consumed: proposed v1, C02/C03/C04/C09; G0 remains OPEN
+Branch / PR: `codex/a4-editor-semantics-s0` / `#34`
+Contract consumed: proposed v1 C02/C03/C04/C09; G0 remains OPEN
 
-### Coordination and ownership evidence
+### Scope and ownership
 
-- The assignment was re-read from `coordination/dispatch.md` before implementation. Only S0 was executed; S1/S2/S3 were not started.
-- The dispatch baseline was `63aa75b6170766a3e3d1728feb5e5417f5632f20`. During execution CORE C0 was merged to `main` as `80056fb7ab6e410ef2d2ddc17a830b068d263671`. Before the first SEMANTICS write, the empty remote S0 branch was fast-forwarded to that merge so this PR cannot appear to remove CORE-owned C0 files. No CORE production/test file was edited.
-- The GitHub connector exposes the remote repository rather than the user's local shared checkout. The isolated remote branch was used only to satisfy the requested PR handoff; it did not switch, reset, stage, stash or otherwise alter the shared local checkout.
-- Exclusive scope is preserved: the implementation adds only S-owned semantic proof modules, the specifically leased S browser fixture, and this SEMANTICS handoff.
-- No package/lockfile/configuration, Prisma, generated pagination bundle, editor/session/history/toolbar, field, route/service or workflow file was changed. No version bump, deployment, merge to `main`, or v2 writer activation was performed.
+- This correction pass resumes only the existing S0 packet after CORE review. S1/S2/S3 were not started.
+- Writable scope remains the original SEMANTICS lease. The correction changes only `structural-position.ts`, `semantic-page-breaks.ts`, the leased `a4-boundary-semantics.browser.test.tsx`, and this handoff.
+- No CORE/FIELDS/WORKFLOW production or test file was edited. `editor-session.ts` / `CanonicalInputBridge` is imported only by the S-owned proof fixture to demonstrate the contract boundary.
+- No editor/session/toolbar wiring, active v2 command, migration, package/lock/config change, generated pagination bundle, version bump, deployment, or merge to `main` is included.
 
-### Files changed by S0
+### CORE G0 review corrections completed
 
-- `src/components/documents/a4-pagination/structural-position.ts` — C02 structural position proof: `text` versus `children` positions, affinity, directional selection capture, unique-node resolution and explicit rejection of ambiguous duplicate semantic IDs.
-- `src/components/documents/a4-pagination/semantic-page-breaks.ts` — C03/C04 proof codec and projection: inline hard-break marker, tree-aware DOM Range partitioning, source-range mappings, list continuation projection, logical marker removal and typed cell-interior limitation.
-- `__tests__/browser/a4-boundary-semantics.browser.test.tsx` — executable S0 fixtures for ordinary soft pagination, `<br>`, blank blocks, adjacent field boundaries, reverse selection, empty cells, legacy breaks, v2 nested breaks, numbering/source mapping and logical break deletion.
-- This file — S0 contract/compatibility handoff for CORE.
+1. **Structural selection affinity**
+   - Collapsed DOM anchor/focus capture is performed once and reused, so a logically collapsed DOM selection cannot become two A4 positions merely because the endpoints were assigned different fallback affinities.
+   - Non-collapsed anchor/focus direction remains represented by anchor/focus ordering; endpoint role no longer injects `after` for anchor and `before` for focus.
+   - Child-boundary capture canonicalizes the side of a single adjacent structural node: before `<br>` captures `affinity: 'before'`; after it captures `affinity: 'after'`.
+   - `resolveA4Position` now uses affinity when a text offset coincides with a zero-text structural boundary and when a text offset lies exactly between text nodes.
+   - The browser fixture performs capture -> resolve -> capture regressions for immediately before/after `<br>`, blank paragraph, empty cell, adjacent atomic field-like elements, collapsed selection, forward non-collapsed selection, and reverse non-collapsed selection.
 
-### Proposed S0 interfaces and locations
+2. **Multiple semantic breaks in one logical list item**
+   - Added the ordered-list fixture `Before [break1] Middle [break2] After` with `start="5"` and a following item 6.
+   - Projection still produces one canonical OL/LI/P chain; all three projected fragments retain the source `list` -> `item-5` -> `paragraph` ancestry.
+   - Source-range constraints now intersect. The middle paragraph/item range is exactly `[7,14]` for `Middle ` rather than being overwritten to `[0,14]` or `[7,end]`.
+   - Continuation metadata composes across adjacent break boundaries. A fragment that is after break 1 and before break 2 receives `data-flow-continuation="both"`; its ordered-list counter is not reset back to the canonical list base.
+   - Removing either `break-1` or `break-2` leaves one logical item 5, retains all `Before Middle After` text, retains the other break, and preserves `start="5"`.
 
-`src/components/documents/a4-pagination/structural-position.ts` is the proposed C02 compatibility home for the structural selection primitives:
+3. **C02/C04 contract boundary completed**
+   - Exact S1 transaction/document and projection mapping contracts are published below and exported by the proof modules.
+   - The projection mapping is tagged with the `sessionKey` and `documentRevision` copied from CORE C0. The S map never allocates or advances a revision.
+   - A proof fixture instantiates CORE's existing `createCanonicalInputBridge<A4Selection>()`, creates a revision-tagged S projection from its snapshot, maps a pointer selection, commits an `A4TransactionResult` through `bridge.commitCanonical`, and proves the old position map remains revision 0 and is rejected by CORE after revision 1 exists.
+
+4. **Rendered ordered-list evidence strengthened**
+   - The proof now derives concrete marker labels using the same counter rules as `a4-page-content-css.ts`: `--flow-list-start` initializes the list counter, ordinary LI increments and displays it, and `data-flow-continuation-item` suppresses both increment and marker.
+   - For the single-break `start="5"` fixture the displayed sequence is: first fragment `5.`, continuation item no marker, following item `6.`.
+   - For the two-break fixture the displayed sequence is: fragment 1 `5.`, fragment 2 continuation/no marker, fragment 3 continuation/no marker followed by `6.`.
+   - Existing nested-list, legacy top-level break, `start="5"`, soft-pagination, serialization, and deletion evidence remains covered.
+
+## Frozen S0 interface proposal for G0
+
+### C02 — structural positions and pure transaction result
+
+Proposed home: `src/components/documents/a4-pagination/structural-position.ts`.
 
 ```ts
 type A4Position =
@@ -40,44 +61,113 @@ interface A4Selection {
   focus: A4Position;
 }
 
-captureA4Position(root, node, offset, affinity?)
-captureA4SelectionFromDomPoints(root, anchor, focus)
-captureA4Selection(root)
-resolveA4Position(root, position)
+interface CanonicalEditorDocument {
+  readonly internalHtml: string;
+}
+
+type A4TransactionResult =
+  | {
+      status: 'applied';
+      document: CanonicalEditorDocument;
+      selection: A4Selection;
+      changedNodeIds: readonly string[];
+    }
+  | { status: 'unchanged'; reason: string }
+  | { status: 'rejected'; code: string; message: string };
 ```
 
-The proof deliberately leaves the existing `FlowPoint`/`FlowSelectionBookmark` API untouched. S1 may provide a migration adapter after G0 freezes the contract. `resolveA4Position` requires exactly one canonical element for a semantic ID; duplicated IDs are rejected rather than silently selecting the first/last page fragment.
+`CanonicalEditorDocument` deliberately has **no session key and no revision field**. It is the S-owned HTML-backed canonical tree/snapshot value with internal semantic IDs. A pure S1 command will receive the current canonical document + structural selection and return the union above; it will not increment session revision or publish rendered state.
 
-`src/components/documents/a4-pagination/semantic-page-breaks.ts` is the proposed C03/C04 proof home:
+The G0 adapter to today's `DocumentTransactionResult` is therefore explicit and one-way during rollout:
+
+```text
+A4TransactionResult.applied.document.internalHtml
+    -> serialize canonical HTML according to the agreed persistence/view boundary
+A4TransactionResult.applied.selection
+    -> structural selection retained by CORE
+A4TransactionResult.applied.changedNodeIds
+    -> CORE history/change-map invalidation input
+
+unchanged/rejected
+    -> no canonical content commit
+```
+
+S1 may implement this adapter only after G0. S0 does not alter `document-actions.ts` or activate this command surface.
+
+### C04 — exact projection-position map supplied to CORE
+
+Proposed home: `src/components/documents/a4-pagination/semantic-page-breaks.ts`.
 
 ```ts
-const INLINE_A4_PAGE_BREAK_HTML = '<span data-a4-break="page"></span>';
+interface A4ProjectionSourceRevision {
+  sessionKey: EditorSessionKey;      // imported from CORE editor-session.ts
+  documentRevision: EditorRevision;  // imported from CORE editor-session.ts
+}
 
-projectA4SemanticBreaksForProof(html): A4BreakProjectionProof
-mapProjectedTextOffsetToSource(proof, fragmentIndex, sourceNodeId, offset, affinity?)
-hydrateA4SemanticProofHtml(html): string
-removeA4PageBreakForProof(internalHtml, breakNodeId): A4PageBreakRemovalProof
-serializeA4SemanticProofHtml(internalHtml): string
-validateA4PageBreakPositionForProof(root, position): A4PageBreakPositionSupport
+interface A4SourceRangeBinding {
+  sourceNodeId: string;
+  startTextOffset: number;
+  endTextOffset: number;
+}
+
+interface A4ProjectionFragmentPositionMap {
+  fragmentIndex: number;
+  sourceRanges: readonly A4SourceRangeBinding[];
+}
+
+interface A4ProjectionPositionMap extends A4ProjectionSourceRevision {
+  fragments: readonly A4ProjectionFragmentPositionMap[];
+}
+
+interface A4ProjectedTextPoint {
+  fragmentIndex: number;
+  sourceNodeId: string;
+  projectedOffset: number;
+  affinity?: A4Position['affinity'];
+}
+
+interface A4MappedSourcePosition extends A4ProjectionSourceRevision {
+  position: A4Position;
+}
 ```
 
-These names intentionally say `ForProof`: S0 does not make them active production writers/readers. At G0 CORE can freeze/refine naming and S1 can integrate the agreed contract into the existing model/actions/engine without bypassing ownership.
+`mapProjectedTextOffsetToSource(positionMap, point)` returns the revision association together with the canonical `A4Position`. The projected offset is relative to that fragment's bound source range; e.g. the two-break middle range `[7,14]` maps projected offset `2` to canonical offset `9`.
 
-### C02 structural-position proof
+### Binding to C0 `CanonicalInputBridge` — one revision authority
 
-The fixture distinguishes positions that the legacy text-only bookmark aliases together:
+CORE C0 already owns:
 
-- before versus after `<br>` are distinct `children` positions;
-- a blank paragraph has a valid child position despite zero text;
-- adjacent field-like atomic elements expose the boundary between them;
-- an empty table cell has a distinct structural position;
-- directional anchor/focus values remain directional for reverse selections.
+```ts
+interface CanonicalInputBridge<TSelection> {
+  getSnapshot(): SnapshotResult;
+  commitCanonical(content: string, selection: TSelection): EditorRevision;
+  publishProjection(revision: EditorRevision): boolean;
+  resolveNativeInputTarget(input: {
+    renderedRevision: EditorRevision;
+    origin: NativeInputOrigin;
+    renderedSelection: TSelection;
+  }): NativeInputTarget<TSelection>;
+  // ...other C0 members unchanged
+}
+```
 
-CORE adapter rule: use canonical semantic IDs for C02. A position resolved against a canonical tree must be unique. A pointer/caret on a projected page fragment must first use the projection source mapping; it must not search a multi-page DOM by duplicate view IDs and sum unrelated content.
+The G0 composition is exactly:
 
-### C03 nested manual-break and list-continuity proof
+```text
+1. CORE bridge.getSnapshot() yields { sessionKey, revision, content }.
+2. S projection receives { sessionKey, documentRevision: revision } as immutable source metadata.
+3. S returns fragments + A4ProjectionPositionMap tagged with those copied values.
+4. A rendered point is mapped to { sessionKey, documentRevision, position: A4Position }.
+5. CORE verifies/uses that same rendered revision through resolveNativeInputTarget(...).
+6. If an S transaction is applied, CORE calls commitCanonical(serializedContent, result.selection).
+7. commitCanonical alone allocates the next EditorRevision. The old S position map does not mutate; it remains tagged with the old revision and becomes stale.
+```
 
-The proposed canonical v2 fixture remains one list and one logical list item:
+There is therefore no S revision counter, no projection-owned revision increment, no alternate stale-selection authority, and no database version conflation. S1 must preserve this boundary.
+
+## C03 nested-break representation and compatibility
+
+Canonical v2 nested break remains:
 
 ```html
 <ol start="5">
@@ -85,115 +175,75 @@ The proposed canonical v2 fixture remains one list and one logical list item:
 </ol>
 ```
 
-The proof hydrates runtime semantic IDs without persisting them, partitions the canonical tree with DOM `Range.cloneContents()` around the nested marker, and creates two **view fragments** whose ancestors retain the same source-node IDs. The canonical OL/LI is never split into two independent canonical lists/items.
+The canonical tree is unsplit. `Range.cloneContents()` is used only to derive view fragments. For each inline break, every split ancestor carries its source semantic ID into the projected fragment. Multiple range constraints for the same source node are intersected so a fragment between two breaks maps only to its true source slice.
 
-For a break in item 5 of `<ol start="5">`:
-
-- first view fragment keeps the item marker and has `--flow-list-start: 4`;
-- continuation view fragment has `data-flow-continuation-item="true"` and `--flow-list-start: 5`, so the item marker is not repeated and following items continue at the intended number;
-- those values are projection metadata only and are stripped before serialization;
-- the canonical `start="5"` remains durable numbering intent.
-
-The nested mixed-list fixture proves ancestry is preserved through outer list → outer item → nested list → nested item → paragraph. Both outer and nested continuation items map back to their single canonical source items.
-
-### Source mapping example for CORE
-
-For canonical item text `BeforeAfter` with a break after `Before`, the first fragment binds source range `[0, 6]` and the continuation binds `[6, 11]` for the same `sourceNodeId`.
-
-```text
-first fragment item offset 2  -> { kind: 'text', nodeId: itemId, offset: 2 }
-second fragment item offset 2 -> { kind: 'text', nodeId: itemId, offset: 8 }
-```
-
-This is the S0 bridge requested by CORE C0: a later-page projected position maps directly to one logical source item instead of relying on duplicated physical-page identities. C1/C2 still own revision tagging, stale projection change maps and event dispatch.
-
-### Soft-pagination invariant
-
-S0 also exercises the existing `paginateFlowHtml` path with one long ordered-list item. The item spans multiple soft pages using the same runtime source ID; continuation pages suppress the duplicate marker; `reassemblePageFragments` produces one canonical `<ol start="5"><li>...</li></ol>` with all text retained. This is treated as an existing invariant to preserve, not a new writer implementation.
-
-### Compatibility proof and WORKFLOW handoff
-
-Legacy top-level hard break remains:
+Legacy top-level compatibility remains:
 
 ```html
 <div class="page-break" data-break-type="hard"></div>
 ```
 
-The S0 fixture reads it, projects it as a hard boundary, preserves explicit blank paragraphs plus table `caption`/`tfoot`, and serializes it through the existing normalization path. Independent old lists on opposite sides of such a marker are not inferred to be one list.
+Legacy boundaries are read/projected without inferring that independent lists on opposite sides form one logical list. Blank paragraphs, table caption/tfoot content, nested mixed lists and serialization stripping of runtime `data-flow-*` / `--flow-list-start` metadata remain covered.
 
-The v2 marker remains:
+A manual page break inside `td`/`th` remains explicitly unsupported by S0 and returns `table-cell-interior-unsupported` without changing content. No split-cell/row promise is introduced.
 
-```html
-<span data-a4-break="page"></span>
-```
+## Validation evidence
 
-The proof serializer keeps this semantic marker while removing runtime `data-flow-*` attributes and `--flow-list-start`. WORKFLOW should eventually consume canonical content through the agreed S reader/projection interface; it must not persist projection counter offsets or rely only on `contentJson` feature metadata because partials have no such column. No generated bundle change is requested in S0 because no production engine integration has landed.
+### Supported Node 24 repository CI
 
-### Logical break deletion proof
+PR #34 head after the correction code/test commits: `6a3bb5c86b1927862163be6b7b9ac3cebb77a10b`.
+GitHub Actions run: `Node 24 compatibility` run `#136` (`34570491465`).
 
-`removeA4PageBreakForProof` removes only the selected inline semantic marker from the canonical tree and returns a collapsed structural selection at the former child index. The fixture verifies that the ordered list still has the same two items, keeps `start="5"`, and rejoins `Before` + `After` as `BeforeAfter`. This models the required first Backspace/Delete action at a manual break: remove the break without deleting user text.
-
-Actual keyboard Backspace/Delete routing remains CORE/S1 integration work after G0; S0 does not patch the editor or active `document-actions.ts` path.
-
-### Explicit limitations and rejected scope
-
-- A manual break **inside a table cell** is explicitly unsupported by this proof and returns `table-cell-interior-unsupported` without modifying content. No split-row/cell representation is claimed.
-- Between-row table break semantics are not implemented in S0. If required later, S1 must define and test a row-boundary contract that preserves caption/header/footer behavior.
-- Structural text offsets use DOM UTF-16 conventions at this adapter boundary, matching C02. Grapheme-aware delete behavior belongs to S1 commands.
-- The proof source-range map covers stable source-node text ranges. Full zero-text projected-node mapping, revision/change maps and stale-projection reconciliation remain C1/S1 integration work.
-- Existing field-like attributes in the fixture are only atomic structural-boundary descriptors. Field grammar, durable field identity and decorations remain F-owned.
-- This packet does not fix A4E-002/003/011 in the live editor. It proves the representation/adapter required before the active mutation path can change.
-
-### Validation evidence
-
-The remote connector cannot provide an executable checkout to the container, and outbound `github.com` DNS is unavailable there. The container reports Node `v22.16.0`, while Oakcloud requires Node `>=24 <25`; therefore no repository Vitest/browser suite, lint, typecheck or build is claimed as passed.
-
-An isolated TypeScript 5.8.3 compile was run against the exact two S0 production-module drafts and the browser fixture, with minimal declarations for existing model/engine/Vitest imports:
+At the time this handoff text was prepared, the supported runner had already recorded:
 
 ```text
-tsc --noEmit -p tsconfig.json
-isolated-tsc=PASS
-node=v22.16.0
-TypeScript=5.8.3
+Set up Node 24                  PASS
+Verify runtime major           PASS
+Lint                           PASS
+Typecheck                      PASS
 ```
 
-This proves TypeScript syntax/type consistency of the authored S0 surface under the isolated declarations, not repository integration under Node 24. The supported validation remains required before G0 is frozen:
+The final PR review must use the latest run attached to the eventual handoff commit, because updating this file creates a new PR head and therefore a fresh workflow run.
+
+### Required targeted S0 commands
+
+CORE requested these exact Node 24 commands:
 
 ```text
-node --version  # must be >=24 <25
-node_modules/vitest/vitest.mjs run --config vitest.browser.config.ts \
+npx vitest run --config vitest.browser.config.ts \
   __tests__/browser/a4-boundary-semantics.browser.test.tsx
 
-node_modules/vitest/vitest.mjs run \
-  __tests__/components/a4-pagination
+npx vitest run __tests__/components/a4-pagination
 ```
 
-If CI executes these checks on the PR, CORE should use those exact run results as the executable evidence; otherwise run them in the user's Node-24 checkout before integration sign-off.
+Result in this execution environment:
 
-### A4E acceptance mapping
+```text
+NOT EXECUTED — environment/ownership block, not a test failure.
+```
 
-- A4E-002: representation proof keeps one logical LI and numbering intent through manual break projection and logical break removal; production keyboard path remains pending S1/CORE.
-- A4E-008/018: durable `ol[start]` remains semantic intent; runtime counter offsets are not persisted; export-reader parity remains WORKFLOW/S1 gate work.
-- A4E-011: structural `children` positions distinguish `<br>`, blank content, adjacent atomic boundaries and empty cells; full editor migration remains pending S1/CORE.
-- A4E-028: existing long-item soft pagination identity/reassembly is explicitly retained as an invariant; performance work is not started.
-- A4E-029: a dedicated native-browser-config fixture now captures S0 semantic invariants; the previously recorded editor race/blank-page gates remain unchanged.
+Reason: the available working container is Node `v22.16.0`, has no repository checkout/dependencies and cannot resolve `github.com`/`nodejs.org`. The repository's only GitHub workflow correctly provisions Node 24 but does not expose arbitrary/ad-hoc commands and does not run either command above. S0 does not have a lease to edit `.github/workflows`, `package.json`, shared config, or another owner's test to inject these commands. Those files were intentionally left untouched.
 
-### Compatibility, migration and rollout
+Local proof-only compile performed after the correction draft:
 
-- Existing public editor APIs and active mutation routes are unchanged.
-- Existing legacy hard-break content remains compatible.
-- No schema/database/API migration is introduced.
-- No v2 writer is enabled. Writer activation remains blocked until S1/W1 reader compatibility and the later G2 rollout gate.
-- No output bundle regeneration is required for this proof-only packet.
-- Rollback is deletion of the additive proof modules/test/handoff only; stored business documents are unaffected.
+```text
+tsc --noEmit -p isolated-s0-tsconfig.json
+PASS — TypeScript 5.8.3 / Node v22.16.0
+```
 
-### Remaining dependencies and CORE action
+This local compile is supplemental only and is **not** represented as the requested Node 24 Vitest evidence. G0 must not treat the two targeted commands as passed until they are executed verbatim in an authorized Node 24 checkout/runner.
 
-S0 is READY FOR INTEGRATION review, but G0 remains **OPEN**. CORE must not advance SEMANTICS to S1 from this handoff alone. Before freezing G0, CORE should:
+## Acceptance mapping after CORE correction
 
-1. run/obtain Node-24 executable results for the S0 fixture plus existing pagination suite;
-2. review the C02 type/location against C0's generic editor-session selection bridge;
-3. review the C03 inline marker/source-range/list-continuation representation with WORKFLOW's reader/output inventory;
-4. resolve any contract naming or mapping refinements centrally in `contracts.md`/dispatch and publish one common G0 base.
+- **A4E-002 / C03:** single and multiple inline breaks retain one canonical ordered-list item, list-start intent, concrete projected numbering, and logical deletion semantics.
+- **A4E-011 / C02:** structural positions distinguish before/after `<br>`, blank blocks/cells and adjacent atomics; capture/resolve round-trips cover collapsed, forward and reverse selections.
+- **C04:** position maps carry CORE's session/document revision association and stale maps cannot advance themselves.
+- **A4E-008/018:** durable `ol[start]` remains canonical; projection counter offsets remain runtime-only.
+- **A4E-028:** existing one-item soft-pagination/reassembly invariant remains covered.
+- **A4E-029:** S0 boundary fixture is expanded without enabling production writer behavior.
 
-SEMANTICS stops here and waits for a new explicit S1 assignment after G0.
+## Remaining dependency and stop boundary
+
+Implementation corrections requested by CORE are authored within S0 and the proof interfaces are published. **G0 remains OPEN.** The two requested targeted Node 24 Vitest invocations still require an authorized runner that can execute ad-hoc commands without violating the Wave-0 ownership lease. No result is fabricated here.
+
+SEMANTICS stops at **READY FOR INTEGRATION — S0 only**. Do not begin S1 until CORE explicitly freezes/publishes G0 and dispatches a new S1 assignment.
