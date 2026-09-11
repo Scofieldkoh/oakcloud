@@ -96,11 +96,11 @@ type ConnectorProvider =
   | 'SHAREPOINT';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 const MODEL_DEFAULT_GROUPS = [
-  { key: 'general', label: 'General default' },
-  { key: 'ocr', label: 'OCR default' },
-  { key: 'research', label: 'Research default' },
-  { key: 'businessAssistant', label: 'Business Assistant default' },
-  { key: 'bizfileExtraction', label: 'BizFile extraction default' },
+  { key: 'general', label: 'General default', description: 'Everyday AI requests and general-purpose work.' },
+  { key: 'ocr', label: 'OCR default', description: 'OCR and document text extraction.' },
+  { key: 'research', label: 'Research default', description: 'Research and search-oriented tasks.' },
+  { key: 'businessAssistant', label: 'Business Assistant default', description: 'Business Assistant planning and actions.' },
+  { key: 'bizfileExtraction', label: 'BizFile extraction default', description: 'Structured extraction from BizFile documents.' },
 ] as const;
 
 type ModelDefaultGroup = (typeof MODEL_DEFAULT_GROUPS)[number]['key'];
@@ -1285,46 +1285,68 @@ export default function ConnectorsPage() {
           setShowCredentials({});
         }}
         title={`Edit ${editingConnector?.name}`}
+        description={editingConnector ? `${getProviderDisplayName(editingConnector.provider)} · ${editingConnector.type === 'AI_PROVIDER' ? 'AI provider' : 'Storage / email'} connector` : undefined}
         size="4xl"
       >
         <form onSubmit={handleUpdate} autoComplete="off">
-          <ModalBody>
+          <ModalBody className="p-0">
             {formError && (
-              <Alert variant="error" className="mb-4">
-                {formError}
-              </Alert>
+              <div className="p-4 pb-0">
+                <Alert variant="error">
+                  {formError}
+                </Alert>
+              </div>
             )}
-            <div className="space-y-4">
-              {/* Name */}
-              <FormInput
-                label="Display Name"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                inputSize="sm"
-              />
 
-              {/* Credentials */}
-              {editingConnector && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <label className="label mb-0">
-                      Credentials{' '}
-                      <span className="text-text-muted font-normal">
-                        (leave blank to keep current)
-                      </span>
-                    </label>
-                    {(editingConnector.provider === 'SHAREPOINT' || editingConnector.provider === 'ONEDRIVE') && (
-                      <button
-                        type="button"
-                        onClick={() => setShowSetupGuide(editingConnector.provider as 'SHAREPOINT' | 'ONEDRIVE')}
-                        className="text-text-muted hover:text-oak-light transition-colors"
-                        title="Setup Guide"
-                      >
-                        <HelpCircle className="w-4 h-4" />
-                      </button>
-                    )}
+            <div className="divide-y divide-border-primary">
+              {/* Connection details */}
+              <section className="p-4 sm:p-5" aria-labelledby="connector-connection-heading">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 id="connector-connection-heading" className="text-base font-semibold text-text-primary">
+                      Connection
+                    </h3>
+                    <p className="mt-1 text-sm text-text-secondary">
+                      Name this connector, update credentials, and control whether it can be used.
+                    </p>
                   </div>
-                  {getCredentialFields(editingConnector.provider).map((field) => (
+                  <div className="flex items-center gap-3 rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2 sm:min-w-52 sm:justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-text-primary">Connector enabled</div>
+                      <div className="text-xs text-text-muted">
+                        {editForm.isEnabled ? 'Available for use' : 'Currently disabled'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-label="Enable connector"
+                      aria-checked={editForm.isEnabled}
+                      onClick={() => setEditForm({ ...editForm, isEnabled: !editForm.isEnabled })}
+                      className={cn(
+                        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
+                        editForm.isEnabled ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
+                          editForm.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                        )}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <FormInput
+                    label="Display Name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    inputSize="sm"
+                  />
+
+                  {editingConnector && getCredentialFields(editingConnector.provider).map((field) => (
                     <div key={field.key} className="relative">
                       <FormInput
                         id={`edit-connector-${field.key}`}
@@ -1352,8 +1374,9 @@ export default function ConnectorsPage() {
                       {field.type === 'password' && (
                         <button
                           type="button"
+                          aria-label={`${showCredentials[field.key] ? 'Hide' : 'Show'} ${field.label}`}
                           onClick={() => toggleCredentialVisibility(field.key)}
-                          className="absolute right-3 top-8 text-text-muted hover:text-text-secondary"
+                          className="absolute right-3 top-8 text-text-muted transition-colors hover:text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
                         >
                           {showCredentials[field.key] ? (
                             <EyeOff className="w-4 h-4" />
@@ -1365,14 +1388,36 @@ export default function ConnectorsPage() {
                     </div>
                   ))}
                 </div>
-              )}
+
+                {editingConnector && getCredentialFields(editingConnector.provider).length > 0 && (
+                  <p className="mt-2 text-xs text-text-muted">
+                    Credential fields are write-only. Leave a field blank to keep its current value.
+                  </p>
+                )}
+
+                {editingConnector && (editingConnector.provider === 'SHAREPOINT' || editingConnector.provider === 'ONEDRIVE') && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSetupGuide(editingConnector.provider as 'SHAREPOINT' | 'ONEDRIVE')}
+                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-oak-light transition-colors hover:text-oak-primary"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    Open provider setup guide
+                  </button>
+                )}
+              </section>
 
               {editingConnector &&
                 (editingConnector.provider === 'ONEDRIVE' || editingConnector.provider === 'SHAREPOINT') && (
-                  <div className="space-y-2">
-                    <label className="label mb-0">
-                      Mailbox Emails (Communication)
-                    </label>
+                  <section className="p-4 sm:p-5" aria-labelledby="connector-mailboxes-heading">
+                    <div className="mb-3">
+                      <h3 id="connector-mailboxes-heading" className="text-base font-semibold text-text-primary">
+                        Communication mailboxes
+                      </h3>
+                      <p className="mt-1 text-sm text-text-secondary">
+                        Outlook mailboxes that Communication sync is allowed to read.
+                      </p>
+                    </div>
                     <textarea
                       value={editForm.mailboxUserIdsText}
                       onChange={(e) =>
@@ -1383,247 +1428,287 @@ export default function ConnectorsPage() {
                       }
                       placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
                       className="input w-full min-h-24 p-3"
+                      aria-label="Mailbox emails for Communication"
                     />
-                    <p className="text-xs text-text-muted">
-                      Used by Communication sync to read Outlook mailboxes. Separate multiple
-                      values with comma or newline.
+                    <p className="mt-1 text-xs text-text-muted">
+                      Separate multiple values with a comma or a new line.
                     </p>
-                  </div>
-                  )}
+                  </section>
+                )}
 
               {editingConnector?.provider === 'SHAREPOINT' && editingConnector.workspaceId === session?.tenantId && (
-                <SharePointFilingSettings connectorId={editingConnector.id} />
+                <section className="p-4 sm:p-5">
+                  <SharePointFilingSettings connectorId={editingConnector.id} />
+                </section>
               )}
 
-              {/* Models Ã¢â‚¬â€ AI providers only */}
+              {/* Models — AI providers only */}
               {editingConnector?.type === 'AI_PROVIDER' && (
-                <div className="space-y-3">
-                  <label className="label mb-0">Models</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-end">
-                    <FormInput
-                      label="Model ID"
-                      value={newModelId}
-                      onChange={(e) => setNewModelId(e.target.value)}
-                      placeholder="provider/model-id"
-                      inputSize="sm"
-                    />
-                    <FormInput
-                      label="Name"
-                      value={newModelName}
-                      onChange={(e) => setNewModelName(e.target.value)}
-                      placeholder="Display name"
-                      inputSize="sm"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleAddModel}
-                      isLoading={addModelMutation.isPending}
-                      disabled={!newModelId.trim() || addModelMutation.isPending}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add
-                    </Button>
+                <section className="p-4 sm:p-5" aria-labelledby="connector-routing-heading">
+                  <div className="mb-4">
+                    <h3 id="connector-routing-heading" className="text-base font-semibold text-text-primary">
+                      Model routing
+                    </h3>
+                    <p className="mt-1 text-sm text-text-secondary">
+                      Choose the default model for each workload. Auto lets Oakcloud select an eligible model at runtime.
+                    </p>
                   </div>
+
                   {isLoadingModels ? (
                     <div className="space-y-2">
-                      {[1, 2].map((i) => (
+                      {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="h-14 rounded-lg bg-bg-tertiary animate-pulse"
+                          className="h-14 animate-pulse rounded-lg bg-bg-tertiary"
                         />
                       ))}
                     </div>
                   ) : connectorModels && connectorModels.length > 0 ? (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="overflow-hidden rounded-xl border border-border-primary">
+                      <div className="hidden grid-cols-[minmax(150px,0.9fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-3 border-b border-border-primary bg-bg-tertiary px-3 py-2 md:grid">
+                        <span className="text-xs font-medium text-text-secondary">Workload</span>
+                        <span className="text-xs font-medium text-text-secondary">Default model</span>
+                        {editingConnector.provider === 'OPENROUTER' && (
+                          <span className="text-xs font-medium text-text-secondary">Reasoning effort</span>
+                        )}
+                      </div>
+                      <div className="divide-y divide-border-primary">
                         {MODEL_DEFAULT_GROUPS.map((group) => (
-                          <div key={group.key}>
-                            <label className="label">{group.label}</label>
-                            <select
-                              aria-label={group.label}
-                              value={editForm.modelDefaults[group.key]}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  modelDefaults: {
-                                    ...editForm.modelDefaults,
-                                    [group.key]: e.target.value,
-                                  },
-                                  reasoningDefaults: Object.fromEntries(Object.entries(editForm.reasoningDefaults).filter(([key]) => key !== group.key)),
-                                })
-                              }
-                              className="input input-sm w-full"
-                            >
-                              <option value="">Auto</option>
-                              {connectorModels
-                                .filter((model) => model.isEnabled)
-                                .map((model) => (
-                                  <option key={model.modelId} value={model.modelId}>
-                                    {model.name}
-                                  </option>
-                                ))}
-                            </select>
-                            {editingConnector.provider === 'OPENROUTER' && <ReasoningEffortSelect
-                              label={group.label}
-                              efforts={connectorModels.find((model) => model.modelId === editForm.modelDefaults[group.key] && model.isEnabled)?.reasoningEfforts}
-                              value={editForm.reasoningDefaults[group.key]?.modelId === editForm.modelDefaults[group.key] ? editForm.reasoningDefaults[group.key]?.effort : undefined}
-                              onChange={(effort) => setEditForm((previous) => {
-                                const reasoningDefaults = { ...previous.reasoningDefaults };
-                                if (effort) reasoningDefaults[group.key] = { modelId: previous.modelDefaults[group.key], effort };
-                                else delete reasoningDefaults[group.key];
-                                return { ...previous, reasoningDefaults };
-                              })}
-                            />}
+                          <div
+                            key={group.key}
+                            className={cn(
+                              'grid gap-3 bg-background-secondary p-3',
+                              editingConnector.provider === 'OPENROUTER'
+                                ? 'md:grid-cols-[minmax(150px,0.9fr)_minmax(0,1fr)_minmax(0,0.9fr)] md:items-start'
+                                : 'md:grid-cols-[minmax(150px,0.9fr)_minmax(0,1fr)] md:items-center'
+                            )}
+                          >
+                            <div className="min-w-0">
+                              <label htmlFor={`connector-default-${group.key}`} className="text-sm font-medium text-text-primary">
+                                {group.label}
+                              </label>
+                              <p className="mt-0.5 text-xs text-text-muted">{group.description}</p>
+                            </div>
+                            <div>
+                              <label htmlFor={`connector-default-${group.key}`} className="label md:sr-only">Default model</label>
+                              <select
+                                id={`connector-default-${group.key}`}
+                                aria-label={group.label}
+                                value={editForm.modelDefaults[group.key]}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    modelDefaults: {
+                                      ...editForm.modelDefaults,
+                                      [group.key]: e.target.value,
+                                    },
+                                    reasoningDefaults: Object.fromEntries(Object.entries(editForm.reasoningDefaults).filter(([key]) => key !== group.key)),
+                                  })
+                                }
+                                className="input input-sm w-full"
+                              >
+                                <option value="">Auto</option>
+                                {connectorModels
+                                  .filter((model) => model.isEnabled)
+                                  .map((model) => (
+                                    <option key={model.modelId} value={model.modelId}>
+                                      {model.name}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                            {editingConnector.provider === 'OPENROUTER' && (
+                              <ReasoningEffortSelect
+                                label={group.label}
+                                efforts={connectorModels.find((model) => model.modelId === editForm.modelDefaults[group.key] && model.isEnabled)?.reasoningEfforts}
+                                value={editForm.reasoningDefaults[group.key]?.modelId === editForm.modelDefaults[group.key] ? editForm.reasoningDefaults[group.key]?.effort : undefined}
+                                onChange={(effort) => setEditForm((previous) => {
+                                  const reasoningDefaults = { ...previous.reasoningDefaults };
+                                  if (effort) reasoningDefaults[group.key] = { modelId: previous.modelDefaults[group.key], effort };
+                                  else delete reasoningDefaults[group.key];
+                                  return { ...previous, reasoningDefaults };
+                                })}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
-                      {connectorModels.map((model: ConnectorModelConfig) => (
-                        <div
-                          key={model.modelId}
-                          className="flex flex-col gap-3 p-3 rounded-lg border border-border-primary bg-bg-tertiary sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="flex flex-col min-w-0 mr-3">
-                            <span className="text-sm font-medium text-text-primary truncate">
-                              {model.name}
-                            </span>
-                            <span className="text-xs text-text-muted truncate">
-                              {model.providerModelId}
-                            </span>
-                            {editingConnector.provider === 'OPENROUTER' && (
-                              <span
-                                className={cn(
-                                  'mt-1 text-xs',
-                                  model.lastPdfInputTest?.success
-                                    ? 'text-success'
-                                    : model.lastPdfInputTest
-                                      ? 'text-error'
-                                      : 'text-text-muted'
-                                )}
-                                title={model.lastPdfInputTest?.error}
-                              >
-                                {model.lastPdfInputTest?.success
-                                  ? 'PDF OK'
-                                  : model.lastPdfInputTest
-                                    ? 'PDF failed'
-                                    : 'PDF untested'}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {editingConnector.provider === 'OPENROUTER' && (
-                              <>
-                                <select
-                                  value={model.documentInputMode}
-                                  onChange={(e) =>
-                                    handleUpdateModelDocumentInputMode(
-                                      model,
-                                      e.target.value as ConnectorModelConfig['documentInputMode']
-                                    )
-                                  }
-                                  className="input input-sm w-28"
-                                  disabled={addModelMutation.isPending}
-                                  title="Document input mode"
-                                >
-                                  <option value="auto">Auto</option>
-                                  <option value="pdf">PDF</option>
-                                  <option value="image">Image</option>
-                                </select>
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  size="xs"
-                                  onClick={() => handleTestModelPdf(model)}
-                                  isLoading={
-                                    testModelPdfMutation.isPending &&
-                                    testModelPdfMutation.variables?.modelId === model.modelId
-                                  }
-                                  disabled={!model.isEnabled || testModelPdfMutation.isPending}
-                                >
-                                  <RefreshCw className="w-3 h-3 mr-1" />
-                                  Test PDF
-                                </Button>
-                              </>
-                            )}
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={model.isEnabled}
-                              disabled={toggleModelMutation.isPending}
-                              onClick={() =>
-                                toggleModelMutation.mutate({
-                                  modelId: model.modelId,
-                                  isEnabled: !model.isEnabled,
-                                })
-                              }
-                              className={cn(
-                                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
-                                model.isEnabled
-                                  ? 'bg-oak-primary border-oak-primary'
-                                  : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
-                              )}
-                            >
-                              <span
-                                className={cn(
-                                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
-                                  model.isEnabled ? 'translate-x-5' : 'translate-x-0'
-                                )}
-                              />
-                            </button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="xs"
-                              iconOnly
-                              leftIcon={<Trash2 className="w-4 h-4" />}
-                              aria-label={`Remove ${model.name}`}
-                              title={`Remove ${model.name}`}
-                              disabled={deleteModelMutation.isPending}
-                              onClick={() => handleRemoveModel(model)}
-                            />
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-text-muted">No models registered for this provider.</p>
+                    <div className="rounded-lg border border-dashed border-border-primary p-4 text-sm text-text-muted">
+                      No models are registered yet. Add a model below to configure workload defaults.
+                    </div>
                   )}
-                </div>
-              )}
 
-              {/* Options */}
-              <div className="space-y-3">
-                {/* Enabled Toggle */}
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-text-primary">Enabled</span>
-                    <span className="text-xs text-text-muted">
-                      {editForm.isEnabled ? 'Connector is active and can be used' : 'Connector is disabled'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={editForm.isEnabled}
-                    onClick={() => setEditForm({ ...editForm, isEnabled: !editForm.isEnabled })}
-                    className={cn(
-                      'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2',
-                      editForm.isEnabled ? 'bg-oak-primary border-oak-primary' : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+                  <div className="mt-6 border-t border-border-primary pt-5" aria-labelledby="connector-models-heading">
+                    <div className="mb-4">
+                      <h4 id="connector-models-heading" className="text-sm font-semibold text-text-primary">
+                        Available models
+                      </h4>
+                      <p className="mt-1 text-xs text-text-muted">
+                        Register provider model IDs and manage document input capability per model.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                      <FormInput
+                        label="Model ID"
+                        value={newModelId}
+                        onChange={(e) => setNewModelId(e.target.value)}
+                        placeholder="provider/model-id"
+                        inputSize="sm"
+                      />
+                      <FormInput
+                        label="Display name"
+                        value={newModelName}
+                        onChange={(e) => setNewModelName(e.target.value)}
+                        placeholder="Optional friendly name"
+                        inputSize="sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleAddModel}
+                        isLoading={addModelMutation.isPending}
+                        disabled={!newModelId.trim() || addModelMutation.isPending}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add model
+                      </Button>
+                    </div>
+
+                    {connectorModels && connectorModels.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {connectorModels.map((model: ConnectorModelConfig) => (
+                          <div
+                            key={model.modelId}
+                            className="flex flex-col gap-3 rounded-lg border border-border-primary bg-background-primary p-3 md:flex-row md:items-center md:justify-between"
+                          >
+                            <div className="min-w-0 md:mr-4">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="truncate text-sm font-medium text-text-primary">
+                                  {model.name}
+                                </span>
+                                <span className={cn(
+                                  'rounded-full px-2 py-0.5 text-2xs font-medium',
+                                  model.isEnabled
+                                    ? 'bg-oak-primary/10 text-oak-light'
+                                    : 'bg-bg-tertiary text-text-muted'
+                                )}>
+                                  {model.isEnabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                              </div>
+                              <span className="mt-0.5 block truncate font-mono text-xs text-text-muted">
+                                {model.providerModelId}
+                              </span>
+                              {editingConnector.provider === 'OPENROUTER' && (
+                                <span
+                                  className={cn(
+                                    'mt-1 block text-xs',
+                                    model.lastPdfInputTest?.success
+                                      ? 'text-success'
+                                      : model.lastPdfInputTest
+                                        ? 'text-error'
+                                        : 'text-text-muted'
+                                  )}
+                                  title={model.lastPdfInputTest?.error}
+                                >
+                                  {model.lastPdfInputTest?.success
+                                    ? 'PDF input verified'
+                                    : model.lastPdfInputTest
+                                      ? 'PDF input test failed'
+                                      : 'PDF input not tested'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                              {editingConnector.provider === 'OPENROUTER' && (
+                                <>
+                                  <div>
+                                    <label htmlFor={`document-mode-${model.modelId}`} className="sr-only">Document input mode for {model.name}</label>
+                                    <select
+                                      id={`document-mode-${model.modelId}`}
+                                      value={model.documentInputMode}
+                                      onChange={(e) =>
+                                        handleUpdateModelDocumentInputMode(
+                                          model,
+                                          e.target.value as ConnectorModelConfig['documentInputMode']
+                                        )
+                                      }
+                                      className="input input-sm w-28"
+                                      disabled={addModelMutation.isPending}
+                                      title="Document input mode"
+                                    >
+                                      <option value="auto">Auto input</option>
+                                      <option value="pdf">PDF</option>
+                                      <option value="image">Image</option>
+                                    </select>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="xs"
+                                    onClick={() => handleTestModelPdf(model)}
+                                    isLoading={
+                                      testModelPdfMutation.isPending &&
+                                      testModelPdfMutation.variables?.modelId === model.modelId
+                                    }
+                                    disabled={!model.isEnabled || testModelPdfMutation.isPending}
+                                  >
+                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    Test PDF
+                                  </Button>
+                                </>
+                              )}
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-label={`${model.isEnabled ? 'Disable' : 'Enable'} ${model.name}`}
+                                aria-checked={model.isEnabled}
+                                disabled={toggleModelMutation.isPending}
+                                onClick={() =>
+                                  toggleModelMutation.mutate({
+                                    modelId: model.modelId,
+                                    isEnabled: !model.isEnabled,
+                                  })
+                                }
+                                className={cn(
+                                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                  model.isEnabled
+                                    ? 'bg-oak-primary border-oak-primary'
+                                    : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
+                                    model.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                                  )}
+                                />
+                              </button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="xs"
+                                iconOnly
+                                leftIcon={<Trash2 className="w-4 h-4" />}
+                                aria-label={`Remove ${model.name}`}
+                                title={`Remove ${model.name}`}
+                                disabled={deleteModelMutation.isPending}
+                                onClick={() => handleRemoveModel(model)}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
-                        editForm.isEnabled ? 'translate-x-5' : 'translate-x-0'
-                      )}
-                    />
-                  </button>
-                </div>
-              </div>
+                  </div>
+                </section>
+              )}
             </div>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="bg-background-secondary">
             <Button
               variant="secondary"
               onClick={() => {
