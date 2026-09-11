@@ -7,6 +7,7 @@ import {
   assertA4EditorReaderFormatLevel,
   assertA4EditorWriterFormatLevel,
 } from '@/lib/document-editor/a4-editor-capabilities';
+import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
 
 function metadataFormatLevel(contentJson: unknown): A4BreakFormatLevel {
   if (!contentJson || typeof contentJson !== 'object' || Array.isArray(contentJson)) return 1;
@@ -32,9 +33,11 @@ export function detectA4StoredFormatLevel(
 
 /**
  * Reads canonical break semantics through S1 and enforces current server reader
- * authority. It never introduces a second parser or position representation.
+ * authority. Server-side callers install one JSDOM environment adapter first;
+ * the S1 parser/structural-position implementation itself remains unchanged.
  */
 export function readA4StoredDocument(content: string, contentJson?: unknown) {
+  ensureA4ServerDomGlobals();
   const reader = readA4BreakDocument(content);
   const requiredFormatLevel = detectA4StoredFormatLevel(content, contentJson);
   assertA4EditorReaderFormatLevel(requiredFormatLevel);
