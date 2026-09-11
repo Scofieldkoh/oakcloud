@@ -1,119 +1,91 @@
 # WORKFLOW Coordination Log
 
-Instance: `WORKFLOW`  
-Assignment: `W0`  
-Status: COMPLETE — HANDOFF READY FOR CORE  
-Baseline: `main` at `80056fb7ab6e410ef2d2ddc17a830b068d263671`
+## WORKFLOW-W0-20260911-01
 
-## Scope completed
+Role and packet: WORKFLOW / W0 — persistence, save concurrency, drafts, batch editing, preview and HTML/PDF compatibility proof  
+Starting state: RUNNING  
+Ending state: **READY FOR INTEGRATION — W0 only**  
+Branch: `workflow/w0-a4-editor-persistence-proof`  
+Existing PR: #33 — https://github.com/Scofieldkoh/oakcloud/pull/33  
+Contract consumed: proposed v1 plus CORE/S0/F0 W0 handoff decisions; G0 remains open.
 
-Executed only the released W0 assignment from `coordination/dispatch.md`:
+### Scope completed
 
-- inventoried template/generated-document/batch/draft/preview/export readers and writers;
-- converted save-concurrency, draft, batch-JSON and output-parity defects into focused baseline proofs;
-- exercised a representative rich document through the actual PDF HTML builder;
-- closed the inferred version/draft/read-after-write assumptions from current code;
-- recorded migration/client-contract implications and future collision points in `workflow-proof.md`.
+W0 only was completed. The existing PR was updated; no competing PR, merge, W1 production behavior, Prisma migration/schema change, generated bundle update, version bump or deployment was performed.
 
-No worker was delegated. No later WORKFLOW assignment was started.
+Evidence now includes:
+- writer/reader/consumer inventory for DocumentTemplate, TemplatePartial and GeneratedDocument, including lifecycle, draft, batch, preview and output consumers;
+- closed revision-source design: API `expectedRevision`; DocumentTemplate/TemplatePartial use existing `version`; GeneratedDocument gets a dedicated future `revision` integer while `templateVersion` stays provenance;
+- 409 conflict/error payload and audit/soft-delete/editability semantics;
+- batch same-revision race and `selected_ids`/legacy ordering fixtures;
+- draft stale-restore, save acknowledgement and reopen/status fixtures;
+- exact C03 `<span data-a4-break="page"></span>` preservation fixture through the real recursive partial resolver plus legacy break compatibility expectations;
+- C05/C06/C08 field persistence/identity/derived-value/missing-value fixtures;
+- explicit synthetic-vs-PDF-byte validation boundary.
 
-## Files changed
-
-Only the six WORKFLOW-owned W0 paths were changed:
+### Files changed
 
 1. `tests/services/document-template-editor-save.test.ts`
 2. `tests/services/document-template-editor-batch.test.ts`
 3. `tests/services/document-template-editor-drafts.test.ts`
-4. `tests/document-output/document-template-editor-output.test.ts`
-5. `docs/plans/2026-09-10-a4-editor-implementation/workflow-proof.md`
-6. `docs/plans/2026-09-10-a4-editor-implementation/coordination/workflow.md`
+4. `tests/services/document-template-editor-fields.test.ts` (new)
+5. `tests/document-output/document-template-editor-output.test.ts`
+6. `docs/plans/2026-09-10-a4-editor-implementation/workflow-proof.md`
+7. `docs/plans/2026-09-10-a4-editor-implementation/coordination/workflow.md`
 
-No production source, Prisma schema/migration, version file, BODY/SEMANTICS/FIELDS test, or shared coordination file was modified.
+No production source file is changed by this correction set.
 
-## Backend / persistence readers and writers reviewed
+### Validation evidence
 
-- `src/app/(dashboard)/template-partials/editor/page.tsx`
-- `src/app/api/document-templates/[id]/route.ts`
-- `src/lib/validations/document-template.ts`
-- `src/services/document-template.service.ts`
-- `src/app/(dashboard)/generated-documents/[id]/edit/page.tsx`
-- `src/app/api/generated-documents/[id]/draft/route.ts`
-- `src/services/document-generator.service.ts`
-- `src/components/documents/generation-batch/batch-review-workspace.tsx`
-- `src/components/documents/generation-batch/document-generation-batch-workspace.tsx`
-- `src/components/documents/generation-batch/use-document-generation-batch.ts`
-- `src/services/document-export.service.ts`
-- `src/components/documents/a4-print-styles.ts`
-- `src/components/documents/a4-pagination/layout.ts`
-- `prisma/schema.prisma`
-
-## Baseline failures captured
-
-| Proof | Baseline defect |
-| --- | --- |
-| `W-SAVE-01` | template submit composes persistence from parent `formData`, not a canonical editor snapshot |
-| `W-SAVE-02` | no expected-version request/write predicate |
-| `W-BATCH-01` | body edit sends `null` content JSON |
-| `W-BATCH-02` | layout edit replaces sibling JSON metadata |
-| `W-BATCH-03` | active layout reads template JSON instead of item-edited JSON |
-| `W-DRAFT-01` | generated-document autosave callback is unwired |
-| `W-DRAFT-02` | draft freshness is HTML-only |
-| `W-DRAFT-03` | save acknowledgement can clear dirty state without an edit/save revision guard |
-| `W-OUTPUT-01` | PDF sanitizer does not preserve representative rich structure |
-| `W-OUTPUT-02` | HTML sanitizer contract is not aligned |
-| `W-OUTPUT-03` | fallback PDF HTML retains fixed-height hidden overflow |
-| `W-OUTPUT-04` | pagination failure is warned and swallowed |
-
-These are intentionally wrapped in `it.fails` for W0 baseline proof. Later fixes must remove `.fails` as each desired invariant becomes true.
-
-## Surviving fixtures / compatibility
-
-- `DocumentTemplate.version` already exists and increments, so basic template expected-version CAS can reuse it without a schema migration.
-- Batch save input already carries `editedContentJson` and `expectedRevision`; wrapper boundaries are the data-loss point.
-- Draft GET/DELETE paths are tenant-gated and user-scoped.
-- `DocumentDraft.metadata` can carry initial base-revision metadata without a migration.
-- Older `null` / unversioned template `contentJson` resolves to `DEFAULT_A4_DOCUMENT_LAYOUT`.
-- Paginated output preserves continuation and oversized-page markers.
-
-## Migration and client-contract implications
-
-W0 itself changes neither schema nor client/API contracts.
-
-Before later WORKFLOW implementation, CORE must explicitly settle:
-
-- template update `expectedVersion` request and stale-write response semantics;
-- generated-document conflict token: `updatedAt` precondition versus a new integer revision (the latter requires migration);
-- whether draft base revision remains in existing JSON `metadata` or is promoted to typed/indexed storage;
-- degraded PDF fallback policy: explicit failure versus clearly labeled overflow-visible fallback.
-
-Template CAS can use the existing integer version. Draft base revision can initially use existing metadata. No migration is justified by W0 alone.
-
-## Collision risks for later waves
-
-Do not release later WORKFLOW production edits on shared editor/export hotspots without CORE sequencing:
-
-- template editor save + preview surface can collide with FIELDS/CORE;
-- generated-document editor can collide with CORE editor-session work;
-- batch review/workspace can collide with CORE/SEMANTICS integration;
-- export service can collide with SEMANTICS pagination/output changes;
-- any Prisma migration remains shared/integration-sensitive.
-
-No such hotspot was edited in W0.
-
-## Acceptance targets
+This environment does not provide an executable Oakcloud checkout under Node 24. Its available container is Node 22 and cannot resolve GitHub/npm for a dependency-capable checkout. Therefore the following required commands remain **NOT EXECUTED here** and are not claimed as passing:
 
 ```bash
-npx vitest run tests/services/document-template-editor-save.test.ts tests/services/document-template-editor-batch.test.ts tests/services/document-template-editor-drafts.test.ts
+npm run lint
+npm run typecheck
+npm run build
+npx vitest run tests/services/document-template-editor-save.test.ts
+npx vitest run tests/services/document-template-editor-batch.test.ts
+npx vitest run tests/services/document-template-editor-drafts.test.ts
+npx vitest run tests/services/document-template-editor-fields.test.ts
 npx vitest run tests/document-output/document-template-editor-output.test.ts
-npx tsc -b
 ```
 
-Expected-failure fixtures are baseline specifications, not waived bugs.
+Likewise, actual Puppeteer PDF bytes could not be generated. Synthetic resolver/PDF-HTML fixtures are committed, but production PDF-byte readiness remains a later executable gate. The user explicitly authorized updating the PR despite this validation limitation.
 
-## CORE handoff
+### Owner status at W0 handoff
 
-Detailed evidence, writer/reader inventory, inferred-assumption closure, compatibility proof, intended later fixes, and risk map are in:
+| Owner | Wave-0 packet | Evidence observed | Status / next gate |
+| --- | --- | --- | --- |
+| CORE | C0 | `coordination/core.md`; bounded C01/C04 proof, input inventory; targeted execution blocked in its environment | READY FOR INTEGRATION; CORE owns G0 review |
+| SEMANTICS | S0 | PR #34; structural selection/C03 nested-break/list-continuity corrections; Node24 workflow lint/typecheck evidence, focused targets not executed | READY FOR INTEGRATION — S0 only |
+| FIELDS | F0 | PR #32; field grammar/identity/lossless codec/trusted-rich proof; Node24 smoke/workflow evidence with focused Vitest blocked | READY FOR INTEGRATION — F0 only |
+| WORKFLOW | W0 | PR #33; persistence/concurrency/draft/batch/output/field proof updated in this handoff | READY FOR INTEGRATION — W0 only |
 
-`docs/plans/2026-09-10-a4-editor-implementation/workflow-proof.md`
+G0 is **not** frozen by WORKFLOW. VERIFY remains idle until CORE publishes a verification assignment.
 
-Handoff status: READY. WORKFLOW stops at W0 and awaits CORE review/release before any production persistence, draft, batch, preview, HTML/PDF or schema work.
+### W -> owner requests
+
+**To CORE**
+- Freeze the additive persistence contract name as `expectedRevision` across W consumers.
+- Freeze revision sources: `DocumentTemplate.version`, `TemplatePartial.version`, and a dedicated future `GeneratedDocument.revision`; never use `templateVersion` as edit revision.
+- Approve the repository-convention conflict mapping: HTTP 409 with stable `VERSION_CONFLICT`, safe current/expected revision details and reload/reconcile action; settle HTTP 428/equivalent for missing preconditions when enforcement becomes strict.
+- Assign/sequence the future GeneratedDocument revision migration in W1 integration; W0 deliberately does not edit schema/migrations.
+- Run/arrange the exact Node24 focused commands before treating W0 executable acceptance as complete.
+
+**To SEMANTICS**
+- Keep S0's exact C03 nested marker and list-continuity codec as the reader contract consumed by W output paths.
+- Preserve legacy hard breaks plus supported authored class/style/attributes/context; identify any export projection attributes that W must allowlist later.
+
+**To FIELDS**
+- Publish the final F0 stored-field definition/identity codec and trusted-rich origin capability for W1 consumption.
+- Preserve scoped IDs, raw-vs-derived distinction, forward metadata and false/zero/empty/missing semantics through persistence/reopen.
+
+### Shared-change request to CORE
+
+For W1 only, CORE must coordinate the shared database/API migration window for the dedicated `GeneratedDocument.revision` field and any shared error/capability contract changes. WORKFLOW does not request or authorize those shared changes in W0 and has not implemented them here.
+
+### Exact stop point
+
+All authorized W0 proof/design corrections are committed to the existing WORKFLOW branch/PR. WORKFLOW stops now. It must not implement W1 persistence/concurrency behavior, migrations, reader activation, PDF fallback fixes or bundle changes until CORE reviews C0/S0/F0/W0, freezes G0 and publishes a new explicit WORKFLOW assignment.
+
+**READY FOR INTEGRATION — W0 only**
