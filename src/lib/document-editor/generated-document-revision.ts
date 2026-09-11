@@ -3,6 +3,8 @@ import { classifyRevisionMiss } from '@/lib/document-editor/revision-concurrency
 
 export type GeneratedDocumentEditableStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 
+type RevisionReadClient = Pick<Prisma.TransactionClient, '$queryRaw'>;
+
 export interface GeneratedDocumentRevisionState {
   revision: number;
   deletedAt: Date | null;
@@ -92,11 +94,11 @@ export async function claimGeneratedDocumentRevision(
 }
 
 export async function readGeneratedDocumentRevision(
-  tx: Prisma.TransactionClient,
+  client: RevisionReadClient,
   id: string,
   tenantId: string,
 ): Promise<number> {
-  const rows = await tx.$queryRaw<Array<{ revision: number }>>(Prisma.sql`
+  const rows = await client.$queryRaw<Array<{ revision: number }>>(Prisma.sql`
     SELECT "revision"
     FROM "generated_documents"
     WHERE "id" = ${id}
@@ -107,4 +109,19 @@ export async function readGeneratedDocumentRevision(
     classifyRevisionMiss(null, { resource: 'generated-document' });
   }
   return rows[0].revision;
+}
+
+export async function readGeneratedDocumentRevisions(
+  client: RevisionReadClient,
+  ids: string[],
+  tenantId: string,
+): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  const rows = await client.$queryRaw<Array<{ id: string; revision: number }>>(Prisma.sql`
+    SELECT "id", "revision"
+    FROM "generated_documents"
+    WHERE "tenant_id" = ${tenantId}
+      AND "id" IN (${Prisma.join(ids)})
+  `);
+  return new Map(rows.map((row) => [row.id, row.revision]));
 }
