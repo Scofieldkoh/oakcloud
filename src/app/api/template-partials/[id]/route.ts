@@ -127,10 +127,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const input = updateTemplatePartialSchema.parse({ ...partialData, id });
-    if (input.content !== undefined) {
-      // TemplatePartial has no contentJson; S1 markup detection is authoritative.
-      assertA4WriterCanPreserve(input.content);
-    }
+    if (input.content !== undefined) assertA4WriterCanPreserve(input.content);
     const partial = await updateTemplatePartial(
       input,
       { tenantId: effectiveTenantId, userId: session.id },
@@ -185,8 +182,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       reason,
       expectedRevision,
     );
+    const deleted = await prisma.templatePartial.findFirst({
+      where: { id, tenantId: effectiveTenantId },
+      select: { version: true },
+    });
+    if (!deleted) {
+      return NextResponse.json({ error: 'Partial not found' }, { status: 404 });
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, revision: deleted.version });
   } catch (error) {
     return apiError(error, 'Delete');
   }
