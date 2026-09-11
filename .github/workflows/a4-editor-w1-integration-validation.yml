@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   finalize-bundle:
-    if: github.event.head_commit.message != 'chore(a4-editor): regenerate W1 pagination bundle'
+    if: "${{ github.event.head_commit.message != 'chore(a4-editor): regenerate W1 pagination bundle' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
