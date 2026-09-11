@@ -16,7 +16,7 @@ jobs:
   w1-integration:
     name: W1 focused integration and output proof
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:16
@@ -67,39 +67,50 @@ jobs:
       - name: Verify generated diff hygiene
         run: git diff --check
 
-      - name: Run W1 focused Vitest suite
-        run: >-
-          npx vitest run
-          tests/lib/a4-editor-capabilities-w1.test.ts
-          tests/lib/a4-editor-producer-integration-w1.test.ts
-          tests/lib/a4-editor-server-reader-w1.test.ts
-          tests/services/document-export-w1.test.ts
-          tests/services/document-template-editor-save.test.ts
-          tests/services/document-template-editor-fields.test.ts
-          tests/services/document-template-editor-drafts.test.ts
-          tests/document-output/document-template-editor-output.test.ts
-
-      - name: Run W1 disposable PostgreSQL suite
-        run: >-
-          npx vitest run
-          __tests__/integration/a4-editor-workflow-w1.postgres.test.ts
-          __tests__/integration/document-generation-batch.postgres.test.ts
-          --maxWorkers=1
-
-      - name: Run TypeScript build-mode validation
-        run: npx tsc -b
-
-      - name: Install isolated Chromium for real PDF proof
+      - name: Run all W1 validation gates and capture evidence
+        shell: bash
         run: |
-          npx playwright install --with-deps chromium
-          echo "CHROME_PATH=$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")" >> "$GITHUB_ENV"
+          set +e
+          mkdir -p .tmp/w1-validation
 
-      - name: Run real PDF byte, page and sentinel proof
-        run: |
-          mkdir -p .tmp
-          cat > .tmp/a4-w1-real-pdf-proof.ts <<'EOF'
+          run_gate() {
+            gate="$1"
+            shift
+            echo "=== $gate ===" | tee ".tmp/w1-validation/${gate}.log"
+            "$@" 2>&1 | tee -a ".tmp/w1-validation/${gate}.log"
+            code=${PIPESTATUS[0]}
+            echo "$code" > ".tmp/w1-validation/${gate}.exit"
+            echo "=== $gate exit $code ===" | tee -a ".tmp/w1-validation/${gate}.log"
+          }
+
+          run_gate focused npx vitest run \
+            tests/lib/a4-editor-capabilities-w1.test.ts \
+            tests/lib/a4-editor-producer-integration-w1.test.ts \
+            tests/lib/a4-editor-server-reader-w1.test.ts \
+            tests/services/document-export-w1.test.ts \
+            tests/services/document-template-editor-save.test.ts \
+            tests/services/document-template-editor-fields.test.ts \
+            tests/services/document-template-editor-drafts.test.ts \
+            tests/document-output/document-template-editor-output.test.ts
+
+          run_gate postgres npx vitest run \
+            __tests__/integration/a4-editor-workflow-w1.postgres.test.ts \
+            __tests__/integration/document-generation-batch.postgres.test.ts \
+            --maxWorkers=1
+
+          run_gate typecheck npx tsc -b
+
+          echo "=== chromium-install ===" | tee .tmp/w1-validation/chromium-install.log
+          npx playwright install --with-deps chromium 2>&1 | tee -a .tmp/w1-validation/chromium-install.log
+          chromium_code=${PIPESTATUS[0]}
+          echo "$chromium_code" > .tmp/w1-validation/chromium-install.exit
+          echo "=== chromium-install exit $chromium_code ===" | tee -a .tmp/w1-validation/chromium-install.log
+
+          if [ "$chromium_code" -eq 0 ]; then
+            export CHROME_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+            cat > .tmp/w1-validation/a4-w1-real-pdf-proof.ts <<'EOF'
           import pdfParse from 'pdf-parse';
-          import { generatePDF } from '../src/services/document-export.service';
+          import { generatePDF } from '../../src/services/document-export.service';
 
           const first = 'FIRST-W1-REAL-PDF-SENTINEL';
           const last = 'LAST-W1-REAL-PDF-SENTINEL';
@@ -151,9 +162,51 @@ jobs:
           if (!parsed.text.includes('After explicit break') || !parsed.text.includes('After legacy break')) throw new Error('Hard-break content missing from PDF');
           console.log(JSON.stringify({ bytes: buffer.length, pages: parsed.numpages, firstIndex, lastIndex }));
           EOF
-          npx tsx .tmp/a4-w1-real-pdf-proof.ts
+            echo "=== pdf ===" | tee .tmp/w1-validation/pdf.log
+            CHROME_PATH="$CHROME_PATH" npx tsx .tmp/w1-validation/a4-w1-real-pdf-proof.ts 2>&1 | tee -a .tmp/w1-validation/pdf.log
+            pdf_code=${PIPESTATUS[0]}
+          else
+            echo "Chromium installation failed; PDF proof not runnable." | tee .tmp/w1-validation/pdf.log
+            pdf_code=125
+          fi
+          echo "$pdf_code" > .tmp/w1-validation/pdf.exit
+          echo "=== pdf exit $pdf_code ===" | tee -a .tmp/w1-validation/pdf.log
+
+          printf 'focused=%s\npostgres=%s\ntypecheck=%s\nchromium-install=%s\npdf=%s\n' \
+            "$(cat .tmp/w1-validation/focused.exit)" \
+            "$(cat .tmp/w1-validation/postgres.exit)" \
+            "$(cat .tmp/w1-validation/typecheck.exit)" \
+            "$(cat .tmp/w1-validation/chromium-install.exit)" \
+            "$(cat .tmp/w1-validation/pdf.exit)" \
+            | tee .tmp/w1-validation/summary.txt
+
+          exit 0
+
+      - name: Upload W1 validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a4-editor-w1-validation-evidence
+          path: .tmp/w1-validation
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Enforce W1 validation gates
+        shell: bash
+        run: |
+          cat .tmp/w1-validation/summary.txt
+          failed=0
+          for gate in focused postgres typecheck chromium-install pdf; do
+            code="$(cat ".tmp/w1-validation/${gate}.exit")"
+            if [ "$code" != "0" ]; then
+              echo "Gate $gate failed with exit code $code"
+              failed=1
+            fi
+          done
+          exit "$failed"
 
       - name: Commit regenerated pagination bundle
+        if: success()
         run: |
           if git diff --quiet -- src/components/documents/a4-pagination/pagination-bundle.generated.ts; then
             echo "Pagination bundle already fresh."
