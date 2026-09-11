@@ -194,3 +194,197 @@ This packet remains intentionally read/behavior neutral: it adds proof contracts
 - The exact requested three-file Vitest run is still missing a successful execution result because this local environment cannot reach npm; do not misread the Node-24 smoke or unrelated GitHub CI tests as that pass.
 
 **FIELDS state:** `READY FOR INTEGRATION — F0 only`. Do not dispatch or begin F1 from this handoff alone. Wait for CORE to freeze/publish G0 and a new FIELDS assignment in `coordination/dispatch.md`.
+
+---
+
+## FIELDS-F1-20260911-01 — READY FOR INTEGRATION
+
+**Role:** FIELDS  
+**Packet:** F1 — one parser, registry and lossless definition adapter  
+**Stage-1 common baseline:** `bfdc4f95594b73ce4d20bff45f320bdb53837c37`  
+**Implementation head before this coordination-only handoff commit:** `513f3b960a83a16c21a1af666e98b29860d97043`  
+**Branch:** `codex/a4-editor-fields-f1`  
+**PR:** `#38` — `A4Editor: implement F1 unified field parser and lossless registry`  
+**Frozen contracts consumed:** C05/C06 G0 decisions; no F2/F3 work has started.
+
+### F1 parser / registry / type APIs
+
+The F1 canonical field front end is `src/lib/template-field-parser.ts`:
+
+- `parseTemplateFields(input)` is the HTML-aware source-preserving parser. Each supported occurrence produces a `FieldGrammarNode` with `kind`, exact `span`, normalized semantic `expression`, owner `scope`, and deterministic `occurrenceId`; applicable nodes also carry `path`, `modifier`, `partialName` and/or `block`.
+- `normalizeTemplateFieldSyntax(content, parsed?)` rewrites only expressions the parser already accepted. Malformed expressions remain byte-for-byte recoverable and no replacement key is guessed.
+- `extractTemplateFieldPaths(parsed)` and `extractTemplatePartialNames(parsed)` are the shared discovery helpers.
+- `ParseTemplateFieldsInput` accepts a scoped registry, an optional explicit known-path set, partial sources and explicit legacy-binding candidates. Nested partial syntax is parsed in each partial's own owner scope; a parent registry is not reused as child authority.
+
+The production definition/value boundary is `src/lib/template-field-registry.ts`:
+
+- `loadStoredFieldRegistry({ scope, definitions })` consumes the frozen lossless definition loader while containing ordinary malformed stored definitions as stable diagnostics plus preserved source rather than leaking implementation exceptions to UI consumers.
+- `serializeStoredFieldDefinition(definition)` is the no-change exact serializer contract.
+- `createFieldInputDescriptor(definition)` exports the later WORKFLOW form descriptor.
+- `validateTypedFieldValue(value)` validates exact typed values without number/date/boolean appearance coercion.
+- `typedFieldValueToLegacyPayloadValue(value)` is the explicit typed-to-legacy conversion boundary.
+- `resolveTypedFieldValueByPrecedence(input)` implements the frozen precedence without conflating missing, empty, false or zero.
+- `FIELD_VALUE_PRECEDENCE_V1` is exactly `item-value -> accepted-prefixed-legacy-value -> document-override -> shared-master -> default`.
+
+`src/lib/template-field-runtime.ts` publishes `resolveTemplateFields(...)`, the F1 parser-backed render/generation adapter. It parses and normalizes supported syntax, then delegates to the established `resolvePlaceholders` implementation. It intentionally does not introduce F2 ordinary-value escaping, new scoped runtime binding or appearance-based coercion.
+
+### Supported parser grammar
+
+F1 recognizes through the shared front end:
+
+- simple and frozen-normalized spaced references;
+- internal/external modifiers, including editor HTML around the referenced expression;
+- `each`, `if`, `unless`, and `with` blocks;
+- `else` and loop variables;
+- partial references including supported encoded `>` forms;
+- `data-template-each` attribute constructs;
+- service roots including service scalars, `service.fields.*`, service collection blocks and loop item context.
+
+Formatting around a complete expression remains markup; HTML inserted inside/breaking the expression yields a recoverable formatted-expression diagnostic.
+
+### Stable F1 diagnostic codes
+
+The shared diagnostic surface uses the frozen codes where applicable:
+
+- `dangling-expression`
+- `formatted-expression`
+- `invalid-expression`
+- `unknown-root`
+- `unknown-field`
+- `duplicate-key-in-scope`
+- `missing-partial`
+- `circular-partial`
+- `ambiguous-legacy-binding`
+- `mismatched-block`
+- `unclosed-block`
+
+Every parser diagnostic includes exact source span and owner scope. Template-editor validation keeps its legacy panel-level issue codes for compatibility and exposes the stable F1 code as `diagnosticCode` for CORE navigation.
+
+### Lossless serializer contract
+
+`storagePlaceholdersToEditorResult`, `storagePlaceholdersToEditor` and `editorPlaceholdersToStorage` now share the F registry boundary instead of maintaining a second reinterpretive definition model. A no-change round trip preserves:
+
+- persisted `id` when present;
+- exact stored key and label semantics;
+- exact stored `type`, including preserve-only legacy `list` / `conditional` and unknown future types;
+- exact `source`, including forward-compatible unknown source strings;
+- category and path;
+- explicit-vs-omitted `required` state;
+- default value, format and options through the original stored definition;
+- `linkedTo` and `sourcePartial`;
+- arbitrary JSON-compatible forward metadata.
+
+The authoring view may expose an unsupported type with a read-only/preserve-only descriptor, but a no-change save does not reinterpret that stored type. Invalid stored definitions returned by `storagePlaceholdersToEditorResult` are preserved separately with diagnostics rather than throwing into authoring UI.
+
+### Scoped identity
+
+The registry identity is deterministic from owner kind + stable owner ID + persisted field ID when present, otherwise the scoped normalized stored key. Display labels, partial display names and underscore concatenation are not identity inputs.
+
+`mergeTemplateAndPartialPlaceholders` now recursively discovers nested partial definitions and keeps colliding logical keys unchanged across owner scopes. The historical `${partialName}_${key}` form is accepted only as a compatibility linking lookup and is never minted as the new field identity/key.
+
+Callers loading a concrete template or partial must pass its stable owner ID through the adapter `scope`. The deterministic `legacy-template-editor` fallback exists only so older unscoped callers do not regain random IDs; CORE/WORKFLOW integration must replace that fallback at concrete top-level editor/load boundaries.
+
+### Typed value / input descriptor contract
+
+The frozen discriminated value model remains authoritative for:
+
+- text;
+- multiline text;
+- date;
+- exact number string;
+- exact currency string;
+- boolean;
+- missing;
+- empty;
+- legacy structured value.
+
+`FieldInputDescriptor` exposes identity, scope, key, label, stored type, control, required/default semantics and preserve-only disabled reason. ISO-looking text remains text when the stored type is text. Exact decimal strings are not converted through floating-point values at this boundary. Missing, `''`, `false`, `'0'`/zero-like exact strings and default absence remain distinguishable.
+
+### C06 production policy exports
+
+`src/lib/a4-content-policy.ts` now publishes shared production policy data/helpers while leaving F2 escaping disabled:
+
+- `A4_CANONICAL_TAGS` retains semantic authored structures including `blockquote`, `caption`, `tfoot`, lists/tables, `sup` and `sub`;
+- `A4_CANONICAL_ATTRIBUTES` includes list `start`, safe table attributes and the frozen structural attributes;
+- `A4_SEMANTIC_PAGE_BREAK_HTML` is exactly `<span data-a4-break="page"></span>` and consumes the C03 semantic break rather than introducing a second codec;
+- `isA4ProjectionOnlyAttribute` treats listed and future `data-flow-*` metadata as projection-only/non-canonical;
+- `A4_ALWAYS_REJECTED_TAGS` and `getA4SanitizerPolicy()` expose the shared executable/form exclusion policy to environment adapters;
+- `createDeclarativeFieldContentFragment(...)` cannot mint trusted-rich authority from stored `renderMode`, client metadata or pasted/token metadata;
+- `createTrustedRichContentFragment(...)` still requires a canonical singleton in `C06_TRUSTED_RICH_ORIGINS`, so JSON-shaped spoof attempts fail.
+
+### Exact integration requests
+
+**CORE**
+
+1. Consume `parseTemplateFields` once per canonical source snapshot for token decoration/navigation; decorate by `node.occurrenceId`, `node.scope` and exact `node.span`, and keep `node.span.raw` as the recovery/navigation source. Do not reconstruct identity from labels or editor token attributes.
+2. Map `TemplateValidationIssue.diagnosticCode` plus the parser node `scope/span` into the CORE diagnostic navigator. Ordinary malformed authoring input is a diagnostic state, not an exception path.
+3. At concrete template/partial load boundaries, pass the stable database owner ID to `storagePlaceholdersToEditor(..., { scope: { kind, id } })`; do not rely on the compatibility fallback scope.
+
+**WORKFLOW — API/Zod preservation**
+
+1. Update W-owned request/response schemas to preserve `id`, all stored types, `options`, explicit-vs-omitted `required`, and arbitrary JSON-compatible forward metadata. Use a passthrough/explicit-extension strategy; do not reconstruct definitions from an allow-listed subset.
+2. Feed persisted definitions through the F lossless registry/serializer contract. Preserve exact strings for number/currency form payloads and the discriminated missing/empty/boolean states; do not add visual/appearance coercion.
+3. Keep stable owner IDs with every definition set so scoped identities survive reload and relabel.
+
+**WORKFLOW — render/generation**
+
+1. Replace direct new integrations with `resolveTemplateFields` rather than adding another regex parser in W-owned render/generation paths. Existing raw `resolvePlaceholders` remains the compatibility implementation underneath F1.
+2. When applying document values, use `resolveTypedFieldValueByPrecedence`; provide `acceptedPrefixedLegacyKey` only for an explicitly supported legacy binding. Do not infer aliases from labels/partial display names.
+3. Do not enable ordinary-field escaping or scoped runtime rebinding from this PR. Those remain F2 plus W integration work.
+
+**SEMANTICS**
+
+1. When a field occurrence must be treated atomically for structural positioning, consume the F parser's exact `span`, `occurrenceId` and owner `scope`; do not scan/re-tokenize the source with a separate field regex.
+2. Consume `A4_SEMANTIC_PAGE_BREAK_HTML` / `data-a4-break` as the shared C03 boundary and keep `data-flow-*` strictly projection-only.
+
+### Incremental adoption completed in F1
+
+- `template-analysis.ts` field/partial extraction, syntax checks and dependency graph diagnostics now consume the shared parser.
+- `template-placeholder-storage.ts` and template-analysis field conversion share the lossless adapter instead of divergent definition rewriters.
+- template-editor syntax validation consumes parser nodes/diagnostics while preserving existing UI issue codes.
+- `resolveTemplateFields` provides the parser-backed generation adapter and reuses the existing resolver instead of rewriting it.
+- Existing legacy partial replacement regex remains only inside the established resolver compatibility implementation; F1 does not pretend the later runtime rewrite is complete.
+
+### F1 tests and execution evidence
+
+Added/promoted test coverage:
+
+- `__tests__/lib/template-field-f1.test.ts` — frozen grammar, source spans, occurrence IDs, malformed-source recovery, safe normalization, registry diagnostics, missing/circular partials, stable scoped identity, lossless legacy/forward metadata, typed descriptors and precedence.
+- `__tests__/lib/a4-content-policy-f1.test.ts` — semantic C06 structures, C03 break, projection-only metadata, unsafe-tag exclusion and trusted-rich spoof rejection.
+- `__tests__/lib/template-field-f0-compatibility.test.ts` — F1-owned baseline defects are promoted to passing expectations; the two F2 defects remain explicit `it.fails` cases.
+
+Requested minimum command for F1:
+
+```text
+npx vitest run \
+  __tests__/lib/template-field-contract.test.ts \
+  __tests__/lib/template-field-f0-compatibility.test.ts \
+  __tests__/lib/a4-content-policy.test.ts
+```
+
+This execution environment cannot produce a valid local F1 Vitest result: its available container runtime is Node 22 and the dependency-capable Node 24 checkout used in the earlier F0 evidence is not available here; outbound GitHub/npm resolution is unavailable from the container. I therefore do **not** record the requested focused Vitest command as passed. The PR's repository workflow uses Node 24 and is the authoritative lint/typecheck/build evidence available from this instance; it does not contain the requested F1-focused Vitest command and is not represented as a substitute for that command.
+
+Affected existing suites to rerun in a dependency-capable Node 24 checkout before integration are:
+
+```text
+__tests__/lib/template-placeholder-storage.test.ts
+__tests__/lib/template-analysis.test.ts
+__tests__/lib/placeholder-resolver.test.ts
+__tests__/lib/document-generation-master-fields.test.ts
+```
+
+plus template-editor parser/helper tests present on the integration baseline and the F1-specific suites above.
+
+### Unresolved / intentionally deferred compatibility cases
+
+- F2 ordinary-field HTML escaping remains intentionally unimplemented; the compatibility test stays `it.fails`.
+- F2 declared-type runtime formatting/scoped binding remains intentionally unimplemented; ISO-looking text can still be appearance-formatted by the legacy resolver and the compatibility test stays `it.fails`.
+- Raw legacy callers of `storagePlaceholdersToEditor` that do not yet supply a stable owner scope use the deterministic compatibility owner `legacy-template-editor`; CORE/WORKFLOW must supply real owner IDs at concrete boundaries during integration.
+- Legacy partial records without persisted IDs use `legacy-partial:<stored name>` as the deterministic preservation fallback. No display label is used.
+- W-owned API/Zod losslessness and final canonical generation adoption remain integration work; FIELDS did not edit those owned files.
+
+### F1 ownership confirmation
+
+F1 changed only F-owned parser/registry/adapters/types/analysis/editor-helper/content-policy files, F tests and this F coordination log. It did not edit W-owned API/routes/forms, SEMANTICS-owned structural modules, Prisma/schema files, deployment/configuration files or version metadata.
+
+**FIELDS state:** `READY FOR INTEGRATION — F1 only`. F2 and F3 have not started.
