@@ -352,6 +352,7 @@ export async function generateDocumentGenerationBatch(
         const document = await materializeDocumentFromTemplate(
           {
             templateId: item.templateId,
+            expectedRevision: item.generatedDocument.revision,
             companyId: batch.primaryCompanyId ?? undefined,
             contactIds: configuration.contactIds,
             selectedDirectorId: configuration.selectedDirectorId ?? undefined,
@@ -372,7 +373,7 @@ export async function generateDocumentGenerationBatch(
           },
           taskContext,
         );
-        await finalizeDocument(document.id, params);
+        await finalizeDocument(document.id, params, document.revision);
         await prisma.documentGenerationBatchItem.update({
           where: { id: item.id },
           data: {
@@ -553,6 +554,7 @@ export async function retryDocumentGenerationBatchItem(
     const document = await materializeDocumentFromTemplate(
       {
         templateId: item.templateId,
+        expectedRevision: item.generatedDocument.revision,
         companyId: batch.primaryCompanyId ?? undefined,
         contactIds: configuration.contactIds,
         selectedDirectorId: configuration.selectedDirectorId ?? undefined,
@@ -573,7 +575,7 @@ export async function retryDocumentGenerationBatchItem(
       },
       taskContext,
     );
-    await finalizeDocument(document.id, params);
+    await finalizeDocument(document.id, params, document.revision);
     await prisma.documentGenerationBatchItem.update({
       where: { id: item.id },
       data: {
