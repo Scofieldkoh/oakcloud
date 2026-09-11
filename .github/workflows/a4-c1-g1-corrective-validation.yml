@@ -50,8 +50,12 @@ jobs:
           __tests__/components/a4-editor-toolbar.test.tsx
           __tests__/components/a4-page-editor-ssr.test.tsx
           --reporter=verbose
+      - name: Generate database client
+        run: npm run db:generate
       - name: Typecheck
         run: npm run typecheck
+      - name: TypeScript project build check
+        run: npx tsc -b
       - name: Production build
         run: npm run build
       - name: Commit validated C1 corrective source
