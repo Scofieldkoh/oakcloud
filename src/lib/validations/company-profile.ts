@@ -23,6 +23,7 @@ const address = z.object({
   effectiveFrom: optionalDate,
 });
 const identityRecord = z.object({
+  contactId: z.string().uuid().nullable().optional(),
   identificationType: z.enum(BIZFILE_IDENTIFICATION_TYPE_OPTIONS).nullable().optional(),
   identificationNumber: optionalText,
   nationality: optionalText,
