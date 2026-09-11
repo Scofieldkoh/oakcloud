@@ -15,6 +15,7 @@ import {
   useCompanyProfileSection,
   useSaveCompanyProfileSection,
 } from '@/hooks/use-company-profile-sections';
+import { CompanyPersonContactLinker } from './company-person-contact-linker';
 import { COMPANY_PROFILE_FIELD_OPTIONS } from './company-profile-field-options';
 
 const objectDefaults: Record<string, Record<string, unknown>> = {
@@ -55,10 +56,12 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
   const key = path.at(-1) ?? '';
   const label = fieldLabel(path);
   if (Array.isArray(value)) {
+    const contactKind = key === 'officers' ? 'officer' : key === 'shareholders' ? 'shareholder' : null;
     return <div className="space-y-3 sm:col-span-2">
       <div className="flex items-center justify-between"><p className="label mb-0">{label}</p><Button size="xs" variant="secondary" onClick={() => onChange([...value, { ...(arrayDefaults[key] ?? {}) }])} leftIcon={<Plus />}>Add {words(key).replace(/s$/, '')}</Button></div>
       {value.map((item, index) => <div key={index} className="rounded-lg border border-border-primary bg-background-primary p-3">
         <div className="mb-2 flex items-center justify-between"><p className="text-xs font-semibold text-text-secondary">{label} {index + 1}</p><Button size="xs" variant="ghost" iconOnly aria-label={`Remove ${label} ${index + 1}`} onClick={() => onChange(value.filter((_, itemIndex) => itemIndex !== index))} leftIcon={<Trash2 />} /></div>
+        {contactKind && item && typeof item === 'object' ? <CompanyPersonContactLinker kind={contactKind} label={`${label} ${index + 1}`} value={item as Record<string, unknown>} onChange={(next) => onChange(value.map((entry, itemIndex) => itemIndex === index ? next : entry))} /> : null}
         <CompanyProfileValueEditor value={item} path={[...path, String(index)]} onChange={(next) => onChange(value.map((entry, itemIndex) => itemIndex === index ? next : entry))} />
       </div>)}
     </div>;
@@ -76,13 +79,7 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
   const enumOptions = COMPANY_PROFILE_FIELD_OPTIONS[key];
   if (enumOptions) {
     return <div className="block text-sm">
-      <SearchableSelect
-        label={label}
-        options={enumOptions}
-        value={typeof value === 'string' ? value : ''}
-        onChange={onChange}
-        showKeyboardHints={false}
-      />
+      <SearchableSelect label={label} options={enumOptions} value={typeof value === 'string' ? value : ''} onChange={onChange} showKeyboardHints={false} />
     </div>;
   }
   if (isDateField(key)) {
@@ -121,18 +118,12 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
     setError(null);
     setLatest(null);
     try {
-      const saved = onSave
-        ? await onSave(section, draft, version)
-        : await mutation.mutateAsync({ data: draft, ifMatchVersion: version });
+      const saved = onSave ? await onSave(section, draft, version) : await mutation.mutateAsync({ data: draft, ifMatchVersion: version });
       setDraft(saved.data);
       setBaseline(saved.data);
       setVersion(saved.version);
     } catch (caught) {
-      const conflictLatest = caught instanceof CompanyProfileConflictError
-        ? caught.latest
-        : caught && typeof caught === 'object' && 'latest' in caught
-          ? (caught as { latest: CompanyProfileSectionDto }).latest
-          : null;
+      const conflictLatest = caught instanceof CompanyProfileConflictError ? caught.latest : caught && typeof caught === 'object' && 'latest' in caught ? (caught as { latest: CompanyProfileSectionDto }).latest : null;
       if (conflictLatest) setLatest(conflictLatest);
       setError(caught instanceof Error ? caught.message : 'Failed to save section');
     }
