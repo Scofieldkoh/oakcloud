@@ -57,15 +57,101 @@ export const A4_ALWAYS_REJECTED_TAGS = Object.freeze([
   'script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select',
 ] as const);
 
-export type TrustedRichOrigin =
+export type TrustedRichOriginName =
   | 'template-partial'
   | 'canonical-builder'
   | 'service-composition';
 
+/**
+ * Private brand plus canonical singleton identity makes this an in-process C06
+ * capability, not a JSON/client/token-declarable string flag.
+ */
+const TRUSTED_RICH_ORIGIN_BRAND: unique symbol = Symbol('c06-trusted-rich-origin');
+
+export interface TrustedRichOrigin {
+  readonly name: TrustedRichOriginName;
+  readonly [TRUSTED_RICH_ORIGIN_BRAND]: true;
+}
+
+function createTrustedRichOrigin(name: TrustedRichOriginName): TrustedRichOrigin {
+  return Object.freeze({
+    name,
+    [TRUSTED_RICH_ORIGIN_BRAND]: true as const,
+  });
+}
+
+/** The only canonical C06 capabilities that may mint a trusted-rich fragment. */
+export const C06_TRUSTED_RICH_ORIGINS = Object.freeze({
+  templatePartial: createTrustedRichOrigin('template-partial'),
+  canonicalBuilder: createTrustedRichOrigin('canonical-builder'),
+  serviceComposition: createTrustedRichOrigin('service-composition'),
+});
+
+const TRUSTED_RICH_ORIGIN_SET = new Set<TrustedRichOrigin>(
+  Object.values(C06_TRUSTED_RICH_ORIGINS),
+);
+
+export function isCanonicalTrustedRichOrigin(value: unknown): value is TrustedRichOrigin {
+  return TRUSTED_RICH_ORIGIN_SET.has(value as TrustedRichOrigin);
+}
+
+export type TextContentFragment = {
+  kind: 'text';
+  value: string;
+  multiline: boolean;
+};
+
+export type TrustedRichContentFragment = {
+  kind: 'trusted-rich';
+  html: string;
+  origin: TrustedRichOrigin;
+};
+
 export type ResolvedContentFragment =
-  | { kind: 'text'; value: string; multiline: boolean }
-  | { kind: 'trusted-rich'; html: string; origin: TrustedRichOrigin }
+  | TextContentFragment
+  | TrustedRichContentFragment
   | { kind: 'legacy-rich'; html: string; compatibilityBinding: string };
+
+/**
+ * Declarative field input is always ordinary text at this trust boundary.
+ * `renderMode`, pasted/client metadata and token decoration are retained inputs
+ * only for compatibility/diagnostics; none can mint a TrustedRichOrigin.
+ */
+export interface DeclarativeFieldContentInput {
+  value: string;
+  multiline?: boolean;
+  renderMode?: unknown;
+  clientMetadata?: Readonly<Record<string, unknown>>;
+  tokenMetadata?: Readonly<Record<string, unknown>>;
+}
+
+export function createDeclarativeFieldContentFragment(
+  input: DeclarativeFieldContentInput,
+): TextContentFragment {
+  return {
+    kind: 'text',
+    value: input.value,
+    multiline: input.multiline ?? false,
+  };
+}
+
+/**
+ * Runtime trusted HTML can be minted only with one of the canonical singleton
+ * capabilities above. A JSON object that merely names an origin is rejected.
+ */
+export function createTrustedRichContentFragment(input: {
+  html: string;
+  origin: TrustedRichOrigin;
+}): TrustedRichContentFragment {
+  if (!isCanonicalTrustedRichOrigin(input.origin)) {
+    throw new TypeError('Trusted rich content requires a canonical C06 origin capability');
+  }
+  return {
+    kind: 'trusted-rich',
+    html: input.html,
+    origin: input.origin,
+  };
+}
 
 export interface A4ContentPolicyContract {
   version: typeof A4_CONTENT_POLICY_VERSION;
@@ -78,6 +164,8 @@ export interface A4ContentPolicyContract {
   plainTextResolution: 'escape-at-interpolation-boundary';
   multilineResolution: 'single-canonical-newline-conversion';
   unknownLegacyRichValue: 'preserve-source-and-block-conversion';
+  declarativeRenderModeAuthority: 'none';
+  trustedRichAuthority: 'canonical-origin-capability-only';
 }
 
 export const A4_CONTENT_POLICY_CONTRACT: A4ContentPolicyContract = Object.freeze({
@@ -91,4 +179,6 @@ export const A4_CONTENT_POLICY_CONTRACT: A4ContentPolicyContract = Object.freeze
   plainTextResolution: 'escape-at-interpolation-boundary',
   multilineResolution: 'single-canonical-newline-conversion',
   unknownLegacyRichValue: 'preserve-source-and-block-conversion',
+  declarativeRenderModeAuthority: 'none',
+  trustedRichAuthority: 'canonical-origin-capability-only',
 });

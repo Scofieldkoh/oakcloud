@@ -8,6 +8,11 @@ import {
   A4_EDITOR_DECORATION_ATTRIBUTES,
   A4_LEGACY_PRESERVE_ONLY_TAGS,
   A4_STRUCTURAL_ATTRIBUTES,
+  C06_TRUSTED_RICH_ORIGINS,
+  createDeclarativeFieldContentFragment,
+  createTrustedRichContentFragment,
+  isCanonicalTrustedRichOrigin,
+  type TrustedRichOrigin,
 } from '@/lib/a4-content-policy';
 
 describe('C06 F0 content-policy contract proof', () => {
@@ -46,6 +51,41 @@ describe('C06 F0 content-policy contract proof', () => {
       plainTextResolution: 'escape-at-interpolation-boundary',
       multilineResolution: 'single-canonical-newline-conversion',
       unknownLegacyRichValue: 'preserve-source-and-block-conversion',
+      declarativeRenderModeAuthority: 'none',
+      trustedRichAuthority: 'canonical-origin-capability-only',
     });
+  });
+
+  it('keeps stored/client/pasted render metadata declarative and unable to promote ordinary text', () => {
+    const fragment = createDeclarativeFieldContentFragment({
+      value: '<strong>literal text</strong>',
+      multiline: true,
+      renderMode: 'trusted-rich',
+      clientMetadata: { trusted: true, origin: 'canonical-builder' },
+      tokenMetadata: { 'data-render-mode': 'trusted-rich' },
+    });
+
+    expect(fragment).toEqual({
+      kind: 'text',
+      value: '<strong>literal text</strong>',
+      multiline: true,
+    });
+  });
+
+  it('requires the canonical C06 origin capability for trusted-rich runtime fragments', () => {
+    const trusted = createTrustedRichContentFragment({
+      html: '<strong>canonical builder output</strong>',
+      origin: C06_TRUSTED_RICH_ORIGINS.canonicalBuilder,
+    });
+    expect(trusted.kind).toBe('trusted-rich');
+    expect(trusted.origin).toBe(C06_TRUSTED_RICH_ORIGINS.canonicalBuilder);
+    expect(isCanonicalTrustedRichOrigin(trusted.origin)).toBe(true);
+
+    const clientSpoof = { name: 'canonical-builder' } as unknown as TrustedRichOrigin;
+    expect(isCanonicalTrustedRichOrigin(clientSpoof)).toBe(false);
+    expect(() => createTrustedRichContentFragment({
+      html: '<strong>client supplied</strong>',
+      origin: clientSpoof,
+    })).toThrow('Trusted rich content requires a canonical C06 origin capability');
   });
 });
