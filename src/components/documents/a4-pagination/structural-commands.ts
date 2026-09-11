@@ -174,8 +174,8 @@ function pointAtBoundarySibling(
   direction: A4DeleteDirection,
 ): Node | null {
   const backwards = direction === 'backward';
-  let node: Node = point.node;
-  let offset = point.offset;
+  const node: Node = point.node;
+  const offset = point.offset;
 
   if (node.nodeType === Node.ELEMENT_NODE) {
     const element = node as Element;
@@ -237,6 +237,18 @@ function caretAfterRemovingNode(
   if (!parent || !(parent === root || root.contains(parent))) return null;
   const index = Array.prototype.indexOf.call(parent.childNodes, node) as number;
   node.remove();
+
+  if (parent === root) {
+    const previous = root.childNodes[index - 1] ?? null;
+    if (previous) {
+      return previous.nodeType === Node.TEXT_NODE
+        ? { node: previous, offset: previous.textContent?.length ?? 0 }
+        : { node: previous, offset: previous.childNodes.length };
+    }
+    const next = root.childNodes[index] ?? null;
+    return next ? { node: next, offset: 0 } : null;
+  }
+
   return { node: parent, offset: Math.max(0, index) };
 }
 
