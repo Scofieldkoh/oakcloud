@@ -109,6 +109,13 @@ import {
   type EditorFormatState,
 } from './a4-editor-toolbar';
 import { buildA4PrintCss, PAGE_NUMBER_STRIP_MM } from './a4-print-styles';
+import {
+  createCanonicalEditorSession,
+  type A4EditorSnapshot,
+  type CanonicalEditorIntentKind,
+  type CanonicalEditorSession,
+  type SnapshotResult,
+} from './a4-pagination/editor-session';
 
 // ============================================================================
 // HTML Sanitization
@@ -394,6 +401,11 @@ export interface A4PageEditorProps {
   readOnly?: boolean;
   layout?: A4DocumentLayout;
   onLayoutChange?: (layout: A4DocumentLayout) => void;
+  /** Stable document identity. W2 should supply the persisted entity/item identity. */
+  sessionKey?: string;
+  contentJson?: Record<string, unknown>;
+  fields?: readonly unknown[];
+  onSnapshotChange?: (snapshot: A4EditorSnapshot) => void;
 }
 
 export interface A4PageEditorRef {
@@ -401,6 +413,8 @@ export interface A4PageEditorRef {
   insertHtmlAtCursor: (html: string) => void;
   focus: () => void;
   getContent: () => string;
+  getSnapshot: () => SnapshotResult;
+  prepareSnapshot: () => SnapshotResult;
   setContent: (html: string) => void;
   focusFlowBlock?: (flowId: string) => void;
 }
@@ -659,6 +673,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       readOnly = false,
       layout,
       onLayoutChange,
+      sessionKey,
+      contentJson,
+      fields,
+      onSnapshotChange,
     },
     ref,
   ) {
@@ -669,6 +687,30 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     // the effects below once browser APIs are available.
     const lastValueRef = useRef<string | null>(null);
     const isInternalUpdate = useRef(false);
+    const onChangeRef = useRef(onChange);
+    const onSnapshotChangeRef = useRef(onSnapshotChange);
+    onChangeRef.current = onChange;
+    onSnapshotChangeRef.current = onSnapshotChange;
+    const canonicalSessionRef = useRef<
+      CanonicalEditorSession<
+        FlowSelectionBookmark | null,
+        unknown,
+        InlineFormatPatch | null,
+        A4DocumentLayout
+      > | null
+    >(null);
+    const sessionsRef = useRef(
+      new Map<
+        string,
+        CanonicalEditorSession<
+          FlowSelectionBookmark | null,
+          unknown,
+          InlineFormatPatch | null,
+          A4DocumentLayout
+        >
+      >(),
+    );
+    const resolvedSessionKey = sessionKey ?? 'legacy-a4-editor';
 
     const savedSelectionRef = useRef<FlowSelectionBookmark | null>(null);
     const pendingTypingFormatRef = useRef<InlineFormatPatch | null>(null);
@@ -696,7 +738,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const saveCursorPosition = useCallback(() => {
       const surface = documentSurfaceRef.current;
-      if (surface) savedSelectionRef.current = captureFlowSelection(surface);
+      if (surface) {
+        savedSelectionRef.current = captureFlowSelection(surface);
+        canonicalSessionRef.current?.endTypingGroup();
+      }
     }, []);
 
     const restoreSelection = useCallback(() => {
@@ -754,6 +799,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, []);
 
     const canonicalPagesHtml = useCallback((pageList: PageData[]) => {
+      const session = canonicalSessionRef.current;
+      if (session) return session.getState().internalHtml;
       return reassemblePageFragments(
         pageList.map((page) => ({
           content: page.content,
@@ -781,6 +828,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const pendingSelectionFlowIdRef = useRef<string | null>(null);
     const pendingUpdateRef = useRef(false);
     const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
+    const compositionTargetRef = useRef<FlowSelectionBookmark | null>(null);
     const pendingNonCancelableMutationRef = useRef<{
       pages: PageData[];
       canonical: string;
@@ -839,6 +887,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const scheduleReflow = useCallback(
       (sourcePages: PageData[], emitChange: boolean) => {
         const renderedPages = renderedPagesRef.current;
+        const session = canonicalSessionRef.current;
+        const projectionRevision = session?.createProjectionRevision() ?? null;
+        const canonical =
+          session?.getState().internalHtml ??
+          reassemblePageFragments(
+            sourcePages.map((page) => ({
+              content: page.content,
+              hardBreakBefore: page.hardBreakBefore,
+              oversized: page.oversized,
+            })),
+          );
         pagesRef.current = sourcePages;
         reflowGenerationRef.current += 1;
         const generation = reflowGenerationRef.current;
@@ -865,13 +924,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               );
             }
 
-            const canonical = reassemblePageFragments(
-              pagesRef.current.map((page) => ({
-                content: page.content,
-                hardBreakBefore: page.hardBreakBefore,
-                oversized: page.oversized,
-              })),
-            );
             const measurer = createPageMeasurer(
               pageLayout,
               fontFamily,
@@ -887,6 +939,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 pageLayout.contentHeightPx,
               );
               if (generation !== reflowGenerationRef.current) return;
+              if (
+                session &&
+                projectionRevision &&
+                !session.publishProjection(projectionRevision)
+              ) {
+                return;
+              }
 
               const nextPages = fragments.map((fragment, index) => ({
                 id:
@@ -898,8 +957,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 oversized: fragment.oversized,
               }));
               pagesRef.current = nextPages;
-              lastValueRef.current = serializePages(nextPages);
-              pendingUpdateRef.current = emitChange;
+              if (!session) {
+                lastValueRef.current = serializePages(nextPages);
+                pendingUpdateRef.current = emitChange;
+              }
               setPages(nextPages);
             } finally {
               measurer.dispose();
@@ -913,6 +974,63 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       },
       [fontFamily, fontSize, lineHeight, pageLayout, paragraphSpacing, serializePages],
     );
+
+    useEffect(() => {
+      const canonicalValue = sanitizeHtml(
+        stripFlowMetadata(hydrateFlowHtml(ensureEditableCanonicalHtml(value))),
+      );
+      let session = sessionsRef.current.get(resolvedSessionKey) ?? null;
+      if (!session) {
+        const initialHtml = hydrateFlowHtml(ensureEditableCanonicalHtml(value));
+        session = createCanonicalEditorSession({
+          sessionKey: resolvedSessionKey,
+          internalHtml: initialHtml,
+          selection: null,
+          typingMarks: null,
+          contentJson: contentJson ?? {},
+          fields,
+          metadata: effectiveLayout,
+          serializeContent: (internalHtml) =>
+            sanitizeHtml(stripFlowMetadata(internalHtml)),
+          onSnapshotChange: (snapshot) => {
+            lastValueRef.current = snapshot.content;
+            isInternalUpdate.current = true;
+            onSnapshotChangeRef.current?.(snapshot);
+            onChangeRef.current?.(snapshot.content);
+          },
+        });
+        sessionsRef.current.set(resolvedSessionKey, session);
+      } else {
+        const current = session.getSnapshot();
+        const currentContent = current.ok ? current.snapshot.content : null;
+        const controlledEcho = canonicalValue === lastValueRef.current;
+        if (!controlledEcho && currentContent !== canonicalValue) {
+          session.replaceExternalState({
+            internalHtml: hydrateFlowHtml(ensureEditableCanonicalHtml(value)),
+            selection: null,
+            contentJson: contentJson ?? session.getState().contentJson,
+            fields: fields ?? session.getState().fields,
+            metadata: effectiveLayout,
+            resetHistory: true,
+            acknowledged: true,
+          });
+        }
+      }
+      canonicalSessionRef.current = session;
+      lastValueRef.current = canonicalValue;
+      const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
+      pagesRef.current = nextPages;
+      setPages(nextPages);
+      scheduleReflow(nextPages, false);
+    }, [
+      contentJson,
+      effectiveLayout,
+      fields,
+      parsePages,
+      resolvedSessionKey,
+      scheduleReflow,
+      value,
+    ]);
 
     useEffect(() => {
       scheduleReflow(pagesRef.current, false);
@@ -1000,9 +1118,34 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           const pageElement = target.closest('[data-page-id]') as HTMLElement | null;
           if (pageElement?.dataset.pageId) setActivePageId(pageElement.dataset.pageId);
         },
-        getContent: () => serializePages(pagesRef.current),
+        getContent: () => {
+          const snapshot = canonicalSessionRef.current?.getSnapshot();
+          return snapshot?.ok ? snapshot.snapshot.content : lastValueRef.current ?? '';
+        },
+        getSnapshot: () =>
+          canonicalSessionRef.current?.getSnapshot() ?? {
+            ok: false,
+            reason: 'unreconciled-input',
+            message: 'The canonical editor session is not ready.',
+          },
+        prepareSnapshot: () =>
+          canonicalSessionRef.current?.prepareSnapshot() ?? {
+            ok: false,
+            reason: 'unreconciled-input',
+            message: 'The canonical editor session is not ready.',
+          },
         setContent: (html: string) => {
-          const newPages = parsePages(html, pagesRef.current);
+          const session = canonicalSessionRef.current;
+          const canonical = hydrateFlowHtml(ensureEditableCanonicalHtml(html));
+          if (session) {
+            session.replaceExternalState({
+              internalHtml: canonical,
+              selection: null,
+              resetHistory: true,
+              acknowledged: true,
+            });
+          }
+          const newPages = parsePages(canonical, pagesRef.current);
           pagesRef.current = newPages;
           setPages(newPages);
           scheduleReflow(newPages, false);
@@ -1101,57 +1244,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }
     }, [displayPages, activePageId]);
 
-    useEffect(() => {
-      const canonicalValue = stripFlowMetadata(
-        hydrateFlowHtml(ensureEditableCanonicalHtml(value)),
-      );
-      if (isInternalUpdate.current || canonicalValue === lastValueRef.current) {
-        isInternalUpdate.current = false;
-        return;
-      }
 
-      lastValueRef.current = canonicalValue;
-
-      if (!isPreviewMode || readOnly) {
-        setPages((prev) => {
-          const newPages = parsePages(value, prev);
-          pagesRef.current = newPages;
-          scheduleReflow(newPages, false);
-          if (
-            !newPages.find((p) => p.id === activePageIdRef.current) &&
-            newPages.length > 0
-          ) {
-            setActivePageId(newPages[0].id);
-          }
-          return newPages;
-        });
-      }
-    }, [value, parsePages, isPreviewMode, readOnly, scheduleReflow]);
-
-    const historyRef = useRef<{ past: string[]; future: string[] }>({
-      past: [],
-      future: [],
-    });
-
-    const pushHistorySnapshot = useCallback(
-      (pageList: PageData[]) => {
-        const snapshot = serializePages(pageList);
-        const lastSnapshot =
-          historyRef.current.past[historyRef.current.past.length - 1];
-
-        if (snapshot === lastSnapshot) return;
-
-        historyRef.current.past.push(snapshot);
-        if (historyRef.current.past.length > 100) {
-          historyRef.current.past.shift();
-        }
-        historyRef.current.future = [];
-      },
-      [serializePages],
-    );
+    const pushHistorySnapshot = useCallback((_pageList: PageData[]) => undefined, []);
 
     useEffect(() => {
-      if (pendingUpdateRef.current && onChange) {
+      if (pendingUpdateRef.current && onChange && !canonicalSessionRef.current) {
         pendingUpdateRef.current = false;
         const html = serializePages(pages);
         isInternalUpdate.current = true;
@@ -1160,90 +1257,96 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }
     }, [pages, onChange, serializePages]);
 
-    const handleUndo = useCallback(() => {
-      if (effectivePreviewMode) return;
-
-      setPages((prev) => {
-        const previousSnapshot = historyRef.current.past.pop();
-        if (!previousSnapshot) return prev;
-
-        historyRef.current.future.push(serializePages(pagesRef.current));
-
-        const nextPages = parsePages(previousSnapshot, prev);
+    const restoreCanonicalHistoryResult = useCallback(
+      (direction: 'undo' | 'redo') => {
+        if (effectivePreviewMode) return;
+        const session = canonicalSessionRef.current;
+        if (!session) return;
+        const result = direction === 'undo' ? session.undo() : session.redo();
+        if (result.status !== 'applied') return;
+        pendingFlowSelectionRef.current = result.selection;
+        const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
         pagesRef.current = nextPages;
-        scheduleReflow(nextPages, true);
-        if (nextPages.length > 0) {
-          setActivePageId(nextPages[0].id);
-        }
-        return nextPages;
-      });
-    }, [effectivePreviewMode, parsePages, scheduleReflow, serializePages]);
+        setPages(nextPages);
+        scheduleReflow(nextPages, false);
+      },
+      [effectivePreviewMode, parsePages, scheduleReflow],
+    );
 
-    const handleRedo = useCallback(() => {
-      if (effectivePreviewMode) return;
-
-      setPages((prev) => {
-        const nextSnapshot = historyRef.current.future.pop();
-        if (!nextSnapshot) return prev;
-
-        historyRef.current.past.push(serializePages(prev));
-
-        const nextPages = parsePages(nextSnapshot, prev);
-        pagesRef.current = nextPages;
-        scheduleReflow(nextPages, true);
-        if (nextPages.length > 0) {
-          setActivePageId(nextPages[0].id);
-        }
-        return nextPages;
-      });
-    }, [effectivePreviewMode, parsePages, scheduleReflow, serializePages]);
+    const handleUndo = useCallback(
+      () => restoreCanonicalHistoryResult('undo'),
+      [restoreCanonicalHistoryResult],
+    );
+    const handleRedo = useCallback(
+      () => restoreCanonicalHistoryResult('redo'),
+      [restoreCanonicalHistoryResult],
+    );
 
     const commitDocumentSurface = useCallback(() => {
       const surface = documentSurfaceRef.current;
-      if (effectivePreviewMode || !surface) return;
+      const session = canonicalSessionRef.current;
+      if (effectivePreviewMode || !surface || !session) return;
+      const state = session.getState();
+      if (session.getRenderedProjection().documentRevision !== state.revision) {
+        setSurfaceRepairGeneration((generation) => generation + 1);
+        setPages(parsePages(state.internalHtml, pagesRef.current));
+        return;
+      }
 
       const currentPages = pagesRef.current;
-      const metadataByPageId = new Map(
-        currentPages.map((page) => [page.id, page]),
-      );
+      const metadataByPageId = new Map(currentPages.map((page) => [page.id, page]));
       const renderedPageElements = Array.from(
         surface.querySelectorAll<HTMLElement>(
           '[data-testid^="a4-page-content-"][data-page-id]',
         ),
       );
       renderedPageElements.forEach(normalizeEditedFlowIds);
-      pendingFlowSelectionRef.current = captureFlowSelection(surface);
       normalizeFormattingSpans(surface);
-
+      const bookmark = captureFlowSelection(surface) ?? state.selection;
       const renderedPages = renderedPageElements.flatMap((element) => {
         const page = metadataByPageId.get(element.dataset.pageId!);
         if (!page) return [];
-
-        const content = sanitizeHtml(
-          replaceTypedPageBreaks(element.innerHTML),
-        );
-        return [content === page.content ? page : { ...page, content }];
+        return [{
+          ...page,
+          content: sanitizeHtml(replaceTypedPageBreaks(element.innerHTML)),
+        }];
       });
-      const renderedPageIds = new Set(renderedPages.map((page) => page.id));
-      let renderedIndex = 0;
-      const nextPages = currentPages.map((page) => {
-        if (!renderedPageIds.has(page.id)) return page;
-        return renderedPages[renderedIndex++] ?? page;
-      });
-      nextPages.push(...renderedPages.slice(renderedIndex));
-
-      if (
-        nextPages.length === currentPages.length &&
-        nextPages.every((page, index) => page === currentPages[index])
-      ) {
+      if (renderedPages.length !== currentPages.length) {
+        setSurfaceRepairGeneration((generation) => generation + 1);
+        setPages(parsePages(state.internalHtml, currentPages));
         return;
       }
-
+      const candidate = hydrateFlowHtml(
+        ensureEditableCanonicalHtml(
+          reassemblePageFragments(
+            renderedPages.map((page) => ({
+              content: page.content,
+              hardBreakBefore: page.hardBreakBefore,
+              oversized: page.oversized,
+            })),
+          ),
+        ),
+      );
+      if (candidate === state.internalHtml) return;
       preserveScrollPosition();
-      pushHistorySnapshot(currentPages);
+      const result = session.dispatch({
+        sessionKey: state.sessionKey,
+        baseRevision: state.revision,
+        intent: { kind: 'native-reconcile', origin: 'pointer', history: 'separate' },
+        selection: bookmark,
+        apply: () => ({
+          status: 'applied',
+          internalHtml: candidate,
+          selection: bookmark,
+        }),
+      });
+      if (result.status !== 'applied') return;
+      pendingFlowSelectionRef.current = result.selection;
+      const nextPages = parsePages(session.getState().internalHtml, currentPages);
       pagesRef.current = nextPages;
-      scheduleReflow(nextPages, true);
-    }, [effectivePreviewMode, preserveScrollPosition, pushHistorySnapshot, scheduleReflow]);
+      setPages(nextPages);
+      scheduleReflow(nextPages, false);
+    }, [effectivePreviewMode, parsePages, preserveScrollPosition, scheduleReflow]);
 
     const clearTableResizeHover = useCallback(() => {
       const previous = tableResizeHoverRef.current;
@@ -1407,17 +1510,39 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     );
 
     const commitUserTransaction = useCallback(
-      (result: DocumentTransactionResult) => {
-        if (effectivePreviewMode || !result.changed) return;
+      (
+        result: DocumentTransactionResult,
+        intentKind: CanonicalEditorIntentKind = 'structural',
+      ) => {
+        const session = canonicalSessionRef.current;
+        if (effectivePreviewMode || !result.changed || !session) return;
+        const state = session.getState();
+        const selection = result.selection ?? state.selection;
+        const canonical = hydrateFlowHtml(ensureEditableCanonicalHtml(result.html));
         preserveScrollPosition();
-        const sourcePages = pagesRef.current;
-        pushHistorySnapshot(sourcePages);
-        pendingFlowSelectionRef.current = result.selection;
-        const nextPages = parsePages(result.html, sourcePages);
+        const committed = session.dispatch({
+          sessionKey: state.sessionKey,
+          baseRevision: state.revision,
+          intent: {
+            kind: intentKind,
+            origin: 'keyboard',
+            history: intentKind === 'insert-text' ? 'typing' : 'separate',
+          },
+          selection,
+          apply: () => ({
+            status: 'applied',
+            internalHtml: canonical,
+            selection,
+          }),
+        });
+        if (committed.status !== 'applied') return;
+        pendingFlowSelectionRef.current = committed.selection;
+        const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
         pagesRef.current = nextPages;
-        scheduleReflow(nextPages, true);
+        setPages(nextPages);
+        scheduleReflow(nextPages, false);
       },
-      [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
+      [effectivePreviewMode, parsePages, preserveScrollPosition, scheduleReflow],
     );
 
     const applyInsertionTransaction = useCallback(
@@ -1561,30 +1686,32 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handleDeleteAcrossPages = useCallback(() => {
       if (effectivePreviewMode || !documentSurfaceRef.current) return;
-      const bookmark = captureFlowSelection(documentSurfaceRef.current);
-      if (!bookmark || bookmark.collapsed) return;
-      const collapsePoint = selectionStartPoint(bookmark);
-
-      setPages((prev) => {
-        pushHistorySnapshot(prev);
-        const canonical = reassemblePageFragments(
-          prev.map((page) => ({
-            content: page.content,
-            hardBreakBefore: page.hardBreakBefore,
-          })),
-        );
-        const deleted = deleteFlowSelection(canonical, bookmark);
-        const nextPages = parsePages(deleted, prev);
-        pendingFlowSelectionRef.current = {
-          anchor: collapsePoint,
-          focus: collapsePoint,
-          collapsed: true,
-        };
-        pagesRef.current = nextPages;
-        scheduleReflow(nextPages, true);
-        return nextPages;
+      const session = canonicalSessionRef.current;
+      if (!session) return;
+      const rendered = captureFlowSelection(documentSurfaceRef.current);
+      if (!rendered || rendered.collapsed) return;
+      const target = session.resolveNativeInputTarget({
+        renderedRevision: session.getRenderedProjection().documentRevision,
+        origin: 'keyboard',
+        renderedSelection: rendered,
       });
-    }, [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow]);
+      if (!target.ok || !target.selection || target.selection.collapsed) return;
+      const collapsePoint = selectionStartPoint(target.selection);
+      const canonical = session.getState().internalHtml;
+      const deleted = deleteFlowSelection(canonical, target.selection);
+      commitUserTransaction(
+        {
+          html: deleted,
+          selection: {
+            anchor: collapsePoint,
+            focus: collapsePoint,
+            collapsed: true,
+          },
+          changed: deleted !== canonical,
+        },
+        'delete-backward',
+      );
+    }, [commitUserTransaction, effectivePreviewMode]);
 
     const handleReplaceAcrossPages = useCallback(
       (
@@ -1598,54 +1725,30 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         },
       ) => {
         if (effectivePreviewMode || !documentSurfaceRef.current) return;
-        const bookmark =
-          transaction?.bookmark ??
-          captureFlowSelection(documentSurfaceRef.current);
-        if (!bookmark || bookmark.collapsed) return;
-        const replacementPoint =
-          transaction?.replacementPoint ?? selectionStartPoint(bookmark);
-        const sourcePages = transaction?.pages ?? pagesRef.current;
-        preserveScrollPosition();
-        const canonical =
-          transaction?.canonical ??
-          reassemblePageFragments(
-            sourcePages.map((page) => ({
-              content: page.content,
-              hardBreakBefore: page.hardBreakBefore,
-            })),
-          );
-        pushHistorySnapshot(sourcePages);
-        const replacementStartOffset = documentTextOffsetForFlowPoint(
-          canonical,
-          replacementPoint,
+        const session = canonicalSessionRef.current;
+        if (!session) return;
+        const rendered =
+          transaction?.bookmark ?? captureFlowSelection(documentSurfaceRef.current);
+        if (!rendered) return;
+        const target = transaction
+          ? { ok: true as const, selection: rendered }
+          : session.resolveNativeInputTarget({
+              renderedRevision: session.getRenderedProjection().documentRevision,
+              origin: 'keyboard',
+              renderedSelection: rendered,
+            });
+        if (!target.ok || !target.selection) return;
+        const result = replaceLogicalSelection(
+          session.getState().internalHtml,
+          target.selection,
+          html,
         );
-        const replacementText = document.createElement('div');
-        replacementText.innerHTML = html;
-        const nextCanonical = replaceFlowSelection(canonical, bookmark, html);
-        const hydratedNextCanonical = hydrateFlowHtml(nextCanonical);
-        const replacementLength = replacementText.textContent?.length ?? 0;
-        const replacementCaret =
-          replacementStartOffset === null
-            ? replacementPoint
-            : flowPointAtDocumentTextOffset(
-                hydratedNextCanonical,
-                replacementStartOffset + replacementLength,
-              ) ?? replacementPoint;
-        const nextPages = parsePages(hydratedNextCanonical, sourcePages);
-        pendingFlowSelectionRef.current = {
-          anchor: replacementCaret,
-          focus: replacementCaret,
-          collapsed: true,
-        };
-        pagesRef.current = nextPages;
+        commitUserTransaction(result, 'insert-text');
         if (transaction?.repairSurface) {
           setSurfaceRepairGeneration((generation) => generation + 1);
         }
-        pendingUpdateRef.current = true;
-        setPages(nextPages);
-        scheduleReflow(nextPages, true);
       },
-      [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
+      [commitUserTransaction, effectivePreviewMode],
     );
 
     useEffect(() => {
@@ -1676,116 +1779,131 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const repairPendingNonCancelableMutation = useCallback(
       (followup?: { inputType?: string; data?: string | null }) => {
         const pending = pendingNonCancelableMutationRef.current;
-        if (!pending) return false;
+        const session = canonicalSessionRef.current;
+        if (!pending || !session) return false;
         pendingNonCancelableMutationRef.current = null;
-
         const inputType = followup?.inputType || pending.inputType;
         const inputData = followup?.data ?? pending.data;
-        if (pending.repairOnly) {
-          pagesRef.current = pending.pages;
-          if (pending.collapsePoint) {
-            pendingFlowSelectionRef.current = {
-              anchor: pending.collapsePoint,
-              focus: pending.collapsePoint,
-              collapsed: true,
-            };
-          } else if (pending.targetPageId) {
-            pendingFocusStartPageId.current = pending.targetPageId;
-          }
+        if (pending.repairOnly || !pending.bookmark) {
           setSurfaceRepairGeneration((generation) => generation + 1);
-          setPages(pending.pages.map((page) => ({ ...page })));
-          return true;
-        }
-
-        if (!pending.bookmark || !pending.collapsePoint) {
-          pagesRef.current = pending.pages;
-          if (pending.targetPageId) {
-            pendingFocusStartPageId.current = pending.targetPageId;
-          }
-          setSurfaceRepairGeneration((generation) => generation + 1);
-          setPages(pending.pages.map((page) => ({ ...page })));
-          return true;
-        }
-
-        if (inputType.startsWith('delete')) {
-          pushHistorySnapshot(pending.pages);
-          const deleted = deleteFlowSelection(
-            pending.canonical,
-            pending.bookmark,
-          );
-          const nextPages = parsePages(deleted, pending.pages);
-          pendingFlowSelectionRef.current = {
-            anchor: pending.collapsePoint,
-            focus: pending.collapsePoint,
-            collapsed: true,
-          };
+          const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
           pagesRef.current = nextPages;
-          setSurfaceRepairGeneration((generation) => generation + 1);
           setPages(nextPages);
-          scheduleReflow(nextPages, true);
           return true;
         }
-
-        const isSupportedTextReplacement =
-          typeof inputData === 'string' &&
-          [
-            'insertText',
-            'insertReplacementText',
-            'insertCompositionText',
-            'insertFromComposition',
-          ].includes(inputType);
-        if (isSupportedTextReplacement) {
+        if (inputType.startsWith('delete')) {
+          const direction = inputType.toLowerCase().includes('forward')
+            ? 'forward'
+            : 'backward';
+          commitUserTransaction(
+            applyLogicalDelete(
+              session.getState().internalHtml,
+              pending.bookmark,
+              direction,
+            ),
+            direction === 'forward' ? 'delete-forward' : 'delete-backward',
+          );
+          setSurfaceRepairGeneration((generation) => generation + 1);
+          return true;
+        }
+        if (typeof inputData === 'string') {
           const replacement = document.createElement('div');
           replacement.textContent = inputData;
-          handleReplaceAcrossPages(replacement.innerHTML, {
-            pages: pending.pages,
-            canonical: pending.canonical,
-            bookmark: pending.bookmark,
-            replacementPoint: pending.collapsePoint,
-            repairSurface: true,
-          });
+          const result = replaceLogicalSelection(
+            session.getState().internalHtml,
+            pending.bookmark,
+            replacement.innerHTML,
+          );
+          commitUserTransaction(result, 'insert-text');
+          setSurfaceRepairGeneration((generation) => generation + 1);
           return true;
         }
-
-        pagesRef.current = pending.pages;
-        pendingFlowSelectionRef.current = {
-          anchor: pending.collapsePoint,
-          focus: pending.collapsePoint,
-          collapsed: true,
-        };
+        session.markUnreconciledInput(
+          'A native edit could not be reconciled safely. Review the affected text before saving.',
+        );
         setSurfaceRepairGeneration((generation) => generation + 1);
-        setPages(pending.pages.map((page) => ({ ...page })));
         return true;
       },
-      [
-        handleReplaceAcrossPages,
-        parsePages,
-        pushHistorySnapshot,
-        scheduleReflow,
-      ],
+      [commitUserTransaction, parsePages],
     );
 
-    const handleDocumentInput = useCallback((event: ReactFormEvent<HTMLDivElement>) => {
-      const inputEvent = event.nativeEvent as InputEvent;
-      if (
-        repairPendingNonCancelableMutation({
-          inputType: inputEvent.inputType,
-          data: inputEvent.data,
-        })
-      ) {
-        return;
-      }
-      commitDocumentSurface();
-    }, [commitDocumentSurface, repairPendingNonCancelableMutation]);
+    const handleDocumentInput = useCallback(
+      (event: ReactFormEvent<HTMLDivElement>) => {
+        const inputEvent = event.nativeEvent as InputEvent;
+        const session = canonicalSessionRef.current;
+        if (inputEvent.isComposing) {
+          session?.updateCompositionDom(event.currentTarget.innerHTML);
+          return;
+        }
+        if (
+          repairPendingNonCancelableMutation({
+            inputType: inputEvent.inputType,
+            data: inputEvent.data,
+          })
+        ) {
+          return;
+        }
+        if (session) {
+          const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
+          pagesRef.current = nextPages;
+          setPages(nextPages);
+          setSurfaceRepairGeneration((generation) => generation + 1);
+          return;
+        }
+        commitDocumentSurface();
+      },
+      [commitDocumentSurface, parsePages, repairPendingNonCancelableMutation],
+    );
+
+    const handleDocumentCompositionStart = useCallback(
+      (event: ReactCompositionEvent<HTMLDivElement>) => {
+        const session = canonicalSessionRef.current;
+        const surface = documentSurfaceRef.current;
+        if (!session || !surface) return;
+        const rendered = captureFlowSelection(surface);
+        if (!rendered) return;
+        const target = session.beginComposition({
+          renderedRevision: session.getRenderedProjection().documentRevision,
+          renderedSelection: rendered,
+          affectedNodeIds: [rendered.anchor.flowId, rendered.focus.flowId],
+        });
+        compositionTargetRef.current = target.ok ? target.selection : null;
+      },
+      [],
+    );
 
     const handleDocumentCompositionEnd = useCallback(
       (event: ReactCompositionEvent<HTMLDivElement>) => {
-        repairPendingNonCancelableMutation({
-          inputType: 'insertCompositionText',
-          data: event.data,
+        const session = canonicalSessionRef.current;
+        const target = compositionTargetRef.current;
+        compositionTargetRef.current = null;
+        if (!session || !target) return;
+        const replacement = document.createElement('div');
+        replacement.textContent = event.data;
+        const result = replaceLogicalSelection(
+          session.getState().internalHtml,
+          target,
+          replacement.innerHTML,
+        );
+        if (!result.changed || !result.selection) {
+          session.markUnreconciledInput(
+            'Text composition could not be reconciled with the canonical range.',
+          );
+          return;
+        }
+        const committed = session.finishComposition({
+          internalHtml: hydrateFlowHtml(ensureEditableCanonicalHtml(result.html)),
+          selection: result.selection,
         });
+        if (committed.status !== 'applied') return;
+        pendingFlowSelectionRef.current = result.selection;
+        const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
+        pagesRef.current = nextPages;
+        setPages(nextPages);
+        setSurfaceRepairGeneration((generation) => generation + 1);
+        scheduleReflow(nextPages, false);
       },
-      [repairPendingNonCancelableMutation],
+      [parsePages, scheduleReflow],
     );
 
     const handleDocumentPaste = useCallback(
@@ -1817,9 +1935,46 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (result.changed && result.selection) {
           pendingTypingPointRef.current = result.selection.anchor;
         }
-        commitUserTransaction(result);
+        commitUserTransaction(result, 'paste');
       },
       [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
+    );
+
+    const handleDocumentCut = useCallback(
+      (event: ReactClipboardEvent<HTMLDivElement>) => {
+        if (effectivePreviewMode) return;
+        const surface = documentSurfaceRef.current;
+        const session = canonicalSessionRef.current;
+        if (!surface || !session) return;
+        const rendered = captureFlowSelection(surface);
+        if (!rendered || rendered.collapsed) return;
+        const target = session.resolveNativeInputTarget({
+          renderedRevision: session.getRenderedProjection().documentRevision,
+          origin: 'keyboard',
+          renderedSelection: rendered,
+        });
+        if (!target.ok || !target.selection || target.selection.collapsed) return;
+        event.preventDefault();
+        const selection = window.getSelection();
+        const text = selection?.toString() ?? '';
+        event.clipboardData.setData('text/plain', text);
+        const collapsePoint = selectionStartPoint(target.selection);
+        const canonical = session.getState().internalHtml;
+        const deleted = deleteFlowSelection(canonical, target.selection);
+        commitUserTransaction(
+          {
+            html: deleted,
+            selection: {
+              anchor: collapsePoint,
+              focus: collapsePoint,
+              collapsed: true,
+            },
+            changed: deleted !== canonical,
+          },
+          'cut',
+        );
+      },
+      [commitUserTransaction, effectivePreviewMode],
     );
 
     const handleDocumentKeyDown = useCallback(
@@ -1932,176 +2087,110 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handleBeforeInput = useCallback(
       (inputEvent: InputEvent) => {
+        if (effectivePreviewMode) return;
         const surface = documentSurfaceRef.current;
+        const session = canonicalSessionRef.current;
+        if (!surface || !session) return;
+        const rendered = captureFlowSelection(surface);
+        if (!rendered) {
+          if (inputEvent.cancelable) inputEvent.preventDefault();
+          return;
+        }
+        const target = session.resolveNativeInputTarget({
+          renderedRevision: session.getRenderedProjection().documentRevision,
+          origin: inputEvent.isComposing ? 'composition' : 'keyboard',
+          renderedSelection: rendered,
+        });
+        if (!target.ok || !target.selection) {
+          if (inputEvent.cancelable) inputEvent.preventDefault();
+          setEditorStatus('Selection is from an older page layout; choose the text again.');
+          return;
+        }
         if (
-          !effectivePreviewMode &&
-          surface &&
-          !selectionIsWithinPageContents(surface)
+          inputEvent.isComposing ||
+          inputEvent.inputType.toLowerCase().includes('composition')
         ) {
-          if (inputEvent.cancelable) {
-            inputEvent.preventDefault();
-            return;
-          }
-
-          const selection = window.getSelection();
-          const targetPage =
-            pageContentFromTarget(surface, selection?.focusNode ?? null) ??
-            pageContentFromTarget(surface, selection?.anchorNode ?? null) ??
-            surface.querySelector<HTMLElement>(
-              `[data-testid^="a4-page-content-"][data-page-id="${activePageIdRef.current}"]`,
-            ) ??
-            surface.querySelector<HTMLElement>(
-              '[data-testid^="a4-page-content-"][data-page-id]',
-            );
-          const targetFlow = targetPage?.querySelector<HTMLElement>(
-            '[data-flow-id]',
-          );
-          const flowId = targetFlow?.dataset.flowId;
-          const isMutating = Boolean(
-            inputEvent.inputType || inputEvent.data !== null,
-          );
-          const targetPageId = targetPage?.dataset.pageId;
-          if (isMutating && targetPageId) {
-            const safePoint = flowId ? { flowId, offset: 0 } : null;
-            const snapshotPages = pagesRef.current;
-            pendingNonCancelableMutationRef.current = {
-              pages: snapshotPages,
-              canonical: reassemblePageFragments(
-                snapshotPages.map((page) => ({
-                  content: page.content,
-                  hardBreakBefore: page.hardBreakBefore,
-                })),
-              ),
-              bookmark: safePoint
-                ? {
-                    anchor: safePoint,
-                    focus: safePoint,
-                    collapsed: true,
-                  }
-                : null,
-              collapsePoint: safePoint,
-              targetPageId,
-              inputType: inputEvent.inputType,
-              data: inputEvent.data,
-              repairOnly: true,
-            };
-          }
+          return;
+        }
+        const canonical = session.getState().internalHtml;
+        const bookmark = target.selection;
+        if (!inputEvent.cancelable) {
+          pendingNonCancelableMutationRef.current = {
+            pages: pagesRef.current,
+            canonical,
+            bookmark,
+            collapsePoint: bookmark.anchor,
+            targetPageId: pageContentFromTarget(
+              surface,
+              window.getSelection()?.focusNode ?? null,
+            )?.dataset.pageId ?? null,
+            inputType: inputEvent.inputType,
+            data: inputEvent.data,
+            repairOnly: false,
+          };
           return;
         }
 
-        const pendingFormat = pendingTypingFormatRef.current;
-        const isPendingFormatTextInsertion =
-          !effectivePreviewMode &&
-          surface &&
-          pendingFormat !== null &&
-          inputEvent.cancelable &&
-          (inputEvent.inputType === 'insertText' ||
-            inputEvent.inputType === 'insertReplacementText' ||
-            inputEvent.inputType === 'insertCompositionText' ||
-            inputEvent.inputType === 'insertFromComposition' ||
-            (!inputEvent.inputType && inputEvent.data !== null));
-        if (isPendingFormatTextInsertion) {
-          const bookmark = captureFlowSelection(surface);
-          if (bookmark?.collapsed) {
-            inputEvent.preventDefault();
-            const result = insertTextWithFormat(
-              canonicalPagesHtml(pagesRef.current),
-              bookmark,
-              inputEvent.data ?? '',
-              pendingFormat,
-            );
-            if (result.changed) {
-              if (result.selection) {
-                pendingTypingPointRef.current = result.selection.anchor;
-              }
-              commitUserTransaction(result);
-            }
-            return;
-          }
-        }
-
-        if (!effectivePreviewMode && surface && selectionSpansPages(surface)) {
-          const bookmark = captureFlowSelection(surface);
-          if (!bookmark || bookmark.collapsed) return;
-          const collapsePoint = selectionStartPoint(bookmark);
-          if (!inputEvent.cancelable) {
-            const snapshotPages = pagesRef.current;
-            pendingNonCancelableMutationRef.current = {
-              pages: snapshotPages,
-              canonical: reassemblePageFragments(
-                snapshotPages.map((page) => ({
-                  content: page.content,
-                  hardBreakBefore: page.hardBreakBefore,
-                })),
-              ),
-              bookmark,
-              collapsePoint,
-              targetPageId:
-                pageContentFromTarget(
-                  surface,
-                  window.getSelection()?.focusNode ?? null,
-                )?.dataset.pageId ?? null,
-              inputType: inputEvent.inputType,
-              data: inputEvent.data,
-              repairOnly: false,
-            };
-            return;
-          }
-
+        const inputType = inputEvent.inputType;
+        if (inputType === 'insertText' || inputType === 'insertReplacementText') {
           inputEvent.preventDefault();
-
-          if (inputEvent.inputType?.startsWith('delete')) {
-            handleDeleteAcrossPages();
-            return;
+          const data = inputEvent.data ?? '';
+          const pendingFormat = pendingTypingFormatRef.current;
+          const result = pendingFormat
+            ? insertTextWithFormat(canonical, bookmark, data, pendingFormat)
+            : (() => {
+                const replacement = document.createElement('div');
+                replacement.textContent = data;
+                return replaceLogicalSelection(canonical, bookmark, replacement.innerHTML);
+              })();
+          if (result.changed && result.selection) {
+            pendingTypingPointRef.current = result.selection.anchor;
           }
-
-          const isCompositionInput =
-            inputEvent.isComposing ||
-            inputEvent.inputType?.toLowerCase().includes('composition');
-          const inputData = inputEvent.data;
-          const isTextReplacement =
-            !isCompositionInput &&
-            typeof inputData === 'string' &&
-            (!inputEvent.inputType ||
-              inputEvent.inputType === 'insertText' ||
-              inputEvent.inputType === 'insertReplacementText');
-          if (isTextReplacement) {
-            const replacement = document.createElement('div');
-            replacement.textContent = inputData;
-            handleReplaceAcrossPages(replacement.innerHTML);
-          }
+          commitUserTransaction(result, 'insert-text');
           return;
         }
-
-        if (
-          !effectivePreviewMode &&
-          surface &&
-          inputEvent.cancelable &&
-          inputEvent.inputType === 'insertParagraph'
-        ) {
-          const bookmark = captureFlowSelection(surface);
-          if (bookmark) {
-            inputEvent.preventDefault();
-            const result = insertParagraphAtSelection(
-              canonicalPagesHtml(pagesRef.current),
-              bookmark,
-            );
-            if (result.changed) {
-              if (result.selection) {
-                pendingTypingPointRef.current = result.selection.anchor;
-              }
-              commitUserTransaction(result);
-            }
-          }
+        if (inputType === 'insertParagraph') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            insertParagraphAtSelection(canonical, bookmark),
+            'insert-paragraph',
+          );
+          return;
+        }
+        if (inputType === 'insertLineBreak') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            replaceLogicalSelection(canonical, bookmark, '<br>'),
+            'insert-line-break',
+          );
+          return;
+        }
+        if (inputType === 'deleteContentBackward') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            applyLogicalDelete(canonical, bookmark, 'backward'),
+            'delete-backward',
+          );
+          return;
+        }
+        if (inputType === 'deleteContentForward') {
+          inputEvent.preventDefault();
+          commitUserTransaction(
+            applyLogicalDelete(canonical, bookmark, 'forward'),
+            'delete-forward',
+          );
+          return;
+        }
+        if (inputType === 'insertFromPaste' || inputType === 'deleteByCut') {
+          inputEvent.preventDefault();
+          return;
+        }
+        if (inputType) {
+          inputEvent.preventDefault();
+          setEditorStatus(`Unsupported native edit was blocked: ${inputType}`);
         }
       },
-      [
-        canonicalPagesHtml,
-        commitUserTransaction,
-        effectivePreviewMode,
-        handleDeleteAcrossPages,
-        handleReplaceAcrossPages,
-      ],
+      [commitUserTransaction, effectivePreviewMode],
     );
 
     useEffect(() => {
@@ -2168,8 +2257,30 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           content: beforeHtml,
         };
         updatedPages.splice(pageIndex + 1, 0, newPage);
+        const session = canonicalSessionRef.current;
+        if (session) {
+          const canonical = reassemblePageFragments(
+            updatedPages.map((page) => ({
+              content: page.content,
+              hardBreakBefore: page.hardBreakBefore,
+              oversized: page.oversized,
+            })),
+          );
+          const state = session.getState();
+          session.dispatch({
+            sessionKey: state.sessionKey,
+            baseRevision: state.revision,
+            intent: { kind: 'structural', origin: 'keyboard', history: 'separate' },
+            selection: pendingFlowSelectionRef.current ?? state.selection,
+            apply: () => ({
+              status: 'applied',
+              internalHtml: hydrateFlowHtml(ensureEditableCanonicalHtml(canonical)),
+              selection: pendingFlowSelectionRef.current ?? state.selection,
+            }),
+          });
+        }
         pagesRef.current = updatedPages;
-        scheduleReflow(updatedPages, true);
+        scheduleReflow(updatedPages, false);
         return updatedPages;
       });
     }, [activePageId, effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
@@ -2836,13 +2947,18 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             key={surfaceRepairGeneration}
             ref={documentSurfaceRef}
             data-testid="a4-document-surface"
+            data-document-revision={
+              canonicalSessionRef.current?.getRenderedProjection().documentRevision ?? 0
+            }
             contentEditable={!effectivePreviewMode}
             suppressContentEditableWarning
             aria-busy={isReflowing}
             onInput={handleDocumentInput}
+            onCompositionStart={handleDocumentCompositionStart}
             onCompositionEnd={handleDocumentCompositionEnd}
             onKeyDown={handleDocumentKeyDown}
             onPaste={handleDocumentPaste}
+            onCut={handleDocumentCut}
             onPointerDown={handleTableResizePointerDown}
             onPointerMove={handleTableResizePointerMove}
             onPointerLeave={clearTableResizeHover}
