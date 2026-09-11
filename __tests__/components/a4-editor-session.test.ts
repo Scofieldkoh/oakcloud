@@ -91,6 +91,23 @@ describe('A4 editor C1 canonical session', () => {
     });
   });
 
+  it('keeps the pending canonical caret after delete/format until projection publication', () => {
+    const session = createSession();
+    apply(session, 'format', '<p><strong>Alpha</strong></p><p>Later</p>', 'after-format');
+    expect(
+      session.resolveNativeInputTarget({
+        renderedRevision: 0,
+        origin: 'keyboard',
+        renderedSelection: 'stale-after-format',
+      }),
+    ).toMatchObject({ ok: true, baseRevision: 1, selection: 'after-format' });
+    apply(session, 'insert-text', '<p><strong>Alpha</strong>X</p><p>Later</p>', 'after-x');
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { revision: 2, content: expect.stringContaining('<p>Later</p>') },
+    });
+  });
+
   it('does not redirect a stale pointer selection to the pending keyboard caret', () => {
     const session = createSession();
     apply(session, 'format', '<p><strong>Alpha</strong></p><p>Later</p>', 'after-alpha');

@@ -94,7 +94,7 @@ describe('A4PageEditor C0 native sequence regressions', () => {
     host.remove();
   });
 
-  it.fails('preserves every later-page item when Enter is followed immediately by typing', async () => {
+  it('preserves every later-page item when Enter is followed immediately by typing', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     let parentValue = boundaryListFixture();
 
@@ -139,7 +139,7 @@ describe('A4PageEditor C0 native sequence regressions', () => {
     expect(parentValue).toBe(canonical);
   });
 
-  it.fails('replaces a selection spanning visual pages when Enter is pressed', async () => {
+  it('replaces a selection spanning visual pages when Enter is pressed', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const value = boundaryListFixture();
 
@@ -180,7 +180,7 @@ describe('A4PageEditor C0 native sequence regressions', () => {
     expect(canonicalText(after)).toContain('Item 30 ');
   });
 
-  it.fails('does not carry undo history from document A into document B', async () => {
+  it('does not carry undo history from document A into document B', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     let parentValue = '<p>Document A</p>';
     const onChange = (html: string) => {
@@ -189,7 +189,12 @@ describe('A4PageEditor C0 native sequence regressions', () => {
 
     await act(async () => {
       root.render(
-        <A4PageEditor ref={editorRef} value={parentValue} onChange={onChange} />,
+        <A4PageEditor
+          ref={editorRef}
+          sessionKey="document:A"
+          value={parentValue}
+          onChange={onChange}
+        />,
       );
     });
     let surface = await waitForEditorIdle();
@@ -206,7 +211,12 @@ describe('A4PageEditor C0 native sequence regressions', () => {
     parentValue = '<p>Document B</p>';
     await act(async () => {
       root.render(
-        <A4PageEditor ref={editorRef} value={parentValue} onChange={onChange} />,
+        <A4PageEditor
+          ref={editorRef}
+          sessionKey="document:B"
+          value={parentValue}
+          onChange={onChange}
+        />,
       );
     });
     surface = await waitForEditorIdle();

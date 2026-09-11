@@ -689,6 +689,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const isInternalUpdate = useRef(false);
     const onChangeRef = useRef(onChange);
     const onSnapshotChangeRef = useRef(onSnapshotChange);
+    const suppressNextOnChangeRef = useRef(false);
     onChangeRef.current = onChange;
     onSnapshotChangeRef.current = onSnapshotChange;
     const canonicalSessionRef = useRef<
@@ -859,6 +860,33 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const updateLayout = useCallback(
       (next: A4DocumentLayout) => {
         const normalized = normalizeA4DocumentLayout(next);
+        const session = canonicalSessionRef.current;
+        if (session) {
+          const state = session.getState();
+          if (JSON.stringify(state.metadata) !== JSON.stringify(normalized)) {
+            session.dispatch({
+              sessionKey: state.sessionKey,
+              baseRevision: state.revision,
+              intent: {
+                kind: 'layout',
+                origin: 'programmatic',
+                history: 'separate',
+                affectsLayout: true,
+              },
+              selection: state.selection,
+              apply: () => ({
+                status: 'applied',
+                internalHtml: state.internalHtml,
+                selection: state.selection,
+                metadata: normalized,
+                contentJson: {
+                  ...state.contentJson,
+                  editorLayout: normalized,
+                },
+              }),
+            });
+          }
+        }
         if (layout === undefined) setInternalLayout(normalized);
         onLayoutChange?.(normalized);
       },
@@ -939,6 +967,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 pageLayout.contentHeightPx,
               );
               if (generation !== reflowGenerationRef.current) return;
+              if (session && canonicalSessionRef.current !== session) {
+                return;
+              }
               if (
                 session &&
                 projectionRevision &&
@@ -993,10 +1024,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           serializeContent: (internalHtml) =>
             sanitizeHtml(stripFlowMetadata(internalHtml)),
           onSnapshotChange: (snapshot) => {
+            const contentChanged = snapshot.content !== lastValueRef.current;
+            const suppressOnChange = suppressNextOnChangeRef.current;
+            suppressNextOnChangeRef.current = false;
             lastValueRef.current = snapshot.content;
-            isInternalUpdate.current = true;
             onSnapshotChangeRef.current?.(snapshot);
-            onChangeRef.current?.(snapshot.content);
+            if (contentChanged && !suppressOnChange) {
+              isInternalUpdate.current = true;
+              onChangeRef.current?.(snapshot.content);
+            }
           },
         });
         sessionsRef.current.set(resolvedSessionKey, session);
@@ -1005,6 +1041,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const currentContent = current.ok ? current.snapshot.content : null;
         const controlledEcho = canonicalValue === lastValueRef.current;
         if (!controlledEcho && currentContent !== canonicalValue) {
+          suppressNextOnChangeRef.current = true;
           session.replaceExternalState({
             internalHtml: hydrateFlowHtml(ensureEditableCanonicalHtml(value)),
             selection: null,
@@ -1138,6 +1175,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           const session = canonicalSessionRef.current;
           const canonical = hydrateFlowHtml(ensureEditableCanonicalHtml(html));
           if (session) {
+            suppressNextOnChangeRef.current = true;
             session.replaceExternalState({
               internalHtml: canonical,
               selection: null,
@@ -1264,13 +1302,26 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!session) return;
         const result = direction === 'undo' ? session.undo() : session.redo();
         if (result.status !== 'applied') return;
+        const restoredState = session.getState();
+        const restoredLayout = normalizeA4DocumentLayout(restoredState.metadata);
+        if (JSON.stringify(restoredLayout) !== JSON.stringify(effectiveLayout)) {
+          if (layout === undefined) setInternalLayout(restoredLayout);
+          onLayoutChange?.(restoredLayout);
+        }
         pendingFlowSelectionRef.current = result.selection;
-        const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
+        const nextPages = parsePages(restoredState.internalHtml, pagesRef.current);
         pagesRef.current = nextPages;
         setPages(nextPages);
         scheduleReflow(nextPages, false);
       },
-      [effectivePreviewMode, parsePages, scheduleReflow],
+      [
+        effectiveLayout,
+        effectivePreviewMode,
+        layout,
+        onLayoutChange,
+        parsePages,
+        scheduleReflow,
+      ],
     );
 
     const handleUndo = useCallback(
@@ -1785,10 +1836,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const inputType = followup?.inputType || pending.inputType;
         const inputData = followup?.data ?? pending.data;
         if (pending.repairOnly || !pending.bookmark) {
-          setSurfaceRepairGeneration((generation) => generation + 1);
-          const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
+          const nextPages = parsePages(
+            session.getState().internalHtml,
+            pagesRef.current,
+          );
+          const focusPageId = pending.targetPageId ?? nextPages[0]?.id ?? null;
+          if (focusPageId) pendingFocusStartPageId.current = focusPageId;
           pagesRef.current = nextPages;
           setPages(nextPages);
+          setSurfaceRepairGeneration((generation) => generation + 1);
           return true;
         }
         if (inputType.startsWith('delete')) {
@@ -1831,16 +1887,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       (event: ReactFormEvent<HTMLDivElement>) => {
         const inputEvent = event.nativeEvent as InputEvent;
         const session = canonicalSessionRef.current;
-        if (inputEvent.isComposing) {
-          session?.updateCompositionDom(event.currentTarget.innerHTML);
-          return;
-        }
         if (
           repairPendingNonCancelableMutation({
             inputType: inputEvent.inputType,
             data: inputEvent.data,
           })
         ) {
+          return;
+        }
+        if (inputEvent.isComposing) {
+          session?.updateCompositionDom(event.currentTarget.innerHTML);
           return;
         }
         if (session) {
@@ -2011,15 +2067,32 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           pageContent &&
           isCaretAtEditorEnd(pageContent)
         ) {
+          const session = canonicalSessionRef.current;
           const bookmark = captureFlowSelection(surface);
-          if (bookmark) {
+          if (session && bookmark) {
             event.preventDefault();
+            const target = session.resolveNativeInputTarget({
+              renderedRevision: session.getRenderedProjection().documentRevision,
+              origin: 'keyboard',
+              renderedSelection: bookmark,
+            });
+            if (!target.ok || !target.selection) {
+              const nextPages = parsePages(
+                session.getState().internalHtml,
+                pagesRef.current,
+              );
+              pagesRef.current = nextPages;
+              setPages(nextPages);
+              setSurfaceRepairGeneration((generation) => generation + 1);
+              return;
+            }
             commitUserTransaction(
               applyLogicalDelete(
-                canonicalPagesHtml(pagesRef.current),
-                bookmark,
+                session.getState().internalHtml,
+                target.selection,
                 'forward',
               ),
+              'delete-forward',
             );
             return;
           }
@@ -2042,34 +2115,42 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           isCaretAtEditorStart(pageContent)
         ) {
           event.preventDefault();
-          const currentPages = pagesRef.current;
-          const pageIndex = currentPages.findIndex(
-            (page) => page.id === pageContent.dataset.pageId,
-          );
-          let sourcePages = currentPages;
-          if (pageIndex >= 0) {
-            const liveContent = sanitizeHtml(pageContent.innerHTML);
-            if (currentPages[pageIndex].content !== liveContent) {
-              const hydrated = document.createElement('div');
-              hydrated.innerHTML = liveContent;
-              hydrateFlowContainer(hydrated);
-              pageContent.innerHTML = hydrated.innerHTML;
-              sourcePages = currentPages.map((page, index) =>
-                index === pageIndex
-                  ? { ...page, content: sanitizeHtml(hydrated.innerHTML) }
-                  : page,
-              );
-              pagesRef.current = sourcePages;
-            }
-          }
+          const session = canonicalSessionRef.current;
           const bookmark = captureFlowSelection(surface);
-          if (!bookmark) return;
+          if (!session || !bookmark) {
+            if (session) {
+              const nextPages = parsePages(
+                session.getState().internalHtml,
+                pagesRef.current,
+              );
+              pagesRef.current = nextPages;
+              setPages(nextPages);
+              setSurfaceRepairGeneration((generation) => generation + 1);
+            }
+            return;
+          }
+          const target = session.resolveNativeInputTarget({
+            renderedRevision: session.getRenderedProjection().documentRevision,
+            origin: 'keyboard',
+            renderedSelection: bookmark,
+          });
+          if (!target.ok || !target.selection) {
+            const nextPages = parsePages(
+              session.getState().internalHtml,
+              pagesRef.current,
+            );
+            pagesRef.current = nextPages;
+            setPages(nextPages);
+            setSurfaceRepairGeneration((generation) => generation + 1);
+            return;
+          }
           commitUserTransaction(
             applyLogicalDelete(
-              canonicalPagesHtml(sourcePages),
-              bookmark,
+              session.getState().internalHtml,
+              target.selection,
               'backward',
             ),
+            'delete-backward',
           );
         }
       },
@@ -2082,6 +2163,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         handleUndo,
         selectAllDocument,
         syncActivePage,
+        parsePages,
       ],
     );
 
@@ -2093,7 +2175,25 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!surface || !session) return;
         const rendered = captureFlowSelection(surface);
         if (!rendered) {
-          if (inputEvent.cancelable) inputEvent.preventDefault();
+          if (inputEvent.cancelable) {
+            inputEvent.preventDefault();
+            return;
+          }
+          const state = session.getState();
+          pendingNonCancelableMutationRef.current = {
+            pages: pagesRef.current,
+            canonical: state.internalHtml,
+            bookmark: null,
+            collapsePoint: null,
+            targetPageId:
+              pageContentFromTarget(
+                surface,
+                window.getSelection()?.focusNode ?? null,
+              )?.dataset.pageId ?? activePageIdRef.current ?? null,
+            inputType: inputEvent.inputType,
+            data: inputEvent.data,
+            repairOnly: true,
+          };
           return;
         }
         const target = session.resolveNativeInputTarget({
