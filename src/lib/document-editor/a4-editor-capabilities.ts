@@ -9,8 +9,22 @@ export interface A4EditorCapabilities {
   revisionPrecondition: RevisionPreconditionMode;
 }
 
+/**
+ * Compatibility interpretation for an old/missing page bootstrap. This is
+ * intentionally more conservative than the current server reader capability.
+ */
 export const DEFAULT_A4_EDITOR_CAPABILITIES: Readonly<A4EditorCapabilities> = Object.freeze({
   readerFormatLevel: 1,
+  allowedWriterFormatLevel: 1,
+  revisionPrecondition: 'optional',
+});
+
+/**
+ * W1 server authority after the integrated S1/F1 reader/policy work. Reading
+ * level 2 is enabled; authoring level 2 remains deliberately disabled.
+ */
+export const SERVER_A4_EDITOR_CAPABILITIES: Readonly<A4EditorCapabilities> = Object.freeze({
+  readerFormatLevel: 2,
   allowedWriterFormatLevel: 1,
   revisionPrecondition: 'optional',
 });
@@ -23,21 +37,19 @@ function isRevisionPreconditionMode(value: unknown): value is RevisionPreconditi
   return value === 'optional' || value === 'required';
 }
 
-/**
- * Server-owned production capability. W1 intentionally leaves level-2 writing
- * disabled until the S1/F1 readers and policy adapters have been integrated.
- */
+/** Single server-owned production capability. */
 export function getA4EditorCapabilities(): A4EditorCapabilities {
-  return { ...DEFAULT_A4_EDITOR_CAPABILITIES };
+  return { ...SERVER_A4_EDITOR_CAPABILITIES };
 }
 
 /**
- * Parse capability data received from a trusted server bootstrap. Missing or
- * malformed data always falls back to the conservative level-1/optional mode.
+ * Parse capability data received by a compatibility client. Missing or
+ * malformed bootstrap data must behave as reader 1 / writer 1 / optional even
+ * when the current server itself has a newer reader.
  */
 export function parseA4EditorCapabilities(value: unknown): A4EditorCapabilities {
   if (!value || typeof value !== 'object') {
-    return getA4EditorCapabilities();
+    return { ...DEFAULT_A4_EDITOR_CAPABILITIES };
   }
 
   const candidate = value as Partial<A4EditorCapabilities>;
@@ -46,7 +58,7 @@ export function parseA4EditorCapabilities(value: unknown): A4EditorCapabilities 
     || !isFormatLevel(candidate.allowedWriterFormatLevel)
     || !isRevisionPreconditionMode(candidate.revisionPrecondition)
   ) {
-    return getA4EditorCapabilities();
+    return { ...DEFAULT_A4_EDITOR_CAPABILITIES };
   }
 
   return {
@@ -95,6 +107,24 @@ export function assertA4EditorWriterFormatLevel(
       requiredFormatLevel,
       allowedWriterFormatLevel: capabilities.allowedWriterFormatLevel,
       action: 'reload-read-only',
+    },
+  );
+}
+
+export function assertA4EditorReaderFormatLevel(
+  requiredFormatLevel: A4EditorFormatLevel,
+  capabilities: A4EditorCapabilities = getA4EditorCapabilities(),
+): void {
+  if (requiredFormatLevel <= capabilities.readerFormatLevel) return;
+
+  throw new ApiError(
+    ErrorCodes.UNSUPPORTED_EDITOR_FORMAT,
+    'This content uses an editor format this server cannot safely read.',
+    409,
+    {
+      requiredFormatLevel,
+      readerFormatLevel: capabilities.readerFormatLevel,
+      action: 'upgrade-or-reload-read-only',
     },
   );
 }
