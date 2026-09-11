@@ -20,40 +20,52 @@ export const documentTemplateCompositionTypeEnum = z.enum([
 ]);
 
 // ============================================================================
-// Placeholder Schema
+// JSON / Placeholder Schemas
 // ============================================================================
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(jsonValueSchema),
+  ]),
+);
+
+/**
+ * F1/W1 storage contract.
+ *
+ * Stored field definitions are intentionally lossless at this request boundary:
+ * stable IDs, preserve-only/future type strings, options/format/default values,
+ * omitted-vs-explicit required state and unknown JSON-compatible metadata must
+ * survive API -> persistence -> API unchanged. Trusted-rich authority is never
+ * derived from this declarative data; C06 owns that in-process capability.
+ */
 export const placeholderDefinitionSchema = z.object({
-  key: z.string().min(1).max(100), // e.g., "company.name", "director[0].name"
+  id: z.string().min(1).optional(),
+  key: z.string().min(1).max(100),
   label: z.string().min(1).max(200),
-  type: z.enum([
-    'text',
-    'textarea',
-    'date',
-    'number',
-    'currency',
-    'boolean',
-    'list',
-    'conditional',
-  ]),
-  source: z.enum([
-    'company',
-    'contact',
-    'officer',
-    'shareholder',
-    'service',
-    'custom',
-    'system',
-  ]),
-  category: z.string().optional(), // Category for grouping (e.g., 'custom')
-  path: z.string().optional(), // Data path for auto-resolution
-  defaultValue: z.string().optional(),
-  format: z.string().optional(), // Date format, number format, etc.
-  required: z.boolean().default(false),
-  // Conditional visibility - link partial placeholder to template boolean
-  linkedTo: z.string().optional(), // Key of template boolean placeholder (without 'custom.' prefix)
-  sourcePartial: z.string().optional(), // Name of the partial this placeholder came from
-});
+  type: z.string().min(1).max(100),
+  source: z.string().min(1).max(100).optional(),
+  category: z.string().optional(),
+  path: z.string().optional(),
+  defaultValue: jsonValueSchema.optional(),
+  format: jsonValueSchema.optional(),
+  options: jsonValueSchema.optional(),
+  required: z.boolean().optional(),
+  linkedTo: z.string().optional(),
+  sourcePartial: z.string().optional(),
+}).catchall(jsonValueSchema);
 
 export type PlaceholderDefinition = z.infer<typeof placeholderDefinitionSchema>;
 
@@ -69,17 +81,6 @@ const a4LayoutSchema = z.object({
   }),
 });
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
-const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(jsonValueSchema),
-    z.record(jsonValueSchema),
-  ]),
-);
 const contentJsonSchema = z.record(jsonValueSchema).superRefine((value, context) => {
   if (value.layout === undefined) return;
   const parsed = a4LayoutSchema.safeParse(value.layout);
