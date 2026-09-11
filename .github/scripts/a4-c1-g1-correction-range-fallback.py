@@ -218,6 +218,11 @@ replace_once(
                       dragEnd.node,
                       dragEnd.offset,
                     );
+                    refineCrossPageNativeSelectionFocus(
+                      surface,
+                      event.clientX,
+                      event.clientY,
+                    );
                   }
                 }
                 nativeSelectionDragStartRef.current = null;
