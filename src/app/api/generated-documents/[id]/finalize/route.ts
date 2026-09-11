@@ -13,19 +13,27 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/**
- * POST /api/generated-documents/[id]/finalize
- * Finalize a document
- */
+function parseExpectedRevision(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const revision = typeof value === 'number' ? value : Number(value);
+  if (!Number.isInteger(revision) || revision < 0) {
+    throw new Error('expectedRevision must be a non-negative integer');
+  }
+  return revision;
+}
+
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
-
-    // Check update permission
     await requirePermission(session, 'document', 'update');
 
     const body = await request.json().catch(() => ({}));
+    const expectedRevision = parseExpectedRevision(
+      typeof body === 'object' && body !== null && 'expectedRevision' in body
+        ? (body as { expectedRevision?: unknown }).expectedRevision
+        : undefined,
+    );
     const taskContext = parseTaskLaunchContext(
       typeof body === 'object' && body !== null && 'taskContext' in body
         ? (body as { taskContext: unknown }).taskContext
@@ -41,7 +49,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const document = await finalizeDocument(id, { tenantId, userId: session.id });
+    const document = await finalizeDocument(
+      id,
+      { tenantId, userId: session.id },
+      expectedRevision,
+    );
     if (taskContext) {
       await safelyLinkGeneratedDocumentTaskOutcome({
         tenantId,
@@ -58,31 +70,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-/**
- * DELETE /api/generated-documents/[id]/finalize
- * Unfinalize a document (return to draft)
- */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
-
-    // Check update permission
     await requirePermission(session, 'document', 'update');
 
     const { searchParams } = new URL(request.url);
     const reason = searchParams.get('reason');
-
     if (!reason) {
-      return NextResponse.json(
-        { error: 'Reason is required for un-finalizing' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Reason is required for un-finalizing' }, { status: 400 });
     }
-
+    const expectedRevision = parseExpectedRevision(searchParams.get('expectedRevision'));
     const tenantId = requireSessionWorkspaceId(session);
-
-    const document = await unfinalizeDocument(id, { tenantId, userId: session.id }, reason);
+    const document = await unfinalizeDocument(
+      id,
+      { tenantId, userId: session.id },
+      reason,
+      expectedRevision,
+    );
 
     return NextResponse.json(document);
   } catch (error) {
