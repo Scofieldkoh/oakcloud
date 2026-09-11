@@ -39,6 +39,7 @@ jobs:
           python scripts/a4-c1-review-fix.py
           python scripts/a4-c1-review-fix-2.py
           python scripts/a4-c1-review-fix-3.py
+          python scripts/a4-c1-review-fix-4.py
       - name: C1 canonical session tests
         run: npx vitest run __tests__/components/a4-editor-session.test.ts
       - name: A4 page editor component tests
@@ -63,6 +64,7 @@ jobs:
           rm scripts/a4-c1-review-fix.py
           rm scripts/a4-c1-review-fix-2.py
           rm scripts/a4-c1-review-fix-3.py
+          rm scripts/a4-c1-review-fix-4.py
           rm .github/workflows/a4-c1-review-fix.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
