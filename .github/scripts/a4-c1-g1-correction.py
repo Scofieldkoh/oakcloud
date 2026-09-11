@@ -12,8 +12,6 @@ def replace_once(old: str, new: str, label: str) -> None:
     text = text.replace(old, new, 1)
 
 
-# CORE owns the rendered projection revision/session identity. Keep a pending
-# publication token until React has committed the matching page DOM.
 replace_once(
     "  type A4EditorSnapshot,\n  type CanonicalEditorIntentKind,",
     "  type A4EditorSnapshot,\n  type A4ProjectionRevision,\n  type CanonicalEditorIntentKind,",
@@ -121,8 +119,6 @@ replace_once(
     "pending projection publication ref",
 )
 
-# A session-backed reflow must not replace the last published projection with
-# an unpaginated hard-section parse while the newer canonical revision is pending.
 replace_once(
     "        pagesRef.current = sourcePages;\n        reflowGenerationRef.current += 1;",
     """        if (!session) {
@@ -172,9 +168,6 @@ replace_once(
     "queue pending projection publication",
 )
 
-# Restore the canonical logical selection against the newly mounted projection
-# before that projection is declared current. This prevents a same-revision
-# keyboard event from observing a stale browser caret.
 anchor = """    useEffect(() => {
       const canonicalValue = sanitizeHtml("""
 restore_and_publish = """    const restorePendingFlowSelection = useCallback(() => {
@@ -194,7 +187,24 @@ restore_and_publish = """    const restorePendingFlowSelection = useCallback(() 
         targetFlowElement?.closest<HTMLElement>('[data-page-id]') ?? null;
       pendingSelectionFlowIdRef.current = bookmark.anchor.flowId;
 
-      if (!restoreFlowSelection(root, bookmark)) return false;
+      const beforeSelection = window.getSelection();
+      const beforeOffset = beforeSelection?.anchorOffset ?? null;
+      const beforeText = beforeSelection?.anchorNode?.textContent ?? null;
+      if (!restoreFlowSelection(root, bookmark)) {
+        console.info('[c1-debug-restore-failed]', JSON.stringify({ bookmark }));
+        return false;
+      }
+      const afterSelection = window.getSelection();
+      console.info(
+        '[c1-debug-restore]',
+        JSON.stringify({
+          bookmark,
+          beforeOffset,
+          beforeText,
+          afterOffset: afterSelection?.anchorOffset ?? null,
+          afterText: afterSelection?.anchorNode?.textContent ?? null,
+        }),
+      );
       savedSelectionRef.current = captureFlowSelection(root) ?? bookmark;
       setEditorStatus(null);
       if (pageElement?.dataset.pageId) {
@@ -230,6 +240,10 @@ restore_and_publish = """    const restorePendingFlowSelection = useCallback(() 
           'data-document-revision',
           String(pending.revision.documentRevision),
         );
+        console.info(
+          '[c1-debug-publish]',
+          JSON.stringify({ revision: pending.revision.documentRevision }),
+        );
         pendingProjectionPublicationRef.current = null;
       }
     }, [pages, restorePendingFlowSelection, surfaceRepairGeneration]);
@@ -238,8 +252,6 @@ restore_and_publish = """    const restorePendingFlowSelection = useCallback(() 
       const canonicalValue = sanitizeHtml("""
 replace_once(anchor, restore_and_publish, "DOM-committed projection publication")
 
-# The ordinary post-render path remains the fallback selection restoration path;
-# it no longer discards a bookmark when mapping failed.
 replace_once(
     """    useEffect(() => {
       const bookmark = pendingFlowSelectionRef.current;
@@ -275,9 +287,6 @@ replace_once(
     "selection restoration fallback",
 )
 
-# Canonical soft edits schedule pagination while leaving the last committed pages
-# mounted. Deterministic hard-page add/delete can publish their hard sections
-# immediately because page count itself is the requested structural action.
 replace_once(
     """        result: DocumentTransactionResult,
         intentKind: CanonicalEditorIntentKind = 'structural',
@@ -333,9 +342,6 @@ replace_once(
     "hard page delete immediate projection",
 )
 
-# If a native input reaches React after a session-backed canonical handler, remount
-# the committed projection from canonical authority without collapsing it to a
-# hard-section parse. A logical bookmark is accepted only through C1 revision checks.
 replace_once(
     """        if (session) {
           const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
@@ -346,21 +352,6 @@ replace_once(
         }
         commitDocumentSurface();""",
     """        if (session) {
-          if (!pendingFlowSelectionRef.current) {
-            const renderedSelection = captureFlowSelection(event.currentTarget);
-            if (renderedSelection) {
-              const target = session.resolveNativeInputTarget({
-                renderedRevision:
-                  session.getRenderedProjection().documentRevision,
-                origin: 'pointer',
-                renderedSelection,
-              });
-              if (target.ok && target.selection) {
-                pendingFlowSelectionRef.current = target.selection;
-                session.updateSelection(target.selection);
-              }
-            }
-          }
           setSurfaceRepairGeneration((generation) => generation + 1);
           return;
         }
@@ -368,9 +359,42 @@ replace_once(
     "canonical unexpected input repair",
 )
 
-# Pointer selections are normalized only at the rendered DOM endpoint. The page
-# identity is used solely to detect a physical-page crossing; captureFlowSelection
-# remains the projection-to-canonical mapping authority.
+replace_once(
+    """        const target = session.resolveNativeInputTarget({
+          renderedRevision: session.getRenderedProjection().documentRevision,
+          origin: inputEvent.isComposing ? 'composition' : 'keyboard',
+          renderedSelection: rendered,
+        });""",
+    """        const renderedRevision =
+          session.getRenderedProjection().documentRevision;
+        const target = session.resolveNativeInputTarget({
+          renderedRevision,
+          origin: inputEvent.isComposing ? 'composition' : 'keyboard',
+          renderedSelection: rendered,
+        });
+        if (
+          inputEvent.inputType === 'insertParagraph' ||
+          inputEvent.inputType === 'insertText'
+        ) {
+          const selection = window.getSelection();
+          console.info(
+            '[c1-debug-input]',
+            JSON.stringify({
+              inputType: inputEvent.inputType,
+              data: inputEvent.data,
+              stateRevision: session.getState().revision,
+              renderedRevision,
+              rendered,
+              target,
+              pendingFlowSelection: pendingFlowSelectionRef.current,
+              domAnchorOffset: selection?.anchorOffset ?? null,
+              domAnchorText: selection?.anchorNode?.textContent ?? null,
+            }),
+          );
+        }""",
+    "input routing diagnostics",
+)
+
 replace_once(
     """            onMouseUp={(event) => {
               if (!effectivePreviewMode) {
@@ -380,25 +404,54 @@ replace_once(
             }}""",
     """            onMouseUp={(event) => {
               if (!effectivePreviewMode) {
+                const beforeSelection = window.getSelection();
+                const beforeText = beforeSelection?.toString() ?? '';
+                if (
+                  beforeText.includes('First page') ||
+                  beforeText.includes('pha') ||
+                  beforeText.includes('Secon')
+                ) {
+                  console.info(
+                    '[c1-debug-mouse-before]',
+                    JSON.stringify({
+                      clientX: event.clientX,
+                      clientY: event.clientY,
+                      anchorOffset: beforeSelection?.anchorOffset ?? null,
+                      focusOffset: beforeSelection?.focusOffset ?? null,
+                      anchorText: beforeSelection?.anchorNode?.textContent ?? null,
+                      focusText: beforeSelection?.focusNode?.textContent ?? null,
+                      selectedText: beforeText,
+                      spansPages: selectionSpansPages(event.currentTarget),
+                    }),
+                  );
+                }
                 refineCrossPageNativeSelectionFocus(
                   event.currentTarget,
                   event.clientX,
                   event.clientY,
                 );
+                const afterSelection = window.getSelection();
+                const afterText = afterSelection?.toString() ?? '';
+                if (
+                  beforeText.includes('First page') ||
+                  beforeText.includes('pha') ||
+                  beforeText.includes('Secon')
+                ) {
+                  console.info(
+                    '[c1-debug-mouse-after]',
+                    JSON.stringify({
+                      anchorOffset: afterSelection?.anchorOffset ?? null,
+                      focusOffset: afterSelection?.focusOffset ?? null,
+                      focusText: afterSelection?.focusNode?.textContent ?? null,
+                      selectedText: afterText,
+                    }),
+                  );
+                }
                 syncActivePage(event.target);
                 syncFormattingFromSelection();
               }
             }}""",
-    "cross-page native mouse endpoint",
-)
-
-replace_once(
-    """      savedSelectionRef.current = bookmark;
-      setActiveFormats(""",
-    """      savedSelectionRef.current = bookmark;
-      canonicalSessionRef.current?.updateSelection(bookmark);
-      setActiveFormats(""",
-    "canonical pointer selection update",
+    "cross-page native mouse endpoint diagnostics",
 )
 
 path.write_text(text)
