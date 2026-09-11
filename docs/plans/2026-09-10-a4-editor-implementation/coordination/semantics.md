@@ -255,10 +255,11 @@ SEMANTICS stops at **READY FOR INTEGRATION — S0 only**. Do not begin S1 until 
 Dispatch ID: `SEMANTICS-S1-20260911-01`
 Role and packet: SEMANTICS / S1 — structural positions, commands and versioned break readers
 Starting state: DISPATCHED
-Ending state: READY FOR INTEGRATION — S1 ONLY
+Ending state: READY FOR RE-REVIEW — S1 ONLY
 Frozen Stage-1 common baseline: `bfdc4f95594b73ce4d20bff45f320bdb53837c37`
 Implementation branch / PR: `codex/a4-editor-semantics-s1` / `#36`
-Implementation code head immediately before this handoff: `f8b228f32637dcfab93e5d2c6be3b73cc7d84803`
+Initial S1 handoff code head: `f8b228f32637dcfab93e5d2c6be3b73cc7d84803`
+C02/C04 correction code/test head before this handoff: `44d8b3718fd14e0a57a93298dbdce6b54c07adb2`
 Contract consumed: frozen G0 C02/C03/C04/C09 and Stage-1 CORE dispatch; no contract widening.
 
 ### Scope completed
@@ -319,6 +320,7 @@ Contract consumed: frozen G0 C02/C03/C04/C09 and Stage-1 CORE dispatch; no contr
 - `mapA4ProjectedStructuralPoint(canonical, projection, point)`
 - `serializeA4CanonicalBreakDocument(canonical)`
 - `A4BreakFormatLevel`, `A4BreakReaderResult`, `A4ProjectedStructuralPoint`, `A4ProjectedStructuralMapResult`.
+- C02/C04 correction exports `A4ProjectedChildBoundaryBinding`, `A4StructuralProjectionFragmentPositionMap`, `A4StructuralProjectionPositionMap`, and `A4StructuralBreakProjectionProof`; these extend the existing revision-qualified projection map with structural child-boundary bindings without introducing another revision authority.
 
 `engine.ts` / `structural-pagination.ts`:
 
@@ -366,11 +368,36 @@ Result in this execution environment:
 NOT EXECUTED — environment/tooling block, not represented as a pass or a test failure.
 ```
 
-Reason: the available working container is Node `v22.16.0`, has no repository checkout/dependencies and cannot resolve GitHub. The authenticated GitHub connector can mutate/read the repository but cannot execute arbitrary workflow commands. The repository's `Node 24 compatibility` workflow does provision Node 24 and validates lint/typecheck/build, but it does not expose the two required ad-hoc Vitest invocations. No workflow/config/package file was modified to bypass the SEMANTICS ownership boundary.
+Reason: the available working container is Node `v22.16.0`, has no repository checkout/dependencies and cannot resolve GitHub. The authenticated GitHub connector can mutate/read the repository but cannot execute arbitrary workflow commands. The repository's `Node 24 compatibility` workflow provisions Node 24 but does not expose the two required ad-hoc Vitest invocations. No workflow/config/package file was modified to bypass the SEMANTICS ownership boundary.
 
-S1-specific regressions are authored in `__tests__/components/a4-pagination/structural-commands.test.ts`. The existing S0 browser proof was not weakened or modified. The latest code-head workflow before this handoff is `Node 24 compatibility` run `#193` (`34590849406`); final review must use the latest run attached to the handoff PR head because this documentation update itself creates a newer commit/run.
+The original S1 regressions remain in `__tests__/components/a4-pagination/structural-commands.test.ts`; the existing S0 browser proof was not weakened or modified. For the C02/C04 re-review correction, focused direct regressions were added in `__tests__/components/a4-pagination/semantic-break-projection.test.ts` as recorded below.
 
-A prior code-head run (`#188`, `34590552868`) found two `prefer-const` lint errors in `structural-commands.ts`; both were corrected in the final code head. Its independent Business Assistant PostgreSQL compatibility job passed. No targeted Vitest result is fabricated.
+C02/C04 correction implementation/test head `44d8b3718fd14e0a57a93298dbdce6b54c07adb2` triggered `Node 24 compatibility` run `#210` (`34600726399`). Before this documentation handoff commit, that run had actually completed Node 24 setup, dependency install, runtime-major verification, lint, registry freshness, Prisma generation, typecheck, P16 evidence, Chromium path, and Business Assistant/BizFile contract checks successfully; the application build was still in progress. The independent PostgreSQL recovery/authorization job completed successfully. The final PR-head workflow created by this handoff must be used for the final CI status. No targeted Vitest result is fabricated.
+
+### CORE Stage-1 re-review correction — C02/C04 structural child mapping
+
+**Defect confirmed:** the original `mapA4ProjectedStructuralPoint()` converted `children` positions to `Range.toString().length`, mapped that text offset through `mapProjectedTextOffsetToSource()`, and then recaptured a structural position. Distinct zero-text child boundaries therefore could alias whenever adjacent `<br>`, atomic/reference nodes, empty structural owners, or semantic-break neighbors shared the same text offset.
+
+**Correction implemented:**
+
+- `partitionA4SemanticBreaks()` now augments each revision-qualified projection fragment with exact `childBoundaries` entries mapping `{ projectedNodeId, projectedIndex }` to `{ sourceNodeId, sourceIndex }`.
+- Direct runtime `data-flow-id` identity is used for semantic element children wherever available. Text/non-runtime children are matched only when uniquely identifiable within the fragment's source interval.
+- Source intervals are bounded by the nearest authored semantic breaks for the same structural owner, including nested/multiple-break cases; this prevents a projected fragment from mapping through unrelated removed break boundaries.
+- Empty canonical owners retain exact child index `0`. Empty projected fragments created at an authored break map only when the break bounds identify one exact canonical boundary.
+- `mapA4ProjectedStructuralPoint()` consumes the recorded structural binding directly for `children` positions. Older S0 proof-shaped objects can use the same bounded structural matcher on demand for compatibility; there is no text-offset fallback for `children` positions.
+- `before` / `after` affinity is preserved unchanged. Ambiguous/invalid structural mapping returns `null` rather than redirecting a caret to a text-equivalent visual location.
+- `text` positions continue through the existing `mapProjectedTextOffsetToSource()` path unchanged.
+- The map continues to copy CORE's `sessionKey` and `documentRevision`; SEMANTICS allocates no revision and introduces no second revision system.
+
+**Exact focused regressions added in `semantic-break-projection.test.ts`:**
+
+1. `A<br><br>B`: directly exercises `mapA4ProjectedStructuralPoint()` for the boundary before BR1, between BR1/BR2, and after BR2 and asserts exact canonical child index plus affinity.
+2. Two adjacent zero-text field/reference atomics: asserts the boundary between them remains index `1` and does not collapse before or after both.
+3. `<br><span data-a4-break="page"></span><span data-field-id="x"></span>`: asserts both emitted `childBoundaries` and direct mapper results on each side of the semantic break, including exact canonical indices and affinity.
+4. Empty paragraph plus empty table cell: asserts `children` index `0` remains exact through projection without inventing text offsets.
+5. `Hello[semantic break]World`: asserts the existing text projection path still maps fragment text offset `2` to canonical text offset `7`.
+
+The existing multiple nested-break / `start=5` / list-continuation proof remains unchanged and continues to cover the original S1 semantics. Legacy hard-break reading, nested C03 break representation, one canonical LI across a nested break, grapheme-safe deletion, stale-position rejection, `paginateFlowHtml` compatibility, runtime metadata stripping, and non-mutating unsupported cell-interior break insertion were not changed by this correction.
 
 ### Unsupported cases / explicit no-op boundaries
 
@@ -386,10 +413,10 @@ A prior code-head run (`#188`, `34590552868`) found two `prefer-const` lint erro
 - CORE C1/C2 must wire native editor input/key handling and commit the pure `A4TransactionResult` through CORE's single revision authority. SEMANTICS does not allocate revisions or wire DOM events.
 - WORKFLOW W1 must consume the reader/pagination APIs, apply its persistence/output capability gate and regenerate the generated browser pagination bundle after S1 integration.
 - FIELDS remains owner of durable C05 field identity/parser/registry behavior. S1 only treats field/reference-like DOM nodes as atomic runtime structural nodes; runtime flow IDs are not durable field IDs.
-- The frozen C04 source map is ready for CORE native-input reconciliation; stale positions are rejected rather than snapped to visual page locations.
+- The C04 structural projection map now retains exact child-boundary bindings as well as the existing source text ranges, with the same CORE-owned session/revision identity.
 
 ### Stop boundary
 
-S1 implementation is complete within the SEMANTICS lease. S2 and S3 have **not started**. The PR remains unmerged for CORE review/integration.
+The narrow CORE C02/C04 correction is complete within the SEMANTICS S1 lease. No CORE, FIELDS, WORKFLOW or generated-bundle file was edited by this correction. S2 and S3 have **not started**. PR #36 remains unmerged for CORE re-review.
 
-SEMANTICS state: **READY FOR INTEGRATION — S1 only**
+SEMANTICS state: **READY FOR RE-REVIEW — S1 only**
