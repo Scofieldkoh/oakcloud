@@ -4,32 +4,52 @@ import {
   type RevisionPreconditionMode,
 } from '@/lib/document-editor/a4-editor-capabilities';
 
+export type RevisionResource =
+  | 'document-template'
+  | 'template-partial'
+  | 'generated-document'
+  | 'document-generation-batch';
+
+const RESOURCE_TYPES: Record<RevisionResource, string> = {
+  'document-template': 'DocumentTemplate',
+  'template-partial': 'TemplatePartial',
+  'generated-document': 'GeneratedDocument',
+  'document-generation-batch': 'DocumentGenerationBatch',
+};
+
 export interface RevisionDetails {
-  resource: 'document-template' | 'template-partial' | 'generated-document' | 'document-generation-batch';
+  resource: RevisionResource;
   expectedRevision?: number;
   revision?: number;
-  action?: 'reload' | 'reload-read-only';
 }
 
 export class VersionConflictError extends ApiError {
   constructor(details: RevisionDetails) {
     super(
       ErrorCodes.VERSION_CONFLICT,
-      'This resource changed after it was loaded. Reload before saving again.',
+      'This document changed since you opened it. Reload or reconcile before saving.',
       409,
-      { ...details, action: details.action ?? 'reload' },
+      {
+        resourceType: RESOURCE_TYPES[details.resource],
+        expectedRevision: details.expectedRevision,
+        currentRevision: details.revision,
+        action: 'reload-or-reconcile',
+      },
     );
     this.name = 'VersionConflictError';
   }
 }
 
 export class RevisionPreconditionRequiredError extends ApiError {
-  constructor(details: Omit<RevisionDetails, 'expectedRevision'>) {
+  constructor(resource: RevisionResource) {
     super(
       ErrorCodes.REVISION_PRECONDITION_REQUIRED,
-      'Reload this resource before saving so the server can verify its revision.',
+      'expectedRevision is required for this mutation.',
       428,
-      { ...details, action: details.action ?? 'reload' },
+      {
+        resourceType: RESOURCE_TYPES[resource],
+        action: 'reload-and-retry',
+      },
     );
     this.name = 'RevisionPreconditionRequiredError';
   }
@@ -37,11 +57,11 @@ export class RevisionPreconditionRequiredError extends ApiError {
 
 export function assertRevisionPrecondition(
   expectedRevision: number | undefined,
-  resource: RevisionDetails['resource'],
+  resource: RevisionResource,
   mode: RevisionPreconditionMode = getA4EditorCapabilities().revisionPrecondition,
 ): void {
   if (expectedRevision !== undefined || mode === 'optional') return;
-  throw new RevisionPreconditionRequiredError({ resource });
+  throw new RevisionPreconditionRequiredError(resource);
 }
 
 /**
@@ -52,15 +72,18 @@ export function classifyRevisionMiss(
   state: { revision: number; deleted: boolean; locked: boolean } | null,
   details: Omit<RevisionDetails, 'revision'>,
 ): never {
-  if (!state) {
-    throw new NotFoundError('Resource not found');
-  }
+  if (!state) throw new NotFoundError('Resource not found');
   if (state.deleted || state.locked) {
     throw new ApiError(
       ErrorCodes.CONFLICT,
-      state.deleted ? 'This resource is deleted.' : 'This resource is not editable in its current state.',
+      state.deleted
+        ? 'This resource is deleted.'
+        : 'This resource is not editable in its current state.',
       409,
-      { resource: details.resource, action: 'reload-read-only' },
+      {
+        resourceType: RESOURCE_TYPES[details.resource],
+        action: 'reload-read-only',
+      },
     );
   }
   throw new VersionConflictError({ ...details, revision: state.revision });
