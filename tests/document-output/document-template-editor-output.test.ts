@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
+import { getA4SanitizerPolicy } from '@/lib/a4-content-policy';
 import { buildPDFHtml, buildPaginatedSectionsHtml } from '@/services/document-export.service';
 
 const readRepoFile = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
@@ -30,7 +31,7 @@ const representativeRichContent = [
 
 const buildRepresentativePdfHtml = (content: string) => buildPDFHtml(
   {
-    title: 'WORKFLOW W0 output fixture',
+    title: 'WORKFLOW W1 output fixture',
     status: 'FINALIZED',
     content,
     contentJson: undefined,
@@ -39,8 +40,8 @@ const buildRepresentativePdfHtml = (content: string) => buildPDFHtml(
   { top: 20, right: 20, bottom: 20, left: 20 },
 );
 
-describe('A4 editor WORKFLOW W0 preview / HTML / PDF compatibility proofs', () => {
-  it('W-OUTPUT-FIXTURE-00 defines the complete synthetic two-page candidate and retains ordered sentinels in corresponding PDF HTML', () => {
+describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () => {
+  it('W-OUTPUT-FIXTURE-00 defines the complete synthetic multi-page candidate and retains ordered sentinels in PDF HTML', () => {
     expect(representativeRichContent).toContain('<h1>');
     expect(representativeRichContent).toContain('<ol start="5">');
     expect(representativeRichContent).toContain('<ol><li>Nested resolution 5.1</li>');
@@ -59,7 +60,7 @@ describe('A4 editor WORKFLOW W0 preview / HTML / PDF compatibility proofs', () =
     expect(lastIndex).toBeGreaterThan(firstIndex);
   });
 
-  it.fails('W-OUTPUT-01 preserves representative rich structure through the actual PDF HTML builder', () => {
+  it('W-OUTPUT-01 preserves representative canonical rich structure through the PDF HTML builder', () => {
     const html = buildRepresentativePdfHtml(representativeRichContent);
     expect(html).toContain('<blockquote>');
     expect(html).toContain('<caption>');
@@ -67,32 +68,38 @@ describe('A4 editor WORKFLOW W0 preview / HTML / PDF compatibility proofs', () =
     expect(html).toContain('start="5"');
   });
 
-  it.fails('W-OUTPUT-02 keeps the HTML-export sanitizer contract aligned with the PDF/editor rich-structure contract', () => {
-    const start = exportServiceSource.indexOf('export async function exportToHTML');
-    if (start < 0) throw new Error('Unable to locate exportToHTML');
-    const source = exportServiceSource.slice(start);
-    for (const token of ["'blockquote'", "'caption'", "'tfoot'", "'start'"]) expect(source).toContain(token);
+  it('W-OUTPUT-02 consumes the single F1 C06 sanitizer policy instead of a W-owned allowlist', () => {
+    const policy = getA4SanitizerPolicy();
+    for (const token of ['blockquote', 'caption', 'tfoot']) expect(policy.allowedTags).toContain(token);
+    expect(policy.allowedAttributes).toContain('start');
+    expect(policy.allowedAttributes).toContain('data-a4-break');
+    expect(exportServiceSource).toContain('getA4SanitizerPolicy');
+    expect(exportServiceSource).toContain('A4_EDITOR_DECORATION_ATTRIBUTES');
+    expect(exportServiceSource).toContain('serializeA4CanonicalBreakDocument');
+    expect(exportServiceSource).toContain('readA4StoredDocument');
   });
 
-  it.fails('W-OUTPUT-03 does not leave fixed-height hidden overflow active when PDF pagination falls back', () => {
-    const longContent = Array.from({ length: 240 }, (_, index) => `<p>Long fallback paragraph ${index + 1}</p>`).join('');
+  it('W-OUTPUT-03 retains the full source candidate in pre-pagination HTML without fixed-height clipping', () => {
+    const longContent = Array.from({ length: 240 }, (_, index) => `<p>Long pagination paragraph ${index + 1}</p>`).join('');
     const html = buildRepresentativePdfHtml(`${longContent}<p>END-OF-DOCUMENT-SENTINEL</p>`);
     expect(html).toContain('END-OF-DOCUMENT-SENTINEL');
     expect(html).not.toContain('overflow: hidden;');
   });
 
-  it.fails('W-OUTPUT-04 makes pagination failure explicit instead of logging and continuing as a successful PDF', () => {
-    expect(exportServiceSource).not.toContain("console.warn('A4 pagination in export failed; falling back to natural page flow'");
+  it('W-OUTPUT-04 makes pagination failure explicit rather than warning and producing a clipped PDF', () => {
+    expect(exportServiceSource).toContain('throw new ExportPaginationError');
+    expect(exportServiceSource).toContain('Pagination returned no printable fragments');
+    expect(exportServiceSource).not.toContain('falling back to natural page flow');
   });
 
-  it.fails('W-OUTPUT-05 preserves the exact C03 canonical break and authored attributes through PDF HTML assembly', () => {
+  it('W-OUTPUT-05 preserves canonical structural attributes while stripping unsupported authored authority', () => {
     const content = `<p class="outer" style="text-align:right">Before<span class="manual-marker" style="break-before:page" data-source="fixture" data-a4-break="page"></span>After</p>${LEGACY_BREAK}`;
     const html = buildRepresentativePdfHtml(content);
     expect(html).toContain('data-a4-break="page"');
     expect(html).toContain('class="manual-marker"');
-    expect(html).toContain('data-source="fixture"');
     expect(html).toContain('class="outer"');
     expect(html).toContain('data-break-type="hard"');
+    expect(html).not.toContain('data-source="fixture"');
   });
 
   it('W-OUTPUT-FIXTURE-01 resolves a canonical nested partial path without flattening the C03 break', () => {
