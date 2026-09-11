@@ -37,6 +37,7 @@ const RUNTIME_SEMANTIC_IDENTITY_SELECTOR = [
   'th',
   'td',
   'br',
+  '.page-break',
   '[data-a4-break="page"]',
   '[data-field-id]',
   '[data-placeholder-id]',
@@ -120,14 +121,10 @@ export function hydrateFlowContainer(container: HTMLElement): void {
   Array.from(container.childNodes).forEach((node) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
-      if (!element.classList.contains('page-break')) ensureFlowId(element);
+      ensureFlowId(element);
       element
         .querySelectorAll<HTMLElement>(RUNTIME_SEMANTIC_IDENTITY_SELECTOR)
-        .forEach((semanticNode) => {
-          if (!semanticNode.classList.contains('page-break')) {
-            ensureFlowId(semanticNode);
-          }
-        });
+        .forEach((semanticNode) => ensureFlowId(semanticNode));
       return;
     }
 
