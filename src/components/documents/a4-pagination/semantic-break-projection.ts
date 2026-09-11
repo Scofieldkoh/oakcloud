@@ -10,8 +10,9 @@ import {
   type A4ProjectionSourceRevision,
 } from './semantic-page-breaks';
 import {
+  captureA4Position,
   createCanonicalEditorDocument,
-  validateA4DocumentPosition,
+  resolveA4Position,
   type A4Position,
   type CanonicalEditorDocument,
 } from './structural-position';
@@ -39,10 +40,7 @@ export type A4ProjectedStructuralMapResult =
     }
   | null;
 
-/**
- * Reader-only format detection. Markup is authoritative because partials do
- * not have contentJson and readers must understand v2 before writers enable it.
- */
+/** Reader-only detection; markup is authoritative for partials without JSON. */
 export function detectA4BreakFormatLevel(input: string): A4BreakFormatLevel {
   return /<span\b[^>]*data-a4-break\s*=\s*["']page["'][^>]*>/i.test(input)
     ? 2
@@ -60,10 +58,8 @@ export function readA4BreakDocument(input: string): A4BreakReaderResult {
 }
 
 /**
- * Production C03/C04 tree-aware partition. The implementation is the S0-proven
- * visitor promoted behind a production name; proof aliases remain for G0/S0
- * regression compatibility. Runtime identity is hydrated before partitioning
- * so zero-text nodes (br, empty cells, atomics) participate in C02 identity.
+ * Production C03/C04 tree-aware partition. The S0 visitor is promoted behind
+ * a production name and fed the fully hydrated C02 runtime identity tree.
  */
 export function partitionA4SemanticBreaks(
   input: string | CanonicalEditorDocument,
@@ -74,7 +70,6 @@ export function partitionA4SemanticBreaks(
   return projectA4SemanticBreaksForProof(canonical.internalHtml, source);
 }
 
-/** Maps a projected text point back to its revision-qualified canonical source. */
 export function mapA4ProjectedTextPoint(
   positionMap: A4ProjectionPositionMap,
   point: A4ProjectedTextPoint,
@@ -82,34 +77,76 @@ export function mapA4ProjectedTextPoint(
   return mapProjectedTextOffsetToSource(positionMap, point);
 }
 
+function uniqueFlowElement(root: HTMLElement, nodeId: string): HTMLElement | null {
+  const matches = Array.from(root.querySelectorAll<HTMLElement>('[data-flow-id]')).filter(
+    (element) => element.dataset.flowId === nodeId,
+  );
+  return matches.length === 1 ? matches[0] : null;
+}
+
 /**
- * Zero-text child boundaries retain the source node id/index/affinity supplied
- * by the projected semantic ancestry. The result is accepted only if it still
- * validates against the canonical document; there is no visual-page fallback.
+ * Maps both text and zero-text child boundaries from a projected fragment to
+ * the canonical source. Child positions are first reduced to the fragment's
+ * text offset, then recaptured against canonical runtime structure so a
+ * before/after BR, atomic, empty block or break remains a children position.
  */
 export function mapA4ProjectedStructuralPoint(
   canonical: CanonicalEditorDocument,
-  positionMap: A4ProjectionPositionMap,
+  projection: A4BreakProjectionProof,
   point: A4ProjectedStructuralPoint,
 ): A4ProjectedStructuralMapResult {
-  const fragment = positionMap.fragments.find(
-    (candidate) => candidate.fragmentIndex === point.fragmentIndex,
-  );
+  if (point.position.kind === 'text') {
+    return mapProjectedTextOffsetToSource(projection.positionMap, {
+      fragmentIndex: point.fragmentIndex,
+      sourceNodeId: point.position.nodeId,
+      projectedOffset: point.position.offset,
+      affinity: point.position.affinity,
+    });
+  }
+
+  const fragment = projection.fragments[point.fragmentIndex];
   if (!fragment) return null;
-  const binding = fragment.sourceRanges.find(
-    (candidate) => candidate.sourceNodeId === point.position.nodeId,
+  const fragmentRoot = document.createElement('div');
+  fragmentRoot.innerHTML = fragment.content;
+  const projectedOwner = uniqueFlowElement(fragmentRoot, point.position.nodeId);
+  if (
+    !projectedOwner ||
+    point.position.index < 0 ||
+    point.position.index > projectedOwner.childNodes.length
+  ) {
+    return null;
+  }
+
+  const projectedRange = document.createRange();
+  projectedRange.setStart(projectedOwner, 0);
+  projectedRange.setEnd(projectedOwner, point.position.index);
+  const mappedText = mapProjectedTextOffsetToSource(projection.positionMap, {
+    fragmentIndex: point.fragmentIndex,
+    sourceNodeId: point.position.nodeId,
+    projectedOffset: projectedRange.toString().length,
+    affinity: point.position.affinity,
+  });
+  if (!mappedText) return null;
+
+  const canonicalRoot = document.createElement('div');
+  canonicalRoot.innerHTML = canonical.internalHtml;
+  const canonicalDomPoint = resolveA4Position(canonicalRoot, mappedText.position);
+  if (!canonicalDomPoint) return null;
+  const structural = captureA4Position(
+    canonicalRoot,
+    canonicalDomPoint.node,
+    canonicalDomPoint.offset,
+    point.position.affinity,
   );
-  if (!binding && point.position.kind === 'text') return null;
-  const validation = validateA4DocumentPosition(canonical, point.position);
-  if (validation.status === 'rejected') return null;
+  if (!structural) return null;
   return {
-    sessionKey: positionMap.sessionKey,
-    documentRevision: positionMap.documentRevision,
-    position: point.position,
+    sessionKey: projection.positionMap.sessionKey,
+    documentRevision: projection.positionMap.documentRevision,
+    position: structural,
   };
 }
 
-/** Persisted form: authored old/new break markup retained, runtime projection removed. */
+/** Persisted form retains authored breaks and strips runtime projection data. */
 export function serializeA4CanonicalBreakDocument(
   canonical: CanonicalEditorDocument | string,
 ): string {
