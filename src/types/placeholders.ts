@@ -11,13 +11,6 @@
 
 import type { DocumentParty } from '@/lib/document-party';
 
-// ============================================================================
-// Placeholder Value Types
-// ============================================================================
-
-/**
- * Supported data types for placeholder values
- */
 export type PlaceholderValueType =
   | 'text'
   | 'date'
@@ -26,9 +19,12 @@ export type PlaceholderValueType =
   | 'boolean'
   | 'textarea';
 
-/**
- * Source category of a placeholder
- */
+export type PlaceholderOwnerScope = {
+  kind: 'template' | 'partial';
+  id: string;
+  label?: string;
+};
+
 export type PlaceholderSource =
   | 'company'
   | 'contact'
@@ -38,99 +34,58 @@ export type PlaceholderSource =
   | 'custom'
   | 'system';
 
-// ============================================================================
-// Placeholder Definition Types
-// ============================================================================
-
-/**
- * Custom placeholder definition - user-defined placeholders in templates
- */
 export interface CustomPlaceholderDefinition {
-  /** Unique identifier */
   id: string;
-  /** Placeholder key (used in template syntax: {{custom.key}}) */
   key: string;
-  /** Human-readable label */
   label: string;
-  /** Data type for validation and input rendering */
   type: PlaceholderValueType;
-  /** Whether this placeholder is required for document generation */
+  /** Exact stored type; unsupported legacy values are preserve-only. */
+  storedType?: string;
+  /** Durable identity derived from stable owner scope and persisted ID/key. */
+  fieldIdentity?: string;
+  ownerScope?: PlaceholderOwnerScope;
+  storagePersistedId?: string;
+  preserveOnly?: boolean;
   required: boolean;
-  /** Default value if not provided */
+  /** False authoring default stays distinct from an omitted stored property. */
+  storageRequiredWasExplicit?: boolean;
   defaultValue?: string;
-  /** Description/help text for the placeholder */
   description?: string;
-  /** Key of template boolean placeholder that controls visibility (without 'custom.' prefix) */
   linkedTo?: string;
-  /** Name of the partial this placeholder originated from */
   sourcePartial?: string;
-  /** Persisted source namespace. Omitted for newly authored custom fields. */
   storageSource?: PlaceholderSource;
-  /** Persisted resolver path. */
+  /** Exact stored source string, including unknown forward-compatible values. */
+  storageRawSource?: string;
   storagePath?: string;
-  /** Persisted grouping category. */
   storageCategory?: string;
-  /** Original definition retained so unknown metadata survives editor saves. */
+  /** Complete original definition, including unknown forward metadata. */
   storageDefinition?: Record<string, unknown>;
 }
 
-/**
- * Placeholder definition stored in template JSON
- * Used by the validation service and resolver
- */
 export interface PlaceholderDefinition {
-  /** Placeholder key */
   key: string;
-  /** Whether this placeholder is required */
   required?: boolean;
-  /** Minimum items for array placeholders */
   minItems?: number;
-  /** Maximum items for array placeholders */
   maxItems?: number;
-  /** Key of boolean placeholder that controls visibility */
   linkedTo?: string;
-  /** Name of the partial this placeholder came from */
   sourcePartial?: string;
 }
 
-/**
- * Extended placeholder definition with source tracking
- * Used when merging placeholders from templates and partials
- */
 export interface MergedPlaceholder extends CustomPlaceholderDefinition {
-  /** Where this placeholder came from */
   source: 'template' | 'partial';
-  /** Name of the source template/partial */
   sourceName?: string;
-  /** Display name of the source */
   sourceDisplayName?: string;
 }
 
-/**
- * Placeholder requirement for validation
- */
 export interface PlaceholderRequirement {
-  /** Placeholder key */
   key: string;
-  /** Source category */
   source: PlaceholderSource;
-  /** Whether this placeholder is required */
   required: boolean;
-  /** Minimum items for array placeholders */
   minItems?: number;
-  /** Maximum items for array placeholders */
   maxItems?: number;
-  /** Key of boolean placeholder that controls visibility */
   linkedTo?: string;
 }
 
-// ============================================================================
-// Mock Data Types (for template preview/testing)
-// ============================================================================
-
-/**
- * Address data structure
- */
 export interface AddressData {
   block: string;
   street: string;
@@ -141,9 +96,6 @@ export interface AddressData {
   letter?: string;
 }
 
-/**
- * Company data for mock preview
- */
 export interface MockCompanyData {
   name: string;
   uen: string;
@@ -154,9 +106,6 @@ export interface MockCompanyData {
   capital: number;
 }
 
-/**
- * Director data for mock preview
- */
 export interface MockDirectorData {
   name: string;
   identificationNumber: string;
@@ -165,9 +114,6 @@ export interface MockDirectorData {
   address: string;
 }
 
-/**
- * Shareholder data for mock preview
- */
 export interface MockShareholderData {
   name: string;
   shareClass: string;
@@ -177,14 +123,8 @@ export interface MockShareholderData {
   nationality: string;
 }
 
-/**
- * Custom data values - dynamic based on user-defined placeholders
- */
 export type CustomData = Record<string, string | number | Date | undefined>;
 
-/**
- * System data for templates
- */
 export interface SystemData {
   currentDate: Date;
   generatedBy: string;
@@ -192,9 +132,6 @@ export interface SystemData {
   tenantName?: string;
 }
 
-/**
- * Complete mock data values for template preview
- */
 export interface MockDataValues {
   company: MockCompanyData;
   directors: MockDirectorData[];
@@ -206,13 +143,6 @@ export interface MockDataValues {
   system: SystemData;
 }
 
-// ============================================================================
-// Template Partial Type
-// ============================================================================
-
-/**
- * Template partial data structure
- */
 export interface TemplatePartialData {
   id: string;
   name: string;
@@ -222,14 +152,4 @@ export interface TemplatePartialData {
   placeholders?: unknown;
 }
 
-// ============================================================================
-// Re-exports from placeholder-resolver for convenience
-// ============================================================================
-
-// Note: The following types are defined in @/lib/placeholder-resolver.ts
-// and should be imported from there for actual data operations:
-// - CompanyData
-// - OfficerData
-// - ShareholderData
-// - ContactData
-// - PlaceholderContext
+// Resolver data types remain exported from @/lib/placeholder-resolver.ts.

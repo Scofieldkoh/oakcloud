@@ -1,63 +1,77 @@
-import { describe, expect, it } from 'vitest';
-import { createCanonicalInputBridge } from '@/components/documents/a4-pagination/editor-session';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  createCanonicalEditorSession,
+  createCanonicalInputBridge,
+} from '@/components/documents/a4-pagination/editor-session';
 
-describe('A4 editor C0 canonical input bridge proof', () => {
-  it('rejects a stale DOM write after a canonical command publishes first', () => {
-    const bridge = createCanonicalInputBridge({
-      sessionKey: 'template:c0-proof',
-      content: '<p>Alpha</p>',
-      selection: 'after-alpha',
-    });
+function createSession(sessionKey = 'template:c1') {
+  return createCanonicalEditorSession<string, { id: string }, string, { layout: string }>({
+    sessionKey,
+    internalHtml: '<p>Alpha</p><p>Later</p>',
+    selection: 'after-alpha',
+    typingMarks: 'plain',
+    contentJson: { untouched: true },
+    fields: [{ id: 'field-1' }],
+    metadata: { layout: 'default' },
+    serializeContent: (content) => content,
+  });
+}
 
-    const revision = bridge.commitCanonical(
-      '<p>Alpha</p><p><br></p>',
+function apply(
+  session: ReturnType<typeof createSession>,
+  kind: 'insert-text' | 'insert-paragraph' | 'format' | 'paste' | 'layout',
+  internalHtml: string,
+  selection: string,
+  extra: Record<string, unknown> = {},
+) {
+  const state = session.getState();
+  return session.dispatch({
+    sessionKey: state.sessionKey,
+    baseRevision: state.revision,
+    intent: {
+      kind,
+      origin: 'keyboard',
+      history: kind === 'insert-text' ? 'typing' : 'separate',
+      ...(extra as object),
+    },
+    selection,
+    apply: () => ({ status: 'applied', internalHtml, selection }),
+  });
+}
+
+describe('A4 editor C1 canonical session', () => {
+  it('returns the latest canonical snapshot before projection catches up', () => {
+    const session = createSession();
+    const result = apply(
+      session,
+      'insert-paragraph',
+      '<p>Alpha</p><p><br></p><p>Later</p>',
       'new-paragraph',
     );
-
-    expect(revision).toBe(1);
-    expect(bridge.getRenderedRevision()).toBe(0);
-    expect(
-      bridge.commitNativeDom({
-        renderedRevision: 0,
-        content: '<p>AlphaSTALE</p>',
-        selection: 'stale-caret',
-      }),
-    ).toEqual({
-      status: 'rejected',
-      reason: 'stale-projection',
-      currentRevision: 1,
-      renderedRevision: 0,
-    });
-
-    expect(bridge.getSnapshot()).toEqual({
+    expect(result).toMatchObject({ status: 'applied', revision: 1 });
+    expect(session.getRenderedProjection().documentRevision).toBe(0);
+    expect(session.getSnapshot()).toMatchObject({
       ok: true,
       snapshot: {
-        sessionKey: 'template:c0-proof',
         revision: 1,
-        content: '<p>Alpha</p><p><br></p>',
-        contentJson: {},
-        fields: undefined,
+        content: '<p>Alpha</p><p><br></p><p>Later</p>',
       },
     });
   });
 
-  it('routes uninterrupted keyboard input to the latest canonical caret while projection lags', () => {
-    const bridge = createCanonicalInputBridge({
-      sessionKey: 'template:c0-rapid-enter',
-      content: '<p>Alpha</p>',
-      selection: 'after-alpha',
-    });
-
-    bridge.commitCanonical(
-      '<p>Alpha</p><p><br></p>',
+  it('routes Enter -> immediate typing to the canonical pending caret', () => {
+    const session = createSession();
+    apply(
+      session,
+      'insert-paragraph',
+      '<p>Alpha</p><p><br></p><p>Later</p>',
       'new-paragraph',
     );
-
     expect(
-      bridge.resolveNativeInputTarget({
+      session.resolveNativeInputTarget({
         renderedRevision: 0,
         origin: 'keyboard',
-        renderedSelection: 'old-page-caret',
+        renderedSelection: 'stale-rendered-caret',
       }),
     ).toEqual({
       ok: true,
@@ -65,25 +79,43 @@ describe('A4 editor C0 canonical input bridge proof', () => {
       selection: 'new-paragraph',
       source: 'pending-canonical-selection',
     });
+    apply(
+      session,
+      'insert-text',
+      '<p>Alpha</p><p>N</p><p>Later</p>',
+      'after-n',
+    );
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { revision: 2, content: expect.stringContaining('<p>Later</p>') },
+    });
   });
 
-  it('does not redirect an explicit pointer move made on a stale projection', () => {
-    const bridge = createCanonicalInputBridge({
-      sessionKey: 'template:c0-pointer',
-      content: '<p>Alpha</p>',
-      selection: 'after-alpha',
-    });
-
-    bridge.commitCanonical(
-      '<p>Alpha</p><p>Beta</p>',
-      'after-beta',
-    );
-
+  it('keeps the pending canonical caret after delete/format until projection publication', () => {
+    const session = createSession();
+    apply(session, 'format', '<p><strong>Alpha</strong></p><p>Later</p>', 'after-format');
     expect(
-      bridge.resolveNativeInputTarget({
+      session.resolveNativeInputTarget({
+        renderedRevision: 0,
+        origin: 'keyboard',
+        renderedSelection: 'stale-after-format',
+      }),
+    ).toMatchObject({ ok: true, baseRevision: 1, selection: 'after-format' });
+    apply(session, 'insert-text', '<p><strong>Alpha</strong>X</p><p>Later</p>', 'after-x');
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { revision: 2, content: expect.stringContaining('<p>Later</p>') },
+    });
+  });
+
+  it('does not redirect a stale pointer selection to the pending keyboard caret', () => {
+    const session = createSession();
+    apply(session, 'format', '<p><strong>Alpha</strong></p><p>Later</p>', 'after-alpha');
+    expect(
+      session.resolveNativeInputTarget({
         renderedRevision: 0,
         origin: 'pointer',
-        renderedSelection: 'clicked-old-page',
+        renderedSelection: 'old-pointer-position',
       }),
     ).toEqual({
       ok: false,
@@ -93,109 +125,214 @@ describe('A4 editor C0 canonical input bridge proof', () => {
     });
   });
 
-  it('accepts a current projection and rejects an obsolete projection publication', () => {
+  it('rejects stale reflow publication by all source revisions', () => {
+    const session = createSession();
+    const stale = session.createProjectionRevision();
+    apply(session, 'layout', '<p>Alpha</p><p>Later</p>', 'after-alpha', {
+      affectsLayout: true,
+    });
+    expect(session.publishProjection(stale)).toBe(false);
+    const current = session.createProjectionRevision();
+    expect(current.layoutRevision).toBe(1);
+    expect(session.publishProjection(current)).toBe(true);
+  });
+
+  it('commits an applied transaction exactly once and ignores unchanged/rejected results', () => {
+    const onSnapshotChange = vi.fn();
+    const session = createCanonicalEditorSession<string>({
+      sessionKey: 'template:once',
+      internalHtml: '<p>A</p>',
+      selection: 'a',
+      typingMarks: null,
+      metadata: null,
+      serializeContent: (content) => content,
+      onSnapshotChange,
+    });
+    const base = session.getState();
+    expect(
+      session.dispatch({
+        sessionKey: base.sessionKey,
+        baseRevision: base.revision,
+        intent: { kind: 'insert-text', origin: 'keyboard' },
+        selection: 'b',
+        apply: () => ({ status: 'unchanged', reason: 'noop' }),
+      }),
+    ).toEqual({ status: 'unchanged', reason: 'noop' });
+    expect(session.getState().revision).toBe(0);
+    expect(onSnapshotChange).not.toHaveBeenCalled();
+
+    const rejected = session.dispatch({
+      sessionKey: base.sessionKey,
+      baseRevision: base.revision,
+      intent: { kind: 'insert-text', origin: 'keyboard' },
+      selection: 'b',
+      apply: () => ({ status: 'rejected', code: 'NO', message: 'No' }),
+    });
+    expect(rejected).toEqual({ status: 'rejected', code: 'NO', message: 'No' });
+    expect(session.getState().revision).toBe(0);
+
+    const appliedResult = session.dispatch({
+      sessionKey: base.sessionKey,
+      baseRevision: base.revision,
+      intent: { kind: 'insert-text', origin: 'keyboard' },
+      selection: 'b',
+      apply: () => ({ status: 'applied', internalHtml: '<p>AB</p>', selection: 'b' }),
+    });
+    expect(appliedResult).toMatchObject({ status: 'applied', revision: 1 });
+    expect(session.getState().revision).toBe(1);
+    expect(onSnapshotChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('coalesces bounded continuous typing but keeps paste and format distinct', () => {
+    const session = createSession();
+    apply(session, 'insert-text', '<p>AlphaA</p><p>Later</p>', 'a');
+    apply(session, 'insert-text', '<p>AlphaAB</p><p>Later</p>', 'b');
+    apply(session, 'paste', '<p>AlphaABPASTE</p><p>Later</p>', 'paste');
+    apply(session, 'format', '<p><strong>AlphaABPASTE</strong></p><p>Later</p>', 'format');
+    expect(session.undo()).toMatchObject({ status: 'applied' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { content: '<p>AlphaABPASTE</p><p>Later</p>' },
+    });
+    expect(session.undo()).toMatchObject({ status: 'applied' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { content: '<p>AlphaAB</p><p>Later</p>' },
+    });
+    expect(session.undo()).toMatchObject({ status: 'applied' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { content: '<p>Alpha</p><p>Later</p>' },
+    });
+  });
+
+  it('isolates history between document sessions', () => {
+    const a = createSession('template:A');
+    const b = createSession('template:B');
+    apply(a, 'insert-text', '<p>Alpha!</p><p>Later</p>', 'a!');
+    expect(b.undo()).toEqual({ status: 'unchanged', reason: 'nothing-to-undo' });
+    expect(b.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { sessionKey: 'template:B', content: '<p>Alpha</p><p>Later</p>' },
+    });
+  });
+
+  it('restores complete content/selection/metadata through undo and redo', () => {
+    const session = createSession();
+    const state = session.getState();
+    session.dispatch({
+      sessionKey: state.sessionKey,
+      baseRevision: state.revision,
+      intent: { kind: 'layout', origin: 'programmatic', history: 'separate', affectsLayout: true },
+      selection: 'after-layout',
+      apply: () => ({
+        status: 'applied',
+        internalHtml: '<p>Alpha</p><p>Later</p>',
+        selection: 'after-layout',
+        contentJson: { untouched: true, layout: { margin: 10 } },
+        metadata: { layout: 'wide' },
+      }),
+    });
+    expect(session.undo()).toMatchObject({ status: 'applied', selection: 'after-alpha' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { contentJson: { untouched: true } },
+    });
+    expect(session.redo()).toMatchObject({ status: 'applied', selection: 'after-layout' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { contentJson: { untouched: true, layout: { margin: 10 } } },
+    });
+  });
+
+  it('blocks complete snapshots during composition and commits composition once', () => {
+    const session = createSession();
+    expect(
+      session.beginComposition({
+        renderedRevision: 0,
+        renderedSelection: 'after-alpha',
+        affectedNodeIds: ['alpha'],
+      }),
+    ).toMatchObject({ ok: true, baseRevision: 0 });
+    expect(session.updateCompositionDom('<p>Alpha漢</p><p>Later</p>')).toBe(true);
+    expect(session.getSnapshot()).toMatchObject({ ok: false, reason: 'composition-active' });
+    expect(
+      session.finishComposition({
+        internalHtml: '<p>Alpha漢</p><p>Later</p>',
+        selection: 'after-ime',
+      }),
+    ).toEqual({ status: 'applied', revision: 1 });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { revision: 1, content: '<p>Alpha漢</p><p>Later</p>' },
+    });
+  });
+
+  it('keeps a typed recoverable state for unreconciled native input', () => {
+    const session = createSession();
+    session.markUnreconciledInput('Review the affected text.');
+    expect(session.prepareSnapshot()).toEqual({
+      ok: false,
+      reason: 'unreconciled-input',
+      message: 'Review the affected text.',
+    });
+    session.clearUnreconciledInput();
+    expect(session.prepareSnapshot()).toMatchObject({ ok: true });
+  });
+
+  it('acknowledges controlled echoes without generating duplicate history', () => {
+    const session = createSession();
+    apply(session, 'insert-text', '<p>Alpha!</p><p>Later</p>', 'after-bang');
+    expect(session.isDirty()).toBe(true);
+    expect(session.acknowledgeRevision(1)).toBe(true);
+    expect(session.isDirty()).toBe(false);
+    expect(session.undo()).toMatchObject({ status: 'applied' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { content: '<p>Alpha</p><p>Later</p>' },
+    });
+  });
+
+  it('explicit external load resets only that session history and never crosses identity', () => {
+    const session = createSession('batch-item:A');
+    apply(session, 'insert-text', '<p>Alpha!</p><p>Later</p>', 'after-bang');
+    const nextRevision = session.replaceExternalState({
+      internalHtml: '<p>Server B</p>',
+      selection: 'after-b',
+      resetHistory: true,
+      acknowledged: true,
+    });
+    expect(nextRevision).toBe(2);
+    expect(session.undo()).toEqual({ status: 'unchanged', reason: 'nothing-to-undo' });
+    expect(session.getSnapshot()).toMatchObject({
+      ok: true,
+      snapshot: { sessionKey: 'batch-item:A', content: '<p>Server B</p>' },
+    });
+  });
+});
+
+describe('A4 editor C0 bridge compatibility', () => {
+  it('retains stale DOM rejection and pending keyboard behavior', () => {
     const bridge = createCanonicalInputBridge({
-      sessionKey: 'template:c0-publish',
+      sessionKey: 'template:c0-compatible',
       content: '<p>Alpha</p>',
       selection: 'after-alpha',
     });
-
-    const revision = bridge.commitCanonical('<p>AlphaX</p>', 'after-x');
-    expect(bridge.publishProjection(0)).toBe(false);
-    expect(bridge.publishProjection(revision)).toBe(true);
-    expect(bridge.getRenderedRevision()).toBe(revision);
-
+    const revision = bridge.commitCanonical('<p>Alpha</p><p><br></p>', 'new-paragraph');
+    expect(revision).toBe(1);
     expect(
       bridge.resolveNativeInputTarget({
-        renderedRevision: revision,
-        origin: 'keyboard',
-        renderedSelection: 'after-x-rendered',
-      }),
-    ).toEqual({
-      ok: true,
-      baseRevision: revision,
-      selection: 'after-x-rendered',
-      source: 'rendered-projection',
-    });
-  });
-
-  it('keeps composition as one bounded canonical commit and blocks snapshots while active', () => {
-    const bridge = createCanonicalInputBridge({
-      sessionKey: 'template:c0-ime',
-      content: '<p>A</p>',
-      selection: 'after-a',
-    });
-
-    expect(
-      bridge.beginComposition({
         renderedRevision: 0,
-        renderedSelection: 'after-a',
+        origin: 'keyboard',
+        renderedSelection: 'old',
       }),
-    ).toEqual({
-      ok: true,
-      baseRevision: 0,
-      selection: 'after-a',
-      source: 'rendered-projection',
-    });
-
-    expect(bridge.getSnapshot()).toEqual({
-      ok: false,
-      reason: 'composition-active',
-      message: 'Finish text composition before preparing a complete editor snapshot.',
-    });
-
+    ).toMatchObject({ ok: true, selection: 'new-paragraph' });
     expect(
       bridge.commitNativeDom({
         renderedRevision: 0,
-        content: '<p>Aintermediate</p>',
-        selection: 'intermediate',
+        content: '<p>STALE</p>',
+        selection: 'stale',
       }),
-    ).toEqual({
-      status: 'rejected',
-      reason: 'composition-active',
-      currentRevision: 0,
-      renderedRevision: 0,
-    });
-
-    expect(bridge.finishComposition('<p>A漢</p>', 'after-composed')).toEqual({
-      status: 'applied',
-      revision: 1,
-    });
-    expect(bridge.getSnapshot()).toMatchObject({
-      ok: true,
-      snapshot: {
-        revision: 1,
-        content: '<p>A漢</p>',
-      },
-    });
-  });
-
-  it('supports rapid current-revision delete commits without waiting for projection', () => {
-    const bridge = createCanonicalInputBridge({
-      sessionKey: 'template:c0-delete',
-      content: '<p>ABC</p>',
-      selection: 'after-c',
-    });
-
-    bridge.commitCanonical('<p>AB</p>', 'after-b');
-    const target = bridge.resolveNativeInputTarget({
-      renderedRevision: 0,
-      origin: 'keyboard',
-      renderedSelection: 'old-after-c',
-    });
-    expect(target).toMatchObject({
-      ok: true,
-      baseRevision: 1,
-      selection: 'after-b',
-    });
-
-    bridge.commitCanonical('<p>A</p>', 'after-a');
-    expect(bridge.getSnapshot()).toMatchObject({
-      ok: true,
-      snapshot: {
-        revision: 2,
-        content: '<p>A</p>',
-      },
-    });
+    ).toMatchObject({ status: 'rejected', reason: 'stale-projection' });
   });
 });

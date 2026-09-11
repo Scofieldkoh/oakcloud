@@ -121,6 +121,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
     };
     case 'officers': return { officers: company.officers.map((officer) => ({
       id: officer.id,
+      contactId: officer.contactId,
       name: officer.name,
       role: officer.role,
       identificationType: officer.identificationType,
@@ -133,6 +134,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
     })) };
     case 'shareholders': return { shareholders: company.shareholders.map((shareholder) => ({
       id: shareholder.id,
+      contactId: shareholder.contactId,
       name: shareholder.name,
       shareholderType: shareholder.shareholderType,
       isNominee: shareholder.isNominee,
@@ -269,6 +271,15 @@ async function replaceAddress(
   else await tx.companyAddress.create({ data: { companyId, addressType: type, ...values } });
 }
 
+async function assertContactLinksBelongToCompany(tx: Tx, companyId: string, contactIds: Array<string | null | undefined>) {
+  const ids = [...new Set(contactIds.filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return;
+  const company = await tx.company.findUnique({ where: { id: companyId }, select: { tenantId: true } });
+  if (!company) throw new CompanyProfileNotFoundError('Company not found');
+  const count = await tx.contact.count({ where: { id: { in: ids }, tenantId: company.tenantId, deletedAt: null } });
+  if (count !== ids.length) throw new Error('One or more selected contacts are not available for this company');
+}
+
 export async function mutateCompanyProfileSection(tx: Tx, companyId: string, section: CompanyProfileSectionId, rawData: unknown) {
   switch (section) {
     case 'identity': {
@@ -313,9 +324,10 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
     }
     case 'officers': {
       const data = companyProfileSectionSchemas.officers.parse(rawData);
+      await assertContactLinksBelongToCompany(tx, companyId, data.officers.map((officer) => officer.contactId));
       await tx.companyOfficer.deleteMany({ where: { companyId } });
       for (const officer of data.officers) await tx.companyOfficer.create({ data: {
-        companyId, name: officer.name, role: officer.role,
+        companyId, contactId: officer.contactId ?? null, name: officer.name, role: officer.role,
         identificationType: officer.identificationType, identificationNumber: officer.identificationNumber,
         nationality: officer.nationality, address: officer.address,
         appointmentDate: dateOrNull(officer.appointmentDate), cessationDate: dateOrNull(officer.cessationDate),
@@ -327,9 +339,10 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
     }
     case 'shareholders': {
       const data = companyProfileSectionSchemas.shareholders.parse(rawData);
+      await assertContactLinksBelongToCompany(tx, companyId, data.shareholders.map((shareholder) => shareholder.contactId));
       await tx.companyShareholder.deleteMany({ where: { companyId } });
       for (const shareholder of data.shareholders) await tx.companyShareholder.create({ data: {
-        companyId, name: shareholder.name, shareholderType: shareholder.shareholderType,
+        companyId, contactId: shareholder.contactId ?? null, name: shareholder.name, shareholderType: shareholder.shareholderType,
         isNominee: shareholder.isNominee ?? false,
         identificationType: shareholder.identificationType, identificationNumber: shareholder.identificationNumber,
         nationality: shareholder.nationality, placeOfOrigin: shareholder.placeOfOrigin, address: shareholder.address,
