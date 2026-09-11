@@ -1,28 +1,18 @@
 import {
+  paginateA4FlowHtml,
   paginateFlowHtml,
+  type A4FlowPaginationResult,
   type HtmlMeasurer,
 } from './engine';
-import {
-  partitionA4SemanticBreaks,
-} from './semantic-break-projection';
-import type {
-  A4BreakProjectionFragment,
-  A4ProjectionPositionMap,
-  A4ProjectionSourceRevision,
-} from './semantic-page-breaks';
+import type { A4ProjectionSourceRevision } from './semantic-page-breaks';
 import type { PageFragment } from './model';
 import type { CanonicalEditorDocument } from './structural-position';
 
-export interface A4StructuralPaginationResult {
-  pages: readonly PageFragment[];
-  sourceFragments: readonly A4BreakProjectionFragment[];
-  positionMap: A4ProjectionPositionMap;
-}
+export type A4StructuralPaginationResult = A4FlowPaginationResult;
 
 /**
- * S1 pagination adapter. Manual hard-break partitioning happens against the
- * unsplit canonical tree before the existing soft pagination engine measures
- * each projected fragment. This avoids string-splitting nested break markup.
+ * Named S1 adapter for CORE/WORKFLOW. The engine entry itself now consumes the
+ * structural partition contract, so this is a stable semantic-facing name.
  */
 export function paginateA4StructuralHtml(
   input: string | CanonicalEditorDocument,
@@ -30,34 +20,14 @@ export function paginateA4StructuralHtml(
   measurer: HtmlMeasurer,
   maxHeight: number,
 ): A4StructuralPaginationResult {
-  const projection = partitionA4SemanticBreaks(input, source);
-  const pages = projection.fragments.flatMap((fragment) => {
-    const softPages = paginateFlowHtml(fragment.content, measurer, maxHeight);
-    return softPages.map((page, pageIndex) => ({
-      ...page,
-      hardBreakBefore: pageIndex === 0 ? fragment.hardBreakBefore : false,
-    }));
-  });
-  return {
-    pages,
-    sourceFragments: projection.fragments,
-    positionMap: projection.positionMap,
-  };
+  return paginateA4FlowHtml(input, source, measurer, maxHeight);
 }
 
-/**
- * Compatibility entry for legacy callers that only need PageFragment[]. New
- * revision-aware consumers should call paginateA4StructuralHtml.
- */
+/** Compatibility alias retained for callers migrating from text-only paging. */
 export function paginateFlowHtmlStructuralCompat(
   input: string,
   measurer: HtmlMeasurer,
   maxHeight: number,
 ): PageFragment[] {
-  return [...paginateA4StructuralHtml(
-    input,
-    { sessionKey: 'legacy-paginate-flow-html', documentRevision: 0 },
-    measurer,
-    maxHeight,
-  ).pages];
+  return paginateFlowHtml(input, measurer, maxHeight);
 }
