@@ -256,22 +256,25 @@ function addBindingDiagnostics(
 
     if (node.path && !isContextualPath(node.path, blockStack)) {
       const root = node.path.split(/[.[]/, 1)[0];
-      const knownPaths = root === 'service' ? undefined : input.knownPaths;
-      const referenceDiagnostic = diagnoseFieldReferenceContract({
-        path: node.path,
-        scope: input.scope,
-        registry: input.registry,
-        knownPaths,
-      });
-      if (!FIELD_CONTEXT_ROOT_SET.has(root) && referenceDiagnostic?.code !== 'unknown-root') {
-        diagnostics.push(diagnostic(
-          'unknown-root',
-          `Unknown field root: ${root}`,
-          node.span,
-          input.scope,
-        ));
-      } else if (referenceDiagnostic) {
-        diagnostics.push({ ...referenceDiagnostic, span: node.span });
+      const explicitlyKnown = input.knownPaths?.includes(node.path) ?? false;
+      if (!explicitlyKnown) {
+        const knownPaths = root === 'custom' ? input.knownPaths : undefined;
+        const referenceDiagnostic = diagnoseFieldReferenceContract({
+          path: node.path,
+          scope: input.scope,
+          registry: input.registry,
+          knownPaths,
+        });
+        if (!FIELD_CONTEXT_ROOT_SET.has(root) && referenceDiagnostic?.code !== 'unknown-root') {
+          diagnostics.push(diagnostic(
+            'unknown-root',
+            `Unknown field root: ${root}`,
+            node.span,
+            input.scope,
+          ));
+        } else if (referenceDiagnostic) {
+          diagnostics.push({ ...referenceDiagnostic, span: node.span });
+        }
       }
 
       const identities = legacyByPath.get(node.path);
@@ -405,10 +408,8 @@ function collectPartialGraphDiagnostics(
       expanded.add(partial.id);
       const partialScope: FieldOwnerScope = { kind: 'partial', id: partial.id, label: partial.name };
       const nested = parseOneSource({
-        ...input,
         content: partial.content,
         scope: partialScope,
-        partials: undefined,
       });
       diagnostics.push(...nested.diagnostics);
       visit(nested, [...stack, partialName]);
