@@ -67,7 +67,7 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
     </div>;
   }
   if (value && typeof value === 'object') {
-    return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:col-span-2">{Object.entries(value as Record<string, unknown>).filter(([child]) => child !== 'id').map(([child, childValue]) => <CompanyProfileValueEditor key={child} value={childValue} path={[...path, child]} onChange={(next) => onChange({ ...(value as Record<string, unknown>), [child]: next })} />)}</div>;
+    return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:col-span-2">{Object.entries(value as Record<string, unknown>).filter(([child]) => child !== 'id' && child !== 'contactId').map(([child, childValue]) => <CompanyProfileValueEditor key={child} value={childValue} path={[...path, child]} onChange={(next) => onChange({ ...(value as Record<string, unknown>), [child]: next })} />)}</div>;
   }
   if (value === null && objectDefaults[key]) {
     return <div><p className="label">{label}</p><Button variant="secondary" size="xs" onClick={() => onChange({ ...objectDefaults[key] })}>Add {words(key)}</Button></div>;
