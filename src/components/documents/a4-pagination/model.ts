@@ -14,6 +14,39 @@ const FLOW_ATTRIBUTE_NAMES = [
   'data-flow-oversized',
 ] as const;
 
+const RUNTIME_SEMANTIC_IDENTITY_SELECTOR = [
+  'p',
+  'div',
+  'blockquote',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'ol',
+  'ul',
+  'li',
+  'table',
+  'caption',
+  'colgroup',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'br',
+  '[data-a4-break="page"]',
+  '[data-field-id]',
+  '[data-placeholder-id]',
+  '[data-placeholder-key]',
+  '[data-reference-id]',
+  '[data-field-key]',
+  '[data-field-reference]',
+  '[contenteditable="false"]',
+].join(',');
+
 let fallbackFlowId = 0;
 
 export interface PageFragment {
@@ -29,11 +62,6 @@ export interface DomPoint {
 
 export const EMPTY_EDITABLE_PARAGRAPH_HTML = '<p><br></p>';
 
-/**
- * DOM-free hard-section count derived from derived page fragments.
- * Every explicit hard boundary starts a new section, and an empty page list
- * still represents one editable section once materialized.
- */
 export function hardSectionCountFromPages(
   pages: ReadonlyArray<{ hardBreakBefore: boolean }>,
 ): number {
@@ -74,12 +102,16 @@ export function ensureEditableCanonicalHtml(input: string): string {
   const hasContent = Boolean(
     root.textContent?.length ||
       root.querySelector(
-        'audio,canvas,embed,hr,iframe,img,input,object,svg,table,textarea,video,.page-break',
+        'audio,canvas,embed,hr,iframe,img,input,object,svg,table,textarea,video,.page-break,[data-a4-break="page"]',
       ),
   );
   return hasContent ? root.innerHTML : EMPTY_EDITABLE_PARAGRAPH_HTML;
 }
 
+/**
+ * Legacy top-level section adapter. Nested v2 markers intentionally are not
+ * string-split here; production pagination uses the tree-aware partitioner.
+ */
 export function splitHardSections(input: string): string[] {
   return splitHardPageSections(normalizeCanonicalHtml(input));
 }
@@ -88,11 +120,14 @@ export function hydrateFlowContainer(container: HTMLElement): void {
   Array.from(container.childNodes).forEach((node) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
-      if (element.classList.contains('page-break')) return;
-      ensureFlowId(element);
-      element.querySelectorAll<HTMLElement>('li, tr').forEach((nestedBlock) => {
-        ensureFlowId(nestedBlock);
-      });
+      if (!element.classList.contains('page-break')) ensureFlowId(element);
+      element
+        .querySelectorAll<HTMLElement>(RUNTIME_SEMANTIC_IDENTITY_SELECTOR)
+        .forEach((semanticNode) => {
+          if (!semanticNode.classList.contains('page-break')) {
+            ensureFlowId(semanticNode);
+          }
+        });
       return;
     }
 
@@ -294,12 +329,6 @@ function removeTextPrefix(element: HTMLElement, length: number): void {
   }
 }
 
-/**
- * Older pagination builds could leave the same tail word in both halves of a
- * continued list item. Only repair an exact word-boundary overlap when the
- * list item is explicitly marked as a continuation and its boundary blocks
- * either share a flow id or predate nested-block flow ids entirely.
- */
 function repairLegacyBoundaryTextOverlap(
   target: HTMLElement,
   source: HTMLElement,
