@@ -128,6 +128,8 @@ function sanitizeA4Html(
   return purify.sanitize(content, {
     ALLOWED_TAGS: policy.allowedTags,
     ALLOWED_ATTR: allowedAttributes,
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
     FORBID_TAGS: policy.rejectedTags,
   });
 }
