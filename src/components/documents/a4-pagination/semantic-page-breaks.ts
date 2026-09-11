@@ -3,6 +3,7 @@ import {
   normalizeCanonicalHtml,
   stripFlowMetadata,
 } from './model';
+import type { EditorRevision, EditorSessionKey } from './editor-session';
 import {
   resolveA4Position,
   type A4Position,
@@ -26,6 +27,36 @@ export interface A4BreakProjectionFragment {
   sourceRanges: readonly A4SourceRangeBinding[];
 }
 
+export interface A4ProjectionSourceRevision {
+  sessionKey: EditorSessionKey;
+  documentRevision: EditorRevision;
+}
+
+export interface A4ProjectionFragmentPositionMap {
+  fragmentIndex: number;
+  sourceRanges: readonly A4SourceRangeBinding[];
+}
+
+/**
+ * C04 proof boundary supplied by SEMANTICS and consumed by CORE. The revision
+ * values are copied from CORE's CanonicalInputBridge snapshot; this map never
+ * allocates, increments, or otherwise owns a revision.
+ */
+export interface A4ProjectionPositionMap extends A4ProjectionSourceRevision {
+  fragments: readonly A4ProjectionFragmentPositionMap[];
+}
+
+export interface A4ProjectedTextPoint {
+  fragmentIndex: number;
+  sourceNodeId: string;
+  projectedOffset: number;
+  affinity?: A4Position['affinity'];
+}
+
+export interface A4MappedSourcePosition extends A4ProjectionSourceRevision {
+  position: A4Position;
+}
+
 export interface A4PageBreakDescriptor {
   nodeId: string;
   kind: A4PageBreakKind;
@@ -37,6 +68,7 @@ export interface A4BreakProjectionProof {
   internalHtml: string;
   breaks: readonly A4PageBreakDescriptor[];
   fragments: readonly A4BreakProjectionFragment[];
+  positionMap: A4ProjectionPositionMap;
 }
 
 export type A4PageBreakPositionSupport =
@@ -51,6 +83,13 @@ export interface A4PageBreakRemovalProof {
   changed: boolean;
   internalHtml: string;
   selection: A4Selection | null;
+}
+
+export interface A4ProjectedOrderedListMarker {
+  itemNodeId: string | null;
+  continuation: boolean;
+  value: number | null;
+  label: string | null;
 }
 
 interface BoundaryPoint {
@@ -279,6 +318,15 @@ function breakContext(root: HTMLElement, element: HTMLElement): BreakContext {
   };
 }
 
+function mergeContinuationSide(
+  element: HTMLElement,
+  side: 'start' | 'end',
+): void {
+  const existing = element.dataset.flowContinuation;
+  element.dataset.flowContinuation =
+    existing && existing !== side ? 'both' : side;
+}
+
 function markSplitSide(
   fragment: HTMLElement,
   context: BreakContext,
@@ -286,20 +334,26 @@ function markSplitSide(
 ): void {
   context.splitNodes.forEach((splitNode) => {
     elementsByFlowId(fragment, splitNode.sourceNodeId).forEach((element) => {
-      element.dataset.flowContinuation = side;
+      mergeContinuationSide(element, side);
     });
   });
 
   context.listContinuations.forEach((continuation) => {
     elementsByFlowId(fragment, continuation.listNodeId).forEach((list) => {
-      list.dataset.flowContinuation = side;
+      mergeContinuationSide(list, side);
       if (list.tagName !== 'OL') return;
       const counter =
         side === 'start'
           ? continuation.counterBeforeFirstItem
           : continuation.counterAfterSplitItem;
-      if (counter > 0) {
-        list.style.setProperty('--flow-list-start', String(counter));
+      const current = list.style.getPropertyValue('--flow-list-start');
+      // A middle fragment is already the continuation after the preceding
+      // break. Do not let the next break's start-side metadata reset it to the
+      // canonical list base and redisplay the same item number.
+      if (side === 'end' || current === '') {
+        if (counter > 0) {
+          list.style.setProperty('--flow-list-start', String(counter));
+        }
       }
     });
     if (side === 'end') {
@@ -310,18 +364,32 @@ function markSplitSide(
   });
 }
 
-function upsertRange(
+function intersectRange(
   ranges: A4SourceRangeBinding[],
   binding: A4SourceRangeBinding,
 ): void {
   const existingIndex = ranges.findIndex(
     (candidate) => candidate.sourceNodeId === binding.sourceNodeId,
   );
-  if (existingIndex >= 0) {
-    ranges[existingIndex] = binding;
-  } else {
+  if (existingIndex < 0) {
     ranges.push(binding);
+    return;
   }
+
+  const existing = ranges[existingIndex];
+  const startTextOffset = Math.max(
+    existing.startTextOffset,
+    binding.startTextOffset,
+  );
+  const endTextOffset = Math.min(existing.endTextOffset, binding.endTextOffset);
+  if (startTextOffset > endTextOffset) {
+    throw new Error(`Non-overlapping source ranges for ${binding.sourceNodeId}`);
+  }
+  ranges[existingIndex] = {
+    sourceNodeId: binding.sourceNodeId,
+    startTextOffset,
+    endTextOffset,
+  };
 }
 
 function buildSourceRanges(
@@ -336,15 +404,29 @@ function buildSourceRanges(
     const source = firstElementByFlowId(canonical, sourceNodeId);
     if (!source) return;
     if ((projected.textContent ?? '') === (source.textContent ?? '')) {
-      upsertRange(ranges, {
+      intersectRange(ranges, {
         sourceNodeId,
         startTextOffset: 0,
         endTextOffset: source.textContent?.length ?? 0,
       });
     }
   });
-  explicit.forEach((binding) => upsertRange(ranges, binding));
+  explicit.forEach((binding) => intersectRange(ranges, binding));
   return ranges;
+}
+
+function buildPositionMap(
+  source: A4ProjectionSourceRevision,
+  fragments: readonly A4BreakProjectionFragment[],
+): A4ProjectionPositionMap {
+  return {
+    sessionKey: source.sessionKey,
+    documentRevision: source.documentRevision,
+    fragments: fragments.map((fragment, fragmentIndex) => ({
+      fragmentIndex,
+      sourceRanges: fragment.sourceRanges,
+    })),
+  };
 }
 
 export function hydrateA4SemanticProofHtml(input: string): string {
@@ -355,6 +437,7 @@ export function hydrateA4SemanticProofHtml(input: string): string {
 
 export function projectA4SemanticBreaksForProof(
   input: string,
+  source: A4ProjectionSourceRevision,
 ): A4BreakProjectionProof {
   const canonical = createRoot(input);
   hydrateStructuralSourceIds(canonical);
@@ -363,16 +446,18 @@ export function projectA4SemanticBreaksForProof(
   );
 
   if (contexts.length === 0) {
+    const fragments: A4BreakProjectionFragment[] = [
+      {
+        content: canonical.innerHTML,
+        hardBreakBefore: false,
+        sourceRanges: buildSourceRanges(canonical, canonical, []),
+      },
+    ];
     return {
       internalHtml: canonical.innerHTML,
       breaks: [],
-      fragments: [
-        {
-          content: canonical.innerHTML,
-          hardBreakBefore: false,
-          sourceRanges: buildSourceRanges(canonical, canonical, []),
-        },
-      ],
+      fragments,
+      positionMap: buildPositionMap(source, fragments),
     };
   }
 
@@ -414,42 +499,83 @@ export function projectA4SemanticBreaksForProof(
     });
   });
 
+  const fragments = fragmentRoots.map((fragment, index) => ({
+    content: fragment.innerHTML,
+    hardBreakBefore: index > 0,
+    sourceRanges: buildSourceRanges(
+      fragment,
+      canonical,
+      explicitRangesByFragment[index],
+    ),
+  }));
+
   return {
     internalHtml: canonical.innerHTML,
     breaks: contexts.map((context) => context.descriptor),
-    fragments: fragmentRoots.map((fragment, index) => ({
-      content: fragment.innerHTML,
-      hardBreakBefore: index > 0,
-      sourceRanges: buildSourceRanges(
-        fragment,
-        canonical,
-        explicitRangesByFragment[index],
-      ),
-    })),
+    fragments,
+    positionMap: buildPositionMap(source, fragments),
   };
 }
 
 export function mapProjectedTextOffsetToSource(
-  proof: A4BreakProjectionProof,
-  fragmentIndex: number,
-  sourceNodeId: string,
-  projectedOffset: number,
-  affinity: A4Position['affinity'] = 'after',
-): A4Position | null {
-  const fragment = proof.fragments[fragmentIndex];
-  if (!fragment || projectedOffset < 0) return null;
+  positionMap: A4ProjectionPositionMap,
+  point: A4ProjectedTextPoint,
+): A4MappedSourcePosition | null {
+  const fragment = positionMap.fragments.find(
+    (candidate) => candidate.fragmentIndex === point.fragmentIndex,
+  );
+  if (!fragment || point.projectedOffset < 0) return null;
   const binding = fragment.sourceRanges.find(
-    (candidate) => candidate.sourceNodeId === sourceNodeId,
+    (candidate) => candidate.sourceNodeId === point.sourceNodeId,
   );
   if (!binding) return null;
   const available = binding.endTextOffset - binding.startTextOffset;
-  if (projectedOffset > available) return null;
+  if (point.projectedOffset > available) return null;
   return {
-    kind: 'text',
-    nodeId: sourceNodeId,
-    offset: binding.startTextOffset + projectedOffset,
-    affinity,
+    sessionKey: positionMap.sessionKey,
+    documentRevision: positionMap.documentRevision,
+    position: {
+      kind: 'text',
+      nodeId: point.sourceNodeId,
+      offset: binding.startTextOffset + point.projectedOffset,
+      affinity: point.affinity ?? 'after',
+    },
   };
+}
+
+/**
+ * Mirrors the ordered-list counter rules in a4-page-content-css.ts and returns
+ * the concrete marker labels a projected fragment displays. This turns the S0
+ * numbering proof into observable values instead of merely asserting that a
+ * CSS custom property exists.
+ */
+export function projectedOrderedListMarkersForProof(
+  fragmentHtml: string,
+  listNodeId: string,
+): readonly A4ProjectedOrderedListMarker[] {
+  const root = createRoot(fragmentHtml);
+  const list = firstElementByFlowId(root, listNodeId);
+  if (!list || list.tagName !== 'OL') return [];
+
+  const flowStart = Number.parseInt(
+    list.style.getPropertyValue('--flow-list-start'),
+    10,
+  );
+  let counter = Number.isFinite(flowStart) ? flowStart : listCounterBase(list);
+  return Array.from(list.children)
+    .filter((child) => child.tagName === 'LI')
+    .map((child) => {
+      const item = child as HTMLElement;
+      const continuation = item.hasAttribute('data-flow-continuation-item');
+      if (!continuation) counter += 1;
+      const value = continuation ? null : counter;
+      return {
+        itemNodeId: item.dataset.flowId ?? null,
+        continuation,
+        value,
+        label: value === null ? null : `${value}.`,
+      };
+    });
 }
 
 export function serializeA4SemanticProofHtml(internalHtml: string): string {
