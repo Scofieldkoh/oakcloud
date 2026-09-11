@@ -62,15 +62,15 @@ describe('W1 integrated S1 reader/pagination adapters', () => {
     const reader = readA4StoredDocument('<p>Alpha<span data-a4-break="page"></span>Omega</p>');
     const projection = partitionA4SemanticBreaks(reader.canonical, source);
     const binding = projection.positionMap.fragments
-      .flatMap((fragmentMap) => fragmentMap.textRanges.map((range) => ({ fragmentMap, range })))
-      .find(({ range }) => range.projectedEnd > range.projectedStart);
+      .flatMap((fragmentMap) => fragmentMap.sourceRanges.map((range) => ({ fragmentMap, range })))
+      .find(({ range }) => range.endTextOffset > range.startTextOffset);
     expect(binding).toBeDefined();
     if (!binding) return;
 
     const mapped = mapA4ProjectedTextPoint(projection.positionMap, {
       fragmentIndex: binding.fragmentMap.fragmentIndex,
-      sourceNodeId: binding.range.projectedNodeId,
-      projectedOffset: binding.range.projectedStart,
+      sourceNodeId: binding.range.sourceNodeId,
+      projectedOffset: 0,
       affinity: 'after',
     });
     expect(mapped).toMatchObject({
@@ -78,7 +78,7 @@ describe('W1 integrated S1 reader/pagination adapters', () => {
       position: {
         kind: 'text',
         nodeId: binding.range.sourceNodeId,
-        offset: binding.range.sourceStart,
+        offset: binding.range.startTextOffset,
       },
     });
   });
