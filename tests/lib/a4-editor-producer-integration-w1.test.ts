@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   mapA4ProjectedStructuralPoint,
+  mapA4ProjectedTextPoint,
   partitionA4SemanticBreaks,
 } from '@/components/documents/a4-pagination/semantic-break-projection';
 import { paginateA4StructuralHtml } from '@/components/documents/a4-pagination/structural-pagination';
@@ -55,6 +56,31 @@ describe('W1 integrated S1 reader/pagination adapters', () => {
     expect(projection.fragments.every((fragment) => /<ol\b[^>]*start="5"/i.test(fragment.content))).toBe(true);
     expect(projection.fragments.every((fragment) => /<li\b/i.test(fragment.content))).toBe(true);
     expect(projection.positionMap).toMatchObject(source);
+  });
+
+  it('maps projected text positions through the revision-qualified S1 map', () => {
+    const reader = readA4StoredDocument('<p>Alpha<span data-a4-break="page"></span>Omega</p>');
+    const projection = partitionA4SemanticBreaks(reader.canonical, source);
+    const binding = projection.positionMap.fragments
+      .flatMap((fragmentMap) => fragmentMap.textRanges.map((range) => ({ fragmentMap, range })))
+      .find(({ range }) => range.projectedEnd > range.projectedStart);
+    expect(binding).toBeDefined();
+    if (!binding) return;
+
+    const mapped = mapA4ProjectedTextPoint(projection.positionMap, {
+      fragmentIndex: binding.fragmentMap.fragmentIndex,
+      sourceNodeId: binding.range.projectedNodeId,
+      projectedOffset: binding.range.projectedStart,
+      affinity: 'after',
+    });
+    expect(mapped).toMatchObject({
+      ...source,
+      position: {
+        kind: 'text',
+        nodeId: binding.range.sourceNodeId,
+        offset: binding.range.sourceStart,
+      },
+    });
   });
 
   it('retains exact zero-text structural child-boundary mappings through the W reader', () => {
