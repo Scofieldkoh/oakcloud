@@ -232,10 +232,12 @@ describe('A4PageEditor', () => {
     });
   });
 
-  it('commits page fragments in rendered DOM order', async () => {
+  it('rejects unqualified whole-surface DOM reconstruction as canonical authority', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
     const onChange = vi.fn();
     render(
       <A4PageEditor
+        ref={editorRef}
         value={`<p>First page</p>${hardPageBreak}<p>Second page</p>`}
         onChange={onChange}
       />,
@@ -246,25 +248,26 @@ describe('A4PageEditor', () => {
     const secondPage = screen.getByTestId('a4-page-content-2');
     const firstWrapper = firstPage.parentElement!.parentElement!;
     const secondWrapper = secondPage.parentElement!.parentElement!;
+    const canonicalBefore = editorRef.current?.getContent();
 
     surface.insertBefore(secondWrapper, firstWrapper);
-    secondPage.innerHTML = '<p>Second page edited</p>';
+    secondPage.innerHTML = '<p>STALE SECOND PAGE</p>';
     fireEvent.input(surface);
 
-    await waitFor(() => expect(onChange).toHaveBeenCalled());
-    const emittedHtml = onChange.mock.calls.at(-1)?.[0] as string;
-    const emittedText = new DOMParser()
-      .parseFromString(emittedHtml, 'text/html')
-      .body.textContent ?? '';
-    expect(emittedText.indexOf('Second page edited')).toBeLessThan(
-      emittedText.indexOf('First page'),
-    );
+    await waitFor(() => {
+      expect(editorRef.current?.getContent()).toBe(canonicalBefore);
+      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent('First page');
+      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent('Second page');
+    });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('retains filtered pages while committing visible fragments in DOM order', async () => {
+  it('preserves hidden/later canonical content when a rendered fragment is stale', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
     const onChange = vi.fn();
     render(
       <A4PageEditor
+        ref={editorRef}
         value={
           `<p>First visible</p>${hardPageBreak}` +
           `<p>[Remove Page]</p>${hardPageBreak}` +
@@ -275,25 +278,19 @@ describe('A4PageEditor', () => {
     );
 
     const surface = screen.getByTestId('a4-document-surface');
-    const firstPage = screen.getByTestId('a4-page-content-1');
     const secondPage = screen.getByTestId('a4-page-content-2');
-    const firstWrapper = firstPage.parentElement!.parentElement!;
-    const secondWrapper = secondPage.parentElement!.parentElement!;
+    const canonicalBefore = editorRef.current?.getContent();
+    expect(canonicalBefore).toContain('[Remove Page]');
 
-    expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(2);
-    surface.insertBefore(secondWrapper, firstWrapper);
-    secondPage.innerHTML = '<p>Second visible edited</p>';
+    secondPage.innerHTML = '<p>STALE VISIBLE FRAGMENT</p>';
     fireEvent.input(surface);
 
-    await waitFor(() => expect(onChange).toHaveBeenCalled());
-    const emittedHtml = onChange.mock.calls.at(-1)?.[0] as string;
-    const emittedText = new DOMParser()
-      .parseFromString(emittedHtml, 'text/html')
-      .body.textContent ?? '';
-    expect(emittedText).toContain('[Remove Page]');
-    expect(emittedText.indexOf('Second visible edited')).toBeLessThan(
-      emittedText.indexOf('First visible'),
-    );
+    await waitFor(() => {
+      expect(editorRef.current?.getContent()).toBe(canonicalBefore);
+      expect(editorRef.current?.getContent()).toContain('[Remove Page]');
+      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent('Second visible');
+    });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('keeps a native range spanning two physical pages', async () => {
@@ -492,18 +489,22 @@ describe('A4PageEditor', () => {
     });
   });
 
-  it('preserves live page content when backspacing from a later page', async () => {
+  it('rejects stale page DOM when backspacing from a later page', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
     render(
       <A4PageEditor
+        ref={editorRef}
         value={`<p>First page</p>${hardPageBreak}<p>Original second page</p>`}
+        onChange={onChange}
       />,
     );
 
+    const canonicalBefore = editorRef.current?.getContent();
     const secondPage = screen.getByTestId('a4-page-content-2');
     act(() => {
       secondPage.focus();
       secondPage.innerHTML = '<p>Unsaved live second page</p>';
-
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(secondPage);
@@ -515,17 +516,18 @@ describe('A4PageEditor', () => {
     await act(async () => {
       fireEvent.keyDown(secondPage, { key: 'Backspace' });
       await new Promise((resolve) => setTimeout(resolve, 0));
-      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     await waitFor(() => {
-      expect(screen.queryByTestId('a4-page-content-2')).not.toBeInTheDocument();
+      expect(editorRef.current?.getContent()).toBe(canonicalBefore);
+      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent(
+        'Original second page',
+      );
+      expect(screen.getByTestId('a4-document-surface').textContent).not.toContain(
+        'Unsaved live second page',
+      );
     });
-
-    const firstPage = screen.getByTestId('a4-page-content-1');
-    expect(firstPage.innerHTML).toContain('First page');
-    expect(firstPage.innerHTML).toContain('Unsaved live second page');
-    expect(firstPage.innerHTML).not.toContain('Original second page');
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('treats leading empty blocks as page start when backspacing from a later page', async () => {
@@ -564,33 +566,40 @@ describe('A4PageEditor', () => {
     );
   });
 
-  it('keeps the caret in place after typing inside the editor', async () => {
+  it('keeps the canonical caret after beforeinput typing', async () => {
     render(<A4PageEditor value="<p>First line</p><p>Second line</p>" />);
 
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => expect(surface).toHaveAttribute('aria-busy', 'false'));
     const editor = screen.getByTestId('a4-page-content-1');
     const secondText = editor.querySelectorAll('p')[1]?.firstChild;
     expect(secondText).toBeTruthy();
 
     act(() => {
-      editor.focus();
+      surface.focus();
       const selection = window.getSelection();
       const range = document.createRange();
       range.setStart(secondText!, 6);
       range.collapse(true);
       selection?.removeAllRanges();
       selection?.addRange(range);
-      secondText!.textContent = 'Second typed line';
-      range.setStart(secondText!, 6);
-      range.collapse(true);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-      fireEvent.input(editor);
     });
+    surface.dispatchEvent(
+      new InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: true,
+        data: ' typed',
+        inputType: 'insertText',
+      }),
+    );
 
     await waitFor(() => {
+      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
+        'Second typed line',
+      );
       const selection = window.getSelection();
-      expect(selection?.anchorNode).toBe(secondText);
-      expect(selection?.anchorOffset).toBe(6);
+      expect(selection?.anchorNode?.textContent).toBe('Second typed line');
+      expect(selection?.anchorOffset).toBe(12);
     });
   });
 
@@ -958,41 +967,53 @@ describe('A4PageEditor', () => {
     });
   });
 
-  it('supports Ctrl+Z and Ctrl+Y for editor changes', async () => {
+  it('supports Ctrl+Z and Ctrl+Y for canonical beforeinput changes', async () => {
     render(<A4PageEditor value="<p>Start</p>" />);
 
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => expect(surface).toHaveAttribute('aria-busy', 'false'));
     const editor = screen.getByTestId('a4-page-content-1');
     const textNode = editor.querySelector('p')?.firstChild;
     expect(textNode).toBeTruthy();
 
     act(() => {
-      editor.focus();
-      textNode!.textContent = 'Start typed';
-      fireEvent.input(editor);
+      surface.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(textNode!, 5);
+      range.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
     });
+    surface.dispatchEvent(
+      new InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: true,
+        data: ' typed',
+        inputType: 'insertText',
+      }),
+    );
 
     await waitFor(() => {
-      expect(editor.textContent).toContain('Start typed');
+      expect(screen.getByTestId('a4-page-content-1').textContent).toBe(
+        'Start typed',
+      );
     });
 
-    await act(async () => {
-      fireEvent.keyDown(editor, { key: 'z', ctrlKey: true });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-page-content-1').textContent).toBe('Start');
     });
 
-    expect(screen.getByTestId('a4-page-content-1').textContent).toBe('Start');
-
-    await act(async () => {
-      fireEvent.keyDown(screen.getByTestId('a4-page-content-1'), {
-        key: 'y',
-        ctrlKey: true,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 0));
+    fireEvent.keyDown(screen.getByTestId('a4-document-surface'), {
+      key: 'y',
+      ctrlKey: true,
     });
-
-    expect(screen.getByTestId('a4-page-content-1').textContent).toBe(
-      'Start typed',
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-page-content-1').textContent).toBe(
+        'Start typed',
+      );
+    });
   });
 
   it('treats legacy page-break comments as soft layout hints', async () => {
@@ -1323,7 +1344,7 @@ describe('A4PageEditor', () => {
     });
   });
 
-  it('preserves a reversed non-collapsed selection through reflow', async () => {
+  it('preserves a reversed non-collapsed selection through canonical formatting reflow', async () => {
     const onChange = vi.fn();
     render(
       <A4PageEditor
@@ -1339,20 +1360,34 @@ describe('A4PageEditor', () => {
 
     act(() => {
       surface.focus();
-      const selection = window.getSelection()!;
-      selection.setBaseAndExtent(secondText, 2, firstText, 2);
-      firstPage.querySelector('p')!.setAttribute('style', 'color: red');
-      fireEvent.input(surface);
+      window.getSelection()!.setBaseAndExtent(secondText, 2, firstText, 2);
+    });
+    fireEvent.change(screen.getByTitle('Text Color'), {
+      target: { value: '#ff0000' },
     });
 
     await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith(expect.stringContaining('color: red'));
+      expect(onChange).toHaveBeenCalledWith(expect.stringContaining('color'));
       const selection = window.getSelection()!;
       expect(selection.isCollapsed).toBe(false);
-      expect(selection.anchorNode?.textContent).toBe('Beta');
+      const anchorElement =
+        selection.anchorNode?.nodeType === Node.ELEMENT_NODE
+          ? (selection.anchorNode as HTMLElement)
+          : selection.anchorNode?.parentElement;
+      const focusElement =
+        selection.focusNode?.nodeType === Node.ELEMENT_NODE
+          ? (selection.focusNode as HTMLElement)
+          : selection.focusNode?.parentElement;
+      expect(
+        anchorElement?.closest('[data-testid="a4-page-content-2"]'),
+      ).toBeTruthy();
+      expect(
+        focusElement?.closest('[data-testid="a4-page-content-1"]'),
+      ).toBeTruthy();
       expect(selection.anchorOffset).toBe(2);
-      expect(selection.focusNode?.textContent).toBe('Alpha');
       expect(selection.focusOffset).toBe(2);
+      expect(selection.toString()).toContain('pha');
+      expect(selection.toString()).toContain('Be');
     });
   });
 
@@ -1506,7 +1541,7 @@ describe('A4PageEditor', () => {
     });
   });
 
-  it('repairs a non-cancelable cross-page composition as one canonical transaction', async () => {
+  it('reconciles a cross-page composition once at compositionend', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const onChange = vi.fn();
     render(
@@ -1530,6 +1565,7 @@ describe('A4PageEditor', () => {
       range.setEnd(secondText, 2);
       selection.removeAllRanges();
       selection.addRange(range);
+      fireEvent.compositionStart(surface, { data: '' });
     });
 
     surface.dispatchEvent(
@@ -1551,6 +1587,15 @@ describe('A4PageEditor', () => {
       isComposing: true,
     });
 
+    expect(
+      new DOMParser()
+        .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
+        .body.textContent,
+    ).toBe('AlphaBeta');
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.compositionEnd(surface, { data: '文' });
+
     await waitFor(() => {
       const canonical = editorRef.current?.getContent() ?? '';
       const text = new DOMParser()
@@ -1563,24 +1608,13 @@ describe('A4PageEditor', () => {
       );
     });
 
-    await waitFor(() => {
-      const repairedSelection = window.getSelection()!;
-      const selectionElement =
-        repairedSelection.anchorNode?.nodeType === Node.ELEMENT_NODE
-          ? (repairedSelection.anchorNode as HTMLElement)
-          : repairedSelection.anchorNode?.parentElement;
-      expect(repairedSelection.isCollapsed).toBe(true);
-      expect(
-        selectionElement?.closest('[data-testid^="a4-page-content-"]'),
-      ).toBeTruthy();
+    fireEvent.keyDown(screen.getByTestId('a4-document-surface'), {
+      key: 'z',
+      ctrlKey: true,
     });
-
-    const repairedSurface = screen.getByTestId('a4-document-surface');
-    fireEvent.keyDown(repairedSurface, { key: 'z', ctrlKey: true });
     await waitFor(() => {
-      const canonical = editorRef.current?.getContent() ?? '';
       const text = new DOMParser()
-        .parseFromString(canonical, 'text/html')
+        .parseFromString(editorRef.current?.getContent() ?? '', 'text/html')
         .body.textContent ?? '';
       expect(text).toBe('AlphaBeta');
     });
@@ -1597,13 +1631,29 @@ describe('A4PageEditor', () => {
       />,
     );
 
+    const surface = screen.getByTestId('a4-document-surface');
     const initialFirstPage = screen.getByTestId('a4-page-content-1');
-    initialFirstPage.innerHTML = '<p>Alpha edited</p>';
-    fireEvent.input(screen.getByTestId('a4-document-surface'));
+    const alphaText = initialFirstPage.querySelector('p')!.firstChild!;
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(alphaText, 5);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    surface.dispatchEvent(
+      new InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: true,
+        data: ' edited',
+        inputType: 'insertText',
+      }),
+    );
     await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
     onChange.mockClear();
 
-    const surface = screen.getByTestId('a4-document-surface');
     const firstPage = screen.getByTestId('a4-page-content-1');
     const paperContainer = firstPage.parentElement!;
     act(() => {
