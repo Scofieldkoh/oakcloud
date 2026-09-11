@@ -1,0 +1,25 @@
+name: A4 C1 dispatch finalize
+on:
+  push:
+    branches:
+      - codex/a4-editor-core-c1
+permissions:
+  contents: write
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/a4-editor-core-c1
+      - name: Mark CORE C1 ready and commit
+        shell: bash
+        run: |
+          python -c "from pathlib import Path; p=Path('docs/plans/2026-09-10-a4-editor-implementation/coordination/dispatch.md'); s=p.read_text(); a=s.index('## CORE-C1-20260911-01'); b=s.index('## SEMANTICS-S1-20260911-01', a); x=s[a:b]; old='State: **DISPATCHED**'; assert x.count(old)==1, x.count(old); p.write_text(s[:a]+x.replace(old,'State: **READY FOR INTEGRATION**',1)+s[b:])"
+          rm .github/workflows/a4-c1-dispatch-finalize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: mark CORE C1 ready for integration"
+          git push origin HEAD:codex/a4-editor-core-c1
