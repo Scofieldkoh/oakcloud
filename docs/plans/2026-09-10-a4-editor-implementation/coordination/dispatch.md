@@ -27,7 +27,7 @@ These reservations apply to the four released Stage-1 assignments below. They do
 
 Dispatch ID: `CORE-C1-20260911-01`
 Role and packet: CORE / C1 — canonical session, native input and per-document history
-State: **DISPATCHED**
+State: **READY FOR INTEGRATION**
 Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
 Baseline commit: `bfdc4f95594b73ce4d20bff45f320bdb53837c37`
 Contract version and status: **v1 frozen at G0**; `coordination/g0.md` is authoritative.
