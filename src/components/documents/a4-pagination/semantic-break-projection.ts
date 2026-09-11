@@ -10,9 +10,8 @@ import {
   type A4ProjectionSourceRevision,
 } from './semantic-page-breaks';
 import {
-  captureA4Position,
   createCanonicalEditorDocument,
-  resolveA4Position,
+  validateA4DocumentPosition,
   type A4Position,
   type CanonicalEditorDocument,
 } from './structural-position';
@@ -84,11 +83,148 @@ function uniqueFlowElement(root: HTMLElement, nodeId: string): HTMLElement | nul
   return matches.length === 1 ? matches[0] : null;
 }
 
+interface A4StructuralChildInterval {
+  start: number;
+  end: number;
+}
+
+function directBreakChildInterval(
+  projection: A4BreakProjectionProof,
+  fragmentIndex: number,
+  ownerNodeId: string,
+  sourceChildCount: number,
+): A4StructuralChildInterval {
+  const previousBreak = projection.breaks[fragmentIndex - 1]?.position ?? null;
+  const nextBreak = projection.breaks[fragmentIndex]?.position ?? null;
+  const start =
+    previousBreak?.kind === 'children' && previousBreak.nodeId === ownerNodeId
+      ? previousBreak.index + 1
+      : 0;
+  const end =
+    nextBreak?.kind === 'children' && nextBreak.nodeId === ownerNodeId
+      ? nextBreak.index
+      : sourceChildCount;
+  return { start, end };
+}
+
+function projectedChildMatchesSource(
+  projected: ChildNode,
+  source: ChildNode,
+): boolean {
+  if (projected.nodeType !== source.nodeType) return false;
+
+  if (projected.nodeType === Node.TEXT_NODE) {
+    return projected.textContent === source.textContent;
+  }
+
+  if (projected.nodeType === Node.ELEMENT_NODE) {
+    const projectedElement = projected as HTMLElement;
+    const sourceElement = source as HTMLElement;
+    const projectedFlowId = projectedElement.dataset.flowId;
+    const sourceFlowId = sourceElement.dataset.flowId;
+    if (projectedFlowId || sourceFlowId) {
+      return Boolean(
+        projectedFlowId &&
+          sourceFlowId &&
+          projectedFlowId === sourceFlowId,
+      );
+    }
+    return projectedElement.isEqualNode(sourceElement);
+  }
+
+  return projected.isEqualNode(source);
+}
+
+function uniqueSourceChildIndex(
+  canonicalOwner: HTMLElement,
+  projectedChild: ChildNode,
+  interval: A4StructuralChildInterval,
+): number | null {
+  const matches: number[] = [];
+  const lower = Math.max(0, interval.start);
+  const upper = Math.min(canonicalOwner.childNodes.length, interval.end);
+  for (let index = lower; index < upper; index += 1) {
+    const sourceChild = canonicalOwner.childNodes[index];
+    if (projectedChildMatchesSource(projectedChild, sourceChild)) {
+      matches.push(index);
+    }
+  }
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function mapProjectedChildBoundary(
+  canonicalOwner: HTMLElement,
+  projectedOwner: HTMLElement,
+  projection: A4BreakProjectionProof,
+  fragmentIndex: number,
+  projectedIndex: number,
+): number | null {
+  if (
+    !Number.isInteger(projectedIndex) ||
+    projectedIndex < 0 ||
+    projectedIndex > projectedOwner.childNodes.length
+  ) {
+    return null;
+  }
+
+  const ownerNodeId = canonicalOwner.dataset.flowId;
+  if (!ownerNodeId) return null;
+  const interval = directBreakChildInterval(
+    projection,
+    fragmentIndex,
+    ownerNodeId,
+    canonicalOwner.childNodes.length,
+  );
+  if (interval.start > interval.end) return null;
+
+  if (projectedOwner.childNodes.length === 0) {
+    if (canonicalOwner.childNodes.length === 0) return 0;
+    return interval.start === interval.end ? interval.start : null;
+  }
+
+  const leftSourceIndex =
+    projectedIndex > 0
+      ? uniqueSourceChildIndex(
+          canonicalOwner,
+          projectedOwner.childNodes[projectedIndex - 1],
+          interval,
+        )
+      : null;
+  const rightSourceIndex =
+    projectedIndex < projectedOwner.childNodes.length
+      ? uniqueSourceChildIndex(
+          canonicalOwner,
+          projectedOwner.childNodes[projectedIndex],
+          interval,
+        )
+      : null;
+
+  let sourceIndex: number | null = null;
+  if (leftSourceIndex !== null && rightSourceIndex !== null) {
+    if (leftSourceIndex + 1 !== rightSourceIndex) return null;
+    sourceIndex = rightSourceIndex;
+  } else if (leftSourceIndex !== null) {
+    sourceIndex = leftSourceIndex + 1;
+  } else if (rightSourceIndex !== null) {
+    sourceIndex = rightSourceIndex;
+  }
+
+  if (
+    sourceIndex === null ||
+    sourceIndex < interval.start ||
+    sourceIndex > interval.end
+  ) {
+    return null;
+  }
+  return sourceIndex;
+}
+
 /**
- * Maps both text and zero-text child boundaries from a projected fragment to
- * the canonical source. Child positions are first reduced to the fragment's
- * text offset, then recaptured against canonical runtime structure so a
- * before/after BR, atomic, empty block or break remains a children position.
+ * Maps text positions through the retained text-range contract and maps child
+ * positions structurally. Children are never reduced to text offsets: exact
+ * runtime child identities and direct semantic-break source bounds determine
+ * the canonical child boundary. Ambiguous structural mappings return null
+ * rather than redirecting a caret to a text-equivalent visual location.
  */
 export function mapA4ProjectedStructuralPoint(
   canonical: CanonicalEditorDocument,
@@ -109,36 +245,32 @@ export function mapA4ProjectedStructuralPoint(
   const fragmentRoot = document.createElement('div');
   fragmentRoot.innerHTML = fragment.content;
   const projectedOwner = uniqueFlowElement(fragmentRoot, point.position.nodeId);
-  if (
-    !projectedOwner ||
-    point.position.index < 0 ||
-    point.position.index > projectedOwner.childNodes.length
-  ) {
-    return null;
-  }
-
-  const projectedRange = document.createRange();
-  projectedRange.setStart(projectedOwner, 0);
-  projectedRange.setEnd(projectedOwner, point.position.index);
-  const mappedText = mapProjectedTextOffsetToSource(projection.positionMap, {
-    fragmentIndex: point.fragmentIndex,
-    sourceNodeId: point.position.nodeId,
-    projectedOffset: projectedRange.toString().length,
-    affinity: point.position.affinity,
-  });
-  if (!mappedText) return null;
+  if (!projectedOwner) return null;
 
   const canonicalRoot = document.createElement('div');
   canonicalRoot.innerHTML = canonical.internalHtml;
-  const canonicalDomPoint = resolveA4Position(canonicalRoot, mappedText.position);
-  if (!canonicalDomPoint) return null;
-  const structural = captureA4Position(
-    canonicalRoot,
-    canonicalDomPoint.node,
-    canonicalDomPoint.offset,
-    point.position.affinity,
+  const canonicalOwner = uniqueFlowElement(canonicalRoot, point.position.nodeId);
+  if (!canonicalOwner) return null;
+
+  const sourceIndex = mapProjectedChildBoundary(
+    canonicalOwner,
+    projectedOwner,
+    projection,
+    point.fragmentIndex,
+    point.position.index,
   );
-  if (!structural) return null;
+  if (sourceIndex === null) return null;
+
+  const structural: A4Position = {
+    kind: 'children',
+    nodeId: point.position.nodeId,
+    index: sourceIndex,
+    affinity: point.position.affinity,
+  };
+  if (validateA4DocumentPosition(canonical, structural).status === 'rejected') {
+    return null;
+  }
+
   return {
     sessionKey: projection.positionMap.sessionKey,
     documentRevision: projection.positionMap.documentRevision,
