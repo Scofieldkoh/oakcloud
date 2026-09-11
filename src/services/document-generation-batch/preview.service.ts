@@ -21,6 +21,7 @@ import {
   resolveDocumentGenerationTitle,
   selectDocumentGenerationTitleDate,
 } from '@/lib/document-generation-title';
+import { claimGeneratedDocumentRevision } from '@/lib/document-editor/generated-document-revision';
 import {
   renderTemplateForGeneration,
 } from '@/services/document-generator.service';
@@ -80,6 +81,7 @@ async function templateCustomFields(
   const fields = mergeTemplateAndPartialPlaceholders({
     templatePlaceholders: storageFormatToCustomPlaceholders(
       normalizeStoredPlaceholders(template.placeholders),
+      { scope: { kind: 'template', id: template.id } },
     ),
     templateContent: template.content,
     partials,
@@ -201,10 +203,6 @@ function evaluateDiagnostics(
   };
 }
 
-// ============================================================================
-// Preview
-// ============================================================================
-
 export async function previewDocumentGenerationBatchItem(
   batchId: string,
   itemId: string,
@@ -271,6 +269,11 @@ export async function previewDocumentGenerationBatchItem(
         validationDiagnostics: diagnostics as never,
       },
     });
+    await claimGeneratedDocumentRevision(tx, {
+      id: item.generatedDocumentId,
+      tenantId: params.tenantId,
+      allowedStatuses: ['DRAFT'],
+    });
     await tx.generatedDocument.update({
       where: { id: item.generatedDocumentId },
       data: { title: evaluated.resolvedTitle },
@@ -286,10 +289,6 @@ export async function previewDocumentGenerationBatchItem(
   );
   return mapBatchToDto(batch, catalogue);
 }
-
-// ============================================================================
-// Review
-// ============================================================================
 
 export async function reviewDocumentGenerationBatchItem(
   batchId: string,
@@ -353,6 +352,11 @@ export async function reviewDocumentGenerationBatchItem(
         status: 'READY',
         validationDiagnostics: Prisma.DbNull,
       },
+    });
+    await claimGeneratedDocumentRevision(tx, {
+      id: item.generatedDocumentId,
+      tenantId: params.tenantId,
+      allowedStatuses: ['DRAFT'],
     });
     await tx.generatedDocument.update({
       where: { id: item.generatedDocumentId },
