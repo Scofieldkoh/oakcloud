@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
-import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
 import {
   createTemplatePartialSchema,
   searchTemplatePartialsSchema,
@@ -10,7 +14,6 @@ import {
 import {
   createTemplatePartial,
   searchTemplatePartials,
-  getAllTemplatePartials,
 } from '@/services/template-partial.service';
 
 function withRevision<T extends { version: number }>(value: T) {
@@ -54,8 +57,21 @@ export async function GET(request: NextRequest) {
     }
 
     if (searchParams.get('all') === 'true') {
-      const partials = await getAllTemplatePartials(effectiveTenantId);
-      return NextResponse.json({ partials });
+      const partials = await prisma.templatePartial.findMany({
+        where: { tenantId: effectiveTenantId, deletedAt: null },
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          description: true,
+          content: true,
+          placeholders: true,
+          version: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+      partials.forEach((partial) => readA4StoredDocument(partial.content));
+      return NextResponse.json({ partials: partials.map(withRevision) });
     }
 
     const input = searchTemplatePartialsSchema.parse({
@@ -95,7 +111,6 @@ export async function POST(request: NextRequest) {
     }
 
     const input = createTemplatePartialSchema.parse(partialData);
-    // TemplatePartial has no contentJson: S1 markup detection is authoritative.
     assertA4WriterCanPreserve(input.content);
     const partial = await createTemplatePartial(input, {
       tenantId: effectiveTenantId,
