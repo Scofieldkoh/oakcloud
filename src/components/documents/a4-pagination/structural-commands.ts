@@ -1,5 +1,6 @@
 import { ensureFlowId, normalizeEditedFlowIds } from './model';
 import {
+  captureA4Position,
   createCanonicalEditorDocument,
   hydrateA4RuntimeIdentity,
   normalizeA4SelectionRange,
@@ -13,17 +14,18 @@ import {
 } from './structural-position';
 
 export type A4DeleteDirection = 'backward' | 'forward';
+export type A4CommandCapabilityCode =
+  | 'invalid-position'
+  | 'table-cell-interior-unsupported'
+  | 'no-manual-break'
+  | 'not-blank-section'
+  | 'not-in-list';
 
 export type A4CommandCapability =
   | { applicable: true }
   | {
       applicable: false;
-      code:
-        | 'invalid-position'
-        | 'table-cell-interior-unsupported'
-        | 'no-manual-break'
-        | 'not-blank-section'
-        | 'not-in-list';
+      code: A4CommandCapabilityCode;
       reason: string;
     };
 
@@ -37,22 +39,19 @@ export interface A4ListLevelContext {
 export interface A4BlankPageCapability {
   applicable: boolean;
   scope: 'break' | 'blank-hard-section' | 'none';
-  code?: A4CommandCapability extends { applicable: false; code: infer C } ? C : never;
+  code?: A4CommandCapabilityCode;
   reason?: string;
 }
 
 const INLINE_BREAK_SELECTOR = 'span[data-a4-break="page"]';
 const LEGACY_BREAK_SELECTOR = '.page-break[data-break-type="hard"], .page-break';
 const EXPLICIT_BREAK_SELECTOR = `${INLINE_BREAK_SELECTOR}, ${LEGACY_BREAK_SELECTOR}`;
-const ATOMIC_SELECTOR = [
-  '[data-field-id]',
-  '[data-placeholder-id]',
-  '[data-placeholder-key]',
-  '[data-reference-id]',
-  '[data-field-key]',
-  '[data-field-reference]',
-  '[contenteditable="false"]',
-].join(',');
+
+interface ResolvedSelection {
+  root: HTMLElement;
+  range: Range;
+  collapsed: boolean;
+}
 
 function rootFor(canonical: CanonicalEditorDocument): HTMLElement {
   const root = document.createElement('div');
@@ -60,23 +59,52 @@ function rootFor(canonical: CanonicalEditorDocument): HTMLElement {
   return root;
 }
 
-function elementForDomPoint(point: A4DomPoint): HTMLElement | null {
+function rejected(code: string, message: string): A4TransactionResult {
+  return { status: 'rejected', code, message };
+}
+
+function elementForPoint(point: A4DomPoint): HTMLElement | null {
   return point.node.nodeType === Node.ELEMENT_NODE
     ? (point.node as HTMLElement)
     : point.node.parentElement;
 }
 
-function rejected(code: string, message: string): A4TransactionResult {
-  return { status: 'rejected', code, message };
+function resolveSelection(
+  canonical: CanonicalEditorDocument,
+  selection: A4Selection,
+): ResolvedSelection | A4TransactionResult {
+  const normalized = normalizeA4SelectionRange(canonical, selection);
+  if (normalized.status === 'rejected') {
+    return rejected('invalid-position', normalized.message);
+  }
+  const root = rootFor(canonical);
+  const start = resolveA4Position(root, normalized.range.start);
+  const end = resolveA4Position(root, normalized.range.end);
+  if (!start || !end) {
+    return rejected(
+      'invalid-position',
+      'The structural selection no longer resolves in this canonical document.',
+    );
+  }
+  const range = document.createRange();
+  range.setStart(start.node, start.offset);
+  range.setEnd(end.node, end.offset);
+  return { root, range, collapsed: normalized.range.collapsed };
 }
 
-function changedIdsBeforeAfter(
+function isTransactionResult(
+  value: ResolvedSelection | A4TransactionResult,
+): value is A4TransactionResult {
+  return 'status' in value;
+}
+
+function changedNodeIds(
   before: CanonicalEditorDocument,
   afterRoot: HTMLElement,
 ): readonly string[] {
   const beforeRoot = rootFor(before);
-  const ids = new Set<string>();
   const beforeById = new Map<string, string>();
+  const changed = new Set<string>();
   beforeRoot.querySelectorAll<HTMLElement>('[data-flow-id]').forEach((element) => {
     const nodeId = element.dataset.flowId;
     if (nodeId) beforeById.set(nodeId, element.outerHTML);
@@ -84,127 +112,109 @@ function changedIdsBeforeAfter(
   afterRoot.querySelectorAll<HTMLElement>('[data-flow-id]').forEach((element) => {
     const nodeId = element.dataset.flowId;
     if (!nodeId) return;
-    if (beforeById.get(nodeId) !== element.outerHTML) ids.add(nodeId);
+    if (beforeById.get(nodeId) !== element.outerHTML) changed.add(nodeId);
     beforeById.delete(nodeId);
   });
-  beforeById.forEach((_html, nodeId) => ids.add(nodeId));
-  return Array.from(ids);
+  beforeById.forEach((_html, nodeId) => changed.add(nodeId));
+  return [...changed];
 }
 
-function finalizeApplied(
+function finishApplied(
   before: CanonicalEditorDocument,
   root: HTMLElement,
-  selection: A4Selection,
+  point: A4DomPoint,
+  affinity: A4Position['affinity'] = 'after',
 ): A4TransactionResult {
   hydrateA4RuntimeIdentity(root);
   normalizeEditedFlowIds(root);
-  const document: CanonicalEditorDocument = { internalHtml: root.innerHTML };
-  const validation = normalizeA4SelectionRange(document, selection);
+  const position = captureA4Position(root, point.node, point.offset, affinity);
+  if (!position) {
+    return rejected(
+      'invalid-result-selection',
+      'The semantic command applied but its resulting caret could not be mapped.',
+    );
+  }
+  const nextDocument: CanonicalEditorDocument = { internalHtml: root.innerHTML };
+  const validation = normalizeA4SelectionRange(nextDocument, {
+    anchor: position,
+    focus: position,
+  });
   if (validation.status === 'rejected') {
     return rejected('invalid-result-selection', validation.message);
   }
   return {
     status: 'applied',
-    document,
-    selection,
-    changedNodeIds: changedIdsBeforeAfter(before, root),
+    document: nextDocument,
+    selection: { anchor: position, focus: position },
+    changedNodeIds: changedNodeIds(before, root),
   };
 }
 
-function resolvedRange(
+function collapseSelectedRange(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
 ):
-  | {
-      ok: true;
-      root: HTMLElement;
-      range: Range;
-      start: A4Position;
-      end: A4Position;
-      direction: 'forward' | 'reverse';
-    }
-  | { ok: false; result: A4TransactionResult } {
-  const normalized = normalizeA4SelectionRange(canonical, selection);
-  if (normalized.status === 'rejected') {
-    return {
-      ok: false,
-      result: rejected('invalid-position', normalized.message),
-    };
-  }
-  const root = rootFor(canonical);
-  const startPoint = resolveA4Position(root, normalized.range.start);
-  const endPoint = resolveA4Position(root, normalized.range.end);
-  if (!startPoint || !endPoint) {
-    return {
-      ok: false,
-      result: rejected(
-        'invalid-position',
-        'The structural selection no longer resolves in this document.',
-      ),
-    };
-  }
-  const range = document.createRange();
-  range.setStart(startPoint.node, startPoint.offset);
-  range.setEnd(endPoint.node, endPoint.offset);
+  | { root: HTMLElement; point: A4DomPoint }
+  | A4TransactionResult {
+  const resolved = resolveSelection(canonical, selection);
+  if (isTransactionResult(resolved)) return resolved;
+  resolved.range.deleteContents();
   return {
-    ok: true,
-    root,
-    range,
-    start: normalized.range.start,
-    end: normalized.range.end,
-    direction: normalized.range.direction,
+    root: resolved.root,
+    point: {
+      node: resolved.range.startContainer,
+      offset: resolved.range.startOffset,
+    },
   };
 }
 
-function pointAfterMutation(
+function pointAtBoundarySibling(
   root: HTMLElement,
-  nodeId: string,
-  domPoint: A4DomPoint,
-  affinity: A4Position['affinity'] = 'after',
-): A4Position | null {
-  const owner = Array.from(root.querySelectorAll<HTMLElement>('[data-flow-id]')).find(
-    (candidate) => candidate.dataset.flowId === nodeId,
-  );
-  if (!owner) return null;
-  if (domPoint.node === owner) {
-    return {
-      kind: 'children',
-      nodeId,
-      index: Math.min(domPoint.offset, owner.childNodes.length),
-      affinity,
-    };
-  }
-  const probe = document.createRange();
-  probe.setStart(owner, 0);
-  try {
-    probe.setEnd(domPoint.node, domPoint.offset);
-  } catch {
-    return null;
-  }
-  return {
-    kind: 'text',
-    nodeId,
-    offset: probe.toString().length,
-    affinity,
-  };
-}
-
-function semanticOwnerId(root: HTMLElement, point: A4DomPoint): string | null {
-  const element = elementForDomPoint(point);
-  if (!element || !root.contains(element)) return null;
-  const owner = element.closest<HTMLElement>('[data-flow-id]');
-  return owner?.dataset.flowId ?? null;
-}
-
-function adjacentChild(
   point: A4DomPoint,
   direction: A4DeleteDirection,
 ): Node | null {
-  if (point.node.nodeType !== Node.ELEMENT_NODE) return null;
-  const element = point.node as HTMLElement;
-  return direction === 'backward'
-    ? element.childNodes[point.offset - 1] ?? null
-    : element.childNodes[point.offset] ?? null;
+  const backwards = direction === 'backward';
+  let node: Node = point.node;
+  let offset = point.offset;
+
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const element = node as Element;
+    const direct = backwards
+      ? element.childNodes[offset - 1] ?? null
+      : element.childNodes[offset] ?? null;
+    if (direct) return direct;
+    if ((backwards && offset !== 0) || (!backwards && offset !== element.childNodes.length)) {
+      return null;
+    }
+  } else if (node.nodeType === Node.TEXT_NODE) {
+    const length = node.textContent?.length ?? 0;
+    if ((backwards && offset !== 0) || (!backwards && offset !== length)) {
+      return null;
+    }
+  }
+
+  let child: Node = node;
+  let parent = child.parentNode;
+  while (parent && parent !== root) {
+    const index = Array.prototype.indexOf.call(parent.childNodes, child) as number;
+    if (backwards) {
+      if (index > 0) return parent.childNodes[index - 1];
+      if (index !== 0) return null;
+    } else {
+      if (index + 1 < parent.childNodes.length) return parent.childNodes[index + 1];
+      if (index !== parent.childNodes.length - 1) return null;
+    }
+    child = parent;
+    parent = parent.parentNode;
+  }
+
+  if (parent === root) {
+    const index = Array.prototype.indexOf.call(root.childNodes, child) as number;
+    return backwards
+      ? root.childNodes[index - 1] ?? null
+      : root.childNodes[index + 1] ?? null;
+  }
+  return null;
 }
 
 function adjacentExplicitBreak(
@@ -212,42 +222,22 @@ function adjacentExplicitBreak(
   point: A4DomPoint,
   direction: A4DeleteDirection,
 ): HTMLElement | null {
-  const direct = adjacentChild(point, direction);
-  if (
-    direct?.nodeType === Node.ELEMENT_NODE &&
-    (direct as Element).matches(EXPLICIT_BREAK_SELECTOR)
-  ) {
-    return direct as HTMLElement;
-  }
-
-  const collapsed = document.createRange();
-  collapsed.setStart(point.node, point.offset);
-  collapsed.collapse(true);
-  const breaks = Array.from(root.querySelectorAll<HTMLElement>(EXPLICIT_BREAK_SELECTOR));
-  const ordered = direction === 'backward' ? breaks.reverse() : breaks;
-  for (const marker of ordered) {
-    const parent = marker.parentNode;
-    if (!parent) continue;
-    const index = Array.prototype.indexOf.call(parent.childNodes, marker) as number;
-    const boundary = document.createRange();
-    boundary.setStart(parent, index + (direction === 'backward' ? 1 : 0));
-    boundary.collapse(true);
-    if (collapsed.compareBoundaryPoints(Range.START_TO_START, boundary) === 0) {
-      return marker;
-    }
-  }
-  return null;
+  const candidate = pointAtBoundarySibling(root, point, direction);
+  return candidate?.nodeType === Node.ELEMENT_NODE &&
+    (candidate as Element).matches(EXPLICIT_BREAK_SELECTOR)
+    ? (candidate as HTMLElement)
+    : null;
 }
 
-function adjacentAtomic(
-  point: A4DomPoint,
-  direction: A4DeleteDirection,
-): HTMLElement | null {
-  const child = adjacentChild(point, direction);
-  return child?.nodeType === Node.ELEMENT_NODE &&
-    (child as Element).matches(ATOMIC_SELECTOR)
-    ? (child as HTMLElement)
-    : null;
+function caretAfterRemovingNode(
+  root: HTMLElement,
+  node: HTMLElement,
+): A4DomPoint | null {
+  const parent = node.parentNode;
+  if (!parent || !(parent === root || root.contains(parent))) return null;
+  const index = Array.prototype.indexOf.call(parent.childNodes, node) as number;
+  node.remove();
+  return { node: parent, offset: Math.max(0, index) };
 }
 
 function textNodes(root: HTMLElement): Text[] {
@@ -259,124 +249,88 @@ function textNodes(root: HTMLElement): Text[] {
 }
 
 function comparePoints(left: A4DomPoint, right: A4DomPoint): number {
-  const a = document.createRange();
-  a.setStart(left.node, left.offset);
-  a.collapse(true);
-  const b = document.createRange();
-  b.setStart(right.node, right.offset);
-  b.collapse(true);
-  return a.compareBoundaryPoints(Range.START_TO_START, b);
+  const leftRange = document.createRange();
+  leftRange.setStart(left.node, left.offset);
+  leftRange.collapse(true);
+  const rightRange = document.createRange();
+  rightRange.setStart(right.node, right.offset);
+  rightRange.collapse(true);
+  return leftRange.compareBoundaryPoints(Range.START_TO_START, rightRange);
 }
 
 function graphemeBounds(
-  text: string,
-  requestedIndex: number,
+  value: string,
+  targetIndex: number,
 ): { start: number; end: number } | null {
-  if (!text.length) return null;
-  const Segmenter = Intl.Segmenter;
-  if (Segmenter) {
-    const segments = Array.from(new Segmenter(undefined, { granularity: 'grapheme' }).segment(text));
+  if (!value.length || targetIndex < 0 || targetIndex >= value.length) return null;
+  if (typeof Intl.Segmenter === 'function') {
+    const segments = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(value);
     for (const segment of segments) {
       const start = segment.index;
       const end = start + segment.segment.length;
-      if (requestedIndex >= start && requestedIndex < end) return { start, end };
+      if (targetIndex >= start && targetIndex < end) return { start, end };
     }
   }
-  const codePoint = Array.from(text.slice(requestedIndex))[0];
-  if (!codePoint) return null;
-  return { start: requestedIndex, end: requestedIndex + codePoint.length };
+  const codePoint = Array.from(value.slice(targetIndex))[0];
+  return codePoint
+    ? { start: targetIndex, end: targetIndex + codePoint.length }
+    : null;
 }
 
 function deleteAdjacentGrapheme(
   root: HTMLElement,
   point: A4DomPoint,
   direction: A4DeleteDirection,
-): { changed: boolean; caret: A4DomPoint; ownerId: string | null } {
-  const nodes = textNodes(root);
-  const candidates = direction === 'backward' ? [...nodes].reverse() : nodes;
+): A4DomPoint | null {
+  const candidates = direction === 'backward'
+    ? textNodes(root).reverse()
+    : textNodes(root);
   for (const text of candidates) {
-    const startPoint = { node: text, offset: 0 } satisfies A4DomPoint;
-    const endPoint = { node: text, offset: text.length } satisfies A4DomPoint;
-    const relationToStart = comparePoints(point, startPoint);
-    const relationToEnd = comparePoints(point, endPoint);
-    let targetIndex: number | null = null;
+    let target: number | null = null;
     if (point.node === text) {
-      if (direction === 'backward' && point.offset > 0) targetIndex = point.offset - 1;
-      if (direction === 'forward' && point.offset < text.length) targetIndex = point.offset;
-    } else if (direction === 'backward' && relationToEnd >= 0) {
-      targetIndex = text.length - 1;
-    } else if (direction === 'forward' && relationToStart <= 0) {
-      targetIndex = 0;
+      target = direction === 'backward'
+        ? point.offset > 0 ? point.offset - 1 : null
+        : point.offset < text.length ? point.offset : null;
+    } else {
+      const start: A4DomPoint = { node: text, offset: 0 };
+      const end: A4DomPoint = { node: text, offset: text.length };
+      if (direction === 'backward' && comparePoints(point, end) >= 0) {
+        target = text.length - 1;
+      }
+      if (direction === 'forward' && comparePoints(point, start) <= 0) {
+        target = 0;
+      }
     }
-    if (targetIndex === null || targetIndex < 0) continue;
-    const bounds = graphemeBounds(text.data, targetIndex);
+    if (target === null) continue;
+    const bounds = graphemeBounds(text.data, target);
     if (!bounds) continue;
-    const ownerId = text.parentElement?.closest<HTMLElement>('[data-flow-id]')?.dataset.flowId ?? null;
     text.deleteData(bounds.start, bounds.end - bounds.start);
-    return {
-      changed: true,
-      caret: { node: text, offset: bounds.start },
-      ownerId,
-    };
+    return { node: text, offset: bounds.start };
   }
-  return { changed: false, caret: point, ownerId: semanticOwnerId(root, point) };
-}
-
-function collapseAfterRangeDeletion(
-  canonical: CanonicalEditorDocument,
-  selection: A4Selection,
-):
-  | { ok: true; root: HTMLElement; point: A4DomPoint; position: A4Position }
-  | { ok: false; result: A4TransactionResult } {
-  const resolved = resolvedRange(canonical, selection);
-  if (!resolved.ok) return resolved;
-  const ownerId = semanticOwnerId(resolved.root, {
-    node: resolved.range.startContainer,
-    offset: resolved.range.startOffset,
-  });
-  resolved.range.deleteContents();
-  const point: A4DomPoint = {
-    node: resolved.range.startContainer,
-    offset: resolved.range.startOffset,
-  };
-  hydrateA4RuntimeIdentity(resolved.root);
-  const fallbackOwner = ownerId ?? semanticOwnerId(resolved.root, point);
-  if (!fallbackOwner) {
-    return {
-      ok: false,
-      result: rejected('invalid-position', 'The selected range has no semantic caret target.'),
-    };
-  }
-  const position = pointAfterMutation(resolved.root, fallbackOwner, point) ?? {
-    kind: 'text' as const,
-    nodeId: fallbackOwner,
-    offset: 0,
-    affinity: 'after' as const,
-  };
-  return { ok: true, root: resolved.root, point, position };
+  return null;
 }
 
 export function getInsertManualBreakCapability(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
 ): A4CommandCapability {
-  const normalized = normalizeA4SelectionRange(canonical, selection);
-  if (normalized.status === 'rejected') {
-    return { applicable: false, code: 'invalid-position', reason: normalized.message };
-  }
-  const root = rootFor(canonical);
-  const start = resolveA4Position(root, normalized.range.start);
-  const end = resolveA4Position(root, normalized.range.end);
-  if (!start || !end) {
+  const resolved = resolveSelection(canonical, selection);
+  if (isTransactionResult(resolved)) {
     return {
       applicable: false,
       code: 'invalid-position',
-      reason: 'The structural selection no longer resolves.',
+      reason: resolved.status === 'rejected' ? resolved.message : 'Invalid structural selection.',
     };
   }
-  const startElement = elementForDomPoint(start);
-  const endElement = elementForDomPoint(end);
-  if (startElement?.closest('td, th') || endElement?.closest('td, th')) {
+  const start = elementForPoint({
+    node: resolved.range.startContainer,
+    offset: resolved.range.startOffset,
+  });
+  const end = elementForPoint({
+    node: resolved.range.endContainer,
+    offset: resolved.range.endOffset,
+  });
+  if (start?.closest('td, th') || end?.closest('td, th')) {
     return {
       applicable: false,
       code: 'table-cell-interior-unsupported',
@@ -392,8 +346,8 @@ export function insertA4ManualPageBreak(
 ): A4TransactionResult {
   const capability = getInsertManualBreakCapability(canonical, selection);
   if (!capability.applicable) return rejected(capability.code, capability.reason);
-  const prepared = collapseAfterRangeDeletion(canonical, selection);
-  if (!prepared.ok) return prepared.result;
+  const prepared = collapseSelectedRange(canonical, selection);
+  if ('status' in prepared) return prepared;
   const marker = document.createElement('span');
   marker.dataset.a4Break = 'page';
   ensureFlowId(marker);
@@ -401,23 +355,16 @@ export function insertA4ManualPageBreak(
   range.setStart(prepared.point.node, prepared.point.offset);
   range.collapse(true);
   range.insertNode(marker);
-  const parent = marker.parentElement;
-  if (!parent) return rejected('invalid-position', 'The page break could not be inserted.');
-  const parentId = ensureFlowId(parent);
+  const parent = marker.parentNode;
+  if (!parent) return rejected('invalid-position', 'The manual break could not be inserted.');
   const index = Array.prototype.indexOf.call(parent.childNodes, marker) as number;
-  const caret: A4Position = {
-    kind: 'children',
-    nodeId: parentId,
-    index: index + 1,
-    affinity: 'after',
-  };
-  return finalizeApplied(canonical, prepared.root, { anchor: caret, focus: caret });
+  return finishApplied(canonical, prepared.root, { node: parent, offset: index + 1 }, 'after');
 }
 
-function breakAtSelectionBoundary(
+function breakAtCaret(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
-): { root: HTMLElement; marker: HTMLElement; position: A4Position } | null {
+): { root: HTMLElement; marker: HTMLElement } | null {
   const normalized = normalizeA4SelectionRange(canonical, selection);
   if (normalized.status === 'rejected' || !normalized.range.collapsed) return null;
   const root = rootFor(canonical);
@@ -426,23 +373,14 @@ function breakAtSelectionBoundary(
   const marker =
     adjacentExplicitBreak(root, point, 'backward') ??
     adjacentExplicitBreak(root, point, 'forward');
-  if (!marker) return null;
-  const parent = marker.parentElement;
-  const parentId = parent?.dataset.flowId;
-  if (!parent || !parentId) return null;
-  const index = Array.prototype.indexOf.call(parent.childNodes, marker) as number;
-  return {
-    root,
-    marker,
-    position: { kind: 'children', nodeId: parentId, index, affinity: 'after' },
-  };
+  return marker ? { root, marker } : null;
 }
 
 export function getRemoveManualBreakCapability(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
 ): A4CommandCapability {
-  return breakAtSelectionBoundary(canonical, selection)
+  return breakAtCaret(canonical, selection)
     ? { applicable: true }
     : {
         applicable: false,
@@ -455,16 +393,17 @@ export function removeA4ManualPageBreak(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
 ): A4TransactionResult {
-  const found = breakAtSelectionBoundary(canonical, selection);
+  const found = breakAtCaret(canonical, selection);
   if (!found) {
     return {
       status: 'unchanged',
       reason: 'There is no explicit manual page break at this structural boundary.',
     };
   }
-  found.marker.remove();
-  const caret = found.position;
-  return finalizeApplied(canonical, found.root, { anchor: caret, focus: caret });
+  const point = caretAfterRemovingNode(found.root, found.marker);
+  return point
+    ? finishApplied(canonical, found.root, point, 'after')
+    : rejected('invalid-position', 'The manual page-break boundary is invalid.');
 }
 
 export function deleteA4Selection(
@@ -472,103 +411,57 @@ export function deleteA4Selection(
   selection: A4Selection,
   direction: A4DeleteDirection,
 ): A4TransactionResult {
-  const normalized = normalizeA4SelectionRange(canonical, selection);
-  if (normalized.status === 'rejected') {
-    return rejected('invalid-position', normalized.message);
-  }
-  if (!normalized.range.collapsed) {
-    const prepared = collapseAfterRangeDeletion(canonical, selection);
-    if (!prepared.ok) return prepared.result;
-    return finalizeApplied(canonical, prepared.root, {
-      anchor: prepared.position,
-      focus: prepared.position,
+  const resolved = resolveSelection(canonical, selection);
+  if (isTransactionResult(resolved)) return resolved;
+
+  if (!resolved.collapsed) {
+    resolved.range.deleteContents();
+    return finishApplied(canonical, resolved.root, {
+      node: resolved.range.startContainer,
+      offset: resolved.range.startOffset,
     });
   }
 
-  const root = rootFor(canonical);
-  const point = resolveA4Position(root, normalized.range.start);
-  if (!point) {
-    return rejected('invalid-position', 'The structural caret no longer resolves.');
+  const point: A4DomPoint = {
+    node: resolved.range.startContainer,
+    offset: resolved.range.startOffset,
+  };
+  const marker = adjacentExplicitBreak(resolved.root, point, direction);
+  if (marker) {
+    const next = caretAfterRemovingNode(resolved.root, marker);
+    return next
+      ? finishApplied(canonical, resolved.root, next)
+      : rejected('invalid-position', 'The manual page-break boundary is invalid.');
   }
 
-  const explicitBreak = adjacentExplicitBreak(root, point, direction);
-  if (explicitBreak) {
-    const parent = explicitBreak.parentElement;
-    const parentId = parent?.dataset.flowId;
-    if (!parent || !parentId) {
-      return rejected('invalid-position', 'The manual page-break boundary is invalid.');
-    }
-    const index = Array.prototype.indexOf.call(parent.childNodes, explicitBreak) as number;
-    explicitBreak.remove();
-    const caret: A4Position = {
-      kind: 'children',
-      nodeId: parentId,
-      index,
-      affinity: 'after',
-    };
-    return finalizeApplied(canonical, root, { anchor: caret, focus: caret });
-  }
-
-  const atomic = adjacentAtomic(point, direction);
-  if (atomic) {
-    const parent = atomic.parentElement;
-    const parentId = parent?.dataset.flowId;
-    if (parent && parentId) {
-      const index = Array.prototype.indexOf.call(parent.childNodes, atomic) as number;
-      atomic.remove();
-      const caret: A4Position = {
-        kind: 'children',
-        nodeId: parentId,
-        index,
-        affinity: 'after',
-      };
-      return finalizeApplied(canonical, root, { anchor: caret, focus: caret });
-    }
-  }
-
-  const deletion = deleteAdjacentGrapheme(root, point, direction);
-  if (!deletion.changed) {
-    return { status: 'unchanged', reason: 'There is no logical content to delete.' };
-  }
-  hydrateA4RuntimeIdentity(root);
-  const ownerId = deletion.ownerId ?? semanticOwnerId(root, deletion.caret);
-  if (!ownerId) return rejected('invalid-position', 'Deleted text has no semantic owner.');
-  const caret = pointAfterMutation(root, ownerId, deletion.caret, 'after');
-  if (!caret) return rejected('invalid-position', 'The post-delete caret could not be mapped.');
-  return finalizeApplied(canonical, root, { anchor: caret, focus: caret });
+  const next = deleteAdjacentGrapheme(resolved.root, point, direction);
+  return next
+    ? finishApplied(canonical, resolved.root, next)
+    : { status: 'unchanged', reason: 'There is no logical content to delete.' };
 }
 
 export function insertA4LineBreak(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
 ): A4TransactionResult {
-  const prepared = collapseAfterRangeDeletion(canonical, selection);
-  if (!prepared.ok) return prepared.result;
-  const ownerId = semanticOwnerId(prepared.root, prepared.point);
-  if (!ownerId) return rejected('invalid-position', 'The line-break caret has no semantic owner.');
-  const lineBreak = document.createElement('br');
-  ensureFlowId(lineBreak);
+  const prepared = collapseSelectedRange(canonical, selection);
+  if ('status' in prepared) return prepared;
+  const br = document.createElement('br');
+  ensureFlowId(br);
   const range = document.createRange();
   range.setStart(prepared.point.node, prepared.point.offset);
   range.collapse(true);
-  range.insertNode(lineBreak);
-  const parent = lineBreak.parentElement;
+  range.insertNode(br);
+  const parent = br.parentNode;
   if (!parent) return rejected('invalid-position', 'The line break could not be inserted.');
-  const parentId = ensureFlowId(parent);
-  const index = Array.prototype.indexOf.call(parent.childNodes, lineBreak) as number;
-  const caret: A4Position = {
-    kind: 'children',
-    nodeId: parentId,
-    index: index + 1,
-    affinity: 'after',
-  };
-  return finalizeApplied(canonical, prepared.root, { anchor: caret, focus: caret });
+  const index = Array.prototype.indexOf.call(parent.childNodes, br) as number;
+  return finishApplied(canonical, prepared.root, { node: parent, offset: index + 1 }, 'after');
 }
 
-function closestParagraphLike(root: HTMLElement, point: A4DomPoint): HTMLElement | null {
-  let element = elementForDomPoint(point);
+function paragraphBlockForPoint(root: HTMLElement, point: A4DomPoint): HTMLElement | null {
+  let element = elementForPoint(point);
   while (element && element !== root) {
-    if (/^(P|DIV|BLOCKQUOTE|H[1-6]|LI)$/.test(element.tagName)) return element;
+    if (/^(P|DIV|BLOCKQUOTE|H[1-6])$/.test(element.tagName)) return element;
     element = element.parentElement;
   }
   return null;
@@ -587,11 +480,11 @@ export function insertA4ParagraphBreak(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
 ): A4TransactionResult {
-  const prepared = collapseAfterRangeDeletion(canonical, selection);
-  if (!prepared.ok) return prepared.result;
-  const block = closestParagraphLike(prepared.root, prepared.point);
+  const prepared = collapseSelectedRange(canonical, selection);
+  if ('status' in prepared) return prepared;
+  const block = paragraphBlockForPoint(prepared.root, prepared.point);
   if (!block) {
-    return { status: 'unchanged', reason: 'The caret is not in a splittable logical block.' };
+    return { status: 'unchanged', reason: 'The caret is not in a splittable paragraph block.' };
   }
   if (block.closest('td, th')) {
     return {
@@ -609,29 +502,15 @@ export function insertA4ParagraphBreak(
   const before = beforeRange.cloneContents();
   const after = afterRange.cloneContents();
 
-  if (block.tagName === 'LI') {
-    const nextItem = cloneBlockShell(block);
-    nextItem.appendChild(after);
-    block.replaceChildren(before);
-    if (!block.hasChildNodes()) block.appendChild(document.createElement('br'));
-    if (!nextItem.hasChildNodes()) nextItem.appendChild(document.createElement('p')).appendChild(document.createElement('br'));
-    block.after(nextItem);
-    hydrateA4RuntimeIdentity(prepared.root);
-    const nextId = ensureFlowId(nextItem);
-    const caret: A4Position = { kind: 'children', nodeId: nextId, index: 0, affinity: 'after' };
-    return finalizeApplied(canonical, prepared.root, { anchor: caret, focus: caret });
-  }
-
-  const nextBlock = cloneBlockShell(block);
-  nextBlock.appendChild(after);
+  const next = cloneBlockShell(block);
+  next.appendChild(after);
   block.replaceChildren(before);
   if (!block.hasChildNodes()) block.appendChild(document.createElement('br'));
-  if (!nextBlock.hasChildNodes()) nextBlock.appendChild(document.createElement('br'));
-  block.after(nextBlock);
+  if (!next.hasChildNodes()) next.appendChild(document.createElement('br'));
+  block.after(next);
   hydrateA4RuntimeIdentity(prepared.root);
-  const nextId = ensureFlowId(nextBlock);
-  const caret: A4Position = { kind: 'children', nodeId: nextId, index: 0, affinity: 'after' };
-  return finalizeApplied(canonical, prepared.root, { anchor: caret, focus: caret });
+  ensureFlowId(next);
+  return finishApplied(canonical, prepared.root, { node: next, offset: 0 }, 'after');
 }
 
 export function getA4ListLevelContext(
@@ -644,8 +523,9 @@ export function getA4ListLevelContext(
     return { inList: false, level: 0, listNodeIds: [], itemNodeId: null };
   }
   const point = resolveA4Position(root, position);
-  const element = point ? elementForDomPoint(point) : null;
-  const item = element?.closest<HTMLElement>('li') ?? null;
+  const item = point
+    ? elementForPoint(point)?.closest<HTMLElement>('li') ?? null
+    : null;
   if (!item) return { inList: false, level: 0, listNodeIds: [], itemNodeId: null };
   const listNodeIds: string[] = [];
   let current: HTMLElement | null = item.parentElement;
@@ -670,9 +550,9 @@ export function getTableBreakCapability(
   return getInsertManualBreakCapability(canonical, selection);
 }
 
-function isBlankBlock(element: Element | null): boolean {
-  if (!element) return false;
-  return !(element.textContent ?? '').trim() && !element.querySelector('img,table,hr,input,textarea,video,audio,svg');
+function isBlankBlock(element: HTMLElement): boolean {
+  return !(element.textContent ?? '').trim() &&
+    !element.querySelector('img,table,hr,input,textarea,video,audio,svg');
 }
 
 export function getDeleteBlankPageOrBreakCapability(
@@ -685,13 +565,20 @@ export function getDeleteBlankPageOrBreakCapability(
       applicable: false,
       scope: 'none',
       code: 'invalid-position',
-      reason: normalized.status === 'rejected' ? normalized.message : 'Select a single structural caret.',
+      reason: normalized.status === 'rejected'
+        ? normalized.message
+        : 'A blank-page capability requires a collapsed structural caret.',
     };
   }
   const root = rootFor(canonical);
   const point = resolveA4Position(root, normalized.range.start);
   if (!point) {
-    return { applicable: false, scope: 'none', code: 'invalid-position', reason: 'The caret no longer resolves.' };
+    return {
+      applicable: false,
+      scope: 'none',
+      code: 'invalid-position',
+      reason: 'The structural caret no longer resolves.',
+    };
   }
   if (
     adjacentExplicitBreak(root, point, 'backward') ||
@@ -699,11 +586,10 @@ export function getDeleteBlankPageOrBreakCapability(
   ) {
     return { applicable: true, scope: 'break' };
   }
-  const element = elementForDomPoint(point);
-  const topBlock = element?.closest<HTMLElement>('[data-flow-id]') ?? null;
-  if (topBlock && isBlankBlock(topBlock)) {
-    const previous = topBlock.previousElementSibling;
-    const next = topBlock.nextElementSibling;
+  const block = elementForPoint(point)?.closest<HTMLElement>('[data-flow-id]');
+  if (block && isBlankBlock(block)) {
+    const previous = block.previousElementSibling;
+    const next = block.nextElementSibling;
     if (previous?.matches(EXPLICIT_BREAK_SELECTOR) || next?.matches(EXPLICIT_BREAK_SELECTOR)) {
       return { applicable: true, scope: 'blank-hard-section' };
     }
@@ -716,7 +602,6 @@ export function getDeleteBlankPageOrBreakCapability(
   };
 }
 
-/** Convenience for callers that start from persisted HTML. */
 export function createA4CommandDocument(html: string): CanonicalEditorDocument {
   return createCanonicalEditorDocument(html);
 }
