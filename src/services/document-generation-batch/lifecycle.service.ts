@@ -16,6 +16,14 @@ import {
 import {
   deriveMasterFieldCatalogue,
 } from '@/lib/document-generation-master-fields';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
+import {
+  claimGeneratedDocumentRevision,
+  readGeneratedDocumentRevision,
+} from '@/lib/document-editor/generated-document-revision';
 import { serviceAgreementDraftSchema } from '@/lib/validations/service-agreement';
 import {
   upsertServiceAgreementDraft,
@@ -127,7 +135,7 @@ export async function loadMasterCatalogueForTemplateIds(
   const [templates, partials] = await Promise.all([
     prisma.documentTemplate.findMany({
       where: { id: { in: templateIds }, tenantId, deletedAt: null },
-      select: { id: true, content: true, placeholders: true },
+      select: { id: true, content: true, contentJson: true, placeholders: true },
     }),
     prisma.templatePartial.findMany({
       where: { tenantId, deletedAt: null },
@@ -141,11 +149,18 @@ export async function loadMasterCatalogueForTemplateIds(
       },
     }),
   ]);
+  for (const template of templates) {
+    readA4StoredDocument(template.content, template.contentJson);
+  }
+  for (const partial of partials) {
+    readA4StoredDocument(partial.content);
+  }
   const sources = templates.map((template) => ({
     templateId: template.id,
     fields: mergeTemplateAndPartialPlaceholders({
       templatePlaceholders: storageFormatToCustomPlaceholders(
         normalizeStoredPlaceholders(template.placeholders),
+        { scope: { kind: 'template', id: template.id } },
       ),
       templateContent: template.content,
       partials,
@@ -189,6 +204,7 @@ async function resolveTemplates(
   if (inactive) {
     throw new ValidationError(`Template "${inactive.name}" is not active`);
   }
+  templates.forEach((template) => readA4StoredDocument(template.content, template.contentJson));
   return templates;
 }
 
@@ -212,10 +228,6 @@ export function computeBatchStatus(itemStatuses: string[]): 'DRAFT' | 'PARTIAL' 
   if (generated > 0) return 'PARTIAL';
   return 'DRAFT';
 }
-
-// ============================================================================
-// Create
-// ============================================================================
 
 export async function createDocumentGenerationBatch(
   input: CreateDocumentGenerationBatchInput,
@@ -306,10 +318,6 @@ export async function createDocumentGenerationBatch(
   return mapBatchToDto(batch, catalogue);
 }
 
-// ============================================================================
-// List
-// ============================================================================
-
 export async function listDocumentGenerationBatches(
   params: TenantAwareParams,
 ): Promise<DocumentGenerationBatchListItem[]> {
@@ -358,10 +366,6 @@ export async function listDocumentGenerationBatches(
   });
 }
 
-// ============================================================================
-// Resume
-// ============================================================================
-
 export async function getDocumentGenerationBatch(
   id: string,
   params: TenantAwareParams,
@@ -380,10 +384,6 @@ export async function getDocumentGenerationBatch(
     catalogue,
   );
 }
-
-// ============================================================================
-// Update (optimistic whole-batch save)
-// ============================================================================
 
 async function syncServiceAgreementForItem(
   tx: Prisma.TransactionClient | typeof prisma,
@@ -495,7 +495,6 @@ export async function updateDocumentGenerationBatch(
       current.items.map((item) => [item.templateId, item]),
     );
 
-    // Remove templates no longer selected (never removes generated outputs).
     for (const item of current.items) {
       if (submittedTemplateIds.includes(item.templateId)) continue;
       if (item.status === 'GENERATED') {
@@ -507,6 +506,11 @@ export async function updateDocumentGenerationBatch(
       if (agreement && agreement.status === 'DRAFT') {
         await tx.serviceAgreement.delete({ where: { id: agreement.id } });
       }
+      await claimGeneratedDocumentRevision(tx, {
+        id: item.generatedDocumentId,
+        tenantId: params.tenantId,
+        allowedStatuses: ['DRAFT'],
+      });
       await tx.generatedDocument.update({
         where: { id: item.generatedDocumentId },
         data: { deletedAt: new Date() },
@@ -514,8 +518,6 @@ export async function updateDocumentGenerationBatch(
       await tx.documentGenerationBatchItem.delete({ where: { id: item.id } });
     }
 
-    // Move remaining items to temporary unique display orders before applying
-    // final ordering so the (batchId, displayOrder) constraint never trips.
     for (const [index, submitted] of input.items.entries()) {
       const existingItem = existingByTemplate.get(submitted.templateId);
       if (!existingItem) continue;
@@ -548,6 +550,16 @@ export async function updateDocumentGenerationBatch(
               `Generated document "${existingItem.template.name}" is immutable`,
             );
           }
+        }
+        if (submitted.editedContent !== undefined || submitted.editedContentJson !== undefined) {
+          const effectiveContent = submitted.editedContent
+            ?? existingItem.editedContent
+            ?? existingItem.previewContent
+            ?? '';
+          const effectiveContentJson = submitted.editedContentJson !== undefined
+            ? submitted.editedContentJson
+            : (existingItem.editedContentJson ?? existingItem.template.contentJson);
+          assertA4WriterCanPreserve(effectiveContent, effectiveContentJson);
         }
         const changed =
           submitted.configuration !== undefined
@@ -613,8 +625,6 @@ export async function updateDocumentGenerationBatch(
       }
     }
 
-    // Sync complete Service Agreement workspaces transactionally; incomplete
-    // ones remain persisted in item configuration and block preflight.
     const syncedItems = await tx.documentGenerationBatchItem.findMany({
       where: { batchId: id },
       include: batchItemInclude,
@@ -666,9 +676,6 @@ export async function updateDocumentGenerationBatch(
     });
     const status = computeBatchStatus(finalItems.map((item) => item.status));
 
-    // The client may point `activeItemId` at a local item by its template id
-    // before the first save assigns it a server id. Resolve it against the
-    // final items so the stored value is always a real item id.
     const resolveActiveItemId = (): string | null => {
       if (input.activeItemId === undefined) return current.activeItemId;
       if (input.activeItemId === null) return null;
@@ -726,10 +733,6 @@ export async function updateDocumentGenerationBatch(
   return mapBatchToDto(batch, catalogue);
 }
 
-// ============================================================================
-// Discard
-// ============================================================================
-
 export async function discardDocumentGenerationBatch(
   id: string,
   input: { expectedRevision?: number },
@@ -765,6 +768,11 @@ export async function discardDocumentGenerationBatch(
       if (agreement && agreement.status === 'DRAFT') {
         await tx.serviceAgreement.delete({ where: { id: agreement.id } });
       }
+      await claimGeneratedDocumentRevision(tx, {
+        id: item.generatedDocumentId,
+        tenantId: params.tenantId,
+        allowedStatuses: ['DRAFT'],
+      });
       await tx.generatedDocument.update({
         where: { id: item.generatedDocumentId },
         data: { deletedAt: new Date() },
@@ -800,10 +808,6 @@ export async function discardDocumentGenerationBatch(
   };
 }
 
-// ============================================================================
-// Legacy adoption
-// ============================================================================
-
 export async function adoptLegacyGenerationSession(
   draftId: string,
   input: CreateDocumentGenerationBatchInput,
@@ -817,6 +821,13 @@ export async function adoptLegacyGenerationSession(
   if (!document || !state) {
     throw new NotFoundError('Document draft not found');
   }
+  readA4StoredDocument(document.content, document.contentJson);
+  const observedRevision = await readGeneratedDocumentRevision(
+    prisma,
+    document.id,
+    params.tenantId,
+  );
+
   const existingItem = await prisma.documentGenerationBatchItem.findUnique({
     where: { generatedDocumentId: draftId },
     select: { batchId: true },
@@ -832,6 +843,7 @@ export async function adoptLegacyGenerationSession(
     where: { id: templateId, tenantId: params.tenantId, deletedAt: null },
   });
   if (!template) throw new NotFoundError('Template not found');
+  readA4StoredDocument(template.content, template.contentJson);
 
   const agreement = state.serviceAgreementId
     ? await prisma.serviceAgreement.findUnique({
@@ -884,6 +896,12 @@ export async function adoptLegacyGenerationSession(
     });
     const metadata = { ...(document.metadata as Record<string, unknown>) };
     delete metadata.generationSession;
+    await claimGeneratedDocumentRevision(tx, {
+      id: document.id,
+      tenantId: params.tenantId,
+      expectedRevision: observedRevision,
+      allowedStatuses: ['DRAFT'],
+    });
     await tx.generatedDocument.update({
       where: { id: document.id },
       data: {
