@@ -11,10 +11,9 @@ import {
   getAllTemplatePartials,
 } from '@/services/template-partial.service';
 
-// ============================================================================
-// GET /api/template-partials
-// List/search template partials
-// ============================================================================
+function withRevision<T extends { version: number }>(value: T) {
+  return { ...value, revision: value.version };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,8 +21,6 @@ export async function GET(request: NextRequest) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-
-    // For SUPER_ADMIN, allow specifying tenantId via query param
     const tenantIdParam = searchParams.get('tenantId');
     const effectiveTenantId =
       session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
@@ -32,13 +29,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
-    // Check if requesting all partials (for dropdown)
     if (searchParams.get('all') === 'true') {
       const partials = await getAllTemplatePartials(effectiveTenantId);
       return NextResponse.json({ partials });
     }
 
-    // Parse search parameters
     const input = searchTemplatePartialsSchema.parse({
       search: searchParams.get('search') || undefined,
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : 1,
@@ -52,7 +47,10 @@ export async function GET(request: NextRequest) {
       userId: session.id,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      partials: result.partials.map(withRevision),
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
@@ -62,15 +60,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
-    console.error('Get template partials error:', error);
+    console.error('Get template partials error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-// ============================================================================
-// POST /api/template-partials
-// Create a new template partial
-// ============================================================================
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,8 +72,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { tenantId: bodyTenantId, ...partialData } = body;
-
-    // For SUPER_ADMIN, allow specifying tenantId in body
     const effectiveTenantId =
       session.isSuperAdmin && bodyTenantId ? bodyTenantId : session.tenantId;
 
@@ -89,13 +80,12 @@ export async function POST(request: NextRequest) {
     }
 
     const input = createTemplatePartialSchema.parse(partialData);
-
     const partial = await createTemplatePartial(input, {
       tenantId: effectiveTenantId,
       userId: session.id,
     });
 
-    return NextResponse.json(partial, { status: 201 });
+    return NextResponse.json(withRevision(partial), { status: 201 });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
@@ -111,7 +101,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
     }
-    console.error('Create template partial error:', error);
+    console.error('Create template partial error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
