@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Document Export Service
  *
  * Handles PDF and HTML export of generated documents.
@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { ApiError, ErrorCodes } from '@/lib/errors';
 import {
   getLetterhead,
   buildHeaderHtml,
@@ -65,6 +66,18 @@ export interface HTMLResult {
   sections: DocumentSection[];
 }
 
+export class ExportPaginationError extends ApiError {
+  constructor(details?: unknown) {
+    super(
+      ErrorCodes.SERVICE_UNAVAILABLE,
+      'PDF pagination could not be completed safely. Please retry the export.',
+      503,
+      details,
+    );
+    this.name = 'ExportPaginationError';
+  }
+}
+
 // Default page margins in mm (matches A4PageEditor's 20mm margins)
 const DEFAULT_MARGINS: PageMargins = {
   top: 20,
@@ -72,6 +85,8 @@ const DEFAULT_MARGINS: PageMargins = {
   bottom: 20,
   left: 20,
 };
+
+const PDF_PAGE_TIMEOUT_MS = 30_000;
 
 // ============================================================================
 // PDF Export
@@ -122,7 +137,8 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
   const layout = extractA4DocumentLayout(document.contentJson);
   const pageLayout = createA4PageLayout(layout.marginsMm);
 
-  // Generate PDF
+  // Generate PDF. Failure is propagated before audit logging and cannot mutate
+  // the stored document or be mistaken for a successful clipped export.
   const pdfBuffer = await generatePDF(htmlContent, {
     format,
     orientation,
@@ -142,7 +158,8 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
     },
   });
 
-  // Log export
+  // Log only successful exports. No document HTML or resolved field values are
+  // included in the failure path or audit metadata.
   await createAuditLog({
     action: 'EXPORT',
     entityType: 'GeneratedDocument',
@@ -187,7 +204,11 @@ interface ExportPageFragment {
 }
 
 /**
- * Generate PDF using Puppeteer
+ * Generate PDF using Puppeteer.
+ *
+ * W1 safety rule: when pagination is requested, pagination must succeed before
+ * page.pdf() is allowed to run. The previous warning-and-fallback path could
+ * return fixed-height sections whose content had been clipped.
  */
 export async function generatePDF(
   html: string,
@@ -200,10 +221,7 @@ export async function generatePDF(
     pagination?: ExportPaginationOptions;
   }
 ): Promise<Buffer> {
-  // Lazy load puppeteer-core
   const puppeteer = await import('puppeteer-core');
-
-  // Try to find Chrome executable or use remote browser
   const executablePath = await findChromePath();
 
   const browser = await puppeteer.default.launch({
@@ -217,11 +235,23 @@ export async function generatePDF(
     ],
   });
 
+  let page: Awaited<ReturnType<typeof browser.newPage>> | null = null;
   try {
-    const page = await browser.newPage();
+    page = await browser.newPage();
+    page.setDefaultTimeout(PDF_PAGE_TIMEOUT_MS);
+    page.setDefaultNavigationTimeout(PDF_PAGE_TIMEOUT_MS);
 
     await page.setContent(html, {
       waitUntil: 'networkidle0',
+      timeout: PDF_PAGE_TIMEOUT_MS,
+    });
+
+    // Font metrics are part of pagination geometry. Never measure against a
+    // half-loaded font set and later print with different metrics.
+    await page.evaluate(async () => {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
     });
 
     if (options.pagination) {
@@ -242,24 +272,34 @@ export async function generatePDF(
             };
           };
           const paginate = globalScope.A4Pagination?.paginateA4Document;
-          if (!paginate) return null;
+          if (!paginate) {
+            throw new Error('Pagination bundle did not expose paginateA4Document');
+          }
           return paginate(payload.canonicalHtml, payload.layout);
         }, {
           canonicalHtml: options.pagination.canonicalHtml,
           layout: options.pagination.layout,
         } satisfies { canonicalHtml: string; layout: unknown });
-        if (fragments) {
-          const sectionsHtml = buildPaginatedSectionsHtml(fragments);
-          await page.evaluate((replacement) => {
-            const container = document.getElementById('a4-paginated-sections');
-            if (container) container.innerHTML = replacement;
-          }, sectionsHtml);
+
+        if (!Array.isArray(fragments) || fragments.length === 0) {
+          throw new Error('Pagination returned no printable fragments');
         }
-      } catch (paginationError) {
-        console.warn(
-          'A4 pagination in export failed; falling back to natural page flow',
-          paginationError,
-        );
+
+        const sectionsHtml = buildPaginatedSectionsHtml(fragments);
+        const replaced = await page.evaluate((replacement) => {
+          const container = document.getElementById('a4-paginated-sections');
+          if (!container) return false;
+          container.innerHTML = replacement;
+          return true;
+        }, sectionsHtml);
+        if (!replaced) {
+          throw new Error('PDF pagination target was unavailable');
+        }
+      } catch (error) {
+        // Deliberately do not log the supplied HTML, canonical content, field
+        // values, or the raw browser exception. The caller receives a stable,
+        // recoverable typed error and no PDF bytes are produced.
+        throw new ExportPaginationError({ action: 'retry' });
       }
     }
 
@@ -279,10 +319,18 @@ export async function generatePDF(
         bottom: '0mm',
         left: '0mm',
       },
+      timeout: PDF_PAGE_TIMEOUT_MS,
     });
 
     return Buffer.from(pdfBuffer);
   } finally {
+    if (page) {
+      try {
+        await page.close();
+      } catch {
+        // Browser close below remains the final resource boundary.
+      }
+    }
     await browser.close();
   }
 }
@@ -375,7 +423,8 @@ export async function exportToHTML(params: ExportHTMLParams): Promise<HTMLResult
     throw new Error('Document not found');
   }
 
-  // Sanitize content
+  // Sanitizer semantics remain unchanged in the independent W1 slice. F1 owns
+  // the shared C06 policy; W1 will replace this adapter after F1 integration.
   const window = new JSDOM('').window;
   const purify = DOMPurify(window);
   const sanitizedContent = purify.sanitize(document.content, {
@@ -626,7 +675,8 @@ export async function generatePreviewHtml(
   const headerHtml = buildHeaderHtml(letterhead);
   const footerHtml = buildFooterHtml(letterhead);
 
-  // Sanitize content
+  // F1 will replace this local sanitizer with the shared C06 adapter during
+  // producer integration. Do not widen or duplicate that policy here.
   const window = new JSDOM('').window;
   const purify = DOMPurify(window);
   const sanitizedContent = purify.sanitize(document.content, {
