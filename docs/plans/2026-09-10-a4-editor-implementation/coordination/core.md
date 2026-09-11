@@ -1,5 +1,80 @@
 # CORE handoff log
 
+## CORE-C1-G1-CORRECTION-20260912-01
+
+Dispatch ID: `CORE-C1-G1-CORRECTION-20260912-01`
+Role and packet: CORE / C1 corrective owner — integrated G1 canonical integrity blockers only
+Starting state: **G1 BLOCKED — CORRECTION REQUIRED**
+Ending state: **READY FOR INTEGRATION — G1 remains blocked pending separate SEMANTICS correction integration and integrated G1 rerun**
+Frozen contract consumed: **v1 frozen at G0 — unchanged**
+Integrated baseline: `603f3a25d168435b56709ef9c2c2e8cdda9af737`
+Branch: `codex/a4-editor-core-c1-g1-correction`
+Corrective PR: **#41** — `C1 G1 corrective: restore projection and native selection integrity`
+Validated production-source commit: `7dff3958f0c70a54378fa3eea2c17f72ede6e60a`
+Validation workflow run: `34634080485` — **SUCCESS**
+Validation environment: Node `24.20.0`; Playwright Chromium `149.0.7827.55`
+Validation completed: `2026-09-11T18:40:05Z` source commit; handoff recorded `2026-09-12T07:19:00+08:00`
+
+### Corrective scope and decisions
+
+- C1 remains the sole canonical session/revision authority. No second canonical document, revision counter, or rendered-page authority was introduced.
+- Ordinary canonical edits no longer replace the mounted `PageData[]` projection before revision-qualified reflow publishes. The most recent committed projection remains mounted while a newer canonical revision is being paginated.
+- A collapsed native text transaction is repaired only when the S1 transaction returns changed canonical content but a collapsed logical caret that did not advance. The repair is derived from the canonical transaction result and available logical-flow text; SEMANTICS command ownership is unchanged.
+- A cancelable canonical `beforeinput` transaction records a revision-bound pairing so the matching post-input event is consumed exactly once rather than being mistaken for a second DOM mutation.
+- For an unpaired same-revision native `input` repair, C1 first bookmarks the valid logical selection and then repairs the rendered surface from canonical state; stale rendered DOM never replaces canonical content.
+- Native cross-page mouse selection keeps the browser's valid anchor. A collapsed cross-page drag may be reconstructed from localized pointer endpoints only when both endpoints resolve to different rendered page contents. Focus refinement advances by one adjacent glyph only when pointer geometry proves that glyph was reached.
+- Parsed pages may publish immediately only when a canonical replacement changes **hard-section topology**. Ordinary soft pagination remains asynchronous and revision-qualified.
+- No SEMANTICS-owned algorithm, FIELDS/WORKFLOW production behavior, database schema, deployment setting, version, or frozen contract was changed.
+
+### Validation evidence
+
+The final corrective workflow ran from the integrated Stage-1 baseline with the temporary transform applied in CI and committed production source only after every gate passed.
+
+```text
+npx vitest run --config vitest.browser.config.ts \
+  __tests__/browser/a4-input-sequences.browser.test.tsx \
+  __tests__/browser/a4-boundary-semantics.browser.test.tsx \
+  __tests__/browser/a4-page-editor.browser.test.tsx \
+  --reporter=verbose
+PASS — 3 files, 58/58 tests
+
+npx vitest run \
+  __tests__/components/a4-editor-session.test.ts \
+  __tests__/components/a4-page-editor.test.tsx \
+  __tests__/components/a4-editor-toolbar.test.tsx \
+  __tests__/components/a4-page-editor-ssr.test.tsx \
+  --reporter=verbose
+PASS — 4 files, 94/94 tests
+
+npm run db:generate
+PASS
+
+npm run typecheck
+PASS
+
+npx tsc -b
+PASS
+
+npm run build
+PASS
+
+git diff --check
+PASS
+```
+
+The browser proof covers the blocked CORE regressions together with rapid Enter -> typing, document-order typing, native cross-page selection and replacement, hard-page behavior, caret preservation, committed-projection retention, and per-document history isolation.
+
+### Net files and cleanup
+
+- Production correction: `src/components/documents/a4-page-editor.tsx`.
+- Coordination evidence: this `coordination/core.md` handoff entry.
+- Temporary validation workflows/scripts and accidental placeholder files were removed before handoff and have **no net PR file diff**.
+- The branch intentionally remains unmerged. `main` was rechecked at the integrated baseline `603f3a25d168435b56709ef9c2c2e8cdda9af737` before PR handoff.
+
+### Integration disposition
+
+PR #41 is **READY FOR CORE INTEGRATION REVIEW** but must remain unmerged until the user gives the merge call. This correction alone does **not** declare G1 passed: integrate the separately owned SEMANTICS G1 correction first (or together in the integrator's controlled order), then rerun the canonical G1 gate against the resulting immutable integrated commit. Do not begin C2, S2, F2, W2, deployment, or any Stage-2 work from this handoff.
+
 ## CORE-C1-20260911-01
 
 Dispatch ID: `CORE-C1-20260911-01`
