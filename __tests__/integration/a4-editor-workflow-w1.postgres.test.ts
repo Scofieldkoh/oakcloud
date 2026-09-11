@@ -203,7 +203,7 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
     expect(['<p>client-a</p>', '<p>client-b</p>']).toContain(stored.content);
   });
 
-  it('keeps lifecycle CAS revision-scoped and rejects an older canonical revision', async () => {
+  it('keeps lifecycle CAS revision-scoped and rejects an older canonical revision without side effects', async () => {
     const actor = await seedTenant('Lifecycle');
     const document = await seedGeneratedDocument(actor, 'Synthetic lifecycle');
     const edited = await updateGeneratedDocument({
@@ -213,6 +213,13 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
     }, actor);
     const archived = await archiveDocument(document.id, actor, 'synthetic test', edited.revision);
     expect(archived.revision).toBe(2);
+    const auditCountBeforeRejected = await prisma.auditLog.count({
+      where: {
+        tenantId: actor.tenantId,
+        entityType: 'GeneratedDocument',
+        entityId: document.id,
+      },
+    });
 
     await expect(updateGeneratedDocument({
       id: document.id,
@@ -220,9 +227,18 @@ describePostgres('A4 editor WORKFLOW W1 PostgreSQL concurrency', () => {
       title: 'stale title',
     }, actor)).rejects.toMatchObject({ statusCode: 409 });
     const stored = await prisma.generatedDocument.findUniqueOrThrow({ where: { id: document.id } });
+    const auditCountAfterRejected = await prisma.auditLog.count({
+      where: {
+        tenantId: actor.tenantId,
+        entityType: 'GeneratedDocument',
+        entityId: document.id,
+      },
+    });
     expect(stored.revision).toBe(2);
     expect(stored.status).toBe('ARCHIVED');
     expect(stored.title).toBe('Synthetic lifecycle');
+    expect(stored.content).toBe('<p>edited</p>');
+    expect(auditCountAfterRejected).toBe(auditCountBeforeRejected);
   });
 
   it('isolates per-item bulk stale failures and does not mutate the stale document', async () => {
