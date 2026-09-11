@@ -116,6 +116,7 @@ export type CreateDocumentTemplateInput = z.infer<typeof createDocumentTemplateS
 
 export const updateDocumentTemplateSchema = z.object({
   id: z.string().uuid(),
+  expectedRevision: z.number().int().nonnegative().optional(),
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(5000).optional().nullable(),
   category: documentTemplateCategoryEnum.optional(),
