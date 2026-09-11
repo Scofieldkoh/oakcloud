@@ -54,7 +54,7 @@ import type {
 } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
-import { ApiError, NotFoundError, ValidationError } from '@/lib/errors';
+import { ApiError, ErrorCodes, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import { metadataHasUnresolvedTemplateData } from '@/lib/document-finalization';
@@ -186,6 +186,20 @@ const TRACKED_FIELDS: (keyof GeneratedDocument)[] = [
 
 function withRevision<T extends GeneratedDocument>(document: T, revision: number): T & { revision: number } {
   return { ...document, revision };
+}
+
+function generatedDocumentStateConflict(deleted = false): ApiError {
+  return new ApiError(
+    ErrorCodes.CONFLICT,
+    deleted
+      ? 'This resource is deleted.'
+      : 'This resource is not editable in its current state.',
+    409,
+    {
+      resourceType: 'GeneratedDocument',
+      action: 'reload-read-only',
+    },
+  );
 }
 
 async function buildContactsContext(
@@ -589,7 +603,7 @@ export async function materializeDocumentFromTemplate(
       where: { id: target.generatedDocumentId, tenantId, deletedAt: null },
     });
     if (!existingChild) throw new NotFoundError('Document draft not found');
-    if (existingChild.status !== 'DRAFT') throw new ValidationError('Document draft is not editable');
+    if (existingChild.status !== 'DRAFT') throw generatedDocumentStateConflict();
     if (target.expectedBatchItemId) {
       const batchItem = await prisma.documentGenerationBatchItem.findFirst({
         where: {
@@ -850,10 +864,9 @@ export async function updateGeneratedDocument(
     where: { id: data.id, tenantId, deletedAt: null },
   });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.status === 'FINALIZED') {
-    throw new Error('Cannot update a finalized document. Unfinalize it first.');
+  if (existing.status === 'FINALIZED' || existing.status === 'ARCHIVED') {
+    throw generatedDocumentStateConflict();
   }
-  if (existing.status === 'ARCHIVED') throw new Error('Cannot update an archived document');
 
   if (data.content !== undefined || data.contentJson !== undefined) {
     assertA4WriterCanPreserve(
@@ -916,8 +929,9 @@ export async function finalizeDocument(
     where: { id, tenantId, deletedAt: null },
   });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.status === 'FINALIZED') throw new Error('Document is already finalized');
-  if (existing.status === 'ARCHIVED') throw new Error('Cannot finalize an archived document');
+  if (existing.status === 'FINALIZED' || existing.status === 'ARCHIVED') {
+    throw generatedDocumentStateConflict();
+  }
   if (metadataHasUnresolvedTemplateData(existing.metadata)) {
     throw new Error('Cannot finalize document with unresolved placeholders or partials');
   }
@@ -972,7 +986,7 @@ export async function unfinalizeDocument(
     where: { id, tenantId, deletedAt: null },
   });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.status !== 'FINALIZED') throw new Error('Document is not finalized');
+  if (existing.status !== 'FINALIZED') throw generatedDocumentStateConflict();
   await assertGeneratedDocumentCanBeUnfinalized(tenantId, existing.id);
 
   const document = await prisma.$transaction(async (tx) => {
@@ -1024,7 +1038,7 @@ export async function archiveDocument(
 
   const existing = await prisma.generatedDocument.findFirst({ where: { id, tenantId, deletedAt: null } });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.status === 'ARCHIVED') throw new Error('Document is already archived');
+  if (existing.status === 'ARCHIVED') throw generatedDocumentStateConflict();
 
   const document = await prisma.$transaction(async (tx) => {
     const claim = await claimGeneratedDocumentRevision(tx, {
@@ -1064,7 +1078,7 @@ export async function deleteGeneratedDocument(
 
   const existing = await prisma.generatedDocument.findFirst({ where: { id, tenantId } });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.deletedAt) throw new Error('Document is already deleted');
+  if (existing.deletedAt) throw generatedDocumentStateConflict(true);
 
   const document = await prisma.$transaction(async (tx) => {
     const claim = await claimGeneratedDocumentRevision(tx, { id, tenantId, expectedRevision });
@@ -1114,7 +1128,7 @@ export async function bulkDeleteGeneratedDocuments(
       continue;
     }
     if (document.deletedAt) {
-      failed.push({ id, error: 'Document is already deleted' });
+      failed.push({ id, error: 'This resource is deleted.', code: ErrorCodes.CONFLICT });
       continue;
     }
 
