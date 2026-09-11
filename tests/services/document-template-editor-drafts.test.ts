@@ -29,17 +29,20 @@ const restoreDecision = (draftBaseRevision: number, serverRevision: number) =>
 
 const isEditableStatus = (status: 'DRAFT' | 'FINALIZED' | 'ARCHIVED') => status === 'DRAFT';
 
-describe('A4 editor WORKFLOW W0 draft and save-race proofs', () => {
-  it.fails('W-DRAFT-01 wires the generated-document autosave callback into the editor lifecycle', () => {
+describe('A4 editor WORKFLOW W1 draft and save-race proofs', () => {
+  it.fails('W-DRAFT-01 CORE autosave callback wiring remains outside WORKFLOW W1', () => {
     const occurrences = generatedEditorSource.match(/\b_handleAutoSave\b/g)?.length ?? 0;
     expect(occurrences).toBeGreaterThan(1);
   });
 
-  it.fails('W-DRAFT-02 compares draft freshness using canonical JSON or a base revision rather than HTML alone', () => {
-    expect(draftRouteSource).toMatch(/hasDifferentContent:[\s\S]{0,300}(?:contentJson|baseRevision|baseServerRevision|expectedRevision)/);
+  it('W-DRAFT-02 compares draft freshness using canonical JSON and base revision, not HTML alone', () => {
+    expect(draftRouteSource).toContain('baseRevision');
+    expect(draftRouteSource).toContain('revisionChanged');
+    expect(draftRouteSource).toContain('jsonChanged');
+    expect(draftRouteSource).toMatch(/hasDifferentContent:\s*revisionChanged\s*\|\|\s*jsonChanged\s*\|\|/);
   });
 
-  it.fails('W-DRAFT-03 binds save acknowledgement to a snapshot revision before clearing newer dirty state', () => {
+  it.fails('W-DRAFT-03 CORE delayed-save acknowledgement UI remains outside WORKFLOW W1', () => {
     expect(generatedSaveBlock).toMatch(/(?:saveRevision|editRevision|snapshotRevision|requestRevision)/);
     expect(generatedSaveBlock).toContain('setHasUnsavedChanges(false)');
   });
@@ -50,7 +53,7 @@ describe('A4 editor WORKFLOW W0 draft and save-race proofs', () => {
     expect(draftRouteSource).toContain('where: { documentId: id, userId: session.id }');
   });
 
-  it('W-DRAFT-COMPAT-01 existing metadata can carry base/server/session/snapshot revisions without a W0 migration', () => {
+  it('W-DRAFT-COMPAT-01 existing metadata carries canonical base revisions without a draft schema migration', () => {
     expect(draftModel).toMatch(/metadata\s+Json\?/);
     expect(draftModel).toMatch(/contentJson\s+Json\?/);
   });
