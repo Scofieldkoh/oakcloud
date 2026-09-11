@@ -327,3 +327,119 @@ These are validation/integration gates; WORKFLOW has not started W2 route-snapsh
 PR #37 remains open, draft and unmerged until the outstanding Node-24 focused validation and CORE bundle-generation gate are satisfied. No application version bump was made. No deployment was activated. No production/business data was used.
 
 **W2/W3 DID NOT START.**
+
+### CORE full W1 integration review correction — 2026-09-11
+
+CORE reviewed W1 against the integrated C1/S1/F1 baseline at `339e068431d881f7d74c3b64e839c940e34feccf` and accepted the W1 architecture. The correction starts from CORE's handed-back PR head `fb0351b91be1209ab56da71f818289c86b30f120`. The exact W1 correction implementation head immediately before this handoff-only documentation commit is `90774fd305095388f625a40997a2ae035a008d43`. The resulting documentation commit necessarily changes the branch head; the final re-review SHA is published in PR #37 metadata/comment after this handoff commit.
+
+The two temporary CORE validation-workflow commits present in history remain historical only. WORKFLOW did not restore or modify the deleted temporary validation workflow, did not alter package/runtime configuration to gain a runner, and did not touch the checked-in generated pagination bundle.
+
+#### CORE pre-correction integration evidence
+
+CORE's independent Node-24/PostgreSQL-16/Chromium pass established the following before these corrections:
+
+- Node 24 setup: **PASS**.
+- Prisma generation: **PASS**.
+- complete migration replay against a disposable PostgreSQL database: **PASS**.
+- `npm run generate:pagination-bundle`: **PASS**.
+- generated bundle diff hygiene: **PASS**.
+- `npx tsc -b`: **PASS**.
+- Chromium installation: **PASS**.
+- focused W1 set: **53 passed / 2 failed**, both in `tests/document-output/document-template-editor-output.test.ts`.
+- W1 PostgreSQL concurrency suite: **6 passed / 1 failed**; the failure was archived-state mutation classification.
+- existing batch PostgreSQL suite could not provide valid behavior evidence because its synthetic cleanup deleted users before the tenant's batch graph and hit `document_generation_batches_created_by_id_fkey`.
+- the standalone real-PDF harness stopped before production PDF generation because its temporary TypeScript runner used top-level `await` while `tsx` compiled it as CommonJS. This is a CORE validation-harness defect, not a W1 production defect; no W1 production workaround was added.
+
+#### Correction 1 — authoritative F1 C06 attribute policy
+
+`sanitizeA4Html()` still gets tags and attributes exclusively from `getA4SanitizerPolicy()` and adds only `A4_EDITOR_DECORATION_ATTRIBUTES` in the projection-output mode. DOMPurify is now configured with:
+
+```ts
+ALLOW_DATA_ATTR: false,
+ALLOW_ARIA_ATTR: false,
+```
+
+This prevents its generic data/ARIA defaults from bypassing F1's explicit `ALLOWED_ATTR`. No W-owned canonical attribute allowlist was introduced and no F1 policy definition was changed.
+
+Functional regressions now cover removal of `data-source`, another arbitrary `data-*`, client `data-trusted`, arbitrary `aria-*` and `onclick`; retention of explicit F1 canonical `data-a4-break`, legacy `data-break-type`, class/style/list/table structure; approved `data-flow-*` only in projection output; and removal of projection-only metadata from canonical PDF/HTML preparation.
+
+#### Correction 2 — typed locked/archived GeneratedDocument mutation results
+
+The generic finalized/archived/deleted mutation-state errors touched by W1 are now typed 409 `ApiError` conflicts through one W1 helper matching the existing C07 state-miss convention. Tenant-scoped not-found behavior remains unchanged and another tenant is not disclosed.
+
+The archived stale-write PostgreSQL regression now asserts all of the required rejected-mutation invariants: HTTP/service `statusCode: 409`, revision remains 2, status remains `ARCHIVED`, title/content remain unchanged, and the tenant/document audit-row count is unchanged across the rejected operation. Finalized/materialization/unfinalize/archive/repeated-delete pre-checks no longer emit untyped 500-class state errors.
+
+#### Correction 3 — idempotent legacy batch adoption
+
+`adoptLegacyGenerationSession()` now:
+
+1. loads the generated document by `id + tenantId + deletedAt:null`;
+2. returns scoped not-found if it does not exist;
+3. checks `DocumentGenerationBatchItem` ownership using both `generatedDocumentId` and `tenantId`;
+4. if already adopted, loads/returns the existing batch through the normal tenant-scoped service path;
+5. only requires/parses `metadata.generationSession` when there is no existing batch item;
+6. retains the existing revision observation/claim around the actual first-time metadata mutation.
+
+The batch PostgreSQL regression now proves first and second adoption return the same batch and generated-document ID, exactly one batch exists, and the GeneratedDocument revision after the second call equals the revision after the first call.
+
+#### Correction 4 — referentially safe synthetic batch cleanup
+
+`__tests__/integration/document-generation-batch.postgres.test.ts` cleanup remains limited to tenant IDs created by the test. For each synthetic tenant it now deletes in referentially safe order: audit logs; null batch `activeItemId`; batch items; batches; generated documents; templates; users; workspace. Foreign-key constraints remain enabled and cleanup errors are not ignored.
+
+The corrected batch suite itself was not executed by this WORKFLOW session because the local runtime is Node 22; it remains an explicit CORE re-review gate below.
+
+#### Correction 5 — W-OUTPUT-03 functional fail-closed proof
+
+The invalid blanket assertion against `overflow: hidden` has been removed. W-OUTPUT-03 now constructs 240 source paragraphs plus `END-OF-DOCUMENT-SENTINEL`, verifies the complete first/last source survives into pre-pagination HTML, captures the exact `canonicalHtml` payload given to the paginator and asserts it equals the complete source, forces pagination failure, requires `ExportPaginationError`, proves `page.pdf()` was never called, and verifies page/browser cleanup. No successful-page containment CSS was weakened or removed.
+
+#### Correction 6 — sanitizer/output parity regressions
+
+W-owned output tests now exercise the shared F1 policy through canonical PDF preparation, projection-page preparation, and HTML export. Coverage includes blockquote, caption, `tfoot`, `ol start=5`, C03 semantic break, legacy hard break, arbitrary data attributes, arbitrary ARIA/event attributes, projection-only flow metadata, and synthetic field/reference text/markup where the shared policy supports it. F2 ordinary-value escaping remains inactive and outside W1.
+
+#### Validation in this correction session
+
+The local execution host was checked again:
+
+```text
+node --version
+v22.16.0
+```
+
+Therefore WORKFLOW did **not** execute or claim success for the Node-24-only focused W1 command, the disposable W1/batch PostgreSQL suites, or `npx tsc -b`. No disposable or production/business database was used by this session. The repository's ordinary `Node 24 compatibility` workflow was allowed to run naturally from the PR pushes; no temporary CORE workflow was restored. That ordinary workflow is supplemental compile/build evidence only and is not substituted for CORE's focused W1 gate.
+
+The exact CORE re-review commands remain:
+
+```bash
+npx vitest run \
+  tests/lib/a4-editor-capabilities-w1.test.ts \
+  tests/lib/a4-editor-producer-integration-w1.test.ts \
+  tests/lib/a4-editor-server-reader-w1.test.ts \
+  tests/services/document-export-w1.test.ts \
+  tests/services/document-template-editor-save.test.ts \
+  tests/services/document-template-editor-fields.test.ts \
+  tests/services/document-template-editor-drafts.test.ts \
+  tests/document-output/document-template-editor-output.test.ts
+```
+
+Then, against an explicitly disposable PostgreSQL database only:
+
+```bash
+npx vitest run \
+  __tests__/integration/a4-editor-workflow-w1.postgres.test.ts \
+  __tests__/integration/document-generation-batch.postgres.test.ts \
+  --maxWorkers=1
+```
+
+Then:
+
+```bash
+npx tsc -b
+```
+
+CORE should also rerun the corrected standalone real-PDF harness after regenerating the S1/W1 pagination bundle under CORE's shared generation lease. The checked-in generated bundle remains untouched by WORKFLOW.
+
+#### Re-review stop boundary
+
+Only W1 corrections from CORE's full integration review were made. **W2 and W3 have not started.** PR #37 remains open, draft and unmerged. No application-version bump or deployment activation was made.
+
+**READY FOR RE-REVIEW — W1 only**
