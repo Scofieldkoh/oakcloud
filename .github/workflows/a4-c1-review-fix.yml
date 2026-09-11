@@ -35,9 +35,17 @@ jobs:
           p.write_text(s)
           PY
       - name: Apply C1 review fixes
-        run: python scripts/a4-c1-review-fix.py
-      - name: Focused CORE component tests
-        run: npx vitest run __tests__/components/a4-editor-session.test.ts __tests__/components/a4-page-editor.test.tsx __tests__/components/a4-editor-toolbar.test.tsx __tests__/components/a4-page-editor-ssr.test.tsx
+        run: |
+          python scripts/a4-c1-review-fix.py
+          python scripts/a4-c1-review-fix-2.py
+      - name: C1 canonical session tests
+        run: npx vitest run __tests__/components/a4-editor-session.test.ts
+      - name: A4 page editor component tests
+        run: npx vitest run __tests__/components/a4-page-editor.test.tsx
+      - name: A4 toolbar component tests
+        run: npx vitest run __tests__/components/a4-editor-toolbar.test.tsx
+      - name: A4 editor SSR tests
+        run: npx vitest run __tests__/components/a4-page-editor-ssr.test.tsx
       - name: C1 browser input sequences
         run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-input-sequences.browser.test.tsx
       - name: Typecheck
@@ -50,6 +58,7 @@ jobs:
       - name: Commit validated review fixes
         run: |
           rm scripts/a4-c1-review-fix.py
+          rm scripts/a4-c1-review-fix-2.py
           rm .github/workflows/a4-c1-review-fix.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
