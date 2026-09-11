@@ -151,129 +151,179 @@ CORE owns the final G0 decision and execution-only integration validation.
 
 ---
 
-## WORKFLOW-W1-20260911-01 — Reader safety and revision plumbing
+## WORKFLOW-W1-20260911-01 — Integrated reader safety and revision plumbing
 
 Role and packet: WORKFLOW / W1 only  
-Common Stage-1 baseline: `bfdc4f95594b73ce4d20bff45f320bdb53837c37`  
+Integrated baseline: `339e068431d881f7d74c3b64e839c940e34feccf`  
 Branch: `codex/a4-editor-workflow-w1`  
-PR: #37 — https://github.com/Scofieldkoh/oakcloud/pull/37 (draft; do not merge)  
+PR: #37 — existing PR only; **do not merge**  
+Baseline reconciliation merge commit: `2cc51a6ff405251796cf3108f938b7a8c459fc5b`  
+Latest W1 implementation head before this handoff-only commit: `12928afe857d5efdce8c7f8c35640a61e995dec6`  
 W2/W3: **NOT STARTED**
 
-### W1 status matrix
+A commit cannot contain its own SHA, so the implementation head above is the exact code head handed into this documentation commit. The final PR head and CI run are recorded in PR metadata after the handoff update.
 
-| W1 requirement | Status | Evidence / remaining work |
-| --- | --- | --- |
-| CORE dispatch `WORKFLOW-W1-20260911-01` confirmed | **COMPLETE** | Read from `codex/a4-editor-core-c1`; branch remains based on common Stage-1 baseline, not CORE C1 implementation. |
-| GeneratedDocument forward SQL migration | **COMPLETE** | `prisma/migrations/20260911181700_add_generated_document_revision/migration.sql`; additive `revision INTEGER NOT NULL DEFAULT 0`; disposable PostgreSQL migration step passed in Node 24 CI. |
-| GeneratedDocument Prisma model declaration | **BLOCKED ENVIRONMENT** | Required exact declaration is `revision Int @default(0)` with no `@map`. The connected GitHub writer exposes whole-file replacement only for this large schema and no safe line patch; migration/runtime use the frozen physical column but the Prisma declaration must be added before integration. |
-| DocumentTemplate revision CAS / acknowledgement | **COMPLETE** | Public `expectedRevision`; existing `version` is compared in tenant/deleted predicate and incremented in accepted mutation; responses retain `version` and add `revision`. |
-| TemplatePartial revision CAS / acknowledgement | **COMPLETE** | Public `expectedRevision`; existing `version` is compared/incremented atomically; responses retain `version` and add `revision`. |
-| GeneratedDocument revision CAS / acknowledgement | **COMPLETE** | DB-side CAS claim updates `generated_documents.revision` by tenant/id/deleted/status/expected revision within the same transaction as canonical mutation. Create/clone return 0; get/search expose public `revision`. |
-| Existing-target materialization revision safety | **COMPLETE** | CAS occurs before canonical update; linked draft Service Agreement deletion moved behind accepted CAS so stale materialization cannot delete it. |
-| Finalize/unfinalize/archive/delete revision safety | **COMPLETE** | CAS before mutation; audit/task/e-sign effects run only after an accepted mutation. |
-| Bulk generated-document delete revision participation | **COMPLETE** | Additive `expectedRevisions` map; each canonical row is independently CAS-protected and returns per-item failure without stale success effects. |
-| Draft base-revision reconciliation | **NOT YET REQUIRED** | Draft rows do not increment canonical revision. Binding/reconciliation extension remains a later workflow/draft integration item; no W2 behavior was started. |
-| Existing batch revision | **NOT YET REQUIRED** | Existing `DocumentGenerationBatch.revision` is preserved. No new W2 batch UX/session work was begun in W1. |
-| Capability producer | **COMPLETE** | `src/lib/document-editor/a4-editor-capabilities.ts` + authenticated `GET /api/page-bootstrap/document-editor`; production/fallback is reader 1, writer 1, revision optional; client claims can only reduce authority. |
-| v2 writer activation | **NOT YET REQUIRED** | Explicitly disabled in W1. |
-| Independent PDF/export failure containment | **COMPLETE** | Pagination must succeed before `page.pdf`; no warning-and-clipped-success fallback; font readiness awaited; 30s bounds; page/browser cleanup in `finally`; stored document untouched; success audit only after PDF success. |
-| Old/new C03 break readers / nested pagination | **WAITING FOR S1** | Must consume final S1 exports; no duplicate parser/paginator created. |
-| Shared C06 content-policy adapters / sanitizer parity | **WAITING FOR F1** | Must consume final F1 policy exports; existing sanitizer allowlists were not independently widened/replaced. |
-| TemplatePartial markup-based v2 feature detection | **WAITING FOR F1** | Final parser/registry adapter required. |
-| Reader-before-writer level-2 content detection | **WAITING FOR S1** | Level-2 writer guard exists, but authoritative break-format detection must use S1 rather than a duplicate detector. |
-| Server/render/export reader compatibility | **WAITING FOR S1** | Final structural reader integration deferred. |
-| Pagination bundle regeneration/freshness | **WAITING FOR S1** | Regenerate only after S1 integration according to ownership procedure. |
-| Actual Puppeteer PDF byte/sentinel evidence | **BLOCKED ENVIRONMENT** | Standard CI validates Node/Chromium path but this session has no dependency-capable Node 24 checkout for the requested real PDF proof. HTML-only evidence is not treated as PDF proof. |
-| W2/W3 | **NOT YET REQUIRED** | Not started. |
+### Baseline integration and conflict resolution
 
-### Public API contract implemented
+The previous W1 branch was reconciled with `main@339e068431d881f7d74c3b64e839c940e34feccf` as a real two-parent merge. The W1 changed-path set and the producer changes between the original Stage-1 common baseline and the integrated baseline were disjoint, so there were no content-level source conflicts to resolve. The merge retained every completed W1 blob while taking the integrated CORE C1 / FIELDS F1 / SEMANTICS S1 tree unchanged. No CORE-, SEMANTICS- or FIELDS-owned production implementation was edited to make W1 integrate.
 
-Successful edit-capable responses preserve existing fields and acknowledge:
+### S1 production interfaces consumed
 
-```json
-{ "revision": 8 }
-```
+WORKFLOW consumes the integrated SEMANTICS production APIs rather than defining a second break parser or structural-position model:
 
-Template and partial responses also retain their native `version`; public `revision` mirrors it. GeneratedDocument public `revision` comes from the dedicated database column. Requests use additive:
+- `detectA4BreakFormatLevel`
+- `readA4BreakDocument`
+- `partitionA4SemanticBreaks`
+- `mapA4ProjectedTextPoint`
+- `mapA4ProjectedStructuralPoint`
+- `serializeA4CanonicalBreakDocument`
+- `paginateA4FlowHtml`
+- `paginateA4StructuralHtml`
+- the revision-qualified projection map carrying CORE-owned `sessionKey` / `documentRevision`, text `sourceRanges` and exact structural `childBoundaries`
 
-```json
-{ "expectedRevision": 7 }
-```
+`src/lib/document-editor/a4-editor-format.ts` delegates markup format detection and canonical reading to S1 and only combines that result with the frozen optional `contentJson.a4Editor.schemaVersion` marker. `src/lib/document-editor/a4-server-dom.ts` is an environment adapter only: it provides one process-local JSDOM set of missing DOM primitives so the unchanged S1 DOM implementation can be consumed by server readers/export paths. It contains no hard-break parser, structural mapping algorithm or revision authority.
 
-Lifecycle DELETE endpoints accept `expectedRevision` as a query parameter where a request body is not already part of the route. Bulk generated-document delete accepts:
+Compatibility preserved by these adapters includes legacy top-level hard breaks, nested C03 semantic breaks, one logical `LI` across a nested page break, revision-qualified text mapping and exact zero-text child-boundary mapping around `<br>`, field/atomic nodes and empty owners.
 
-```json
-{
-  "ids": ["..."],
-  "reason": "...",
-  "expectedRevisions": { "<document-id>": 7 }
-}
-```
+### F1 production interfaces consumed
 
-Transitional missing preconditions remain accepted only while server capability is `revisionPrecondition: "optional"`.
+WORKFLOW consumes FIELDS production contracts through the integrated modules, including:
 
-Stale mutation response is frozen as HTTP 409:
+- `parseTemplateFields`
+- `resolveTemplateFields`
+- `loadStoredFieldRegistry`
+- `serializeStoredFieldDefinition`
+- `resolveTypedFieldValueByPrecedence`
+- `getA4SanitizerPolicy`
+- `A4_EDITOR_DECORATION_ATTRIBUTES`
+- the frozen C06 canonical trusted-rich capability model (WORKFLOW does not mint a parallel trust flag)
+
+`placeholderDefinitionSchema` is now lossless for JSON-compatible field definitions: stable `id`; arbitrary stored/future type strings; `source`, `category`, `path`; `defaultValue`; `format`; `options`; explicit-vs-omitted `required`; `linkedTo`; `sourcePartial`; and unknown forward top-level metadata survive validation. Template and partial services pass stable owner IDs into the F1 registry/serializer. Unknown/preserve-only types remain stored unchanged and are not appearance-coerced.
+
+Generation now enters the F1 parser/resolver boundary through `resolveTemplateFields`; typed top-level custom value selection uses `resolveTypedFieldValueByPrecedence`. F2 ordinary-field escaping and later scoped runtime rebinding are intentionally not activated in W1.
+
+### Reader-before-writer capability state
+
+The server capability is now:
 
 ```json
 {
-  "error": "This document changed since you opened it. Reload or reconcile before saving.",
-  "code": "VERSION_CONFLICT",
-  "details": {
-    "resourceType": "GeneratedDocument",
-    "expectedRevision": 7,
-    "currentRevision": 8,
-    "action": "reload-or-reconcile"
-  }
+  "readerFormatLevel": 2,
+  "allowedWriterFormatLevel": 1,
+  "revisionPrecondition": "optional"
 }
 ```
 
-Future strict-mode missing precondition is HTTP 428:
+Old/missing/malformed client capability metadata still falls back conservatively to `1 / 1 / optional`. Client claims can reduce authority but cannot elevate server reader/writer/revision authority. Level-2 writers remain disabled. W-owned template, partial, generated-document, generation, preview/batch and export reader boundaries now validate stored content through the integrated S1 reader before a corresponding newer writer capability can ever be enabled.
 
-```json
-{
-  "error": "expectedRevision is required for this mutation.",
-  "code": "REVISION_PRECONDITION_REQUIRED",
-  "details": {
-    "resourceType": "GeneratedDocument",
-    "action": "reload-and-retry"
-  }
-}
+### C07 revision / migration status
+
+- Public precondition remains `expectedRevision`.
+- DocumentTemplate and TemplatePartial compare it to their existing `version` and increment atomically in the accepted scoped mutation; successful responses preserve `version` and add public `revision`.
+- `GeneratedDocument` now has `revision Int @default(0)` in `prisma/schema.prisma`; physical migration `prisma/migrations/20260911181700_add_generated_document_revision/migration.sql` adds `generated_documents.revision INTEGER NOT NULL DEFAULT 0`. There is no `@map` and `templateVersion` remains generation provenance only.
+- GeneratedDocument canonical/lifecycle writers use a tenant/deleted/status/revision-qualified database claim and increment before canonical mutation in the same transaction. Zero-row claims are reclassified only through tenant-scoped state.
+- Create/clone begin at revision 0; ordinary reads/search expose the dedicated revision.
+- Finalize/unfinalize/archive/delete and existing-target materialization retain CAS and execute audit/task/e-sign effects only after an accepted canonical mutation.
+- Bulk delete accepts per-document expected revisions so one stale item fails independently without mutating another item.
+- Batch materialization/retry now carries each hidden GeneratedDocument's loaded revision into materialization and the returned revision into finalization. A concurrent child-document change therefore fails that item rather than being overwritten by an unchecked batch lifecycle write.
+- Draft save records the canonical base revision and rejects a stale base before replacing that user's draft. Full overlapping autosave/session sequencing remains W2 and was not started.
+
+### Output / export fail-safe
+
+`src/services/document-export.service.ts` now routes canonical output through S1 and sanitizes through F1's shared C06 policy. It no longer uses the legacy top-level string splitter or independent sanitizer allowlists for W1 output. HTML/preview/PDF retain the supported canonical structures and semantic break attribute.
+
+PDF pagination is a correctness gate: bundle/load/pagination/fragment/installation failure throws `ExportPaginationError` before `page.pdf`; invalid/empty fragment output is not accepted; fonts are awaited before measurement; cancellation and timeout do not produce successful bytes; page/browser resources close in `finally`; and successful audit logging occurs only after PDF bytes exist. No content/field values are logged on the failure path.
+
+### Pagination browser bundle status
+
+WORKFLOW does **not** hold the shared CORE generation lease. W-owned source/build integration is complete:
+
+- `src/services/document-export-pagination-browser.entry.ts` is the stable W output bridge and delegates to the integrated S1 browser paginator.
+- `scripts/build-pagination-bundle.mts` now bundles that W bridge, so S1's transitive projection/semantic dependencies are included when CORE regenerates.
+
+The checked-in shared artifact was deliberately **not regenerated or hand-edited** by WORKFLOW. CORE must run exactly:
+
+```bash
+npm run generate:pagination-bundle
 ```
 
-Capability bootstrap response is exactly:
+Expected generated file:
 
-```json
-{
-  "a4EditorCapabilities": {
-    "readerFormatLevel": 1,
-    "allowedWriterFormatLevel": 1,
-    "revisionPrecondition": "optional"
-  }
-}
+```text
+src/components/documents/a4-pagination/pagination-bundle.generated.ts
 ```
 
-### Writer coverage
+This is a coordination handoff item, not permission for WORKFLOW to bypass the lease.
 
-Independent W1 now covers the W0 inventory for document-template update/delete/restore, TemplatePartial update/delete, GeneratedDocument ordinary update, existing-target materialization, finalize, unfinalize, archive, soft delete and per-row bulk delete. Create/clone paths acknowledge their defined initial revision. Task/e-signing effects attached to finalize/unfinalize and task-outcome reconciliation are downstream of successful CAS and do not execute after a stale rejection. `templateVersion` remains generation provenance.
+### Regression coverage added/updated
 
-### Export containment
+Synthetic W-owned coverage now includes:
 
-`generatePDF` now treats pagination as a correctness gate. When pagination is requested, failure to load the bundle, paginate, produce fragments, or install them into the print target throws typed recoverable `ExportPaginationError` before PDF bytes are returned. It does not log source document HTML or field values. Browser/page resources close in `finally`, and font readiness is awaited before pagination measurement. Existing HTML/preview sanitizers remain unchanged pending the F1 shared C06 policy.
+- legacy top-level hard-break read/partition;
+- nested C03 v2 read/partition and one-list-item projection;
+- revision-qualified S1 text mapping;
+- exact zero-text structural child-boundary mapping through W adapters;
+- revision-qualified `paginateA4StructuralHtml`;
+- server Node-environment S1 read/serialize adapter;
+- 2/1 reader-before-writer capability and old-client fallback;
+- level-2 write rejection;
+- field ID/type/options/format/required-presence/link/sourcePartial/unknown-metadata preservation through W schemas and F1 registry;
+- distinct identities for colliding field keys under different stable partial scopes;
+- explicit PDF pagination failure, complete-fragment installation, cancellation cleanup and navigation-timeout cleanup;
+- disposable-PostgreSQL source coverage for two stale template clients, stale partial writes, atomic GeneratedDocument revision increments, lifecycle stale rejection, bulk per-item isolation, tenant scoping, draft base freshness and field metadata persistence/read-back.
 
-### Tests and CI
+The PostgreSQL suite is gated by `TEST_DATABASE_URL`; it contains synthetic workspace/users/documents only and cannot run against production/business data by default.
 
-Added focused capability tests for conservative fallback, non-elevation of authority and unsupported level-2 writer rejection. Existing W0 save/batch/draft/output fixtures remain the integration proof inventory. GitHub Actions `Node 24 compatibility` run `34590841516` completed **SUCCESS** on head `a6bac83b75673db9e0769e41817822c1e616f476`; its disposable PostgreSQL step successfully applied the new migration. Standard CI is useful compile/migration evidence but does not replace the requested real Puppeteer PDF-byte/sentinel validation.
+### Validation actually executed / blocked
 
-Focused real-PDF proof remains **BLOCKED ENVIRONMENT** and must not be inferred from HTML-string tests.
+Local execution host:
 
-### Producer integration dependencies
+```text
+node --version
+v22.16.0
+```
 
-After S1/F1 are integrated, resume this same W1 branch/PR and only consume their final exports for C03 old/new break readers, nested-break pagination semantics, shared C06 policy/sanitizer parity, TemplatePartial v2 feature detection, server/render/export compatibility and reader-before-writer format rejection. Then regenerate the pagination bundle after S1 integration and rerun the output/PDF gates. No S1/F1 source has been copied into W1.
+Oakcloud requires Node `>=24 <25`, and this host cannot resolve `github.com` for an executable checkout. Therefore the following requested W1 commands are **NOT EXECUTED** here and are not claimed as passes:
 
-### Migration / rollback implications
+```bash
+npx vitest run \
+  tests/lib/a4-editor-capabilities-w1.test.ts \
+  tests/lib/a4-editor-producer-integration-w1.test.ts \
+  tests/lib/a4-editor-server-reader-w1.test.ts \
+  tests/services/document-export-w1.test.ts \
+  tests/services/document-template-editor-save.test.ts \
+  tests/services/document-template-editor-fields.test.ts \
+  tests/services/document-template-editor-drafts.test.ts \
+  tests/document-output/document-template-editor-output.test.ts
 
-Forward migration is additive and existing rows become revision 0. Rollback ordering remains: keep writer level 1; keep revision precondition optional; roll back strict clients/writers before reader plumbing; retain `generated_documents.revision` while any deployed code reads it; drop the column last only as part of a coordinated full schema rollback. No production database was reset or touched.
+TEST_DATABASE_URL=<disposable-synthetic-postgres> npx vitest run \
+  __tests__/integration/a4-editor-workflow-w1.postgres.test.ts \
+  __tests__/integration/document-generation-batch.postgres.test.ts \
+  --maxWorkers=1
 
-### Intermediate stop point
+npx tsc -b
+```
 
-S1/F1 are not integrated. The PR remains draft/open and unmerged. W2/W3 have not started. Before producer integration, the one-line Prisma schema declaration noted above must be applied safely and the producer-dependent reader/policy/bundle work must remain deferred until S1/F1 land.
+Database fixture used by WORKFLOW in this session: **none**. No production/business database was touched. The new PostgreSQL suite is prepared only for an explicitly disposable `TEST_DATABASE_URL`.
+
+GitHub Actions provides the repository's available Node-24 execution environment. On W1 implementation head `dddc21d86e2b60b22025fa83611dc94d8da55636`, run `34612857457` reached and passed the Node-24 runtime guard, lint, registry freshness, Prisma client generation and repository `npm run typecheck`; its disposable PostgreSQL migration-deploy job also completed successfully. At handoff drafting time that full workflow was still completing unrelated contract/build jobs. The child-revision follow-up head `12928afe857d5efdce8c7f8c35640a61e995dec6` queued run `34613376988`; final PR metadata should be consulted for its completed result.
+
+Repository `npm run typecheck` is `tsc --noEmit`; it is useful compile evidence but is **not** represented as the requested `npx tsc -b` execution.
+
+Actual Puppeteer PDF-byte/page/sentinel validation against the regenerated S1 bundle is also **BLOCKED FOR CORE INTEGRATION VALIDATION** until CORE holds the generation lease and produces the checked-in bundle.
+
+### Remaining compatibility / integration adapters
+
+No competing producer implementation remains. The remaining integration-only actions are:
+
+1. CORE regeneration of the checked-in pagination bundle using the exact command/file above.
+2. Execution of the focused W1 Vitest set, the disposable W1 PostgreSQL suite and `npx tsc -b` in an authorized Node-24 checkout.
+3. Real PDF byte/page/sentinel validation after the regenerated bundle is present.
+
+These are validation/integration gates; WORKFLOW has not started W2 route-snapshot/save-acknowledgement UI migration, W2 overlapping-draft sequencing, W3 field lifecycle/escaping, or any deployment activation.
+
+### Stop boundary
+
+PR #37 remains open, draft and unmerged until the outstanding Node-24 focused validation and CORE bundle-generation gate are satisfied. No application version bump was made. No deployment was activated. No production/business data was used.
+
+**W2/W3 DID NOT START.**
