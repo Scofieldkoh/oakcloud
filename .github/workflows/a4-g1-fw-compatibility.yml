@@ -1,0 +1,81 @@
+name: A4 G1 F1 W1 compatibility
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-g1-verification
+    paths:
+      - .github/workflows/a4-g1-fw-compatibility.yml
+
+permissions:
+  contents: read
+
+env:
+  G1_INTEGRATION_SHA: 603f3a25d168435b56709ef9c2c2e8cdda9af737
+
+jobs:
+  fields:
+    name: G1 F1 C05/C06 compatibility smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.G1_INTEGRATION_SHA }}
+          fetch-depth: 0
+      - name: Assert exact G1 source commit
+        run: test "$(git rev-parse HEAD)" = "$G1_INTEGRATION_SHA"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run F1 field and content-policy compatibility smoke
+        run: >-
+          npx vitest run
+          __tests__/lib/template-field-contract.test.ts
+          __tests__/lib/template-field-f0-compatibility.test.ts
+          __tests__/lib/template-field-f1.test.ts
+          __tests__/lib/a4-content-policy.test.ts
+          __tests__/lib/a4-content-policy-f1.test.ts
+          __tests__/lib/template-placeholder-storage.test.ts
+          __tests__/lib/template-analysis.test.ts
+          __tests__/lib/placeholder-resolver.test.ts
+          __tests__/lib/document-generation-master-fields.test.ts
+          --reporter=verbose
+
+  workflow:
+    name: G1 W1 reader sanitizer save output smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
+      JWT_SECRET: g1-ci-only-build-secret-that-is-not-used-at-runtime
+      ENCRYPTION_KEY: g1-ci-only-build-encryption-key
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.G1_INTEGRATION_SHA }}
+          fetch-depth: 0
+      - name: Assert exact G1 source commit
+        run: test "$(git rev-parse HEAD)" = "$G1_INTEGRATION_SHA"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Run W1 reader sanitizer save and output compatibility smoke
+        run: >-
+          npx vitest run
+          tests/lib/a4-editor-capabilities-w1.test.ts
+          tests/lib/a4-editor-producer-integration-w1.test.ts
+          tests/lib/a4-editor-server-reader-w1.test.ts
+          tests/services/document-export-w1.test.ts
+          tests/services/document-template-editor-save.test.ts
+          tests/services/document-template-editor-fields.test.ts
+          tests/services/document-template-editor-drafts.test.ts
+          tests/document-output/document-template-editor-output.test.ts
+          --reporter=verbose
