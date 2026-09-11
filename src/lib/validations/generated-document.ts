@@ -54,6 +54,7 @@ export type SaveGenerationSessionInput = z.infer<typeof saveGenerationSessionSch
 
 export const createDocumentFromTemplateSchema = z.object({
   draftId: z.string().uuid().optional(),
+  expectedRevision: z.number().int().nonnegative().optional(),
   serviceAgreementId: z.string().uuid().optional(),
   discardServiceAgreement: z.boolean().optional(),
   templateId: z.string().uuid(),
@@ -92,6 +93,7 @@ export type CreateBlankDocumentInput = z.infer<typeof createBlankDocumentSchema>
 
 export const updateGeneratedDocumentSchema = z.object({
   id: z.string().uuid(),
+  expectedRevision: z.number().int().nonnegative().optional(),
   title: z.string().min(1).max(300).optional(),
   content: z.string().optional(),
   contentJson: z.any().optional().nullable(),
