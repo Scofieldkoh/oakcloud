@@ -54,6 +54,8 @@ export interface CustomPlaceholderDefinition {
   linkedTo?: string;
   sourcePartial?: string;
   storageSource?: PlaceholderSource;
+  /** Exact stored source string, including unknown forward-compatible values. */
+  storageRawSource?: string;
   storagePath?: string;
   storageCategory?: string;
   /** Complete original definition, including unknown forward metadata. */
