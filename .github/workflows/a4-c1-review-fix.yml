@@ -1,0 +1,48 @@
+name: A4 C1 review fix validation
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-core-c1
+
+permissions:
+  contents: write
+
+jobs:
+  review-fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/a4-editor-core-c1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Apply C1 review fixes
+        run: python scripts/a4-c1-review-fix.py
+      - name: Focused CORE component tests
+        run: npx vitest run __tests__/components/a4-editor-session.test.ts __tests__/components/a4-page-editor.test.tsx __tests__/components/a4-editor-toolbar.test.tsx __tests__/components/a4-page-editor-ssr.test.tsx
+      - name: C1 browser input sequences
+        run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-input-sequences.browser.test.tsx
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Static stale-authority review
+        run: |
+          ! grep -n "const liveContent = sanitizeHtml(pageContent.innerHTML)" src/components/documents/a4-page-editor.tsx
+          ! grep -n "historyRef" src/components/documents/a4-page-editor.tsx
+          ! grep -n "reassemblePageFragments(.*pagesRef.current" src/components/documents/a4-page-editor.tsx
+      - name: Commit validated review fixes
+        run: |
+          rm scripts/a4-c1-review-fix.py
+          rm .github/workflows/a4-c1-review-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "A4Editor C1: close stale DOM and layout history gaps"
+          git fetch origin codex/a4-editor-core-c1
+          git rebase origin/codex/a4-editor-core-c1
+          git push origin HEAD:codex/a4-editor-core-c1
