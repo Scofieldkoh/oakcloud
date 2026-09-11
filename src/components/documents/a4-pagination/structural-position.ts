@@ -19,6 +19,24 @@ export interface A4Selection {
   focus: A4Position;
 }
 
+/**
+ * C02 proof boundary. The revision is intentionally not stored here: CORE's
+ * CanonicalInputBridge remains the sole session/document revision authority.
+ */
+export interface CanonicalEditorDocument {
+  readonly internalHtml: string;
+}
+
+export type A4TransactionResult =
+  | {
+      status: 'applied';
+      document: CanonicalEditorDocument;
+      selection: A4Selection;
+      changedNodeIds: readonly string[];
+    }
+  | { status: 'unchanged'; reason: string }
+  | { status: 'rejected'; code: string; message: string };
+
 export interface A4DomPoint {
   node: Node;
   offset: number;
@@ -71,6 +89,18 @@ function isStructuralBoundary(node: Node | null): boolean {
   );
 }
 
+function structuralAffinityAtChildBoundary(
+  element: HTMLElement,
+  index: number,
+  fallback: A4PositionAffinity,
+): A4PositionAffinity {
+  const previousIsStructural = isStructuralBoundary(element.childNodes[index - 1] ?? null);
+  const nextIsStructural = isStructuralBoundary(element.childNodes[index] ?? null);
+  if (previousIsStructural && !nextIsStructural) return 'after';
+  if (nextIsStructural && !previousIsStructural) return 'before';
+  return fallback;
+}
+
 function textOffsetWithin(
   element: HTMLElement,
   node: Node,
@@ -96,6 +126,31 @@ function textLength(element: HTMLElement): number {
   return total;
 }
 
+function structuralBoundaryAtTextOffset(
+  element: HTMLElement,
+  offset: number,
+  affinity: A4PositionAffinity,
+): A4DomPoint | null {
+  const candidates: A4DomPoint[] = [];
+  element.querySelectorAll<HTMLElement>(STRUCTURAL_BOUNDARY_SELECTOR).forEach((boundary) => {
+    const parent = boundary.parentNode;
+    if (!parent) return;
+    const index = Array.prototype.indexOf.call(parent.childNodes, boundary) as number;
+    if (index < 0) return;
+    const point = affinity === 'before'
+      ? { node: parent, offset: index }
+      : { node: parent, offset: index + 1 };
+    const logicalOffset = textOffsetWithin(element, point.node, point.offset);
+    if (logicalOffset === offset) candidates.push(point);
+  });
+  if (candidates.length === 0) return null;
+  return affinity === 'before' ? candidates[0] : candidates[candidates.length - 1];
+}
+
+function sameDomPoint(left: A4DomPoint, right: A4DomPoint): boolean {
+  return left.node === right.node && left.offset === right.offset;
+}
+
 export function captureA4Position(
   root: HTMLElement,
   node: Node,
@@ -109,7 +164,12 @@ export function captureA4Position(
 
   if (node.nodeType === Node.ELEMENT_NODE && node === flowElement) {
     if (offset > flowElement.childNodes.length) return null;
-    return { kind: 'children', nodeId, index: offset, affinity };
+    return {
+      kind: 'children',
+      nodeId,
+      index: offset,
+      affinity: structuralAffinityAtChildBoundary(flowElement, offset, affinity),
+    };
   }
 
   if (node.nodeType === Node.TEXT_NODE) {
@@ -155,18 +215,13 @@ export function captureA4SelectionFromDomPoints(
   anchor: A4DomPoint,
   focus: A4DomPoint,
 ): A4Selection | null {
-  const capturedAnchor = captureA4Position(
-    root,
-    anchor.node,
-    anchor.offset,
-    'after',
-  );
-  const capturedFocus = captureA4Position(
-    root,
-    focus.node,
-    focus.offset,
-    'before',
-  );
+  if (sameDomPoint(anchor, focus)) {
+    const collapsed = captureA4Position(root, anchor.node, anchor.offset, 'after');
+    return collapsed ? { anchor: collapsed, focus: collapsed } : null;
+  }
+
+  const capturedAnchor = captureA4Position(root, anchor.node, anchor.offset, 'after');
+  const capturedFocus = captureA4Position(root, focus.node, focus.offset, 'after');
   if (!capturedAnchor || !capturedFocus) return null;
   return { anchor: capturedAnchor, focus: capturedFocus };
 }
@@ -197,16 +252,56 @@ export function resolveA4Position(
 
   const total = textLength(element);
   if (position.offset < 0 || position.offset > total) return null;
+
+  const structuralBoundary = structuralBoundaryAtTextOffset(
+    element,
+    position.offset,
+    position.affinity,
+  );
+  if (structuralBoundary) return structuralBoundary;
+
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  let remaining = position.offset;
+  const textNodes: Text[] = [];
   let node: Node | null;
-  while ((node = walker.nextNode())) {
-    const length = node.textContent?.length ?? 0;
-    if (remaining <= length) return { node, offset: remaining };
-    remaining -= length;
+  while ((node = walker.nextNode())) textNodes.push(node as Text);
+
+  if (textNodes.length === 0) {
+    return position.offset === 0
+      ? {
+          node: element,
+          offset: position.affinity === 'before' ? 0 : element.childNodes.length,
+        }
+      : null;
   }
 
-  return position.offset === 0
-    ? { node: element, offset: 0 }
-    : { node: element, offset: element.childNodes.length };
+  let consumed = 0;
+  for (let index = 0; index < textNodes.length; index += 1) {
+    const textNode = textNodes[index];
+    const length = textNode.textContent?.length ?? 0;
+    const start = consumed;
+    const end = start + length;
+
+    if (position.offset > start && position.offset < end) {
+      return { node: textNode, offset: position.offset - start };
+    }
+
+    if (position.offset === start) {
+      if (position.affinity === 'before' && index > 0) {
+        const previous = textNodes[index - 1];
+        return { node: previous, offset: previous.textContent?.length ?? 0 };
+      }
+      return { node: textNode, offset: 0 };
+    }
+
+    if (position.offset === end) {
+      if (position.affinity === 'after' && index + 1 < textNodes.length) {
+        return { node: textNodes[index + 1], offset: 0 };
+      }
+      return { node: textNode, offset: length };
+    }
+
+    consumed = end;
+  }
+
+  return { node: textNodes[textNodes.length - 1], offset: textNodes[textNodes.length - 1].textContent?.length ?? 0 };
 }
