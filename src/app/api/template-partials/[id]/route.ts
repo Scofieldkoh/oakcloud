@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
+import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import { updateTemplatePartialSchema } from '@/lib/validations/template-partial';
 import {
   getTemplatePartial,
@@ -126,6 +127,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const input = updateTemplatePartialSchema.parse({ ...partialData, id });
+    if (input.content !== undefined) {
+      // TemplatePartial has no contentJson; S1 markup detection is authoritative.
+      assertA4WriterCanPreserve(input.content);
+    }
     const partial = await updateTemplatePartial(
       input,
       { tenantId: effectiveTenantId, userId: session.id },
