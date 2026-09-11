@@ -817,8 +817,22 @@ export async function adoptLegacyGenerationSession(
   const document = await prisma.generatedDocument.findFirst({
     where: { id: draftId, tenantId: params.tenantId, deletedAt: null },
   });
-  const state = document ? readActiveGenerationSession(document.metadata) : null;
-  if (!document || !state) {
+  if (!document) {
+    throw new NotFoundError('Document draft not found');
+  }
+
+  const existingItem = await prisma.documentGenerationBatchItem.findFirst({
+    where: { generatedDocumentId: draftId, tenantId: params.tenantId },
+    select: { batchId: true },
+  });
+  if (existingItem) {
+    const existingBatch = await getDocumentGenerationBatch(existingItem.batchId, params);
+    await safelyLinkBatchOutcome(existingBatch, params, taskContext);
+    return existingBatch;
+  }
+
+  const state = readActiveGenerationSession(document.metadata);
+  if (!state) {
     throw new NotFoundError('Document draft not found');
   }
   readA4StoredDocument(document.content, document.contentJson);
@@ -827,16 +841,6 @@ export async function adoptLegacyGenerationSession(
     document.id,
     params.tenantId,
   );
-
-  const existingItem = await prisma.documentGenerationBatchItem.findUnique({
-    where: { generatedDocumentId: draftId },
-    select: { batchId: true },
-  });
-  if (existingItem) {
-    const existingBatch = await getDocumentGenerationBatch(existingItem.batchId, params);
-    await safelyLinkBatchOutcome(existingBatch, params, taskContext);
-    return existingBatch;
-  }
 
   const templateId = state.templateId ?? input.items[0].templateId;
   const template = await prisma.documentTemplate.findFirst({
