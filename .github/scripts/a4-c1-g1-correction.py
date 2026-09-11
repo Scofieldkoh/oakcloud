@@ -13,110 +13,173 @@ def replace_once(old: str, new: str, label: str) -> None:
 
 
 replace_once(
-    "  type A4EditorSnapshot,\n  type CanonicalEditorIntentKind,",
-    "  type A4EditorSnapshot,\n  type A4ProjectionRevision,\n  type CanonicalEditorIntentKind,",
-    "projection revision import",
-)
-
-replace_once(
     "function selectionStartPoint(\n",
-    """function sameProjectionRevision(
-  left: A4ProjectionRevision,
-  right: A4ProjectionRevision,
-): boolean {
-  return (
-    left.sessionKey === right.sessionKey &&
-    left.documentRevision === right.documentRevision &&
-    left.layoutRevision === right.layoutRevision &&
-    left.fontRevision === right.fontRevision
+    """function repairCollapsedNativeTextSelection(
+  result: DocumentTransactionResult,
+  sourceSelection: FlowSelectionBookmark,
+  insertedText: string,
+): DocumentTransactionResult {
+  if (
+    !result.changed ||
+    !sourceSelection.collapsed ||
+    insertedText.length === 0 ||
+    !result.selection ||
+    !result.selection.collapsed
+  ) {
+    return result;
+  }
+
+  const source = sourceSelection.anchor;
+  const returned = result.selection.anchor;
+  const didNotAdvance =
+    returned.flowId === source.flowId && returned.offset === source.offset;
+  if (!didNotAdvance) return result;
+
+  const container = document.createElement('div');
+  container.innerHTML = result.html;
+  const fragments = Array.from(
+    container.querySelectorAll<HTMLElement>('[data-flow-id]'),
+  ).filter((element) => element.dataset.flowId === source.flowId);
+  const availableTextLength = fragments.reduce(
+    (length, fragment) => length + (fragment.textContent?.length ?? 0),
+    0,
   );
+  const nextOffset = source.offset + insertedText.length;
+  if (availableTextLength < nextOffset) return result;
+
+  const point = { flowId: source.flowId, offset: nextOffset };
+  return {
+    ...result,
+    selection: { anchor: point, focus: point, collapsed: true },
+  };
 }
 
-function nearestTextBoundaryAtPointer(
+interface NativeSelectionDragPoint {
+  node: Node;
+  offset: number;
+  pageContent: HTMLElement;
+}
+
+function localClientPoint(clientX: number, clientY: number) {
+  const transforms: Array<{
+    left: number;
+    top: number;
+    scaleX: number;
+    scaleY: number;
+  }> = [];
+  let currentWindow: Window = window;
+
+  while (currentWindow.frameElement) {
+    const frameElement = currentWindow.frameElement as HTMLElement;
+    const frameRect = frameElement.getBoundingClientRect();
+    transforms.push({
+      left: frameRect.left,
+      top: frameRect.top,
+      scaleX: frameElement.clientWidth
+        ? frameRect.width / frameElement.clientWidth
+        : 1,
+      scaleY: frameElement.clientHeight
+        ? frameRect.height / frameElement.clientHeight
+        : 1,
+    });
+    currentWindow = currentWindow.parent;
+  }
+
+  let x = clientX;
+  let y = clientY;
+  for (let index = transforms.length - 1; index >= 0; index -= 1) {
+    const transform = transforms[index];
+    x = (x - transform.left) / transform.scaleX;
+    y = (y - transform.top) / transform.scaleY;
+  }
+  return { x, y };
+}
+
+function nativeSelectionPointAtClientPosition(
   root: HTMLElement,
   clientX: number,
   clientY: number,
-): { node: Text; offset: number } | null {
-  const selection = window.getSelection();
-  const focusNode = selection?.focusNode;
-  if (!selection || !focusNode || focusNode.nodeType !== Node.TEXT_NODE) {
-    return null;
-  }
-  const textNode = focusNode as Text;
-  if (!root.contains(textNode) || textNode.length === 0) return null;
+): NativeSelectionDragPoint | null {
+  const { x, y } = localClientPoint(clientX, clientY);
+  const ownerDocument = root.ownerDocument as Document & {
+    caretPositionFromPoint?: (
+      x: number,
+      y: number,
+    ) => { offsetNode: Node; offset: number } | null;
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+  };
+  const caretPosition = ownerDocument.caretPositionFromPoint?.(x, y) ?? null;
+  const caretRange = caretPosition
+    ? null
+    : ownerDocument.caretRangeFromPoint?.(x, y) ?? null;
+  const node = caretPosition?.offsetNode ?? caretRange?.startContainer ?? null;
+  const offset = caretPosition?.offset ?? caretRange?.startOffset ?? 0;
+  if (!node || !root.contains(node)) return null;
 
-  const nativeOffset = Math.min(
-    Math.max(selection.focusOffset, 0),
-    textNode.length,
-  );
+  const pageContent = pageContentContainingNode(root, node);
+  if (!pageContent) return null;
+  if (node.nodeType !== Node.TEXT_NODE) {
+    return { node, offset, pageContent };
+  }
+
+  const textNode = node as Text;
+  const nativeOffset = Math.min(Math.max(offset, 0), textNode.length);
   const firstCandidate = Math.max(0, nativeOffset - 2);
   const lastCandidate = Math.min(textNode.length, nativeOffset + 2);
   let bestOffset = nativeOffset;
   let bestScore = Number.POSITIVE_INFINITY;
 
-  for (let offset = firstCandidate; offset <= lastCandidate; offset += 1) {
-    const range = root.ownerDocument.createRange();
+  for (
+    let candidateOffset = firstCandidate;
+    candidateOffset <= lastCandidate;
+    candidateOffset += 1
+  ) {
+    const range = ownerDocument.createRange();
     let rect: DOMRect;
     let boundaryX: number;
-    if (offset === 0) {
+    if (candidateOffset === 0) {
       range.setStart(textNode, 0);
       range.setEnd(textNode, Math.min(1, textNode.length));
       rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
       boundaryX = rect.left;
     } else {
       range.setStart(textNode, 0);
-      range.setEnd(textNode, offset);
+      range.setEnd(textNode, candidateOffset);
       const rects = range.getClientRects();
       rect = rects[rects.length - 1] ?? range.getBoundingClientRect();
       boundaryX = rect.right;
     }
     if (!rect.width && !rect.height) continue;
-    const dx = boundaryX - clientX;
-    const dy = rect.top + rect.height / 2 - clientY;
+    const dx = boundaryX - x;
+    const dy = rect.top + rect.height / 2 - y;
     const score = dx * dx + dy * dy * 16;
     if (score < bestScore) {
       bestScore = score;
-      bestOffset = offset;
+      bestOffset = candidateOffset;
     }
   }
 
-  return { node: textNode, offset: bestOffset };
-}
-
-function refineCrossPageNativeSelectionFocus(
-  root: HTMLElement,
-  clientX: number,
-  clientY: number,
-): void {
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || !selectionSpansPages(root)) return;
-  const anchorNode = selection.anchorNode;
-  if (!anchorNode) return;
-  const point = nearestTextBoundaryAtPointer(root, clientX, clientY);
-  if (!point) return;
-  selection.setBaseAndExtent(
-    anchorNode,
-    selection.anchorOffset,
-    point.node,
-    point.offset,
-  );
+  return { node: textNode, offset: bestOffset, pageContent };
 }
 
 function selectionStartPoint(
 """,
-    "projection and native endpoint helpers",
+    "native selection helpers",
 )
 
 replace_once(
     "    const reflowGenerationRef = useRef(0);\n    const [isReflowing, setIsReflowing] = useState(false);",
     """    const reflowGenerationRef = useRef(0);
-    const pendingProjectionPublicationRef = useRef<{
-      revision: A4ProjectionRevision;
-      pages: PageData[];
-      generation: number;
+    const pairedCanonicalInputRef = useRef<{
+      inputType: string;
+      data: string | null;
+      revision: number;
     } | null>(null);
+    const nativeSelectionDragStartRef = useRef<NativeSelectionDragPoint | null>(
+      null,
+    );
     const [isReflowing, setIsReflowing] = useState(false);""",
-    "pending projection publication ref",
+    "native routing refs",
 )
 
 replace_once(
@@ -126,165 +189,6 @@ replace_once(
         }
         reflowGenerationRef.current += 1;""",
     "retain committed pages while session reflow is pending",
-)
-
-replace_once(
-    """              if (
-                session &&
-                projectionRevision &&
-                !session.publishProjection(projectionRevision)
-              ) {
-                return;
-              }
-
-              const nextPages = fragments.map""",
-    """              if (
-                session &&
-                projectionRevision &&
-                !sameProjectionRevision(
-                  projectionRevision,
-                  session.createProjectionRevision(),
-                )
-              ) {
-                return;
-              }
-
-              const nextPages = fragments.map""",
-    "defer projection publication until DOM commit",
-)
-
-replace_once(
-    """              pagesRef.current = nextPages;
-              if (!session) {""",
-    """              pagesRef.current = nextPages;
-              if (session && projectionRevision) {
-                pendingProjectionPublicationRef.current = {
-                  revision: projectionRevision,
-                  pages: nextPages,
-                  generation,
-                };
-              }
-              if (!session) {""",
-    "queue pending projection publication",
-)
-
-anchor = """    useEffect(() => {
-      const canonicalValue = sanitizeHtml("""
-restore_and_publish = """    const restorePendingFlowSelection = useCallback(() => {
-      const bookmark = pendingFlowSelectionRef.current;
-      if (!bookmark) return true;
-      const root = documentSurfaceRef.current;
-      if (!root) return false;
-
-      const targetFlowElement = Array.from(
-        root.querySelectorAll<HTMLElement>('[data-flow-id]'),
-      ).find((element) => element.dataset.flowId === bookmark.anchor.flowId);
-      const targetEditor = targetFlowElement?.closest(
-        '[contenteditable=\"true\"]',
-      ) as HTMLDivElement | null;
-      targetEditor?.focus({ preventScroll: true });
-      const pageElement =
-        targetFlowElement?.closest<HTMLElement>('[data-page-id]') ?? null;
-      pendingSelectionFlowIdRef.current = bookmark.anchor.flowId;
-
-      const beforeSelection = window.getSelection();
-      const beforeOffset = beforeSelection?.anchorOffset ?? null;
-      const beforeText = beforeSelection?.anchorNode?.textContent ?? null;
-      if (!restoreFlowSelection(root, bookmark)) {
-        console.info('[c1-debug-restore-failed]', JSON.stringify({ bookmark }));
-        return false;
-      }
-      const afterSelection = window.getSelection();
-      console.info(
-        '[c1-debug-restore]',
-        JSON.stringify({
-          bookmark,
-          beforeOffset,
-          beforeText,
-          afterOffset: afterSelection?.anchorOffset ?? null,
-          afterText: afterSelection?.anchorNode?.textContent ?? null,
-        }),
-      );
-      savedSelectionRef.current = captureFlowSelection(root) ?? bookmark;
-      setEditorStatus(null);
-      if (pageElement?.dataset.pageId) {
-        setActivePageId(pageElement.dataset.pageId);
-      }
-      pendingFlowSelectionRef.current = null;
-      return true;
-    }, []);
-
-    useLayoutEffect(() => {
-      const pending = pendingProjectionPublicationRef.current;
-      if (
-        !pending ||
-        pending.pages !== pages ||
-        pending.generation !== reflowGenerationRef.current
-      ) {
-        return;
-      }
-      const session = canonicalSessionRef.current;
-      if (
-        !session ||
-        !sameProjectionRevision(
-          pending.revision,
-          session.createProjectionRevision(),
-        )
-      ) {
-        pendingProjectionPublicationRef.current = null;
-        return;
-      }
-      if (!restorePendingFlowSelection()) return;
-      if (session.publishProjection(pending.revision)) {
-        documentSurfaceRef.current?.setAttribute(
-          'data-document-revision',
-          String(pending.revision.documentRevision),
-        );
-        console.info(
-          '[c1-debug-publish]',
-          JSON.stringify({ revision: pending.revision.documentRevision }),
-        );
-        pendingProjectionPublicationRef.current = null;
-      }
-    }, [pages, restorePendingFlowSelection, surfaceRepairGeneration]);
-
-    useEffect(() => {
-      const canonicalValue = sanitizeHtml("""
-replace_once(anchor, restore_and_publish, "DOM-committed projection publication")
-
-replace_once(
-    """    useEffect(() => {
-      const bookmark = pendingFlowSelectionRef.current;
-      const root = documentSurfaceRef.current;
-      if (!bookmark || !root) return;
-
-      const targetFlowElement = Array.from(
-        root.querySelectorAll<HTMLElement>('[data-flow-id]'),
-      ).find(
-        (element) => element.dataset.flowId === bookmark.anchor.flowId,
-      );
-      const targetEditor = targetFlowElement?.closest(
-        '[contenteditable=\"true\"]',
-      ) as HTMLDivElement | null;
-      targetEditor?.focus({ preventScroll: true });
-      const pageElement = targetFlowElement?.closest<HTMLElement>(
-        '[data-page-id]',
-      ) ?? null;
-      pendingSelectionFlowIdRef.current = bookmark.anchor.flowId;
-
-      if (restoreFlowSelection(root, bookmark)) {
-        savedSelectionRef.current = captureFlowSelection(root) ?? bookmark;
-        setEditorStatus(null);
-        if (pageElement?.dataset.pageId) {
-          setActivePageId(pageElement.dataset.pageId);
-        }
-      }
-      pendingFlowSelectionRef.current = null;
-    }, [pages, surfaceRepairGeneration]);""",
-    """    useEffect(() => {
-      restorePendingFlowSelection();
-    }, [pages, restorePendingFlowSelection, surfaceRepairGeneration]);""",
-    "selection restoration fallback",
 )
 
 replace_once(
@@ -352,47 +256,113 @@ replace_once(
         }
         commitDocumentSurface();""",
     """        if (session) {
+          const nativeInput = event.nativeEvent as InputEvent;
+          const paired = pairedCanonicalInputRef.current;
+          pairedCanonicalInputRef.current = null;
+          if (
+            paired &&
+            paired.inputType === nativeInput.inputType &&
+            paired.data === nativeInput.data &&
+            paired.revision === session.getState().revision
+          ) {
+            return;
+          }
           setSurfaceRepairGeneration((generation) => generation + 1);
           return;
         }
         commitDocumentSurface();""",
-    "canonical unexpected input repair",
+    "bounded paired input reconciliation",
 )
 
-replace_once(
-    """        const target = session.resolveNativeInputTarget({
-          renderedRevision: session.getRenderedProjection().documentRevision,
-          origin: inputEvent.isComposing ? 'composition' : 'keyboard',
-          renderedSelection: rendered,
-        });""",
-    """        const renderedRevision =
-          session.getRenderedProjection().documentRevision;
-        const target = session.resolveNativeInputTarget({
-          renderedRevision,
-          origin: inputEvent.isComposing ? 'composition' : 'keyboard',
-          renderedSelection: rendered,
-        });
-        if (
-          inputEvent.inputType === 'insertParagraph' ||
-          inputEvent.inputType === 'insertText'
-        ) {
-          const selection = window.getSelection();
-          console.info(
-            '[c1-debug-input]',
-            JSON.stringify({
+old_insert = """          const result = pendingTyping
+            ? insertTextWithFormat(
+                canonical,
+                bookmark,
+                inputEvent.data ?? '',
+                pendingTyping,
+              )
+            : replaceLogicalSelection(
+                canonical,
+                bookmark,
+                escapeTextForHtml(inputEvent.data ?? ''),
+              );
+          commitUserTransaction(result, 'insert-text');
+          return;"""
+new_insert = """          const insertedText = inputEvent.data ?? '';
+          const result = pendingTyping
+            ? insertTextWithFormat(
+                canonical,
+                bookmark,
+                insertedText,
+                pendingTyping,
+              )
+            : replaceLogicalSelection(
+                canonical,
+                bookmark,
+                escapeTextForHtml(insertedText),
+              );
+          const repaired = repairCollapsedNativeTextSelection(
+            result,
+            bookmark,
+            insertedText,
+          );
+          const beforeRevision = session.getState().revision;
+          commitUserTransaction(repaired, 'insert-text');
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
               inputType: inputEvent.inputType,
               data: inputEvent.data,
-              stateRevision: session.getState().revision,
-              renderedRevision,
-              rendered,
-              target,
-              pendingFlowSelection: pendingFlowSelectionRef.current,
-              domAnchorOffset: selection?.anchorOffset ?? null,
-              domAnchorText: selection?.anchorNode?.textContent ?? null,
-            }),
-          );
-        }""",
-    "input routing diagnostics",
+              revision: session.getState().revision,
+            };
+          }
+          return;"""
+replace_once(old_insert, new_insert, "collapsed insert-text caret repair")
+
+for label, old_call in [
+    ("paragraph", "commitUserTransaction(result, 'insert-paragraph');"),
+    ("line break", "commitUserTransaction(result, 'insert-line-break');"),
+    ("delete backward", "commitUserTransaction(result, 'delete-backward');"),
+    ("delete forward", "commitUserTransaction(result, 'delete-forward');"),
+]:
+    new_call = f"""const beforeRevision = session.getState().revision;
+          {old_call}
+          if (session.getState().revision !== beforeRevision) {{
+            pairedCanonicalInputRef.current = {{
+              inputType: inputEvent.inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            }};
+          }}"""
+    replace_once(old_call, new_call, f"paired canonical {label}")
+
+replace_once(
+    """        const target = getTableColumnResizeTarget(
+          documentSurfaceRef.current ?? event.currentTarget,
+          event.target,
+          event.clientX,
+        );
+        if (!target) return;
+
+        event.preventDefault();""",
+    """        const surface = documentSurfaceRef.current ?? event.currentTarget;
+        const target = getTableColumnResizeTarget(
+          surface,
+          event.target,
+          event.clientX,
+        );
+        if (!target) {
+          nativeSelectionDragStartRef.current =
+            nativeSelectionPointAtClientPosition(
+              surface,
+              event.clientX,
+              event.clientY,
+            );
+          return;
+        }
+        nativeSelectionDragStartRef.current = null;
+
+        event.preventDefault();""",
+    "cross-page pointer start capture",
 )
 
 replace_once(
@@ -404,54 +374,36 @@ replace_once(
             }}""",
     """            onMouseUp={(event) => {
               if (!effectivePreviewMode) {
-                const beforeSelection = window.getSelection();
-                const beforeText = beforeSelection?.toString() ?? '';
+                const dragStart = nativeSelectionDragStartRef.current;
+                nativeSelectionDragStartRef.current = null;
+                const dragEnd = dragStart
+                  ? nativeSelectionPointAtClientPosition(
+                      event.currentTarget,
+                      event.clientX,
+                      event.clientY,
+                    )
+                  : null;
                 if (
-                  beforeText.includes('First page') ||
-                  beforeText.includes('pha') ||
-                  beforeText.includes('Secon')
+                  dragStart &&
+                  dragEnd &&
+                  dragStart.pageContent !== dragEnd.pageContent
                 ) {
-                  console.info(
-                    '[c1-debug-mouse-before]',
-                    JSON.stringify({
-                      clientX: event.clientX,
-                      clientY: event.clientY,
-                      anchorOffset: beforeSelection?.anchorOffset ?? null,
-                      focusOffset: beforeSelection?.focusOffset ?? null,
-                      anchorText: beforeSelection?.anchorNode?.textContent ?? null,
-                      focusText: beforeSelection?.focusNode?.textContent ?? null,
-                      selectedText: beforeText,
-                      spansPages: selectionSpansPages(event.currentTarget),
-                    }),
-                  );
-                }
-                refineCrossPageNativeSelectionFocus(
-                  event.currentTarget,
-                  event.clientX,
-                  event.clientY,
-                );
-                const afterSelection = window.getSelection();
-                const afterText = afterSelection?.toString() ?? '';
-                if (
-                  beforeText.includes('First page') ||
-                  beforeText.includes('pha') ||
-                  beforeText.includes('Secon')
-                ) {
-                  console.info(
-                    '[c1-debug-mouse-after]',
-                    JSON.stringify({
-                      anchorOffset: afterSelection?.anchorOffset ?? null,
-                      focusOffset: afterSelection?.focusOffset ?? null,
-                      focusText: afterSelection?.focusNode?.textContent ?? null,
-                      selectedText: afterText,
-                    }),
-                  );
+                  const selection = window.getSelection();
+                  if (selection?.setBaseAndExtent) {
+                    selection.removeAllRanges();
+                    selection.setBaseAndExtent(
+                      dragStart.node,
+                      dragStart.offset,
+                      dragEnd.node,
+                      dragEnd.offset,
+                    );
+                  }
                 }
                 syncActivePage(event.target);
                 syncFormattingFromSelection();
               }
             }}""",
-    "cross-page native mouse endpoint diagnostics",
+    "cross-page native mouse range",
 )
 
 path.write_text(text)
