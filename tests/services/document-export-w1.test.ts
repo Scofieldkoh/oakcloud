@@ -13,6 +13,16 @@ const mocks = vi.hoisted(() => ({
   pdf: vi.fn(),
   pageClose: vi.fn(),
   browserClose: vi.fn(),
+  generatedDocumentFindFirst: vi.fn(),
+}));
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    generatedDocument: {
+      findFirst: mocks.generatedDocumentFindFirst,
+      findMany: vi.fn(),
+    },
+  },
 }));
 
 vi.mock('@/lib/chrome-executable', () => ({
@@ -27,6 +37,8 @@ vi.mock('puppeteer-core', () => ({
 
 import {
   ExportPaginationError,
+  buildPDFHtml,
+  exportToHTML,
   generatePDF,
 } from '@/services/document-export.service';
 
@@ -145,5 +157,55 @@ describe('W1 PDF fail-closed pagination', () => {
     expect(mocks.pdf).not.toHaveBeenCalled();
     expect(mocks.pageClose).toHaveBeenCalledOnce();
     expect(mocks.browserClose).toHaveBeenCalledOnce();
+  });
+
+  it('applies the same shared C06 canonical sanitizer policy to HTML export and PDF preparation', async () => {
+    const content = [
+      '<blockquote><p>Quoted governance text</p></blockquote>',
+      '<table><caption>Approval matrix</caption><tbody><tr><td>Body</td></tr></tbody><tfoot><tr><td>Footer</td></tr></tfoot></table>',
+      '<ol start="5"><li>Fifth resolution</li></ol>',
+      '<p><span data-field-reference="field-1">Synthetic field/reference</span></p>',
+      '<p><span data-a4-break="page" data-source="fixture" data-whatever="nope" aria-label="client" onclick="alert(1)" data-flow-id="canonical-only"></span></p>',
+      '<div class="page-break" data-break-type="hard"></div>',
+    ].join('');
+    mocks.generatedDocumentFindFirst.mockResolvedValueOnce({
+      id: 'synthetic-document',
+      title: 'Synthetic sanitizer parity',
+      content,
+      contentJson: null,
+    });
+
+    const htmlExport = await exportToHTML({
+      documentId: 'synthetic-document',
+      tenantId: 'synthetic-tenant',
+      includeStyles: false,
+      includeSections: false,
+    });
+    const pdfPreparation = buildPDFHtml(
+      {
+        title: 'Synthetic sanitizer parity',
+        status: 'FINALIZED',
+        content,
+        contentJson: null,
+      },
+      null,
+      { top: 20, right: 20, bottom: 20, left: 20 },
+    );
+
+    for (const output of [htmlExport.html, pdfPreparation]) {
+      expect(output).toContain('<blockquote>');
+      expect(output).toContain('<caption>Approval matrix</caption>');
+      expect(output).toContain('<tfoot>');
+      expect(output).toContain('start="5"');
+      expect(output).toContain('data-a4-break="page"');
+      expect(output).toContain('data-break-type="hard"');
+      expect(output).toContain('Synthetic field/reference');
+      expect(output).not.toContain('data-source="fixture"');
+      expect(output).not.toContain('data-whatever="nope"');
+      expect(output).not.toContain('aria-label="client"');
+      expect(output).not.toContain('onclick=');
+      expect(output).not.toContain('data-flow-id="canonical-only"');
+      expect(output).not.toContain('data-field-reference="field-1"');
+    }
   });
 });
