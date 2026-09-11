@@ -12,6 +12,11 @@ jobs:
   corrective:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
+    env:
+      DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
+      JWT_SECRET: g1-ci-only-build-secret-that-is-not-used-at-runtime
+      ENCRYPTION_KEY: g1-ci-only-build-encryption-key
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@v6
         with:
