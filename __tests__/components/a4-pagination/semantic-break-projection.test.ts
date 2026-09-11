@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   mapA4ProjectedStructuralPoint,
   partitionA4SemanticBreaks,
+  type A4StructuralBreakProjectionProof,
 } from '@/components/documents/a4-pagination/semantic-break-projection';
 import {
   createCanonicalEditorDocument,
   type A4Position,
   type CanonicalEditorDocument,
 } from '@/components/documents/a4-pagination/structural-position';
-import type { A4BreakProjectionProof } from '@/components/documents/a4-pagination/semantic-page-breaks';
 
 const SOURCE = {
   sessionKey: 's1-structural-projection',
@@ -17,7 +17,7 @@ const SOURCE = {
 
 function project(html: string): {
   canonical: CanonicalEditorDocument;
-  projection: A4BreakProjectionProof;
+  projection: A4StructuralBreakProjectionProof;
 } {
   const canonical = createCanonicalEditorDocument(html);
   return {
@@ -28,7 +28,7 @@ function project(html: string): {
 
 function mapPosition(
   canonical: CanonicalEditorDocument,
-  projection: A4BreakProjectionProof,
+  projection: A4StructuralBreakProjectionProof,
   fragmentIndex: number,
   position: A4Position,
 ) {
@@ -81,6 +81,18 @@ describe('A4 S1 structural projection mapping', () => {
     );
 
     expect(projection.fragments).toHaveLength(2);
+    expect(projection.positionMap.fragments[0].childBoundaries).toContainEqual({
+      projectedNodeId: 'p',
+      projectedIndex: 1,
+      sourceNodeId: 'p',
+      sourceIndex: 1,
+    });
+    expect(projection.positionMap.fragments[1].childBoundaries).toContainEqual({
+      projectedNodeId: 'p',
+      projectedIndex: 0,
+      sourceNodeId: 'p',
+      sourceIndex: 2,
+    });
     expect(
       mapPosition(canonical, projection, 0, {
         kind: 'children',
