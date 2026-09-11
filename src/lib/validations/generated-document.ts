@@ -1,14 +1,8 @@
 import { z } from 'zod';
 import { serviceAgreementDraftSchema } from '@/lib/validations/service-agreement';
 
-// ============================================================================
-// Enums
-// ============================================================================
-
 export const generatedDocumentStatusEnum = z.enum(['DRAFT', 'FINALIZED', 'ARCHIVED']);
-
 export const GENERATION_SESSION_VERSION = 2 as const;
-
 const nullableUuid = z.string().uuid().nullable();
 
 const generationSessionFields = {
@@ -48,10 +42,6 @@ export const saveGenerationSessionSchema = generationSessionStateV2Schema.extend
 export type GenerationSessionState = z.infer<typeof generationSessionStateSchema>;
 export type SaveGenerationSessionInput = z.infer<typeof saveGenerationSessionSchema>;
 
-// ============================================================================
-// Create Document from Template
-// ============================================================================
-
 export const createDocumentFromTemplateSchema = z.object({
   draftId: z.string().uuid().optional(),
   expectedRevision: z.number().int().nonnegative().optional(),
@@ -65,17 +55,13 @@ export const createDocumentFromTemplateSchema = z.object({
   selectedShareholderId: z.string().uuid().optional(),
   selectedContactId: z.string().uuid().optional(),
   title: z.string().min(1, 'Title is required').max(300),
-  customData: z.record(z.unknown()).optional(), // Custom placeholder values
+  customData: z.record(z.unknown()).optional(),
   useLetterhead: z.boolean().default(true),
   editedContent: z.string().optional(),
   editedContentJson: z.any().optional().nullable(),
 });
 
 export type CreateDocumentFromTemplateInput = z.input<typeof createDocumentFromTemplateSchema>;
-
-// ============================================================================
-// Create Blank Document
-// ============================================================================
 
 export const createBlankDocumentSchema = z.object({
   companyId: z.string().uuid().optional().nullable(),
@@ -86,10 +72,6 @@ export const createBlankDocumentSchema = z.object({
 });
 
 export type CreateBlankDocumentInput = z.infer<typeof createBlankDocumentSchema>;
-
-// ============================================================================
-// Update Document
-// ============================================================================
 
 export const updateGeneratedDocumentSchema = z.object({
   id: z.string().uuid(),
@@ -103,17 +85,13 @@ export const updateGeneratedDocumentSchema = z.object({
 
 export type UpdateGeneratedDocumentInput = z.infer<typeof updateGeneratedDocumentSchema>;
 
-// ============================================================================
-// Search Documents
-// ============================================================================
-
 export const searchGeneratedDocumentsSchema = z.object({
   query: z.string().optional(),
   title: z.string().optional(),
   companyId: z.string().uuid().optional(),
-  companyName: z.string().optional(), // Free text filter by company name
+  companyName: z.string().optional(),
   templateId: z.string().uuid().optional(),
-  templateName: z.string().optional(), // Free text filter by template name
+  templateName: z.string().optional(),
   createdBy: z.string().optional(),
   signedFrom: z.string().optional(),
   signedTo: z.string().optional(),
@@ -138,20 +116,12 @@ export const searchGeneratedDocumentsSchema = z.object({
 
 export type SearchGeneratedDocumentsInput = z.infer<typeof searchGeneratedDocumentsSchema>;
 
-// ============================================================================
-// Clone Document
-// ============================================================================
-
 export const cloneDocumentSchema = z.object({
   id: z.string().uuid(),
-  title: z.string().min(1).max(300).optional(), // Optional new title
+  title: z.string().min(1).max(300).optional(),
 });
 
 export type CloneDocumentInput = z.infer<typeof cloneDocumentSchema>;
-
-// ============================================================================
-// Document Comment
-// ============================================================================
 
 export const createDocumentCommentSchema = z.object({
   documentId: z.string().uuid(),
@@ -161,17 +131,19 @@ export const createDocumentCommentSchema = z.object({
   selectionStart: z.number().int().optional().nullable(),
   selectionEnd: z.number().int().optional().nullable(),
   selectedText: z.string().optional().nullable(),
-  parentId: z.string().uuid().optional().nullable(), // For replies
+  parentId: z.string().uuid().optional().nullable(),
 });
 
 export type CreateDocumentCommentInput = z.infer<typeof createDocumentCommentSchema>;
 
-// ============================================================================
-// Auto-save Draft
-// ============================================================================
-
+/**
+ * Drafts are not a second canonical revision stream. `baseRevision` records the
+ * GeneratedDocument revision the draft was derived from so later reconciliation
+ * can detect drift without incrementing canonical revision on autosave.
+ */
 export const saveDraftSchema = z.object({
   documentId: z.string().uuid(),
+  baseRevision: z.number().int().nonnegative().optional(),
   content: z.string(),
   contentJson: z.any().optional().nullable(),
   metadata: z.record(z.unknown()).optional().nullable(),
