@@ -5,7 +5,9 @@ import { getA4EditorCapabilities } from '@/lib/document-editor/a4-editor-capabil
 export async function GET() {
   try {
     await requireAuth();
-    return NextResponse.json({ capabilities: getA4EditorCapabilities() });
+    return NextResponse.json({
+      a4EditorCapabilities: getA4EditorCapabilities(),
+    });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
