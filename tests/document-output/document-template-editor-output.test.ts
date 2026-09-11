@@ -9,16 +9,62 @@ const exportServiceSource = readRepoFile('src/services/document-export.service.t
 
 const CANONICAL_BREAK = '<span data-a4-break="page"></span>';
 const LEGACY_BREAK = '<div class="page-break" data-break-type="hard"></div>';
-const representativeRichContent = `<blockquote><p>Quoted governance text</p></blockquote><table><caption>Approval matrix</caption><thead><tr><th>Role</th><th>Decision</th></tr></thead><tbody><tr><td>Board</td><td>Approve</td></tr></tbody><tfoot><tr><td colspan="2">End of matrix</td></tr></tfoot></table><ol start="4"><li>Fourth resolution</li><li>Fifth resolution</li></ol>`;
-const buildRepresentativePdfHtml = (content: string) => buildPDFHtml({ title: 'WORKFLOW W0 output fixture', status: 'FINALIZED', content, contentJson: undefined }, null, { top: 20, right: 20, bottom: 20, left: 20 });
+const FIRST_SENTINEL = 'W0-PDF-FIRST-SENTINEL';
+const LAST_SENTINEL = 'W0-PDF-LAST-SENTINEL';
+const paginationFiller = Array.from(
+  { length: 120 },
+  (_, index) => `<p>W0 pagination filler ${index + 1}: deterministic synthetic content for multi-page output validation.</p>`,
+).join('');
+
+const representativeRichContent = [
+  `<h1>${FIRST_SENTINEL}</h1>`,
+  '<blockquote><p>Quoted governance text</p></blockquote>',
+  '<table><caption>Approval matrix</caption><thead><tr><th>Role</th><th>Decision</th></tr></thead><tbody><tr><td>Board</td><td>Approve</td></tr></tbody><tfoot><tr><td colspan="2">End of matrix</td></tr></tfoot></table>',
+  '<ol start="5"><li>Fifth resolution<ol><li>Nested resolution 5.1</li><li>Nested resolution 5.2</li></ol></li><li>Sixth resolution</li></ol>',
+  '<p><span data-field-reference="field-canonical-001">Synthetic field/reference: REF-W0-001</span></p>',
+  `<p>Before inline hard break${CANONICAL_BREAK}After inline hard break</p>`,
+  LEGACY_BREAK,
+  paginationFiller,
+  `<p>${LAST_SENTINEL}</p>`,
+].join('');
+
+const buildRepresentativePdfHtml = (content: string) => buildPDFHtml(
+  {
+    title: 'WORKFLOW W0 output fixture',
+    status: 'FINALIZED',
+    content,
+    contentJson: undefined,
+  },
+  null,
+  { top: 20, right: 20, bottom: 20, left: 20 },
+);
 
 describe('A4 editor WORKFLOW W0 preview / HTML / PDF compatibility proofs', () => {
+  it('W-OUTPUT-FIXTURE-00 defines the complete synthetic two-page candidate and retains ordered sentinels in corresponding PDF HTML', () => {
+    expect(representativeRichContent).toContain('<h1>');
+    expect(representativeRichContent).toContain('<ol start="5">');
+    expect(representativeRichContent).toContain('<ol><li>Nested resolution 5.1</li>');
+    expect(representativeRichContent).toContain('<blockquote>');
+    expect(representativeRichContent).toContain('<caption>Approval matrix</caption>');
+    expect(representativeRichContent).toContain('<tfoot>');
+    expect(representativeRichContent).toContain('data-field-reference="field-canonical-001"');
+    expect(representativeRichContent).toContain(CANONICAL_BREAK);
+    expect(representativeRichContent).toContain(LEGACY_BREAK);
+    expect(representativeRichContent.match(/W0 pagination filler/g)).toHaveLength(120);
+
+    const html = buildRepresentativePdfHtml(representativeRichContent);
+    const firstIndex = html.indexOf(FIRST_SENTINEL);
+    const lastIndex = html.indexOf(LAST_SENTINEL);
+    expect(firstIndex).toBeGreaterThanOrEqual(0);
+    expect(lastIndex).toBeGreaterThan(firstIndex);
+  });
+
   it.fails('W-OUTPUT-01 preserves representative rich structure through the actual PDF HTML builder', () => {
     const html = buildRepresentativePdfHtml(representativeRichContent);
     expect(html).toContain('<blockquote>');
     expect(html).toContain('<caption>');
     expect(html).toContain('<tfoot>');
-    expect(html).toContain('start="4"');
+    expect(html).toContain('start="5"');
   });
 
   it.fails('W-OUTPUT-02 keeps the HTML-export sanitizer contract aligned with the PDF/editor rich-structure contract', () => {
@@ -74,7 +120,14 @@ describe('A4 editor WORKFLOW W0 preview / HTML / PDF compatibility proofs', () =
   });
 
   it('W-OUTPUT-SURVIVE-01 keeps continuation and oversized-page markers in the shared paginated output path', () => {
-    const html = buildPaginatedSectionsHtml([{ content: '<p>First page</p>', hardBreakBefore: false }, { content: '<ol><li data-flow-continuation-item="true"><p>Continued item</p></li></ol>', hardBreakBefore: false, oversized: true }]);
+    const html = buildPaginatedSectionsHtml([
+      { content: '<p>First page</p>', hardBreakBefore: false },
+      {
+        content: '<ol><li data-flow-continuation-item="true"><p>Continued item</p></li></ol>',
+        hardBreakBefore: false,
+        oversized: true,
+      },
+    ]);
     expect(html).toContain('data-flow-continuation-item="true"');
     expect(html).toContain('data-oversized="true"');
     expect(html.match(/<section class="print-page"/g)).toHaveLength(2);

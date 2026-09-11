@@ -1,91 +1,150 @@
 # WORKFLOW Coordination Log
 
-## WORKFLOW-W0-20260911-01
+## WORKFLOW-W0-20260911-01 — G0 correction handoff
 
-Role and packet: WORKFLOW / W0 — persistence, save concurrency, drafts, batch editing, preview and HTML/PDF compatibility proof  
-Starting state: RUNNING  
-Ending state: **READY FOR INTEGRATION — W0 only**  
+Role and packet: WORKFLOW / W0 — persistence, concurrency, fields, drafts, batch editing and output proof  
 Branch: `workflow/w0-a4-editor-persistence-proof`  
 Existing PR: #33 — https://github.com/Scofieldkoh/oakcloud/pull/33  
-Contract consumed: proposed v1 plus CORE/S0/F0 W0 handoff decisions; G0 remains open.
+Ending state: **READY FOR INTEGRATION — W0 only**  
+G0 owner: CORE. WORKFLOW does not freeze or merge G0.
 
-### Scope completed
+### Scope boundary
 
-W0 only was completed. The existing PR was updated; no competing PR, merge, W1 production behavior, Prisma migration/schema change, generated bundle update, version bump or deployment was performed.
+This correction stays inside W0. It does not begin W1/W2/W3/Stage 1 and does not change production resolver behavior, Zod/API schemas, Prisma schema/migrations, capability negotiation, `expectedRevision` enforcement, writer format level, pagination bundle, package/CI configuration, application version, deployment, or main.
 
-Evidence now includes:
-- writer/reader/consumer inventory for DocumentTemplate, TemplatePartial and GeneratedDocument, including lifecycle, draft, batch, preview and output consumers;
-- closed revision-source design: API `expectedRevision`; DocumentTemplate/TemplatePartial use existing `version`; GeneratedDocument gets a dedicated future `revision` integer while `templateVersion` stays provenance;
-- 409 conflict/error payload and audit/soft-delete/editability semantics;
-- batch same-revision race and `selected_ids`/legacy ordering fixtures;
-- draft stale-restore, save acknowledgement and reopen/status fixtures;
-- exact C03 `<span data-a4-break="page"></span>` preservation fixture through the real recursive partial resolver plus legacy break compatibility expectations;
-- C05/C06/C08 field persistence/identity/derived-value/missing-value fixtures;
-- explicit synthetic-vs-PDF-byte validation boundary.
+### Corrections completed for CORE's second G0 review
 
-### Files changed
+1. **W-FIELD-05 corrected.** Current resolver behavior is now represented truthfully: ordinary values can presently introduce markup. The future C06 escape-at-interpolation requirement is an `it.fails` baseline and no resolver change is made.
+2. **Fake field round-trip removed.** The W0 field fixture now exercises `placeholderDefinitionSchema`, document-template create/update request schemas, and TemplatePartial create/update request schemas. It explicitly records current stripping of `id`, `options` and unknown metadata, current defaulting of omitted `required`, and recognition of all current field types including `list` and `conditional`.
+3. **F0 lossless target remains expected-failure evidence.** Full stable-ID/options/forward-metadata preservation and omitted-property presence semantics are not described as current production behavior.
+4. **Capability contract published.** W0 defines `readerFormatLevel: 1 | 2`, `allowedWriterFormatLevel: 1 | 2`, and `revisionPrecondition: 'optional' | 'required'`. Repository search found no existing generic document-editor config endpoint. The established authenticated central read pattern is `src/app/api/page-bootstrap/*`; W0 therefore proposes, design-only, `src/lib/document-editor/a4-editor-capabilities.ts` plus `GET src/app/api/page-bootstrap/document-editor/route.ts` as the single propagation boundary. Old/missing capability data falls back to `1 / 1 / optional` and never enables writer level 2.
+5. **C07 migration design completed.** Public precondition is `expectedRevision`; DocumentTemplate and TemplatePartial map it to existing `version`; GeneratedDocument gets future `revision Int @default(0)` with no `@map`; `templateVersion` remains provenance. Forward/transition/strict-enforcement/rollback ordering and participating writers are documented. No migration is applied.
+6. **Synthetic output candidate completed.** The W0 output fixture now contains a heading, OL start=5, nested list, block quote, table caption/footer, synthetic field/reference, exact C03 inline break, legacy top-level hard break, 120 filler paragraphs, and unique first/last sentinels. Corresponding PDF-HTML sentinel ordering is represented in the test. Actual PDF-byte/page validation remains an execution gate, not an HTML claim.
+7. **Handoff claims reclassified.** `workflow-proof.md` now labels evidence as SATISFIED, EXPECTED-FAILURE BASELINE CAPTURED, or BLOCKED FOR CORE INTEGRATION VALIDATION.
+
+### W0 file set
+
+PR #33 remains limited to these W-owned files:
 
 1. `tests/services/document-template-editor-save.test.ts`
 2. `tests/services/document-template-editor-batch.test.ts`
 3. `tests/services/document-template-editor-drafts.test.ts`
-4. `tests/services/document-template-editor-fields.test.ts` (new)
+4. `tests/services/document-template-editor-fields.test.ts`
 5. `tests/document-output/document-template-editor-output.test.ts`
 6. `docs/plans/2026-09-10-a4-editor-implementation/workflow-proof.md`
 7. `docs/plans/2026-09-10-a4-editor-implementation/coordination/workflow.md`
 
-No production source file is changed by this correction set.
+This G0 correction changes only the field test, output test and the two WORKFLOW documents; the earlier W0 save/batch/draft proof files remain unchanged.
 
-### Validation evidence
+### Field test ledger
 
-This environment does not provide an executable Oakcloud checkout under Node 24. Its available container is Node 22 and cannot resolve GitHub/npm for a dependency-capable checkout. Therefore the following required commands remain **NOT EXECUTED here** and are not claimed as passing:
+| Fixture | Classification | Meaning |
+| --- | --- | --- |
+| W-FIELD-01A | **SATISFIED** | actual `placeholderDefinitionSchema` current lossiness recorded |
+| W-FIELD-01B | **SATISFIED** | actual DocumentTemplate create/update carriers show same current lossiness |
+| W-FIELD-01C | **SATISFIED** | actual TemplatePartial create/update carriers show same current lossiness |
+| W-FIELD-01D | **SATISFIED** | explicit `required:true` survives; omission currently materializes `false` |
+| W-FIELD-01E | **SATISFIED** | all current types recognized, explicitly including legacy `list` and `conditional` |
+| W-FIELD-01F | **EXPECTED-FAILURE BASELINE CAPTURED** | future lossless stable ID/options/unknown metadata contract |
+| W-FIELD-01G | **EXPECTED-FAILURE BASELINE CAPTURED** | future omitted-property presence preservation |
+| W-FIELD-04 | **SATISFIED** | layout merge keeps unrelated stored contentJson metadata |
+| W-FIELD-05A | **SATISFIED** | current ordinary resolver value can inject markup; missing diagnostics remain observable |
+| W-FIELD-05B | **EXPECTED-FAILURE BASELINE CAPTURED** | future C06 ordinary-value escaping boundary |
 
-```bash
-npm run lint
-npm run typecheck
-npm run build
-npx vitest run tests/services/document-template-editor-save.test.ts
-npx vitest run tests/services/document-template-editor-batch.test.ts
-npx vitest run tests/services/document-template-editor-drafts.test.ts
-npx vitest run tests/services/document-template-editor-fields.test.ts
-npx vitest run tests/document-output/document-template-editor-output.test.ts
+### Output test ledger
+
+| Fixture | Classification | Meaning |
+| --- | --- | --- |
+| W-OUTPUT-FIXTURE-00 | **SATISFIED at source-contract level** | complete deterministic multi-page candidate and ordered HTML sentinels defined |
+| W-OUTPUT-01..05 | **EXPECTED-FAILURE BASELINE CAPTURED** | current sanitizer/attribute/fallback gaps remain visible without production fixes |
+| W-OUTPUT-FIXTURE-01/02 | **SATISFIED at source-contract level** | real recursive partial resolver and missing-partial observability fixtures |
+| W-OUTPUT-SURVIVE-01 | **SATISFIED at source-contract level** | continuation/oversized markers remain in shared paginated-section builder contract |
+| Actual Puppeteer PDF bytes/page count/text order/break/clipping proof | **BLOCKED FOR CORE INTEGRATION VALIDATION** | no Node 24 dependency-capable Oakcloud checkout on this session host |
+
+“SATISFIED at source-contract level” identifies a normal passing assertion in the committed test source; it is **not** a claim that this session executed Vitest.
+
+### Capability handoff
+
+Proposed single server contract, not implemented in W0:
+
+```ts
+export interface A4EditorCapabilities {
+  readerFormatLevel: 1 | 2;
+  allowedWriterFormatLevel: 1 | 2;
+  revisionPrecondition: 'optional' | 'required';
+}
 ```
 
-Likewise, actual Puppeteer PDF bytes could not be generated. Synthetic resolver/PDF-HTML fixtures are committed, but production PDF-byte readiness remains a later executable gate. The user explicitly authorized updating the PR despite this validation limitation.
+Proposed producer boundary: authenticated `GET /api/page-bootstrap/document-editor`, backed by one server module `src/lib/document-editor/a4-editor-capabilities.ts`.
 
-### Owner status at W0 handoff
+Default when absent/old deployment:
 
-| Owner | Wave-0 packet | Evidence observed | Status / next gate |
-| --- | --- | --- | --- |
-| CORE | C0 | `coordination/core.md`; bounded C01/C04 proof, input inventory; targeted execution blocked in its environment | READY FOR INTEGRATION; CORE owns G0 review |
-| SEMANTICS | S0 | PR #34; structural selection/C03 nested-break/list-continuity corrections; Node24 workflow lint/typecheck evidence, focused targets not executed | READY FOR INTEGRATION — S0 only |
-| FIELDS | F0 | PR #32; field grammar/identity/lossless codec/trusted-rich proof; Node24 smoke/workflow evidence with focused Vitest blocked | READY FOR INTEGRATION — F0 only |
-| WORKFLOW | W0 | PR #33; persistence/concurrency/draft/batch/output/field proof updated in this handoff | READY FOR INTEGRATION — W0 only |
+```json
+{
+  "readerFormatLevel": 1,
+  "allowedWriterFormatLevel": 1,
+  "revisionPrecondition": "optional"
+}
+```
 
-G0 is **not** frozen by WORKFLOW. VERIFY remains idle until CORE publishes a verification assignment.
+Reader-before-writer ordering and rollback are fully specified in `workflow-proof.md`. No scattered client flags are proposed.
 
-### W -> owner requests
+### GeneratedDocument revision handoff
 
-**To CORE**
-- Freeze the additive persistence contract name as `expectedRevision` across W consumers.
-- Freeze revision sources: `DocumentTemplate.version`, `TemplatePartial.version`, and a dedicated future `GeneratedDocument.revision`; never use `templateVersion` as edit revision.
-- Approve the repository-convention conflict mapping: HTTP 409 with stable `VERSION_CONFLICT`, safe current/expected revision details and reload/reconcile action; settle HTTP 428/equivalent for missing preconditions when enforcement becomes strict.
-- Assign/sequence the future GeneratedDocument revision migration in W1 integration; W0 deliberately does not edit schema/migrations.
-- Run/arrange the exact Node24 focused commands before treating W0 executable acceptance as complete.
+Design-only Prisma target:
 
-**To SEMANTICS**
-- Keep S0's exact C03 nested marker and list-continuity codec as the reader contract consumed by W output paths.
-- Preserve legacy hard breaks plus supported authored class/style/attributes/context; identify any export projection attributes that W must allowlist later.
+```prisma
+revision Int @default(0)
+```
 
-**To FIELDS**
-- Publish the final F0 stored-field definition/identity codec and trusted-rich origin capability for W1 consumption.
-- Preserve scoped IDs, raw-vs-derived distinction, forward metadata and false/zero/empty/missing semantics through persistence/reopen.
+Physical table: `generated_documents`; physical column: `revision`; no `@map` needed. Existing/new rows begin at 0. Later accepted canonical/lifecycle writes compare public `expectedRevision` and increment once. Template/partial continue to use existing `version`. `templateVersion` is not an edit revision.
 
-### Shared-change request to CORE
+### Validation actually executed in this session
 
-For W1 only, CORE must coordinate the shared database/API migration window for the dedicated `GeneratedDocument.revision` field and any shared error/capability contract changes. WORKFLOW does not request or authorize those shared changes in W0 and has not implemented them here.
+Focused W0 tests: **NOT EXECUTED**.  
+`npx tsc -b`: **NOT EXECUTED**.  
+Puppeteer/PDF bytes: **NOT EXECUTED**.
 
-### Exact stop point
+Reason: the available local host exposes Node `22.16.0`, no Node 24 binary and no dependency-capable Oakcloud checkout; `package.json` requires Node `>=24 <25`. W0 does not downgrade runtime requirements or alter CI/package configuration to fabricate a pass.
 
-All authorized W0 proof/design corrections are committed to the existing WORKFLOW branch/PR. WORKFLOW stops now. It must not implement W1 persistence/concurrency behavior, migrations, reader activation, PDF fallback fixes or bundle changes until CORE reviews C0/S0/F0/W0, freezes G0 and publishes a new explicit WORKFLOW assignment.
+The existing repository PR workflow `.github/workflows/node24-compatibility.yml` does use Node 24 for checkout, lint, typecheck, build and Chromium-path validation after PR updates. Its result is useful independent evidence but does not substitute for the focused W0 Vitest commands below.
+
+### Required CORE integration validation
+
+```bash
+npx vitest run \
+  tests/services/document-template-editor-save.test.ts \
+  tests/services/document-template-editor-batch.test.ts \
+  tests/services/document-template-editor-drafts.test.ts \
+  tests/services/document-template-editor-fields.test.ts
+
+npx vitest run \
+  tests/document-output/document-template-editor-output.test.ts
+
+npx tsc -b
+```
+
+CORE integration validation must additionally run the actual Puppeteer PDF path against the committed synthetic candidate and verify page count >=2, first/last sentinel preservation and order, explicit break behavior, and no clipped-success output.
+
+### G0 status matrix
+
+| Requirement | Status |
+| --- | --- |
+| W-FIELD-05 truthfully represents current resolver + future C06 | **EXPECTED-FAILURE BASELINE CAPTURED** |
+| Actual DocumentTemplate/TemplatePartial Zod boundary evidence | **SATISFIED** |
+| Future F0 lossless field boundary | **EXPECTED-FAILURE BASELINE CAPTURED** |
+| Exact capability contract/central propagation design | **SATISFIED** |
+| Exact GeneratedDocument revision migration design | **SATISFIED** |
+| Complete synthetic multi-page output candidate | **SATISFIED** |
+| Real PDF-byte validation | **BLOCKED FOR CORE INTEGRATION VALIDATION** |
+| Focused Node24 W0 Vitest execution | **BLOCKED FOR CORE INTEGRATION VALIDATION** |
+| Node24 `npx tsc -b` | **BLOCKED FOR CORE INTEGRATION VALIDATION** |
+| Production behavior/schema remains untouched | **SATISFIED** |
+
+### Stop point
+
+WORKFLOW stops after this W0 correction. No W1/W2/W3/Stage-1 implementation, migration, capability activation, revision enforcement, v2 writer, bundle regeneration, deployment or merge is started.
+
+CORE owns the final G0 decision and execution-only integration validation.
 
 **READY FOR INTEGRATION — W0 only**
