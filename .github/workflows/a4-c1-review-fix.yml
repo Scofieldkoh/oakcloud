@@ -48,6 +48,8 @@ jobs:
         run: npx vitest run __tests__/components/a4-editor-toolbar.test.tsx
       - name: A4 editor SSR tests
         run: npx vitest run __tests__/components/a4-page-editor-ssr.test.tsx
+      - name: Install browser runtime
+        run: npx playwright install chromium
       - name: C1 browser input sequences
         run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-input-sequences.browser.test.tsx
       - name: Typecheck
