@@ -1131,7 +1131,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       if (scrollContainerRef.current) {
         pendingScrollTopRef.current = scrollContainerRef.current.scrollTop;
       }
-      pendingViewPageIdRef.current = activePageIdRef.current;
+      const surface = documentSurfaceRef.current;
+      const focusNode = window.getSelection()?.focusNode ?? null;
+      const selectionPage =
+        surface && focusNode ? pageContentFromTarget(surface, focusNode) : null;
+      pendingViewPageIdRef.current =
+        selectionPage?.dataset.pageId ?? activePageIdRef.current;
     }, []);
 
     const scheduleReflow = useCallback(
@@ -1957,6 +1962,32 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       },
       [commitS2Indent, effectivePreviewMode, restoreSelection],
     );
+
+    const applyCurrentS2NestToggle = useCallback(() => {
+      const surface = documentSurfaceRef.current;
+      if (!surface || effectivePreviewMode) return false;
+      if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
+        return false;
+      }
+      const bookmark = captureFlowSelection(surface);
+      if (!bookmark) return false;
+      const context = getA4EditorListContext(
+        canonicalPagesHtml(pagesRef.current),
+        bookmark,
+      );
+      if (!context?.inList) return false;
+      pendingTypingFormatRef.current = null;
+      pendingTypingPointRef.current = null;
+      return commitS2Indent(
+        bookmark,
+        context.level > 1 ? 'outdent' : 'indent',
+      );
+    }, [
+      canonicalPagesHtml,
+      commitS2Indent,
+      effectivePreviewMode,
+      restoreSelection,
+    ]);
 
     const applyInsertionTransaction = useCallback(
       (html: string) => {
@@ -3165,7 +3196,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (command.type === 'nest-list') {
-          applyCurrentS2Indent('indent');
+          applyCurrentS2NestToggle();
           return;
         }
 
@@ -3189,7 +3220,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         } as const;
         handleCommand(commandMap[command.type]);
       },
-      [applyCurrentS2Indent, applyCurrentSemanticCommand, applySelectionTransaction, handleCommand],
+      [applyCurrentS2NestToggle, applyCurrentSemanticCommand, applySelectionTransaction, handleCommand],
     );
 
     const handlePrint = useCallback(() => {
