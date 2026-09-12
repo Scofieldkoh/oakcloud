@@ -51,6 +51,7 @@ interface ResolvedSelection {
   root: HTMLElement;
   range: Range;
   collapsed: boolean;
+  startPosition: A4Position;
 }
 
 function rootFor(canonical: CanonicalEditorDocument): HTMLElement {
@@ -89,7 +90,12 @@ function resolveSelection(
   const range = document.createRange();
   range.setStart(start.node, start.offset);
   range.setEnd(end.node, end.offset);
-  return { root, range, collapsed: normalized.range.collapsed };
+  return {
+    root,
+    range,
+    collapsed: normalized.range.collapsed,
+    startPosition: normalized.range.start,
+  };
 }
 
 function isTransactionResult(
@@ -158,14 +164,14 @@ function collapseSelectedRange(
   | A4TransactionResult {
   const resolved = resolveSelection(canonical, selection);
   if (isTransactionResult(resolved)) return resolved;
-  resolved.range.deleteContents();
-  return {
-    root: resolved.root,
-    point: {
-      node: resolved.range.startContainer,
-      offset: resolved.range.startOffset,
-    },
-  };
+  if (!resolved.collapsed) resolved.range.deleteContents();
+  const point = resolveA4Position(resolved.root, resolved.startPosition);
+  return point
+    ? { root: resolved.root, point }
+    : rejected(
+        'invalid-result-selection',
+        'The normalized logical selection start could not be restored after range deletion.',
+      );
 }
 
 function pointAtBoundarySibling(
@@ -428,10 +434,13 @@ export function deleteA4Selection(
 
   if (!resolved.collapsed) {
     resolved.range.deleteContents();
-    return finishApplied(canonical, resolved.root, {
-      node: resolved.range.startContainer,
-      offset: resolved.range.startOffset,
-    });
+    const point = resolveA4Position(resolved.root, resolved.startPosition);
+    return point
+      ? finishApplied(canonical, resolved.root, point)
+      : rejected(
+          'invalid-result-selection',
+          'The normalized logical selection start could not be restored after range deletion.',
+        );
   }
 
   const point: A4DomPoint = {

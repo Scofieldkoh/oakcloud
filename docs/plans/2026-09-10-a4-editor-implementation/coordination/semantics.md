@@ -393,7 +393,7 @@ C02/C04 correction implementation/test head `44d8b3718fd14e0a57a93298dbdce6b54c0
 
 1. `A<br><br>B`: directly exercises `mapA4ProjectedStructuralPoint()` for the boundary before BR1, between BR1/BR2, and after BR2 and asserts exact canonical child index plus affinity.
 2. Two adjacent zero-text field/reference atomics: asserts the boundary between them remains index `1` and does not collapse before or after both.
-3. `<br><span data-a4-break="page"></span><span data-field-id="x"></span>`: asserts both emitted `childBoundaries` and direct mapper results on each side of the semantic break, including exact canonical indices and affinity.
+3. `<br><span data-a4-break="page"></span><span data-field-id="x" contenteditable="false"></span>`: asserts both emitted `childBoundaries` and direct mapper results on each side of the semantic break, including exact canonical indices and affinity.
 4. Empty paragraph plus empty table cell: asserts `children` index `0` remains exact through projection without inventing text offsets.
 5. `Hello[semantic break]World`: asserts the existing text projection path still maps fragment text offset `2` to canonical text offset `7`.
 
@@ -420,3 +420,99 @@ The existing multiple nested-break / `start=5` / list-continuation proof remains
 The narrow CORE C02/C04 correction is complete within the SEMANTICS S1 lease. No CORE, FIELDS, WORKFLOW or generated-bundle file was edited by this correction. S2 and S3 have **not started**. PR #36 remains unmerged for CORE re-review.
 
 SEMANTICS state: **READY FOR RE-REVIEW — S1 only**
+
+---
+
+## SEMANTICS-S1-G1-CORRECTION-20260912-01
+
+Role and packet: SEMANTICS / S1 corrective owner for blocked G1 only
+Integrated G1 baseline: `603f3a25d168435b56709ef9c2c2e8cdda9af737`
+Contract: **v1 frozen at G0**; no contract widening
+Branch: `codex/a4-editor-semantics-s1-g1-correction`
+PR: `#40`
+Correction code head before this handoff update: `12e105e72861ecfd371c340fef90e7a8f8a76995`
+Scope boundary: **S1 G1 correction only; no S2 / Stage-2 work**
+
+### Corrective scope and root cause
+
+1. **Reverse selected-range deletion**
+   - The C02 normalization logic already ordered forward and reverse selections correctly. The defect occurred after the normalized DOM `Range` was deleted: `deleteA4Selection()` and the shared selected-range collapse helper used the browser-mutated `Range.startContainer/startOffset` as the resulting caret.
+   - Cross-block deletion can detach or relocate that DOM boundary even though the original normalized logical start remains valid. `finishApplied()` then correctly failed closed because it could not capture the detached point, which surfaced as `status: "rejected"` for the reverse regression.
+   - The correction retains the normalized `A4Position` start in `ResolvedSelection`, deletes only the normalized range, and resolves that logical start against the mutated canonical root before producing the collapsed result selection. If that logical position is genuinely no longer resolvable, the command still rejects. No stale/session/revision validation was weakened.
+
+2. **List-item Enter `<br>` metadata discrepancy**
+   - S1 had widened generic `hydrateFlowContainer()` runtime identity assignment to include nested `<br>` elements. Legacy/public `document-actions` uses that generic hydrator, so the empty list-item placeholder created as canonical `<p><br></p>` was returned as `<p><br data-flow-id="…"></p>`.
+   - `data-flow-id` on a `<br>` is required for exact zero-text C02 structural/runtime mapping, but it is projection/editor identity rather than persisted/public canonical authority. The correct boundary is to keep `<br>` identity in `hydrateA4RuntimeIdentity()` / `STRUCTURAL_IDENTITY_SELECTOR`, which is the structural runtime path, and stop assigning it from the generic legacy/public flow hydrator.
+   - `stripFlowMetadata()` remains unchanged and still strips all runtime flow metadata at persistence. Structural `<br>` identity, child-boundary distinction, semantic break mapping and runtime affinity remain available because the S-owned structural hydrator still explicitly includes `br`.
+
+### Files changed
+
+- `src/components/documents/a4-pagination/structural-commands.ts` — retain normalized logical range start and restore the result caret from it after selected-range deletion.
+- `src/components/documents/a4-pagination/model.ts` — remove only `br` from the generic runtime identity selector; structural runtime hydration continues to own BR identity.
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/semantics.md` — this corrective evidence and CORE handoff.
+
+No CORE editor/session/history file, FIELDS file, WORKFLOW file, generated bundle, package/configuration, migration, deployment file or version was changed.
+
+### G1 regression baseline and validation commands
+
+Integrated G1 S1 result supplied by CORE for baseline `603f3a25d168435b56709ef9c2c2e8cdda9af737`:
+
+```text
+__tests__/components/a4-pagination
+171 tests total
+169 passed
+2 failed
+```
+
+The two reported failures are the existing regressions:
+
+```text
+__tests__/components/a4-pagination/structural-commands.test.ts
+A4 S1 structural commands > deletes only a reverse selected range and preserves unselected siblings
+
+__tests__/components/a4-pagination/document-actions.test.ts
+A4 canonical document actions > Enter inside list items > creates an empty second item when Enter is pressed at the end
+```
+
+Required Node 24 commands:
+
+```text
+npx vitest run __tests__/components/a4-pagination --reporter=verbose
+
+npx vitest run --config vitest.browser.config.ts \
+  __tests__/browser/a4-boundary-semantics.browser.test.tsx \
+  --reporter=verbose
+```
+
+Result in this execution environment:
+
+```text
+NOT EXECUTED — environment/tooling limitation, not represented as a pass.
+```
+
+The available execution container is Node `v22.16.0`, has no executable repository checkout/dependencies, and cannot resolve `github.com`. The authenticated GitHub connector can read/write the repository but cannot execute arbitrary repository commands. The existing `Node 24 compatibility` workflow provisions Node 24 but does not run either mandatory S1 Vitest command and exposes no ad-hoc command input. SEMANTICS ownership excludes changing workflow/package/configuration files merely to manufacture this evidence, so no such change was made.
+
+PR #40 triggers the repository's existing Node 24 static/build workflow. Those checks are supplemental and are not substituted for the two required G1 test commands. CORE must execute the exact commands above when re-integrating/re-running G1.
+
+### Preservation review
+
+Static review of the correction confirms:
+
+- forward/reverse selection ordering remains entirely in `normalizeA4SelectionRange()`; the correction consumes its normalized `start` and does not introduce direction-specific deletion logic;
+- stale/session/change-map rejection paths are unchanged;
+- manual semantic break insertion/removal and nested v2 mapping code are unchanged;
+- `STRUCTURAL_IDENTITY_SELECTOR` and `STRUCTURAL_BOUNDARY_SELECTOR` still explicitly include `br`, preserving zero-text child positions and before/after affinity in C02 runtime mapping;
+- legacy/v2 readers, grapheme deletion, structural pagination and persistence metadata stripping are unchanged;
+- SEMANTICS still consumes CORE `sessionKey` / `documentRevision` and introduces no revision counter, session authority, editor history ownership or database revision logic.
+
+### Remaining risks / untested evidence
+
+- The two mandatory Node 24 Vitest commands have not been executable from this environment. Their final pass/fail counts remain required CORE re-integration evidence; no pass is claimed here.
+- The existing repository Node 24 workflow does not cover the S1 component directory or the boundary-semantics browser file. A green workflow therefore cannot by itself close G1.
+- `coordination/g1.md` was requested by the corrective prompt but is not present at the integrated baseline/current `main` through the available repository API; the exact two G1 failures supplied by CORE in the corrective assignment were used as the blocker record. No replacement G1 authority file was invented by SEMANTICS.
+
+### Handoff to CORE
+
+PR #40 contains only the S1 corrections above and must not be merged by SEMANTICS. CORE should re-integrate the PR head, run the exact Node 24 S1 component and boundary browser commands, then decide whether G1 is cleared. SEMANTICS does not mark G1 passed or frozen.
+
+**READY FOR CORE RE-INTEGRATION — S1 G1 CORRECTION ONLY**
