@@ -109,11 +109,12 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
           if (!item) throw new Error(`Missing rendered list item: ${needle}`);
           const list = item.closest('ol');
           if (!list) throw new Error(`Missing rendered list for: ${needle}`);
+          const before = getComputedStyle(item, '::before');
           return {
             start: list.getAttribute('start'),
             classes: list.className,
-            listStyleType: getComputedStyle(item).listStyleType,
-            markerWeight: getComputedStyle(item, '::marker').fontWeight,
+            beforeContent: before.content,
+            beforeWeight: before.fontWeight,
           };
         };
         return {
@@ -140,9 +141,9 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
       expect(rendered.continuation.start).toBe('8');
       expect(rendered.restart.start).toBe('1');
       expect(rendered.alpha.classes).toContain('list-alpha');
-      expect(rendered.alpha.listStyleType.toLowerCase()).toMatch(/alpha|lower-alpha/);
+      expect(rendered.alpha.beforeContent.toLowerCase()).toContain('lower-alpha');
       expect(rendered.bold.classes).toContain('list-bold-numbers');
-      expect(Number.parseInt(rendered.bold.markerWeight, 10) || 700).toBeGreaterThanOrEqual(600);
+      expect(Number.parseInt(rendered.bold.beforeWeight, 10) || 700).toBeGreaterThanOrEqual(600);
       expect(rendered.nestedDepth).toBeGreaterThanOrEqual(2);
       await page.close();
     } finally {
@@ -172,6 +173,18 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
     expect(pdfBuffer.length).toBeGreaterThan(5_000);
 
     const extracted = await extractPdfText(pdfBuffer);
+    const outputDir = process.env.Q1_OUTPUT_DIR;
+    if (outputDir) {
+      mkdirSync(outputDir, { recursive: true });
+      writeFileSync(join(outputDir, 'a4-q1-real-output.pdf'), pdfBuffer);
+      writeFileSync(join(outputDir, 'a4-q1-real-output.txt'), `${extracted.text}\n`);
+    }
+
+    console.info(
+      `Q1_REAL_PDF pages=${extracted.pageCount} bytes=${pdfBuffer.length} chrome=${executablePath}`,
+    );
+    console.info(`Q1_REAL_PDF_TEXT ${extracted.text.replace(/\s+/g, ' ').slice(0, 2000)}`);
+
     expect(extracted.pageCount).toBeGreaterThan(1);
     expect(countOccurrences(extracted.text, FIRST_SENTINEL)).toBe(1);
     expect(countOccurrences(extracted.text, LAST_SENTINEL)).toBe(1);
@@ -197,24 +210,12 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
       previousIndex = currentIndex;
     }
 
-    // Chrome includes rendered list markers in the PDF text stream. These
-    // checks prove numbering survives the real HTML -> paginator -> PDF path.
+    // The production print CSS renders numbering through li::before counters.
+    // Chrome exposes those rendered counters in the generated PDF text stream.
     expect(extracted.text).toMatch(/(^|\s)5[.)](\s|$)/);
     expect(extracted.text).toMatch(/(^|\s)6[.)](\s|$)/);
     expect(extracted.text).toMatch(/(^|\s)8[.)](\s|$)/);
     expect(extracted.text).toMatch(/(^|\s)1[.)](\s|$)/);
     expect(extracted.text).toMatch(/(^|\s)[aA][.)](\s|$)/);
-
-    const outputDir = process.env.Q1_OUTPUT_DIR;
-    if (outputDir) {
-      mkdirSync(outputDir, { recursive: true });
-      writeFileSync(join(outputDir, 'a4-q1-real-output.pdf'), pdfBuffer);
-      writeFileSync(join(outputDir, 'a4-q1-real-output.txt'), `${extracted.text}\n`);
-    }
-
-    console.info(
-      `Q1_REAL_PDF pages=${extracted.pageCount} bytes=${pdfBuffer.length} chrome=${executablePath}`,
-    );
-    console.info(`Q1_REAL_PDF_TEXT ${extracted.text.replace(/\s+/g, ' ').slice(0, 2000)}`);
   });
 });
