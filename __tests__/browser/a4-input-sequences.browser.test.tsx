@@ -318,4 +318,44 @@ describe('A4PageEditor C0 native sequence regressions', () => {
     expect(window.getSelection()?.isCollapsed).toBe(true);
   });
 
+
+  it('uses S2 semantic list indentation for native Tab and Shift+Tab', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={'<ol><li><p>One</p></li><li><p>Two</p></li><li><p>Three</p></li></ol>'}
+        />,
+      );
+    });
+    const surface = await waitForEditorIdle();
+    const second = surface.querySelectorAll('ol > li > p')[1] as HTMLElement | undefined;
+    if (!second) throw new Error('Expected second list item');
+    surface.focus();
+    setCollapsedCaret(second, 1);
+
+    await act(async () => {
+      await userEvent.keyboard('{Tab}');
+    });
+    await waitForEditorIdle();
+    let canonical = editorRef.current?.getContent() ?? '';
+    let doc = new DOMParser().parseFromString(canonical, 'text/html');
+    expect(doc.querySelectorAll('ol > li:first-child > ol > li')).toHaveLength(1);
+    expect(doc.body.textContent).toContain('OneTwoThree');
+
+    const nested = surface.querySelector('ol > li:first-child > ol > li > p') as HTMLElement | null;
+    if (!nested) throw new Error('Expected nested list item after Tab');
+    surface.focus();
+    setCollapsedCaret(nested, 1);
+    await act(async () => {
+      await userEvent.keyboard('{Shift>}{Tab}{/Shift}');
+    });
+    await waitForEditorIdle();
+    canonical = editorRef.current?.getContent() ?? '';
+    doc = new DOMParser().parseFromString(canonical, 'text/html');
+    expect(doc.querySelectorAll(':scope > body > ol > li')).toHaveLength(3);
+    expect(doc.body.textContent).toContain('OneTwoThree');
+  });
+
 });

@@ -7,14 +7,14 @@ import {
 import { createA4CommandDocument } from '@/components/documents/a4-pagination/structural-commands';
 import type { FlowSelectionBookmark } from '@/components/documents/a4-pagination/selection';
 
-function paragraphBookmark(html: string, offset: number): {
+function paragraphBookmark(html: string, offset: number, selector = 'p[data-flow-id]'): {
   html: string;
   bookmark: FlowSelectionBookmark;
 } {
   const canonical = createA4CommandDocument(html);
   const root = document.createElement('div');
   root.innerHTML = canonical.internalHtml;
-  const paragraph = root.querySelector<HTMLElement>('p[data-flow-id]');
+  const paragraph = root.querySelector<HTMLElement>(selector);
   const flowId = paragraph?.dataset.flowId;
   if (!flowId) throw new Error('Expected hydrated paragraph identity');
   const point = { flowId, offset };
@@ -114,4 +114,65 @@ describe('A4Editor C2 semantic bridge', () => {
     expect(parsed.nodes[0].occurrenceId).toContain('template%3A42');
     expect(parsed.diagnostics.some((entry) => entry.code === 'dangling-expression')).toBe(true);
   });
+
+  it('routes Enter through S2 list semantics without duplicating later siblings', () => {
+    const source = paragraphBookmark(
+      '<ol start="5"><li><p>AlphaBeta</p></li><li><p>Next</p></li></ol>',
+      5,
+      'ol > li:first-child > p[data-flow-id]',
+    );
+    const result = runA4EditorSemanticCommand(
+      source.html,
+      source.bookmark,
+      { type: 'insert-paragraph' },
+    );
+    expect(result.status).toBe('applied');
+    if (result.status !== 'applied') return;
+    const root = document.createElement('div');
+    root.innerHTML = result.transaction.html;
+    expect(root.querySelector('ol')?.getAttribute('start')).toBe('5');
+    expect(Array.from(root.querySelectorAll('ol > li > p'), (node) => node.textContent))
+      .toEqual(['Alpha', 'Beta', 'Next']);
+  });
+
+  it('routes list indentation, list conversion and numbering through S2 transactions', () => {
+    const list = paragraphBookmark(
+      '<ol><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ol>',
+      0,
+      'ol > li:nth-child(2) > p[data-flow-id]',
+    );
+    const indented = runA4EditorSemanticCommand(list.html, list.bookmark, {
+      type: 'indent',
+      direction: 'indent',
+      metrics: { emPx: 16, remPx: 16, maxIndentPx: 600 },
+    });
+    expect(indented.status).toBe('applied');
+    if (indented.status !== 'applied') return;
+    const indentedRoot = document.createElement('div');
+    indentedRoot.innerHTML = indented.transaction.html;
+    expect(indentedRoot.querySelectorAll('ol > li:first-child > ol > li')).toHaveLength(1);
+
+    const paragraphs = paragraphBookmark('<p>A</p><p>B</p>', 0, 'p:first-child[data-flow-id]');
+    const converted = runA4EditorSemanticCommand(paragraphs.html, paragraphs.bookmark, {
+      type: 'set-list-type',
+      listType: 'unordered',
+    });
+    expect(converted.status).toBe('applied');
+    if (converted.status !== 'applied') return;
+    expect(converted.transaction.html).toContain('<ul');
+
+    const restart = paragraphBookmark(
+      '<ol><li><p>A</p></li><li><p>B</p></li></ol>',
+      0,
+      'ol > li:nth-child(2) > p[data-flow-id]',
+    );
+    const restarted = runA4EditorSemanticCommand(restart.html, restart.bookmark, {
+      type: 'restart-numbering',
+      start: 7,
+    });
+    expect(restarted.status).toBe('applied');
+    if (restarted.status !== 'applied') return;
+    expect(restarted.transaction.html).toContain('start="7"');
+  });
+
 });

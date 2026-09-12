@@ -20,9 +20,21 @@ import {
   type A4Selection,
 } from './a4-pagination/structural-position';
 import {
-  insertParagraphAtSelection,
-  type DocumentTransactionResult,
-} from './a4-pagination/document-actions';
+  applyA4S2Indent,
+  continueA4S2OrderedList,
+  getA4S2ContinueNumberingCapability,
+  getA4S2ListIndentCapability,
+  getA4S2NeutralTypingFormatPatch,
+  insertA4S2ParagraphBreak,
+  readA4S2FormattingState,
+  restartA4S2OrderedListAtSelection,
+  setA4S2ListType,
+  type A4S2FormattingState,
+  type A4S2IndentDirection,
+  type A4S2IndentMetrics,
+  type A4S2ListType,
+} from './a4-pagination/s2-semantics';
+import type { DocumentTransactionResult } from './a4-pagination/document-actions';
 import type { FlowSelectionBookmark } from './a4-pagination/selection';
 
 export type A4EditorSemanticCommand =
@@ -34,7 +46,15 @@ export type A4EditorSemanticCommand =
       affinity?: A4PositionAffinity;
     }
   | { type: 'insert-manual-break' }
-  | { type: 'remove-manual-break' };
+  | { type: 'remove-manual-break' }
+  | {
+      type: 'indent';
+      direction: A4S2IndentDirection;
+      metrics: A4S2IndentMetrics;
+    }
+  | { type: 'set-list-type'; listType: A4S2ListType }
+  | { type: 'restart-numbering'; start: number }
+  | { type: 'continue-numbering' };
 
 export type A4EditorSemanticCommandResult =
   | {
@@ -87,29 +107,17 @@ function structuralSelectionForFlowBookmark(
 }
 
 /**
- * CORE C2 adapter only. SEMANTICS owns every command and structural position;
- * this bridge translates C1's compatibility FlowSelectionBookmark to the
- * frozen C02 command boundary and translates the resulting selection back.
- * It never allocates a revision or reconstructs canonical state from pages.
- *
- * S1 intentionally does not yet own list Enter/exit semantics. Until S2
- * replaces that gap, paragraph insertion remains on the existing
- * SEMANTICS-owned canonical transaction so C2 does not regress the frozen G1
- * behaviour. Shift+Enter, deletion and manual breaks use the S1 command
- * contract directly.
+ * CORE integration adapter. SEMANTICS owns every structural/list
+ * operation. This bridge translates C1 FlowSelectionBookmark state to
+ * S1/S2 structural transactions and translates the resulting selection
+ * back. It never allocates a revision/history entry or reconstructs
+ * canonical state from projected pages.
  */
 export function runA4EditorSemanticCommand(
   internalHtml: string,
   bookmark: FlowSelectionBookmark,
   command: A4EditorSemanticCommand,
 ): A4EditorSemanticCommandResult {
-  if (command.type === 'insert-paragraph') {
-    const transaction = insertParagraphAtSelection(internalHtml, bookmark);
-    return transaction.changed
-      ? { status: 'applied', transaction, changedNodeIds: [] }
-      : { status: 'unchanged', reason: 'Paragraph insertion did not change the canonical document.' };
-  }
-
   const structural = structuralSelectionForFlowBookmark(
     internalHtml,
     bookmark,
@@ -125,18 +133,67 @@ export function runA4EditorSemanticCommand(
 
   const result = (() => {
     switch (command.type) {
+      case 'insert-paragraph':
+        return insertA4S2ParagraphBreak(structural.canonical, structural.selection);
       case 'insert-line-break':
         return insertA4LineBreak(structural.canonical, structural.selection);
       case 'delete':
         return deleteA4Selection(
-          structural.canonical,
-          structural.selection,
-          command.direction,
+structural.canonical,
+structural.selection,
+command.direction,
         );
       case 'insert-manual-break':
         return insertA4ManualPageBreak(structural.canonical, structural.selection);
       case 'remove-manual-break':
         return removeA4ManualPageBreak(structural.canonical, structural.selection);
+      case 'indent': {
+        const capability = getA4S2ListIndentCapability(
+structural.canonical,
+structural.selection,
+command.direction,
+        );
+        if (!capability.applicable && capability.code !== 'not-in-list') {
+return {
+  status: 'unchanged' as const,
+  reason: capability.reason ?? 'The list indentation command is not applicable.',
+};
+        }
+        return applyA4S2Indent(
+structural.canonical,
+structural.selection,
+command.direction,
+command.metrics,
+        );
+      }
+      case 'set-list-type':
+        return setA4S2ListType(
+structural.canonical,
+structural.selection,
+command.listType,
+        );
+      case 'restart-numbering':
+        return restartA4S2OrderedListAtSelection(
+structural.canonical,
+structural.selection,
+command.start,
+        );
+      case 'continue-numbering': {
+        const capability = getA4S2ContinueNumberingCapability(
+structural.canonical,
+structural.selection,
+        );
+        if (!capability.applicable) {
+return {
+  status: 'unchanged' as const,
+  reason: capability.reason ?? 'Numbering cannot continue from this selection.',
+};
+        }
+        return continueA4S2OrderedList(
+structural.canonical,
+structural.selection,
+        );
+      }
     }
   })();
 
@@ -180,10 +237,30 @@ export function getA4EditorListContext(
   );
 }
 
+export function readA4EditorS2FormattingState(
+  internalHtml: string,
+  bookmark: FlowSelectionBookmark,
+): A4S2FormattingState | null {
+  const structural = structuralSelectionForFlowBookmark(
+    internalHtml,
+    bookmark,
+    'after',
+  );
+  if (!structural) return null;
+  return readA4S2FormattingState(
+    structural.canonical,
+    structural.selection,
+  );
+}
+
+export function getA4EditorNeutralTypingFormatPatch() {
+  return getA4S2NeutralTypingFormatPatch();
+}
+
 /**
- * F1 parser consumption hook for view-decoration/navigation. CORE exposes the
- * parser output without inventing field grammar, identity, resolution or
- * lifecycle semantics. F2 remains the owner of field mutation transactions.
+ * F1 parser consumption hook for view-decoration/navigation. CORE exposes
+ * the parser output without inventing field grammar, identity, resolution
+ * or lifecycle semantics. F2 remains the owner of field mutation transactions.
  */
 export function analyzeA4EditorFieldSource(
   content: string,
