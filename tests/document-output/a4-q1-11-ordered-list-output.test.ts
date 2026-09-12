@@ -139,7 +139,7 @@ describe('A4 editor Q1-11 ordered-list production output', () => {
           nestedInner: document.querySelector('ol.q1-nested ol')?.getAttribute('start'),
           alphaClass: document.querySelector('ol.q1-alpha')?.className,
           boldClass: document.querySelector('ol.q1-bold')?.className,
-          boldWeight: boldItem ? getComputedStyle(boldItem, '::before').fontWeight : '',
+          boldWeight: boldItem ? getComputedStyle(boldItem, '::marker').fontWeight : '',
           nestedDepth,
           projectionNodeCount: document.querySelectorAll(
             '[data-flow-continuation-item], [data-flow-id], [data-a4-flow-id]',
