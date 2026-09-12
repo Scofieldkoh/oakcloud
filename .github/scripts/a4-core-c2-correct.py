@@ -27,7 +27,7 @@ editor = replace_between(
     editor,
     'function selectionStartPoint(',
     'function replaceTypedPageBreaks',
-    'function replaceTypedPageBreaks',
+    '',
     'remove obsolete physical selection helper',
 )
 editor = replace_once(
