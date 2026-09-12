@@ -68,6 +68,53 @@ def correct_list_toggle_mapping() -> None:
     path.write_text(text.replace(old_deps, new_deps, 1))
 
 
+def correct_w1_source_contracts() -> None:
+    save_path = Path('tests/services/document-template-editor-save.test.ts')
+    save_text = save_path.read_text()
+    old_save = """  it.fails(
+    'W-SAVE-01 CORE submit-time snapshot remains outside WORKFLOW W1',
+"""
+    new_save = """  it(
+    'W-SAVE-01 CORE submit-time snapshot is consumed by the integrated workflow',
+"""
+    if old_save not in save_text:
+        raise SystemExit('W-SAVE-01 marker is missing.')
+    save_path.write_text(save_text.replace(old_save, new_save, 1))
+
+    draft_path = Path('tests/services/document-template-editor-drafts.test.ts')
+    draft_text = draft_path.read_text()
+    old_source = """const draftRouteSource = readRepoFile('src/app/api/generated-documents/[id]/draft/route.ts');
+const prismaSchemaSource = readRepoFile('prisma/schema.prisma');
+"""
+    new_source = """const draftRouteSource = readRepoFile('src/app/api/generated-documents/[id]/draft/route.ts');
+const draftWorkflowServiceSource = readRepoFile('src/services/document-draft-workflow.service.ts');
+const prismaSchemaSource = readRepoFile('prisma/schema.prisma');
+"""
+    if old_source not in draft_text:
+        raise SystemExit('Draft source declarations marker is missing.')
+    draft_text = draft_text.replace(old_source, new_source, 1)
+    old_assertions = """  it('W-DRAFT-SURVIVE-01 draft reads and deletes are tenant-gated and user-scoped', () => {
+    expect(draftRouteSource).toContain('getGeneratedDocumentById(id, tenantId)');
+    expect(draftRouteSource).toContain('getLatestDraft(id, session.id)');
+    expect(draftRouteSource).toContain('where: { documentId: id, userId: session.id }');
+  });
+"""
+    new_assertions = """  it('W-DRAFT-SURVIVE-01 draft reads and deletes are tenant-gated and user-scoped', () => {
+    expect(draftRouteSource).toContain('getGeneratedDocumentById(id, tenantId)');
+    expect(draftRouteSource).toContain('getLatestEditorDraft(id, session.id, tenantId)');
+    expect(draftRouteSource).toContain('deleteEditorDrafts({');
+    expect(draftWorkflowServiceSource).toContain('where: { id: documentId, tenantId, deletedAt: null }');
+    expect(draftWorkflowServiceSource).toContain('where: { documentId, userId }');
+    expect(draftWorkflowServiceSource).toContain('where: { id: input.documentId, tenantId: input.tenantId, deletedAt: null }');
+    expect(draftWorkflowServiceSource).toContain('where: { documentId: input.documentId, userId: input.userId }');
+  });
+"""
+    if old_assertions not in draft_text:
+        raise SystemExit('W-DRAFT-SURVIVE-01 marker is missing.')
+    draft_path.write_text(draft_text.replace(old_assertions, new_assertions, 1))
+
+
 if __name__ == '__main__':
     reapply_v2_corrections()
     correct_list_toggle_mapping()
+    correct_w1_source_contracts()
