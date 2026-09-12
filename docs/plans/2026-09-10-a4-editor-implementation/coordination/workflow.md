@@ -443,3 +443,162 @@ CORE should also rerun the corrected standalone real-PDF harness after regenerat
 Only W1 corrections from CORE's full integration review were made. **W2 and W3 have not started.** PR #37 remains open, draft and unmerged. No application-version bump or deployment activation was made.
 
 **READY FOR RE-REVIEW — W1 only**
+
+---
+
+## WORKFLOW-W2-20260912-01 — Current-revision workflow integration
+
+Role and packet: WORKFLOW / W2 only  
+Starting merged `main`: `6f1ab8d3cb90056c556771936f4c763d9596efdf`  
+Programme G1-validated Stage-2 source baseline: `ad7285ace280f0b4002f119f923a8e2166b9475f`  
+Branch: `codex/a4-editor-workflow-w2-20260912`  
+PR: #44 — open, unmerged  
+Frozen contract: **v1 frozen at G0 — unchanged**  
+G1: **FROZEN/PASSED**  
+Validated W2 implementation head before this handoff-only documentation commit: `bade29a5036e4eea9326e2eb3a7c761c5c7b7362`  
+Node-24 validation run: `34667813235`  
+Stop state: **READY FOR INTEGRATION — W2 ONLY**
+
+A commit cannot contain its own SHA. The implementation head above is the exact production/test head that passed the full recorded validation; the final PR head is the documentation-only handoff commit that follows it.
+
+### Boundaries consumed
+
+W2 consumes existing producer authorities rather than reimplementing them:
+
+- **C1** `A4PageEditorRef.prepareSnapshot()`, stable `sessionKey`, local snapshot revisions and canonical `content`/`contentJson` snapshots.
+- **S1/W1** canonical A4 stored-document readers and output compatibility adapters.
+- **F1/W1** stored field-definition parsing/default resolution and shared sanitizer/output behavior.
+- **W1/C07** `GeneratedDocument.revision` and existing DocumentTemplate/TemplatePartial `expectedRevision`/version CAS behavior remain the only server revision authorities.
+
+W2 local snapshot revisions are acknowledgement/order tokens only. They are never used as a second server revision authority.
+
+### Delivered
+
+1. **Current-revision canonical saves.** Generated-document and template/partial editor routes save from C1 `prepareSnapshot()` output, pass the current server `expectedRevision`, allow only one canonical save to be in flight, and acknowledge only the exact snapshot/form revision captured at dispatch. A late success never clears or navigates away from newer local edits.
+2. **Sequenced draft integration.** `document-draft-workflow.service.ts` serializes draft replacement per tenant/document using a PostgreSQL transaction advisory lock, rejects a stale canonical base revision, rejects non-DRAFT canonical documents, scopes local draft ordering to stable editor session plus per-mount writer instance, and deletes only draft snapshots covered by an acknowledged canonical save.
+3. **Revision-aware recovery.** Draft GET returns canonical revision/status and whether the server revision changed. Recovery from an older base is explicit reconciliation; finalized/archived documents cannot restore a draft into an editable state.
+4. **Batch identity and save acknowledgements.** Batch persistence fingerprints request-owned state. An older server response can advance server item IDs/revision while preserving newer local content/layout/configuration as dirty. Successful persistence no longer disables the unsaved-navigation guard by itself.
+5. **Batch document isolation.** Each review item uses a stable item session; `editedContentJson` survives content edits; item layout metadata wins over template/default metadata and is restored when switching between items; layout-only edits count as manual edits before preview replacement.
+6. **Preview integration.** Unsaved template previews validate the current canonical snapshot through the existing A4 reader, resolve unsaved field values through the existing field workflow and call the canonical generation renderer without creating a temporary template row. Client preview responses are accepted only when the snapshot, form revision and preview context still match the request.
+7. **W1 compatibility preserved.** The W2 validation lane reuses unchanged W1 capability, producer, server-reader, export, GeneratedDocument CAS and batch PostgreSQL suites instead of duplicating those contracts.
+
+### W2 validation commands and exact results
+
+All recorded execution below was performed by the repository's existing `.github/workflows/node24-compatibility.yml` on pull request #44. The local tool host could not resolve GitHub for a dependency-capable checkout, so no local execution is claimed.
+
+Node-24 static/build job:
+
+```bash
+npm ci
+node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1)"
+npm run lint
+npm run check:assistant-capabilities
+npm run db:generate
+npm run typecheck
+npm run test:p16:evidence
+npm run test:run -- __tests__/lib/chrome-executable.test.ts --reporter=dot
+npm run test:run -- __tests__/services/business-assistant __tests__/api/business-assistant __tests__/services/bizfile __tests__/api/bizfile __tests__/lib/fresh-authorization.test.ts __tests__/middleware.test.ts --reporter=dot
+NODE_OPTIONS=--max-old-space-size=8192 npm run build
+```
+
+Result: **PASS**. Focused/static test counts in that job were:
+
+- P16 evidence: **1 file / 12 tests / 12 passed / 0 failed**.
+- Chromium path resolution: **1 file / 6 tests / 6 passed / 0 failed**.
+- Business Assistant/BizFile contract set: **47 files / 497 tests / 497 passed / 0 failed**.
+- Lint: **0 errors / 12 warnings repository-wide**. Two warnings are in the W2 template route adapter (`partials` dependency expression); ten are pre-existing outside W2.
+- Repository typecheck: **PASS**.
+- Application production build: **PASS**.
+
+Disposable PostgreSQL-16 job:
+
+```bash
+npm ci
+npm run check:assistant-capabilities
+npm run db:generate
+node scripts/require-business-assistant-test-env.mjs
+npx prisma migrate deploy
+npm run test:business-assistant:postgres
+npx vitest run __tests__/integration/business-assistant-correction-concurrency.postgres.test.ts --maxWorkers=1
+npx vitest run __tests__/integration/bizfile --maxWorkers=1
+```
+
+Result: **PASS**. Exact counts:
+
+- existing Business Assistant PostgreSQL suite: **10 files / 34 tests / 34 passed / 0 failed**;
+- correction-concurrency PostgreSQL suite: **1 file / 2 tests / 2 passed / 0 failed**;
+- recursive BizFile/W2 compatibility lane: **9 files / 62 tests / 62 passed / 0 failed**.
+
+The 62-test lane contains, among the existing BizFile coverage:
+
+- W2 draft sequencing: **5/5 passed**;
+- W2 batch acknowledgement/isolation: **3/3 passed**;
+- unchanged W1 capability/producer/server-reader/export compatibility: **22/22 passed**;
+- unchanged W1 PostgreSQL GeneratedDocument CAS/batch compatibility: **13/13 passed**.
+
+Production-image job:
+
+```bash
+docker buildx build --load --tag oakcloud:node24-ci .
+docker run --rm --entrypoint sh oakcloud:node24-ci -lc '
+  node --version | grep -E "^v24\\." &&
+  test "$CHROME_PATH" = "/usr/local/bin/oakcloud-chromium" &&
+  test -x "$CHROME_PATH" &&
+  "$CHROME_PATH" --version &&
+  npm run test:chromium
+'
+```
+
+Result: **PASS**.
+
+### PostgreSQL / concurrency evidence
+
+The W2 PostgreSQL assertions ran only against the existing guarded disposable PostgreSQL service:
+
+```text
+PostgreSQL 16.15
+host: 127.0.0.1
+port: 55439
+database: business_assistant_test
+user: assistant_test
+```
+
+All **71 repository migrations** were replayed into that isolated database before tests. W2 creates only synthetic workspace/user/generated-document/draft rows and deletes them after each test. No production/business database was touched.
+
+The W2 draft suite proves:
+
+- overlapping writes serialize under the transaction advisory lock and the highest local revision wins;
+- a stale canonical base revision is rejected before replacing the stored draft;
+- canonical-save cleanup cannot delete a newer draft than the acknowledged snapshot;
+- a fresh writer instance may restart its local C1 revision without being misclassified as an old in-flight save;
+- finalized documents reject draft persistence.
+
+The reused W1 PostgreSQL suites additionally prove generated-document CAS and batch revision behavior remained compatible.
+
+### Migration / schema impact
+
+**None.** W2 adds no Prisma schema change, migration, package change, application-version bump, CI workflow change or deployment configuration change. It consumes the revision/provenance schema delivered by W1/C07.
+
+### Compatibility / ownership impact
+
+- No CORE editor production implementation was edited.
+- No SEMANTICS implementation was edited.
+- No FIELDS production implementation was edited. The template workflow adapter is deliberately located under the W-owned route directory; the FIELDS-owned `src/components/documents/template-editor/*` tree is unchanged from starting main.
+- Existing `render-test` callers that send a persisted `templateId` remain supported; the unsaved-snapshot editor path is additive.
+- Existing generated-document provenance (`templateVersion`) remains separate from edit revision authority.
+- Existing W1 output sanitizer/readers remain authoritative and their compatibility suites pass unchanged.
+
+### Blocked producer dependencies
+
+**None.** C1, S1, F1, W1, G1 freeze and the fresh `w1-s1-structural-v1` pagination bundle are present in the starting integrated tree as required. W2 did not merge or substitute another agent's branch.
+
+### Remaining risks
+
+1. The W2 template route adapter has two non-blocking React `exhaustive-deps` lint warnings around the derived `partials` array. The full lint command is green with zero errors, but those two warnings should be cleaned during integration polish.
+2. W2 added focused unit/PostgreSQL compatibility coverage but did not add a new end-to-end Playwright scenario for human interaction timing across every route; the Node-24 production build, canonical contract suites and concurrency suites are green.
+
+### Stop boundary
+
+PR #44 remains open and unmerged. W2 did not start W3, C3, S3 or F3, did not deploy, did not bump the application version and did not merge another agent's branch.
+
+**READY FOR INTEGRATION — W2 ONLY**
