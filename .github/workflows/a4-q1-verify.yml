@@ -17,34 +17,74 @@ env:
   CANDIDATE_SHA: 6e8d4426c0d57043d85a830045dee465f6ff9a47
 
 jobs:
-  browser-baseline:
-    name: Q1 real Chromium baseline
+  browser-q1:
+    name: Q1 real Chromium acceptance and 20x repeatability
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
+      - name: Check out VERIFY harness
+        uses: actions/checkout@v6
+        with:
+          path: verify-harness
+          persist-credentials: false
       - name: Check out frozen candidate
         uses: actions/checkout@v6
         with:
           ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          path: candidate
           fetch-depth: 1
           persist-credentials: false
-      - name: Prove frozen candidate
-        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Prove frozen candidate before overlay
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Overlay VERIFY-owned browser test only
+        run: cp verify-harness/__tests__/browser/a4-q1-acceptance.browser.test.tsx candidate/__tests__/browser/
+      - name: Prove overlay scope
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          git status --short
+          test "$(git status --short)" = "?? __tests__/browser/a4-q1-acceptance.browser.test.tsx"
       - name: Set up Node 24
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: candidate/package-lock.json
       - name: Install dependencies
+        working-directory: candidate
         run: npm ci
       - name: Install real Chromium
+        working-directory: candidate
         run: npx playwright install --with-deps chromium
-      - name: Browser and Chromium versions
+      - name: Browser versions
+        working-directory: candidate
         run: |
           node --version
           npx playwright --version
-          npx playwright install --dry-run chromium
-      - name: Execute Q1-relevant native A4 browser suites
+          node -e "const { chromium } = require('playwright'); console.log('chromium=' + chromium.executablePath())"
+      - name: Q1-01 native Enter immediate-type 20 consecutive fresh runs
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 20); do
+            echo "Q1_REPEATABILITY_RUN=${attempt}/20"
+            npx vitest run --config vitest.browser.config.ts \
+              __tests__/browser/a4-input-sequences.browser.test.tsx \
+              -t "preserves every later-page item when Enter is followed immediately by typing" \
+              --reporter=dot
+          done
+      - name: Execute VERIFY-owned boundary packet
+        working-directory: candidate
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-q1-acceptance.browser.test.tsx
+          -t "Q1-02|Q1-03|Q1-05|Q1-07|Q1-09/Q1-12"
+          --reporter=verbose
+      - name: Execute complete frozen Q1-relevant browser baseline and fault variants
+        working-directory: candidate
         run: >-
           npx vitest run --config vitest.browser.config.ts
           __tests__/browser/a4-input-sequences.browser.test.tsx
@@ -53,10 +93,10 @@ jobs:
           __tests__/browser/a4-page-editor.browser.test.tsx
           --reporter=verbose
 
-  postgres-baseline:
-    name: Q1 disposable PostgreSQL baseline
+  postgres-q1:
+    name: Q1 save-reopen batch reader PostgreSQL acceptance
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16
@@ -75,47 +115,114 @@ jobs:
       DATABASE_URL: postgresql://a4_q1:a4-q1-test-only@127.0.0.1:55440/a4_q1_test
       TEST_DATABASE_URL: postgresql://a4_q1:a4-q1-test-only@127.0.0.1:55440/a4_q1_test
     steps:
+      - name: Check out VERIFY harness
+        uses: actions/checkout@v6
+        with:
+          path: verify-harness
+          persist-credentials: false
       - name: Check out frozen candidate
         uses: actions/checkout@v6
         with:
           ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          path: candidate
           fetch-depth: 1
           persist-credentials: false
-      - name: Prove frozen candidate
-        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Prove frozen candidate before overlay
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Overlay VERIFY-owned persistence test only
+        run: cp verify-harness/__tests__/integration/a4-editor-q1-persistence.test.ts candidate/__tests__/integration/
+      - name: Prove overlay scope
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          git status --short
+          test "$(git status --short)" = "?? __tests__/integration/a4-editor-q1-persistence.test.ts"
       - name: Set up Node 24
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: candidate/package-lock.json
       - name: Install dependencies
+        working-directory: candidate
         run: npm ci
       - name: Generate Prisma client
+        working-directory: candidate
         run: npm run db:generate
       - name: Apply migrations to disposable Q1 database
+        working-directory: candidate
         run: npx prisma migrate deploy
-      - name: Execute existing W1 persistence baseline
-        run: npx vitest run __tests__/integration/a4-editor-workflow-w1.postgres.test.ts --maxWorkers=1 --reporter=verbose
+      - name: Execute Q1 persistence acceptance plus frozen W1 baseline
+        working-directory: candidate
+        run: >-
+          npx vitest run
+          __tests__/integration/a4-editor-q1-persistence.test.ts
+          __tests__/integration/a4-editor-workflow-w1.postgres.test.ts
+          --maxWorkers=1 --reporter=verbose
 
-  output-baseline:
-    name: Q1 HTML/PDF contract baseline
+  output-q1:
+    name: Q1 real HTML PDF rendering acceptance
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
+      - name: Check out VERIFY harness
+        uses: actions/checkout@v6
+        with:
+          path: verify-harness
+          persist-credentials: false
       - name: Check out frozen candidate
         uses: actions/checkout@v6
         with:
           ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          path: candidate
           fetch-depth: 1
           persist-credentials: false
-      - name: Prove frozen candidate
-        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Prove frozen candidate before overlay
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Overlay VERIFY-owned output test only
+        run: cp verify-harness/tests/document-output/a4-editor-q1-output.test.ts candidate/tests/document-output/
+      - name: Prove overlay scope
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          git status --short
+          test "$(git status --short)" = "?? tests/document-output/a4-editor-q1-output.test.ts"
       - name: Set up Node 24
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: candidate/package-lock.json
       - name: Install dependencies
+        working-directory: candidate
         run: npm ci
-      - name: Execute HTML/PDF contract baseline
-        run: npx vitest run tests/document-output/document-template-editor-output.test.ts --reporter=verbose
+      - name: Install real Chromium
+        working-directory: candidate
+        run: npx playwright install --with-deps chromium
+      - name: Bind production Puppeteer path to installed Chromium
+        working-directory: candidate
+        run: |
+          CHROME_PATH=$(node -e "const { chromium } = require('playwright'); process.stdout.write(chromium.executablePath())")
+          echo "PUPPETEER_EXECUTABLE_PATH=${CHROME_PATH}" >> "$GITHUB_ENV"
+          echo "Q1_OUTPUT_DIR=${GITHUB_WORKSPACE}/candidate/.q1-artifacts" >> "$GITHUB_ENV"
+          echo "Q1_CHROMIUM=${CHROME_PATH}"
+      - name: Execute real HTML/PDF Q1 output acceptance
+        working-directory: candidate
+        run: >-
+          npx vitest run
+          tests/document-output/a4-editor-q1-output.test.ts
+          --reporter=verbose
+      - name: Upload retained Q1 PDF evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a4-q1-real-output
+          path: candidate/.q1-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
