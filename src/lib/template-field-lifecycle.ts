@@ -124,8 +124,7 @@ function migrateLinkedDefinitions(
   previous: LosslessStoredFieldDefinition,
   next: LosslessStoredFieldDefinition,
 ): readonly LosslessStoredFieldDefinition[] {
-  const linkMigration = new Map<string, string>([
-    [previous.identity, next.identity],
+  const scopedLinkMigration = new Map<string, string>([
     [previous.key, next.key],
     [previous.resolverPath, next.resolverPath],
   ]);
@@ -133,8 +132,14 @@ function migrateLinkedDefinitions(
   return definitions.map((definition) => {
     if (definition.identity === previous.identity) return next;
     if (!definition.linkedTo) return definition;
-    const linkedTo = linkMigration.get(definition.linkedTo);
+
+    const linkedTo = definition.linkedTo === previous.identity
+      ? next.identity
+      : sameScope(definition.scope, previous.scope)
+        ? scopedLinkMigration.get(definition.linkedTo)
+        : undefined;
     if (!linkedTo || linkedTo === definition.linkedTo) return definition;
+
     return loadLosslessStoredFieldDefinition({
       scope: definition.scope,
       definition: { ...definition.original, linkedTo },
