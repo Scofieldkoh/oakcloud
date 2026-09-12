@@ -51,6 +51,7 @@ export type ApplyFieldLifecycleTransactionResult =
       identity: string;
       usageCount: number;
       occurrenceIds: readonly string[];
+      linkedFieldIdentities: readonly string[];
     }
   | { status: 'rejected'; code: string; message: string };
 
@@ -59,6 +60,7 @@ export interface ApplyFieldLifecycleTransactionInput {
   snapshot: FieldLifecycleSnapshot;
   intent: SemanticFieldLifecycleIntent;
   confirmReferenceRemoval?: boolean;
+  confirmDependentUnlink?: boolean;
   metadataAdapter?: FieldLifecycleMetadataAdapter;
 }
 
@@ -145,6 +147,25 @@ function migrateLinkedDefinitions(
       definition: { ...definition.original, linkedTo },
     });
   });
+}
+
+function linkedDependentsForDefinition(
+  definitions: readonly LosslessStoredFieldDefinition[],
+  target: LosslessStoredFieldDefinition,
+): readonly LosslessStoredFieldDefinition[] {
+  const scopedLinks = new Set([target.key, target.resolverPath]);
+  return definitions.filter((definition) => definition.identity !== target.identity
+    && definition.linkedTo != null
+    && (definition.linkedTo === target.identity
+      || (sameScope(definition.scope, target.scope) && scopedLinks.has(definition.linkedTo))));
+}
+
+function unlinkDefinition(
+  definition: LosslessStoredFieldDefinition,
+): LosslessStoredFieldDefinition {
+  const original: Record<string, unknown> = { ...definition.original };
+  delete original.linkedTo;
+  return loadLosslessStoredFieldDefinition({ scope: definition.scope, definition: original });
 }
 
 function applyMetadataAdapter(
@@ -392,16 +413,24 @@ function applyDelete(
   const paths = new Set(definitionPaths(definition));
   const usages = parsed.nodes.filter((node) => Boolean(node.path && paths.has(node.path)));
   const occurrenceIds = usages.map((node) => node.occurrenceId);
+  const linkedDependents = linkedDependentsForDefinition(input.snapshot.definitions, definition);
+  const referenceConfirmationRequired = referenceAction === 'remove-references'
+    && usages.length > 0
+    && !input.confirmReferenceRemoval;
+  const dependentUnlinkConfirmationRequired = linkedDependents.length > 0
+    && !input.confirmDependentUnlink;
 
-  if (referenceAction === 'remove-references' && usages.length > 0 && !input.confirmReferenceRemoval) {
+  if (referenceConfirmationRequired || dependentUnlinkConfirmationRequired) {
     return {
       status: 'needs-confirmation',
       identity,
       usageCount: usages.length,
       occurrenceIds,
+      linkedFieldIdentities: linkedDependents.map((candidate) => candidate.identity),
     };
   }
 
+  const linkedIdentities = new Set(linkedDependents.map((candidate) => candidate.identity));
   const content = referenceAction === 'remove-references'
     ? replaceSpans(input.snapshot.content, usages.map((node) => ({
         start: node.span.start,
@@ -411,7 +440,9 @@ function applyDelete(
     : input.snapshot.content;
   const after: FieldLifecycleSnapshot = {
     content,
-    definitions: input.snapshot.definitions.filter((candidate) => candidate.identity !== identity),
+    definitions: input.snapshot.definitions
+      .filter((candidate) => candidate.identity !== identity)
+      .map((candidate) => linkedIdentities.has(candidate.identity) ? unlinkDefinition(candidate) : candidate),
     dependentMetadata: applyMetadataAdapter(input.snapshot, input.metadataAdapter, {
       kind: 'delete', identity, changedOccurrenceIds: occurrenceIds,
     }),
