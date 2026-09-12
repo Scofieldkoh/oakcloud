@@ -274,3 +274,23 @@ Scope rule: each owner implements only its named Wave-2 packet from the existing
 - Stop boundary: **W2 only**. Do not begin W3, deploy, or bump version.
 
 Wave-2 assignments are published by CORE/integrator only after the canonical G1 pass. Publication is not implementation; all four packets remain untouched at this dispatch commit.
+
+## Wave-2 integration closeout / G2 candidate — 2026-09-12
+
+**G2 CANDIDATE BLOCKED — CORRECTION REQUIRED**
+
+- CORE integration branch: `codex/a4-editor-wave2-g2-integration-20260912`
+- single integration PR: #47
+- starting main: `6f1ab8d3cb90056c556771936f4c763d9596efdf`
+- S2: PR #43 @ `4b025bec4f256169a32b2216b0fd54cd4a083349`
+- F2: PR #45 @ `df56185328d20784ad870adf0750b0d0315996f8`
+- W2: PR #44 @ `d5a98dd48d1b3196706cc41bd000b9f8f9f9b03f`
+- C2: PR #46 @ `b154630a3227646a4cf8d562902566720c532fec`
+- frozen contract: **v1 frozen at G0 — unchanged**
+- G1: **FROZEN/PASSED**
+
+Blocking corrections and exact ownership are recorded in `coordination/g2.md` and `coordination/core.md`.
+
+**Q1 — G2 boundary and reader compatibility: WITHHELD.**
+
+Do not start C3, S3, F3, W3, deployment or version bump.

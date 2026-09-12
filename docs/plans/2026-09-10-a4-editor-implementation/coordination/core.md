@@ -386,3 +386,58 @@ C2 was reviewed and corrected against fresh Node 24 runs rather than weakening t
 
 **READY FOR INTEGRATION — C2 ONLY**
 
+
+## Wave-2 CORE integration closeout — 2026-09-12
+
+Status: **G2 CANDIDATE BLOCKED — CORRECTION REQUIRED**
+
+CORE integrated Wave-2 on `codex/a4-editor-wave2-g2-integration-20260912` from current merged main `6f1ab8d3cb90056c556771936f4c763d9596efdf`. The historical G1-validated source baseline remains `ad7285ace280f0b4002f119f923a8e2166b9475f`; it was not used as the integration branch base. The frozen contract remains **v1 frozen at G0 — unchanged** and G1 remains **G1 FROZEN/PASSED**.
+
+Integrated reviewed packets, in dependency order, without merging any packet PR to main:
+- S2 — PR #43 — `4b025bec4f256169a32b2216b0fd54cd4a083349` — `SEMANTICS-S2-20260912-01`
+- F2 — PR #45 — `df56185328d20784ad870adf0750b0d0315996f8` — `FIELDS-F2-20260912-01`
+- W2 — PR #44 — `d5a98dd48d1b3196706cc41bd000b9f8f9f9b03f` — `WORKFLOW-W2-20260912-01`
+- C2 — PR #46 — `b154630a3227646a4cf8d562902566720c532fec` — `CORE-C2-20260912-01`
+
+The single integration PR is **#47**. The final product-code checkpoint before coordination closeout is `a5e86d01e3906d3ec72ed6ce3fcb8f5a3d15d2d4`. The immutable candidate checksum is the PR #47 head containing this closeout record and is validated directly by the final candidate matrix.
+
+### CORE-owned C2 ↔ S2 wiring completed
+
+- Enter now consumes `insertA4S2ParagraphBreak`; the temporary C2 compatibility Enter path is no longer authoritative.
+- Native Tab/Shift+Tab and toolbar indent/outdent consume S2 indentation semantics through the C1 adapter.
+- OL/UL conversion, restart numbering and continue numbering consume S2 APIs where S2 exposes the operation.
+- CORE consumes S2 mixed/uniform formatting state and the S2 neutral typing-format patch for collapsed Clear Formatting.
+- C1 remains the sole canonical session, editor history and document-revision authority. One S2 transaction becomes one C1 action/history/revision commit.
+- Semantic nesting/lift and native Tab/Shift+Tab integration regressions were corrected in CORE.
+- Two CORE attempts to restore Enter-driven caret viewport following did not satisfy the required real-Chromium proof; no test or contract was weakened.
+
+### F2 / W2 integration implications
+
+F2 remains the owner of parser/registry identity, scoped resolution, escaping/trust and atomic field lifecycle transactions. CORE does not recreate those rules. Full lifecycle activation is not silently expanded into C2; that producer/consumer boundary remains for a later authorized packet.
+
+W2 consumes C1 snapshots/revisions and does not introduce another editor history/session authority. W2's server expected-revision/CAS token remains separate from C1's local editor revision. W2 focused and PostgreSQL behavior is healthy, but two W1 source-contract tests still inspect the pre-W2 editor-page source after extraction; that compatibility repair belongs to WORKFLOW/W2.
+
+### Blocking evidence
+
+- S2 focused: 5 files / 106 tests — **104 passed, 2 failed**: indent-limit normalization and mixed bold state.
+- Full A4 pagination: 10 files / 199 tests — **197 passed, 2 failed**, same S2 failures.
+- F1/F2: 12 files / **133/133 passed**.
+- W2 focused: 3 files / **28/28 passed**.
+- W1/W2 source compatibility: 6 files / 42 tests passed; 2 W1 source-contract files fail during loading after W2 extraction.
+- Exact S2 Chromium boundary: 1 file / 13 tests — **12 passed, 1 failed**, same mixed-formatting-state defect.
+- CORE component recheck: 5 files / 100 tests — **99 passed, 1 failed**. Remaining list toggle-off requires semantic unlist; S2 exposes `ordered | unordered | alpha` but no `none`/unlist transaction.
+- CORE Chromium recheck: 2 files / 53 tests — **51 passed, 2 failed**: active-list toggle-off and viewport-follow.
+- Targeted Chromium at `a5e86d01e3906d3ec72ed6ce3fcb8f5a3d15d2d4`: selected empty paragraph restored, but viewport `scrollTop` remained `200`; required assertion is `> 200`.
+- Disposable PostgreSQL 16: all 71 migrations replayed; W2 draft sequencing **5/5 passed**; W2/W1 PostgreSQL compatibility **13/13 passed**.
+- Bundle freshness, lint, typecheck, `npx tsc -b`, and production build passed at the integrated code checkpoint. Final candidate matrix reruns them on the immutable closeout head.
+
+Unresolved owners:
+1. **SEMANTICS/S2** — indent-limit normalization defect.
+2. **SEMANTICS/S2** — mixed formatting-state defect.
+3. **SEMANTICS/S2** — no semantic unlist/`none` operation for active-list toggle-off.
+4. **WORKFLOW/W2** — two W1 source-contract checks were not migrated after source extraction.
+5. **CORE integration** — Enter restores semantic caret after repagination but real-Chromium viewport-follow remains broken after two targeted corrections.
+
+Q1 — G2 boundary and reader compatibility: **WITHHELD**. No Q1 run is released while the candidate is blocked.
+
+Stop boundary remains in force: no C3, S3, F3, W3, D1 deployment or version bump.
