@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyA4S2Indent,
+  clearA4S2ListType,
   continueA4S2OrderedList,
   getA4S2ContinueNumberingCapability,
   getA4S2ListIndentCapability,
@@ -250,6 +251,20 @@ describe('A4 S2 list conversion and level semantics', () => {
     expect(Array.from(body.querySelectorAll('ol > li'), (li) => li.textContent))
       .toEqual(['A', 'B', 'C']);
   });
+
+  it('removes selected list semantics while preserving surrounding ordered values', () => {
+  const canonical = createCanonicalEditorDocument(
+    '<ol start="5"><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ol>',
+  );
+  const body = clean(applied(clearA4S2ListType(
+    canonical,
+    caret(canonical, 'ol > li:nth-child(2) > p', 0),
+  )));
+  expect(Array.from(body.children, (node) => node.tagName)).toEqual(['OL', 'P', 'OL']);
+  expect(body.children[0].getAttribute('start')).toBe('5');
+  expect(body.children[2].getAttribute('start')).toBe('7');
+  expect(Array.from(body.children, (node) => node.textContent)).toEqual(['A', 'B', 'C']);
+});
 
   it('keeps nested descendants attached when an outer selected item converts', () => {
     const canonical = createCanonicalEditorDocument(
