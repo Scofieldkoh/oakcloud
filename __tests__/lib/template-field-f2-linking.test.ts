@@ -54,4 +54,55 @@ describe('FIELDS F2 scoped linking migration', () => {
     expect(byId.get('foreign-key-link')?.linkedTo).toBe('custom.note');
     expect(result.transaction.after.content).toBe('<p>{{custom.memo}}</p>');
   });
+
+  it('requires explicit confirmation before unlinking dependent definitions during delete', () => {
+    const target = loadLosslessStoredFieldDefinition({
+      scope: TEMPLATE_SCOPE,
+      definition: {
+        id: 'delete-target', key: 'custom.deleteTarget', label: 'Delete target', type: 'text',
+      },
+    });
+    const dependent = loadLosslessStoredFieldDefinition({
+      scope: TEMPLATE_SCOPE,
+      definition: {
+        id: 'delete-dependent', key: 'custom.dependent', label: 'Dependent', type: 'text',
+        linkedTo: target.identity, futureMetadata: { keep: true },
+      },
+    });
+    const before = {
+      content: '<p>{{custom.dependent}}</p>',
+      definitions: [target, dependent],
+      dependentMetadata: { keep: true },
+    };
+
+    const requested = applyFieldLifecycleTransaction({
+      scope: TEMPLATE_SCOPE,
+      snapshot: before,
+      intent: { kind: 'delete', identity: target.identity, referenceAction: 'keep-unresolved' },
+    });
+    expect(requested).toEqual(expect.objectContaining({
+      status: 'needs-confirmation',
+      identity: target.identity,
+      usageCount: 0,
+      occurrenceIds: [],
+      linkedFieldIdentities: [dependent.identity],
+    }));
+
+    const confirmed = applyFieldLifecycleTransaction({
+      scope: TEMPLATE_SCOPE,
+      snapshot: before,
+      intent: { kind: 'delete', identity: target.identity, referenceAction: 'keep-unresolved' },
+      confirmDependentUnlink: true,
+    });
+    expect(confirmed.status).toBe('applied');
+    if (confirmed.status !== 'applied') return;
+    expect(confirmed.transaction.after.content).toBe(before.content);
+    expect(confirmed.transaction.after.definitions).toHaveLength(1);
+    expect(confirmed.transaction.after.definitions[0].identity).toBe(dependent.identity);
+    expect(confirmed.transaction.after.definitions[0].linkedTo).toBeUndefined();
+    expect(confirmed.transaction.after.definitions[0].unknownMetadata).toEqual({
+      futureMetadata: { keep: true },
+    });
+    expect(confirmed.transaction.after.dependentMetadata).toEqual({ keep: true });
+  });
 });
