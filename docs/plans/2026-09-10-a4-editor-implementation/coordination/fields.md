@@ -388,3 +388,118 @@ plus template-editor parser/helper tests present on the integration baseline and
 F1 changed only F-owned parser/registry/adapters/types/analysis/editor-helper/content-policy files, F tests and this F coordination log. It did not edit W-owned API/routes/forms, SEMANTICS-owned structural modules, Prisma/schema files, deployment/configuration files or version metadata.
 
 **FIELDS state:** `READY FOR INTEGRATION — F1 only`. F2 and F3 have not started.
+---
+
+## FIELDS-F2-20260912-01 — READY FOR INTEGRATION — F2 ONLY
+
+**Role:** Parallel Agent 3 / FIELDS / F2 owner only
+**Packet:** `FIELDS-F2-20260912-01`
+**Starting merged main:** `6f1ab8d3cb90056c556771936f4c763d9596efdf`
+**Recorded G1 Stage-2 source baseline:** `ad7285ace280f0b4002f119f923a8e2166b9475f` (historical programme record only; not used as the branch base)
+**Branch:** `codex/a4-editor-fields-f2-20260912`
+**PR:** `#45` — https://github.com/Scofieldkoh/oakcloud/pull/45
+**Validated implementation head before this coordination-only handoff:** `8b64420ddd75386a3162b8d2dfa6eb6276703934`
+**Frozen contract:** `v1 frozen at G0` unchanged; G1 remains `FROZEN / PASSED`; C05/C06 unchanged.
+**Stop state:** `READY FOR INTEGRATION — F2 ONLY`.
+
+### F2 implementation completed
+
+1. Added `src/lib/template-field-resolution.ts` as the explicit F2 scoped-resolution and interpolation boundary. Owner/source scope remains structured and independent from the active render/value context (`company`, `contact`, `invoice`, `employee`, `global`, `loop_item`). Values resolve by exact field identity, with cross-field sharing allowed only through explicit identity-to-identity bindings.
+2. Added deterministic legacy flattened-value adaptation. A legacy key may bind implicitly only when it resolves to exactly one scoped definition; collisions produce an explicit ambiguity error and require an exact identity binding. No label/display-name or underscore-concatenation identity is introduced.
+3. Added ordinary-text escaping at interpolation: `&`, `<`, `>`, double quotes and single quotes are escaped exactly once; multiline values normalize CRLF/CR and emit `<br>` only after text escaping. Modifier results are escaped after transformation. Replacement is single-pass so braces introduced by ordinary field text are inert and are not reparsed as template syntax.
+4. Preserved the C06 trust boundary. Declarative/stored/client render metadata cannot mint rich authority. Canonical trusted-rich fragments require a canonical C06 origin capability plus a WORKFLOW-supplied sanitizer. Legacy rich fragments require an explicitly approved compatibility binding plus a sanitizer. Forged trusted origins are rejected.
+5. Unsupported legacy structured field values remain preserve-only and are never silently flattened or stringified to `[object Object]`.
+6. Added `src/lib/template-field-lifecycle.ts` with pure all-or-nothing semantic transactions for create, relabel, definition change, key/path migration, insert-reference and delete. Applied transactions carry `before`/`after` snapshots, changed occurrence IDs and parser diagnostics so CORE can treat them as one undo/history unit and WORKFLOW can persist one revision/CAS result.
+7. Key migration atomically updates parser-recognised references/modifiers, tracked path, same-scope key/path `linkedTo` references, exact identity links and a caller-projected dependent-metadata snapshot while retaining unknown/forward metadata.
+8. Delete requires explicit confirmation before destructive reference removal. It also detects linked dependent definitions and requires an independent explicit dependent-unlink confirmation so deletion cannot silently leave dangling `linkedTo`; confirmed unlink removes only the link and preserves all other stored/forward metadata.
+9. Insert-reference validates exactly one parser-recognised scoped reference and creates the definition plus source reference in one transaction. Cross-scope insertion is rejected.
+10. `src/lib/template-field-runtime.ts` exports the new F2 APIs but leaves the existing `resolveTemplateFields` compatibility path unchanged. F2 is **not activated** in the legacy renderer by this packet; D2/W2 renderer/persistence activation remains WORKFLOW-owned.
+
+### C05/C06 identity, legacy and losslessness evidence
+
+- Stable persisted IDs remain the field identity authority across relabel and key migration.
+- Equal semantic keys can coexist in parent and multiple partial owner scopes without renaming or flattening.
+- Explicit identity linking can cross owner scopes; key/path-form linking migrates only within the target owner scope, so a same-named foreign-scope field is not rewritten accidentally.
+- Unknown/forward metadata is retained through insert, relabel, definition change, key migration and dependent unlink.
+- The F1 lossless parser/registry/storage suites remain green together with F2.
+- The two F2 `it.fails` sentinels in `template-field-f0-compatibility.test.ts` deliberately remain expected failures for the old D2-inactive compatibility renderer. They must remain so until WORKFLOW performs the authorised D2 renderer switch; the new F2 APIs have separate executable passing coverage and this packet does not claim the legacy renderer is activated.
+
+### Escaping and trust-boundary evidence
+
+Executable F2 tests prove:
+
+- plain text containing ampersands, angle brackets, double/single quotes and apparent HTML is escaped once;
+- multiline text is normalized once and markup characters remain escaped;
+- modifier output stays ordinary escaped text;
+- inserted `{{...}}` text is inert because resolved field text is not reparsed;
+- declarative client/stored rich-looking metadata cannot elevate text authority;
+- canonical trusted-rich content is blocked without a sanitizer and accepted only with the canonical C06 origin capability plus sanitizer;
+- forged trusted origins are rejected;
+- already-safe trusted-rich content is not double-encoded by the field boundary;
+- legacy-rich content is blocked unless both an approved compatibility binding and sanitizer are supplied.
+
+### Exact Node 24 validation
+
+An isolated validation-only branch was used solely because the local execution container exposes Node 22 and has no dependency/network access. It is not part of the F2 PR diff.
+
+Validation run: https://github.com/Scofieldkoh/oakcloud/actions/runs/34667965526
+Runtime: Node `v24.20.0`, npm `11.19.0`.
+
+Commands/steps passed:
+
+```text
+npm ci
+node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1); console.log(process.version)"
+npm run db:generate
+npm run lint
+npm run typecheck
+npm run test:run -- \
+  __tests__/lib/template-field-f2.test.ts \
+  __tests__/lib/template-field-f2-edge.test.ts \
+  __tests__/lib/template-field-f2-linking.test.ts \
+  __tests__/lib/template-field-contract.test.ts \
+  __tests__/lib/template-field-f0-compatibility.test.ts \
+  __tests__/lib/template-field-f1.test.ts \
+  __tests__/lib/a4-content-policy.test.ts \
+  __tests__/lib/a4-content-policy-f1.test.ts \
+  __tests__/lib/template-placeholder-storage.test.ts \
+  __tests__/lib/template-analysis.test.ts \
+  __tests__/lib/placeholder-resolver.test.ts \
+  __tests__/lib/document-generation-master-fields.test.ts \
+  --reporter=verbose
+```
+
+Result: **12 test files passed / 133 tests passed**. `npm run lint` completed with **0 errors / 10 pre-existing unrelated warnings**. `npm run typecheck` passed.
+
+The normal PR Node 24 compatibility run for the validated code head also passed all jobs: https://github.com/Scofieldkoh/oakcloud/actions/runs/34667958776. This includes Node 24 static checks, `npm run build`, the production Docker image build/runtime/Chromium verification, and the repository's existing PostgreSQL recovery/authorization job.
+
+### Exact CORE integration request
+
+1. Consume an applied `SemanticFieldTransaction` as one editor history/undo unit. Do not replay its content, registry and dependent-metadata changes as separate editor mutations.
+2. Project CORE-owned field-panel, token/data-attribute, title-date and related editor metadata through the transaction `metadataAdapter` so those changes are committed/reverted with the same semantic operation. FIELDS does not take ownership of the editor implementation.
+3. When a transaction returns `needs-confirmation`, expose both source-usage information and `linkedFieldIdentities`; resubmit only after the user explicitly confirms the applicable reference removal and/or dependent unlink.
+4. Keep navigation/token identity keyed by the F1 parser's structured identity, owner scope, occurrence ID and exact span. Do not infer identity from labels or presentation token attributes.
+
+### Exact WORKFLOW integration request
+
+1. Behind the authorised D2/W2 integration only, load lossless definitions with stable persisted owner IDs and construct the active `ScopedFieldValueContext` from the actual company/contact/invoice/employee/global/loop item. Do not flatten scopes into renamed keys.
+2. Invoke `resolveScopedTemplateFieldSource` separately for the parent template and for each partial using that source's own owner scope/definitions, with the full definition set available for explicit identity bindings. Do not run resolved ordinary field text back through the template parser.
+3. Recursive partial composition remains WORKFLOW-owned. Use the F1 parser/dependency information and pass composed partial output through the canonical C06 trusted-rich origin plus the renderer's allowlist sanitizer. Request/form/database text never becomes trusted HTML merely because metadata says so.
+4. Use `renderResolvedFieldFragment` as the F2 trust boundary for any W-owned trusted/legacy-rich adapter: trusted-rich requires a canonical C06 origin plus sanitizer; legacy-rich requires an approved compatibility binding plus sanitizer.
+5. Persist an applied lifecycle transaction's `after.content`, `after.definitions` and projected `after.dependentMetadata` atomically through the existing WORKFLOW revision/CAS path. Do not create partial writes across those units.
+6. Use one canonical resolved HTML path for preview/HTML/PDF consumers; do not add a renderer-specific alternate field resolver.
+7. Preserve all unknown/legacy definition metadata through W-owned API/Zod serialization; do not rebuild definitions from a narrow allow-list.
+
+### Blocked dependencies and remaining risks
+
+- **F2 implementation blocker:** none.
+- **Activation dependencies:** CORE must wire the semantic transaction into editor history/UI confirmation/metadata projections; WORKFLOW must perform the authorised D2/W2 renderer/sanitizer/persistence integration. Those are intentionally outside FIELDS ownership.
+- A legacy definition without a persisted ID can have its deterministic key-derived C05 identity change during an explicit key migration; the transaction exposes previous/new identity semantics so external consumer metadata can be remapped. Persisted-ID definitions remain stable.
+- End-to-end renderer sanitization/HTML/PDF parity is not claimed here because the canonical sanitizer/renderer is WORKFLOW-owned and was deliberately not modified.
+- Stable owner IDs must be supplied at concrete template/partial load boundaries; compatibility fallback owner IDs are not a substitute for production ownership.
+
+### Ownership confirmation
+
+F2 changed only FIELDS-owned library/test surfaces plus this FIELDS coordination log. It did not modify CORE editor production files, WORKFLOW routes/APIs/services, SEMANTICS production files, Prisma/schema/migrations, package/CI configuration, version metadata, deployment configuration or `main`. No F3, W2, deployment, version bump or merge was performed.
+
+**FIELDS state:** `READY FOR INTEGRATION — F2 ONLY`.
