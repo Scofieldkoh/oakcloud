@@ -1,0 +1,121 @@
+name: A4 G2 immutable corrected validation
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-g2-corrected-validation-20260912-v2
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+
+jobs:
+  components-static:
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgresql://localhost/oakcloud
+      JWT_SECRET: a4-g2-validation-only-synthetic-jwt-secret-not-for-production-use-20260912
+      ENCRYPTION_KEY: a4-g2-validation-only-synthetic-encryption-key-00000000000000000000
+      BUSINESS_ASSISTANT_ENABLED: "false"
+      BUSINESS_ASSISTANT_PROVIDER_ENABLED: "false"
+      BUSINESS_ASSISTANT_MUTATIONS_ENABLED: "false"
+      NODE_OPTIONS: --max-old-space-size=6144
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: node -e "if (!process.versions.node.startsWith('24.')) process.exit(1); console.log('Node', process.version)"
+      - run: npm ci
+      - run: npm run db:generate
+      - name: S2 focused
+        run: npx vitest run __tests__/components/a4-pagination/s2-semantics.test.ts __tests__/components/a4-pagination/s2-list-formatting-regressions.test.ts __tests__/components/a4-pagination/structural-position.test.ts __tests__/components/a4-pagination/structural-commands.test.ts __tests__/components/a4-pagination/semantic-break-projection.test.ts __tests__/components/a4-pagination/formatting.test.ts --reporter=verbose
+      - name: CORE C1 C2 focused
+        run: npx vitest run __tests__/components/a4-editor-c2-bridge.test.ts __tests__/components/a4-editor-session.test.ts __tests__/components/a4-page-editor.test.tsx __tests__/components/a4-editor-toolbar.test.tsx __tests__/components/a4-page-editor-ssr.test.tsx --reporter=verbose
+      - name: Full pagination
+        run: npx vitest run __tests__/components/a4-pagination --reporter=verbose
+      - name: FIELDS F1 F2
+        run: npm run test:run -- __tests__/lib/template-field-f2.test.ts __tests__/lib/template-field-f2-edge.test.ts __tests__/lib/template-field-f2-linking.test.ts __tests__/lib/template-field-contract.test.ts __tests__/lib/template-field-f0-compatibility.test.ts __tests__/lib/template-field-f1.test.ts __tests__/lib/a4-content-policy.test.ts __tests__/lib/a4-content-policy-f1.test.ts __tests__/lib/template-placeholder-storage.test.ts __tests__/lib/template-analysis.test.ts __tests__/lib/placeholder-resolver.test.ts __tests__/lib/document-generation-master-fields.test.ts --reporter=verbose
+      - name: WORKFLOW W1
+        run: npx vitest run tests/lib/a4-editor-capabilities-w1.test.ts tests/lib/a4-editor-producer-integration-w1.test.ts tests/lib/a4-editor-server-reader-w1.test.ts tests/services/document-export-w1.test.ts tests/services/document-template-editor-save.test.ts tests/services/document-template-editor-fields.test.ts tests/services/document-template-editor-drafts.test.ts tests/document-output/document-template-editor-output.test.ts --reporter=verbose
+      - name: WORKFLOW W2 non PostgreSQL
+        run: npx vitest run __tests__/components/documents/generation-batch/batch-workflow-ack.test.ts __tests__/integration/bizfile/a4-workflow-w2-batch.test.ts __tests__/integration/bizfile/a4-workflow-w2-w1-compat.test.ts --reporter=verbose
+      - name: Pagination bundle freshness
+        run: |
+          grep -q 'w1-s1-structural-v1' src/components/documents/a4-pagination/pagination-bundle.generated.ts
+          npm run generate:pagination-bundle
+          git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx tsc -b
+      - run: npm run build
+
+  browser:
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgresql://localhost/oakcloud
+      JWT_SECRET: a4-g2-validation-only-synthetic-jwt-secret-not-for-production-use-20260912
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: node -e "if (!process.versions.node.startsWith('24.')) process.exit(1); console.log('Node', process.version)"
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npx playwright install chromium --with-deps
+      - name: Integrated real Chromium matrix
+        run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-input-sequences.browser.test.tsx __tests__/browser/a4-boundary-semantics.browser.test.tsx __tests__/browser/a4-page-editor.browser.test.tsx --reporter=verbose
+
+  postgres:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: business_assistant_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55439:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d business_assistant_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:55439/business_assistant_test?schema=public
+      BUSINESS_ASSISTANT_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:55439/business_assistant_test?schema=public
+      TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:55439/business_assistant_test?schema=public
+      JWT_SECRET: a4-g2-validation-only-synthetic-jwt-secret-not-for-production-use-20260912
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: node -e "if (!process.versions.node.startsWith('24.')) process.exit(1); console.log('Node', process.version)"
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Disposable database guard
+        run: node scripts/require-business-assistant-test-env.mjs
+      - name: Apply all migrations
+        run: npx prisma migrate deploy
+      - name: W1 PostgreSQL CAS and batch
+        run: npx vitest run __tests__/integration/a4-editor-workflow-w1.postgres.test.ts __tests__/integration/document-generation-batch.postgres.test.ts --maxWorkers=1 --reporter=verbose
+      - name: W2 PostgreSQL drafts
+        run: npx vitest run __tests__/integration/bizfile/a4-workflow-w2-drafts.postgres.test.ts --maxWorkers=1 --reporter=verbose
+      - name: W2 W1 PostgreSQL compatibility
+        run: npx vitest run __tests__/integration/bizfile/a4-workflow-w2-w1-postgres-compat.test.ts --maxWorkers=1 --reporter=verbose
