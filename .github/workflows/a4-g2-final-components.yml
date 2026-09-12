@@ -1,0 +1,36 @@
+name: A4 G2 final components
+on:
+  push:
+    branches: [codex/a4-editor-g2-prevalidation-20260912]
+    paths: [.github/workflows/a4-g2-final-components.yml]
+permissions:
+  contents: read
+jobs:
+  components:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 07523b105bfd7e32e7916408c7a7e825815d4424
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Run integrated component matrix
+        shell: bash
+        run: |
+          set -u
+          echo "CANDIDATE_SHA=$(git rev-parse HEAD)"
+          failed=0
+          run_suite() { label="$1"; shift; echo "===== SUITE ${label} ====="; set +e; "$@"; code=$?; set -e; echo "===== RESULT ${label} exit=${code} ====="; if [ "$code" -ne 0 ]; then failed=1; fi; }
+          run_suite S2_FOCUSED npx vitest run __tests__/components/a4-pagination/s2-semantics.test.ts __tests__/components/a4-pagination/s2-list-formatting-regressions.test.ts __tests__/components/a4-pagination/structural-position.test.ts __tests__/components/a4-pagination/structural-commands.test.ts __tests__/components/a4-pagination/semantic-break-projection.test.ts __tests__/components/a4-pagination/formatting.test.ts --reporter=verbose
+          run_suite CORE_C1_C2 npx vitest run __tests__/components/a4-editor-c2-bridge.test.ts __tests__/components/a4-editor-session.test.ts __tests__/components/a4-page-editor.test.tsx __tests__/components/a4-editor-toolbar.test.tsx __tests__/components/a4-page-editor-ssr.test.tsx --reporter=verbose
+          run_suite A4_PAGINATION_FULL npx vitest run __tests__/components/a4-pagination --reporter=verbose
+          run_suite FIELDS_F1_F2 npm run test:run -- __tests__/lib/template-field-f2.test.ts __tests__/lib/template-field-f2-edge.test.ts __tests__/lib/template-field-f2-linking.test.ts __tests__/lib/template-field-contract.test.ts __tests__/lib/template-field-f0-compatibility.test.ts __tests__/lib/template-field-f1.test.ts __tests__/lib/a4-content-policy.test.ts __tests__/lib/a4-content-policy-f1.test.ts __tests__/lib/template-placeholder-storage.test.ts __tests__/lib/template-analysis.test.ts __tests__/lib/placeholder-resolver.test.ts __tests__/lib/document-generation-master-fields.test.ts --reporter=verbose
+          run_suite WORKFLOW_W1 npx vitest run tests/lib/a4-editor-capabilities-w1.test.ts tests/lib/a4-editor-producer-integration-w1.test.ts tests/lib/a4-editor-server-reader-w1.test.ts tests/services/document-export-w1.test.ts tests/services/document-template-editor-save.test.ts tests/services/document-template-editor-fields.test.ts tests/services/document-template-editor-drafts.test.ts tests/document-output/document-template-editor-output.test.ts --reporter=verbose
+          run_suite WORKFLOW_W2 npx vitest run __tests__/components/documents/generation-batch/batch-workflow-ack.test.ts __tests__/integration/bizfile/a4-workflow-w2-batch.test.ts __tests__/integration/bizfile/a4-workflow-w2-w1-compat.test.ts --reporter=verbose
+          exit "$failed"
