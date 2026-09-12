@@ -9,6 +9,8 @@ jobs:
   components:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      DATABASE_URL: postgresql://localhost/oakcloud
     steps:
       - uses: actions/checkout@v6
         with:
