@@ -88,7 +88,7 @@ jobs:
           CHROME_PATH=$(node -e 'const { chromium } = require("playwright"); process.stdout.write(chromium.executablePath())')
           echo "PUPPETEER_EXECUTABLE_PATH=${CHROME_PATH}" >> "$GITHUB_ENV"
       - name: Configure evidence directory
-        run: echo "Q1_OUTPUT_DIR=${GITHUB_WORKSPACE}/candidate/.q1-artifacts" >> "$GITHUB_ENV"
+        run: echo "Q1_OUTPUT_DIR=${GITHUB_WORKSPACE}/candidate/q1-artifacts" >> "$GITHUB_ENV"
       - name: Execute Q1-11 real render
         working-directory: candidate
         run: npx vitest run tests/document-output/a4-q1-11-real-render.test.ts --reporter=verbose
@@ -97,6 +97,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: a4-q1-11-real-render
-          path: candidate/.q1-artifacts/
-          if-no-files-found: warn
+          path: candidate/q1-artifacts/
+          if-no-files-found: error
           retention-days: 14
