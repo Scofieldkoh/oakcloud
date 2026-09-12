@@ -67,8 +67,14 @@ interface ResolvedSelection {
   startPosition: A4Position;
 }
 
+interface ListSegment {
+  selected: boolean;
+  startIndex: number;
+  startValue: number | undefined;
+  items: HTMLElement[];
+}
+
 const EDITABLE_BLOCK_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,blockquote';
-const RUNTIME_STYLE_PROPERTIES = ['--flow-list-start'] as const;
 const ATOMIC_CONTENT_SELECTOR = [
   'img',
   'hr',
@@ -255,14 +261,14 @@ function copySemanticAttributes(
   options: { includeIdentity?: boolean } = {},
 ): void {
   for (const attribute of Array.from(source.attributes)) {
-    if (attribute.name === 'data-flow-id' && options.includeIdentity) {
-      target.setAttribute(attribute.name, attribute.value);
+    if (attribute.name === 'data-flow-id') {
+      if (options.includeIdentity) target.setAttribute(attribute.name, attribute.value);
       continue;
     }
     if (attribute.name.startsWith('data-flow-')) continue;
     target.setAttribute(attribute.name, attribute.value);
   }
-  RUNTIME_STYLE_PROPERTIES.forEach((property) => target.style.removeProperty(property));
+  target.style.removeProperty('--flow-list-start');
   if (target.style.length === 0) target.removeAttribute('style');
 }
 
@@ -299,6 +305,13 @@ function orderedItemValueAt(list: HTMLElement, index: number): number {
   return value;
 }
 
+function orderedNextValue(list: HTMLElement): number {
+  const items = directListItems(list);
+  return items.length
+    ? orderedItemValueAt(list, items.length - 1) + 1
+    : orderedListStart(list);
+}
+
 function setOrderedListStart(list: HTMLElement, start: number): void {
   const safeStart = Math.max(1, Math.floor(start) || 1);
   if (safeStart === 1) {
@@ -306,8 +319,8 @@ function setOrderedListStart(list: HTMLElement, start: number): void {
     list.style.removeProperty('--list-start');
   } else {
     list.setAttribute('start', String(safeStart));
-    // Existing shared CSS consumes this semantic mirror. Runtime pagination
-    // overrides it with --flow-list-start without persisting that projection value.
+    // Existing shared editor/output CSS consumes this semantic mirror. The
+    // pagination-only --flow-list-start value remains transient and is removed.
     list.style.setProperty('--list-start', String(safeStart - 1));
   }
   list.style.removeProperty('--flow-list-start');
@@ -371,17 +384,12 @@ function topLevelExitParagraph(item: HTMLElement): HTMLParagraphElement {
   return paragraph;
 }
 
-function exitEmptyListItem(
-  root: HTMLElement,
-  item: HTMLElement,
-): { point: A4DomPoint } | null {
+function exitEmptyListItem(item: HTMLElement): { point: A4DomPoint } | null {
   const list = item.parentElement;
   if (!list || (list.tagName !== 'OL' && list.tagName !== 'UL')) return null;
   const ownerItem = list.parentElement?.closest<HTMLElement>('li') ?? null;
   const outerList = ownerItem?.parentElement ?? null;
 
-  // Empty nested item: one Enter lifts exactly one list level. It remains a
-  // list item so another Enter at the top level can deliberately exit the list.
   if (
     ownerItem &&
     outerList &&
@@ -398,6 +406,9 @@ function exitEmptyListItem(
   if (index < 0) return null;
   const paragraph = topLevelExitParagraph(item);
   const nextItem = items[index + 1] ?? null;
+  const nextOrderedValue = list.tagName === 'OL' && nextItem
+    ? orderedItemValueAt(list, index + 1)
+    : undefined;
   item.remove();
 
   if (items.length === 1) {
@@ -405,6 +416,10 @@ function exitEmptyListItem(
     return { point: { node: paragraph, offset: 0 } };
   }
   if (index === 0) {
+    if (list.tagName === 'OL' && nextOrderedValue !== undefined) {
+      setOrderedListStart(list, nextOrderedValue);
+      directListItems(list)[0]?.removeAttribute('value');
+    }
     list.before(paragraph);
     return { point: { node: paragraph, offset: 0 } };
   }
@@ -415,12 +430,9 @@ function exitEmptyListItem(
 
   const trailingType = listTypeOf(list);
   if (!trailingType) return null;
-  const trailingStart = list.tagName === 'OL'
-    ? orderedItemValueAt(list, index + 1)
-    : undefined;
   const trailing = cloneListShell(list, trailingType, {
     keepIdentity: false,
-    start: trailingStart,
+    start: nextOrderedValue,
   });
   let cursor: Element | null = nextItem;
   while (cursor) {
@@ -428,6 +440,7 @@ function exitEmptyListItem(
     trailing.appendChild(cursor);
     cursor = next;
   }
+  if (trailing.tagName === 'OL') directListItems(trailing)[0]?.removeAttribute('value');
   list.after(paragraph, trailing);
   return { point: { node: paragraph, offset: 0 } };
 }
@@ -436,7 +449,7 @@ function splitListItemAtPoint(
   item: HTMLElement,
   block: HTMLElement,
   point: A4DomPoint,
-): { nextItem: HTMLElement; nextBlock: HTMLElement } {
+): HTMLElement {
   const beforeRange = document.createRange();
   beforeRange.setStart(block, 0);
   beforeRange.setEnd(point.node, point.offset);
@@ -445,27 +458,19 @@ function splitListItemAtPoint(
   afterRange.setEnd(block, block.childNodes.length);
   const before = beforeRange.cloneContents();
   const after = afterRange.cloneContents();
-  const afterHasContent = hasMeaningfulContent(after);
-
-  const nextTag = /^H[1-6]$/.test(block.tagName) && !afterHasContent
+  const nextTag = /^H[1-6]$/.test(block.tagName) && !hasMeaningfulContent(after)
     ? 'P'
     : block.tagName;
   const nextBlock = cloneBlockShell(block, nextTag);
   nextBlock.appendChild(after);
   ensureEditableBlock(nextBlock);
-
   block.replaceChildren(before);
   ensureEditableBlock(block);
 
   const nextItem = document.createElement('li');
   copySemanticAttributes(item, nextItem);
-  // A split continuation is a new logical item and must not duplicate an
-  // authored per-item numbering override or runtime identity.
   nextItem.removeAttribute('value');
   nextItem.appendChild(nextBlock);
-
-  // Nested descendants and other structural children after the split block
-  // are logically after the caret and move with the new item in DOM order.
   let trailing = block.nextSibling;
   while (trailing) {
     const next = trailing.nextSibling;
@@ -473,7 +478,7 @@ function splitListItemAtPoint(
     trailing = next;
   }
   item.after(nextItem);
-  return { nextItem, nextBlock };
+  return nextBlock;
 }
 
 function splitOrdinaryBlockAtPoint(
@@ -488,8 +493,7 @@ function splitOrdinaryBlockAtPoint(
   afterRange.setEnd(block, block.childNodes.length);
   const before = beforeRange.cloneContents();
   const after = afterRange.cloneContents();
-  const afterHasContent = hasMeaningfulContent(after);
-  const nextTag = /^H[1-6]$/.test(block.tagName) && !afterHasContent
+  const nextTag = /^H[1-6]$/.test(block.tagName) && !hasMeaningfulContent(after)
     ? 'P'
     : block.tagName;
   const next = cloneBlockShell(block, nextTag);
@@ -501,10 +505,7 @@ function splitOrdinaryBlockAtPoint(
   return next;
 }
 
-/**
- * S2 Enter semantics on the canonical unsplit tree. No page identity,
- * revision counter, React state or focus side effect is introduced here.
- */
+/** Pure S2 Enter semantics on the canonical unsplit tree. */
 export function insertA4S2ParagraphBreak(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
@@ -512,15 +513,10 @@ export function insertA4S2ParagraphBreak(
   const prepared = collapseSelectionForEnter(canonical, selection);
   if ('status' in prepared) return prepared;
   if (!isGraphemeBoundary(prepared.point.node, prepared.point.offset)) {
-    return rejected(
-      'invalid-grapheme-boundary',
-      'Enter cannot split inside a Unicode grapheme cluster.',
-    );
+    return rejected('invalid-grapheme-boundary', 'Enter cannot split inside a Unicode grapheme cluster.');
   }
   const block = editableBlockForPoint(prepared.root, prepared.point);
-  if (!block) {
-    return { status: 'unchanged', reason: 'The caret is not in an editable paragraph block.' };
-  }
+  if (!block) return { status: 'unchanged', reason: 'The caret is not in an editable paragraph block.' };
   if (block.closest('td, th')) {
     return {
       status: 'unchanged',
@@ -530,17 +526,15 @@ export function insertA4S2ParagraphBreak(
 
   const item = block.closest<HTMLElement>('li');
   if (item && !hasMeaningfulContent(item)) {
-    const exited = exitEmptyListItem(prepared.root, item);
+    const exited = exitEmptyListItem(item);
     return exited
       ? finishAtPoint(canonical, prepared.root, exited.point, 'after')
       : rejected('invalid-list-structure', 'The empty list item could not be lifted safely.');
   }
-
   if (item) {
-    const { nextBlock } = splitListItemAtPoint(item, block, prepared.point);
+    const nextBlock = splitListItemAtPoint(item, block, prepared.point);
     return finishAtPoint(canonical, prepared.root, { node: nextBlock, offset: 0 }, 'after');
   }
-
   const next = splitOrdinaryBlockAtPoint(block, prepared.point);
   return finishAtPoint(canonical, prepared.root, { node: next, offset: 0 }, 'after');
 }
@@ -575,8 +569,9 @@ function selectedItemsForRange(root: HTMLElement, range: Range): HTMLElement[] {
     const item = block.closest<HTMLElement>('li');
     if (item) items.add(item);
   });
-  return Array.from(items).filter(
-    (item) => !Array.from(items).some((other) => other !== item && item.contains(other)),
+  const all = Array.from(items);
+  return all.filter(
+    (item) => !all.some((other) => other !== item && other.contains(item)),
   );
 }
 
@@ -628,8 +623,7 @@ export function getA4S2ListIndentCapability(
   for (const [list, items] of byList) {
     if (direction === 'indent') {
       for (const group of contiguousGroups(items)) {
-        const first = group[0];
-        const previous = first.previousElementSibling;
+        const previous = group[0].previousElementSibling;
         if (!previous || previous.tagName !== 'LI') {
           return {
             applicable: false,
@@ -656,8 +650,7 @@ export function getA4S2ListIndentCapability(
 function nestedListForOwner(owner: HTMLElement, sourceList: HTMLElement): HTMLElement {
   const type = listTypeOf(sourceList)!;
   const existing = Array.from(owner.children).find(
-    (child): child is HTMLElement =>
-      child instanceof HTMLElement && listTypeOf(child) === type,
+    (child): child is HTMLElement => child instanceof HTMLElement && listTypeOf(child) === type,
   );
   if (existing) return existing;
   const nested = cloneListShell(sourceList, type, { keepIdentity: false, start: 1 });
@@ -676,8 +669,7 @@ export function indentA4S2ListItems(
   if (!capability.applicable) {
     return { status: 'unchanged', reason: capability.reason ?? 'List indent is not applicable.' };
   }
-  const byList = selectedItemsByList(resolved.root, resolved.range);
-  for (const [list, items] of byList) {
+  for (const [list, items] of selectedItemsByList(resolved.root, resolved.range)) {
     for (const group of contiguousGroups(items)) {
       const previous = group[0].previousElementSibling as HTMLElement;
       const nested = nestedListForOwner(previous, list);
@@ -697,8 +689,7 @@ export function outdentA4S2ListItems(
   if (!capability.applicable) {
     return { status: 'unchanged', reason: capability.reason ?? 'List outdent is not applicable.' };
   }
-  const byList = selectedItemsByList(resolved.root, resolved.range);
-  for (const [list, items] of byList) {
+  for (const [list, items] of selectedItemsByList(resolved.root, resolved.range)) {
     const owner = list.parentElement as HTMLElement;
     const outer = owner.parentElement as HTMLElement;
     const reference = owner.nextSibling;
@@ -708,6 +699,29 @@ export function outdentA4S2ListItems(
   return finishPreservingSelection(canonical, resolved.root, selection);
 }
 
+function buildListSegments(
+  list: HTMLElement,
+  selectedItems: Set<HTMLElement>,
+): ListSegment[] {
+  const ordered = list.tagName === 'OL';
+  const segments: ListSegment[] = [];
+  directListItems(list).forEach((item, index) => {
+    const selected = selectedItems.has(item);
+    const current = segments.at(-1);
+    if (!current || current.selected !== selected) {
+      segments.push({
+        selected,
+        startIndex: index,
+        startValue: ordered ? orderedItemValueAt(list, index) : undefined,
+        items: [item],
+      });
+    } else {
+      current.items.push(item);
+    }
+  });
+  return segments;
+}
+
 function segmentListBySelection(
   list: HTMLElement,
   selectedItems: Set<HTMLElement>,
@@ -715,26 +729,15 @@ function segmentListBySelection(
 ): boolean {
   const sourceType = listTypeOf(list);
   if (!sourceType || sourceType === targetType) return false;
-  const items = directListItems(list);
-  if (!items.length) return false;
-  const segments: Array<{ selected: boolean; startIndex: number; items: HTMLElement[] }> = [];
-  items.forEach((item, index) => {
-    const selected = selectedItems.has(item);
-    const current = segments.at(-1);
-    if (!current || current.selected !== selected) {
-      segments.push({ selected, startIndex: index, items: [item] });
-    } else {
-      current.items.push(item);
-    }
-  });
-
+  const segments = buildListSegments(list, selectedItems);
+  if (!segments.length) return false;
   const replacements = segments.map((segment, segmentIndex) => {
     const type = segment.selected ? targetType : sourceType;
-    const start = type !== 'unordered'
-      ? sourceType !== 'unordered'
-        ? orderedItemValueAt(list, segment.startIndex)
-        : 1
-      : undefined;
+    const start = type === 'unordered'
+      ? undefined
+      : sourceType === 'unordered'
+        ? 1
+        : segment.startValue;
     const replacement = cloneListShell(list, type, {
       keepIdentity: segmentIndex === 0,
       start,
@@ -747,9 +750,7 @@ function segmentListBySelection(
 }
 
 function rootOutsideBlocksForRange(root: HTMLElement, range: Range): HTMLElement[] {
-  return editableBlocksForRange(root, range).filter(
-    (block) => !block.closest('li'),
-  );
+  return editableBlocksForRange(root, range).filter((block) => !block.closest('li'));
 }
 
 function adjacentBlockGroups(blocks: HTMLElement[]): HTMLElement[][] {
@@ -782,12 +783,7 @@ function orderedListsCompatible(left: HTMLElement, right: HTMLElement): boolean 
     return false;
   }
   const rightStart = right.getAttribute('start');
-  if (!rightStart) return true;
-  const leftItems = directListItems(left);
-  const expected = leftItems.length
-    ? orderedItemValueAt(left, leftItems.length - 1) + 1
-    : orderedListStart(left);
-  return Number.parseInt(rightStart, 10) === expected;
+  return !rightStart || Number.parseInt(rightStart, 10) === orderedNextValue(left);
 }
 
 function mergeEligibleLists(left: HTMLElement, right: HTMLElement): boolean {
@@ -799,10 +795,7 @@ function mergeEligibleLists(left: HTMLElement, right: HTMLElement): boolean {
   return true;
 }
 
-function wrapOutsideBlocksInList(
-  group: HTMLElement[],
-  type: A4S2ListType,
-): void {
+function wrapOutsideBlocksInList(group: HTMLElement[], type: A4S2ListType): void {
   const first = group[0];
   const last = group[group.length - 1];
   const parent = first.parentElement;
@@ -828,14 +821,13 @@ function wrapOutsideBlocksInList(
     nextList.insertBefore(fragment, nextList.firstChild);
     return;
   }
-
   const list = document.createElement(listTag(type));
   configureListType(list, null, type, 1);
   items.forEach((item) => list.appendChild(item));
   parent.insertBefore(list, next);
 }
 
-/** Explicit list type semantics: this never relies on a toolbar toggle state. */
+/** Explicit list type/range semantics. */
 export function setA4S2ListType(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
@@ -879,6 +871,7 @@ export function restartA4S2OrderedListAtSelection(
   const safeStart = Math.max(1, Math.floor(start) || 1);
   if (index === 0) {
     const before = list.outerHTML;
+    item.removeAttribute('value');
     setOrderedListStart(list, safeStart);
     if (before === list.outerHTML) return { status: 'unchanged', reason: 'The list already starts at that value.' };
     return finishPreservingSelection(canonical, resolved.root, selection);
@@ -887,8 +880,25 @@ export function restartA4S2OrderedListAtSelection(
   const type = listTypeOf(list)!;
   const trailing = cloneListShell(list, type, { keepIdentity: false, start: safeStart });
   items.slice(index).forEach((candidate) => trailing.appendChild(candidate));
+  directListItems(trailing)[0]?.removeAttribute('value');
   list.after(trailing);
   return finishPreservingSelection(canonical, resolved.root, selection);
+}
+
+function compatibleOrderedMarkerStyle(left: HTMLElement, right: HTMLElement): boolean {
+  return left.classList.contains('list-alpha') === right.classList.contains('list-alpha') &&
+    left.classList.contains('list-bold-numbers') === right.classList.contains('list-bold-numbers');
+}
+
+function previousEligibleOrderedList(list: HTMLElement): HTMLElement | null {
+  let candidate = list.previousElementSibling;
+  while (candidate) {
+    if (candidate instanceof HTMLElement && candidate.tagName === 'OL') {
+      return compatibleOrderedMarkerStyle(candidate, list) ? candidate : null;
+    }
+    candidate = candidate.previousElementSibling;
+  }
+  return null;
 }
 
 export function getA4S2ContinueNumberingCapability(
@@ -908,25 +918,23 @@ export function getA4S2ContinueNumberingCapability(
   if (!item || !list || list.tagName !== 'OL') {
     return { applicable: false, code: 'not-ordered-list', reason: 'Continue numbering requires an ordered list.' };
   }
-  const previous = list.previousElementSibling;
-  if (!(previous instanceof HTMLElement) || previous.tagName !== 'OL') {
-    return {
-      applicable: false,
-      code: 'no-continuation-source',
-      reason: 'There is no immediately preceding ordered list to continue.',
-    };
-  }
-  if (
-    previous.classList.contains('list-alpha') !== list.classList.contains('list-alpha') ||
-    previous.classList.contains('list-bold-numbers') !== list.classList.contains('list-bold-numbers')
-  ) {
-    return {
-      applicable: false,
-      code: 'incompatible-continuation-source',
-      reason: 'The preceding ordered list uses an incompatible marker style.',
-    };
-  }
-  return { applicable: true };
+  const previous = previousEligibleOrderedList(list);
+  if (previous) return { applicable: true };
+  const anyPreviousOrdered = Array.from(list.parentElement?.children ?? [])
+    .slice(0, Array.from(list.parentElement?.children ?? []).indexOf(list))
+    .reverse()
+    .find((candidate) => candidate instanceof HTMLElement && candidate.tagName === 'OL');
+  return anyPreviousOrdered
+    ? {
+        applicable: false,
+        code: 'incompatible-continuation-source',
+        reason: 'The nearest preceding ordered list uses an incompatible marker style.',
+      }
+    : {
+        applicable: false,
+        code: 'no-continuation-source',
+        reason: 'There is no preceding ordered list at this structural level to continue.',
+      };
 }
 
 export function continueA4S2OrderedList(
@@ -941,9 +949,13 @@ export function continueA4S2OrderedList(
   if (isTransactionResult(resolved)) return resolved;
   const item = selectedStartItem(resolved.root, resolved.range)!;
   const list = item.parentElement!;
-  const previous = list.previousElementSibling as HTMLElement;
-  Array.from(list.children).forEach((child) => previous.appendChild(child));
-  list.remove();
+  const previous = previousEligibleOrderedList(list)!;
+  const before = list.outerHTML;
+  directListItems(list)[0]?.removeAttribute('value');
+  setOrderedListStart(list, orderedNextValue(previous));
+  if (before === list.outerHTML) {
+    return { status: 'unchanged', reason: 'The ordered list already continues the preceding sequence.' };
+  }
   return finishPreservingSelection(canonical, resolved.root, selection);
 }
 
@@ -951,10 +963,7 @@ function formatCssNumber(value: number): string {
   return Number(value.toFixed(4)).toString();
 }
 
-/**
- * Normalizes one explicit paragraph indent step without conflating `rem` and
- * `em`. Unsupported legacy values are preserved unchanged.
- */
+/** Normalize one explicit paragraph indent step without conflating rem and em. */
 export function normalizeA4S2IndentValue(
   current: string,
   direction: A4S2IndentDirection,
@@ -1146,10 +1155,7 @@ export function readA4S2FormattingState(
   };
 }
 
-/**
- * CORE owns typing marks. A collapsed Clear formatting command must consume
- * this neutral patch rather than pretending a zero-width DOM range was cleared.
- */
+/** CORE owns typing marks; collapsed Clear must apply this neutral patch there. */
 export function getA4S2NeutralTypingFormatPatch(): InlineFormatPatch {
   return {
     fontFamily: null,
