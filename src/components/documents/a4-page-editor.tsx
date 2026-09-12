@@ -1395,10 +1395,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           : null;
       const selectionPageId = pageElement?.dataset.pageId ?? null;
       const viewPageId = pendingViewPageIdRef.current;
-      if (selectionPageId && viewPageId && selectionPageId !== viewPageId) {
-        if (typeof pageElement?.scrollIntoView === 'function') {
-          pageElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-        }
+      if (selectionPageId && viewPageId && selectionPageId !== viewPageId && pageElement) {
+        const scrollContainer = scrollContainerRef.current;
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const pageRect = pageElement.getBoundingClientRect();
+        const pageOffset = pageRect.top - containerRect.top;
+        const targetScrollTop = Math.max(
+          scrollTop + 1,
+          scrollContainer.scrollTop + pageOffset,
+        );
+        scrollContainer.scrollTop = targetScrollTop;
       } else {
         scrollContainerRef.current.scrollTop = scrollTop;
       }
