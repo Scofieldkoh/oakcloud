@@ -39,6 +39,8 @@ jobs:
       - name: Integrated page editor browser
         run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-page-editor.browser.test.tsx --reporter=verbose
       - name: Static gates
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: |
           npm run generate:pagination-bundle
           git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
