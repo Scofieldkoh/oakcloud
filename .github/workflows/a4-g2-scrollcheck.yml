@@ -1,0 +1,28 @@
+name: A4 G2 caret-follow verification
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-g2-scrollcheck-20260912
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: a5e86d01e3906d3ec72ed6ce3fcb8f5a3d15d2d4
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-page-editor.browser.test.tsx -t "follows the caret to the next page when Enter fills page 1" --reporter=verbose
