@@ -11,10 +11,7 @@ import {
   type LosslessStoredFieldDefinition,
   type TypedFieldValue,
 } from '@/lib/template-field-contract';
-import {
-  parseTemplateFields,
-  type TemplateFieldPartialSource,
-} from '@/lib/template-field-parser';
+import { parseTemplateFields } from '@/lib/template-field-parser';
 
 /**
  * F2 field semantics are deliberately independent from the legacy renderer.
@@ -28,8 +25,23 @@ export interface ScopedTemplateFieldSource {
   definitions: readonly LosslessStoredFieldDefinition[];
 }
 
-export interface ScopedTemplateFieldPartial extends TemplateFieldPartialSource {
-  definitions: readonly LosslessStoredFieldDefinition[];
+export type FieldValueContextKind =
+  | 'company'
+  | 'contact'
+  | 'invoice'
+  | 'employee'
+  | 'global'
+  | 'loop_item';
+
+/**
+ * Owner scope answers "where was this field declared?". Value context answers
+ * "which render item supplies its value?". Keeping them separate prevents a
+ * parent template, two partials, or two batch items from flattening together.
+ */
+export interface ScopedFieldValueContext {
+  kind: FieldValueContextKind;
+  id?: string;
+  valuesByIdentity: Readonly<Record<string, unknown>>;
 }
 
 /**
@@ -62,6 +74,7 @@ export interface ScopedFieldResolutionDiagnostic {
   severity: 'error' | 'warning';
   message: string;
   scope?: FieldOwnerScope;
+  context?: Pick<ScopedFieldValueContext, 'kind' | 'id'>;
   fieldIdentity?: string;
   occurrenceId?: string;
   legacyKey?: string;
@@ -338,14 +351,15 @@ function effectiveValueIdentity(identity: string, graph: BindingGraph): string |
 
 function resolveScopedFieldValueWithGraph(input: {
   definition: LosslessStoredFieldDefinition;
-  valuesByIdentity: Readonly<Record<string, unknown>>;
+  context: ScopedFieldValueContext;
   graph: BindingGraph;
 }): ResolvedScopedFieldValue {
   const effectiveIdentity = effectiveValueIdentity(input.definition.identity, input.graph)
     ?? input.definition.identity;
   const effectiveDefinition = input.graph.definitionsByIdentity.get(effectiveIdentity) ?? input.definition;
-  const present = Object.prototype.hasOwnProperty.call(input.valuesByIdentity, effectiveIdentity);
+  const present = Object.prototype.hasOwnProperty.call(input.context.valuesByIdentity, effectiveIdentity);
   const diagnostics: ScopedFieldResolutionDiagnostic[] = [];
+  const diagnosticContext = { kind: input.context.kind, ...(input.context.id ? { id: input.context.id } : {}) };
 
   if (present) {
     return {
@@ -355,7 +369,7 @@ function resolveScopedFieldValueWithGraph(input: {
       value: classifyFieldValue({
         storedType: input.definition.storedType,
         present: true,
-        value: input.valuesByIdentity[effectiveIdentity],
+        value: input.context.valuesByIdentity[effectiveIdentity],
       }),
       diagnostics,
     };
@@ -381,6 +395,7 @@ function resolveScopedFieldValueWithGraph(input: {
     severity: input.definition.required ? 'error' : 'warning',
     fieldIdentity: input.definition.identity,
     scope: input.definition.scope,
+    context: diagnosticContext,
     message: input.definition.required
       ? `Required field has no value: ${input.definition.resolverPath}`
       : `Field has no value: ${input.definition.resolverPath}`,
@@ -397,7 +412,7 @@ function resolveScopedFieldValueWithGraph(input: {
 export interface ResolveScopedFieldValueInput {
   definition: LosslessStoredFieldDefinition;
   allDefinitions: readonly LosslessStoredFieldDefinition[];
-  valuesByIdentity: Readonly<Record<string, unknown>>;
+  context: ScopedFieldValueContext;
   bindings?: readonly ScopedFieldValueBinding[];
 }
 
@@ -414,7 +429,7 @@ export function resolveScopedFieldValue(input: ResolveScopedFieldValueInput): Re
   const graph = buildBindingGraph(input.allDefinitions, input.bindings ?? []);
   const resolved = resolveScopedFieldValueWithGraph({
     definition: input.definition,
-    valuesByIdentity: input.valuesByIdentity,
+    context: input.context,
     graph,
   });
   return {
@@ -501,26 +516,21 @@ export function adaptLegacyFlattenedFieldValues(input: {
   };
 }
 
-export interface ResolveScopedTemplateFieldsInput extends RenderResolvedFieldFragmentOptions {
-  template: ScopedTemplateFieldSource;
-  partials?: readonly ScopedTemplateFieldPartial[];
-  valuesByIdentity: Readonly<Record<string, unknown>>;
+export interface ResolveScopedTemplateFieldSourceInput {
+  source: ScopedTemplateFieldSource;
+  allDefinitions?: readonly LosslessStoredFieldDefinition[];
+  context: ScopedFieldValueContext;
   bindings?: readonly ScopedFieldValueBinding[];
   missingValue?: 'keep' | 'blank';
 }
 
-export interface ResolveScopedTemplateFieldsResult {
+export interface ResolveScopedTemplateFieldSourceResult {
+  scope: FieldOwnerScope;
+  context: Pick<ScopedFieldValueContext, 'kind' | 'id'>;
   resolved: string;
   diagnostics: readonly ScopedFieldResolutionDiagnostic[];
   parserDiagnostics: readonly FieldParserDiagnostic[];
   usedFieldIdentities: readonly string[];
-}
-
-interface SourceResolutionContext {
-  allDefinitions: readonly LosslessStoredFieldDefinition[];
-  partialByName: ReadonlyMap<string, ScopedTemplateFieldPartial>;
-  input: ResolveScopedTemplateFieldsInput;
-  bindingGraph: BindingGraph;
 }
 
 function replaceSpans(
@@ -534,72 +544,39 @@ function replaceSpans(
   return output;
 }
 
-function resolveSource(
-  source: ScopedTemplateFieldSource,
-  context: SourceResolutionContext,
-  partialStack: readonly string[],
-  includeBindingDiagnostics: boolean,
-): ResolveScopedTemplateFieldsResult {
-  const partialMetadata = [...context.partialByName.values()].map(({ id, name, content }) => ({ id, name, content }));
+/**
+ * Resolve only fields declared by this source's owner scope. Partial composition
+ * remains a WORKFLOW renderer responsibility: it must invoke this boundary for
+ * each parent/partial source with that source's own definitions, then compose
+ * trusted partial HTML through C06. The result must not be reparsed as template
+ * syntax, which keeps braces inside user text inert.
+ */
+export function resolveScopedTemplateFieldSource(
+  input: ResolveScopedTemplateFieldSourceInput,
+): ResolveScopedTemplateFieldSourceResult {
+  const allDefinitions = input.allDefinitions ?? input.source.definitions;
+  const bindingGraph = buildBindingGraph(allDefinitions, input.bindings ?? []);
   const parsed = parseTemplateFields({
-    content: source.content,
-    scope: source.scope,
-    registry: source.definitions,
-    knownPaths: source.definitions.flatMap((definition) => fieldPaths(definition)),
-    partials: partialMetadata,
+    content: input.source.content,
+    scope: input.source.scope,
+    registry: input.source.definitions,
+    knownPaths: input.source.definitions.flatMap((definition) => fieldPaths(definition)),
   });
-  const diagnostics: ScopedFieldResolutionDiagnostic[] = includeBindingDiagnostics
-    ? [...context.bindingGraph.diagnostics]
-    : [];
-  const parserDiagnostics: FieldParserDiagnostic[] = [...parsed.diagnostics];
+  const diagnostics: ScopedFieldResolutionDiagnostic[] = [...bindingGraph.diagnostics];
   const usedFieldIdentities = new Set<string>();
   const replacements: Array<{ start: number; end: number; value: string }> = [];
 
   for (const node of parsed.nodes) {
-    if (node.kind === 'partial' && node.partialName) {
-      const partial = context.partialByName.get(node.partialName);
-      if (!partial || partialStack.includes(partial.id)) continue;
-      const child = resolveSource(
-        {
-          scope: { kind: 'partial', id: partial.id, label: partial.name },
-          content: partial.content,
-          definitions: partial.definitions,
-        },
-        context,
-        [...partialStack, partial.id],
-        false,
-      );
-      diagnostics.push(...child.diagnostics);
-      parserDiagnostics.push(...child.parserDiagnostics);
-      child.usedFieldIdentities.forEach((identity) => usedFieldIdentities.add(identity));
-
-      if (!context.input.sanitizeTrustedRich) {
-        diagnostics.push({
-          code: 'missing-rich-sanitizer',
-          severity: 'error',
-          occurrenceId: node.occurrenceId,
-          scope: node.scope,
-          message: 'Template partial interpolation requires the WORKFLOW trusted-rich sanitizer adapter.',
-        });
-        continue;
-      }
-      replacements.push({
-        start: node.span.start,
-        end: node.span.end,
-        value: context.input.sanitizeTrustedRich(child.resolved, { ...({} as TrustedRichOrigin) }),
-      });
-      continue;
-    }
-
     if ((node.kind !== 'reference' && node.kind !== 'modifier') || !node.path) continue;
-    const match = definitionForPath(source.definitions, source.scope, node.path);
+    const match = definitionForPath(input.source.definitions, input.source.scope, node.path);
     if (match.ambiguous) {
       diagnostics.push({
         code: 'ambiguous-scoped-field',
         severity: 'error',
         occurrenceId: node.occurrenceId,
         scope: node.scope,
-        message: `Reference ${node.path} matches multiple definitions in the same scope.`,
+        context: { kind: input.context.kind, ...(input.context.id ? { id: input.context.id } : {}) },
+        message: `Reference ${node.path} matches multiple definitions in the same owner scope.`,
       });
       continue;
     }
@@ -609,8 +586,8 @@ function resolveSource(
 
     const valueResult = resolveScopedFieldValueWithGraph({
       definition,
-      valuesByIdentity: context.input.valuesByIdentity,
-      graph: context.bindingGraph,
+      context: input.context,
+      graph: bindingGraph,
     });
     diagnostics.push(...valueResult.diagnostics);
 
@@ -621,6 +598,7 @@ function resolveSource(
         occurrenceId: node.occurrenceId,
         fieldIdentity: definition.identity,
         scope: definition.scope,
+        context: { kind: input.context.kind, ...(input.context.id ? { id: input.context.id } : {}) },
         message: `Legacy field type "${definition.storedType}" is preserve-only and cannot be interpolated by F2.`,
       });
       continue;
@@ -628,7 +606,7 @@ function resolveSource(
 
     const rawText = typedFieldValueToText(valueResult.value);
     if (rawText === null) {
-      if (context.input.missingValue === 'blank') {
+      if (input.missingValue === 'blank') {
         replacements.push({ start: node.span.start, end: node.span.end, value: '' });
       }
       continue;
@@ -644,6 +622,7 @@ function resolveSource(
           occurrenceId: node.occurrenceId,
           fieldIdentity: definition.identity,
           scope: definition.scope,
+          context: { kind: input.context.kind, ...(input.context.id ? { id: input.context.id } : {}) },
           message: `Unsupported field modifier: ${node.modifier}`,
         });
         continue;
@@ -651,8 +630,7 @@ function resolveSource(
       text = modified.value;
     }
 
-    const fragment = fieldFragmentFromTypedValue(valueResult.value, text);
-    const rendered = renderResolvedFieldFragment(fragment, context.input);
+    const rendered = renderResolvedFieldFragment(fieldFragmentFromTypedValue(valueResult.value, text));
     if (rendered.status === 'blocked') {
       diagnostics.push({
         ...rendered.diagnostic,
@@ -666,35 +644,27 @@ function resolveSource(
   }
 
   return {
-    resolved: replaceSpans(source.content, replacements),
+    scope: input.source.scope,
+    context: { kind: input.context.kind, ...(input.context.id ? { id: input.context.id } : {}) },
+    resolved: replaceSpans(input.source.content, replacements),
     diagnostics,
-    parserDiagnostics,
+    parserDiagnostics: parsed.diagnostics,
     usedFieldIdentities: [...usedFieldIdentities],
   };
 }
 
-/**
- * Resolve scoped custom-field references without flattening scope. The returned
- * HTML MUST NOT be sent through the legacy template parser again: WORKFLOW must
- * integrate this interpolation boundary into its one-pass render pipeline so
- * braces contained in ordinary field text can never become template syntax.
- *
- * Partial expansion itself is intentionally left to WORKFLOW because only the
- * renderer owns the canonical sanitizer and trusted-rich origin capability.
- */
-export function resolveScopedTemplateFields(
-  input: ResolveScopedTemplateFieldsInput,
-): ResolveScopedTemplateFieldsResult {
-  const allDefinitions = [
-    ...input.template.definitions,
-    ...(input.partials ?? []).flatMap((partial) => partial.definitions),
-  ];
-  const bindingGraph = buildBindingGraph(allDefinitions, input.bindings ?? []);
-  const partialByName = new Map((input.partials ?? []).map((partial) => [partial.name, partial]));
-  return resolveSource(
-    input.template,
-    { allDefinitions, partialByName, input, bindingGraph },
-    [],
-    true,
-  );
+export function resolveScopedTemplateFieldSources(input: {
+  sources: readonly ScopedTemplateFieldSource[];
+  context: ScopedFieldValueContext;
+  bindings?: readonly ScopedFieldValueBinding[];
+  missingValue?: 'keep' | 'blank';
+}): readonly ResolveScopedTemplateFieldSourceResult[] {
+  const allDefinitions = input.sources.flatMap((source) => source.definitions);
+  return input.sources.map((source) => resolveScopedTemplateFieldSource({
+    source,
+    allDefinitions,
+    context: input.context,
+    bindings: input.bindings,
+    missingValue: input.missingValue,
+  }));
 }
