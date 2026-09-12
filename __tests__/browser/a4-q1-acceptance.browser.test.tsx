@@ -359,7 +359,7 @@ describe('A4 editor G2/Q1 independent browser acceptance', () => {
     );
   });
 
-  it('Q1-08 preserves paragraph semantics, exits headings, and lifts an empty nested list item', async () => {
+  it('Q1-07/Q1-08 preserves paragraph semantics, exits headings, and lifts an empty nested list item', async () => {
     const editorRef = createRef<A4PageEditorRef>();
 
     await act(async () => {
