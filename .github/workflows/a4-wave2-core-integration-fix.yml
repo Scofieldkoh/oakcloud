@@ -1,0 +1,88 @@
+name: A4 Wave-2 CORE integration corrections
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-wave2-g2-integration-20260912
+    paths:
+      - .github/workflows/a4-wave2-core-integration-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/a4-editor-wave2-g2-integration-20260912
+          fetch-depth: 0
+      - name: Apply CORE-owned integration corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected 1 match, found {count}")
+              return text.replace(old, new, 1)
+
+          page = Path('src/components/documents/a4-page-editor.tsx')
+          text = page.read_text(encoding='utf-8')
+
+          text = replace_once(
+              text,
+              """    const preserveScrollPosition = useCallback(() => {\n      if (scrollContainerRef.current) {\n        pendingScrollTopRef.current = scrollContainerRef.current.scrollTop;\n      }\n      pendingViewPageIdRef.current = activePageIdRef.current;\n    }, []);""",
+              """    const preserveScrollPosition = useCallback(() => {\n      if (scrollContainerRef.current) {\n        pendingScrollTopRef.current = scrollContainerRef.current.scrollTop;\n      }\n      const surface = documentSurfaceRef.current;\n      const focusNode = window.getSelection()?.focusNode ?? null;\n      const selectionPage =\n        surface && focusNode ? pageContentFromTarget(surface, focusNode) : null;\n      pendingViewPageIdRef.current =\n        selectionPage?.dataset.pageId ?? activePageIdRef.current;\n    }, []);""",
+              'selection-owned scroll origin',
+          )
+
+          anchor = """    const applyCurrentS2Indent = useCallback(\n      (direction: 'indent' | 'outdent') => {\n        const surface = documentSurfaceRef.current;\n        if (!surface || effectivePreviewMode) return false;\n        if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {\n          return false;\n        }\n        const bookmark = captureFlowSelection(surface);\n        if (!bookmark) return false;\n        pendingTypingFormatRef.current = null;\n        pendingTypingPointRef.current = null;\n        return commitS2Indent(bookmark, direction);\n      },\n      [commitS2Indent, effectivePreviewMode, restoreSelection],\n    );"""
+          replacement = anchor + """\n\n    const applyCurrentS2NestToggle = useCallback(() => {\n      const surface = documentSurfaceRef.current;\n      if (!surface || effectivePreviewMode) return false;\n      if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {\n        return false;\n      }\n      const bookmark = captureFlowSelection(surface);\n      if (!bookmark) return false;\n      const context = getA4EditorListContext(\n        canonicalPagesHtml(pagesRef.current),\n        bookmark,\n      );\n      if (!context?.inList) return false;\n      pendingTypingFormatRef.current = null;\n      pendingTypingPointRef.current = null;\n      return commitS2Indent(\n        bookmark,\n        context.level > 1 ? 'outdent' : 'indent',\n      );\n    }, [\n      canonicalPagesHtml,\n      commitS2Indent,\n      effectivePreviewMode,\n      restoreSelection,\n    ]);"""
+          text = replace_once(text, anchor, replacement, 'semantic nest toggle helper')
+          text = replace_once(
+              text,
+              """        if (command.type === 'nest-list') {\n          applyCurrentS2Indent('indent');\n          return;\n        }""",
+              """        if (command.type === 'nest-list') {\n          applyCurrentS2NestToggle();\n          return;\n        }""",
+              'nest toggle routing',
+          )
+          text = replace_once(
+              text,
+              "      [applyCurrentS2Indent, applyCurrentSemanticCommand, applySelectionTransaction, handleCommand],",
+              "      [applyCurrentS2NestToggle, applyCurrentSemanticCommand, applySelectionTransaction, handleCommand],",
+              'toolbar dependencies',
+          )
+          page.write_text(text, encoding='utf-8')
+
+          unit = Path('__tests__/components/a4-page-editor.test.tsx')
+          u = unit.read_text(encoding='utf-8')
+          helper_anchor = """    const selectBoth = () => {\n      const page = screen.getByTestId('a4-page-content-1');\n      const paragraphs = Array.from(page.querySelectorAll('p'));\n      expect(paragraphs).toHaveLength(2);\n      act(() => {\n        surface.focus();\n        const selection = window.getSelection()!;\n        const range = document.createRange();\n        range.setStart(paragraphs[0].firstChild!, 0);\n        range.setEnd(paragraphs[1].firstChild!, paragraphs[1].textContent!.length);\n        selection.removeAllRanges();\n        selection.addRange(range);\n      });\n    };"""
+          helper_replacement = helper_anchor + """\n    const selectSecondListItem = () => {\n      const page = screen.getByTestId('a4-page-content-1');\n      const paragraphs = Array.from(page.querySelectorAll('li > p'));\n      expect(paragraphs).toHaveLength(2);\n      act(() => {\n        surface.focus();\n        const selection = window.getSelection()!;\n        const range = document.createRange();\n        range.setStart(paragraphs[1].firstChild!, 0);\n        range.collapse(true);\n        selection.removeAllRanges();\n        selection.addRange(range);\n      });\n    };"""
+          u = replace_once(u, helper_anchor, helper_replacement, 'unit second item selector')
+          old_unit_indent = """    selectBoth();\n    fireEvent.click(screen.getByRole('button', { name: 'Increase indent' }));\n    await waitIdle();\n    body = parse(editorRef.current!.getContent());\n    expect(\n      Array.from(body.querySelectorAll<HTMLElement>('ol > li')).every(\n        (listItem) => listItem.style.marginLeft === '2em',\n      ),\n    ).toBe(true);\n    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });\n    await waitFor(() => {\n      expect(\n        Array.from(parse(editorRef.current!.getContent()).querySelectorAll('li')).every(\n          (listItem) => listItem.style.marginLeft === '',\n        ),\n      ).toBe(true);\n    });\n    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });\n    await waitIdle();\n\n    selectBoth();"""
+          new_unit_indent = """    selectSecondListItem();\n    fireEvent.click(screen.getByRole('button', { name: 'Increase indent' }));\n    await waitIdle();\n    body = parse(editorRef.current!.getContent());\n    expect(body.querySelector(':scope > ol > li:first-child > ol > li > p')?.textContent).toBe('Two');\n    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(1);\n    fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });\n    await waitFor(() => {\n      expect(parse(editorRef.current!.getContent()).querySelectorAll(':scope > ol > li')).toHaveLength(2);\n    });\n    fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });\n    await waitIdle();\n    expect(parse(editorRef.current!.getContent()).querySelector(':scope > ol > li:first-child > ol > li > p')?.textContent).toBe('Two');\n\n    selectSecondListItem();\n    fireEvent.click(screen.getByRole('button', { name: 'Decrease indent' }));\n    await waitIdle();\n    expect(parse(editorRef.current!.getContent()).querySelectorAll(':scope > ol > li')).toHaveLength(2);\n\n    selectBoth();"""
+          u = replace_once(u, old_unit_indent, new_unit_indent, 'unit semantic list indent assertions')
+          unit.write_text(u, encoding='utf-8')
+
+          browser = Path('__tests__/browser/a4-page-editor.browser.test.tsx')
+          b = browser.read_text(encoding='utf-8')
+          browser_helper_anchor = """    const selectBoth = () => {\n      const paragraphs = Array.from(\n        host.querySelectorAll('[data-testid=\"a4-page-content-1\"] p'),\n      );\n      expect(paragraphs).toHaveLength(2);\n      surface.focus();\n      const selection = window.getSelection()!;\n      const range = document.createRange();\n      range.setStart(paragraphs[0].firstChild!, 0);\n      range.setEnd(\n        paragraphs[1].firstChild!,\n        paragraphs[1].textContent!.length,\n      );\n      selection.removeAllRanges();\n      selection.addRange(range);\n    };"""
+          browser_helper_replacement = browser_helper_anchor + """\n    const selectSecondListItem = () => {\n      const paragraphs = Array.from(\n        host.querySelectorAll('[data-testid=\"a4-page-content-1\"] li > p'),\n      );\n      expect(paragraphs).toHaveLength(2);\n      surface.focus();\n      const selection = window.getSelection()!;\n      const range = document.createRange();\n      range.setStart(paragraphs[1].firstChild!, 0);\n      range.collapse(true);\n      selection.removeAllRanges();\n      selection.addRange(range);\n    };"""
+          b = replace_once(b, browser_helper_anchor, browser_helper_replacement, 'browser second item selector')
+          old_browser_indent = """    await act(async () => {\n      selectBoth();\n    });\n    await act(async () => {\n      await userEvent.click(buttonByLabel('Increase indent'));\n    });\n    await waitForEditorIdle();\n    body = new DOMParser()\n      .parseFromString(editorRef.current!.getContent(), 'text/html')\n      .body;\n    expect(\n      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(\n        (listItem) => listItem.style.marginLeft === '2em',\n      ),\n    ).toBe(true);\n\n    await act(async () => {\n      selectBoth();\n    });\n    await act(async () => {\n      await userEvent.click(buttonByLabel('Increase indent'));\n    });\n    await waitForEditorIdle();\n    body = new DOMParser()\n      .parseFromString(editorRef.current!.getContent(), 'text/html')\n      .body;\n    expect(\n      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(\n        (listItem) => listItem.style.marginLeft === '4em',\n      ),\n    ).toBe(true);\n\n    await act(async () => {\n      selectBoth();\n    });\n    await act(async () => {\n      await userEvent.click(buttonByLabel('Decrease indent'));\n    });\n    await waitForEditorIdle();\n    body = new DOMParser()\n      .parseFromString(editorRef.current!.getContent(), 'text/html')\n      .body;\n    expect(\n      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(\n        (listItem) => listItem.style.marginLeft === '2em',\n      ),\n    ).toBe(true);"""
+          new_browser_indent = """    await act(async () => {\n      selectSecondListItem();\n    });\n    await act(async () => {\n      await userEvent.click(buttonByLabel('Increase indent'));\n    });\n    await waitForEditorIdle();\n    body = new DOMParser()\n      .parseFromString(editorRef.current!.getContent(), 'text/html')\n      .body;\n    expect(body.querySelector(':scope > ul > li:first-child > ul > li > p')?.textContent).toBe('Two');\n    expect(body.querySelectorAll(':scope > ul > li')).toHaveLength(1);\n\n    await act(async () => {\n      selectSecondListItem();\n    });\n    await act(async () => {\n      await userEvent.click(buttonByLabel('Decrease indent'));\n    });\n    await waitForEditorIdle();\n    body = new DOMParser()\n      .parseFromString(editorRef.current!.getContent(), 'text/html')\n      .body;\n    expect(body.querySelectorAll(':scope > ul > li')).toHaveLength(2);\n    expect(body.querySelectorAll(':scope > ul > li > ul')).toHaveLength(0);"""
+          b = replace_once(b, old_browser_indent, new_browser_indent, 'browser semantic list indent assertions')
+          browser.write_text(b, encoding='utf-8')
+          PY
+
+          rm .github/workflows/a4-wave2-core-integration-fix.yml
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(a4): close CORE Wave-2 integration regressions"
+          git push origin HEAD:codex/a4-editor-wave2-g2-integration-20260912
