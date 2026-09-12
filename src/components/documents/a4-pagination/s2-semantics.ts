@@ -742,7 +742,10 @@ function segmentListBySelection(
       keepIdentity: segmentIndex === 0,
       start,
     });
-    segment.items.forEach((item) => replacement.appendChild(item));
+    segment.items.forEach((item) => {
+      if (type === 'unordered') item.removeAttribute('value');
+      replacement.appendChild(item);
+    });
     return replacement;
   });
   list.replaceWith(...replacements);
