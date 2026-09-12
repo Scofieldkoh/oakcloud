@@ -2090,6 +2090,20 @@ describe('A4PageEditor', () => {
         selection.addRange(range);
       });
     };
+    const selectSecondListItem = () => {
+      const page = screen.getByTestId('a4-page-content-1');
+      const paragraphs = Array.from(page.querySelectorAll('li > p'));
+      expect(paragraphs).toHaveLength(2);
+      act(() => {
+        surface.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(paragraphs[1].firstChild!, 0);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    };
     const waitIdle = () =>
       waitFor(() => {
         expect(surface).toHaveAttribute('aria-busy', 'false');
@@ -2142,25 +2156,24 @@ describe('A4PageEditor', () => {
     fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
     await waitIdle();
 
-    selectBoth();
+    selectSecondListItem();
     fireEvent.click(screen.getByRole('button', { name: 'Increase indent' }));
     await waitIdle();
     body = parse(editorRef.current!.getContent());
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ol > li')).every(
-        (listItem) => listItem.style.marginLeft === '2em',
-      ),
-    ).toBe(true);
+    expect(body.querySelector(':scope > ol > li:first-child > ol > li > p')?.textContent).toBe('Two');
+    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(1);
     fireEvent.keyDown(surface, { key: 'z', ctrlKey: true });
     await waitFor(() => {
-      expect(
-        Array.from(parse(editorRef.current!.getContent()).querySelectorAll('li')).every(
-          (listItem) => listItem.style.marginLeft === '',
-        ),
-      ).toBe(true);
+      expect(parse(editorRef.current!.getContent()).querySelectorAll(':scope > ol > li')).toHaveLength(2);
     });
     fireEvent.keyDown(surface, { key: 'y', ctrlKey: true });
     await waitIdle();
+    expect(parse(editorRef.current!.getContent()).querySelector(':scope > ol > li:first-child > ol > li > p')?.textContent).toBe('Two');
+
+    selectSecondListItem();
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease indent' }));
+    await waitIdle();
+    expect(parse(editorRef.current!.getContent()).querySelectorAll(':scope > ol > li')).toHaveLength(2);
 
     selectBoth();
     fireEvent.click(screen.getByRole('button', { name: 'Numbered list' }));
