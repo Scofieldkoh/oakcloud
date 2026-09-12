@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
-import { TemplateEditorWorkflowPage } from '@/components/documents/template-editor/template-editor-workflow-page';
+import { TemplateEditorWorkflowPage } from './template-editor-workflow-page';
 
 export default function TemplateEditorPage() {
   return (
