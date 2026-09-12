@@ -8,6 +8,7 @@ import type { TenantAwareParams } from '@/lib/types';
 import type { SaveDraftInput } from '@/lib/validations/generated-document';
 
 const EDITOR_SESSION_KEY = 'editorSessionKey';
+const WRITER_INSTANCE_ID = 'writerInstanceId';
 const LOCAL_SNAPSHOT_REVISION = 'localSnapshotRevision';
 const BASE_CANONICAL_REVISION = 'baseCanonicalRevision';
 
@@ -20,6 +21,7 @@ export interface EditorDraftSnapshot {
   savedAt: Date;
   baseRevision: number;
   sessionKey: string | null;
+  writerInstanceId: string | null;
   localSnapshotRevision: number | null;
   ignoredAsStale?: boolean;
 }
@@ -61,6 +63,7 @@ function toSnapshot(
     savedAt: draft.createdAt,
     baseRevision: metadataRevision(metadata, BASE_CANONICAL_REVISION) ?? fallbackRevision,
     sessionKey: metadataString(metadata, EDITOR_SESSION_KEY),
+    writerInstanceId: metadataString(metadata, WRITER_INSTANCE_ID),
     localSnapshotRevision: metadataRevision(metadata, LOCAL_SNAPSHOT_REVISION),
   };
 }
@@ -122,7 +125,9 @@ export async function getLatestEditorDraft(
  * Serializes draft replacement for one generated document and rejects stale
  * canonical bases. C1 local revisions are stored only as client
  * acknowledgement metadata; the W1 GeneratedDocument revision remains the
- * sole server concurrency authority.
+ * sole server concurrency authority. A writer instance scopes local revision
+ * ordering so a fresh reload (whose C1 revision restarts) can supersede an old
+ * tab/session draft without being misclassified as stale.
  */
 export async function saveSequencedEditorDraft(
   data: SaveDraftInput,
@@ -159,6 +164,7 @@ export async function saveSequencedEditorDraft(
 
     const incomingMetadata = metadataRecord(data.metadata);
     const incomingSessionKey = metadataString(incomingMetadata, EDITOR_SESSION_KEY);
+    const incomingWriterInstanceId = metadataString(incomingMetadata, WRITER_INSTANCE_ID);
     const incomingLocalRevision = metadataRevision(incomingMetadata, LOCAL_SNAPSHOT_REVISION);
 
     const existing = await tx.documentDraft.findFirst({
@@ -173,12 +179,20 @@ export async function saveSequencedEditorDraft(
       },
     });
 
-    if (existing && incomingSessionKey && incomingLocalRevision !== null) {
+    if (
+      existing
+      && incomingSessionKey
+      && incomingWriterInstanceId
+      && incomingLocalRevision !== null
+    ) {
       const existingMetadata = metadataRecord(existing.metadata);
       const existingSessionKey = metadataString(existingMetadata, EDITOR_SESSION_KEY);
+      const existingWriterInstanceId = metadataString(existingMetadata, WRITER_INSTANCE_ID);
       const existingLocalRevision = metadataRevision(existingMetadata, LOCAL_SNAPSHOT_REVISION);
+      const sameWriter = existingSessionKey === incomingSessionKey
+        && existingWriterInstanceId === incomingWriterInstanceId;
       if (
-        existingSessionKey === incomingSessionKey
+        sameWriter
         && existingLocalRevision !== null
         && existingLocalRevision > incomingLocalRevision
       ) {
@@ -188,7 +202,7 @@ export async function saveSequencedEditorDraft(
         };
       }
       if (
-        existingSessionKey === incomingSessionKey
+        sameWriter
         && existingLocalRevision === incomingLocalRevision
         && existing.content === data.content
         && JSON.stringify(existing.contentJson ?? null) === JSON.stringify(data.contentJson ?? null)
@@ -234,6 +248,7 @@ export async function deleteEditorDrafts(
     userId: string;
     tenantId: string;
     sessionKey?: string;
+    writerInstanceId?: string;
     throughLocalSnapshotRevision?: number;
   },
 ): Promise<number> {
@@ -247,6 +262,7 @@ export async function deleteEditorDrafts(
 
     if (
       input.sessionKey === undefined
+      || input.writerInstanceId === undefined
       || input.throughLocalSnapshotRevision === undefined
     ) {
       const result = await tx.documentDraft.deleteMany({
@@ -264,9 +280,11 @@ export async function deleteEditorDrafts(
 
     const metadata = metadataRecord(draft.metadata);
     const draftSessionKey = metadataString(metadata, EDITOR_SESSION_KEY);
+    const draftWriterInstanceId = metadataString(metadata, WRITER_INSTANCE_ID);
     const draftLocalRevision = metadataRevision(metadata, LOCAL_SNAPSHOT_REVISION);
     if (
       draftSessionKey !== input.sessionKey
+      || draftWriterInstanceId !== input.writerInstanceId
       || draftLocalRevision === null
       || draftLocalRevision > input.throughLocalSnapshotRevision
     ) {
