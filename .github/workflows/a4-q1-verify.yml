@@ -1,0 +1,118 @@
+name: A4 Q1 VERIFY temporary
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a4-q1-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  CANDIDATE_SHA: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+
+jobs:
+  browser-baseline:
+    name: Q1 real Chromium baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out frozen candidate
+        uses: actions/checkout@v6
+        with:
+          ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove frozen candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install real Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser and Chromium versions
+        run: |
+          node --version
+          npx playwright --version
+          npx playwright install --dry-run chromium
+      - name: Execute Q1-relevant native A4 browser suites
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-input-sequences.browser.test.tsx
+          __tests__/browser/a4-boundary-semantics.browser.test.tsx
+          __tests__/browser/a4-page-editor-controls.browser.test.tsx
+          __tests__/browser/a4-page-editor.browser.test.tsx
+          --reporter=verbose
+
+  postgres-baseline:
+    name: Q1 disposable PostgreSQL baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: a4_q1
+          POSTGRES_PASSWORD: a4-q1-test-only
+          POSTGRES_DB: a4_q1_test
+        ports:
+          - 55440:5432
+        options: >-
+          --health-cmd "pg_isready -U a4_q1 -d a4_q1_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://a4_q1:a4-q1-test-only@127.0.0.1:55440/a4_q1_test
+      TEST_DATABASE_URL: postgresql://a4_q1:a4-q1-test-only@127.0.0.1:55440/a4_q1_test
+    steps:
+      - name: Check out frozen candidate
+        uses: actions/checkout@v6
+        with:
+          ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove frozen candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: Apply migrations to disposable Q1 database
+        run: npx prisma migrate deploy
+      - name: Execute existing W1 persistence baseline
+        run: npx vitest run __tests__/integration/a4-editor-workflow-w1.postgres.test.ts --maxWorkers=1 --reporter=verbose
+
+  output-baseline:
+    name: Q1 HTML/PDF contract baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out frozen candidate
+        uses: actions/checkout@v6
+        with:
+          ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove frozen candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Execute HTML/PDF contract baseline
+        run: npx vitest run tests/document-output/document-template-editor-output.test.ts --reporter=verbose
