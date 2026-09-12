@@ -45,22 +45,21 @@ describe('shared A4 print styles', () => {
     expect(twentyMillimeter).toContain('bottom: calc(-1 * 20mm / 2)');
   });
 
-  it('renders ordered lists with flush CSS counter markers', () => {
+  it('renders ordered lists with flush markers from the native list-item counter', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
     expect(css).toContain('ul, ol { margin: 0 0 0.5em 0; padding-left: 0; }');
     expect(css).toContain('ul { list-style: none; }');
+    expect(css).toContain('ol { list-style: none; }');
+    expect(css).not.toContain('counter-reset: item var(--list-start, 0)');
+    expect(css).not.toContain('ol > li { counter-increment: item; }');
     expect(css).toContain(
-      'ol {\n      list-style: none;\n      counter-reset: item var(--list-start, 0);\n    }',
-    );
-    expect(css).toContain('ol > li { counter-increment: item; }');
-    expect(css).toContain(
-      'ol > li::before {\n      content: counter(item) ". ";\n      position: absolute;\n      left: 0;\n      top: 0;\n    }',
+      'ol > li::before {\n      content: counter(list-item) ". ";\n      position: absolute;\n      left: 0;\n      top: 0;\n    }',
     );
     expect(css).toContain(
       'ol.list-bold-numbers > li::before { font-weight: 700; }',
     );
     expect(css).toContain(
-      'ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }',
+      'ol.list-alpha > li::before { content: counter(list-item, lower-alpha) ") "; }',
     );
     expect(css).toContain('ul > li, ol > li {');
     expect(css).toContain('position: relative;');
@@ -71,22 +70,22 @@ describe('shared A4 print styles', () => {
     expect(css).toContain('position: absolute;');
   });
 
-  it('keeps nested lists flush with parent content and 1.1 counter numbering', () => {
+  it('keeps nested lists flush with parent content and hierarchical list-item numbering', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
     expect(css).toContain('ol ol, ol ul, ul ol, ul ul { padding-left: 0; }');
-    expect(css).toContain('ol ol { counter-reset: item; }');
+    expect(css).not.toContain('ol ol { counter-reset: item; }');
     expect(css).toContain(
-      'ol ol > li::before { content: counters(item, ".") " "; }',
+      'ol ol > li::before { content: counters(list-item, ".") " "; }',
     );
   });
 
   it('continues list counters on paginated continuation fragments', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
     expect(css).toContain(
-      'ol[style*="--flow-list-start"] {\n      counter-reset: item var(--flow-list-start, 0);\n    }',
+      'ol[style*="--flow-list-start"] {\n      counter-reset: list-item var(--flow-list-start, 0);\n    }',
     );
     expect(css).toContain(
-      'ol > li[data-flow-continuation-item] { counter-increment: none; }',
+      'ol > li[data-flow-continuation-item] { counter-increment: list-item 0; }',
     );
     expect(css).toContain(
       'ol > li[data-flow-continuation-item]::before { content: none; }',
