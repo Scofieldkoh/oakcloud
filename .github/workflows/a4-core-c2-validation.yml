@@ -99,6 +99,8 @@ jobs:
 
       - name: Generate Prisma client
         shell: bash
+        env:
+          DATABASE_URL: postgresql://localhost:5432/oakcloud
         run: |
           set -o pipefail
           npm run db:generate 2>&1 | tee /tmp/c2-evidence/db-generate.log
