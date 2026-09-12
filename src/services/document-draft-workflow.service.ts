@@ -74,7 +74,7 @@ async function lockDocumentDraftLane(
   documentId: string,
 ): Promise<void> {
   const key = `${tenantId}:${documentId}`;
-  await tx.$queryRaw(Prisma.sql`
+  await tx.$executeRaw(Prisma.sql`
     SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))
   `);
 }
