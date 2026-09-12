@@ -441,3 +441,27 @@ Unresolved owners:
 Q1 — G2 boundary and reader compatibility: **WITHHELD**. No Q1 run is released while the candidate is blocked.
 
 Stop boundary remains in force: no C3, S3, F3, W3, D1 deployment or version bump.
+
+## Corrected Wave-2 CORE closeout / Q1 release — 2026-09-12
+
+Status: **G2 CORE CANDIDATE FROZEN — Q1 RELEASED**
+
+The earlier blocked Wave-2 closeout above is retained as chronology. CORE corrected all five blocking findings without changing the frozen v1 contract and froze production candidate `6e8d4426c0d57043d85a830045dee465f6ff9a47` for independent VERIFY/Q1.
+
+Corrections are limited to the integrated Wave-2 boundary: S2 indent/mixed-format/unlist semantics, CORE semantic list-toggle and caret-viewport integration, and W1/W2 source-contract proof alignment. No new database schema/migration, deployment, version bump, C3, S3, F3 or W3 work was introduced.
+
+Immutable corrected-candidate evidence against exact `6e8d4426c0d57043d85a830045dee465f6ff9a47`:
+
+- corrected S2 focused lane: **107/107 passed**;
+- corrected CORE focused lane: **100/100 passed**;
+- real Chromium integrated matrix: **66/66 passed**;
+- disposable PostgreSQL 16 after **71 migrations**: **31/31 passed** (W1 CAS/batch 13/13; W2 drafts 5/5; W2/W1 compatibility 13/13);
+- complete required component/static lanes: **PASS** including full pagination, FIELDS F1/F2, W1, W2 non-PostgreSQL, pagination-bundle freshness, lint, typecheck, `npx tsc -b`, and production build;
+- lint completed with no errors; repository warnings remain non-blocking and did not change the gate outcome;
+- production build required a larger validation-runner Node heap and synthetic required environment values only; the application candidate was unchanged.
+
+The first immutable PostgreSQL lane used `postgres` instead of the W2 suite-required synthetic username `assistant_test`; its guard failure was corrected in the harness. The exact candidate then passed the complete 31-test PostgreSQL matrix on the required disposable database. No production data was used.
+
+CORE does **not** mark G2 passed from its own matrix and does **not** execute Q1. Production edits are frozen at `6e8d4426c0d57043d85a830045dee465f6ff9a47`. `VERIFY-Q1-20260912-01` is released in `coordination/dispatch.md` for independent evidence. Any production-code change requires a new immutable candidate and fresh Q1 dispatch.
+
+Stop boundary remains: no C3, S3, F3, W3, D1 deployment or version bump.

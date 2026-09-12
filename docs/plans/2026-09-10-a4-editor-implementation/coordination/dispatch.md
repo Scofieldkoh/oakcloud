@@ -10,7 +10,7 @@ G0 freeze-record commit: `475e54ea4ea4a7218bc0565fb337298c04190afa`
 Deployment: not authorized
 Stage 1: **G1 FROZEN/PASSED**
 Stage-1 corrected integration / Stage-2 common baseline: `ad7285ace280f0b4002f119f923a8e2166b9475f`
-Wave 2: **DISPATCHED — IMPLEMENTATION NOT STARTED**
+Wave 2: **INTEGRATED — CORRECTED G2 CANDIDATE FROZEN FOR Q1**
 
 ## Shared resource reservations — Stage 1
 
@@ -294,3 +294,59 @@ Blocking corrections and exact ownership are recorded in `coordination/g2.md` an
 **Q1 — G2 boundary and reader compatibility: WITHHELD.**
 
 Do not start C3, S3, F3, W3, deployment or version bump.
+
+## VERIFY-Q1-20260912-01 — released after corrected CORE matrix
+
+Dispatch ID: `VERIFY-Q1-20260912-01`
+
+Role / gate: **VERIFY / Q1 — G2 boundary and reader compatibility**
+
+State: **DISPATCHED — independent verification not started**
+
+Immutable production candidate: `6e8d4426c0d57043d85a830045dee465f6ff9a47`
+
+Integration PR: **#47** on `codex/a4-editor-wave2-g2-integration-20260912`; PR remains open/unmerged. VERIFY must check out the exact candidate SHA above, not a later coordination-only PR head.
+
+Contract: **v1 frozen at G0 — unchanged**.
+
+Prerequisites: **G1 FROZEN/PASSED**; C2, S2, required W1/W2 adapters and the integrated Wave-2 candidate have passed the CORE-side immutable matrix. Production writers/production code are frozen at the candidate SHA while Q1 runs.
+
+### VERIFY ownership and exact lease
+
+VERIFY may write only independent acceptance evidence under these leases:
+
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/verify.md`;
+- new Q1-only acceptance tests, if needed, at `__tests__/browser/a4-q1-acceptance.browser.test.tsx`;
+- new Q1-only persistence acceptance tests, if needed, at `__tests__/integration/a4-editor-q1-persistence.test.ts`;
+- new Q1-only output acceptance tests, if needed, at `tests/document-output/a4-editor-q1-output.test.ts`.
+
+VERIFY must not edit production code, frozen contracts, shared configuration, existing owner tests, migrations, package metadata, version files, or Git history. A production defect returns to CORE/owner for correction and a new candidate.
+
+### Reserved verification resources
+
+- Node: **24 (`>=24 <25`)**, executable verified in the report;
+- primary browser: real Chromium using an isolated context; use `.tmp/a4-q1-verify` for Q1-only browser/cache artifacts;
+- server port if a live synthetic app fixture is required: **3423**, released from WORKFLOW after Wave-2 handoff;
+- database: only a disposable synthetic test database/schema; no production or existing business data;
+- output fixtures: synthetic only; actual generated PDF/HTML may be produced for verification, but nothing may be sent, signed, finalized, filed, or deployed.
+
+### Required Q1 evidence
+
+Run the complete Q1 acceptance in `verification-and-rollout.md`, including Q1-01 through Q1-12. In particular:
+
+- native Enter -> immediate typing, Backspace/Delete, formatting, paste, field insertion, break removal and cross-page selections with no synthetic inter-action waits;
+- hard/soft break behavior, nested/long lists, numbering/restart/continuation, Tab/Shift+Tab, toolbar indent, list exit and undo;
+- document A/B history isolation and save/reopen agreement across canonical/ref/parent/server/reopened content;
+- `ol start=5`, alpha/bold/nested numbering through save/reopen and **actual PDF**, asserting every original item/text once and correct list continuation;
+- two-item batch identity/layout preservation and required old/new reader compatibility;
+- native blank-page add/delete proof without weakening or skipping assertions;
+- the critical deterministic fixture for at least **20 consecutive native sequences** per supported primary browser configuration, plus fault/delayed variants;
+- preserve failure artifacts/revisions; one unexplained content-loss event keeps G2 open.
+
+VERIFY must confirm actual HEAD/build equals `6e8d4426c0d57043d85a830045dee465f6ff9a47` before recording results. If the candidate changes, stop and request a fresh immutable assignment.
+
+### Completion boundary
+
+Write the independent gate report to `coordination/verify.md` with environment, exact commands/counts, native sequence results, PDF/HTML evidence, compatibility/readers, blocked/untested checks, defects and technical promotion decision.
+
+Stop after the Q1 report. Q1 verification is not deployment permission. Do not start Q2, D1, C3, S3, F3, W3, deployment or a version bump.
