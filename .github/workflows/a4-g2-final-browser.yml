@@ -1,0 +1,32 @@
+name: A4 G2 final browser
+on:
+  push:
+    branches: [codex/a4-editor-g2-prevalidation-20260912]
+    paths: [.github/workflows/a4-g2-final-browser.yml]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 07523b105bfd7e32e7916408c7a7e825815d4424
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run real Chromium matrix
+        shell: bash
+        run: |
+          set -u
+          echo "CANDIDATE_SHA=$(git rev-parse HEAD)"
+          failed=0
+          run_suite() { label="$1"; shift; echo "===== SUITE ${label} ====="; set +e; "$@"; code=$?; set -e; echo "===== RESULT ${label} exit=${code} ====="; if [ "$code" -ne 0 ]; then failed=1; fi; }
+          run_suite S2_BOUNDARY_BROWSER npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-boundary-semantics.browser.test.tsx --reporter=verbose
+          run_suite INTEGRATED_BROWSER npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-input-sequences.browser.test.tsx __tests__/browser/a4-boundary-semantics.browser.test.tsx __tests__/browser/a4-page-editor.browser.test.tsx --reporter=verbose
+          exit "$failed"
