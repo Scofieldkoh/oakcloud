@@ -333,6 +333,248 @@ function selectionSpansPages(root: HTMLElement): boolean {
   );
 }
 
+function repairCollapsedNativeTextSelection(
+  result: DocumentTransactionResult,
+  sourceSelection: FlowSelectionBookmark,
+  insertedText: string,
+): DocumentTransactionResult {
+  if (
+    !result.changed ||
+    !sourceSelection.collapsed ||
+    insertedText.length === 0 ||
+    !result.selection ||
+    !result.selection.collapsed
+  ) {
+    return result;
+  }
+
+  const source = sourceSelection.anchor;
+  const returned = result.selection.anchor;
+  const didNotAdvance =
+    returned.flowId === source.flowId && returned.offset === source.offset;
+  if (!didNotAdvance) return result;
+
+  const container = document.createElement('div');
+  container.innerHTML = result.html;
+  const fragments = Array.from(
+    container.querySelectorAll<HTMLElement>('[data-flow-id]'),
+  ).filter((element) => element.dataset.flowId === source.flowId);
+  const availableTextLength = fragments.reduce(
+    (length, fragment) => length + (fragment.textContent?.length ?? 0),
+    0,
+  );
+  const nextOffset = source.offset + insertedText.length;
+  if (availableTextLength < nextOffset) return result;
+
+  const point = { flowId: source.flowId, offset: nextOffset };
+  return {
+    ...result,
+    selection: { anchor: point, focus: point, collapsed: true },
+  };
+}
+
+function localClientPoint(clientX: number, clientY: number) {
+  const transforms: Array<{
+    left: number;
+    top: number;
+    scaleX: number;
+    scaleY: number;
+  }> = [];
+  let currentWindow: Window = window;
+
+  while (currentWindow.frameElement) {
+    const frameElement = currentWindow.frameElement as HTMLElement;
+    const frameRect = frameElement.getBoundingClientRect();
+    transforms.push({
+      left: frameRect.left,
+      top: frameRect.top,
+      scaleX: frameElement.clientWidth
+        ? frameRect.width / frameElement.clientWidth
+        : 1,
+      scaleY: frameElement.clientHeight
+        ? frameRect.height / frameElement.clientHeight
+        : 1,
+    });
+    currentWindow = currentWindow.parent;
+  }
+
+  let x = clientX;
+  let y = clientY;
+  for (let index = transforms.length - 1; index >= 0; index -= 1) {
+    const transform = transforms[index];
+    x = (x - transform.left) / transform.scaleX;
+    y = (y - transform.top) / transform.scaleY;
+  }
+  return { x, y };
+}
+
+function refineCrossPageNativeSelectionFocus(
+  root: HTMLElement,
+  clientX: number,
+  clientY: number,
+): void {
+  const selection = window.getSelection();
+  if (
+    !selection ||
+    selection.isCollapsed ||
+    !selectionSpansPages(root) ||
+    selection.focusNode?.nodeType !== Node.TEXT_NODE
+  ) {
+    return;
+  }
+
+  const focusNode = selection.focusNode as Text;
+  const anchorPage = pageContentContainingNode(root, selection.anchorNode);
+  const focusPage = pageContentContainingNode(root, focusNode);
+  if (!anchorPage || !focusPage) return;
+  const pageContents = Array.from(
+    root.querySelectorAll<HTMLElement>(
+      '[data-testid^="a4-page-content-"][data-page-id]',
+    ),
+  );
+  const anchorIndex = pageContents.indexOf(anchorPage);
+  const focusIndex = pageContents.indexOf(focusPage);
+  if (anchorIndex < 0 || focusIndex < 0 || anchorIndex === focusIndex) return;
+
+  const forward = focusIndex > anchorIndex;
+  const offset = selection.focusOffset;
+  const candidateOffset = forward ? offset + 1 : offset - 1;
+  if (candidateOffset < 0 || candidateOffset > focusNode.length) return;
+
+  const glyphRange = root.ownerDocument.createRange();
+  if (forward) {
+    if (offset >= focusNode.length) return;
+    glyphRange.setStart(focusNode, offset);
+    glyphRange.setEnd(focusNode, offset + 1);
+  } else {
+    if (offset <= 0) return;
+    glyphRange.setStart(focusNode, offset - 1);
+    glyphRange.setEnd(focusNode, offset);
+  }
+  const rect = glyphRange.getBoundingClientRect();
+  if (!rect.width && !rect.height) return;
+
+  const local = localClientPoint(clientX, clientY);
+  const candidates = [
+    { x: clientX, y: clientY },
+    local,
+  ];
+  const reachesCandidateGlyph = candidates.some(
+    (point) =>
+      point.y >= rect.top - 3 &&
+      point.y <= rect.bottom + 3 &&
+      point.x >= rect.left - 3 &&
+      point.x <= rect.right + 3,
+  );
+  if (!reachesCandidateGlyph) return;
+
+  selection.setBaseAndExtent(
+    selection.anchorNode!,
+    selection.anchorOffset,
+    focusNode,
+    candidateOffset,
+  );
+}
+
+interface NativeSelectionDragPoint {
+  node: Node;
+  offset: number;
+  pageContent: HTMLElement;
+}
+
+function pointerBoundaryDistance(
+  node: Text,
+  offset: number,
+  x: number,
+  y: number,
+): number {
+  const range = node.ownerDocument.createRange();
+  let rect: DOMRect;
+  let boundaryX: number;
+  if (offset <= 0) {
+    range.setStart(node, 0);
+    range.setEnd(node, Math.min(1, node.length));
+    rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
+    boundaryX = rect.left;
+  } else {
+    range.setStart(node, 0);
+    range.setEnd(node, Math.min(offset, node.length));
+    const rects = range.getClientRects();
+    rect = rects[rects.length - 1] ?? range.getBoundingClientRect();
+    boundaryX = rect.right;
+  }
+  if (!rect.width && !rect.height) return Number.POSITIVE_INFINITY;
+  const dx = boundaryX - x;
+  const dy = rect.top + rect.height / 2 - y;
+  return dx * dx + dy * dy * 16;
+}
+
+function nativeSelectionPointForPointerTarget(
+  root: HTMLElement,
+  target: EventTarget | null,
+  clientX: number,
+  clientY: number,
+): NativeSelectionDragPoint | null {
+  const targetNode = target instanceof Node ? target : null;
+  const targetElement =
+    targetNode?.nodeType === Node.ELEMENT_NODE
+      ? (targetNode as Element)
+      : targetNode?.parentElement ?? null;
+  const flowElement =
+    targetElement?.closest<HTMLElement>('[data-flow-id]') ?? targetElement;
+  if (!flowElement || !root.contains(flowElement)) return null;
+  const pageContent = pageContentContainingNode(root, flowElement);
+  if (!pageContent) return null;
+
+  const ownerDocument = root.ownerDocument as Document & {
+    caretPositionFromPoint?: (
+      x: number,
+      y: number,
+    ) => { offsetNode: Node; offset: number } | null;
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+  };
+  const local = localClientPoint(clientX, clientY);
+  const coordinateCandidates = [
+    { x: clientX, y: clientY },
+    local,
+  ];
+  let best: NativeSelectionDragPoint | null = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (const point of coordinateCandidates) {
+    const caretPosition = ownerDocument.caretPositionFromPoint?.(
+      point.x,
+      point.y,
+    ) ?? null;
+    const caretRange = caretPosition
+      ? null
+      : ownerDocument.caretRangeFromPoint?.(point.x, point.y) ?? null;
+    const node = caretPosition?.offsetNode ?? caretRange?.startContainer ?? null;
+    const offset = caretPosition?.offset ?? caretRange?.startOffset ?? 0;
+    if (
+      !node ||
+      node.nodeType !== Node.TEXT_NODE ||
+      !flowElement.contains(node)
+    ) {
+      continue;
+    }
+    const textNode = node as Text;
+    const boundedOffset = Math.min(Math.max(offset, 0), textNode.length);
+    const score = pointerBoundaryDistance(
+      textNode,
+      boundedOffset,
+      point.x,
+      point.y,
+    );
+    if (score < bestScore) {
+      bestScore = score;
+      best = { node: textNode, offset: boundedOffset, pageContent };
+    }
+  }
+
+  return best;
+}
+
 function selectionStartPoint(
   bookmark: FlowSelectionBookmark,
 ): FlowSelectionBookmark['anchor'] {
@@ -823,6 +1065,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     renderedPagesRef.current = pages;
     const reflowFrameRef = useRef<number | null>(null);
     const reflowGenerationRef = useRef(0);
+    const pairedCanonicalInputRef = useRef<{
+      inputType: string;
+      data: string | null;
+      revision: number;
+    } | null>(null);
+    const nativeSelectionDragStartRef = useRef<NativeSelectionDragPoint | null>(
+      null,
+    );
     const [isReflowing, setIsReflowing] = useState(false);
     const pendingScrollTopRef = useRef<number | null>(null);
     const pendingViewPageIdRef = useRef<string | null>(null);
@@ -926,7 +1176,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               oversized: page.oversized,
             })),
           );
-        pagesRef.current = sourcePages;
+        if (!session) {
+          pagesRef.current = sourcePages;
+        }
         reflowGenerationRef.current += 1;
         const generation = reflowGenerationRef.current;
 
@@ -1463,12 +1715,23 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       (event: ReactPointerEvent<HTMLDivElement>) => {
         if (effectivePreviewMode || tableResizeRef.current) return;
 
+        const surface = documentSurfaceRef.current ?? event.currentTarget;
         const target = getTableColumnResizeTarget(
-          documentSurfaceRef.current ?? event.currentTarget,
+          surface,
           event.target,
           event.clientX,
         );
-        if (!target) return;
+        if (!target) {
+          nativeSelectionDragStartRef.current =
+            nativeSelectionPointForPointerTarget(
+              surface,
+              event.target,
+              event.clientX,
+              event.clientY,
+            );
+          return;
+        }
+        nativeSelectionDragStartRef.current = null;
 
         event.preventDefault();
         event.stopPropagation();
@@ -1564,6 +1827,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       (
         result: DocumentTransactionResult,
         intentKind: CanonicalEditorIntentKind = 'structural',
+        publishParsedProjection = false,
       ) => {
         const session = canonicalSessionRef.current;
         if (effectivePreviewMode || !result.changed || !session) return;
@@ -1589,8 +1853,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (committed.status !== 'applied') return;
         pendingFlowSelectionRef.current = committed.selection;
         const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
-        pagesRef.current = nextPages;
-        setPages(nextPages);
+        if (publishParsedProjection) {
+          pagesRef.current = nextPages;
+          setPages(nextPages);
+        }
         scheduleReflow(nextPages, false);
       },
       [effectivePreviewMode, parsePages, preserveScrollPosition, scheduleReflow],
@@ -1634,7 +1900,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handleAddPage = useCallback(() => {
       if (effectivePreviewMode) return;
-      commitUserTransaction(appendHardPage(canonicalPagesHtml(pagesRef.current)));
+      commitUserTransaction(
+        appendHardPage(canonicalPagesHtml(pagesRef.current)),
+        'structural',
+        true,
+      );
     }, [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode]);
 
     const handleDeletePage = useCallback(
@@ -1650,6 +1920,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             canonicalPagesHtml(currentPages),
             sectionIndex,
           ),
+          'structural',
+          true,
         );
       },
       [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
@@ -1900,9 +2172,28 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
         if (session) {
-          const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
-          pagesRef.current = nextPages;
-          setPages(nextPages);
+          const paired = pairedCanonicalInputRef.current;
+          pairedCanonicalInputRef.current = null;
+          if (
+            paired &&
+            paired.inputType === inputEvent.inputType &&
+            paired.data === inputEvent.data &&
+            paired.revision === session.getState().revision
+          ) {
+            return;
+          }
+          const renderedSelection = captureFlowSelection(event.currentTarget);
+          if (renderedSelection) {
+            const target = session.resolveNativeInputTarget({
+              renderedRevision:
+                session.getRenderedProjection().documentRevision,
+              origin: 'pointer',
+              renderedSelection,
+            });
+            if (target.ok && target.selection) {
+              pendingFlowSelectionRef.current = target.selection;
+            }
+          }
           setSurfaceRepairGeneration((generation) => generation + 1);
           return;
         }
@@ -2170,6 +2461,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const handleBeforeInput = useCallback(
       (inputEvent: InputEvent) => {
         if (effectivePreviewMode) return;
+        pairedCanonicalInputRef.current = null;
         const surface = documentSurfaceRef.current;
         const session = canonicalSessionRef.current;
         if (!surface || !session) return;
@@ -2243,42 +2535,95 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 replacement.textContent = data;
                 return replaceLogicalSelection(canonical, bookmark, replacement.innerHTML);
               })();
-          if (result.changed && result.selection) {
-            pendingTypingPointRef.current = result.selection.anchor;
+          const repaired = repairCollapsedNativeTextSelection(
+            result,
+            bookmark,
+            data,
+          );
+          if (repaired.changed && repaired.selection) {
+            pendingTypingPointRef.current = repaired.selection.anchor;
           }
-          commitUserTransaction(result, 'insert-text');
+          const hardSectionTopologyChanged =
+            !bookmark.collapsed &&
+            splitHardSections(canonical).length !==
+              splitHardSections(repaired.html).length;
+          const beforeRevision = session.getState().revision;
+          commitUserTransaction(
+            repaired,
+            'insert-text',
+            hardSectionTopologyChanged,
+          );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
           return;
         }
         if (inputType === 'insertParagraph') {
           inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
           commitUserTransaction(
             insertParagraphAtSelection(canonical, bookmark),
             'insert-paragraph',
           );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
           return;
         }
         if (inputType === 'insertLineBreak') {
           inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
           commitUserTransaction(
             replaceLogicalSelection(canonical, bookmark, '<br>'),
             'insert-line-break',
           );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
           return;
         }
         if (inputType === 'deleteContentBackward') {
           inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
           commitUserTransaction(
             applyLogicalDelete(canonical, bookmark, 'backward'),
             'delete-backward',
           );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
           return;
         }
         if (inputType === 'deleteContentForward') {
           inputEvent.preventDefault();
+          const beforeRevision = session.getState().revision;
           commitUserTransaction(
             applyLogicalDelete(canonical, bookmark, 'forward'),
             'delete-forward',
           );
+          if (session.getState().revision !== beforeRevision) {
+            pairedCanonicalInputRef.current = {
+              inputType,
+              data: inputEvent.data,
+              revision: session.getState().revision,
+            };
+          }
           return;
         }
         if (inputType === 'insertFromPaste' || inputType === 'deleteByCut') {
@@ -3064,6 +3409,50 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             onPointerLeave={clearTableResizeHover}
             onMouseUp={(event) => {
               if (!effectivePreviewMode) {
+                const surface = event.currentTarget;
+                const selection = window.getSelection();
+                const nativeSpansPages = Boolean(
+                  selection &&
+                    !selection.isCollapsed &&
+                    selectionSpansPages(surface),
+                );
+                if (nativeSpansPages) {
+                  refineCrossPageNativeSelectionFocus(
+                    surface,
+                    event.clientX,
+                    event.clientY,
+                  );
+                } else {
+                  const dragStart = nativeSelectionDragStartRef.current;
+                  const dragEnd = dragStart
+                    ? nativeSelectionPointForPointerTarget(
+                        surface,
+                        event.target,
+                        event.clientX,
+                        event.clientY,
+                      )
+                    : null;
+                  if (
+                    selection &&
+                    dragStart &&
+                    dragEnd &&
+                    dragStart.pageContent !== dragEnd.pageContent
+                  ) {
+                    selection.removeAllRanges();
+                    selection.setBaseAndExtent(
+                      dragStart.node,
+                      dragStart.offset,
+                      dragEnd.node,
+                      dragEnd.offset,
+                    );
+                    refineCrossPageNativeSelectionFocus(
+                      surface,
+                      event.clientX,
+                      event.clientY,
+                    );
+                  }
+                }
+                nativeSelectionDragStartRef.current = null;
                 syncActivePage(event.target);
                 syncFormattingFromSelection();
               }
