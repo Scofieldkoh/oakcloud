@@ -1,53 +1,13 @@
 name: A4 CORE C2 validation
 
 on:
-  push:
-    branches:
-      - codex/a4-editor-core-c2-20260912
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  c2:
+  paused:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
     steps:
-      - name: Check out C2 branch
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Set up Node 24
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-      - name: Apply deterministic CORE C2 patch
-        run: python3 .github/scripts/a4-core-c2-apply.py
-      - name: Review patch integrity
-        run: |
-          git diff --check
-          git diff --stat
-      - name: Install dependencies
-        run: npm ci
-      - name: Run CORE C2 and C1 component regressions
-        id: components
-        shell: bash
-        run: |
-          mkdir -p /tmp/c2-evidence
-          set -o pipefail
-          npx vitest run \
-            __tests__/components/a4-editor-c2-bridge.test.ts \
-            __tests__/components/a4-editor-session.test.ts \
-            __tests__/components/a4-page-editor.test.tsx \
-            __tests__/components/a4-editor-toolbar.test.tsx \
-            __tests__/components/a4-page-editor-ssr.test.tsx \
-            --reporter=verbose 2>&1 | tee /tmp/c2-evidence/components.log
-      - name: Upload component evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: c2-component-evidence-${{ github.run_id }}
-          path: /tmp/c2-evidence
-          if-no-files-found: warn
-          retention-days: 7
+      - run: echo "C2 validation is paused while the deterministic correction is staged."
