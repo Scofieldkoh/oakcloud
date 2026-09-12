@@ -28,10 +28,12 @@ export type AggregateGeneratedDocument = {
 
 export type GeneratedDocumentAvgAggregateOutputType = {
   templateVersion: number | null
+  revision: number | null
 }
 
 export type GeneratedDocumentSumAggregateOutputType = {
   templateVersion: number | null
+  revision: number | null
 }
 
 export type GeneratedDocumentMinAggregateOutputType = {
@@ -39,6 +41,7 @@ export type GeneratedDocumentMinAggregateOutputType = {
   tenantId: string | null
   templateId: string | null
   templateVersion: number | null
+  revision: number | null
   sharePointRelativeFolderPathSnapshot: string | null
   companyId: string | null
   title: string | null
@@ -60,6 +63,7 @@ export type GeneratedDocumentMaxAggregateOutputType = {
   tenantId: string | null
   templateId: string | null
   templateVersion: number | null
+  revision: number | null
   sharePointRelativeFolderPathSnapshot: string | null
   companyId: string | null
   title: string | null
@@ -81,6 +85,7 @@ export type GeneratedDocumentCountAggregateOutputType = {
   tenantId: number
   templateId: number
   templateVersion: number
+  revision: number
   sharePointRelativeFolderPathSnapshot: number
   companyId: number
   title: number
@@ -104,10 +109,12 @@ export type GeneratedDocumentCountAggregateOutputType = {
 
 export type GeneratedDocumentAvgAggregateInputType = {
   templateVersion?: true
+  revision?: true
 }
 
 export type GeneratedDocumentSumAggregateInputType = {
   templateVersion?: true
+  revision?: true
 }
 
 export type GeneratedDocumentMinAggregateInputType = {
@@ -115,6 +122,7 @@ export type GeneratedDocumentMinAggregateInputType = {
   tenantId?: true
   templateId?: true
   templateVersion?: true
+  revision?: true
   sharePointRelativeFolderPathSnapshot?: true
   companyId?: true
   title?: true
@@ -136,6 +144,7 @@ export type GeneratedDocumentMaxAggregateInputType = {
   tenantId?: true
   templateId?: true
   templateVersion?: true
+  revision?: true
   sharePointRelativeFolderPathSnapshot?: true
   companyId?: true
   title?: true
@@ -157,6 +166,7 @@ export type GeneratedDocumentCountAggregateInputType = {
   tenantId?: true
   templateId?: true
   templateVersion?: true
+  revision?: true
   sharePointRelativeFolderPathSnapshot?: true
   companyId?: true
   title?: true
@@ -268,6 +278,7 @@ export type GeneratedDocumentGroupByOutputType = {
   tenantId: string
   templateId: string | null
   templateVersion: number | null
+  revision: number
   sharePointRelativeFolderPathSnapshot: string | null
   companyId: string | null
   title: string
@@ -315,6 +326,7 @@ export type GeneratedDocumentWhereInput = {
   tenantId?: Prisma.StringFilter<"GeneratedDocument"> | string
   templateId?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   templateVersion?: Prisma.IntNullableFilter<"GeneratedDocument"> | number | null
+  revision?: Prisma.IntFilter<"GeneratedDocument"> | number
   sharePointRelativeFolderPathSnapshot?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   companyId?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   title?: Prisma.StringFilter<"GeneratedDocument"> | string
@@ -352,6 +364,7 @@ export type GeneratedDocumentOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   templateId?: Prisma.SortOrderInput | Prisma.SortOrder
   templateVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  revision?: Prisma.SortOrder
   sharePointRelativeFolderPathSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -392,6 +405,7 @@ export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
   tenantId?: Prisma.StringFilter<"GeneratedDocument"> | string
   templateId?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   templateVersion?: Prisma.IntNullableFilter<"GeneratedDocument"> | number | null
+  revision?: Prisma.IntFilter<"GeneratedDocument"> | number
   sharePointRelativeFolderPathSnapshot?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   companyId?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   title?: Prisma.StringFilter<"GeneratedDocument"> | string
@@ -429,6 +443,7 @@ export type GeneratedDocumentOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   templateId?: Prisma.SortOrderInput | Prisma.SortOrder
   templateVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  revision?: Prisma.SortOrder
   sharePointRelativeFolderPathSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -461,6 +476,7 @@ export type GeneratedDocumentScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"GeneratedDocument"> | string
   templateId?: Prisma.StringNullableWithAggregatesFilter<"GeneratedDocument"> | string | null
   templateVersion?: Prisma.IntNullableWithAggregatesFilter<"GeneratedDocument"> | number | null
+  revision?: Prisma.IntWithAggregatesFilter<"GeneratedDocument"> | number
   sharePointRelativeFolderPathSnapshot?: Prisma.StringNullableWithAggregatesFilter<"GeneratedDocument"> | string | null
   companyId?: Prisma.StringNullableWithAggregatesFilter<"GeneratedDocument"> | string | null
   title?: Prisma.StringWithAggregatesFilter<"GeneratedDocument"> | string
@@ -483,6 +499,7 @@ export type GeneratedDocumentScalarWhereWithAggregatesInput = {
 export type GeneratedDocumentCreateInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -517,6 +534,7 @@ export type GeneratedDocumentUncheckedCreateInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -547,6 +565,7 @@ export type GeneratedDocumentUncheckedCreateInput = {
 export type GeneratedDocumentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -581,6 +600,7 @@ export type GeneratedDocumentUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -613,6 +633,7 @@ export type GeneratedDocumentCreateManyInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -635,6 +656,7 @@ export type GeneratedDocumentCreateManyInput = {
 export type GeneratedDocumentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -656,6 +678,7 @@ export type GeneratedDocumentUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -690,6 +713,7 @@ export type GeneratedDocumentCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
   templateVersion?: Prisma.SortOrder
+  revision?: Prisma.SortOrder
   sharePointRelativeFolderPathSnapshot?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -711,6 +735,7 @@ export type GeneratedDocumentCountOrderByAggregateInput = {
 
 export type GeneratedDocumentAvgOrderByAggregateInput = {
   templateVersion?: Prisma.SortOrder
+  revision?: Prisma.SortOrder
 }
 
 export type GeneratedDocumentMaxOrderByAggregateInput = {
@@ -718,6 +743,7 @@ export type GeneratedDocumentMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
   templateVersion?: Prisma.SortOrder
+  revision?: Prisma.SortOrder
   sharePointRelativeFolderPathSnapshot?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -739,6 +765,7 @@ export type GeneratedDocumentMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
   templateVersion?: Prisma.SortOrder
+  revision?: Prisma.SortOrder
   sharePointRelativeFolderPathSnapshot?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -757,6 +784,7 @@ export type GeneratedDocumentMinOrderByAggregateInput = {
 
 export type GeneratedDocumentSumOrderByAggregateInput = {
   templateVersion?: Prisma.SortOrder
+  revision?: Prisma.SortOrder
 }
 
 export type GeneratedDocumentScalarRelationFilter = {
@@ -1104,6 +1132,7 @@ export type GeneratedDocumentUpdateOneWithoutTaskEsigningPreparationsNestedInput
 export type GeneratedDocumentCreateWithoutTenantInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1136,6 +1165,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
   id?: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1197,6 +1227,7 @@ export type GeneratedDocumentScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"GeneratedDocument"> | string
   templateId?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   templateVersion?: Prisma.IntNullableFilter<"GeneratedDocument"> | number | null
+  revision?: Prisma.IntFilter<"GeneratedDocument"> | number
   sharePointRelativeFolderPathSnapshot?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   companyId?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   title?: Prisma.StringFilter<"GeneratedDocument"> | string
@@ -1219,6 +1250,7 @@ export type GeneratedDocumentScalarWhereInput = {
 export type GeneratedDocumentCreateWithoutCreatedByInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1252,6 +1284,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1291,6 +1324,7 @@ export type GeneratedDocumentCreateManyCreatedByInputEnvelope = {
 export type GeneratedDocumentCreateWithoutFinalizedByInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1324,6 +1358,7 @@ export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1395,6 +1430,7 @@ export type GeneratedDocumentUpdateManyWithWhereWithoutFinalizedByInput = {
 export type GeneratedDocumentCreateWithoutCompanyInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1428,6 +1464,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1483,6 +1520,7 @@ export type GeneratedDocumentUpdateManyWithWhereWithoutCompanyInput = {
 export type GeneratedDocumentCreateWithoutTemplateInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1515,6 +1553,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
   id?: string
   tenantId: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1571,6 +1610,7 @@ export type GeneratedDocumentUpdateManyWithWhereWithoutTemplateInput = {
 export type GeneratedDocumentCreateWithoutBatchItemInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1604,6 +1644,7 @@ export type GeneratedDocumentUncheckedCreateWithoutBatchItemInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1649,6 +1690,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutBatchItemInput = {
 export type GeneratedDocumentUpdateWithoutBatchItemInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1682,6 +1724,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutBatchItemInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1711,6 +1754,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutBatchItemInput = {
 export type GeneratedDocumentCreateWithoutSectionsInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1744,6 +1788,7 @@ export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1789,6 +1834,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutSectionsInput = {
 export type GeneratedDocumentUpdateWithoutSectionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1822,6 +1868,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1851,6 +1898,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
 export type GeneratedDocumentCreateWithoutCommentsInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -1884,6 +1932,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -1929,6 +1978,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutCommentsInput = {
 export type GeneratedDocumentUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1962,6 +2012,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1991,6 +2042,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
 export type GeneratedDocumentCreateWithoutDraftsInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -2024,6 +2076,7 @@ export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2069,6 +2122,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutDraftsInput = {
 export type GeneratedDocumentUpdateWithoutDraftsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2102,6 +2156,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2131,6 +2186,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
 export type GeneratedDocumentCreateWithoutServiceAgreementInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -2164,6 +2220,7 @@ export type GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2209,6 +2266,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutServiceAgreementInput = 
 export type GeneratedDocumentUpdateWithoutServiceAgreementInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2242,6 +2300,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2271,6 +2330,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput = {
 export type GeneratedDocumentCreateWithoutEsigningEnvelopeDocumentsInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -2304,6 +2364,7 @@ export type GeneratedDocumentUncheckedCreateWithoutEsigningEnvelopeDocumentsInpu
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2349,6 +2410,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutEsigningEnvelopeDocument
 export type GeneratedDocumentUpdateWithoutEsigningEnvelopeDocumentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2382,6 +2444,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutEsigningEnvelopeDocumentsInpu
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2411,6 +2474,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutEsigningEnvelopeDocumentsInpu
 export type GeneratedDocumentCreateWithoutTaskStageOutcomesInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -2444,6 +2508,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTaskStageOutcomesInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2489,6 +2554,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutTaskStageOutcomesInput =
 export type GeneratedDocumentUpdateWithoutTaskStageOutcomesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2522,6 +2588,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskStageOutcomesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2551,6 +2618,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskStageOutcomesInput = {
 export type GeneratedDocumentCreateWithoutTaskEsigningPreparationsInput = {
   id?: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -2584,6 +2652,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTaskEsigningPreparationsInput
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2629,6 +2698,7 @@ export type GeneratedDocumentUpdateToOneWithWhereWithoutTaskEsigningPreparations
 export type GeneratedDocumentUpdateWithoutTaskEsigningPreparationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2662,6 +2732,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskEsigningPreparationsInput
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2692,6 +2763,7 @@ export type GeneratedDocumentCreateManyTenantInput = {
   id?: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2714,6 +2786,7 @@ export type GeneratedDocumentCreateManyTenantInput = {
 export type GeneratedDocumentUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2746,6 +2819,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2777,6 +2851,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2801,6 +2876,7 @@ export type GeneratedDocumentCreateManyCreatedByInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2824,6 +2900,7 @@ export type GeneratedDocumentCreateManyFinalizedByInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -2845,6 +2922,7 @@ export type GeneratedDocumentCreateManyFinalizedByInput = {
 export type GeneratedDocumentUpdateWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2878,6 +2956,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2909,6 +2988,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCreatedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2930,6 +3010,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCreatedByInput = {
 export type GeneratedDocumentUpdateWithoutFinalizedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2963,6 +3044,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2994,6 +3076,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3017,6 +3100,7 @@ export type GeneratedDocumentCreateManyCompanyInput = {
   tenantId: string
   templateId?: string | null
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   title: string
   content: string
@@ -3038,6 +3122,7 @@ export type GeneratedDocumentCreateManyCompanyInput = {
 export type GeneratedDocumentUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3071,6 +3156,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3102,6 +3188,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCompanyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3124,6 +3211,7 @@ export type GeneratedDocumentCreateManyTemplateInput = {
   id?: string
   tenantId: string
   templateVersion?: number | null
+  revision?: number
   sharePointRelativeFolderPathSnapshot?: string | null
   companyId?: string | null
   title: string
@@ -3146,6 +3234,7 @@ export type GeneratedDocumentCreateManyTemplateInput = {
 export type GeneratedDocumentUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3178,6 +3267,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3209,6 +3299,7 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  revision?: Prisma.IntFieldUpdateOperationsInput | number
   sharePointRelativeFolderPathSnapshot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3309,6 +3400,7 @@ export type GeneratedDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   tenantId?: boolean
   templateId?: boolean
   templateVersion?: boolean
+  revision?: boolean
   sharePointRelativeFolderPathSnapshot?: boolean
   companyId?: boolean
   title?: boolean
@@ -3347,6 +3439,7 @@ export type GeneratedDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.T
   tenantId?: boolean
   templateId?: boolean
   templateVersion?: boolean
+  revision?: boolean
   sharePointRelativeFolderPathSnapshot?: boolean
   companyId?: boolean
   title?: boolean
@@ -3376,6 +3469,7 @@ export type GeneratedDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   tenantId?: boolean
   templateId?: boolean
   templateVersion?: boolean
+  revision?: boolean
   sharePointRelativeFolderPathSnapshot?: boolean
   companyId?: boolean
   title?: boolean
@@ -3405,6 +3499,7 @@ export type GeneratedDocumentSelectScalar = {
   tenantId?: boolean
   templateId?: boolean
   templateVersion?: boolean
+  revision?: boolean
   sharePointRelativeFolderPathSnapshot?: boolean
   companyId?: boolean
   title?: boolean
@@ -3424,7 +3519,7 @@ export type GeneratedDocumentSelectScalar = {
   deletedAt?: boolean
 }
 
-export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "sharePointRelativeFolderPathSnapshot" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "signedAt" | "useLetterhead" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
+export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "revision" | "sharePointRelativeFolderPathSnapshot" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "signedAt" | "useLetterhead" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
 export type GeneratedDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comments?: boolean | Prisma.GeneratedDocument$commentsArgs<ExtArgs>
   drafts?: boolean | Prisma.GeneratedDocument$draftsArgs<ExtArgs>
@@ -3478,6 +3573,7 @@ export type $GeneratedDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     tenantId: string
     templateId: string | null
     templateVersion: number | null
+    revision: number
     sharePointRelativeFolderPathSnapshot: string | null
     companyId: string | null
     title: string
@@ -3935,6 +4031,7 @@ export interface GeneratedDocumentFieldRefs {
   readonly tenantId: Prisma.FieldRef<"GeneratedDocument", 'String'>
   readonly templateId: Prisma.FieldRef<"GeneratedDocument", 'String'>
   readonly templateVersion: Prisma.FieldRef<"GeneratedDocument", 'Int'>
+  readonly revision: Prisma.FieldRef<"GeneratedDocument", 'Int'>
   readonly sharePointRelativeFolderPathSnapshot: Prisma.FieldRef<"GeneratedDocument", 'String'>
   readonly companyId: Prisma.FieldRef<"GeneratedDocument", 'String'>
   readonly title: Prisma.FieldRef<"GeneratedDocument", 'String'>

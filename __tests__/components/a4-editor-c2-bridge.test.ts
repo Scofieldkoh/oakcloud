@@ -161,6 +161,21 @@ describe('A4Editor C2 semantic bridge', () => {
     if (converted.status !== 'applied') return;
     expect(converted.transaction.html).toContain('<ul');
 
+
+  const activeList = paragraphBookmark(
+    '<ol><li><p>Only</p></li></ol>',
+    0,
+    'ol > li > p[data-flow-id]',
+  );
+  const cleared = runA4EditorSemanticCommand(activeList.html, activeList.bookmark, {
+    type: 'clear-list-type',
+  });
+  expect(cleared.status).toBe('applied');
+  if (cleared.status !== 'applied') return;
+  const clearedRoot = document.createElement('div');
+  clearedRoot.innerHTML = cleared.transaction.html;
+  expect(clearedRoot.querySelector('ol, ul')).toBeNull();
+  expect(clearedRoot.querySelector('p')?.textContent).toBe('Only');
     const restart = paragraphBookmark(
       '<ol><li><p>A</p></li><li><p>B</p></li></ol>',
       0,

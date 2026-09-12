@@ -21,6 +21,7 @@ import {
 } from './a4-pagination/structural-position';
 import {
   applyA4S2Indent,
+  clearA4S2ListType,
   continueA4S2OrderedList,
   getA4S2ContinueNumberingCapability,
   getA4S2ListIndentCapability,
@@ -53,6 +54,7 @@ export type A4EditorSemanticCommand =
       metrics: A4S2IndentMetrics;
     }
   | { type: 'set-list-type'; listType: A4S2ListType }
+  | { type: 'clear-list-type' }
   | { type: 'restart-numbering'; start: number }
   | { type: 'continue-numbering' };
 
@@ -172,6 +174,8 @@ structural.canonical,
 structural.selection,
 command.listType,
         );
+      case 'clear-list-type':
+        return clearA4S2ListType(structural.canonical, structural.selection);
       case 'restart-numbering':
         return restartA4S2OrderedListAtSelection(
 structural.canonical,

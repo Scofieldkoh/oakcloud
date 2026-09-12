@@ -852,6 +852,62 @@ export function setA4S2ListType(
   return finishPreservingSelection(canonical, resolved.root, selection);
 }
 
+function clearListSegmentsBySelection(
+  list: HTMLElement,
+  selectedItems: Set<HTMLElement>,
+): boolean {
+  const sourceType = listTypeOf(list);
+  if (!sourceType) return false;
+  const segments = buildListSegments(list, selectedItems);
+  if (!segments.some((segment) => segment.selected)) return false;
+
+  const replacements: Node[] = [];
+  let retainedListIdentity = false;
+  for (const segment of segments) {
+    if (!segment.selected) {
+      const replacement = cloneListShell(list, sourceType, {
+        keepIdentity: !retainedListIdentity,
+        start: segment.startValue,
+      });
+      retainedListIdentity = true;
+      segment.items.forEach((item) => replacement.appendChild(item));
+      replacements.push(replacement);
+      continue;
+    }
+
+    segment.items.forEach((item) => {
+      if (!item.hasChildNodes()) {
+        const paragraph = document.createElement('p');
+        paragraph.innerHTML = '<br>';
+        replacements.push(paragraph);
+        return;
+      }
+      Array.from(item.childNodes).forEach((child) => replacements.push(child));
+    });
+  }
+  list.replaceWith(...replacements);
+  return true;
+}
+
+/** Remove list semantics from selected whole items without moving the operation into CORE. */
+export function clearA4S2ListType(
+  canonical: CanonicalEditorDocument,
+  selection: A4Selection,
+): A4TransactionResult {
+  const resolved = resolveSelection(canonical, selection);
+  if (isTransactionResult(resolved)) return resolved;
+  const byList = selectedItemsByList(resolved.root, resolved.range);
+  if (!byList.size) {
+    return { status: 'unchanged', reason: 'The selection is not in a list item.' };
+  }
+  let changed = false;
+  byList.forEach((items, list) => {
+    changed = clearListSegmentsBySelection(list, new Set(items)) || changed;
+  });
+  if (!changed) return { status: 'unchanged', reason: 'No selected list semantics changed.' };
+  return finishPreservingSelection(canonical, resolved.root, selection);
+}
+
 function selectedStartItem(root: HTMLElement, range: Range): HTMLElement | null {
   const element = elementForPoint({ node: range.startContainer, offset: range.startOffset });
   return element?.closest<HTMLElement>('li') ?? null;
@@ -1013,7 +1069,8 @@ export function normalizeA4S2IndentValue(
     : unit === 'rem'
       ? next * remPx
       : next;
-  if (direction === 'indent' && nextPx > maxIndentPx) {
+  const minimumUsableContentPx = 2 * emPx;
+  if (direction === 'indent' && nextPx + minimumUsableContentPx > maxIndentPx) {
     return { changed: false, value: current || null, code: 'indent-limit-reached' };
   }
   const valueText = next === 0 ? null : `${formatCssNumber(next)}${unit}`;
@@ -1110,18 +1167,42 @@ function markAt(node: Node, root: HTMLElement, mark: 'bold' | 'italic' | 'underl
     (inlineProperty(node, root, 'text-decoration') ?? '').includes('underline');
 }
 
+function compareDomBoundaryPoints(
+  leftNode: Node,
+  leftOffset: number,
+  rightNode: Node,
+  rightOffset: number,
+): number {
+  const left = document.createRange();
+  left.setStart(leftNode, leftOffset);
+  left.collapse(true);
+  const right = document.createRange();
+  right.setStart(rightNode, rightOffset);
+  right.collapse(true);
+  return left.compareBoundaryPoints(Range.START_TO_START, right);
+}
+
 function textNodesInRange(root: HTMLElement, range: Range): Node[] {
   if (range.collapsed) return [range.startContainer];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes: Node[] = [];
   let current: Node | null;
   while ((current = walker.nextNode())) {
-    if (!(current.textContent ?? '').length) continue;
-    const nodeRange = document.createRange();
-    nodeRange.selectNodeContents(current);
-    const startsBeforeNodeEnd = range.compareBoundaryPoints(Range.START_TO_END, nodeRange) < 0;
-    const endsAfterNodeStart = range.compareBoundaryPoints(Range.END_TO_START, nodeRange) > 0;
-    if (startsBeforeNodeEnd && endsAfterNodeStart) nodes.push(current);
+    const length = current.textContent?.length ?? 0;
+    if (!length) continue;
+    const selectionStartsBeforeNodeEnds = compareDomBoundaryPoints(
+      range.startContainer,
+      range.startOffset,
+      current,
+      length,
+    ) < 0;
+    const nodeStartsBeforeSelectionEnds = compareDomBoundaryPoints(
+      current,
+      0,
+      range.endContainer,
+      range.endOffset,
+    ) < 0;
+    if (selectionStartsBeforeNodeEnds && nodeStartsBeforeSelectionEnds) nodes.push(current);
   }
   return nodes.length ? nodes : [range.startContainer];
 }

@@ -1415,19 +1415,31 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         selectionPageIndex !== viewPageIndex;
       const movedPageIdentity =
         Boolean(selectionPageId && viewPageId && selectionPageId !== viewPageId);
-      if ((movedPhysicalPage || movedPageIdentity) && pageElement) {
-        const scrollContainer = scrollContainerRef.current;
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const pageRect = pageElement.getBoundingClientRect();
-        const pageOffset = pageRect.top - containerRect.top;
-        const targetScrollTop = Math.max(
-          scrollTop + 1,
-          scrollContainer.scrollTop + pageOffset,
-        );
-        scrollContainer.scrollTop = targetScrollTop;
-      } else {
-        scrollContainerRef.current.scrollTop = scrollTop;
-      }
+      const scrollContainer = scrollContainerRef.current;
+    const targetFlowElement =
+      flowId && root
+        ? (Array.from(root.querySelectorAll<HTMLElement>('[data-flow-id]'))
+            .find((element) => element.dataset.flowId === flowId) ?? null)
+        : null;
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const targetRect = targetFlowElement?.getBoundingClientRect() ?? null;
+    const targetBelowViewport = Boolean(targetRect && targetRect.bottom > containerRect.bottom);
+    const targetAboveViewport = Boolean(targetRect && targetRect.top < containerRect.top);
+    if (targetRect && (targetBelowViewport || targetAboveViewport)) {
+      const delta = targetBelowViewport
+        ? targetRect.bottom - containerRect.bottom
+        : targetRect.top - containerRect.top;
+      scrollContainer.scrollTop = Math.max(0, scrollTop + delta);
+    } else if ((movedPhysicalPage || movedPageIdentity) && pageElement) {
+      const pageRect = pageElement.getBoundingClientRect();
+      const pageOffset = pageRect.top - containerRect.top;
+      scrollContainer.scrollTop = Math.max(
+        scrollTop + 1,
+        scrollContainer.scrollTop + pageOffset,
+      );
+    } else {
+      scrollContainer.scrollTop = scrollTop;
+    }
       pendingScrollTopRef.current = null;
       pendingViewPageIdRef.current = null;
       pendingViewPageIndexRef.current = null;
@@ -3204,8 +3216,21 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         if (command.type === 'list') {
           const listType = command.value;
-          if (listType === 'none') return;
-          applyCurrentSemanticCommand({ type: 'set-list-type', listType });
+          const surface = documentSurfaceRef.current;
+          if (!surface) return;
+          if (!selectionIsWithinPageContents(surface) && !restoreSelection()) return;
+          const bookmark = captureFlowSelection(surface);
+          if (!bookmark) return;
+          const currentList = readLogicalFormatState(
+            surface,
+            bookmark,
+            effectiveLayout,
+          ).list;
+          if (listType === 'none' || currentList === listType) {
+            applyCurrentSemanticCommand({ type: 'clear-list-type' });
+          } else {
+            applyCurrentSemanticCommand({ type: 'set-list-type', listType });
+          }
           return;
         }
 
@@ -3247,7 +3272,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         } as const;
         handleCommand(commandMap[command.type]);
       },
-      [applyCurrentS2NestToggle, applyCurrentSemanticCommand, applySelectionTransaction, handleCommand],
+      [
+        applyCurrentS2NestToggle,
+        applyCurrentSemanticCommand,
+        applySelectionTransaction,
+        effectiveLayout,
+        handleCommand,
+        restoreSelection,
+      ],
     );
 
     const handlePrint = useCallback(() => {
