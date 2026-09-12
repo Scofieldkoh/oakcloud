@@ -1,0 +1,28 @@
+name: A4 CORE C2 handoff
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-core-c2-20260912
+
+permissions:
+  contents: write
+
+jobs:
+  handoff:
+    if: ${{ !contains(github.event.head_commit.message, '[c2-handoff]') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Apply handoff
+        run: python3 .github/scripts/a4-core-c2-handoff.py
+      - name: Commit handoff
+        run: |
+          git config user.name "ChatGPT"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/a4-core-c2-handoff.yml .github/scripts/a4-core-c2-handoff.py
+          git add docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md
+          git commit -m "docs(a4-editor): record C2 CORE handoff [c2-handoff]"
+          git push origin HEAD:codex/a4-editor-core-c2-20260912
