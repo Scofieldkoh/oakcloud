@@ -3,13 +3,15 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { renderTemplateForGeneration } from '@/services/document-generator.service';
 import {
   renderUnsavedTemplateSnapshot,
 } from '@/services/document-template-preview.service';
 import type { PlaceholderContext } from '@/lib/placeholder-resolver';
 
 const renderTestSchema = z.object({
-  content: z.string().min(1),
+  templateId: z.string().uuid().optional(),
+  content: z.string().min(1).optional(),
   contentJson: z.unknown().optional(),
   placeholders: z.array(z.record(z.unknown())).optional(),
   compositionType: z.enum(['STANDARD', 'SERVICE_AGREEMENT']).optional(),
@@ -20,6 +22,8 @@ const renderTestSchema = z.object({
   contactIds: z.array(z.string().uuid()).optional(),
   customData: z.record(z.unknown()).optional(),
   context: z.record(z.unknown()).optional(),
+}).refine((value) => Boolean(value.content || value.templateId), {
+  message: 'Template content or templateId is required',
 });
 
 export async function POST(request: NextRequest) {
@@ -30,10 +34,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = renderTestSchema.parse(body);
     const tenantId = requireSessionWorkspaceId(session);
+    const generatedBy = `${session.firstName} ${session.lastName}`.trim();
+    const context = data.context as PlaceholderContext | undefined;
+
+    if (!data.content && data.templateId) {
+      const rendered = await renderTemplateForGeneration({
+        templateId: data.templateId,
+        tenantId,
+        companyId: data.companyId,
+        contactIds: data.contactIds,
+        customData: data.customData,
+        contextOverride: context,
+        generatedBy,
+        mode: 'test',
+      });
+      return NextResponse.json({
+        preview: {
+          template: rendered.template,
+          content: rendered.content,
+          contentHtml: rendered.contentHtml,
+          sections: rendered.sections,
+          unresolvedPlaceholders: rendered.missingPlaceholders,
+          missingPartials: rendered.missingPartials,
+          blockingErrors: rendered.blockingErrors,
+          contextSummary: rendered.contextSummary,
+        },
+      });
+    }
+
     const result = await renderUnsavedTemplateSnapshot({
       tenantId,
-      generatedBy: `${session.firstName} ${session.lastName}`.trim(),
-      content: data.content,
+      generatedBy,
+      content: data.content!,
       contentJson: data.contentJson,
       placeholders: data.placeholders,
       compositionType: data.compositionType,
@@ -43,7 +75,7 @@ export async function POST(request: NextRequest) {
       companyId: data.companyId,
       contactIds: data.contactIds,
       customData: data.customData,
-      context: data.context as PlaceholderContext | undefined,
+      context,
     });
     const rendered = result.rendered;
 
