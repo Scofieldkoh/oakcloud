@@ -18,6 +18,16 @@ def replace_between(text: str, start: str, end: str, replacement: str, label: st
     return text[:start_index] + replacement + text[end_index:]
 
 
+def replace_after(text: str, anchor: str, old: str, new: str, label: str) -> str:
+    anchor_index = text.find(anchor)
+    if anchor_index < 0:
+        raise SystemExit(f"{label}: anchor not found")
+    old_index = text.find(old, anchor_index)
+    if old_index < 0:
+        raise SystemExit(f"{label}: replacement target not found after anchor")
+    return text[:old_index] + new + text[old_index + len(old):]
+
+
 editor_path = Path('src/components/documents/a4-page-editor.tsx')
 editor = editor_path.read_text(encoding='utf-8')
 
@@ -40,13 +50,7 @@ editor = replace_once(
 page_start_helper = '''function projectedPageStartBookmark(
   pageContent: HTMLElement,
 ): FlowSelectionBookmark | null {
-  const candidates = Array.from(
-    pageContent.querySelectorAll<HTMLElement>('[data-flow-id]'),
-  ).filter((element) => !element.matches('[data-a4-break="page"]'));
-  const element =
-    candidates.find((candidate) => !candidate.querySelector('[data-flow-id]')) ??
-    candidates[0] ??
-    null;
+  const element = pageContent.querySelector<HTMLElement>('[data-flow-id]');
   const flowId = element?.dataset.flowId;
   if (!flowId) return null;
   const point = { flowId, offset: 0 };
@@ -88,6 +92,13 @@ editor = replace_once(
     old_target,
     new_target,
     'hard page start semantic selection',
+)
+editor = replace_after(
+    editor,
+    '          const semanticBookmark = page?.hardBreakBefore',
+    "{ type: 'delete', direction: 'backward' },",
+    "{\n                type: 'delete',\n                direction: 'backward',\n                affinity: page?.hardBreakBefore ? 'before' : undefined,\n              },",
+    'hard page start delete affinity',
 )
 
 editor_path.write_text(editor, encoding='utf-8')
