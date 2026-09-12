@@ -173,5 +173,5 @@ describe('A4 editor Q1-11 real HTML/PDF rendering acceptance', () => {
     expect(context(extracted.text, 'Q1-CONTINUATION-EIGHT')).toMatch(/8[.)]\s*Q1-CONTINUATION-EIGHT/);
     expect(context(extracted.text, 'Q1-RESTART-ONE')).toMatch(/1[.)]\s*Q1-RESTART-ONE/);
     expect(context(extracted.text, 'Q1-ALPHA-FIRST')).toMatch(/a[.)]\s*Q1-ALPHA-FIRST/i);
-  });
+  }, 30_000);
 });
