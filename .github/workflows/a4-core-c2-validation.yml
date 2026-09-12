@@ -1,134 +1,13 @@
 name: A4 CORE C2 validation
 
 on:
-  push:
-    branches:
-      - codex/a4-editor-core-c2-20260912
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  c2:
-    if: ${{ !contains(github.event.head_commit.message, '[c2-applied]') }}
+  paused:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
     steps:
-      - name: Check out C2 branch
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node 24
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Verify Node 24 runtime
-        run: node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1)"
-
-      - name: Apply deterministic CORE C2 patch
-        run: python3 .github/scripts/a4-core-c2-apply.py
-
-      - name: Apply C2 compatibility correction
-        run: python3 .github/scripts/a4-core-c2-correct.py
-
-      - name: Review patch integrity
-        run: |
-          git diff --check
-          git diff --stat
-          git diff -- src/components/documents/a4-page-editor.tsx __tests__/components/a4-page-editor.test.tsx __tests__/browser/a4-input-sequences.browser.test.tsx
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Run CORE C2 and C1 component regressions
-        shell: bash
-        run: |
-          mkdir -p /tmp/c2-evidence
-          set -o pipefail
-          npx vitest run \
-            __tests__/components/a4-editor-c2-bridge.test.ts \
-            __tests__/components/a4-editor-session.test.ts \
-            __tests__/components/a4-page-editor.test.tsx \
-            __tests__/components/a4-editor-toolbar.test.tsx \
-            __tests__/components/a4-page-editor-ssr.test.tsx \
-            --reporter=verbose 2>&1 | tee /tmp/c2-evidence/components.log
-
-      - name: Run S1 structural regression suite
-        shell: bash
-        run: |
-          set -o pipefail
-          npx vitest run __tests__/components/a4-pagination --reporter=verbose 2>&1 | tee /tmp/c2-evidence/semantics.log
-
-      - name: Run F1 parser and content-policy smoke
-        shell: bash
-        run: |
-          set -o pipefail
-          npx vitest run \
-            __tests__/lib/template-field-contract.test.ts \
-            __tests__/lib/template-field-f0-compatibility.test.ts \
-            __tests__/lib/template-field-f1.test.ts \
-            __tests__/lib/a4-content-policy-f1.test.ts \
-            --reporter=verbose 2>&1 | tee /tmp/c2-evidence/fields.log
-
-      - name: Run exact CORE G1 and C2 Chromium validation
-        shell: bash
-        run: |
-          set -o pipefail
-          npx vitest run --config vitest.browser.config.ts \
-            __tests__/browser/a4-input-sequences.browser.test.tsx \
-            __tests__/browser/a4-boundary-semantics.browser.test.tsx \
-            __tests__/browser/a4-page-editor.browser.test.tsx \
-            --reporter=verbose 2>&1 | tee /tmp/c2-evidence/browser.log
-
-      - name: Lint changed CORE files
-        shell: bash
-        run: |
-          set -o pipefail
-          npx eslint \
-            src/components/documents/a4-page-editor.tsx \
-            src/components/documents/a4-editor-semantic-bridge.ts \
-            __tests__/components/a4-editor-c2-bridge.test.ts \
-            __tests__/components/a4-page-editor.test.tsx \
-            __tests__/browser/a4-input-sequences.browser.test.tsx 2>&1 | tee /tmp/c2-evidence/lint.log
-
-      - name: Generate Prisma client
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run db:generate 2>&1 | tee /tmp/c2-evidence/db-generate.log
-
-      - name: Typecheck
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run typecheck 2>&1 | tee /tmp/c2-evidence/typecheck.log
-
-      - name: TypeScript project build check
-        shell: bash
-        run: |
-          set -o pipefail
-          npx tsc -b 2>&1 | tee /tmp/c2-evidence/tsc-build.log
-
-      - name: Upload C2 validation evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: c2-validation-evidence-${{ github.run_id }}
-          path: /tmp/c2-evidence
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Commit validated C2 CORE source
-        run: |
-          git config user.name "ChatGPT"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/a4-core-c2-validation.yml .github/scripts/a4-core-c2-apply.py .github/scripts/a4-core-c2-correct.py
-          git add src/components/documents/a4-page-editor.tsx __tests__/components/a4-page-editor.test.tsx __tests__/browser/a4-input-sequences.browser.test.tsx
-          git commit -m "feat(a4-editor): wire C2 semantic editing [c2-applied]"
-          git push origin HEAD:codex/a4-editor-core-c2-20260912
+      - run: echo "C2 validation paused during semantic boundary correction."
