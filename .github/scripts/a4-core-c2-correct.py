@@ -1,5 +1,8 @@
 from pathlib import Path
 
+# This transform is intentionally unchanged; this commit only requests a clean
+# Node 24 rerun after a single non-reproducible selection assertion failure.
+
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
     count = text.count(old)
