@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  CANDIDATE_SHA: b8d5f80f8a5dc592aa6ce73fa6ff7f3009e21001
+  CANDIDATE_SHA: ab161167db00dbe54bc9549076d63550b77f4ec5
   VERIFY_SHA: 0e56b7fe95a914488bd9246e5bb008c8557c65df
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: Check out exact corrective candidate
         uses: actions/checkout@v6
         with:
-          ref: b8d5f80f8a5dc592aa6ce73fa6ff7f3009e21001
+          ref: ab161167db00dbe54bc9549076d63550b77f4ec5
           path: candidate
           fetch-depth: 1
           persist-credentials: false
