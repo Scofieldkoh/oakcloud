@@ -4,14 +4,16 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import {
-  renderTemplateForGeneration,
-  type RenderTemplateForGenerationResult,
-} from '@/services/document-generator.service';
+  renderUnsavedTemplateSnapshot,
+} from '@/services/document-template-preview.service';
 import type { PlaceholderContext } from '@/lib/placeholder-resolver';
 
 const renderTestSchema = z.object({
-  templateId: z.string().uuid().optional(),
-  content: z.string().optional(),
+  content: z.string().min(1),
+  contentJson: z.unknown().optional(),
+  placeholders: z.array(z.record(z.unknown())).optional(),
+  compositionType: z.enum(['STANDARD', 'SERVICE_AGREEMENT']).optional(),
+  templateScopeId: z.string().optional(),
   name: z.string().optional(),
   category: z.string().optional(),
   companyId: z.string().uuid().optional().nullable(),
@@ -19,21 +21,6 @@ const renderTestSchema = z.object({
   customData: z.record(z.unknown()).optional(),
   context: z.record(z.unknown()).optional(),
 });
-
-function toResponse(rendered: RenderTemplateForGenerationResult) {
-  return {
-    preview: {
-      template: rendered.template,
-      content: rendered.content,
-      contentHtml: rendered.contentHtml,
-      sections: rendered.sections,
-      unresolvedPlaceholders: rendered.missingPlaceholders,
-      missingPartials: rendered.missingPartials,
-      blockingErrors: rendered.blockingErrors,
-      contextSummary: rendered.contextSummary,
-    },
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,27 +30,41 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = renderTestSchema.parse(body);
     const tenantId = requireSessionWorkspaceId(session);
-
-    const rendered = await renderTemplateForGeneration({
-      templateId: data.templateId,
+    const result = await renderUnsavedTemplateSnapshot({
       tenantId,
-      templateContent: data.content,
-      templateName: data.name,
-      templateCategory: data.category,
+      generatedBy: `${session.firstName} ${session.lastName}`.trim(),
+      content: data.content,
+      contentJson: data.contentJson,
+      placeholders: data.placeholders,
+      compositionType: data.compositionType,
+      templateScopeId: data.templateScopeId,
+      name: data.name,
+      category: data.category,
       companyId: data.companyId,
       contactIds: data.contactIds,
       customData: data.customData,
-      contextOverride: data.context as PlaceholderContext | undefined,
-      generatedBy: `${session.firstName} ${session.lastName}`.trim(),
-      mode: 'test',
+      context: data.context as PlaceholderContext | undefined,
     });
+    const rendered = result.rendered;
 
-    return NextResponse.json(toResponse(rendered));
+    return NextResponse.json({
+      preview: {
+        template: rendered.template,
+        content: rendered.content,
+        contentHtml: rendered.contentHtml,
+        sections: rendered.sections,
+        unresolvedPlaceholders: rendered.missingPlaceholders,
+        missingPartials: rendered.missingPartials,
+        blockingErrors: rendered.blockingErrors,
+        contextSummary: rendered.contextSummary,
+        snapshot: result.snapshot,
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
