@@ -97,32 +97,30 @@ export function buildA4PrintCss(
       margin: 0 0 0.25em 0;
     }
     ul > li { padding-left: 2ch; }
-    ol > li { padding-left: 5ch; }
-    ol ol > li { padding-left: 6ch; }
-    ol ol ol > li { padding-left: 8ch; }
+    ol > li {
+      padding-left: 0;
+      margin-left: 5ch;
+    }
+    ol ol > li { margin-left: 6ch; }
+    ol ol ol > li { margin-left: 8ch; }
     ul > li::before {
       content: "•";
       position: absolute;
       left: 0;
       top: 0;
     }
-    ol > li::before {
-      content: counter(list-item) ". ";
-      position: absolute;
-      left: 0;
-      top: 0;
-    }
-    ol.list-bold-numbers > li::before { font-weight: 700; }
-    ol.list-alpha > li::before { content: counter(list-item, lower-alpha) ") "; }
+    ol > li::marker { content: counter(list-item) ". "; }
+    ol.list-bold-numbers > li::marker { font-weight: 700; }
+    ol.list-alpha > li::marker { content: counter(list-item, lower-alpha) ") "; }
     ol[style*="--flow-list-start"] {
       counter-reset: list-item var(--flow-list-start, 0);
     }
     ol > li[data-flow-continuation-item] { counter-increment: list-item 0; }
-    ol > li[data-flow-continuation-item]::before { content: none; }
+    ol > li[data-flow-continuation-item]::marker { content: none; }
     ul > li[data-flow-continuation-item]::before { content: none; }
     ol ol, ol ul, ul ol, ul ul { padding-left: 0; }
-    ol ol > li::before { content: counters(list-item, ".") " "; }
-    li { display: list-item; margin: 0 0 0.25em 0; }
+    ol ol > li::marker { content: counters(list-item, ".") " "; }
+    li { display: list-item; margin-bottom: 0.25em; }
     blockquote { margin: 0 0 ${normalized.paragraphSpacing} 40px; padding: 0; }
     table {
       width: 100%;
