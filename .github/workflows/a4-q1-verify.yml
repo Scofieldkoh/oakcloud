@@ -2,12 +2,15 @@ name: A4 Q1 VERIFY temporary
 
 on:
   pull_request:
+  push:
+    branches:
+      - verify/a4-editor-q1-20260912
 
 permissions:
   contents: read
 
 concurrency:
-  group: a4-q1-verify-${{ github.event.pull_request.number }}
+  group: a4-q1-verify-${{ github.ref }}
   cancel-in-progress: true
 
 env:
