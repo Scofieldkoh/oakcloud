@@ -119,6 +119,29 @@ function replaceDefinition(
   return definitions.map((definition) => definition.identity === identity ? replacement : definition);
 }
 
+function migrateLinkedDefinitions(
+  definitions: readonly LosslessStoredFieldDefinition[],
+  previous: LosslessStoredFieldDefinition,
+  next: LosslessStoredFieldDefinition,
+): readonly LosslessStoredFieldDefinition[] {
+  const linkMigration = new Map<string, string>([
+    [previous.identity, next.identity],
+    [previous.key, next.key],
+    [previous.resolverPath, next.resolverPath],
+  ]);
+
+  return definitions.map((definition) => {
+    if (definition.identity === previous.identity) return next;
+    if (!definition.linkedTo) return definition;
+    const linkedTo = linkMigration.get(definition.linkedTo);
+    if (!linkedTo || linkedTo === definition.linkedTo) return definition;
+    return loadLosslessStoredFieldDefinition({
+      scope: definition.scope,
+      definition: { ...definition.original, linkedTo },
+    });
+  });
+}
+
 function applyMetadataAdapter(
   snapshot: FieldLifecycleSnapshot,
   adapter: FieldLifecycleMetadataAdapter | undefined,
@@ -298,7 +321,7 @@ function applyKeyMigration(
     };
   }
 
-  const original = { ...definition.original, key: normalizedKey };
+  const original: Record<string, unknown> = { ...definition.original, key: normalizedKey };
   if (definition.path === definition.key) original.path = normalizedKey;
 
   let next: LosslessStoredFieldDefinition;
@@ -330,7 +353,7 @@ function applyKeyMigration(
     changedOccurrenceIds.push(node.occurrenceId);
   }
 
-  const afterDefinitions = replaceDefinition(input.snapshot.definitions, identity, next);
+  const afterDefinitions = migrateLinkedDefinitions(input.snapshot.definitions, definition, next);
   const after: FieldLifecycleSnapshot = {
     content: replaceSpans(input.snapshot.content, replacements),
     definitions: afterDefinitions,
