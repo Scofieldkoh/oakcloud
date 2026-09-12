@@ -1,0 +1,46 @@
+name: A4 G2 CORE integration check
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-g2-corecheck-20260912
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: e0b598f4080d7d0a1efc82ff8da63a6592bc8503
+
+jobs:
+  core-component:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: CORE C1/C2 regression group
+        run: npx vitest run __tests__/components/a4-editor-c2-bridge.test.ts __tests__/components/a4-editor-session.test.ts __tests__/components/a4-page-editor.test.tsx __tests__/components/a4-editor-toolbar.test.tsx __tests__/components/a4-page-editor-ssr.test.tsx --reporter=verbose
+      - name: TypeScript build
+        run: npx tsc -b
+
+  core-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: CORE browser regressions
+        run: npx vitest run --config vitest.browser.config.ts __tests__/browser/a4-input-sequences.browser.test.tsx __tests__/browser/a4-page-editor.browser.test.tsx --reporter=verbose
