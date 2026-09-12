@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
 import {
+  extractA4DocumentLayout,
   mergeA4DocumentLayout,
   type A4DocumentLayout,
 } from '@/components/documents/a4-pagination/layout';
@@ -37,7 +38,7 @@ export interface BatchReviewWorkspaceProps {
   onEditContent: (itemId: string, content: string | null, json: unknown) => void;
   pending?: boolean;
   layout?: A4DocumentLayout;
-  /** Effective item metadata: item override first, then template/default. */
+  /** Optional template metadata fallback. Item metadata always wins. */
   contentJson?: Record<string, unknown> | null;
   completeness?: CompletenessMap;
   /** Documents preventing generation, rendered as jump-to links. */
@@ -63,6 +64,12 @@ function A4Skeleton({ label }: { label: string }) {
       <p className="text-sm text-text-secondary">{label}</p>
     </div>
   );
+}
+
+function recordJson(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
 }
 
 export function BatchReviewWorkspace({
@@ -110,6 +117,10 @@ export function BatchReviewWorkspace({
   const diagnosticCount = diagnostics
     ? diagnostics.errors.length + diagnostics.fieldErrors.length
     : 0;
+  const itemContentJson = recordJson(activeItem?.editedContentJson) ?? contentJson;
+  const effectiveLayout = recordJson(activeItem?.editedContentJson)
+    ? extractA4DocumentLayout(activeItem?.editedContentJson)
+    : layout;
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -311,7 +322,7 @@ export function BatchReviewWorkspace({
                 <A4PageEditor
                   sessionKey={`batch-item:${activeItem.templateId}`}
                   value={activeItem.editedContent ?? activeItem.previewContent ?? ''}
-                  contentJson={contentJson ?? undefined}
+                  contentJson={itemContentJson ?? undefined}
                   onChange={(html) => onEditContent(
                     activeItem.key,
                     html,
@@ -321,12 +332,12 @@ export function BatchReviewWorkspace({
                     activeItem.key,
                     activeItem.editedContent ?? activeItem.previewContent ?? '',
                     mergeA4DocumentLayout(
-                      contentJson ?? activeItem.editedContentJson,
+                      itemContentJson ?? activeItem.editedContentJson,
                       nextLayout,
                     ),
                   )}
                   readOnly={generated}
-                  layout={layout}
+                  layout={effectiveLayout}
                 />
               ) : pending || rendering ? (
                 <A4Skeleton label="Rendering this document…" />
