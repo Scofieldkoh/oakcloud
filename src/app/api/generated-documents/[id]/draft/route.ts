@@ -60,6 +60,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
         savedAt: draft.savedAt,
         baseRevision: draft.baseRevision,
         sessionKey: draft.sessionKey,
+        writerInstanceId: draft.writerInstanceId,
         localSnapshotRevision: draft.localSnapshotRevision,
       },
       document: {
@@ -97,6 +98,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       savedAt: draft.savedAt,
       baseRevision: draft.baseRevision,
       sessionKey: draft.sessionKey,
+      writerInstanceId: draft.writerInstanceId,
       localSnapshotRevision: draft.localSnapshotRevision,
       ignoredAsStale: draft.ignoredAsStale ?? false,
     });
@@ -114,6 +116,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { searchParams } = new URL(request.url);
     const sessionKey = searchParams.get('sessionKey') ?? undefined;
+    const writerInstanceId = searchParams.get('writerInstanceId') ?? undefined;
     const throughLocalSnapshotRevision = parseOptionalRevision(
       searchParams.get('throughLocalSnapshotRevision'),
     );
@@ -122,6 +125,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       userId: session.id,
       tenantId,
       sessionKey,
+      writerInstanceId,
       throughLocalSnapshotRevision,
     });
     const document = await getGeneratedDocumentById(id, tenantId);
