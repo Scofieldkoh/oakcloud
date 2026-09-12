@@ -65,19 +65,14 @@ import {
   applyBlockAlignmentToSelection,
   applyBlockFormatToSelection,
   applyInlineFormat,
-  applyIndentToSelection,
-  applyListToSelection,
-  applyListStartToSelection,
-  applyOutdentToSelection,
   clearInlineFormatting,
   insertTextWithFormat,
   normalizeFormattingSpans,
+  normalizeColorValue,
   readLogicalFormatState,
-  readInlineToggleState,
   readUniformFormatState,
   replaceFormattedSelection,
   toggleBoldListMarkersToSelection,
-  toggleNestedListSelection,
   type InlineFormatPatch,
 } from './a4-pagination/formatting';
 import {
@@ -124,6 +119,9 @@ import {
 import type { A4ProjectionPositionMap } from './a4-pagination/semantic-page-breaks';
 import {
   analyzeA4EditorFieldSource,
+  getA4EditorListContext,
+  getA4EditorNeutralTypingFormatPatch,
+  readA4EditorS2FormattingState,
   runA4EditorSemanticCommand,
   type A4EditorSemanticCommand,
 } from './a4-editor-semantic-bridge';
@@ -1904,6 +1902,62 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [canonicalPagesHtml, commitUserTransaction],
     );
 
+    const commitS2Indent = useCallback(
+      (bookmark: FlowSelectionBookmark, direction: 'indent' | 'outdent') => {
+        const surface = documentSurfaceRef.current;
+        if (!surface) return false;
+        const target = Array.from(
+          surface.querySelectorAll<HTMLElement>('[data-flow-id]'),
+        ).find((element) => element.dataset.flowId === bookmark.anchor.flowId);
+        const computed = target ? getComputedStyle(target) : null;
+        const rootComputed = getComputedStyle(document.documentElement);
+        const emPx = Number.parseFloat(computed?.fontSize ?? '') || 16;
+        const remPx = Number.parseFloat(rootComputed.fontSize) || 16;
+        return commitSemanticCommand(bookmark, {
+          type: 'indent',
+          direction,
+          metrics: {
+            emPx,
+            remPx,
+            maxIndentPx: Math.max(0, pageLayout.contentWidthPx),
+          },
+        });
+      },
+      [commitSemanticCommand, pageLayout.contentWidthPx],
+    );
+
+    const applyCurrentSemanticCommand = useCallback(
+      (command: A4EditorSemanticCommand) => {
+        const surface = documentSurfaceRef.current;
+        if (!surface || effectivePreviewMode) return false;
+        if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
+          return false;
+        }
+        const bookmark = captureFlowSelection(surface);
+        if (!bookmark) return false;
+        pendingTypingFormatRef.current = null;
+        pendingTypingPointRef.current = null;
+        return commitSemanticCommand(bookmark, command);
+      },
+      [commitSemanticCommand, effectivePreviewMode, restoreSelection],
+    );
+
+    const applyCurrentS2Indent = useCallback(
+      (direction: 'indent' | 'outdent') => {
+        const surface = documentSurfaceRef.current;
+        if (!surface || effectivePreviewMode) return false;
+        if (!selectionIsWithinPageContents(surface) && !restoreSelection()) {
+          return false;
+        }
+        const bookmark = captureFlowSelection(surface);
+        if (!bookmark) return false;
+        pendingTypingFormatRef.current = null;
+        pendingTypingPointRef.current = null;
+        return commitS2Indent(bookmark, direction);
+      },
+      [commitS2Indent, effectivePreviewMode, restoreSelection],
+    );
+
     const applyInsertionTransaction = useCallback(
       (html: string) => {
         const surface = documentSurfaceRef.current;
@@ -2044,10 +2098,34 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
       }
       savedSelectionRef.current = bookmark;
-      setActiveFormats(
-        readLogicalFormatState(surface, bookmark, effectiveLayout),
+      const logical = readLogicalFormatState(surface, bookmark, effectiveLayout);
+      const semantic = readA4EditorS2FormattingState(
+        canonicalPagesHtml(pagesRef.current),
+        bookmark,
       );
-    }, [effectiveLayout]);
+      setActiveFormats(semantic ? {
+        ...logical,
+        bold: semantic.bold === 'on',
+        italic: semantic.italic === 'on',
+        underline: semantic.underline === 'on',
+        fontFamily:
+          semantic.fontFamily.state === 'uniform' && semantic.fontFamily.value
+            ? semantic.fontFamily.value
+            : logical.fontFamily,
+        fontSize:
+          semantic.fontSize.state === 'uniform' && semantic.fontSize.value
+            ? semantic.fontSize.value
+            : logical.fontSize,
+        textColor:
+          semantic.textColor.state === 'uniform' && semantic.textColor.value
+            ? normalizeColorValue(semantic.textColor.value)
+            : logical.textColor,
+        highlightColor:
+          semantic.highlightColor.state === 'uniform' && semantic.highlightColor.value
+            ? normalizeColorValue(semantic.highlightColor.value)
+            : logical.highlightColor,
+      } : logical);
+    }, [canonicalPagesHtml, effectiveLayout]);
 
     const handleDeleteAcrossPages = useCallback(
       (direction: 'backward' | 'forward') => {
@@ -2369,6 +2447,37 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const surface = documentSurfaceRef.current;
         if (
           surface &&
+          event.key === 'Tab' &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey
+        ) {
+          const session = canonicalSessionRef.current;
+          const rendered = captureFlowSelection(surface);
+          if (session && rendered) {
+            const target = session.resolveNativeInputTarget({
+              renderedRevision: session.getRenderedProjection().documentRevision,
+              origin: 'keyboard',
+              renderedSelection: rendered,
+            });
+            if (target.ok && target.selection) {
+              const listContext = getA4EditorListContext(
+                session.getState().internalHtml,
+                target.selection,
+              );
+              if (listContext?.inList) {
+                event.preventDefault();
+                commitS2Indent(
+                  target.selection,
+                  event.shiftKey ? 'outdent' : 'indent',
+                );
+                return;
+              }
+            }
+          }
+        }
+        if (
+          surface &&
           event.key === 'Delete' &&
           pageContent &&
           isCaretAtEditorEnd(pageContent)
@@ -2457,6 +2566,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       },
       [
         commitSemanticCommand,
+        commitS2Indent,
         effectivePreviewMode,
         handleDeleteAcrossPages,
         handleRedo,
@@ -2762,10 +2872,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             const pendingValue = pendingTypingFormatRef.current?.[
               property as keyof InlineFormatPatch
             ];
+            const semanticFormatting = readA4EditorS2FormattingState(
+              canonicalPagesHtml(pagesRef.current),
+              bookmark,
+            );
             const active =
               pendingValue !== undefined
                 ? pendingValue !== null
-                : uniform?.[toggleField] === true;
+                : semanticFormatting?.[toggleField] === 'on';
             setPendingTypingFormat({
               ...patch,
               [property]: active ? null : value,
@@ -2784,11 +2898,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               : toggleField === 'italic'
                 ? 'fontStyle'
                 : 'textDecoration';
-          const toggleState = readInlineToggleState(
-            surface,
+          const toggleState = readA4EditorS2FormattingState(
+            canonicalPagesHtml(pagesRef.current),
             bookmark,
-            toggleField,
-          );
+          )?.[toggleField] ?? 'off';
           const effectivePatch =
             toggleState === 'on'
               ? ({ ...patch, [property]: null } as InlineFormatPatch)
@@ -2832,15 +2945,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       if (!bookmark) return;
 
       if (bookmark.collapsed) {
-        setPendingTypingFormat({
-          fontFamily: null,
-          fontSize: null,
-          color: null,
-          backgroundColor: null,
-          fontWeight: null,
-          fontStyle: null,
-          textDecoration: null,
-        });
+        setPendingTypingFormat(getA4EditorNeutralTypingFormatPatch());
         setActiveFormats((prev) => ({
           ...prev,
           bold: false,
@@ -3006,20 +3111,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'indent') {
-          applySelectionTransaction((html, bookmark) =>
-            applyIndentToSelection(html, bookmark),
-          );
+          applyCurrentS2Indent('indent');
           return;
         }
 
         if (cmd === 'outdent') {
-          applySelectionTransaction((html, bookmark) =>
-            applyOutdentToSelection(html, bookmark),
-          );
+          applyCurrentS2Indent('outdent');
         }
       },
       [
         applyClearFormattingTransaction,
+        applyCurrentS2Indent,
         applyFormattingTransaction,
         applySelectionTransaction,
         effectiveLayout,
@@ -3045,23 +3147,25 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (command.type === 'list') {
           const listType = command.value;
           if (listType === 'none') return;
-          applySelectionTransaction((html, bookmark) =>
-            applyListToSelection(html, bookmark, listType),
-          );
+          applyCurrentSemanticCommand({ type: 'set-list-type', listType });
           return;
         }
 
         if (command.type === 'list-start') {
-          applySelectionTransaction((html, bookmark) =>
-            applyListStartToSelection(html, bookmark, command.value),
-          );
+          applyCurrentSemanticCommand({
+            type: 'restart-numbering',
+            start: command.value,
+          });
+          return;
+        }
+
+        if (command.type === 'continue-numbering') {
+          applyCurrentSemanticCommand({ type: 'continue-numbering' });
           return;
         }
 
         if (command.type === 'nest-list') {
-          applySelectionTransaction((html, bookmark) =>
-            toggleNestedListSelection(html, bookmark),
-          );
+          applyCurrentS2Indent('indent');
           return;
         }
 
@@ -3085,7 +3189,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         } as const;
         handleCommand(commandMap[command.type]);
       },
-      [applySelectionTransaction, handleCommand],
+      [applyCurrentS2Indent, applyCurrentSemanticCommand, applySelectionTransaction, handleCommand],
     );
 
     const handlePrint = useCallback(() => {

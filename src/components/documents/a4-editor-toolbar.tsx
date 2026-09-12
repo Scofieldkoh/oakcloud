@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   useCallback,
@@ -50,6 +50,7 @@ export type EditorCommand =
   | { type: 'align'; value: EditorFormatState['alignment'] }
   | { type: 'list'; value: EditorFormatState['list'] }
   | { type: 'list-start'; value: number }
+  | { type: 'continue-numbering' }
   | { type: 'nest-list' }
   | { type: 'list-bold-numbers' }
   | { type: 'indent' | 'outdent' | 'insert-table' };
@@ -320,6 +321,7 @@ export function A4EditorToolbar({
             className={cn(toolbarSelectClass, 'w-14')}
           />
         </label>
+        <ToolbarButton label="Continue numbering" icon={ListOrdered} onSaveSelection={onSaveSelection} onClick={command({ type: 'continue-numbering' })} disabled={blocked || (activeFormats.list !== 'ordered' && activeFormats.list !== 'alpha')} />
         <ToolbarButton label="Decrease indent" icon={Outdent} onSaveSelection={onSaveSelection} onClick={command({ type: 'outdent' })} disabled={blocked} />
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={blocked} />
       </ToolbarGroup>
