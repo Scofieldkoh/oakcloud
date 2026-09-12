@@ -1,0 +1,44 @@
+name: A4 G2 release Q1 coordination
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-wave2-g2-integration-20260912
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/a4-editor-wave2-g2-integration-20260912
+          fetch-depth: 0
+      - name: Verify frozen production candidate is an ancestor
+        run: git merge-base --is-ancestor 6e8d4426c0d57043d85a830045dee465f6ff9a47 HEAD
+      - name: Apply coordination-only release record
+        run: python scripts/a4-g2-release-q1.py
+      - name: Verify only coordination files changed before commit
+        shell: bash
+        run: |
+          changed="$(git diff --name-only)"
+          printf '%s\n' "$changed"
+          unexpected="$(printf '%s\n' "$changed" | grep -Ev '^(docs/plans/2026-09-10-a4-editor-implementation/coordination/(g2|core|dispatch)\.md)$' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected product/config changes:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+      - name: Commit coordination release and remove helper files
+        shell: bash
+        run: |
+          git config user.name "ChatGPT CORE Integrator"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/plans/2026-09-10-a4-editor-implementation/coordination/g2.md
+          git add docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md
+          git add docs/plans/2026-09-10-a4-editor-implementation/coordination/dispatch.md
+          git rm .github/workflows/a4-g2-release-q1.yml scripts/a4-g2-release-q1.py
+          git commit -m "docs(a4): freeze corrected G2 candidate and release Q1"
+          git push origin HEAD:codex/a4-editor-wave2-g2-integration-20260912
