@@ -13,7 +13,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
-import type { A4DocumentLayout } from '@/components/documents/a4-pagination/layout';
+import {
+  mergeA4DocumentLayout,
+  type A4DocumentLayout,
+} from '@/components/documents/a4-pagination/layout';
 import { cn } from '@/lib/utils';
 import type { EditableBatchItem } from './batch-workspace-state';
 import { BatchDocumentQueue, ITEM_STATUS_LABELS } from './batch-document-queue';
@@ -34,6 +37,8 @@ export interface BatchReviewWorkspaceProps {
   onEditContent: (itemId: string, content: string | null, json: unknown) => void;
   pending?: boolean;
   layout?: A4DocumentLayout;
+  /** Effective item metadata: item override first, then template/default. */
+  contentJson?: Record<string, unknown> | null;
   completeness?: CompletenessMap;
   /** Documents preventing generation, rendered as jump-to links. */
   blockers?: GenerationBlocker[];
@@ -69,6 +74,7 @@ export function BatchReviewWorkspace({
   onEditContent,
   pending = false,
   layout,
+  contentJson = null,
   completeness,
   blockers = [],
   previewProgress = null,
@@ -278,12 +284,12 @@ export function BatchReviewWorkspace({
                   Needs attention
                 </p>
                 <ul className="mt-1 list-inside list-disc text-sm text-text-secondary">
-                  {diagnostics?.errors.map((error) => (
-                    <li key={error}>{error}</li>
+                  {diagnostics?.errors.map((itemError) => (
+                    <li key={itemError}>{itemError}</li>
                   ))}
-                  {diagnostics?.fieldErrors.map((error) => (
-                    <li key={`${error.field}-${error.message}`}>
-                      {error.field}: {error.message}
+                  {diagnostics?.fieldErrors.map((fieldError) => (
+                    <li key={`${fieldError.field}-${fieldError.message}`}>
+                      {fieldError.field}: {fieldError.message}
                     </li>
                   ))}
                 </ul>
@@ -298,19 +304,26 @@ export function BatchReviewWorkspace({
               </p>
             )}
 
-            <div
-              className={cn(
-                'min-h-0 flex-1 overflow-hidden rounded-lg border border-border-primary shadow-sm',
-              )}
-            >
+            <div className={cn(
+              'min-h-0 flex-1 overflow-hidden rounded-lg border border-border-primary shadow-sm',
+            )}>
               {activeItem.previewContent ? (
                 <A4PageEditor
+                  sessionKey={`batch-item:${activeItem.templateId}`}
                   value={activeItem.editedContent ?? activeItem.previewContent ?? ''}
-                  onChange={(html) => onEditContent(activeItem.key, html, null)}
+                  contentJson={contentJson ?? undefined}
+                  onChange={(html) => onEditContent(
+                    activeItem.key,
+                    html,
+                    activeItem.editedContentJson,
+                  )}
                   onLayoutChange={(nextLayout) => onEditContent(
                     activeItem.key,
                     activeItem.editedContent ?? activeItem.previewContent ?? '',
-                    { version: 1, layout: nextLayout },
+                    mergeA4DocumentLayout(
+                      contentJson ?? activeItem.editedContentJson,
+                      nextLayout,
+                    ),
                   )}
                   readOnly={generated}
                   layout={layout}
