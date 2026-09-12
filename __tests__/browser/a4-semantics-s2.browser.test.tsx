@@ -29,9 +29,9 @@ function textNode(root: HTMLElement, selector: string): Text {
   const element = root.querySelector<HTMLElement>(selector);
   if (!element) throw new Error(`Missing selector: ${selector}`);
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  const text = walker.nextNode();
-  if (!(text instanceof Text)) throw new Error(`Missing text node: ${selector}`);
-  return text;
+  const node = walker.nextNode();
+  if (!(node instanceof Text)) throw new Error(`Missing text node: ${selector}`);
+  return node;
 }
 
 function nativeSelection(
@@ -45,17 +45,15 @@ function nativeSelection(
   try {
     const anchor = textNode(root, anchorSelector);
     const focus = textNode(root, focusSelector);
-    const selection = window.getSelection();
-    if (!selection) throw new Error('Browser selection is unavailable');
-    selection.removeAllRanges();
-    selection.setBaseAndExtent(anchor, anchorOffset, focus, focusOffset);
-    if (!selection.anchorNode || !selection.focusNode) {
-      throw new Error('Native selection endpoints are unavailable');
-    }
+    const native = window.getSelection();
+    if (!native) throw new Error('Native selection is unavailable');
+    native.removeAllRanges();
+    native.setBaseAndExtent(anchor, anchorOffset, focus, focusOffset);
+    if (!native.anchorNode || !native.focusNode) throw new Error('Native endpoints are unavailable');
     const captured = captureA4SelectionFromDomPoints(
       root,
-      { node: selection.anchorNode, offset: selection.anchorOffset },
-      { node: selection.focusNode, offset: selection.focusOffset },
+      { node: native.anchorNode, offset: native.anchorOffset },
+      { node: native.focusNode, offset: native.focusOffset },
     );
     if (!captured) throw new Error('Native selection could not be captured structurally');
     return captured;
@@ -99,13 +97,17 @@ describe('A4 S2 browser-native semantic boundaries', () => {
     const canonical = createCanonicalEditorDocument(
       '<p>One</p><p>Two</p><ul><li><p>Three</p></li></ul>',
     );
-    const selected = nativeSelection(canonical, 'p:nth-child(2)', 3, 'p:first-child', 0);
+    const selected = nativeSelection(
+      canonical,
+      ':scope > p:nth-child(2)', 3,
+      ':scope > p:first-child', 0,
+    );
     const body = bodyFor(applied(setA4S2ListType(canonical, selected, 'unordered')));
     expect(Array.from(body.querySelectorAll(':scope > ul > li'), (li) => li.textContent))
       .toEqual(['One', 'Two', 'Three']);
   });
 
-  it('splits a list item at a native structural caret without duplicating following content', () => {
+  it('splits a list item at a native caret without duplicating following content', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol start="5"><li><p>AlphaBeta</p></li><li><p>Next</p></li></ol>',
     );
@@ -125,10 +127,8 @@ describe('A4 S2 browser-native semantic boundaries', () => {
     );
     const selected = nativeSelection(
       canonical,
-      'ol > li:nth-child(2) > p',
-      0,
-      'ol > li:nth-child(3) > p',
-      1,
+      'ol > li:nth-child(2) > p', 0,
+      'ol > li:nth-child(3) > p', 1,
     );
     const body = bodyFor(applied(indentA4S2ListItems(canonical, selected)));
     expect(Array.from(body.querySelectorAll(':scope > ol > li:first-child > ol > li'), (li) => li.textContent))
@@ -142,14 +142,18 @@ describe('A4 S2 browser-native semantic boundaries', () => {
     const canonical = createCanonicalEditorDocument(
       '<p><span style="font-weight:bold;font-style:italic;color:red">A</span><span style="font-style:italic;color:red">B</span></p>',
     );
-    const selected = nativeSelection(canonical, 'p', 0, 'p', 2);
+    const selected = nativeSelection(
+      canonical,
+      'p > span:first-child', 0,
+      'p > span:nth-child(2)', 1,
+    );
     const state = readA4S2FormattingState(canonical, selected);
     expect(state?.bold).toBe('mixed');
     expect(state?.italic).toBe('on');
     expect(state?.textColor).toEqual({ state: 'uniform', value: 'red' });
   });
 
-  it('restarts and then explicitly continues ordered numbering without coupling unrelated content', () => {
+  it('restarts and explicitly continues ordered numbering through native carets', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ol>',
     );
@@ -164,7 +168,7 @@ describe('A4 S2 browser-native semantic boundaries', () => {
 
     const continued = applied(continueA4S2OrderedList(
       restarted,
-      caret(restarted, 'ol:nth-child(2) > li:first-child > p', 0),
+      caret(restarted, ':scope > ol:nth-child(2) > li:first-child > p', 0),
     ));
     body = bodyFor(continued);
     expect(body.querySelectorAll(':scope > ol')).toHaveLength(1);
