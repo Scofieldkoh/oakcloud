@@ -1,0 +1,47 @@
+name: A4 G2 final static gates
+on:
+  push:
+    branches: [codex/a4-editor-g2-prevalidation-20260912]
+    paths: [.github/workflows/a4-g2-final-static.yml]
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: postgresql://localhost/oakcloud
+      JWT_SECRET: ci-placeholder-value-long-enough-for-static-build-only
+      ENCRYPTION_KEY: ci-placeholder-encryption-key
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 07523b105bfd7e32e7916408c7a7e825815d4424
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run bundle static and build gates
+        shell: bash
+        run: |
+          set -u
+          echo "CANDIDATE_SHA=$(git rev-parse HEAD)"
+          failed=0
+          run_gate() { label="$1"; shift; echo "===== GATE ${label} ====="; set +e; "$@"; code=$?; set -e; echo "===== RESULT ${label} exit=${code} ====="; if [ "$code" -ne 0 ]; then failed=1; fi; }
+          run_gate NODE24 node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1); console.log(process.version)"
+          run_gate PRISMA_GENERATE npm run db:generate
+          echo "===== GATE BUNDLE_FRESHNESS ====="
+          set +e
+          bash -o pipefail -c "grep -q 'w1-s1-structural-v1' src/components/documents/a4-pagination/pagination-bundle.generated.ts && npm run generate:pagination-bundle && git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts"
+          code=$?
+          set -e
+          echo "===== RESULT BUNDLE_FRESHNESS exit=${code} ====="
+          if [ "$code" -ne 0 ]; then failed=1; fi
+          run_gate LINT npm run lint
+          run_gate TYPECHECK npm run typecheck
+          run_gate TSC_BUILD npx tsc -b
+          run_gate PRODUCTION_BUILD npm run build
+          exit "$failed"
