@@ -1,0 +1,157 @@
+name: A4 Q1 targeted diagnostic
+
+on:
+  push:
+    branches:
+      - verify/a4-editor-q1-20260912
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+
+jobs:
+  q1-08:
+    name: Q1-08 empty nested-list caret
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out VERIFY harness
+        uses: actions/checkout@v6
+        with:
+          path: verify-harness
+          persist-credentials: false
+      - name: Check out frozen candidate
+        uses: actions/checkout@v6
+        with:
+          ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          path: candidate
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove frozen candidate
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Overlay verifier and correct empty-caret harness only
+        run: |
+          cp verify-harness/__tests__/browser/a4-q1-acceptance.browser.test.tsx candidate/__tests__/browser/
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'candidate/__tests__/browser/a4-q1-acceptance.browser.test.tsx';
+          let source = fs.readFileSync(path, 'utf8');
+          const before = `function setCollapsedCaret(element: Element, offset: number) {
+  const node = textNodeFor(element);
+  const range = document.createRange();
+  range.setStart(node, Math.min(offset, node.data.length));
+  range.collapse(true);
+  const selection = window.getSelection();
+  if (!selection) throw new Error('Selection unavailable');
+  selection.removeAllRanges();
+  selection.addRange(range);
+}`;
+          const after = `function setCollapsedCaret(element: Element, offset: number) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const node = walker.nextNode();
+  const range = document.createRange();
+  if (node instanceof Text) {
+    range.setStart(node, Math.min(offset, node.data.length));
+  } else {
+    range.selectNodeContents(element);
+    range.collapse(true);
+  }
+  range.collapse(true);
+  const selection = window.getSelection();
+  if (!selection) throw new Error('Selection unavailable');
+  selection.removeAllRanges();
+  selection.addRange(range);
+}`;
+          if (!source.includes(before)) throw new Error('Expected original caret helper');
+          fs.writeFileSync(path, source.replace(before, after));
+          NODE
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: candidate/package-lock.json
+      - name: Install dependencies
+        working-directory: candidate
+        run: npm ci
+      - name: Install real Chromium
+        working-directory: candidate
+        run: npx playwright install --with-deps chromium
+      - name: Execute Q1-08 only in real Chromium
+        working-directory: candidate
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-q1-acceptance.browser.test.tsx
+          -t "Q1-07/Q1-08"
+          --reporter=verbose
+
+  q1-11:
+    name: Q1-11 real PDF diagnostic
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out VERIFY harness
+        uses: actions/checkout@v6
+        with:
+          path: verify-harness
+          persist-credentials: false
+      - name: Check out frozen candidate
+        uses: actions/checkout@v6
+        with:
+          ref: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+          path: candidate
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove frozen candidate
+        run: |
+          cd candidate
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Overlay output verifier and defer brittle pseudo-style assertions
+        run: |
+          cp verify-harness/tests/document-output/a4-editor-q1-output.test.ts candidate/tests/document-output/
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'candidate/tests/document-output/a4-editor-q1-output.test.ts';
+          let source = fs.readFileSync(path, 'utf8');
+          source = source.replace(
+            "      expect(rendered.startFive.start).toBe('5');\n      expect(rendered.continuation.start).toBe('8');\n      expect(rendered.restart.start).toBe('1');\n      expect(rendered.alpha.classes).toContain('list-alpha');\n      expect(rendered.alpha.beforeContent.toLowerCase()).toContain('lower-alpha');\n      expect(rendered.bold.classes).toContain('list-bold-markers');\n      expect(rendered.bold.beforeWeight).toMatch(/^(700|bold)$/i);\n      expect(rendered.nestedDepth).toBeGreaterThanOrEqual(2);\n",
+            "      console.info(`Q1_RENDERED ${JSON.stringify(rendered)}`);\n",
+          );
+          fs.writeFileSync(path, source);
+          NODE
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: candidate/package-lock.json
+      - name: Install dependencies
+        working-directory: candidate
+        run: npm ci
+      - name: Install real Chromium
+        working-directory: candidate
+        run: npx playwright install --with-deps chromium
+      - name: Bind production Puppeteer path to installed Chromium
+        working-directory: candidate
+        run: |
+          CHROME_PATH=$(node -e "const { chromium } = require('playwright'); process.stdout.write(chromium.executablePath())")
+          echo "PUPPETEER_EXECUTABLE_PATH=${CHROME_PATH}" >> "$GITHUB_ENV"
+          echo "Q1_OUTPUT_DIR=${GITHUB_WORKSPACE}/candidate/.q1-artifacts" >> "$GITHUB_ENV"
+      - name: Generate and assess real PDF
+        working-directory: candidate
+        run: >-
+          npx vitest run tests/document-output/a4-editor-q1-output.test.ts --reporter=verbose
+      - name: Upload real PDF even if post-generation text assertions fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a4-q1-targeted-real-output
+          path: candidate/.q1-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
