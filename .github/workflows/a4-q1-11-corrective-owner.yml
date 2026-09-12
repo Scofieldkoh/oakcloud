@@ -56,6 +56,9 @@ jobs:
       - name: Run print-style owner unit regression
         working-directory: candidate
         run: npx vitest run __tests__/components/a4-print-styles.test.ts --reporter=verbose
+      - name: Run pagination and list owner regressions
+        working-directory: candidate
+        run: npx vitest run __tests__/components/a4-pagination --reporter=verbose
       - name: Run corrective owner Q1-11 real HTML/PDF regression
         working-directory: candidate
         run: npx vitest run tests/document-output/a4-q1-11-ordered-list-output.test.ts --reporter=verbose
