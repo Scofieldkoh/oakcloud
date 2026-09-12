@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       DATABASE_URL: "postgresql://localhost/oakcloud"
+      JWT_SECRET: "a4-g2-validation-only-synthetic-jwt-secret-not-for-production-use-20260912"
     steps:
       - uses: actions/checkout@v6
         with:
