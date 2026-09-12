@@ -623,9 +623,16 @@ describe('A4PageEditor', () => {
     expect(getComputedStyle(blockquote!).marginLeft).toBe('40px');
   });
 
-  it('splits the current page when inserting a page break', async () => {
+  it('stores a semantic page break without treating physical pages as canonical state', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
     const onChange = vi.fn();
-    render(<A4PageEditor value="<p>First</p>" onChange={onChange} />);
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value="<p>First</p>"
+        onChange={onChange}
+      />,
+    );
     await waitFor(() => {
       expect(screen.getByTestId('a4-document-surface')).toHaveAttribute(
         'aria-busy',
@@ -649,18 +656,16 @@ describe('A4PageEditor', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(screen.getByTestId('a4-page-content-2')).toBeInTheDocument();
-    expect(screen.getByTestId('a4-page-content-1').innerHTML).not.toContain(
-      'page-break',
-    );
     await waitFor(() => {
+      const canonical = editorRef.current?.getContent() ?? '';
+      expect(canonical).toContain('data-a4-break="page"');
+      expect(canonical).not.toContain('data-break-type="hard"');
+      expect(canonical).not.toContain('class="page-break"');
       expect(onChange).toHaveBeenLastCalledWith(
-        expect.stringContaining('data-break-type="hard"'),
-      );
-      expect(onChange).toHaveBeenLastCalledWith(
-        expect.not.stringContaining(pageBreak),
+        expect.stringContaining('data-a4-break="page"'),
       );
     });
+    expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent('First');
   });
 
   it('selects all document pages with Ctrl+A', () => {
