@@ -222,16 +222,19 @@ describe('A4 editor Q1-11 ordered-list production output', () => {
       expect(countOccurrences(extracted.text, label)).toBe(1);
     }
 
-    expect(context(extracted.text, 'Q1-DEFAULT-ONE')).toMatch(/1[.)]\s*Q1-DEFAULT-ONE/);
-    expect(context(extracted.text, 'Q1-NUMBER-FIVE')).toMatch(/5[.)]\s*Q1-NUMBER-FIVE/);
-    expect(context(extracted.text, 'Q1-NUMBER-SIX')).toMatch(/6[.)]\s*Q1-NUMBER-SIX/);
-    expect(context(extracted.text, 'Q1-CONTINUATION-EIGHT')).toMatch(/8[.)]\s*Q1-CONTINUATION-EIGHT/);
-    expect(context(extracted.text, 'Q1-RESTART-ONE')).toMatch(/1[.)]\s*Q1-RESTART-ONE/);
-    expect(context(extracted.text, 'Q1-ALPHA-FIRST')).toMatch(/a[.)]\s*Q1-ALPHA-FIRST/i);
-    expect(context(extracted.text, 'Q1-NESTED-PARENT-THREE')).toMatch(/3[.)]\s*Q1-NESTED-PARENT-THREE/);
-    expect(context(extracted.text, 'Q1-NESTED-CHILD-FOUR')).toMatch(/3\.4\s*Q1-NESTED-CHILD-FOUR/);
-    expect(context(extracted.text, 'Q1-PAGED-20')).toMatch(/20[.)]\s*Q1-PAGED-20/);
-    expect(context(extracted.text, 'Q1-PAGED-35')).toMatch(/35[.)]\s*Q1-PAGED-35/);
-    expect(context(extracted.text, 'Q1-PAGED-43')).toMatch(/43[.)]\s*Q1-PAGED-43/);
+    // PDF.js may tokenize marker glyphs separately (for example, "5 .").
+    // Keep the assertion strict on marker value, punctuation, and item order
+    // while tolerating only extractor-inserted whitespace between those glyphs.
+    expect(context(extracted.text, 'Q1-DEFAULT-ONE')).toMatch(/1\s*[.)]\s*Q1-DEFAULT-ONE/);
+    expect(context(extracted.text, 'Q1-NUMBER-FIVE')).toMatch(/5\s*[.)]\s*Q1-NUMBER-FIVE/);
+    expect(context(extracted.text, 'Q1-NUMBER-SIX')).toMatch(/6\s*[.)]\s*Q1-NUMBER-SIX/);
+    expect(context(extracted.text, 'Q1-CONTINUATION-EIGHT')).toMatch(/8\s*[.)]\s*Q1-CONTINUATION-EIGHT/);
+    expect(context(extracted.text, 'Q1-RESTART-ONE')).toMatch(/1\s*[.)]\s*Q1-RESTART-ONE/);
+    expect(context(extracted.text, 'Q1-ALPHA-FIRST')).toMatch(/a\s*[.)]\s*Q1-ALPHA-FIRST/i);
+    expect(context(extracted.text, 'Q1-NESTED-PARENT-THREE')).toMatch(/3\s*[.)]\s*Q1-NESTED-PARENT-THREE/);
+    expect(context(extracted.text, 'Q1-NESTED-CHILD-FOUR')).toMatch(/3\s*\.\s*4\s*Q1-NESTED-CHILD-FOUR/);
+    expect(context(extracted.text, 'Q1-PAGED-20')).toMatch(/20\s*[.)]\s*Q1-PAGED-20/);
+    expect(context(extracted.text, 'Q1-PAGED-35')).toMatch(/35\s*[.)]\s*Q1-PAGED-35/);
+    expect(context(extracted.text, 'Q1-PAGED-43')).toMatch(/43\s*[.)]\s*Q1-PAGED-43/);
   }, 45_000);
 });
