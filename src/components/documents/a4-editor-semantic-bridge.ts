@@ -9,7 +9,6 @@ import {
   getA4ListLevelContext,
   insertA4LineBreak,
   insertA4ManualPageBreak,
-  insertA4ParagraphBreak,
   removeA4ManualPageBreak,
   type A4DeleteDirection,
   type A4ListLevelContext,
@@ -20,7 +19,10 @@ import {
   type A4PositionAffinity,
   type A4Selection,
 } from './a4-pagination/structural-position';
-import type { DocumentTransactionResult } from './a4-pagination/document-actions';
+import {
+  insertParagraphAtSelection,
+  type DocumentTransactionResult,
+} from './a4-pagination/document-actions';
 import type { FlowSelectionBookmark } from './a4-pagination/selection';
 
 export type A4EditorSemanticCommand =
@@ -89,12 +91,25 @@ function structuralSelectionForFlowBookmark(
  * this bridge translates C1's compatibility FlowSelectionBookmark to the
  * frozen C02 command boundary and translates the resulting selection back.
  * It never allocates a revision or reconstructs canonical state from pages.
+ *
+ * S1 intentionally does not yet own list Enter/exit semantics. Until S2
+ * replaces that gap, paragraph insertion remains on the existing
+ * SEMANTICS-owned canonical transaction so C2 does not regress the frozen G1
+ * behaviour. Shift+Enter, deletion and manual breaks use the S1 command
+ * contract directly.
  */
 export function runA4EditorSemanticCommand(
   internalHtml: string,
   bookmark: FlowSelectionBookmark,
   command: A4EditorSemanticCommand,
 ): A4EditorSemanticCommandResult {
+  if (command.type === 'insert-paragraph') {
+    const transaction = insertParagraphAtSelection(internalHtml, bookmark);
+    return transaction.changed
+      ? { status: 'applied', transaction, changedNodeIds: [] }
+      : { status: 'unchanged', reason: 'Paragraph insertion did not change the canonical document.' };
+  }
+
   const structural = structuralSelectionForFlowBookmark(
     internalHtml,
     bookmark,
@@ -110,8 +125,6 @@ export function runA4EditorSemanticCommand(
 
   const result = (() => {
     switch (command.type) {
-      case 'insert-paragraph':
-        return insertA4ParagraphBreak(structural.canonical, structural.selection);
       case 'insert-line-break':
         return insertA4LineBreak(structural.canonical, structural.selection);
       case 'delete':
