@@ -194,10 +194,10 @@ describePostgres('A4 editor Q1 persistence / compatibility acceptance', () => {
 
     const readerA = readA4StoredDocument(reopenedA.content, reopenedA.contentJson);
     const readerB = readA4StoredDocument(reopenedB.content, reopenedB.contentJson);
-    const canonicalA = JSON.stringify(readerA.canonical);
-    const canonicalB = JSON.stringify(readerB.canonical);
-    expect(readerA.canonical.blocks.length).toBeGreaterThan(0);
-    expect(readerB.canonical.blocks.length).toBeGreaterThan(0);
+    const canonicalA = readerA.canonical.internalHtml;
+    const canonicalB = readerB.canonical.internalHtml;
+    expect(canonicalA.length).toBeGreaterThan(0);
+    expect(canonicalB.length).toBeGreaterThan(0);
     expect(canonicalA).toContain('Q1-A-START');
     expect(canonicalA).not.toContain('Q1-B-');
     expect(canonicalB).toContain('Q1-B-START');
@@ -292,6 +292,7 @@ describePostgres('A4 editor Q1 persistence / compatibility acceptance', () => {
     const level2Read = readA4StoredDocument(level2);
     expect(legacyRead.formatLevel).toBe(1);
     expect(level2Read.formatLevel).toBe(2);
-    expect(level2Read.canonical.blocks.some((block) => block.kind === 'hard-break')).toBe(true);
+    expect(legacyRead.canonical.internalHtml).toContain('Legacy Q1 document');
+    expect(level2Read.canonical.internalHtml).toMatch(/data-a4-break=["']page["']/);
   });
 });
