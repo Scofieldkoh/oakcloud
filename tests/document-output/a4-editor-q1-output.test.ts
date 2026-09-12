@@ -36,7 +36,7 @@ const canonicalContent = [
   '<li><p>Q1-ALPHA-FIRST</p></li>',
   '<li><p>Q1-ALPHA-SECOND</p></li>',
   '</ol>',
-  '<ol class="list-bold-numbers q1-bold">',
+  '<ol class="list-bold-markers q1-bold">',
   '<li><p>Q1-BOLD-FIRST</p></li>',
   '<li><p>Q1-BOLD-SECOND</p></li>',
   '</ol>',
@@ -88,7 +88,7 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
 
     expect(html).toContain('start="5"');
     expect(html).toContain('list-alpha');
-    expect(html).toContain('list-bold-numbers');
+    expect(html).toContain('list-bold-markers');
     expect(html.indexOf(FIRST_SENTINEL)).toBeLessThan(html.indexOf(LAST_SENTINEL));
     for (const marker of SOFT_PAGINATION_MARKERS) expect(html).not.toContain(marker);
 
@@ -142,8 +142,8 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
       expect(rendered.restart.start).toBe('1');
       expect(rendered.alpha.classes).toContain('list-alpha');
       expect(rendered.alpha.beforeContent.toLowerCase()).toContain('lower-alpha');
-      expect(rendered.bold.classes).toContain('list-bold-numbers');
-      expect(Number.parseInt(rendered.bold.beforeWeight, 10) || 700).toBeGreaterThanOrEqual(600);
+      expect(rendered.bold.classes).toContain('list-bold-markers');
+      expect(rendered.bold.beforeWeight).toMatch(/^(700|bold)$/i);
       expect(rendered.nestedDepth).toBeGreaterThanOrEqual(2);
       await page.close();
     } finally {
