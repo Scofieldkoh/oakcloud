@@ -26,7 +26,11 @@ import type { FlowSelectionBookmark } from './a4-pagination/selection';
 export type A4EditorSemanticCommand =
   | { type: 'insert-paragraph' }
   | { type: 'insert-line-break' }
-  | { type: 'delete'; direction: A4DeleteDirection }
+  | {
+      type: 'delete';
+      direction: A4DeleteDirection;
+      affinity?: A4PositionAffinity;
+    }
   | { type: 'insert-manual-break' }
   | { type: 'remove-manual-break' };
 
@@ -42,8 +46,11 @@ export type A4EditorSemanticCommandResult =
 function affinityForCommand(
   command: A4EditorSemanticCommand,
 ): A4PositionAffinity {
-  if (command.type === 'delete' && command.direction === 'forward') {
-    return 'before';
+  if (command.type === 'delete') {
+    return (
+      command.affinity ??
+      (command.direction === 'forward' ? 'before' : 'after')
+    );
   }
   return 'after';
 }
