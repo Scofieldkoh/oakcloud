@@ -1,205 +1,155 @@
 # VERIFY handoff log
 
-## Q1 independent verification packet — VERIFY-Q1-20260912-01
+## Q1 independent verification packet — VERIFY-Q1-20260912-01 — FINAL
 
 ### Scope and immutable target
 
 - Assignment: `VERIFY-Q1-20260912-01`
-- Role: independent VERIFY / Q1 only
+- Role: independent VERIFY / G2-Q1 only
 - Frozen production candidate: `6e8d4426c0d57043d85a830045dee465f6ff9a47`
 - Integration PR: `#47 — codex/a4-editor-wave2-g2-integration-20260912`
-- Q1 evidence branch: `verify/a4-editor-q1-20260912`
+- Q1 evidence PR: `#48 — verify/a4-editor-q1-20260912`
 - Frozen contract: `v1 frozen at G0 — unchanged`
-- G1 status supplied by the programme: `FROZEN / PASSED`
-- Evidence closure timestamp: `2026-09-12T17:52:31+08:00` (Asia/Singapore)
+- Product files modified by VERIFY: **none**
+- Temporary VERIFY-only GitHub Actions workflows were removed after evidence capture.
 
-The Q1 execution target is the immutable candidate above. Later commits on PR #47 were inspected only to obtain the published VERIFY assignment and coordination records; they are not treated as the product candidate under test.
+All decisive jobs checked out the frozen candidate by exact SHA, proved `git rev-parse HEAD` matched it, and overlaid only VERIFY-owned acceptance files. No application source, contract, schema, production data, package/version file, or deployment configuration was changed to obtain the result.
 
-No production editor, SEMANTICS, FIELDS, WORKFLOW, contract, migration, shared configuration, owner-test, package, or version file was changed by VERIFY.
+### Environment
 
-### Independent-execution status
+- GitHub-hosted Ubuntu 24.04 runners
+- Node 24
+- Real Chromium installed through Playwright; production Puppeteer was bound to the installed Chromium for output verification
+- Preferred Browser plugin was unavailable in this environment; the permitted real-Playwright/Chromium fallback was used
+- Disposable PostgreSQL 16 container for persistence verification
+- Synthetic Q1 content only; no production business records
 
-Q1 could not be executed in a compliant independent runtime from this VERIFY session. The gate is therefore not eligible to pass.
+### Decisive execution evidence
 
-This is an execution-infrastructure blocker, not a discovered production-code defect:
+#### Browser / repeatability
 
-- `VERIFY-INFRA-01` — no compliant runnable Node 24 + real Chromium + disposable PostgreSQL Q1 execution channel was reachable under the published VERIFY lease.
-- The local isolated runner available to VERIFY reports Node `v22.14.0` and npm `10.9.2`, which does not satisfy the required Node `>=24 <25` environment.
-- The local runner could not retrieve the repository because GitHub DNS resolution failed (`Could not resolve host: github.com`).
-- The exact candidate has a `Node 24 compatibility` GitHub Actions run `#349` / run id `34685170308`, but GitHub reports it as `completed / action_required` with zero jobs.
-- The persistent `.github/workflows/node24-compatibility.yml` workflow does not execute the A4 Q1 browser, Q1 persistence, or Q1 output acceptance suite. It covers static/build/business-assistant checks and a production-image Chromium smoke path only.
-- The candidate deliberately removes the temporary CORE G2 corrective workflow. That deleted workflow both applied production corrections and ran CORE-side validations, so it is not an independent VERIFY/Q1 execution path and its results are not counted as Q1 evidence.
-- No pre-existing `__tests__/browser/a4-q1-acceptance.browser.test.tsx` acceptance file was found in the repository search performed by VERIFY.
-- Shared workflow/configuration changes are outside the VERIFY lease, so VERIFY did not add or alter CI configuration merely to obtain a green result.
+Run `34691284098`, browser job `103546894711`: **SUCCESS**.
 
-Because the required independent environment was unavailable, VERIFY did not create unexecuted Q1 test files and did not manufacture pass evidence. Existing CORE green results remain prerequisites only and are explicitly excluded from Q1 pass counts.
+- exact frozen candidate proved before verifier overlay;
+- Q1-01 native `Enter` followed immediately by typing executed in **20 consecutive fresh-process runs: 20/20 passed**;
+- VERIFY boundary packet passed;
+- complete frozen Q1-relevant browser baseline and delayed/fault variants passed.
 
-### Environment actually observed
+Run `34693602507`, browser job `103553139068`: **SUCCESS** and independently repeated the same 20x critical sequence, boundary packet, and frozen baseline/fault variants.
 
-| Item | Independent Q1 observation |
-| --- | --- |
-| Required Node | `>=24 <25` |
-| Local diagnostic Node | `v22.14.0` — non-compliant |
-| Local diagnostic npm | `10.9.2` |
-| Real Chromium Q1 runtime | Not acquired / not launched |
-| Browser context | Not created |
-| Browser version | Not observed independently |
-| Font environment | Not observed independently |
-| Reserved test server | Not started; port `3423` therefore unused |
-| PostgreSQL Q1 database | Not created |
-| Test-data scope | No application test records created; production/real business data untouched |
-| Production systems/data | Not accessed or mutated |
+#### PostgreSQL / save-reopen / batch / readers
 
-### Commands and execution evidence
+Run `34693602507`, PostgreSQL job `103553138970`: **SUCCESS**.
 
-Diagnostic commands actually executed in the isolated runner:
+The job used a disposable PostgreSQL database, applied migrations, and passed the Q1 persistence acceptance plus the frozen W1 baseline. Evidence covered save/reopen, A/B isolation, two-item batch identity/layout separation, canonical stored-document reading, old/new reader compatibility boundaries, and absence of soft-pagination metadata in persisted canonical state.
 
-```text
-node --version
-# v22.14.0
+#### Q1-08 empty nested-list caret
 
-npm --version
-# 10.9.2
+The first combined verifier used a helper that required a `Text` node and therefore could not place a caret in the deliberate empty fixture `<p><br /></p>`. That was a verifier defect, not a product defect.
 
-# Repository retrieval attempt through git/GitHub
-# failed: Could not resolve host: github.com
-```
+A focused verifier used a real collapsed DOM range inside the empty paragraph and executed the required native `Enter` + immediate typing sequence against the exact frozen candidate.
 
-Repository-connected checks actually performed:
+Run `34697297249`, browser job `103562865846`: **SUCCESS**.
 
-- resolved and inspected frozen commit `6e8d4426c0d57043d85a830045dee465f6ff9a47`;
-- read root `AGENTS.md` and the required A4 implementation/verification/coordination documents;
-- confirmed PR #47 has coordination-only commits after the frozen product candidate;
-- inspected the exact candidate's persistent Node 24 workflow;
-- inspected the exact candidate's workflow-run state: run `34685170308`, `action_required`, zero jobs;
-- inspected the removed temporary CORE corrective workflow from the frozen commit diff;
-- searched for an existing dedicated Q1 browser acceptance file and found none.
+Observed result: the empty nested item lifted to the parent list level, hierarchy remained valid, `Parent` was retained, and immediate typed content `LIFTED` was retained. **Q1-08 passes.**
 
-Q1 test commands actually executed against the exact candidate in a compliant Node 24 / real-Chromium environment: **none**. Consequently there are no independent Q1 test pass counts to report.
+### Q1-11 real HTML/PDF rendering — PRODUCT DEFECT
 
-### Q1-01 through Q1-12
+Run `34697297249`, output job `103562865715`: **FAILURE on the intended numbering assertion after real rendering**.
 
-| Check | Result | Independent evidence |
+The verifier called the production `buildPDFHtml` and `generatePDF` paths with real Chromium. It produced and retained:
+
+- `a4-q1-11-real-html.png`
+- `a4-q1-11-real-output.pdf`
+- `a4-q1-11-real-output.txt`
+
+GitHub Actions artifact:
+
+- name: `a4-q1-11-real-render`
+- artifact id: `10298668552`
+- artifact size: `95,745` bytes
+- artifact digest: `sha256:d08199ea08546d2c856cd6ce22e9b1dccfcc800e1613ee5ec1973e287313974e`
+- retained from run: `34697297249`
+
+Generated PDF facts:
+
+- actual PDF bytes: `42,061`
+- pages: `4`
+- first sentinel: `Q1-REAL-START-7F4A` present
+- final sentinel: `Q1-REAL-END-9C2D` present on page 4
+- sentinel/order and filler content remained intact across pagination
+
+The actual output is wrong for ordered-list start/continuation semantics:
+
+| Fixture | Required | Actual rendered HTML/PDF |
 | --- | --- | --- |
-| Q1-01 — native Enter then immediate typing across a page boundary, no synthetic inter-action wait | **BLOCKED / NOT EXECUTED** | Required real Chromium Node 24 runner unavailable. |
-| Q1-02 — Backspace, Delete, Bold, paste, field insertion, and break removal around page boundaries | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-03 — forward/reverse cross-page selections with Enter and Shift+Enter | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-04 — manual break removal inside list items without deleting content from another page | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-05 — break insertion across multi-page selections | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-06 — long list items and nested lists across soft and hard boundaries | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-07 — Tab, Shift+Tab, and toolbar indent/outdent equivalence | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-08 — Enter inheritance and list-exit behavior for headings, indented/centred paragraphs, nested/top-level lists | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-09 — blank-page/break deletion and full-state Undo restoration | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-10 — Document A/B history isolation, then save/reload | **BLOCKED / NOT EXECUTED** | Same infrastructure blocker. |
-| Q1-11 — durable numbering through save/reopen and actual PDF, including `ol start=5`, alpha, bold, nested numbering, continuation/restart, sentinel uniqueness/order, and no persisted soft-pagination metadata | **BLOCKED / NOT EXECUTED** | Actual HTML/PDF generation and rendered-PDF inspection were not available independently. |
-| Q1-12 — native pointer/keyboard blank-page add/delete behavior | **BLOCKED / NOT EXECUTED** | Required real Chromium Node 24 runner unavailable. |
+| `<ol start="5">` first item | `5.` | `1.` |
+| same list second item | `6.` | `2.` |
+| alpha list | `a)`, `b)` | `a)`, `b)` — correct |
+| bold-number list | bold marker retained | bold `1.` retained |
+| continuation `<ol start="8">` | `8.` | `1.` |
+| explicit restart `<ol start="1">` | `1.` | `1.` — correct |
 
-Exact independent Q1 acceptance count: **0 passed / 0 failed / 12 blocked-not-executed**.
+This was confirmed three ways:
 
-No Q1 item is recorded as passed from CORE-side prerequisite evidence.
+1. PDF text extraction from the real four-page PDF reported `Q1-NUMBER-FIVE 1.`, `Q1-NUMBER-SIX 2.`, and `Q1-CONTINUATION-EIGHT 1.`.
+2. Visual inspection of the retained production HTML screenshot showed the same `1., 2., 1.` markers.
+3. The PDF was rendered to images at 200 DPI; visual inspection of page 1 again showed `Q1-NUMBER-FIVE` as `1.`, `Q1-NUMBER-SIX` as `2.`, and `Q1-CONTINUATION-EIGHT` as `1.`. Page 4 confirmed the final sentinel and ordering.
 
-### Critical native repeatability
+This is therefore **not** a PDF text-extraction artifact and **not** a verifier-only failure.
 
-- Required: at least 20 consecutive native executions per supported primary browser configuration, plus delayed/fault variants.
-- Executed independently: **0 / 20**.
-- Delayed/fault variants executed independently: **0**.
-- Artificial inter-action waits added: **none**.
-- Content-loss events observed independently: **none, because the sequence could not be executed**.
-- Repeatability result: **BLOCKED / NOT EXECUTED**.
+The frozen print stylesheet uses a custom counter reset based on `--list-start` with a default of zero while generated HTML preserves the native `start` attribute. The observed rendering demonstrates that the native `start` value is not reaching the custom output counter for these lists. VERIFY did not change production code to correct it.
 
-### Browser and boundary evidence
+### Q1-01 through Q1-12 result map
 
-- Real Chromium Q1 browser executions: **0**.
-- Isolated Q1 browser contexts created: **0**.
-- Native Enter/immediate-type sequence: **not executed**.
-- Boundary Backspace/Delete/Bold/paste/field/break cases: **not executed**.
-- Cross-page forward/reverse selection cases: **not executed**.
-- Blank-page pointer/keyboard cases: **not executed**.
-- No stale-DOM overwrite, content duplication/loss/reordering, or cross-document history claim can be made independently.
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Q1-01 | **PASS** | 20/20 fresh-process native Enter/immediate-type repetitions; browser runs `34691284098` and `34693602507`. |
+| Q1-02 | **PASS** | VERIFY browser boundary packet passed. |
+| Q1-03 | **PASS** | VERIFY forward/reverse cross-page selection packet passed. |
+| Q1-04 | **PASS** | Complete frozen Q1-relevant browser baseline and break-removal fault variants passed. |
+| Q1-05 | **PASS** | VERIFY selected logical-position break packet passed. |
+| Q1-06 | **PASS** | Complete frozen list/boundary baseline and fault variants passed. |
+| Q1-07 | **PASS** | Native Tab/Shift+Tab/toolbar equivalence packet passed. |
+| Q1-08 | **PASS** | Focused real-Chromium empty nested-list caret test passed, run `34697297249`. |
+| Q1-09 | **PASS** | Undo/blank-page boundary packet passed. |
+| Q1-10 | **PASS** | Disposable-PostgreSQL save/reopen A/B isolation acceptance passed, run `34693602507`. |
+| Q1-11 | **FAIL — PRODUCT DEFECT** | Durable persistence portion passed, but actual HTML/PDF renders `start=5` as `1,2` and continuation `start=8` as `1`. |
+| Q1-12 | **PASS** | Native blank-page pointer/keyboard packet passed. |
 
-Result: **BLOCKED / NOT EXECUTED**.
+### Verifier-only false starts kept separate from the product defect
 
-### Save/reopen and snapshot agreement
+The following did not count as product failures:
 
-The required canonical/ref/parent/server/reopened comparison was not executed independently.
+- initial Q1 environment/channel setup before the temporary VERIFY workflow exception was authorized;
+- early persistence verifier assumptions about canonical storage shape, corrected without production changes;
+- early output-verifier class/style assumptions, corrected without production changes;
+- Q1-08 helper assumption that every caret target contains a text node;
+- one focused Q1-11 workflow shell-quoting error while binding Chromium;
+- one focused Q1-11 default 5-second test timeout;
+- one hidden artifact-directory upload configuration issue.
 
-- save/reopen list semantics: **not executed**;
-- save/reopen hard-break semantics: **not executed**;
-- canonical/ref/parent/server/reopened snapshot equality: **not executed**;
-- Document A/B history isolation through persistence: **not executed**;
-- stale-DOM overwrite detection through persistence: **not executed**.
+After those verifier-only issues were removed, Q1-08 passed and Q1-11 still failed on visible production output, establishing the product defect above.
 
-Result: **BLOCKED / NOT EXECUTED**.
+### Defect requiring owner correction
 
-### Two-item batch identity/layout isolation
+`Q1-11-LIST-OUTPUT-01` — ordered-list native start/continuation value is lost by the custom HTML/PDF output counter path.
 
-No independent Q1 persistence/output runner was available to create and verify the required two synthetic records.
+- Severity for gate: blocking
+- Affected requirement: Q1-11 durable numbering through actual output
+- Reproduction: production HTML and production PDF from exact frozen candidate
+- Data/content loss: no text loss observed in this fixture; numbering semantics are wrong
+- Correct cases in same fixture: alpha numbering, bold marker styling, explicit restart-at-1, sentinels/order/pagination
+- Production correction by VERIFY: **none**
+- Required next action: return to the appropriate implementation owner, correct the output numbering bridge/counter semantics, freeze a new candidate, then rerun Q1-11 and dependent G2/Q1 acceptance before promotion
 
-- two-item identity isolation: **not executed**;
-- two-item layout isolation: **not executed**;
-- cross-item contamination check: **not executed**.
+### Cleanup / promotion boundary
 
-Result: **BLOCKED / NOT EXECUTED**.
-
-### Old/new reader compatibility
-
-Old/new reader compatibility could not be executed independently against persisted synthetic Q1 records.
-
-- legacy/old reader: **not executed**;
-- current/new reader: **not executed**;
-- read-compatibility comparison: **not executed**.
-
-Result: **BLOCKED / NOT EXECUTED**.
-
-### Actual HTML/PDF output evidence
-
-The mandatory independent synthetic document generation path could not be run. Therefore VERIFY has no valid actual-output evidence for promotion.
-
-- generated HTML from Q1 synthetic state: **not generated independently**;
-- generated PDF from Q1 synthetic state: **not generated independently**;
-- rendered PDF pages inspected: **0**;
-- `ol start=5` rendering: **not verified**;
-- alpha numbering: **not verified**;
-- bold list content: **not verified**;
-- nested numbering: **not verified**;
-- continuation/restart: **not verified**;
-- unique sentinel occurrence count/order: **not verified**;
-- hard page breaks and relevant formatting: **not verified**;
-- persisted soft-pagination metadata absence: **not verified through save/reopen/output**.
-
-Evidence location: **none — output generation was blocked before execution**.
-
-Result: **BLOCKED / NOT EXECUTED**.
-
-### PostgreSQL evidence
-
-A disposable Q1 PostgreSQL database/test schema was not created because no compliant executable Q1 runner was reachable.
-
-- migrations applied independently for Q1: **0**;
-- Q1 PostgreSQL tests executed: **0**;
-- production database access: **none**;
-- real business data access: **none**.
-
-Result: **BLOCKED / NOT EXECUTED**.
-
-### Defects and blockers
-
-#### VERIFY-INFRA-01 — independent Q1 execution channel unavailable
-
-- Classification: verification infrastructure / gate-execution blocker.
-- Probable owner: CORE / repository CI coordination, not a production editor workstream.
-- Production defect established: **no**.
-- Production fix attempted by VERIFY: **no**.
-- Failure evidence preserved: non-compliant local Node version, repository-network failure, exact-candidate Actions `action_required` state with zero jobs, and persistent-workflow scope mismatch recorded above.
-- Gate effect: Q1 cannot pass; G2 remains open.
-
-No production-code defect was independently established because none of the acceptance scenarios could be executed in the mandated environment.
-
-### Rollback and read-compatibility implications
-
-Independent rollback/read-compatibility confidence is **not established**. Existing prerequisite evidence must not be promoted into Q1 evidence. The candidate must not advance through G2/Q1 until the complete acceptance set is executed independently against this exact SHA (or, if production bytes change, against a newly frozen immutable candidate).
-
-If only the verification execution channel is corrected and the production candidate remains byte-for-byte `6e8d4426c0d57043d85a830045dee465f6ff9a47`, Q1 still needs to be run from the beginning; no blocked item above can be converted to passed by inference.
+- Temporary `.github/workflows/a4-q1-focused.yml`: removed after evidence capture.
+- Temporary `.github/workflows/a4-q1-verify.yml`: removed after evidence capture.
+- PR #47: not merged by VERIFY.
+- PR #48: evidence only; not merged by VERIFY.
+- No deployment or next implementation wave was started.
 
 ### Promotion decision
 
