@@ -91,10 +91,7 @@ export function buildA4PrintCss(
     br { margin: 0; }
     ul, ol { margin: 0 0 ${normalized.paragraphSpacing} 0; padding-left: 0; }
     ul { list-style: none; }
-    ol {
-      list-style: none;
-      counter-reset: item var(--list-start, 0);
-    }
+    ol { list-style: none; }
     ul > li, ol > li {
       position: relative;
       margin: 0 0 0.25em 0;
@@ -109,24 +106,22 @@ export function buildA4PrintCss(
       left: 0;
       top: 0;
     }
-    ol > li { counter-increment: item; }
     ol > li::before {
-      content: counter(item) ". ";
+      content: counter(list-item) ". ";
       position: absolute;
       left: 0;
       top: 0;
     }
     ol.list-bold-numbers > li::before { font-weight: 700; }
-    ol.list-alpha > li::before { content: counter(item, lower-alpha) ") "; }
+    ol.list-alpha > li::before { content: counter(list-item, lower-alpha) ") "; }
     ol[style*="--flow-list-start"] {
-      counter-reset: item var(--flow-list-start, 0);
+      counter-reset: list-item var(--flow-list-start, 0);
     }
-    ol > li[data-flow-continuation-item] { counter-increment: none; }
+    ol > li[data-flow-continuation-item] { counter-increment: list-item 0; }
     ol > li[data-flow-continuation-item]::before { content: none; }
     ul > li[data-flow-continuation-item]::before { content: none; }
     ol ol, ol ul, ul ol, ul ul { padding-left: 0; }
-    ol ol { counter-reset: item; }
-    ol ol > li::before { content: counters(item, ".") " "; }
+    ol ol > li::before { content: counters(list-item, ".") " "; }
     li { display: list-item; margin: 0 0 0.25em 0; }
     blockquote { margin: 0 0 ${normalized.paragraphSpacing} 40px; padding: 0; }
     table {
