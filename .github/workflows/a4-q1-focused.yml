@@ -84,7 +84,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Bind production Puppeteer path
         working-directory: candidate
-        run: echo "PUPPETEER_EXECUTABLE_PATH=$(node -e \"const { chromium } = require('playwright'); process.stdout.write(chromium.executablePath())\")" >> "$GITHUB_ENV"
+        run: |
+          CHROME_PATH=$(node -e 'const { chromium } = require("playwright"); process.stdout.write(chromium.executablePath())')
+          echo "PUPPETEER_EXECUTABLE_PATH=${CHROME_PATH}" >> "$GITHUB_ENV"
       - name: Configure evidence directory
         run: echo "Q1_OUTPUT_DIR=${GITHUB_WORKSPACE}/candidate/.q1-artifacts" >> "$GITHUB_ENV"
       - name: Execute Q1-11 real render
