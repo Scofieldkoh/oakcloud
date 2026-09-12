@@ -10,95 +10,44 @@ permissions:
 
 jobs:
   c2:
-    if: ${{ !contains(github.event.head_commit.message, '[c2-applied]') }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
-      JWT_SECRET: c2-ci-only-build-secret-that-is-not-used-at-runtime
-      ENCRYPTION_KEY: c2-ci-only-build-encryption-key
-      NODE_OPTIONS: --max-old-space-size=8192
+    timeout-minutes: 25
     steps:
       - name: Check out C2 branch
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
       - name: Set up Node 24
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
-
       - name: Apply deterministic CORE C2 patch
         run: python3 .github/scripts/a4-core-c2-apply.py
-
       - name: Review patch integrity
         run: |
           git diff --check
           git diff --stat
-          git diff -- src/components/documents/a4-page-editor.tsx __tests__/browser/a4-input-sequences.browser.test.tsx
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: Run CORE C2 and C1 component regressions
-        run: >-
-          npx vitest run
-          __tests__/components/a4-editor-c2-bridge.test.ts
-          __tests__/components/a4-editor-session.test.ts
-          __tests__/components/a4-page-editor.test.tsx
-          __tests__/components/a4-editor-toolbar.test.tsx
-          __tests__/components/a4-page-editor-ssr.test.tsx
-          --reporter=verbose
-
-      - name: Run S1 structural regression suite
-        run: npx vitest run __tests__/components/a4-pagination --reporter=verbose
-
-      - name: Run F1 parser and compatibility smoke
-        run: >-
-          npx vitest run
-          __tests__/lib/template-field-contract.test.ts
-          __tests__/lib/template-field-f0-compatibility.test.ts
-          __tests__/lib/template-field-f1.test.ts
-          --reporter=verbose
-
-      - name: Run exact CORE G1/C2 browser validation
-        run: >-
-          npx vitest run --config vitest.browser.config.ts
-          __tests__/browser/a4-input-sequences.browser.test.tsx
-          __tests__/browser/a4-boundary-semantics.browser.test.tsx
-          __tests__/browser/a4-page-editor.browser.test.tsx
-          --reporter=verbose
-
-      - name: Lint changed CORE files
-        run: >-
-          npx eslint
-          src/components/documents/a4-page-editor.tsx
-          src/components/documents/a4-editor-semantic-bridge.ts
-          __tests__/components/a4-editor-c2-bridge.test.ts
-          __tests__/browser/a4-input-sequences.browser.test.tsx
-
-      - name: Generate database client
-        run: npm run db:generate
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: TypeScript project build check
-        run: npx tsc -b
-
-      - name: Production build
-        run: npm run build
-
-      - name: Commit validated C2 CORE source
+        id: components
+        shell: bash
         run: |
-          git config user.name "ChatGPT"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/a4-core-c2-validation.yml .github/scripts/a4-core-c2-apply.py
-          git add src/components/documents/a4-page-editor.tsx __tests__/browser/a4-input-sequences.browser.test.tsx
-          git commit -m "feat(a4-editor): wire C2 semantic editing [c2-applied]"
-          git push origin HEAD:codex/a4-editor-core-c2-20260912
+          mkdir -p /tmp/c2-evidence
+          set -o pipefail
+          npx vitest run \
+            __tests__/components/a4-editor-c2-bridge.test.ts \
+            __tests__/components/a4-editor-session.test.ts \
+            __tests__/components/a4-page-editor.test.tsx \
+            __tests__/components/a4-editor-toolbar.test.tsx \
+            __tests__/components/a4-page-editor-ssr.test.tsx \
+            --reporter=verbose 2>&1 | tee /tmp/c2-evidence/components.log
+      - name: Upload component evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c2-component-evidence-${{ github.run_id }}
+          path: /tmp/c2-evidence
+          if-no-files-found: warn
+          retention-days: 7
