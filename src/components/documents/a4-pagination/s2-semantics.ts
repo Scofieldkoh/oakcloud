@@ -436,7 +436,7 @@ function exitEmptyListItem(item: HTMLElement): { point: A4DomPoint } | null {
   });
   let cursor: Element | null = nextItem;
   while (cursor) {
-    const next = cursor.nextElementSibling;
+    const next: Element | null = cursor.nextElementSibling;
     trailing.appendChild(cursor);
     cursor = next;
   }
@@ -1148,13 +1148,13 @@ export function readA4S2FormattingState(
   if (isTransactionResult(resolved)) return null;
   const samples = textNodesInRange(resolved.root, resolved.range);
   return {
-    bold: toggleState(samples.map((node) => markAt(node, resolved.root, 'bold'))),
-    italic: toggleState(samples.map((node) => markAt(node, resolved.root, 'italic'))),
-    underline: toggleState(samples.map((node) => markAt(node, resolved.root, 'underline'))),
-    fontFamily: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'font-family'))),
-    fontSize: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'font-size'))),
-    textColor: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'color'))),
-    highlightColor: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'background-color'))),
+    bold: toggleState(samples.map((node) => markAt(node, resolved.root, 'bold')),
+    italic: toggleState(samples.map((node) => markAt(node, resolved.root, 'italic')),
+    underline: toggleState(samples.map((node) => markAt(node, resolved.root, 'underline')),
+    fontFamily: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'font-family')),
+    fontSize: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'font-size')),
+    textColor: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'color')),
+    highlightColor: uniformValue(samples.map((node) => inlineProperty(node, resolved.root, 'background-color')),
   };
 }
 
