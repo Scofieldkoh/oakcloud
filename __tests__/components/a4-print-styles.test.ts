@@ -45,7 +45,7 @@ describe('shared A4 print styles', () => {
     expect(twentyMillimeter).toContain('bottom: calc(-1 * 20mm / 2)');
   });
 
-  it('renders ordered lists with flush markers from the native list-item counter', () => {
+  it('renders ordered lists with native list-item markers and durable start semantics', () => {
     const css = buildA4PrintCss(DEFAULT_A4_DOCUMENT_LAYOUT);
     expect(css).toContain('ul, ol { margin: 0 0 0.5em 0; padding-left: 0; }');
     expect(css).toContain('ul { list-style: none; }');
@@ -53,19 +53,19 @@ describe('shared A4 print styles', () => {
     expect(css).not.toContain('counter-reset: item var(--list-start, 0)');
     expect(css).not.toContain('ol > li { counter-increment: item; }');
     expect(css).toContain(
-      'ol > li::before {\n      content: counter(list-item) ". ";\n      position: absolute;\n      left: 0;\n      top: 0;\n    }',
+      'ol > li::marker { content: counter(list-item) ". "; }',
     );
     expect(css).toContain(
-      'ol.list-bold-numbers > li::before { font-weight: 700; }',
+      'ol.list-bold-numbers > li::marker { font-weight: 700; }',
     );
     expect(css).toContain(
-      'ol.list-alpha > li::before { content: counter(list-item, lower-alpha) ") "; }',
+      'ol.list-alpha > li::marker { content: counter(list-item, lower-alpha) ") "; }',
     );
     expect(css).toContain('ul > li, ol > li {');
     expect(css).toContain('position: relative;');
-    expect(css).toContain('ol > li { padding-left: 5ch; }');
-    expect(css).toContain('ol ol > li { padding-left: 6ch; }');
-    expect(css).toContain('ol ol ol > li { padding-left: 8ch; }');
+    expect(css).toContain('ol > li {\n      padding-left: 0;\n      margin-left: 5ch;\n    }');
+    expect(css).toContain('ol ol > li { margin-left: 6ch; }');
+    expect(css).toContain('ol ol ol > li { margin-left: 8ch; }');
     expect(css).toContain('ul > li::before {');
     expect(css).toContain('position: absolute;');
   });
@@ -75,7 +75,7 @@ describe('shared A4 print styles', () => {
     expect(css).toContain('ol ol, ol ul, ul ol, ul ul { padding-left: 0; }');
     expect(css).not.toContain('ol ol { counter-reset: item; }');
     expect(css).toContain(
-      'ol ol > li::before { content: counters(list-item, ".") " "; }',
+      'ol ol > li::marker { content: counters(list-item, ".") " "; }',
     );
   });
 
@@ -88,7 +88,7 @@ describe('shared A4 print styles', () => {
       'ol > li[data-flow-continuation-item] { counter-increment: list-item 0; }',
     );
     expect(css).toContain(
-      'ol > li[data-flow-continuation-item]::before { content: none; }',
+      'ol > li[data-flow-continuation-item]::marker { content: none; }',
     );
     expect(css).toContain(
       'ul > li[data-flow-continuation-item]::before { content: none; }',
