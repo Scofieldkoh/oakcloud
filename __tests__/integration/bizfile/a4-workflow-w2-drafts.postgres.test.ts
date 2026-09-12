@@ -128,7 +128,7 @@ suite('A4 WORKFLOW W2 draft sequencing on disposable PostgreSQL', () => {
     await expect(saveSequencedEditorDraft(
       draftInput('<p>stale</p>', 2, 'writer-a', 0),
       { tenantId, userId },
-    )).rejects.toThrow(/revision/i);
+    )).rejects.toThrow('This document changed since you opened it. Reload or reconcile before saving.');
     const latest = await getLatestEditorDraft(documentId, userId, tenantId);
     expect(latest?.content).toBe('<p>revision 1</p>');
   });
