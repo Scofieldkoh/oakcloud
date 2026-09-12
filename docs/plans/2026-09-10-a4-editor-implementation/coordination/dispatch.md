@@ -2,14 +2,15 @@
 
 Coordinator: CORE
 Shared checkout: `C:\Users\Scofieldkoh\Documents\oakcloud`
-Integration branch (remote preparation): `codex/a4-editor-core-c1`
+Integration branch (remote preparation): `codex/a4-editor-g1-corrected-integration-20260912`
 Starting baseline: `bfdc4f95594b73ce4d20bff45f320bdb53837c37`
 Contract: **v1 frozen at G0**; see `coordination/g0.md`
 G0 integration base before freeze-record commit: `f5a103c85399a3e20d624140a963e19a79ced55a`
 G0 freeze-record commit: `475e54ea4ea4a7218bc0565fb337298c04190afa`
 Deployment: not authorized
-Stage 1: **DISPATCHED**
-Stage-1 common baseline: `bfdc4f95594b73ce4d20bff45f320bdb53837c37`
+Stage 1: **G1 FROZEN/PASSED**
+Stage-1 corrected integration / Stage-2 common baseline: `ad7285ace280f0b4002f119f923a8e2166b9475f`
+Wave 2: **DISPATCHED — IMPLEMENTATION NOT STARTED**
 
 ## Shared resource reservations — Stage 1
 
@@ -217,3 +218,59 @@ Final Wave-0 PR heads passed the repository's Node-24 compatibility workflow. Wo
 ## Integration freeze
 
 **Wave 0 is complete. G0 PASSED. Stage 1 is dispatched from `bfdc4f95594b73ce4d20bff45f320bdb53837c37`.**
+
+
+## Wave 2 assignments — released after G1 freeze
+
+Common baseline for every assignment: `ad7285ace280f0b4002f119f923a8e2166b9475f`
+Contract: **v1 frozen at G0 — unchanged**
+Gate prerequisite: **G1 FROZEN/PASSED**; see `coordination/g1.md`.
+Deployment: **not authorized**.
+Application version bump: **not authorized**.
+Scope rule: each owner implements only its named Wave-2 packet from the existing workstream plan and exclusive ownership table. No owner may start Wave 3/4/5 or silently change the frozen contract.
+
+### CORE-C2-20260912-01
+
+- Role / packet: **CORE — C2**.
+- State: **DISPATCHED — implementation not started**.
+- Start from: `ad7285ace280f0b4002f119f923a8e2166b9475f`.
+- Objective: wire the already-integrated S1 semantic commands/structural mappings and F1 field hooks into the editor, remove remaining physical-page mutation authority, and satisfy native cross-page behavior under the frozen contracts.
+- Prerequisites: C1 + S1 integrated and G1 frozen; consume F1/W1 interfaces without reimplementing their domains.
+- Ownership: CORE production/tests only as defined in README/workstream ownership. Do not edit SEMANTICS/FIELDS/WORKFLOW production files.
+- Required handoff: `coordination/core.md`; include exact commands/counts, compatibility impact, and any blocked dependency.
+- Stop boundary: **C2 only**. Do not begin C3, deploy, or bump version.
+
+### SEMANTICS-S2-20260912-01
+
+- Role / packet: **SEMANTICS — S2**.
+- State: **DISPATCHED — implementation not started**.
+- Start from: `ad7285ace280f0b4002f119f923a8e2166b9475f`.
+- Objective: implement list/Enter/indent/numbering and formatting correctness on top of S1 structural semantics, including required pure/native boundary/list regressions.
+- Prerequisites: S1 integrated and G1 frozen. C1 remains the sole canonical revision/session authority.
+- Ownership: SEMANTICS production/tests only as defined in README/workstream ownership. Do not edit CORE/FIELDS/WORKFLOW production files or create a second revision authority.
+- Required handoff: `coordination/semantics.md`; include exact commands/counts, compatibility impact, and any blocked dependency.
+- Stop boundary: **S2 only**. Do not begin S3, deploy, or bump version.
+
+### FIELDS-F2-20260912-01
+
+- Role / packet: **FIELDS — F2**.
+- State: **DISPATCHED — implementation not started**.
+- Start from: `ad7285ace280f0b4002f119f923a8e2166b9475f`.
+- Objective: implement scoped field resolution, escaping, and atomic field lifecycle operations using the integrated F1 parser/registry/lossless/content-policy contracts; produce semantic field transactions and the renderer integration request owned by WORKFLOW.
+- Prerequisites: F1 integrated and G1 frozen; preserve C05/C06 frozen identity/trust semantics.
+- Ownership: FIELDS production/tests only as defined in README/workstream ownership. Do not edit CORE/W route files or activate W-owned persistence/output behavior.
+- Required handoff: `coordination/fields.md`; include exact commands/counts, compatibility impact, and any blocked dependency.
+- Stop boundary: **F2 only**. Do not begin F3, deploy, or bump version.
+
+### WORKFLOW-W2-20260912-01
+
+- Role / packet: **WORKFLOW — W2**.
+- State: **DISPATCHED — implementation not started**.
+- Start from: `ad7285ace280f0b4002f119f923a8e2166b9475f`.
+- Objective: implement current-revision save, batch identity/layout, preview and draft integration so route adapters consume the existing C1 snapshot/concurrency contracts rather than reimplementing editor state.
+- Prerequisites: C1 + F1 + W1 integrated and G1 frozen; consume S1 readers/mappings and the fresh `w1-s1-structural-v1` bundle as published.
+- Ownership: WORKFLOW production/tests only as defined in README/workstream ownership. Do not edit CORE editor or F/S domain implementations.
+- Required handoff: `coordination/workflow.md`; include exact commands/counts, compatibility/migration implications, and any blocked dependency.
+- Stop boundary: **W2 only**. Do not begin W3, deploy, or bump version.
+
+Wave-2 assignments are published by CORE/integrator only after the canonical G1 pass. Publication is not implementation; all four packets remain untouched at this dispatch commit.
