@@ -573,3 +573,159 @@ describe('A4 S0 structural semantics proof', () => {
     });
   });
 });
+
+function s2Canonical(html: string): CanonicalEditorDocument {
+  return { internalHtml: hydrateFlowHtml(html) };
+}
+
+function s2NativeSelection(
+  canonical: CanonicalEditorDocument,
+  anchorSelector: string,
+  anchorOffset: number,
+  focusSelector: string,
+  focusOffset: number,
+): A4Selection {
+  const root = document.createElement('div');
+  root.contentEditable = 'true';
+  root.innerHTML = canonical.internalHtml;
+  document.body.appendChild(root);
+
+  try {
+    const textAt = (selector: string): Text => {
+      const element = root.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing S2 native selector: ${selector}`);
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const node = walker.nextNode();
+      if (!(node instanceof Text)) throw new Error(`Missing S2 native text: ${selector}`);
+      return node;
+    };
+
+    const anchor = textAt(anchorSelector);
+    const focus = textAt(focusSelector);
+    const native = window.getSelection();
+    if (!native) throw new Error('Native Selection is unavailable');
+    native.removeAllRanges();
+    native.setBaseAndExtent(anchor, anchorOffset, focus, focusOffset);
+    if (!native.anchorNode || !native.focusNode) {
+      throw new Error('Native Selection endpoints are unavailable');
+    }
+    const captured = captureA4SelectionFromDomPoints(
+      root,
+      { node: native.anchorNode, offset: native.anchorOffset },
+      { node: native.focusNode, offset: native.focusOffset },
+    );
+    if (!captured) throw new Error('S2 native selection could not be captured structurally');
+    return captured;
+  } finally {
+    window.getSelection()?.removeAllRanges();
+    root.remove();
+  }
+}
+
+function s2Applied(result: A4TransactionResult): CanonicalEditorDocument {
+  expect(result.status).toBe('applied');
+  if (result.status !== 'applied') throw new Error('Expected applied S2 transaction');
+  return result.document;
+}
+
+function s2Clean(canonical: CanonicalEditorDocument): HTMLElement {
+  return new DOMParser().parseFromString(
+    stripFlowMetadata(canonical.internalHtml),
+    'text/html',
+  ).body;
+}
+
+describe('A4 S2 native list and formatting semantics', () => {
+  it('keeps a native backward paragraph selection in reading order when converting to a list', async () => {
+    const { setA4S2ListType } = await import(
+      '@/components/documents/a4-pagination/s2-semantics'
+    );
+    const canonical = s2Canonical(
+      '<p>One</p><p>Two</p><ul><li><p>Three</p></li></ul>',
+    );
+    const selected = s2NativeSelection(
+      canonical,
+      ':scope > p:nth-child(2)', 3,
+      ':scope > p:first-child', 0,
+    );
+    const body = s2Clean(s2Applied(setA4S2ListType(canonical, selected, 'unordered')));
+    expect(Array.from(body.querySelectorAll(':scope > ul > li'), (li) => li.textContent))
+      .toEqual(['One', 'Two', 'Three']);
+  });
+
+  it('splits a list item at a native caret without duplicating later siblings', async () => {
+    const { insertA4S2ParagraphBreak } = await import(
+      '@/components/documents/a4-pagination/s2-semantics'
+    );
+    const canonical = s2Canonical(
+      '<ol start="5"><li><p>AlphaBeta</p></li><li><p>Next</p></li></ol>',
+    );
+    const selected = s2NativeSelection(
+      canonical,
+      'ol > li:first-child > p', 5,
+      'ol > li:first-child > p', 5,
+    );
+    const body = s2Clean(s2Applied(insertA4S2ParagraphBreak(canonical, selected)));
+    expect(Array.from(body.querySelectorAll('ol > li > p'), (p) => p.textContent))
+      .toEqual(['Alpha', 'Beta', 'Next']);
+    expect(body.textContent?.match(/Next/g)).toHaveLength(1);
+    expect(body.querySelector('ol')?.getAttribute('start')).toBe('5');
+  });
+
+  it('indents a native adjacent-item range as one semantic nested group', async () => {
+    const { indentA4S2ListItems } = await import(
+      '@/components/documents/a4-pagination/s2-semantics'
+    );
+    const canonical = s2Canonical(
+      '<ol><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li><li><p>D</p></li></ol>',
+    );
+    const selected = s2NativeSelection(
+      canonical,
+      'ol > li:nth-child(2) > p', 0,
+      'ol > li:nth-child(3) > p', 1,
+    );
+    const body = s2Clean(s2Applied(indentA4S2ListItems(canonical, selected)));
+    expect(Array.from(body.querySelectorAll(':scope > ol > li:first-child > ol > li'), (li) => li.textContent))
+      .toEqual(['B', 'C']);
+    expect(Array.from(body.querySelectorAll(':scope > ol > li'), (li) =>
+      li.querySelector(':scope > p')?.textContent,
+    )).toEqual(['A', 'D']);
+  });
+
+  it('continues numbering across a hard break only when explicitly commanded', async () => {
+    const { continueA4S2OrderedList } = await import(
+      '@/components/documents/a4-pagination/s2-semantics'
+    );
+    const canonical = s2Canonical(
+      '<ol start="5"><li><p>A</p></li></ol><div class="page-break"></div><p>Gap</p><ol start="20"><li><p>B</p></li></ol>',
+    );
+    const selected = s2NativeSelection(
+      canonical,
+      ':scope > ol:nth-of-type(2) > li > p', 0,
+      ':scope > ol:nth-of-type(2) > li > p', 0,
+    );
+    const body = s2Clean(s2Applied(continueA4S2OrderedList(canonical, selected)));
+    expect(body.querySelectorAll(':scope > ol')).toHaveLength(2);
+    expect(body.querySelector(':scope > ol:nth-of-type(2)')?.getAttribute('start')).toBe('6');
+    expect(body.querySelector('.page-break')).not.toBeNull();
+    expect(body.querySelector(':scope > p')?.textContent).toBe('Gap');
+  });
+
+  it('reports mixed marks independently from uniform properties for a native range', async () => {
+    const { readA4S2FormattingState } = await import(
+      '@/components/documents/a4-pagination/s2-semantics'
+    );
+    const canonical = s2Canonical(
+      '<p><span style="font-weight:bold;font-style:italic;color:red">A</span><span style="font-style:italic;color:red">B</span></p>',
+    );
+    const selected = s2NativeSelection(
+      canonical,
+      'p > span:first-child', 0,
+      'p > span:nth-child(2)', 1,
+    );
+    const state = readA4S2FormattingState(canonical, selected);
+    expect(state?.bold).toBe('mixed');
+    expect(state?.italic).toBe('on');
+    expect(state?.textColor).toEqual({ state: 'uniform', value: 'red' });
+  });
+});
