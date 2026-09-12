@@ -1,0 +1,334 @@
+name: A4 G2 corrective validation v2
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-wave2-g2-integration-20260912
+
+permissions:
+  contents: write
+
+jobs:
+  correct-and-validate:
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgresql://localhost/oakcloud
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/a4-editor-wave2-g2-integration-20260912
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Apply G2 corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"missing replacement marker in {path}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          def insert_before(path: str, marker: str, addition: str) -> None:
+              replace_once(path, marker, addition + marker)
+
+          def regex_once(path: str, pattern: str, replacement: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f"regex replacement count={count} in {path}: {pattern[:120]!r}")
+              p.write_text(updated)
+
+          s2 = 'src/components/documents/a4-pagination/s2-semantics.ts'
+          replace_once(
+              s2,
+              "  if (direction === 'indent' && nextPx > maxIndentPx) {\n",
+              "  const minimumUsableContentPx = 2 * emPx;\n"
+              "  if (direction === 'indent' && nextPx + minimumUsableContentPx > maxIndentPx) {\n",
+          )
+
+          old_range = '''function textNodesInRange(root: HTMLElement, range: Range): Node[] {
+            if (range.collapsed) return [range.startContainer];
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const nodes: Node[] = [];
+            let current: Node | null;
+            while ((current = walker.nextNode())) {
+              if (!(current.textContent ?? '').length) continue;
+              const nodeRange = document.createRange();
+              nodeRange.selectNodeContents(current);
+              const startsBeforeNodeEnd = range.compareBoundaryPoints(Range.START_TO_END, nodeRange) < 0;
+              const endsAfterNodeStart = range.compareBoundaryPoints(Range.END_TO_START, nodeRange) > 0;
+              if (startsBeforeNodeEnd && endsAfterNodeStart) nodes.push(current);
+            }
+            return nodes.length ? nodes : [range.startContainer];
+          }
+          '''
+          new_range = '''function compareDomBoundaryPoints(
+            leftNode: Node,
+            leftOffset: number,
+            rightNode: Node,
+            rightOffset: number,
+          ): number {
+            const left = document.createRange();
+            left.setStart(leftNode, leftOffset);
+            left.collapse(true);
+            const right = document.createRange();
+            right.setStart(rightNode, rightOffset);
+            right.collapse(true);
+            return left.compareBoundaryPoints(Range.START_TO_START, right);
+          }
+
+          function textNodesInRange(root: HTMLElement, range: Range): Node[] {
+            if (range.collapsed) return [range.startContainer];
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const nodes: Node[] = [];
+            let current: Node | null;
+            while ((current = walker.nextNode())) {
+              const length = current.textContent?.length ?? 0;
+              if (!length) continue;
+              const selectionStartsBeforeNodeEnds = compareDomBoundaryPoints(
+                range.startContainer,
+                range.startOffset,
+                current,
+                length,
+              ) < 0;
+              const nodeStartsBeforeSelectionEnds = compareDomBoundaryPoints(
+                current,
+                0,
+                range.endContainer,
+                range.endOffset,
+              ) < 0;
+              if (selectionStartsBeforeNodeEnds && nodeStartsBeforeSelectionEnds) nodes.push(current);
+            }
+            return nodes.length ? nodes : [range.startContainer];
+          }
+          '''
+          replace_once(s2, old_range, new_range)
+
+          clear_list = '''function clearListSegmentsBySelection(
+            list: HTMLElement,
+            selectedItems: Set<HTMLElement>,
+          ): boolean {
+            const sourceType = listTypeOf(list);
+            if (!sourceType) return false;
+            const segments = buildListSegments(list, selectedItems);
+            if (!segments.some((segment) => segment.selected)) return false;
+
+            const replacements: Node[] = [];
+            let retainedListIdentity = false;
+            for (const segment of segments) {
+              if (!segment.selected) {
+                const replacement = cloneListShell(list, sourceType, {
+                  keepIdentity: !retainedListIdentity,
+                  start: segment.startValue,
+                });
+                retainedListIdentity = true;
+                segment.items.forEach((item) => replacement.appendChild(item));
+                replacements.push(replacement);
+                continue;
+              }
+
+              segment.items.forEach((item) => {
+                if (!item.hasChildNodes()) {
+                  const paragraph = document.createElement('p');
+                  paragraph.innerHTML = '<br>';
+                  replacements.push(paragraph);
+                  return;
+                }
+                Array.from(item.childNodes).forEach((child) => replacements.push(child));
+              });
+            }
+            list.replaceWith(...replacements);
+            return true;
+          }
+
+          /** Remove list semantics from selected whole items without moving the operation into CORE. */
+          export function clearA4S2ListType(
+            canonical: CanonicalEditorDocument,
+            selection: A4Selection,
+          ): A4TransactionResult {
+            const resolved = resolveSelection(canonical, selection);
+            if (isTransactionResult(resolved)) return resolved;
+            const byList = selectedItemsByList(resolved.root, resolved.range);
+            if (!byList.size) {
+              return { status: 'unchanged', reason: 'The selection is not in a list item.' };
+            }
+            let changed = false;
+            byList.forEach((items, list) => {
+              changed = clearListSegmentsBySelection(list, new Set(items)) || changed;
+            });
+            if (!changed) return { status: 'unchanged', reason: 'No selected list semantics changed.' };
+            return finishPreservingSelection(canonical, resolved.root, selection);
+          }
+
+          '''
+          insert_before(s2, 'function selectedStartItem(', clear_list)
+
+          s2test = '__tests__/components/a4-pagination/s2-semantics.test.ts'
+          replace_once(
+              s2test,
+              '  applyA4S2Indent,\n  continueA4S2OrderedList,\n',
+              '  applyA4S2Indent,\n  clearA4S2ListType,\n  continueA4S2OrderedList,\n',
+          )
+          unlist_test = '''  it('removes selected list semantics while preserving surrounding ordered values', () => {
+            const canonical = createCanonicalEditorDocument(
+              '<ol start="5"><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ol>',
+            );
+            const body = clean(applied(clearA4S2ListType(
+              canonical,
+              caret(canonical, 'ol > li:nth-child(2) > p', 0),
+            )));
+            expect(Array.from(body.children, (node) => node.tagName)).toEqual(['OL', 'P', 'OL']);
+            expect(body.children[0].getAttribute('start')).toBe('5');
+            expect(body.children[2].getAttribute('start')).toBe('7');
+            expect(Array.from(body.children, (node) => node.textContent)).toEqual(['A', 'B', 'C']);
+          });
+
+          '''
+          insert_before(s2test, "  it('keeps nested descendants attached when an outer selected item converts', () => {\n", unlist_test)
+
+          bridge = 'src/components/documents/a4-editor-semantic-bridge.ts'
+          replace_once(
+              bridge,
+              '  applyA4S2Indent,\n  continueA4S2OrderedList,\n',
+              '  applyA4S2Indent,\n  clearA4S2ListType,\n  continueA4S2OrderedList,\n',
+          )
+          replace_once(
+              bridge,
+              "  | { type: 'set-list-type'; listType: A4S2ListType }\n",
+              "  | { type: 'set-list-type'; listType: A4S2ListType }\n  | { type: 'clear-list-type' }\n",
+          )
+          insert_before(
+              bridge,
+              "      case 'restart-numbering':\n",
+              "      case 'clear-list-type':\n        return clearA4S2ListType(structural.canonical, structural.selection);\n",
+          )
+
+          bridge_test = '__tests__/components/a4-editor-c2-bridge.test.ts'
+          clear_bridge_test = '''
+            const activeList = paragraphBookmark(
+              '<ol><li><p>Only</p></li></ol>',
+              0,
+              'ol > li > p[data-flow-id]',
+            );
+            const cleared = runA4EditorSemanticCommand(activeList.html, activeList.bookmark, {
+              type: 'clear-list-type',
+            });
+            expect(cleared.status).toBe('applied');
+            if (cleared.status !== 'applied') return;
+            const clearedRoot = document.createElement('div');
+            clearedRoot.innerHTML = cleared.transaction.html;
+            expect(clearedRoot.querySelector('ol, ul')).toBeNull();
+            expect(clearedRoot.querySelector('p')?.textContent).toBe('Only');
+          '''
+          insert_before(bridge_test, "    const restart = paragraphBookmark(\n", clear_bridge_test)
+
+          editor = 'src/components/documents/a4-page-editor.tsx'
+          replace_once(
+              editor,
+              "          const listType = command.value;\n          if (listType === 'none') return;\n          applyCurrentSemanticCommand({ type: 'set-list-type', listType });\n          return;\n",
+              "          const listType = command.value;\n          if (listType === 'none') {\n            applyCurrentSemanticCommand({ type: 'clear-list-type' });\n          } else {\n            applyCurrentSemanticCommand({ type: 'set-list-type', listType });\n          }\n          return;\n",
+          )
+          scroll_pattern = r'''      if \(\(movedPhysicalPage \|\| movedPageIdentity\) && pageElement\) \{\n        const scrollContainer = scrollContainerRef\.current;\n        const containerRect = scrollContainer\.getBoundingClientRect\(\);\n        const pageRect = pageElement\.getBoundingClientRect\(\);\n        const pageOffset = pageRect\.top - containerRect\.top;\n        const targetScrollTop = Math\.max\(\n          scrollTop \+ 1,\n          scrollContainer\.scrollTop \+ pageOffset,\n        \);\n        scrollContainer\.scrollTop = targetScrollTop;\n      \} else \{\n        scrollContainerRef\.current\.scrollTop = scrollTop;\n      \}'''
+          scroll_replacement = '''      const scrollContainer = scrollContainerRef.current;
+              const targetFlowElement =
+                flowId && root
+                  ? (Array.from(root.querySelectorAll<HTMLElement>('[data-flow-id]'))
+                      .find((element) => element.dataset.flowId === flowId) ?? null)
+                  : null;
+              const containerRect = scrollContainer.getBoundingClientRect();
+              const targetRect = targetFlowElement?.getBoundingClientRect() ?? null;
+              const targetBelowViewport = Boolean(targetRect && targetRect.bottom > containerRect.bottom);
+              const targetAboveViewport = Boolean(targetRect && targetRect.top < containerRect.top);
+              if (targetRect && (targetBelowViewport || targetAboveViewport)) {
+                const delta = targetBelowViewport
+                  ? targetRect.bottom - containerRect.bottom
+                  : targetRect.top - containerRect.top;
+                scrollContainer.scrollTop = Math.max(0, scrollTop + delta);
+              } else if ((movedPhysicalPage || movedPageIdentity) && pageElement) {
+                const pageRect = pageElement.getBoundingClientRect();
+                const pageOffset = pageRect.top - containerRect.top;
+                scrollContainer.scrollTop = Math.max(
+                  scrollTop + 1,
+                  scrollContainer.scrollTop + pageOffset,
+                );
+              } else {
+                scrollContainer.scrollTop = scrollTop;
+              }'''
+          regex_once(editor, scroll_pattern, scroll_replacement)
+
+          wsave = 'tests/services/document-template-editor-save.test.ts'
+          replace_once(
+              wsave,
+              "  'src/app/(dashboard)/template-partials/editor/page.tsx',\n",
+              "  'src/app/(dashboard)/template-partials/editor/template-editor-workflow-page.tsx',\n",
+          )
+          replace_once(
+              wsave,
+              "  '// Handle keyboard shortcuts',\n",
+              "  'const onKeyDown = (event: KeyboardEvent)',\n",
+          )
+
+          wdraft = 'tests/services/document-template-editor-drafts.test.ts'
+          replace_once(
+              wdraft,
+              "const generatedSaveBlock = sourceSection(generatedEditorSource, 'const handleSave = useCallback', '// Handle draft recovery');\n",
+              "const generatedSaveBlock = sourceSection(generatedEditorSource, 'const handleSave = useCallback', 'const handleLetterheadToggle = useCallback');\n",
+          )
+          PY
+      - name: S2 focused regression
+        run: >-
+          npx vitest run
+          __tests__/components/a4-pagination/s2-semantics.test.ts
+          __tests__/components/a4-pagination/s2-list-formatting-regressions.test.ts
+          __tests__/components/a4-pagination/structural-position.test.ts
+          __tests__/components/a4-pagination/structural-commands.test.ts
+          __tests__/components/a4-pagination/semantic-break-projection.test.ts
+          __tests__/components/a4-pagination/formatting.test.ts
+          --reporter=verbose
+      - name: CORE focused regression
+        run: >-
+          npx vitest run
+          __tests__/components/a4-editor-c2-bridge.test.ts
+          __tests__/components/a4-editor-session.test.ts
+          __tests__/components/a4-page-editor.test.tsx
+          __tests__/components/a4-editor-toolbar.test.tsx
+          __tests__/components/a4-page-editor-ssr.test.tsx
+          --reporter=verbose
+      - name: W1 source-contract correction
+        run: >-
+          npx vitest run
+          tests/services/document-template-editor-save.test.ts
+          tests/services/document-template-editor-drafts.test.ts
+          --reporter=verbose
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+      - name: S2 browser boundary
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-boundary-semantics.browser.test.tsx
+          --reporter=verbose
+      - name: Integrated page editor browser
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-page-editor.browser.test.tsx
+          --reporter=verbose
+      - name: Commit validated corrections
+        shell: bash
+        run: |
+          git config user.name "ChatGPT CORE Integrator"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git rm .github/workflows/a4-g2-correction.yml .github/workflows/a4-g2-correction-v2.yml
+          git commit -m "fix(a4): resolve G2 integration blockers"
+          git push origin HEAD:codex/a4-editor-wave2-g2-integration-20260912
