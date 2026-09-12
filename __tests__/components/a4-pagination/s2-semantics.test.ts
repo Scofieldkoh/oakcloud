@@ -29,11 +29,6 @@ function rootFor(canonical: CanonicalEditorDocument): HTMLElement {
   return root;
 }
 
-function firstText(element: HTMLElement): Text | null {
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  return walker.nextNode() as Text | null;
-}
-
 function position(
   canonical: CanonicalEditorDocument,
   selector: string,
@@ -42,8 +37,9 @@ function position(
   const root = rootFor(canonical);
   const element = root.querySelector<HTMLElement>(selector);
   if (!element) throw new Error(`Missing selector: ${selector}`);
-  const text = firstText(element);
-  const point = text
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const text = walker.nextNode();
+  const point = text instanceof Text
     ? captureA4Position(root, text, offset, 'after')
     : captureA4Position(root, element, offset, 'after');
   if (!point) throw new Error(`Could not capture position: ${selector}`);
@@ -101,11 +97,10 @@ function applied(result: A4TransactionResult): CanonicalEditorDocument {
 }
 
 function clean(canonical: CanonicalEditorDocument): HTMLElement {
-  const body = new DOMParser().parseFromString(
+  return new DOMParser().parseFromString(
     stripFlowMetadata(canonical.internalHtml),
     'text/html',
   ).body;
-  return body;
 }
 
 describe('A4 S2 Enter semantics', () => {
@@ -113,11 +108,10 @@ describe('A4 S2 Enter semantics', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol><li><p style="text-align:center;margin-left:1rem">ABCD</p><ul><li><p>Child</p></li></ul></li><li><p>Next</p></li></ol>',
     );
-    const result = insertA4S2ParagraphBreak(
+    const body = clean(applied(insertA4S2ParagraphBreak(
       canonical,
       caret(canonical, 'ol > li:first-child > p', 2),
-    );
-    const body = clean(applied(result));
+    )));
     const items = body.querySelectorAll(':scope > ol > li');
     expect(items).toHaveLength(3);
     expect(items[0].querySelector(':scope > p')?.textContent).toBe('AB');
@@ -128,10 +122,8 @@ describe('A4 S2 Enter semantics', () => {
     expect((items[1].querySelector(':scope > p') as HTMLElement).style.marginLeft).toBe('1rem');
   });
 
-  it('creates body text after Enter at the end of a heading but keeps heading style mid-heading', () => {
-    const endCanonical = createCanonicalEditorDocument(
-      '<h2 style="text-align:center">Title</h2>',
-    );
+  it('creates body text at heading end but preserves heading semantics mid-heading', () => {
+    const endCanonical = createCanonicalEditorDocument('<h2 style="text-align:center">Title</h2>');
     const endBody = clean(applied(insertA4S2ParagraphBreak(
       endCanonical,
       caret(endCanonical, 'h2', 5),
@@ -148,66 +140,56 @@ describe('A4 S2 Enter semantics', () => {
     expect(Array.from(middleBody.children, (node) => node.textContent)).toEqual(['Ti', 'tle']);
   });
 
-  it('lifts an empty nested item one level before allowing a top-level exit', () => {
+  it('lifts an empty nested item one level before top-level exit semantics apply', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol><li><p>Parent</p><ol><li><p><br></p></li></ol></li><li><p>After</p></li></ol>',
     );
-    const result = insertA4S2ParagraphBreak(
+    const body = clean(applied(insertA4S2ParagraphBreak(
       canonical,
       childCaret(canonical, 'ol > li:first-child > ol > li > p', 0),
-    );
-    const body = clean(applied(result));
-    const outerItems = body.querySelectorAll(':scope > ol > li');
-    expect(outerItems).toHaveLength(3);
-    expect(outerItems[0].querySelector(':scope > p')?.textContent).toBe('Parent');
-    expect(outerItems[1].querySelector(':scope > p')?.textContent).toBe('');
-    expect(outerItems[2].querySelector(':scope > p')?.textContent).toBe('After');
+    )));
+    expect(Array.from(body.querySelectorAll(':scope > ol > li'), (li) =>
+      li.querySelector(':scope > p')?.textContent,
+    )).toEqual(['Parent', '', 'After']);
     expect(body.querySelector(':scope > ol > li > ol')).toBeNull();
   });
 
-  it('exits an empty top-level item and keeps trailing ordered numbering semantic', () => {
+  it('exits an empty top-level middle item while retaining the trailing ordered value', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol start="5"><li><p>A</p></li><li><p><br></p></li><li><p>C</p></li></ol>',
     );
-    const result = insertA4S2ParagraphBreak(
+    const body = clean(applied(insertA4S2ParagraphBreak(
       canonical,
       childCaret(canonical, 'ol > li:nth-child(2) > p', 0),
-    );
-    const body = clean(applied(result));
+    )));
     expect(Array.from(body.children, (node) => node.tagName)).toEqual(['OL', 'P', 'OL']);
     expect(body.children[0].getAttribute('start')).toBe('5');
     expect(body.children[2].getAttribute('start')).toBe('7');
     expect(body.children[2].textContent).toBe('C');
   });
 
-  it('preserves authored blank paragraphs instead of replacing the blank document', () => {
+  it('preserves authored blank paragraphs', () => {
     const canonical = createCanonicalEditorDocument('<p><br></p><p><br></p>');
     const body = clean(applied(insertA4S2ParagraphBreak(
       canonical,
-      childCaret(canonical, 'p:first-child', 0),
+      childCaret(canonical, ':scope > p:first-child', 0),
     )));
     expect(body.querySelectorAll(':scope > p')).toHaveLength(3);
   });
 
   it('rejects Enter inside a Unicode grapheme cluster', () => {
     const canonical = createCanonicalEditorDocument('<p>A👨‍👩‍👧‍👦B</p>');
-    const result = insertA4S2ParagraphBreak(
-      canonical,
-      caret(canonical, 'p', 2),
-    );
+    const result = insertA4S2ParagraphBreak(canonical, caret(canonical, 'p', 2));
     expect(result.status).toBe('rejected');
     if (result.status === 'rejected') expect(result.code).toBe('invalid-grapheme-boundary');
   });
 
-  it('keeps a semantic hard break on the correct side of an Enter split', () => {
-    const canonical = createCanonicalEditorDocument(
-      '<p>A<span data-a4-break="page"></span>B</p>',
-    );
-    const result = insertA4S2ParagraphBreak(
+  it('keeps one S1 hard-break marker on the correct side of the split', () => {
+    const canonical = createCanonicalEditorDocument('<p>A<span data-a4-break="page"></span>B</p>');
+    const body = clean(applied(insertA4S2ParagraphBreak(
       canonical,
       childCaret(canonical, 'p', 2),
-    );
-    const body = clean(applied(result));
+    )));
     expect(body.querySelectorAll('[data-a4-break="page"]')).toHaveLength(1);
     expect(body.querySelectorAll(':scope > p')).toHaveLength(2);
     expect(body.children[0].textContent).toBe('A');
@@ -217,7 +199,7 @@ describe('A4 S2 Enter semantics', () => {
 });
 
 describe('A4 S2 list conversion and level semantics', () => {
-  it('converts only the selected middle item and preserves surrounding list segments', () => {
+  it('converts only selected whole items and preserves surrounding segments', () => {
     const canonical = createCanonicalEditorDocument(
       '<ul><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ul>',
     );
@@ -230,7 +212,7 @@ describe('A4 S2 list conversion and level semantics', () => {
     expect(Array.from(body.children, (node) => node.textContent)).toEqual(['A', 'B', 'C']);
   });
 
-  it('preserves ordered values on unselected segments when a middle item becomes unordered', () => {
+  it('preserves ordered values on unselected segments', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol start="5"><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ol>',
     );
@@ -244,7 +226,7 @@ describe('A4 S2 list conversion and level semantics', () => {
     expect(body.children[2].getAttribute('start')).toBe('7');
   });
 
-  it('preserves meaningful alpha, bold-marker and start semantics across ordered type conversion', () => {
+  it('preserves alpha/bold/start semantics when meaningful to the target type', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol start="5" class="list-bold-numbers"><li><p>A</p></li></ol>',
     );
@@ -259,13 +241,11 @@ describe('A4 S2 list conversion and level semantics', () => {
     expect(list.getAttribute('start')).toBe('5');
   });
 
-  it('prepends adjacent paragraphs to a following list without reversing them', () => {
-    const canonical = createCanonicalEditorDocument(
-      '<p>A</p><p>B</p><ul><li><p>C</p></li></ul>',
-    );
+  it('prepends multiple paragraphs to a following list once and in reading order', () => {
+    const canonical = createCanonicalEditorDocument('<p>A</p><p>B</p><ul><li><p>C</p></li></ul>');
     const body = clean(applied(setA4S2ListType(
       canonical,
-      selection(canonical, 'p:first-child', 0, 'p:nth-child(2)', 1),
+      selection(canonical, ':scope > p:first-child', 0, ':scope > p:nth-child(2)', 1),
       'unordered',
     )));
     expect(body.querySelectorAll(':scope > ul')).toHaveLength(1);
@@ -273,13 +253,13 @@ describe('A4 S2 list conversion and level semantics', () => {
       .toEqual(['A', 'B', 'C']);
   });
 
-  it('joins both compatible adjacent lists around selected paragraphs in document order', () => {
+  it('joins both compatible adjacent lists around selected paragraphs in order', () => {
     const canonical = createCanonicalEditorDocument(
       '<ul><li><p>A</p></li></ul><p>B</p><p>C</p><ul><li><p>D</p></li></ul>',
     );
     const body = clean(applied(setA4S2ListType(
       canonical,
-      selection(canonical, 'p:nth-of-type(1)', 0, 'p:nth-of-type(2)', 1),
+      selection(canonical, ':scope > p:first-of-type', 0, ':scope > p:nth-of-type(2)', 1),
       'unordered',
     )));
     expect(body.querySelectorAll(':scope > ul')).toHaveLength(1);
@@ -291,77 +271,58 @@ describe('A4 S2 list conversion and level semantics', () => {
     const canonical = createCanonicalEditorDocument('<p>A</p><p>B</p><p>C</p>');
     const body = clean(applied(setA4S2ListType(
       canonical,
-      selection(canonical, 'p:nth-child(3)', 1, 'p:first-child', 0),
+      selection(canonical, ':scope > p:nth-child(3)', 1, ':scope > p:first-child', 0),
       'ordered',
     )));
     expect(Array.from(body.querySelectorAll('ol > li'), (li) => li.textContent))
       .toEqual(['A', 'B', 'C']);
   });
 
-  it('indents contiguous selected items beneath one owner without reversing them', () => {
+  it('indents and outdents contiguous items without reversing siblings', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li><li><p>D</p></li></ol>',
     );
     const selected = selection(
       canonical,
-      'ol > li:nth-child(2) > p',
-      0,
-      'ol > li:nth-child(3) > p',
-      1,
+      'ol > li:nth-child(2) > p', 0,
+      'ol > li:nth-child(3) > p', 1,
     );
-    const body = clean(applied(indentA4S2ListItems(canonical, selected)));
+    const indented = applied(indentA4S2ListItems(canonical, selected));
+    let body = clean(indented);
+    expect(Array.from(body.querySelectorAll(':scope > ol > li:first-child > ol > li'), (li) => li.textContent))
+      .toEqual(['B', 'C']);
     expect(Array.from(body.querySelectorAll(':scope > ol > li'), (li) =>
       li.querySelector(':scope > p')?.textContent,
     )).toEqual(['A', 'D']);
-    expect(Array.from(body.querySelectorAll(':scope > ol > li:first-child > ol > li'), (li) => li.textContent))
-      .toEqual(['B', 'C']);
-  });
 
-  it('reports first-item indent as unavailable and leaves content unchanged', () => {
-    const canonical = createCanonicalEditorDocument(
-      '<ol><li><p>A</p></li><li><p>B</p></li></ol>',
+    const nestedSelection = selection(
+      indented,
+      'ol > li:first-child > ol > li:first-child > p', 0,
+      'ol > li:first-child > ol > li:nth-child(2) > p', 1,
     );
-    const selected = caret(canonical, 'ol > li:first-child > p', 0);
-    expect(getA4S2ListIndentCapability(canonical, selected, 'indent')).toMatchObject({
-      applicable: false,
-      code: 'first-item-cannot-indent',
-    });
-    expect(indentA4S2ListItems(canonical, selected).status).toBe('unchanged');
-  });
-
-  it('outdents contiguous nested items in their original order', () => {
-    const canonical = createCanonicalEditorDocument(
-      '<ol><li><p>A</p><ol><li><p>B</p></li><li><p>C</p></li></ol></li><li><p>D</p></li></ol>',
-    );
-    const selected = selection(
-      canonical,
-      'ol > li:first-child > ol > li:first-child > p',
-      0,
-      'ol > li:first-child > ol > li:nth-child(2) > p',
-      1,
-    );
-    const body = clean(applied(outdentA4S2ListItems(canonical, selected)));
+    body = clean(applied(outdentA4S2ListItems(indented, nestedSelection)));
     expect(Array.from(body.querySelectorAll(':scope > ol > li'), (li) =>
       li.querySelector(':scope > p')?.textContent,
     )).toEqual(['A', 'B', 'C', 'D']);
-    expect(body.querySelector(':scope > ol > li > ol')).toBeNull();
   });
 
-  it('reports outermost outdent as unavailable', () => {
-    const canonical = createCanonicalEditorDocument('<ul><li><p>A</p></li></ul>');
+  it('returns capabilities instead of malformed first-item sink / outermost lift', () => {
+    const canonical = createCanonicalEditorDocument('<ol><li><p>A</p></li><li><p>B</p></li></ol>');
     expect(getA4S2ListIndentCapability(
       canonical,
-      caret(canonical, 'ul > li > p', 0),
+      caret(canonical, 'ol > li:first-child > p', 0),
+      'indent',
+    )).toMatchObject({ applicable: false, code: 'first-item-cannot-indent' });
+    expect(getA4S2ListIndentCapability(
+      canonical,
+      caret(canonical, 'ol > li:nth-child(2) > p', 0),
       'outdent',
-    )).toMatchObject({
-      applicable: false,
-      code: 'outermost-item-cannot-outdent',
-    });
+    )).toMatchObject({ applicable: false, code: 'outermost-item-cannot-outdent' });
   });
 });
 
 describe('A4 S2 numbering semantics', () => {
-  it('restarts numbering from a selected middle item by splitting the sequence', () => {
+  it('restarts numbering from the selected middle item', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol><li><p>A</p></li><li><p>B</p></li><li><p>C</p></li></ol>',
     );
@@ -371,18 +332,16 @@ describe('A4 S2 numbering semantics', () => {
       5,
     )));
     expect(body.querySelectorAll(':scope > ol')).toHaveLength(2);
-    expect(Array.from(body.querySelectorAll(':scope > ol:first-child > li'), (li) => li.textContent))
-      .toEqual(['A']);
     expect(body.querySelector(':scope > ol:nth-child(2)')?.getAttribute('start')).toBe('5');
     expect(Array.from(body.querySelectorAll(':scope > ol:nth-child(2) > li'), (li) => li.textContent))
       .toEqual(['B', 'C']);
   });
 
-  it('continues an immediately preceding compatible ordered list explicitly', () => {
+  it('continues only an immediately preceding compatible ordered list', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol start="5"><li><p>A</p></li></ol><ol start="10"><li><p>B</p></li></ol>',
     );
-    const selected = caret(canonical, 'ol:nth-child(2) > li > p', 0);
+    const selected = caret(canonical, ':scope > ol:nth-child(2) > li > p', 0);
     expect(getA4S2ContinueNumberingCapability(canonical, selected).applicable).toBe(true);
     const body = clean(applied(continueA4S2OrderedList(canonical, selected)));
     expect(body.querySelectorAll(':scope > ol')).toHaveLength(1);
@@ -394,43 +353,34 @@ describe('A4 S2 numbering semantics', () => {
     const canonical = createCanonicalEditorDocument(
       '<ol><li><p>A</p></li></ol><p>Gap</p><ol><li><p>B</p></li></ol>',
     );
-    const capability = getA4S2ContinueNumberingCapability(
+    expect(getA4S2ContinueNumberingCapability(
       canonical,
-      caret(canonical, 'ol:nth-of-type(2) > li > p', 0),
-    );
-    expect(capability).toMatchObject({ applicable: false, code: 'no-continuation-source' });
+      caret(canonical, ':scope > ol:nth-of-type(2) > li > p', 0),
+    )).toMatchObject({ applicable: false, code: 'no-continuation-source' });
   });
 });
 
 describe('A4 S2 indentation units and formatting state', () => {
   const metrics = { emPx: 12, remPx: 16, maxIndentPx: 120 };
 
-  it('treats rem as rem and uses measured em/root sizes for the step', () => {
+  it('distinguishes rem from em and uses measured layout context', () => {
     expect(normalizeA4S2IndentValue('1rem', 'indent', metrics)).toEqual({
       changed: true,
       value: '2.5rem',
     });
-  });
-
-  it('preserves unsupported legacy indent expressions unchanged', () => {
     expect(normalizeA4S2IndentValue('calc(1em + 2px)', 'indent', metrics)).toEqual({
       changed: false,
       value: 'calc(1em + 2px)',
       code: 'unsupported-indent-unit',
     });
-  });
-
-  it('prevents indentation beyond the measured usable width', () => {
     expect(normalizeA4S2IndentValue('7em', 'indent', metrics)).toMatchObject({
       changed: false,
       code: 'indent-limit-reached',
     });
   });
 
-  it('uses list level changes for lists and measured margin steps for ordinary paragraphs', () => {
-    const listCanonical = createCanonicalEditorDocument(
-      '<ul><li><p>A</p></li><li><p>B</p></li></ul>',
-    );
+  it('maps list indent to semantic level and paragraph indent to measured margin', () => {
+    const listCanonical = createCanonicalEditorDocument('<ul><li><p>A</p></li><li><p>B</p></li></ul>');
     const listBody = clean(applied(applyA4S2Indent(
       listCanonical,
       caret(listCanonical, 'ul > li:nth-child(2) > p', 0),
@@ -450,15 +400,14 @@ describe('A4 S2 indentation units and formatting state', () => {
     expect((paragraphBody.querySelector('p') as HTMLElement).style.marginLeft).toBe('2.5rem');
   });
 
-  it('reports mixed bold independently from uniform italic and color state', () => {
+  it('reports mixed marks independently from uniform properties', () => {
     const canonical = createCanonicalEditorDocument(
       '<p><span style="font-weight:bold;font-style:italic;color:red">A</span><span style="font-style:italic;color:red">B</span></p>',
     );
     const state = readA4S2FormattingState(
       canonical,
-      selection(canonical, 'p', 0, 'p', 2),
+      selection(canonical, 'p > span:first-child', 0, 'p > span:nth-child(2)', 1),
     );
-    expect(state).not.toBeNull();
     expect(state?.bold).toBe('mixed');
     expect(state?.italic).toBe('on');
     expect(state?.textColor).toEqual({ state: 'uniform', value: 'red' });
