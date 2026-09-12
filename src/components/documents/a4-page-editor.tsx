@@ -1048,6 +1048,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const [isReflowing, setIsReflowing] = useState(false);
     const pendingScrollTopRef = useRef<number | null>(null);
     const pendingViewPageIdRef = useRef<string | null>(null);
+    const pendingViewPageIndexRef = useRef<number | null>(null);
     const pendingSelectionFlowIdRef = useRef<string | null>(null);
     const pendingUpdateRef = useRef(false);
     const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
@@ -1137,6 +1138,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         surface && focusNode ? pageContentFromTarget(surface, focusNode) : null;
       pendingViewPageIdRef.current =
         selectionPage?.dataset.pageId ?? activePageIdRef.current;
+      pendingViewPageIndexRef.current =
+        surface && selectionPage
+          ? Array.from(
+              surface.querySelectorAll<HTMLElement>('[data-page-id]'),
+            ).indexOf(selectionPage)
+          : null;
     }, []);
 
     const scheduleReflow = useCallback(
@@ -1395,7 +1402,20 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           : null;
       const selectionPageId = pageElement?.dataset.pageId ?? null;
       const viewPageId = pendingViewPageIdRef.current;
-      if (selectionPageId && viewPageId && selectionPageId !== viewPageId && pageElement) {
+      const pageElements = root
+        ? Array.from(root.querySelectorAll<HTMLElement>('[data-page-id]'))
+        : [];
+      const selectionPageIndex = pageElement
+        ? pageElements.indexOf(pageElement)
+        : -1;
+      const viewPageIndex = pendingViewPageIndexRef.current;
+      const movedPhysicalPage =
+        selectionPageIndex >= 0 &&
+        viewPageIndex !== null &&
+        selectionPageIndex !== viewPageIndex;
+      const movedPageIdentity =
+        Boolean(selectionPageId && viewPageId && selectionPageId !== viewPageId);
+      if ((movedPhysicalPage || movedPageIdentity) && pageElement) {
         const scrollContainer = scrollContainerRef.current;
         const containerRect = scrollContainer.getBoundingClientRect();
         const pageRect = pageElement.getBoundingClientRect();
@@ -1410,6 +1430,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }
       pendingScrollTopRef.current = null;
       pendingViewPageIdRef.current = null;
+      pendingViewPageIndexRef.current = null;
       pendingSelectionFlowIdRef.current = null;
     }, [isReflowing, pages, surfaceRepairGeneration]);
 
