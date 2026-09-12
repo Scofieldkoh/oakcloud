@@ -1,0 +1,57 @@
+name: A4 G2 immutable PostgreSQL validation
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-g2-corrected-pg-validation-20260912
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: 6e8d4426c0d57043d85a830045dee465f6ff9a47
+
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: assistant_test
+          POSTGRES_DB: business_assistant_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55439:5432
+        options: >-
+          --health-cmd "pg_isready -U assistant_test -d business_assistant_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://assistant_test@127.0.0.1:55439/business_assistant_test?schema=public
+      BUSINESS_ASSISTANT_TEST_DATABASE_URL: postgresql://assistant_test@127.0.0.1:55439/business_assistant_test?schema=public
+      TEST_DATABASE_URL: postgresql://assistant_test@127.0.0.1:55439/business_assistant_test?schema=public
+      JWT_SECRET: a4-g2-validation-only-synthetic-jwt-secret-not-for-production-use-20260912
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: node -e "if (!process.versions.node.startsWith('24.')) process.exit(1); console.log('Node', process.version)"
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Disposable database guard
+        run: node scripts/require-business-assistant-test-env.mjs
+      - name: Apply all migrations
+        run: npx prisma migrate deploy
+      - name: W1 PostgreSQL CAS and batch
+        run: npx vitest run __tests__/integration/a4-editor-workflow-w1.postgres.test.ts __tests__/integration/document-generation-batch.postgres.test.ts --maxWorkers=1 --reporter=verbose
+      - name: W2 PostgreSQL drafts
+        run: npx vitest run __tests__/integration/bizfile/a4-workflow-w2-drafts.postgres.test.ts --maxWorkers=1 --reporter=verbose
+      - name: W2 W1 PostgreSQL compatibility
+        run: npx vitest run __tests__/integration/bizfile/a4-workflow-w2-w1-postgres-compat.test.ts --maxWorkers=1 --reporter=verbose
