@@ -25,6 +25,10 @@ text = path.read_text().replace(
     "screen.getByRole('button', { name: 'Table' })",
     "screen.getByRole('button', { name: 'Tables' })",
 )
+text = text.replace(
+    "screen.getByRole('dialog', { name: 'Table popover' })",
+    "screen.getByRole('dialog', { name: 'Tables popover' })",
+)
 path.write_text(text)
 
 path = Path('__tests__/components/a4-page-editor.test.tsx')
