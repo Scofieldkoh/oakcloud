@@ -84,8 +84,59 @@ export function createWorkflowFieldInputDescriptors(
   });
 }
 
+/**
+ * Route-level form descriptor producer for unsaved template snapshots. It uses
+ * the same lossless F registry as batch forms, so legacy field types remain
+ * visible/read-only rather than being narrowed away by a route schema.
+ */
+export function createStoredWorkflowFieldInputDescriptors(
+  definitions: readonly Readonly<Record<string, unknown>>[],
+  scope: FieldOwnerScope,
+): FieldInputDescriptor[] {
+  const registry = loadStoredFieldRegistry({ scope, definitions });
+  return registry.definitions.map((definition) => createFieldInputDescriptor(definition));
+}
+
 export function fieldInputDescriptorDefaultValue(descriptor: FieldInputDescriptor): unknown {
   return typedFieldValueToLegacyPayloadValue(descriptor.defaultValue);
+}
+
+/**
+ * Normalize route callback values by declared control, never by appearance.
+ * Exact decimal/currency/date/multiline strings stay strings; browser checkbox
+ * legacy strings are converted to a real boolean. Preserve-only legacy fields
+ * pass through unchanged for old snapshots/readers.
+ */
+export function normalizeWorkflowInputValues(
+  descriptors: readonly FieldInputDescriptor[],
+  values: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  const output: Record<string, unknown> = { ...values };
+  for (const descriptor of descriptors) {
+    const key = descriptor.key.replace(/^custom\./, '');
+    if (!Object.prototype.hasOwnProperty.call(values, key)) continue;
+    const value = values[key];
+    switch (descriptor.control) {
+      case 'boolean':
+        if (typeof value === 'boolean') output[key] = value;
+        else if (value === 'true' || value === '1') output[key] = true;
+        else if (value === 'false' || value === '0') output[key] = false;
+        break;
+      case 'date':
+        output[key] = value instanceof Date ? value.toISOString().slice(0, 10) : value;
+        break;
+      case 'decimal':
+      case 'currency':
+        output[key] = typeof value === 'number' ? String(value) : value;
+        break;
+      case 'text':
+      case 'textarea':
+      case 'read-only':
+        output[key] = value;
+        break;
+    }
+  }
+  return output;
 }
 
 /**
