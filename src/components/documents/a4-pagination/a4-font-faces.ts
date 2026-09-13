@@ -75,7 +75,7 @@ function primaryFontFamily(fontFamily: string): string {
 }
 
 function quoteFontFamily(fontFamily: string): string {
-  return `"${fontFamily.replace(/"/g, '\\"')}"`;
+  return `"${fontFamily.split('"').join('\\"')}"`;
 }
 
 /**
