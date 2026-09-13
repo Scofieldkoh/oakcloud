@@ -390,6 +390,10 @@ export async function reviewDocumentGenerationBatchItem(
       where: { id: item.id },
       data: {
         reviewedFingerprint,
+        // Freeze the exact reviewed W3 scoped bytes. W2 generation already
+        // treats editedContent as the final materialization override; equality
+        // with previewContent is still considered unedited by refresh gating.
+        editedContent: item.editedContent ?? item.previewContent,
         status: 'READY',
         validationDiagnostics: Prisma.DbNull,
       },
