@@ -30,6 +30,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
+  assembleA4OutputPages,
+  createA4OutputPreparationSession,
+  type A4OutputPreparationSession,
+} from '@/lib/document-editor/a4-output-preparation';
+import type { A4WorkflowStatus } from '@/lib/document-editor/a4-workflow-status';
+import {
   A4_EDITOR_DECORATION_ATTRIBUTES,
   getA4SanitizerPolicy,
 } from '@/lib/a4-content-policy';
@@ -51,7 +57,6 @@ import {
 import {
   paginateA4FlowHtml,
   paginateFlowHtml,
-  type HtmlMeasurer,
 } from './a4-pagination/engine';
 import {
   captureFlowSelection,
@@ -101,7 +106,15 @@ import {
   type A4PageLayout,
 } from './a4-pagination/a4-page-layout';
 import { buildA4PageContentStyles } from './a4-pagination/a4-page-content-css';
-import { buildA4FontFaceCss } from './a4-pagination/a4-font-faces';
+import {
+  buildA4FontFaceCss,
+  createA4FontRevision,
+  waitForA4FontReadiness,
+} from './a4-pagination/a4-font-faces';
+import {
+  createA4PageMeasurer,
+  type A4PageMeasurer,
+} from './a4-pagination/measure';
 import {
   A4EditorToolbar,
   type EditorCommand,
@@ -146,6 +159,30 @@ function sanitizeHtml(html: string): string {
     ALLOWED_URI_REGEXP:
       /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
   });
+}
+
+function sanitizeOutputHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: A4_SANITIZER_POLICY.allowedTags,
+    ALLOWED_ATTR: A4_SANITIZER_POLICY.allowedAttributes,
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
+    ALLOWED_URI_REGEXP:
+      /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+  });
+}
+
+function workflowStatusText(status: A4WorkflowStatus): string {
+  if (status.message) return status.message;
+  switch (status.phase) {
+    case 'clean': return 'Up to date';
+    case 'dirty': return 'Unsaved changes';
+    case 'saving': return 'Saving…';
+    case 'saved': return 'Saved';
+    case 'conflict': return 'Save conflict';
+    case 'error': return 'Save failed';
+    case 'read-only': return 'Read only';
+  }
 }
 
 // ============================================================================
@@ -599,6 +636,8 @@ export interface A4PageEditorProps {
   ariaLabel?: string;
   /** Enable page-number authoring only when persistence/output support is complete. */
   pageNumbersSupported?: boolean;
+  /** Revision-derived save state produced by the W3 workflow boundary. */
+  workflowStatus?: A4WorkflowStatus;
   tenantId?: string;
   previewContent?: string;
   showPreviewToggle?: boolean;
@@ -657,39 +696,20 @@ function createPageMeasurer(
   fontSize: string,
   lineHeight: string,
   paragraphSpacing: string,
-): HtmlMeasurer & { dispose: () => void } {
-  const element = document.createElement('div');
-  element.className = 'a4-page-content';
-  Object.assign(element.style, {
-    position: 'fixed',
-    visibility: 'hidden',
-    pointerEvents: 'none',
-    contain: 'layout style',
-    top: '-100000px',
-    left: '0',
-    width: `${pageLayout.contentWidthPx}px`,
-    height: 'auto',
-    minHeight: '0',
-    overflow: 'visible',
-    fontFamily,
-    fontSize,
-    lineHeight,
-    overflowWrap: 'break-word',
-    wordBreak: 'break-word',
-    whiteSpace: 'pre-wrap',
-  });
-  element.style.setProperty('--a4-paragraph-spacing', paragraphSpacing);
-  document.body.appendChild(element);
-
-  return {
-    measure(html: string) {
-      element.innerHTML = sanitizeHtml(html);
-      return element.scrollHeight;
+): A4PageMeasurer {
+  return createA4PageMeasurer(
+    {
+      contentWidthPx: pageLayout.contentWidthPx,
+      fontFamily,
+      fontSize,
+      lineHeight,
+      paragraphSpacing,
+      layoutVersion: 1,
+      layoutRevision: 0,
+      fontRevision: createA4FontRevision(fontFamily),
     },
-    dispose() {
-      element.remove();
-    },
-  };
+    { prepareHtml: sanitizeHtml },
+  );
 }
 
 // ============================================================================
@@ -877,6 +897,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       className,
       ariaLabel = 'Document editor',
       pageNumbersSupported = false,
+      workflowStatus,
       tenantId: _tenantId,
       previewContent,
       showPreviewToggle = true,
@@ -1120,7 +1141,23 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       },
       [layout, onLayoutChange],
     );
-    const [showPageNumbers, setShowPageNumbers] = useState(true);
+    const [showPageNumbers, setShowPageNumbers] = useState(pageNumbersSupported);
+    const activePrintSessionRef = useRef<A4OutputPreparationSession | null>(null);
+    useEffect(() => {
+      if (!pageNumbersSupported) setShowPageNumbers(false);
+    }, [pageNumbersSupported]);
+
+    useEffect(
+      () => () => {
+        const activePrint = activePrintSessionRef.current;
+        if (activePrint) {
+          activePrint.cancel('editor-unmounted');
+          void activePrint.dispose().catch(() => undefined);
+        }
+      },
+      [],
+    );
+
     const [surfaceRepairGeneration, setSurfaceRepairGeneration] = useState(0);
     const tableResizeRef = useRef<TableResizeSession | null>(null);
     const tableResizeHoverRef = useRef<{
@@ -3287,84 +3324,129 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       ],
     );
 
-    const handlePrint = useCallback(() => {
-      const printPages = isPreviewMode && previewPages ? previewPages : pages;
+    const handlePrint = useCallback(async () => {
+      if (activePrintSessionRef.current) return;
 
-      // Filter out pages that only contain [Remove Page]
-      const filteredPages = printPages.filter((page) => !shouldRemovePage(page.content));
+      const outputSession = createA4OutputPreparationSession('local-print');
+      activePrintSessionRef.current = outputSession;
+      try {
+        const fontReadiness = await waitForA4FontReadiness(fontFamily);
+        outputSession.assertActive();
+        if (!fontReadiness.ready) {
+          throw new Error('Document fonts are not ready for local print.');
+        }
+        outputSession.markFontsReady();
 
-      const stripBreakElements = (html: string): string => {
-        const container = document.createElement('div');
-        container.innerHTML = html;
-        container
-          .querySelectorAll(
-            '.page-break, [style*="page-break-after"], [style*="page-break-before"]',
-          )
-          .forEach((element) => element.remove());
-        return container.innerHTML;
-      };
+        const canonical =
+          canonicalSessionRef.current?.getState().internalHtml ??
+          canonicalPagesHtml(pagesRef.current);
+        const measurer = createPageMeasurer(
+          pageLayout,
+          fontFamily,
+          fontSize,
+          lineHeight,
+          paragraphSpacing,
+        );
+        let pagination;
+        try {
+          pagination = paginateA4FlowHtml(
+            { internalHtml: canonical },
+            {
+              sessionKey: resolvedSessionKey,
+              documentRevision:
+                canonicalSessionRef.current?.getState().revision ?? 0,
+            },
+            measurer,
+            pageLayout.contentHeightPx,
+          );
+        } finally {
+          measurer.dispose();
+        }
+        outputSession.assertActive();
+        outputSession.markPaginationReady();
 
-      const pagesHtml = filteredPages.length > 0
-        ? filteredPages
-            .map((page, index) => {
-              const content = stripBreakElements(sanitizeHtml(page.content)) || '&nbsp;';
-              const pageNumberHtml = showPageNumbers
-                ? `<div class="print-page-number">${index + 1}</div>`
-                : '';
-              const oversized = page.oversized
-                ? ' data-oversized="true"'
-                : '';
-              return `<section class="print-page"${oversized}><div class="content">${content}</div>${pageNumberHtml}</section>`;
-            })
-            .join('')
-        : '<section class="print-page"><div class="content">&nbsp;</div></section>';
+        const assembly = assembleA4OutputPages(pagination.pages, {
+          sanitizeFragment: sanitizeOutputHtml,
+          includePageNumbers: pageNumbersSupported && showPageNumbers,
+        });
 
-      // Create a hidden iframe for printing (stays on same page)
-      const printFrame = document.createElement('iframe');
-      printFrame.style.position = 'absolute';
-      printFrame.style.top = '-9999px';
-      printFrame.style.left = '-9999px';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = 'none';
-      document.body.appendChild(printFrame);
+        const printFrame = document.createElement('iframe');
+        printFrame.setAttribute('aria-hidden', 'true');
+        Object.assign(printFrame.style, {
+          position: 'absolute',
+          top: '-9999px',
+          left: '-9999px',
+          width: '0',
+          height: '0',
+          border: 'none',
+        });
+        document.body.appendChild(printFrame);
+        outputSession.addCleanup(() => printFrame.remove());
 
-      const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
-      if (!frameDoc) {
-        document.body.removeChild(printFrame);
-        return;
-      }
+        const frameDoc =
+          printFrame.contentDocument ?? printFrame.contentWindow?.document ?? null;
+        const frameWindow = printFrame.contentWindow;
+        if (!frameDoc || !frameWindow) {
+          throw new Error('Unable to create the local print surface.');
+        }
 
-      frameDoc.open();
-      frameDoc.write(`<!DOCTYPE html>
+        frameDoc.open();
+        frameDoc.write(`<!DOCTYPE html>
 <html>
 <head>
   <title>Print</title>
   <style>
+    ${buildA4FontFaceCss()}
+    ${buildA4PageContentStyles(paragraphSpacing)}
     ${buildA4PrintCss(effectiveLayout, {
-      pageNumberStripMm: showPageNumbers ? PAGE_NUMBER_STRIP_MM : undefined,
+      pageNumberStripMm:
+        pageNumbersSupported && showPageNumbers
+          ? PAGE_NUMBER_STRIP_MM
+          : undefined,
     })}
   </style>
 </head>
-<body>${pagesHtml}</body>
+<body>${assembly.html}</body>
 </html>`);
-      frameDoc.close();
+        frameDoc.close();
 
-      // Wait for content to load, then print
-      setTimeout(() => {
-        printFrame.contentWindow?.focus();
-        printFrame.contentWindow?.print();
-        // Remove iframe after printing
-        setTimeout(() => {
-          document.body.removeChild(printFrame);
-        }, 1000);
-      }, 200);
+        const frameFontReadiness = await waitForA4FontReadiness(fontFamily, {
+          fontSet: frameDoc.fonts,
+        });
+        outputSession.assertActive();
+        if (!frameFontReadiness.ready) {
+          throw new Error('Print-frame fonts failed to become ready.');
+        }
+
+        outputSession.markInstalled();
+        outputSession.assertReady();
+        frameWindow.focus();
+        frameWindow.print();
+        setEditorStatus(null);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Local print preparation failed.';
+        outputSession.fail(message);
+        setEditorStatus(`Print failed: ${message}`);
+      } finally {
+        try {
+          await outputSession.dispose();
+        } finally {
+          if (activePrintSessionRef.current === outputSession) {
+            activePrintSessionRef.current = null;
+          }
+        }
+      }
     }, [
+      canonicalPagesHtml,
       effectiveLayout,
-      isPreviewMode,
-      pages,
-      previewPages,
-      shouldRemovePage,
+      fontFamily,
+      fontSize,
+      lineHeight,
+      pageLayout,
+      pageNumbersSupported,
+      paragraphSpacing,
+      resolvedSessionKey,
       showPageNumbers,
     ]);
 
@@ -3477,7 +3559,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
             <button
               type="button"
-              onClick={handlePrint}
+              onClick={() => void handlePrint()}
               className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-background-tertiary text-text-secondary hover:bg-background-secondary"
             >
               <Printer className="w-4 h-4" />
@@ -3666,11 +3748,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           <span data-testid="a4-editor-status">
             {isReflowing
               ? 'Repaginating…'
-              : readOnly
-                ? 'Viewing document'
-                : effectivePreviewMode
-                  ? 'Viewing preview'
-                  : 'Editing'}
+              : workflowStatus
+                ? workflowStatusText(workflowStatus)
+                : readOnly
+                  ? 'Viewing document'
+                  : effectivePreviewMode
+                    ? 'Viewing preview'
+                    : 'Editing'}
           </span>
         </div>
       </div>
