@@ -27,7 +27,6 @@ import {
 import type { BatchStage, EditableBatchItem } from './batch-workspace-state';
 
 export interface MissingRequirement {
-  /** Stable id, usable as a scroll/focus target hint. */
   id: string;
   label: string;
 }
@@ -48,10 +47,6 @@ export const EMPTY_COMPLETENESS: ItemCompleteness = {
   isComplete: true,
 };
 
-/**
- * Splits a template's placeholders into the ones promoted to the shared
- * (master) catalogue and the ones that stay document-specific.
- */
 export function partitionTemplateFields(
   templateFields: CustomPlaceholderDefinition[],
   masterFields: MasterFieldCatalogue,
@@ -82,7 +77,6 @@ function effectiveMasterValue(
 
 export interface SelectItemCompletenessParams {
   item: EditableBatchItem;
-  /** Placeholders declared by this item's template. */
   templateFields: CustomPlaceholderDefinition[];
   masterFields: MasterFieldCatalogue;
   masterFieldValues: Record<string, string>;
@@ -192,14 +186,8 @@ export function completenessFor(
   return map[itemKey] ?? EMPTY_COMPLETENESS;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Stage gating                                                              */
-/* ------------------------------------------------------------------------- */
-
 export interface StageGate {
-  /** True when the stage has everything it needs to be considered done. */
   satisfied: boolean;
-  /** Why the next stage is unavailable. Null when satisfied. */
   reason: string | null;
 }
 
@@ -244,11 +232,6 @@ export function selectStageGates(params: {
   };
 }
 
-/**
- * Index of the furthest stage the user may jump to. A stage only becomes
- * reachable once every earlier gate is satisfied, which stops the stepper
- * from dropping the user onto a screen that cannot function yet.
- */
 export function selectHighestReachableStageIndex(
   gates: StageGates,
   stages: BatchStage[],
@@ -267,33 +250,46 @@ export interface GenerationBlocker {
   reason: string;
 }
 
-/**
- * Names the documents preventing generation. Kept consistent with
- * `selectCanRequestPreflight` by only inspecting items that are not already
- * `READY`/`GENERATED`, so an empty blocker list always means "can generate".
- */
-export function selectGenerationBlockers(params: {
-  items: EditableBatchItem[];
-  completeness: CompletenessMap;
-}): GenerationBlocker[] {
-  return params.items.flatMap((item) => {
-    if (item.status === 'READY' || item.status === 'GENERATED') return [];
-    const itemCompleteness = completenessFor(params.completeness, item.key);
+export function selectGenerationBlockers(
+  items: EditableBatchItem[],
+  completeness: CompletenessMap,
+): GenerationBlocker[] {
+  const blockers: GenerationBlocker[] = [];
+  for (const item of items) {
+    if (item.status === 'GENERATED' || item.status === 'READY') continue;
+    const title = item.configuration.title || item.templateName;
+    const itemCompleteness = completenessFor(completeness, item.key);
+    const diagnostics = item.validationDiagnostics;
+    const diagnosticCount = diagnostics
+      ? diagnostics.errors.length + diagnostics.fieldErrors.length
+      : 0;
+
+    let reason: string;
     if (!itemCompleteness.isComplete) {
-      return [{
-        itemKey: item.key,
-        title: item.configuration.title || item.templateName,
-        reason: `${itemCompleteness.missing.length} required value${itemCompleteness.missing.length === 1 ? '' : 's'} missing`,
-      }];
+      const count = itemCompleteness.missing.length;
+      reason = `${count} required value${count === 1 ? '' : 's'} missing`;
+    } else if (diagnosticCount > 0) {
+      reason = `${diagnosticCount} validation error${diagnosticCount === 1 ? '' : 's'}`;
+    } else if (item.status === 'FAILED') {
+      reason = 'Last attempt failed';
+    } else if (!item.previewContent) {
+      reason = 'Preview not rendered yet';
+    } else if (!item.previewFingerprint) {
+      reason = 'Preview is out of date';
+    } else if (!item.reviewedFingerprint) {
+      reason = 'Not approved yet';
+    } else {
+      reason = 'Not ready';
     }
-    return [{
-      itemKey: item.key,
-      title: item.configuration.title || item.templateName,
-      reason: item.status === 'FAILED'
-        ? item.lastError?.message || 'Generation failed; preview again before retrying.'
-        : item.status === 'BLOCKED'
-          ? item.lastError?.message || 'Resolve the blocking issue before generation.'
-          : 'Preview and approve this document.',
-    }];
-  });
+    blockers.push({ itemKey: item.key, title, reason });
+  }
+  return blockers;
+}
+
+export function isPreviewStale(item: EditableBatchItem): boolean {
+  return Boolean(item.previewContent && !item.previewFingerprint);
+}
+
+export function hasManualEdits(item: EditableBatchItem): boolean {
+  return Boolean(item.editedContent && item.editedContent !== item.previewContent);
 }
