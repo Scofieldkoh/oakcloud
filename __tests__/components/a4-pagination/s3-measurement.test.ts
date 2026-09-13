@@ -269,4 +269,34 @@ describe('A4 S3 measurement/font contract', () => {
       'Item five alpha beta gammaItem six delta epsilon zetaItem seven eta theta iota',
     );
   });
+
+  it('keeps oversized table caption, row and footer content present in one marked page', () => {
+    const tableMeasurer: HtmlMeasurer = {
+      measure(html) {
+        return html.includes('<table') ? 200 : 0;
+      },
+    };
+    const canonical = hydrateFlowHtml(
+      '<table>' +
+        '<caption>Caption sentinel</caption>' +
+        '<tbody><tr><td>Oversized row sentinel</td></tr></tbody>' +
+        '<tfoot><tr><td>Footer sentinel</td></tr></tfoot>' +
+        '</table>',
+    );
+
+    const pages = paginateFlowHtml(canonical, tableMeasurer, 100);
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0].oversized).toBe(true);
+    expect(pages[0].content).toContain('data-flow-oversized="true"');
+    expect(pages[0].content).toContain('Caption sentinel');
+    expect(pages[0].content).toContain('Oversized row sentinel');
+    expect(pages[0].content).toContain('Footer sentinel');
+    const reassembled = stripFlowMetadata(reassemblePageFragments(pages));
+    const root = document.createElement('div');
+    root.innerHTML = reassembled;
+    expect(root.querySelectorAll('caption')).toHaveLength(1);
+    expect(root.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(root.querySelectorAll('tfoot tr')).toHaveLength(1);
+  });
 });
