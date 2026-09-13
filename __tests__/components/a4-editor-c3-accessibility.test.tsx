@@ -37,6 +37,36 @@ describe('A4PageEditor C3 accessibility', () => {
     expect(screen.getByRole('button', { name: 'Insert page break' })).toBeEnabled();
   });
 
+  it('hides page-number chrome until persistence/output support is enabled', () => {
+    render(
+      <A4PageEditor
+        value={'<p>Page one</p><div data-a4-break="page"></div><p>Page two</p>'}
+      />,
+    );
+
+    expect(screen.queryByTestId('a4-page-number-1')).not.toBeInTheDocument();
+  });
+
+  it('surfaces W3 revision-derived workflow status without a local timer', async () => {
+    render(
+      <A4PageEditor
+        value="<p>Status</p>"
+        workflowStatus={{
+          phase: 'saving',
+          serverRevision: 4,
+          acknowledgedRevision: 4,
+          localRevision: 5,
+          dirty: true,
+          canSave: false,
+          shouldRetry: false,
+          message: null,
+        }}
+      />,
+    );
+
+    expect(await screen.findByTestId('a4-editor-status')).toHaveTextContent(/Saving|Repaginating/);
+  });
+
   it('keeps pagination state visual rather than announcing each reflow', () => {
     render(<A4PageEditor value="<p>Status</p>" />);
 
