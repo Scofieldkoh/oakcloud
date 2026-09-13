@@ -32,21 +32,45 @@ jobs:
       - run: npm ci
 
       - name: Focused C3 components
-        run: >-
-          npx vitest run
-          __tests__/components/a4-editor-toolbar.test.tsx
-          __tests__/components/a4-editor-c3-accessibility.test.tsx
-          __tests__/components/a4-page-editor.test.tsx
-          __tests__/components/a4-editor-session.test.ts
-          --reporter=verbose
+        id: focused
+        shell: bash
+        run: |
+          set +e
+          npx vitest run \
+            __tests__/components/a4-editor-toolbar.test.tsx \
+            __tests__/components/a4-editor-c3-accessibility.test.tsx \
+            __tests__/components/a4-page-editor.test.tsx \
+            __tests__/components/a4-editor-session.test.ts \
+            --reporter=verbose > a4-c3-focused.log 2>&1
+          code=$?
+          cat a4-c3-focused.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Persist focused failure diagnostic
+        if: steps.focused.outputs.exit_code != '0'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add a4-c3-focused.log
+          git commit -m "test(a4): capture C3 focused failure diagnostic"
+          git push origin HEAD:codex/a4-editor-core-c3-20260913
+
+      - name: Fail focused gate
+        if: steps.focused.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Typecheck
+        if: steps.focused.outputs.exit_code == '0'
         run: npm run typecheck
 
       - name: Install Chromium
+        if: steps.focused.outputs.exit_code == '0'
         run: npx playwright install --with-deps chromium
 
       - name: Frozen browser regressions
+        if: steps.focused.outputs.exit_code == '0'
         run: >-
           npx vitest run --config vitest.browser.config.ts
           __tests__/browser/a4-page-editor.browser.test.tsx
@@ -55,8 +79,10 @@ jobs:
           --reporter=verbose
 
       - name: Commit validated C3 patch
+        if: steps.focused.outputs.exit_code == '0'
         shell: bash
         run: |
+          rm -f a4-c3-focused.log
           if git diff --quiet; then
             echo "No C3 patch changes to commit"
             exit 0
