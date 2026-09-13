@@ -435,7 +435,10 @@ describe('A4PageEditor', () => {
 
   it('toggles page numbers in the editor', () => {
     render(
-      <A4PageEditor value={`<p>First</p>${hardPageBreak}<p>Second</p>`} />,
+      <A4PageEditor
+        value={`<p>First</p>${hardPageBreak}<p>Second</p>`}
+        pageNumbersSupported
+      />,
     );
 
     expect(screen.getByTestId('a4-page-number-1')).toBeInTheDocument();
@@ -652,7 +655,11 @@ describe('A4PageEditor', () => {
     });
 
     await act(async () => {
-      fireEvent.mouseDown(screen.getByTitle('Insert Page Break'));
+      const pageBreakButton = screen.getByRole('button', {
+        name: 'Insert page break',
+      });
+      fireEvent.pointerDown(pageBreakButton, { button: 0, isPrimary: true });
+      fireEvent.click(pageBreakButton, { button: 0 });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
@@ -816,6 +823,13 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
+    const textOptions = screen.getByRole('button', { name: 'Text options' });
+    fireEvent.pointerDown(textOptions, { button: 0, isPrimary: true });
+    fireEvent.click(textOptions, { button: 0 });
+    fireEvent.pointerDown(screen.getByTitle('Text Color'), {
+      button: 0,
+      isPrimary: true,
+    });
     fireEvent.change(screen.getByTitle('Text Color'), {
       target: { value: '#ff0000' },
     });
@@ -897,6 +911,9 @@ describe('A4PageEditor', () => {
       fireEvent.focus(screen.getByTestId('a4-document-surface'));
     });
 
+    const textOptions = screen.getByRole('button', { name: 'Text options' });
+    fireEvent.pointerDown(textOptions, { button: 0, isPrimary: true });
+    fireEvent.click(textOptions, { button: 0 });
     expect(screen.getByLabelText('Font size')).toHaveValue('24pt');
   });
 
@@ -921,9 +938,13 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tables' }));
+    const tablesMenu = screen.getByRole('button', { name: 'Tables' });
+    fireEvent.pointerDown(tablesMenu, { button: 0, isPrimary: true });
+    fireEvent.click(tablesMenu, { button: 0 });
     await act(async () => {
-      fireEvent.mouseDown(screen.getByTitle('Insert Table'));
+      const insertTable = screen.getByTitle('Insert Table');
+      fireEvent.pointerDown(insertTable, { button: 0, isPrimary: true });
+      fireEvent.click(insertTable, { button: 0 });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
@@ -958,10 +979,16 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tables' }));
+    const tablesMenu = screen.getByRole('button', { name: 'Tables' });
+    fireEvent.pointerDown(tablesMenu, { button: 0, isPrimary: true });
+    fireEvent.click(tablesMenu, { button: 0 });
     await act(async () => {
-      fireEvent.mouseDown(screen.getByTitle('Add Table Row'));
-      fireEvent.mouseDown(screen.getByTitle('Add Table Column'));
+      const addRow = screen.getByTitle('Add Table Row');
+      fireEvent.pointerDown(addRow, { button: 0, isPrimary: true });
+      fireEvent.click(addRow, { button: 0 });
+      const addColumn = screen.getByTitle('Add Table Column');
+      fireEvent.pointerDown(addColumn, { button: 0, isPrimary: true });
+      fireEvent.click(addColumn, { button: 0 });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
@@ -1153,10 +1180,10 @@ describe('A4PageEditor', () => {
     }
   });
 
-  it('keeps a hard blank page after the first Add Page click', async () => {
+  it('keeps a hard blank page after the first Add blank page click', async () => {
     render(<A4PageEditor value="<p>One</p>" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add blank page' }));
 
     await waitFor(() =>
       expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(2),
@@ -1367,6 +1394,13 @@ describe('A4PageEditor', () => {
       surface.focus();
       window.getSelection()!.setBaseAndExtent(secondText, 2, firstText, 2);
     });
+    const textOptions = screen.getByRole('button', { name: 'Text options' });
+    fireEvent.pointerDown(textOptions, { button: 0, isPrimary: true });
+    fireEvent.click(textOptions, { button: 0 });
+    fireEvent.pointerDown(screen.getByTitle('Text Color'), {
+      button: 0,
+      isPrimary: true,
+    });
     fireEvent.change(screen.getByTitle('Text Color'), {
       target: { value: '#ff0000' },
     });
@@ -1449,6 +1483,13 @@ describe('A4PageEditor', () => {
         );
       });
 
+      const textOptions = screen.getByRole('button', { name: 'Text options' });
+      fireEvent.pointerDown(textOptions, { button: 0, isPrimary: true });
+      fireEvent.click(textOptions, { button: 0 });
+      fireEvent.pointerDown(screen.getByLabelText('Text color'), {
+        button: 0,
+        isPrimary: true,
+      });
       fireEvent.change(screen.getByLabelText('Text color'), {
         target: { value: '#ff0000' },
       });
