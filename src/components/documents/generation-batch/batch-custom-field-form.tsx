@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import {
@@ -27,7 +26,7 @@ export function BatchCustomFieldForm({
   const itemValues = item.configuration.itemValues;
   const fieldKeys = new Set(fields.map((field) => field.key));
   const extraKeys = Object.keys(itemValues).filter((key) => !fieldKeys.has(key));
-  const visibleFields = useMemo<CustomPlaceholderDefinition[]>(() => [
+  const visibleFields: CustomPlaceholderDefinition[] = [
     ...fields,
     ...extraKeys.map((key) => ({
       id: key,
@@ -36,14 +35,11 @@ export function BatchCustomFieldForm({
       type: 'text' as const,
       required: false,
     })),
-  ], [extraKeys.join('\u0000'), fields]);
-  const descriptors = useMemo(
-    () => createWorkflowFieldInputDescriptors(visibleFields, {
-      kind: 'template',
-      id: item.templateId,
-    }),
-    [item.templateId, visibleFields],
-  );
+  ];
+  const descriptors = createWorkflowFieldInputDescriptors(visibleFields, {
+    kind: 'template',
+    id: item.templateId,
+  });
 
   if (visibleFields.length === 0) {
     return (
