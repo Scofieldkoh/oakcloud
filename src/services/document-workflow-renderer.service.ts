@@ -73,6 +73,7 @@ export async function renderTemplateForWorkflow(
       params.serviceAgreementId,
       params.userId ? { tenantId: params.tenantId, userId: params.userId } : params.tenantId,
     );
+    if (!agreement) throw new Error('Service Agreement draft not found');
     sourceContent = assembleServiceAgreementTemplate({
       templateContent: sourceContent,
       agreement,
