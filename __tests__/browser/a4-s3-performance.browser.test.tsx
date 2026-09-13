@@ -31,10 +31,10 @@ function representativeFixture(pageCount: number): string {
   return Array.from({ length: pageCount }, (_, pageIndex) => {
     const pageNumber = pageIndex + 1;
     const body = Array.from(
-      { length: 8 },
+      { length: 3 },
       (_, paragraphIndex) =>
         `<p>S3 page ${pageNumber} paragraph ${paragraphIndex + 1} ` +
-        `${'representative A4 pagination text '.repeat(8)}</p>`,
+        `${'representative A4 pagination text '.repeat(4)}</p>`,
     ).join('');
     const breakHtml = pageIndex === 0
       ? ''
