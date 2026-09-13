@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const findTaskStageOutcome = vi.fn();
-const getTaskStageDetail = vi.fn();
-const linkTaskStageOutcome = vi.fn();
+const taskMocks = vi.hoisted(() => ({
+  findTaskStageOutcome: vi.fn(),
+  getTaskStageDetail: vi.fn(),
+  linkTaskStageOutcome: vi.fn(),
+}));
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    taskStageOutcome: { findFirst: findTaskStageOutcome },
+    taskStageOutcome: { findFirst: taskMocks.findTaskStageOutcome },
   },
 }));
 
 vi.mock('@/services/tasks/stage.service', () => ({
-  getTaskStageDetail,
-  linkTaskStageOutcome,
+  getTaskStageDetail: taskMocks.getTaskStageDetail,
+  linkTaskStageOutcome: taskMocks.linkTaskStageOutcome,
   reconcileTaskStageOutcome: vi.fn(),
 }));
 
@@ -62,7 +64,7 @@ describe('W3 synthetic Service Agreement generation regression', () => {
         customCadenceLabel: null,
         sowPartialId: 'synthetic-partial',
         partialVersion: 7,
-        partialContentSnapshot: '<h2>{{service.variantName}}</h2><p>{{service.fields.scope}}</p><p>{{service.entities.0.name}}</p>',
+        partialContentSnapshot: '<h2>{{service.variantName}}</h2><p>{{service.fields.scope}}</p>',
         partialPlaceholdersSnapshot: [],
         partialDependencySnapshot: [],
         entityIds: ['synthetic-entity'],
@@ -112,9 +114,9 @@ describe('W3 synthetic Service Agreement generation regression', () => {
 describe('W3 synthetic task-launched generation regression', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findTaskStageOutcome.mockResolvedValue(null);
-    getTaskStageDetail.mockResolvedValue({ id: 'synthetic-stage' });
-    linkTaskStageOutcome.mockResolvedValue({ id: 'synthetic-outcome' });
+    taskMocks.findTaskStageOutcome.mockResolvedValue(null);
+    taskMocks.getTaskStageDetail.mockResolvedValue({ id: 'synthetic-stage' });
+    taskMocks.linkTaskStageOutcome.mockResolvedValue({ id: 'synthetic-outcome' });
   });
 
   it('links only the first successful generated document to the originating task stage', async () => {
@@ -132,7 +134,7 @@ describe('W3 synthetic task-launched generation regression', () => {
       ],
     });
 
-    expect(findTaskStageOutcome).toHaveBeenCalledWith({
+    expect(taskMocks.findTaskStageOutcome).toHaveBeenCalledWith({
       where: {
         tenantId: 'synthetic-tenant',
         taskStageId: 'synthetic-stage',
@@ -140,13 +142,13 @@ describe('W3 synthetic task-launched generation regression', () => {
       },
       select: { id: true },
     });
-    expect(getTaskStageDetail).toHaveBeenCalledWith(
+    expect(taskMocks.getTaskStageDetail).toHaveBeenCalledWith(
       'synthetic-tenant',
       'synthetic-task',
       'synthetic-stage',
     );
-    expect(linkTaskStageOutcome).toHaveBeenCalledTimes(1);
-    expect(linkTaskStageOutcome).toHaveBeenCalledWith(
+    expect(taskMocks.linkTaskStageOutcome).toHaveBeenCalledTimes(1);
+    expect(taskMocks.linkTaskStageOutcome).toHaveBeenCalledWith(
       'synthetic-tenant',
       'synthetic-stage',
       {
@@ -159,7 +161,7 @@ describe('W3 synthetic task-launched generation regression', () => {
   });
 
   it('does not overwrite an existing authoritative task outcome on retry', async () => {
-    findTaskStageOutcome.mockResolvedValue({ id: 'already-linked' });
+    taskMocks.findTaskStageOutcome.mockResolvedValue({ id: 'already-linked' });
 
     await linkFirstGeneratedDocumentTaskOutcomeForBatch({
       tenantId: 'synthetic-tenant',
@@ -171,7 +173,7 @@ describe('W3 synthetic task-launched generation regression', () => {
       successes: [{ itemId: 'item-1', documentId: 'document-1', title: 'Synthetic One' }],
     });
 
-    expect(getTaskStageDetail).not.toHaveBeenCalled();
-    expect(linkTaskStageOutcome).not.toHaveBeenCalled();
+    expect(taskMocks.getTaskStageDetail).not.toHaveBeenCalled();
+    expect(taskMocks.linkTaskStageOutcome).not.toHaveBeenCalled();
   });
 });
