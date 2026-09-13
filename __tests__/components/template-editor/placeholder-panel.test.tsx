@@ -132,7 +132,7 @@ describe('PlaceholderPanel F3 field discovery UX', () => {
   it('searches custom fields and partials without exposing unrelated categories', () => {
     render(<PlaceholderPanel {...defaultProps} customPlaceholders={[existingField]} partials={[partial]} />);
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search fields' }), { target: { value: 'reference number' } });
-    expect(screen.getByRole('heading', { name: 'Custom' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Custom, 1 result' })).toBeVisible();
     expect(screen.getByText('Reference number')).toBeVisible();
     expect(screen.queryByRole('button', { name: /Company,/ })).not.toBeInTheDocument();
 
@@ -243,7 +243,7 @@ describe('PlaceholderPanel F3 field discovery UX', () => {
         }]}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Service fields' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Service fields, 1 result' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Insert Accounting software' }));
     expect(onInsert).toHaveBeenCalledWith('{{service.fields.software}}');
     expect(screen.queryByRole('button', { name: 'Edit Accounting software' })).not.toBeInTheDocument();
