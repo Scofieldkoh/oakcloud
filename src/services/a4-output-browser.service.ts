@@ -26,7 +26,6 @@ export interface PaginateA4BrowserPageOptions {
   canonicalHtml: string;
   layout: A4BrowserPaginationLayout;
   session: A4OutputPreparationSession;
-  targetElementId?: string;
 }
 
 export interface A4ServerPageChrome {
@@ -67,11 +66,14 @@ function validateFragments(value: unknown): A4OutputPageFragment[] {
  * Shared Chromium paginator/installer for W3 server PDF and HTML output.
  * S owns pagination semantics and the checked generated bundle; W owns only
  * readiness, validation and installation into the output surface.
+ *
+ * The installation callback deliberately retains W1's single-string argument
+ * contract so existing test/browser adapters keep observing the exact assembled
+ * page HTML while PDF, HTML and CORE local-print share the same assembler.
  */
 export async function paginateA4BrowserPage(
   options: PaginateA4BrowserPageOptions,
 ): Promise<A4OutputPageAssembly> {
-  const targetElementId = options.targetElementId ?? 'a4-paginated-sections';
   options.session.assertActive();
 
   await options.page.evaluate(async () => {
@@ -107,12 +109,12 @@ export async function paginateA4BrowserPage(
   options.session.markPaginationReady();
   options.session.assertActive();
 
-  const installed = await options.page.evaluate(({ id, replacement }) => {
-    const container = document.getElementById(id);
+  const installed = await options.page.evaluate((replacement) => {
+    const container = document.getElementById('a4-paginated-sections');
     if (!container) return false;
     container.innerHTML = replacement;
     return true;
-  }, { id: targetElementId, replacement: assembly.html });
+  }, assembly.html);
   if (!installed) throw new Error('A4 pagination target was unavailable');
 
   options.session.markInstalled();
