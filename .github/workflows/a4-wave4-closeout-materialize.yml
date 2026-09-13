@@ -5,7 +5,7 @@ on:
     branches:
       - codex/a4-editor-wave4-integration-20260913
     paths:
-      - docs/plans/2026-09-10-a4-editor-implementation/coordination/.wave4-closeout-trigger
+      - docs/plans/2026-09-10-a4-editor-implementation/coordination/wave4-closeout-trigger.txt
 
 permissions:
   contents: write
