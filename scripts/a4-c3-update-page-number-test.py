@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Temporary branch-only helper. Remove before the C3 PR is finalized.
 path = Path('__tests__/components/a4-page-editor.test.tsx')
 text = path.read_text()
 old = """    render(\n      <A4PageEditor value={`<p>First</p>${hardPageBreak}<p>Second</p>`} />,\n    );\n\n    expect(screen.getByTestId('a4-page-number-1')).toBeInTheDocument();"""
