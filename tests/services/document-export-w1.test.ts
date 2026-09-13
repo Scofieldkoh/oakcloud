@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   addScriptTag: vi.fn(),
   evaluate: vi.fn(),
   pdf: vi.fn(),
+  pageContent: vi.fn(),
+  pageIsClosed: vi.fn(),
   pageClose: vi.fn(),
   browserClose: vi.fn(),
   generatedDocumentFindFirst: vi.fn(),
@@ -80,6 +82,8 @@ beforeEach(() => {
     addScriptTag: mocks.addScriptTag,
     evaluate: mocks.evaluate,
     pdf: mocks.pdf,
+    content: mocks.pageContent,
+    isClosed: mocks.pageIsClosed,
     close: mocks.pageClose,
   };
   const browser = { newPage: mocks.newPage, close: mocks.browserClose };
@@ -89,6 +93,10 @@ beforeEach(() => {
   mocks.addStyleTag.mockResolvedValue(undefined);
   mocks.addScriptTag.mockResolvedValue(undefined);
   mocks.pdf.mockResolvedValue(new Uint8Array([37, 80, 68, 70]));
+  mocks.pageContent.mockImplementation(async () => (
+    `<html><body><div id="a4-paginated-sections">${mocks.replacementHtml}</div></body></html>`
+  ));
+  mocks.pageIsClosed.mockReturnValue(false);
   mocks.pageClose.mockResolvedValue(undefined);
   mocks.browserClose.mockResolvedValue(undefined);
   mocks.evaluate.mockImplementation(async (_fn: unknown, arg?: unknown) => {
@@ -173,7 +181,13 @@ describe('W1 PDF fail-closed pagination', () => {
       title: 'Synthetic sanitizer parity',
       content,
       contentJson: null,
+      status: 'FINALIZED',
+      useLetterhead: false,
     });
+    mocks.fragments = [{
+      content,
+      hardBreakBefore: false,
+    }];
 
     const htmlExport = await exportToHTML({
       documentId: 'synthetic-document',
