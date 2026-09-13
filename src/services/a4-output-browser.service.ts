@@ -29,10 +29,16 @@ export interface PaginateA4BrowserPageOptions {
   targetElementId?: string;
 }
 
+export interface A4ServerPageChrome {
+  headerHtml?: string;
+  footerHtml?: string;
+}
+
 export interface RenderPaginatedA4HtmlOptions {
   html: string;
   canonicalHtml: string;
   layout: A4BrowserPaginationLayout;
+  pageChrome?: A4ServerPageChrome;
   signal?: AbortSignal;
   timeoutMs?: number;
 }
@@ -114,9 +120,37 @@ export async function paginateA4BrowserPage(
   return assembly;
 }
 
+async function installServerPageChrome(page: Page, chrome: A4ServerPageChrome): Promise<void> {
+  if (!chrome.headerHtml && !chrome.footerHtml) return;
+  await page.evaluate(({ headerHtml, footerHtml }) => {
+    document.querySelectorAll<HTMLElement>('.print-page').forEach((printPage) => {
+      printPage.style.position = 'relative';
+      if (headerHtml) {
+        const header = document.createElement('div');
+        header.className = 'a4-output-page-header';
+        header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:4;pointer-events:none;';
+        header.innerHTML = headerHtml;
+        printPage.prepend(header);
+      }
+      if (footerHtml) {
+        const footer = document.createElement('div');
+        footer.className = 'a4-output-page-footer';
+        footer.style.cssText = 'position:absolute;bottom:0;left:0;right:0;z-index:4;pointer-events:none;';
+        footer.innerHTML = footerHtml;
+        printPage.append(footer);
+      }
+    });
+  }, {
+    headerHtml: chrome.headerHtml ?? '',
+    footerHtml: chrome.footerHtml ?? '',
+  });
+}
+
 /**
  * Server HTML uses the same real-browser font/pagination/install path as PDF.
  * No fixed-height or JSDOM fallback is accepted as successful pagination.
+ * Page chrome is supplied only by server-owned builders; this API exposes no
+ * client-controlled trusted-rich promotion switch.
  */
 export async function renderPaginatedA4Html(
   options: RenderPaginatedA4HtmlOptions,
@@ -153,6 +187,7 @@ export async function renderPaginatedA4Html(
       layout: options.layout,
       session,
     });
+    await installServerPageChrome(page, options.pageChrome ?? {});
     session.assertReady();
     const html = await page.content();
     return { html, assembly };
