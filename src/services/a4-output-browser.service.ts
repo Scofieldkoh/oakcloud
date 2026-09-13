@@ -107,6 +107,7 @@ export async function paginateA4BrowserPage(
     // Final PDF/HTML output must use canonical C06 attributes only. Editor-only
     // projection decorations (for example data-flow-id/data-field-reference)
     // are intentionally stripped after pagination and before installation.
+    // Do not enable projection decorations at this final-output boundary.
     sanitizeFragment: (html) => sanitizeCanonicalA4Html(html),
   });
   options.session.markPaginationReady();
