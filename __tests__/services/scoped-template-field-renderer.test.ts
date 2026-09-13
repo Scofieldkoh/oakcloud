@@ -58,10 +58,11 @@ describe('W3 scoped field workflow rendering', () => {
     expect(result.fieldDiagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
   });
 
-  it('shares values only through an explicit structured identity binding', () => {
+  it('shares values only through an explicit structured identity binding after a legacy collision rename', () => {
     const templatePlaceholders = [
       field('parent-shared', 'shared'),
-      field('legacy-child-note', 'note', 'text', {
+      field('child-note', 'child_note', 'text', {
+        path: 'custom.note',
         sourcePartial: 'child',
         linkedTo: 'shared',
       }),
