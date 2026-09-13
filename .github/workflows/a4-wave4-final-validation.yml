@@ -44,8 +44,20 @@ jobs:
           --reporter=dot
       - name: SEMANTICS S3 pagination matrix
         run: npx vitest run __tests__/components/a4-pagination --reporter=dot
-      - name: FIELDS F3 and compatibility matrix
-        run: npx vitest run __tests__/components/template-editor __tests__/lib/template-field-contract.test.ts __tests__/lib/template-field-parser.test.ts __tests__/lib/template-field-registry.test.ts __tests__/lib/template-field-resolver.test.ts --reporter=dot
+      - name: FIELDS F3 authoring/discovery
+        run: >-
+          npx vitest run
+          __tests__/components/template-editor/field-authoring.test.ts
+          __tests__/components/template-editor/placeholder-panel.test.tsx
+          --reporter=dot
+      - name: FIELDS contract/resolver compatibility
+        run: >-
+          npx vitest run
+          __tests__/lib/template-field-contract.test.ts
+          __tests__/lib/template-field-f1.test.ts
+          __tests__/lib/template-placeholder-storage.test.ts
+          __tests__/lib/placeholder-resolver.test.ts
+          --reporter=dot
       - name: WORKFLOW W3 and output compatibility
         run: >-
           npx vitest run
