@@ -3,8 +3,13 @@ import { serviceAgreementItemSchema } from '@/lib/validations/service-agreement'
 
 const uuid = z.string().uuid();
 const nullableUuid = uuid.nullable();
-const fieldValues = z
+const stringFieldValues = z
   .record(z.string().max(10_000))
+  .refine((value) => Object.keys(value).length <= 200, {
+    message: 'At most 200 custom field values are allowed',
+  });
+const itemFieldValues = z
+  .record(z.union([z.string().max(10_000), z.boolean()]))
   .refine((value) => Object.keys(value).length <= 200, {
     message: 'At most 200 custom field values are allowed',
   });
@@ -68,8 +73,8 @@ export const batchItemConfigurationSchema = z.object({
   selectedDirectorIds: z.array(uuid).max(100).optional(),
   selectedShareholderId: nullableUuid,
   selectedContactId: nullableUuid,
-  itemValues: fieldValues,
-  masterOverrides: fieldValues,
+  itemValues: itemFieldValues,
+  masterOverrides: stringFieldValues,
   useLetterhead: z.boolean(),
   serviceAgreement: serviceAgreementWorkspaceSchema.nullable(),
 }).strict();
@@ -111,7 +116,7 @@ export const updateDocumentGenerationBatchSchema = z.object({
   currentStage: z.number().int().min(0).max(3).optional(),
   primaryCompanyId: nullableUuid.optional(),
   activeItemId: nullableUuid.optional(),
-  masterFieldValues: fieldValues.optional(),
+  masterFieldValues: stringFieldValues.optional(),
   items: z.array(updateDocumentGenerationBatchItemSchema).min(1).max(20),
   taskContext: z.unknown().optional(),
 }).strict().superRefine((value, context) => {
