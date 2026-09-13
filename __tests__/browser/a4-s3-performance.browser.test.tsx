@@ -12,11 +12,13 @@ import {
   createA4MeasurerLayout,
 } from '@/components/documents/a4-pagination/measure';
 import {
+  buildA4FontFaceCss,
   waitForA4FontReadiness,
 } from '@/components/documents/a4-pagination/a4-font-faces';
 import {
   paginateA4Document,
 } from '@/components/documents/a4-pagination/paginate-in-browser.entry';
+import { stripFlowMetadata } from '@/components/documents/a4-pagination/model';
 
 interface PerformanceTrace {
   pages: number;
@@ -43,6 +45,20 @@ function representativeFixture(pageCount: number): string {
   }).join('');
 }
 
+function fragmentSignature(
+  fragments: readonly { content: string; hardBreakBefore: boolean; oversized?: boolean }[],
+) {
+  return fragments.map((fragment) => {
+    const root = document.createElement('div');
+    root.innerHTML = stripFlowMetadata(fragment.content);
+    return {
+      text: root.textContent,
+      hardBreakBefore: fragment.hardBreakBefore,
+      oversized: fragment.oversized === true,
+    };
+  });
+}
+
 async function waitForEditorPaint(host: HTMLElement): Promise<HTMLElement> {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     await act(async () => {
@@ -62,8 +78,14 @@ async function waitForEditorPaint(host: HTMLElement): Promise<HTMLElement> {
 describe('A4 S3 representative performance traces', () => {
   let host: HTMLDivElement;
   let root: Root;
+  let fontStyle: HTMLStyleElement;
 
   beforeEach(() => {
+    fontStyle = document.createElement('style');
+    fontStyle.dataset.a4S3Fonts = 'true';
+    fontStyle.textContent = buildA4FontFaceCss();
+    document.head.appendChild(fontStyle);
+
     host = document.createElement('div');
     host.style.height = '1400px';
     document.body.appendChild(host);
@@ -73,6 +95,37 @@ describe('A4 S3 representative performance traces', () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     host.remove();
+    fontStyle.remove();
+  });
+
+  it('converges first-load and warm-load pagination without losing or reordering content', async () => {
+    const layout = createA4MeasurerLayout(DEFAULT_A4_DOCUMENT_LAYOUT);
+    const canonical = representativeFixture(10);
+
+    const cold = await waitForA4FontReadiness(
+      DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+      { runtimeRevision: 0 },
+    );
+    const coldPages = paginateA4Document(canonical, {
+      ...layout,
+      fontRevision: cold.revision,
+    });
+
+    const warm = await waitForA4FontReadiness(
+      DEFAULT_A4_DOCUMENT_LAYOUT.fontFamily,
+      { runtimeRevision: 0 },
+    );
+    const warmPages = paginateA4Document(canonical, {
+      ...layout,
+      fontRevision: warm.revision,
+    });
+
+    expect(cold.ready).toBe(true);
+    expect(warm.ready).toBe(true);
+    expect(warm.revision).toBe(cold.revision);
+    expect(fragmentSignature(warmPages)).toEqual(fragmentSignature(coldPages));
+    expect(warmPages).toHaveLength(10);
+    expect(warmPages.at(-1)?.content).toContain('S3 page 10');
   });
 
   it('records separate pagination and canonical input-to-paint traces for 1/10/30 pages', async () => {
