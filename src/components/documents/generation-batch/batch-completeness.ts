@@ -19,6 +19,11 @@ import {
   canonicalPlaceholderType,
   masterFieldId,
 } from '@/lib/document-generation-master-fields';
+import {
+  createWorkflowFieldInputDescriptors,
+  fieldInputDescriptorDefaultValue,
+  isWorkflowFieldValuePresent,
+} from '@/lib/document-editor/template-field-workflow';
 import type { BatchStage, EditableBatchItem } from './batch-workspace-state';
 
 export interface MissingRequirement {
@@ -98,14 +103,23 @@ export function selectItemCompleteness({
   });
 
   const { itemOnly } = partitionTemplateFields(templateFields, masterFields);
-  for (const field of itemOnly) {
-    if (!field.required) continue;
+  const descriptors = createWorkflowFieldInputDescriptors(itemOnly, {
+    kind: 'template',
+    id: item.templateId,
+  });
+  itemOnly.forEach((field, index) => {
+    const descriptor = descriptors[index];
+    if (!(descriptor?.required ?? field.required)) return;
+    const explicit = Object.prototype.hasOwnProperty.call(item.configuration.itemValues, field.key);
+    const value = explicit
+      ? item.configuration.itemValues[field.key]
+      : descriptor ? fieldInputDescriptorDefaultValue(descriptor) : field.defaultValue;
     requirements.push({
       id: `field:${field.key}`,
       label: field.label,
-      filled: (item.configuration.itemValues[field.key] ?? '').trim().length > 0,
+      filled: isWorkflowFieldValuePresent(value),
     });
-  }
+  });
 
   for (const field of masterFields.fields) {
     if (!field.requiredTemplateIds.includes(item.templateId)) continue;
@@ -258,48 +272,28 @@ export interface GenerationBlocker {
  * `selectCanRequestPreflight` by only inspecting items that are not already
  * `READY`/`GENERATED`, so an empty blocker list always means "can generate".
  */
-export function selectGenerationBlockers(
-  items: EditableBatchItem[],
-  completeness: CompletenessMap,
-): GenerationBlocker[] {
-  const blockers: GenerationBlocker[] = [];
-  for (const item of items) {
-    if (item.status === 'GENERATED' || item.status === 'READY') continue;
-    const title = item.configuration.title || item.templateName;
-    const itemCompleteness = completenessFor(completeness, item.key);
-    const diagnostics = item.validationDiagnostics;
-    const diagnosticCount = diagnostics
-      ? diagnostics.errors.length + diagnostics.fieldErrors.length
-      : 0;
-
-    let reason: string;
+export function selectGenerationBlockers(params: {
+  items: EditableBatchItem[];
+  completeness: CompletenessMap;
+}): GenerationBlocker[] {
+  return params.items.flatMap((item) => {
+    if (item.status === 'READY' || item.status === 'GENERATED') return [];
+    const itemCompleteness = completenessFor(params.completeness, item.key);
     if (!itemCompleteness.isComplete) {
-      const count = itemCompleteness.missing.length;
-      reason = `${count} required value${count === 1 ? '' : 's'} missing`;
-    } else if (diagnosticCount > 0) {
-      reason = `${diagnosticCount} validation error${diagnosticCount === 1 ? '' : 's'}`;
-    } else if (item.status === 'FAILED') {
-      reason = 'Last attempt failed';
-    } else if (!item.previewContent) {
-      reason = 'Preview not rendered yet';
-    } else if (!item.previewFingerprint) {
-      reason = 'Preview is out of date';
-    } else if (!item.reviewedFingerprint) {
-      reason = 'Not approved yet';
-    } else {
-      reason = 'Not ready';
+      return [{
+        itemKey: item.key,
+        title: item.configuration.title || item.templateName,
+        reason: `${itemCompleteness.missing.length} required value${itemCompleteness.missing.length === 1 ? '' : 's'} missing`,
+      }];
     }
-    blockers.push({ itemKey: item.key, title, reason });
-  }
-  return blockers;
-}
-
-/** True when the preview no longer reflects the saved configuration. */
-export function isPreviewStale(item: EditableBatchItem): boolean {
-  return Boolean(item.previewContent && !item.previewFingerprint);
-}
-
-/** True when the user has hand-edited the rendered preview. */
-export function hasManualEdits(item: EditableBatchItem): boolean {
-  return Boolean(item.editedContent && item.editedContent !== item.previewContent);
+    return [{
+      itemKey: item.key,
+      title: item.configuration.title || item.templateName,
+      reason: item.status === 'FAILED'
+        ? item.lastError?.message || 'Generation failed; preview again before retrying.'
+        : item.status === 'BLOCKED'
+          ? item.lastError?.message || 'Resolve the blocking issue before generation.'
+          : 'Preview and approve this document.',
+    }];
+  });
 }
