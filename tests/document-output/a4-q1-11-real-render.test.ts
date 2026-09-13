@@ -168,10 +168,13 @@ describe('A4 editor Q1-11 real HTML/PDF rendering acceptance', () => {
 
     // These assertions are deliberately against actual PDF text produced by
     // Chromium, after the production paginator has replaced the page sections.
-    expect(context(extracted.text, 'Q1-NUMBER-FIVE')).toMatch(/5[.)]\s*Q1-NUMBER-FIVE/);
-    expect(context(extracted.text, 'Q1-NUMBER-SIX')).toMatch(/6[.)]\s*Q1-NUMBER-SIX/);
-    expect(context(extracted.text, 'Q1-CONTINUATION-EIGHT')).toMatch(/8[.)]\s*Q1-CONTINUATION-EIGHT/);
-    expect(context(extracted.text, 'Q1-RESTART-ONE')).toMatch(/1[.)]\s*Q1-RESTART-ONE/);
-    expect(context(extracted.text, 'Q1-ALPHA-FIRST')).toMatch(/a[.)]\s*Q1-ALPHA-FIRST/i);
+    // PDF.js may tokenize marker glyphs separately (for example, `5 .` rather
+    // than `5.`), so allow whitespace only between the exact marker value and
+    // punctuation while preserving the required value, punctuation, and order.
+    expect(context(extracted.text, 'Q1-NUMBER-FIVE')).toMatch(/5\s*[.)]\s*Q1-NUMBER-FIVE/);
+    expect(context(extracted.text, 'Q1-NUMBER-SIX')).toMatch(/6\s*[.)]\s*Q1-NUMBER-SIX/);
+    expect(context(extracted.text, 'Q1-CONTINUATION-EIGHT')).toMatch(/8\s*[.)]\s*Q1-CONTINUATION-EIGHT/);
+    expect(context(extracted.text, 'Q1-RESTART-ONE')).toMatch(/1\s*[.)]\s*Q1-RESTART-ONE/);
+    expect(context(extracted.text, 'Q1-ALPHA-FIRST')).toMatch(/a\s*[.)]\s*Q1-ALPHA-FIRST/i);
   }, 30_000);
 });
