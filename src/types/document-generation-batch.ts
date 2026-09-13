@@ -25,6 +25,15 @@ export type BatchItemStatus =
 export type BatchStatus = 'DRAFT' | 'PARTIAL' | 'COMPLETED';
 
 /**
+ * W3 keeps exact textual representations for text/date/number/currency values
+ * while allowing a real boolean to cross the API boundary. This deliberately
+ * does not broaden master/shared values, whose existing catalogue remains a
+ * string contract. In particular `false`, `0` (the string "0" for exact
+ * numeric inputs), empty and missing remain distinguishable.
+ */
+export type BatchItemFieldValue = string | boolean;
+
+/**
  * Resumable editor value for one Service Agreement item. The server persists
  * this verbatim inside item configuration; when complete it is additionally
  * synchronized into the relational Service Agreement draft.
@@ -49,7 +58,7 @@ export interface BatchItemConfiguration {
   selectedDirectorIds?: string[];
   selectedShareholderId: string | null;
   selectedContactId: string | null;
-  itemValues: Record<string, string>;
+  itemValues: Record<string, BatchItemFieldValue>;
   masterOverrides: Record<string, string>;
   useLetterhead: boolean;
   serviceAgreement: ServiceAgreementWorkspaceState | null;

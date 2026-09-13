@@ -2,6 +2,11 @@
 
 import { cn } from '@/lib/utils';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import {
+  createWorkflowFieldInputDescriptors,
+  fieldInputDescriptorDefaultValue,
+  isWorkflowFieldValuePresent,
+} from '@/lib/document-editor/template-field-workflow';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type { EditableBatchItem } from './batch-workspace-state';
 
@@ -21,7 +26,7 @@ export function BatchCustomFieldForm({
   const itemValues = item.configuration.itemValues;
   const fieldKeys = new Set(fields.map((field) => field.key));
   const extraKeys = Object.keys(itemValues).filter((key) => !fieldKeys.has(key));
-  const visibleFields = [
+  const visibleFields: CustomPlaceholderDefinition[] = [
     ...fields,
     ...extraKeys.map((key) => ({
       id: key,
@@ -31,6 +36,11 @@ export function BatchCustomFieldForm({
       required: false,
     })),
   ];
+  const descriptors = createWorkflowFieldInputDescriptors(visibleFields, {
+    kind: 'template',
+    id: item.templateId,
+  });
+
   if (visibleFields.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border-primary p-3 text-sm text-text-muted">
@@ -39,10 +49,22 @@ export function BatchCustomFieldForm({
     );
   }
 
-  const requiredFields = visibleFields.filter((field) => field.required);
-  const missingRequired = requiredFields.filter(
-    (field) => !(itemValues[field.key] ?? '').trim(),
-  );
+  const entries = visibleFields.map((field, index) => ({
+    field,
+    descriptor: descriptors[index],
+  }));
+  const requiredFields = entries.filter(({ descriptor, field }) => descriptor?.required ?? field.required);
+  const missingRequired = requiredFields.filter(({ descriptor, field }) => {
+    const current = itemValues[field.key];
+    const fallback = descriptor ? fieldInputDescriptorDefaultValue(descriptor) : field.defaultValue;
+    return !isWorkflowFieldValuePresent(
+      Object.prototype.hasOwnProperty.call(itemValues, field.key) ? current : fallback,
+    );
+  });
+
+  const patchValue = (key: string, value: string | boolean) => onPatch({
+    itemValues: { ...itemValues, [key]: value },
+  });
 
   return (
     <div className="space-y-3">
@@ -61,20 +83,30 @@ export function BatchCustomFieldForm({
       ) : null}
 
       <div className="grid gap-3 lg:grid-cols-2">
-        {visibleFields.map((field) => {
-          const value = itemValues[field.key] ?? '';
-          const missing = field.required && !value.trim();
-          if (field.type === 'date') {
+        {entries.map(({ field, descriptor }) => {
+          const hasExplicitValue = Object.prototype.hasOwnProperty.call(itemValues, field.key);
+          const fallback = descriptor ? fieldInputDescriptorDefaultValue(descriptor) : field.defaultValue;
+          const rawValue = hasExplicitValue ? itemValues[field.key] : fallback;
+          const missing = (descriptor?.required ?? field.required)
+            && !isWorkflowFieldValuePresent(rawValue);
+          const textValue = typeof rawValue === 'string'
+            ? rawValue
+            : rawValue === undefined || rawValue === null ? '' : String(rawValue);
+          const control = descriptor?.control
+            ?? (field.type === 'date' ? 'date' : field.type === 'textarea' ? 'textarea' : field.type === 'boolean' ? 'boolean' : 'text');
+          const required = descriptor?.required ?? field.required;
+          const inputDisabled = disabled || control === 'read-only';
+          const key = descriptor?.identity ?? field.fieldIdentity ?? field.id ?? field.key;
+
+          if (control === 'date') {
             return (
-              <div key={field.key} className="block">
+              <div key={key} className="block">
                 <span className="text-sm font-medium text-text-primary">{field.label}</span>
-                {field.required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
+                {required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
                 <SingleDateInput
-                  value={value}
-                  onChange={(next) => onPatch({
-                    itemValues: { ...itemValues, [field.key]: next },
-                  })}
-                  disabled={disabled}
+                  value={textValue}
+                  onChange={(next) => patchValue(field.key, next)}
+                  disabled={inputDisabled}
                   ariaLabel={field.label}
                   error={missing ? 'Required' : undefined}
                   className="mt-1"
@@ -82,25 +114,79 @@ export function BatchCustomFieldForm({
               </div>
             );
           }
+
+          if (control === 'boolean') {
+            const checked = rawValue === true || rawValue === 'true' || rawValue === '1';
+            return (
+              <label
+                key={key}
+                className={cn(
+                  'flex min-h-11 items-center gap-3 rounded-lg border bg-background-primary px-3 py-2',
+                  missing ? 'border-status-error/50' : 'border-border-primary',
+                  inputDisabled && 'opacity-70',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(event) => patchValue(field.key, event.target.checked)}
+                  disabled={inputDisabled}
+                  aria-label={field.label}
+                  aria-required={required || undefined}
+                  className="h-4 w-4 rounded border-border-primary text-oak-primary focus:ring-oak-primary"
+                />
+                <span className="min-w-0 text-sm font-medium text-text-primary">
+                  {field.label}
+                  {required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
+                </span>
+              </label>
+            );
+          }
+
+          if (control === 'textarea') {
+            return (
+              <label key={key} className="block lg:col-span-2">
+                <span className="text-sm font-medium text-text-primary">{field.label}</span>
+                {required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
+                <textarea
+                  value={textValue}
+                  rows={4}
+                  onChange={(event) => patchValue(field.key, event.target.value)}
+                  disabled={inputDisabled}
+                  aria-label={field.label}
+                  aria-required={required || undefined}
+                  aria-invalid={missing || undefined}
+                  className={cn(
+                    'mt-1 w-full rounded-lg border bg-background-primary px-3 py-2 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30',
+                    missing ? 'border-status-error/50' : 'border-border-primary',
+                  )}
+                />
+                {missing ? <span className="mt-1 block text-xs text-status-error">Required</span> : null}
+              </label>
+            );
+          }
+
           return (
-            <label key={field.key} className="block">
+            <label key={key} className="block">
               <span className="text-sm font-medium text-text-primary">{field.label}</span>
-              {field.required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
+              {required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
               <input
                 type="text"
-                value={value}
-                onChange={(event) => onPatch({
-                  itemValues: { ...itemValues, [field.key]: event.target.value },
-                })}
-                disabled={disabled}
+                inputMode={control === 'decimal' || control === 'currency' ? 'decimal' : undefined}
+                value={textValue}
+                onChange={(event) => patchValue(field.key, event.target.value)}
+                disabled={inputDisabled}
                 aria-label={field.label}
-                aria-required={field.required || undefined}
+                aria-required={required || undefined}
+                aria-invalid={missing || undefined}
                 className={cn(
                   'mt-1 min-h-11 w-full rounded-lg border bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 lg:min-h-9',
                   missing ? 'border-status-error/50' : 'border-border-primary',
                 )}
               />
-              {missing ? (
+              {descriptor?.disabledReason ? (
+                <span className="mt-1 block text-xs text-status-warning">{descriptor.disabledReason}</span>
+              ) : missing ? (
                 <span className="mt-1 block text-xs text-status-error">Required</span>
               ) : null}
             </label>

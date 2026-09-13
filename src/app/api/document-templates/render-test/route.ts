@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireSessionWorkspaceId } from '@/lib/api-helpers';
-import { renderTemplateForGeneration } from '@/services/document-generator.service';
+import { placeholderDefinitionSchema } from '@/lib/validations/document-template';
+import { renderTemplateForWorkflow } from '@/services/document-workflow-renderer.service';
 import {
   renderUnsavedTemplateSnapshot,
 } from '@/services/document-template-preview.service';
@@ -13,7 +14,7 @@ const renderTestSchema = z.object({
   templateId: z.string().uuid().optional(),
   content: z.string().min(1).optional(),
   contentJson: z.unknown().optional(),
-  placeholders: z.array(z.record(z.unknown())).optional(),
+  placeholders: z.array(placeholderDefinitionSchema).optional(),
   compositionType: z.enum(['STANDARD', 'SERVICE_AGREEMENT']).optional(),
   templateScopeId: z.string().optional(),
   name: z.string().optional(),
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     const context = data.context as PlaceholderContext | undefined;
 
     if (!data.content && data.templateId) {
-      const rendered = await renderTemplateForGeneration({
+      const rendered = await renderTemplateForWorkflow({
         templateId: data.templateId,
         tenantId,
         companyId: data.companyId,
