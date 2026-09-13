@@ -350,3 +350,132 @@ VERIFY must confirm actual HEAD/build equals `6e8d4426c0d57043d85a830045dee465f6
 Write the independent gate report to `coordination/verify.md` with environment, exact commands/counts, native sequence results, PDF/HTML evidence, compatibility/readers, blocked/untested checks, defects and technical promotion decision.
 
 Stop after the Q1 report. Q1 verification is not deployment permission. Do not start Q2, D1, C3, S3, F3, W3, deployment or a version bump.
+
+## CURRENT AUTHORITATIVE STATE — G2/Q1 PASSED; WAVE 4 RELEASED — 2026-09-13
+
+This section supersedes earlier operational status lines above while preserving them as historical dispatch evidence.
+
+- Corrected production tree independently verified for G2/Q1: `e232f998475f87248588c79cdc63988e942f0da2`.
+- Independent Q1 evidence PR: **#48 — merged**.
+- Current merged `main` and Wave-4 common baseline: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`.
+- G2/Q1: **PASSED**. See `coordination/verify.md` for the historical blocked run, correction rerun, exact environment, artifacts and final technical decision.
+- Contract: **v1 frozen at G0 — unchanged**.
+- Deployment: **not authorized by this dispatch**. G2/Q1 is technically ready for separately authorized D1 promotion under `verification-and-rollout.md`.
+- Application version bump: **not authorized merely by Wave-4 implementation**.
+- Wave 4: **RELEASED — C3 / S3 / F3 / W3**.
+- Q2/G4: **not released**. It starts only after Wave-4 integration produces an immutable candidate and the required G3 prerequisites are satisfied.
+
+### Shared resource reservations — Wave 4
+
+- Git branch/index/commits, shared dependency installation, package/configuration changes, shared Prisma generation, pagination-bundle integration generation, integration documentation and final merge operations: **CORE only** in the shared checkout.
+- Shared full build / `.next` output: **CORE only**. Worker checks must use isolated caches/output and narrowly relevant commands.
+- Browser/server reservations: CORE `3430` / `.tmp/a4-c3-core`; SEMANTICS `3431` / `.tmp/a4-s3-semantics`; FIELDS `3432` / `.tmp/a4-f3-fields`; WORKFLOW `3433` / `.tmp/a4-w3-workflow`.
+- Database: CORE/SEMANTICS/FIELDS have no mutation lease. WORKFLOW may use only an explicitly disposable synthetic test database/schema for W3 persistence/schema/concurrency/output proof. Never mutate production or existing business data.
+- Existing business records, credentials and document contents are never test fixtures. Use synthetic fixtures only.
+- W3 publishes stable print/schema/input producer interfaces early. F3 publishes stable field-panel/typed-input producer interfaces early. CORE consumes reviewed producer interfaces in C3; agents must not duplicate another owner's implementation while waiting.
+- S3 owns measurement/font/pagination source changes. WORKFLOW owns pagination-bundle generation/output consumers; S3 reports bundle-regeneration requirements rather than editing W-owned generated artifacts.
+- No production deployment, real signing, filing, messaging or finalization is included in Wave 4.
+
+### CORE-C3-20260913-01
+
+Dispatch ID: `CORE-C3-20260913-01`
+Role and packet: **CORE / C3 — controls, accessible editing, local print and Wave-4 integration**
+State: **DISPATCHED — implementation not started**
+Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+Baseline commit: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`
+Contract version and status: **v1 frozen at G0 — unchanged**.
+Integrated prerequisites and published consumer APIs: C2/S2/F2/W2 are integrated into the G2/Q1-passed production tree; Q1 evidence is merged. Consume W3 shared print/schema/input producers and F3 stable field-panel/typed-input producers when published; consume S3 geometry/font capability outputs without reimplementing them.
+Exclusive writable production/test/document paths:
+- `src/components/documents/a4-page-editor.tsx`
+- `src/components/documents/a4-editor-toolbar.tsx`
+- CORE-owned editor/session/native-input/history modules and public session types under `src/components/documents/`, including the CORE-owned `a4-pagination/editor-session.ts` exception
+- CORE-owned A4 page-editor/toolbar/SSR/selection-scroll/print/browser tests
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md`
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/dispatch.md`
+Allowed new files: narrowly scoped CORE C3 helpers/tests only. No S/F/W production module may be copied or recreated.
+Reserved validation resources: Node 24; port `3430`; browser/cache `.tmp/a4-c3-core`; no database mutation; CORE owns shared build/config/generated-output integration windows.
+Required acceptance evidence: primary control grouping; single clear Page break/Insert field entry points; accessible editor/toolbar semantics and keyboard/focus behavior; exactly-once pointer/keyboard/assistive activation; command applicability separate from reflow busy state; real W revision/save/error state; local print through W3 shared preparation with readiness and cleanup; persisted page-number control only when output support exists; preserve all G2/Q1 behaviours.
+Allowed independent work if a producer is not yet available: toolbar organization, accessibility and activation correctness may proceed inside CORE ownership. Final field/print wiring must wait for reviewed F3/W3 producer interfaces; do not reproduce them locally.
+Handoff path: `coordination/core.md`.
+Completion boundary and next dependency: stop at **C3 + Wave-4 integration only**. After all owners hand off, integrate in dependency order, run shared checks, establish the immutable Wave-4 candidate, assess G3, and publish a separate VERIFY/Q2 assignment if ready. Do not perform Q2, deploy, or bump version.
+
+### SEMANTICS-S3-20260913-01
+
+Dispatch ID: `SEMANTICS-S3-20260913-01`
+Role and packet: **SEMANTICS / S3 — geometry, font readiness and measured performance**
+State: **DISPATCHED — implementation not started**
+Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+Baseline commit: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`
+Contract version and status: **v1 frozen at G0 — unchanged**.
+Integrated prerequisites and published consumer APIs: C2 + S2 + W1/W2 boundary/output foundations are integrated and G2/Q1 passed. Coordinate final output parity with W3; CORE remains sole editor/session authority.
+Exclusive writable production/test/document paths:
+- SEMANTICS-owned `src/components/documents/a4-pagination/{model.ts,selection.ts,document-actions.ts,formatting.ts,engine.ts,measure.ts,layout.ts,a4-page-layout.ts,a4-page-content-css.ts,a4-font-faces.ts,structural-position.ts,semantic-page-breaks.ts}`
+- `src/components/documents/a4-print-styles.ts`
+- `src/lib/document-page-breaks.ts`
+- S-owned measurement/font/pagination helpers
+- `__tests__/components/a4-pagination/**`
+- S-owned pagination/font/performance regressions
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/semantics.md`
+Allowed new files: S3 measurement/font/performance helpers and focused S regressions only. No CORE editor/session file, F parser/field file, W route/service or W-generated bundle file.
+Reserved validation resources: Node 24; port `3431`; browser/cache `.tmp/a4-s3-semantics`; no database mutation; no shared build/generated-output commands.
+Required acceptance evidence: one coherent measurement/layout/font setup; explicit versioned font readiness; cold/warm convergence; preserved A4/legacy-v1 geometry; no clipping of oversized content; representative 1/10/30-page input-to-paint and pagination measurements; cache keys cover content/width/layout/font revision; optimized/full pagination equivalence; editor/PDF break and numbering parity; exact W3 bundle-regeneration requirements.
+Allowed independent work if a producer is not yet available: all S3 source/equivalence/performance work inside S ownership. Final output parity records may wait for W3 consumers, but do not edit W-owned bundle/output code.
+Handoff path: `coordination/semantics.md`.
+Completion boundary and next dependency: stop at **S3 only**. Do not perform W3, Q2, deployment or version bump.
+
+### FIELDS-F3-20260913-01
+
+Dispatch ID: `FIELDS-F3-20260913-01`
+Role and packet: **FIELDS / F3 — field authoring and discovery UX**
+State: **DISPATCHED — implementation not started**
+Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+Baseline commit: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`
+Contract version and status: **v1 frozen at G0 — unchanged**.
+Integrated prerequisites and published consumer APIs: C2 + F2 are integrated and G2/Q1 passed. Preserve F1/F2 scoped identity, parser, escaping, content-policy and lifecycle semantics. Publish stable field-panel/typed-input producers early for W3/CORE.
+Exclusive writable production/test/document paths:
+- `src/components/documents/template-editor/**` except W-owned route-level wrappers
+- `src/types/placeholders.ts`
+- `src/lib/template-placeholder-storage.ts`
+- `src/lib/template-analysis.ts`
+- `src/lib/placeholder-resolver.ts`
+- `src/lib/document-generation-master-fields.ts`
+- `src/lib/template-field-contract.ts`
+- `src/lib/a4-content-policy.ts`
+- F-owned field registry/parser/lifecycle/content-policy helpers
+- corresponding F-owned template-editor/lib resolver/storage/parser/policy tests
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/fields.md`
+Allowed new files: F3 field UX/search/typed-input helpers and focused F regressions within F ownership. No W route/API/Zod/batch file and no CORE editor/toolbar file.
+Reserved validation resources: Node 24; port `3432`; browser/cache `.tmp/a4-f3-fields`; no database mutation; no shared build/generated-output commands.
+Required acceptance evidence: atomic recognizable inline-field presentation using canonical expressions underneath; source/type/description/default/value details; whole-token format/delete/copy/paste; anti-spoofed pasted chip attributes; complete key generation and clear Create vs Create-and-insert semantics; typed input descriptors; contextual registry/search/applicability; stable recents; usage/location deletion UX; diagnostic occurrence navigation contract; keyboard/focus/long-label/narrow-panel accessibility; bold/heading/list/table/adjacent/page-boundary field cases.
+Allowed independent work if a producer is not yet available: complete F3 panel/catalog/typed-descriptor work and publish the interfaces. W applies route/batch integration and CORE applies editor focus/decoration integration; do not duplicate those consumers.
+Handoff path: `coordination/fields.md`.
+Completion boundary and next dependency: stop at **F3 only**. Do not perform W3, Q2, deployment or version bump.
+
+### WORKFLOW-W3-20260913-01
+
+Dispatch ID: `WORKFLOW-W3-20260913-01`
+Role and packet: **WORKFLOW / W3 — field, preview and output completion**
+State: **DISPATCHED — implementation not started**
+Working directory: `C:\Users\Scofieldkoh\Documents\oakcloud`
+Baseline commit: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`
+Contract version and status: **v1 frozen at G0 — unchanged**.
+Integrated prerequisites and published consumer APIs: W2 + F2 + S2 are integrated and G2/Q1 passed. Publish shared print/schema/input producer commits/interfaces early for CORE C3 and F3 consumers; final acceptance consumes integrated F3/S3/C3.
+Exclusive writable production/test/document paths:
+- template/partial and generated-document route pages owned by WORKFLOW
+- `src/components/documents/generation-batch/**`
+- document template/partial/generator/export services and document-generation-batch services
+- related document APIs and validation schemas
+- `prisma/schema.prisma` and W-owned forward migrations where W3 actually requires them
+- server font adapter
+- pagination bundle build script and generated pagination bundle
+- W-owned persistence/route/batch/output/component/service/integration tests
+- W-owned capability/page-bootstrap routes/modules
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/workflow.md`
+Allowed new files: W3 route/service/schema/output/print-preparation helpers and focused W regressions within W ownership. Do not create competing S pagination logic, F parser/policy/identity logic or CORE editor/session logic.
+Reserved validation resources: Node 24; port `3433`; browser/cache `.tmp/a4-w3-workflow`; explicitly disposable synthetic database/schema only; shared Prisma/bundle generation that can affect the shared checkout is coordinated through CORE's integration window.
+Required acceptance evidence: F typed descriptors applied without false/zero/date/multiline/precision loss; scoped partial collisions and intentional linkings through canonical preview/generation; stable IDs/legacy types/options/path/source/unknown metadata survive API/Zod; policy-gated plain-text escaping and trusted-rich authority; schemas carried consistently through templates/partials/snapshots/drafts without historical rewrite; shared page assembly for local print/PDF/HTML; captions/quotes/footers/list starts/breaks/layout preserved; page numbers only when all outputs support them; letterhead/watermark/margins/cold-font/long-value proof; final S3 bundle freshness; synthetic service-agreement/task-launched generation regressions; recoverable failures and old-snapshot readability; strict C07/C03/C05 rollout-readiness tests.
+Allowed independent work if a producer is not yet available: publish W3 print/schema/input producers and complete W-owned canonical service/output work against integrated F2/S2. Consume F3/S3 final producers when reviewed; do not duplicate them.
+Handoff path: `coordination/workflow.md`.
+Completion boundary and next dependency: stop at **W3 only**. Do not deploy, activate a production rollout, perform Q2 or bump version.
+
+Wave-4 assignments are now published from the merged Q1 evidence baseline. Publication authorizes only the named implementation packets under their ownership boundaries; it does not itself deploy D1/D2/D3 or release Q2.
