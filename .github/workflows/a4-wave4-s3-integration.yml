@@ -1,0 +1,66 @@
+name: A4 Wave 4 S3 Integration
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-wave4-integration-20260913
+
+permissions:
+  contents: write
+
+jobs:
+  validate-s3:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: codex/a4-editor-wave4-integration-20260913
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Regenerate pagination bundle from S3 sources
+        run: |
+          npm run generate:pagination-bundle
+          changed="$(git diff --name-only)"
+          if [ -n "$changed" ] && [ "$changed" != "src/components/documents/a4-pagination/pagination-bundle.generated.ts" ]; then
+            echo "Unexpected generated changes:"
+            echo "$changed"
+            exit 1
+          fi
+
+      - name: S3 pagination unit matrix
+        run: npx vitest run __tests__/components/a4-pagination --reporter=verbose
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: S3 real-Chromium performance and boundary matrix
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-s3-performance.browser.test.tsx
+          __tests__/browser/a4-boundary-semantics.browser.test.tsx
+          --reporter=verbose
+
+      - name: Typecheck integrated S3
+        run: npm run typecheck
+
+      - name: Commit regenerated pagination bundle
+        shell: bash
+        run: |
+          if git diff --quiet -- src/components/documents/a4-pagination/pagination-bundle.generated.ts; then
+            echo "Pagination bundle already fresh"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/documents/a4-pagination/pagination-bundle.generated.ts
+          git commit -m "build(a4): regenerate pagination bundle for S3"
+          git push origin HEAD:codex/a4-editor-wave4-integration-20260913
