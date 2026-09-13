@@ -62,15 +62,14 @@ describe('A4EditorToolbar', () => {
     expect(within(toolbar).getByRole('button', { name: 'Bulleted list' })).toBeVisible();
     expect(within(toolbar).getByRole('button', { name: 'Numbered list' })).toBeVisible();
     expect(within(toolbar).getByRole('button', { name: 'Increase indent' })).toBeVisible();
-    expect(within(toolbar).getByRole('button', { name: 'Page break' })).toBeVisible();
+    expect(within(toolbar).getByRole('button', { name: 'Insert page break' })).toBeVisible();
   });
 
-  it('keeps rare numbering, font and page-section controls in labelled menus', () => {
+  it('keeps rare numbering and font controls in labelled menus', () => {
     renderToolbar({ onLegacyCommand: vi.fn() });
 
     expect(screen.queryByLabelText('Font family')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Alphabetical list' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Append blank page' })).not.toBeInTheDocument();
 
     openMenu('List options');
     expect(screen.getByRole('button', { name: 'Alphabetical list' })).toBeVisible();
@@ -80,20 +79,14 @@ describe('A4EditorToolbar', () => {
     openMenu('Text options');
     expect(screen.getByLabelText('Font family')).toBeVisible();
     expect(screen.getByLabelText('Font size')).toBeVisible();
-    fireEvent.keyDown(document, { key: 'Escape' });
-
-    openMenu('Page options');
-    expect(screen.getByRole('button', { name: 'Append blank page' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Remove page break' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Delete current hard section' })).toBeVisible();
   });
 
   it('ports menus to the body and restores trigger focus on Escape', () => {
     renderToolbar();
 
-    const trigger = screen.getByRole('button', { name: 'Table' });
+    const trigger = screen.getByRole('button', { name: 'Tables' });
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog', { name: 'Table popover' }).parentElement).toBe(document.body);
+    expect(screen.getByRole('dialog', { name: 'Tables popover' }).parentElement).toBe(document.body);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(trigger).toHaveFocus();
   });
@@ -140,14 +133,14 @@ describe('A4EditorToolbar', () => {
 
     const undo = screen.getByRole('button', { name: 'Undo' });
     const redo = screen.getByRole('button', { name: 'Redo' });
-    const pageOptions = screen.getByRole('button', { name: 'Page options' });
+    const deletePage = screen.getByRole('button', { name: 'Delete current page' });
     undo.focus();
 
     fireEvent.keyDown(undo, { key: 'ArrowRight' });
     expect(redo).toHaveFocus();
     fireEvent.keyDown(redo, { key: 'End' });
-    expect(pageOptions).toHaveFocus();
-    fireEvent.keyDown(pageOptions, { key: 'Home' });
+    expect(deletePage).toHaveFocus();
+    fireEvent.keyDown(deletePage, { key: 'Home' });
     expect(undo).toHaveFocus();
   });
 
@@ -201,7 +194,7 @@ describe('A4EditorToolbar', () => {
     renderToolbar({ mutationDisabled: true, onLegacyCommand: vi.fn() });
 
     expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Page break' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Insert page break' })).toBeDisabled();
     expect(screen.getByLabelText('Paragraph style')).toBeDisabled();
   });
 
@@ -229,11 +222,11 @@ describe('A4EditorToolbar', () => {
     expect(screen.getByLabelText('Show page numbers')).toBeVisible();
   });
 
-  it('disables contextual page-section operations when not applicable', () => {
+  it('keeps direct page operations labelled and disables them when not applicable', () => {
     renderToolbar({ canDeletePage: false, canRemovePageBreak: false });
-    openMenu('Page options');
 
+    expect(screen.getByRole('button', { name: 'Add blank page' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Remove page break' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Delete current hard section' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete current page' })).toBeDisabled();
   });
 });
