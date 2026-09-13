@@ -2,8 +2,10 @@ import type { Page } from 'puppeteer-core';
 
 import { buildA4PageContentStyles } from '@/components/documents/a4-pagination/a4-page-content-css';
 import { A4_PAGINATION_BUNDLE } from '@/components/documents/a4-pagination/pagination-bundle.generated';
+import { findChromePath } from '@/lib/chrome-executable';
 import {
   assembleA4OutputPages,
+  createA4OutputPreparationSession,
   type A4OutputPageAssembly,
   type A4OutputPageFragment,
   type A4OutputPreparationSession,
@@ -25,6 +27,14 @@ export interface PaginateA4BrowserPageOptions {
   layout: A4BrowserPaginationLayout;
   session: A4OutputPreparationSession;
   targetElementId?: string;
+}
+
+export interface RenderPaginatedA4HtmlOptions {
+  html: string;
+  canonicalHtml: string;
+  layout: A4BrowserPaginationLayout;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 function validateFragments(value: unknown): A4OutputPageFragment[] {
@@ -102,4 +112,51 @@ export async function paginateA4BrowserPage(
   options.session.markInstalled();
   options.session.assertReady();
   return assembly;
+}
+
+/**
+ * Server HTML uses the same real-browser font/pagination/install path as PDF.
+ * No fixed-height or JSDOM fallback is accepted as successful pagination.
+ */
+export async function renderPaginatedA4Html(
+  options: RenderPaginatedA4HtmlOptions,
+): Promise<{ html: string; assembly: A4OutputPageAssembly }> {
+  const timeoutMs = options.timeoutMs ?? 30_000;
+  const session = createA4OutputPreparationSession('html', options.signal);
+  const puppeteer = await import('puppeteer-core');
+  const executablePath = await findChromePath();
+  session.assertActive();
+  const browser = await puppeteer.default.launch({
+    headless: true,
+    executablePath,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+  });
+  session.addCleanup(() => browser.close());
+
+  try {
+    const page = await browser.newPage();
+    session.addCleanup(async () => {
+      if (!page.isClosed()) await page.close();
+    });
+    page.setDefaultTimeout(timeoutMs);
+    page.setDefaultNavigationTimeout(timeoutMs);
+    session.assertActive();
+    await page.setContent(options.html, { waitUntil: 'networkidle0', timeout: timeoutMs });
+    const assembly = await paginateA4BrowserPage({
+      page,
+      canonicalHtml: options.canonicalHtml,
+      layout: options.layout,
+      session,
+    });
+    session.assertReady();
+    const html = await page.content();
+    return { html, assembly };
+  } finally {
+    await session.dispose();
+  }
 }
