@@ -11,14 +11,18 @@ import {
 } from '@/lib/placeholder-resolver';
 import type { ParsedTemplateFieldSyntax } from '@/lib/template-field-contract';
 
+export * from '@/lib/template-field-lifecycle';
+export * from '@/lib/template-field-resolution';
+
 export interface ResolveTemplateFieldsResult extends ResolveResult {
   syntax: ParsedTemplateFieldSyntax;
 }
 
 /**
- * F1 canonical render/generation entry point. It performs no value escaping or
- * type coercion: parser-approved syntax is normalized, then the established
- * resolver is reused unchanged. Malformed expressions stay recoverable source.
+ * F1 compatibility render/generation entry point. It performs no value escaping
+ * or type coercion: parser-approved syntax is normalized, then the established
+ * resolver is reused unchanged. F2 scoped/escaped semantics are exported from
+ * this module but are NOT activated here; WORKFLOW owns the D2 renderer switch.
  */
 export function resolveTemplateFields(
   content: string,

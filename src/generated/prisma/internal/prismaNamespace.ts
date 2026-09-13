@@ -11582,6 +11582,7 @@ export const GeneratedDocumentScalarFieldEnum = {
   tenantId: 'tenantId',
   templateId: 'templateId',
   templateVersion: 'templateVersion',
+  revision: 'revision',
   sharePointRelativeFolderPathSnapshot: 'sharePointRelativeFolderPathSnapshot',
   companyId: 'companyId',
   title: 'title',

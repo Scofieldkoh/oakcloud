@@ -2455,6 +2455,19 @@ describe('A4PageEditor real layout pagination', () => {
       selection.removeAllRanges();
       selection.addRange(range);
     };
+    const selectSecondListItem = () => {
+      const paragraphs = Array.from(
+        host.querySelectorAll('[data-testid="a4-page-content-1"] li > p'),
+      );
+      expect(paragraphs).toHaveLength(2);
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(paragraphs[1].firstChild!, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    };
 
     await act(async () => {
       selectBoth();
@@ -2486,7 +2499,7 @@ describe('A4PageEditor real layout pagination', () => {
     ).toBe(true);
 
     await act(async () => {
-      selectBoth();
+      selectSecondListItem();
     });
     await act(async () => {
       await userEvent.click(buttonByLabel('Increase indent'));
@@ -2495,30 +2508,11 @@ describe('A4PageEditor real layout pagination', () => {
     body = new DOMParser()
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
-        (listItem) => listItem.style.marginLeft === '2em',
-      ),
-    ).toBe(true);
+    expect(body.querySelector(':scope > ul > li:first-child > ul > li > p')?.textContent).toBe('Two');
+    expect(body.querySelectorAll(':scope > ul > li')).toHaveLength(1);
 
     await act(async () => {
-      selectBoth();
-    });
-    await act(async () => {
-      await userEvent.click(buttonByLabel('Increase indent'));
-    });
-    await waitForEditorIdle();
-    body = new DOMParser()
-      .parseFromString(editorRef.current!.getContent(), 'text/html')
-      .body;
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
-        (listItem) => listItem.style.marginLeft === '4em',
-      ),
-    ).toBe(true);
-
-    await act(async () => {
-      selectBoth();
+      selectSecondListItem();
     });
     await act(async () => {
       await userEvent.click(buttonByLabel('Decrease indent'));
@@ -2527,11 +2521,8 @@ describe('A4PageEditor real layout pagination', () => {
     body = new DOMParser()
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
-        (listItem) => listItem.style.marginLeft === '2em',
-      ),
-    ).toBe(true);
+    expect(body.querySelectorAll(':scope > ul > li')).toHaveLength(2);
+    expect(body.querySelectorAll(':scope > ul > li > ul')).toHaveLength(0);
 
     await act(async () => {
       selectBoth();

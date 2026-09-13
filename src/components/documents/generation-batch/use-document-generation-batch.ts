@@ -22,13 +22,18 @@ import type {
 import {
   BATCH_STAGES,
   createInitialBatchWorkspaceState,
-  editableBatchFromDto,
-  documentGenerationBatchReducer,
   deriveCapabilitiesForCommit,
+  documentGenerationBatchReducer,
+  editableBatchFromDto,
   type BatchStage,
   type BatchWorkspaceState,
   type EditableDocumentGenerationBatch,
 } from './batch-workspace-state';
+import {
+  acknowledgeBatchWithNewerLocalState,
+  batchWorkspaceWriteFingerprint,
+  type WorkflowBatchAction,
+} from './batch-workflow-ack';
 
 export interface UseDocumentGenerationBatchOptions {
   initialBatch?: EditableDocumentGenerationBatch | null;
@@ -36,7 +41,7 @@ export interface UseDocumentGenerationBatchOptions {
 
 export interface DocumentGenerationBatchCommands {
   state: BatchWorkspaceState;
-  dispatch: React.Dispatch<Parameters<typeof documentGenerationBatchReducer>[1]>;
+  dispatch: React.Dispatch<WorkflowBatchAction>;
   saveDraft: () => Promise<EditableDocumentGenerationBatch>;
   continueTo: (stage: BatchStage) => Promise<void>;
   previewItem: (
@@ -77,18 +82,45 @@ function buildUpdateInput(state: BatchWorkspaceState): UpdateDocumentGenerationB
   };
 }
 
+function workflowBatchReducer(
+  state: BatchWorkspaceState,
+  action: WorkflowBatchAction,
+): BatchWorkspaceState {
+  if (action.type === 'server/acknowledge-newer-local') {
+    return acknowledgeBatchWithNewerLocalState(state, action.batch);
+  }
+  return documentGenerationBatchReducer(state, action);
+}
+
+function conflictRevision(error: unknown): number | null {
+  if (
+    !(error instanceof DocumentGenerationBatchApiError)
+    || error.status !== 409
+    || !error.details
+    || typeof error.details !== 'object'
+    || !('currentRevision' in error.details)
+  ) {
+    return null;
+  }
+  const revision = Number(
+    (error.details as { currentRevision: unknown }).currentRevision,
+  );
+  return Number.isInteger(revision) && revision >= 0 ? revision : null;
+}
+
 export function useDocumentGenerationBatch(
   options: UseDocumentGenerationBatchOptions = {},
 ): DocumentGenerationBatchCommands {
   const { initialBatch = null } = options;
   const [state, dispatch] = useReducer(
-    documentGenerationBatchReducer,
+    workflowBatchReducer,
     undefined,
     () => createInitialBatchWorkspaceState(initialBatch ?? []),
   );
   const stateRef = useRef(state);
   stateRef.current = state;
   const initialBatchRef = useRef(initialBatch);
+
   useEffect(() => {
     if (initialBatch === initialBatchRef.current) return;
     initialBatchRef.current = initialBatch;
@@ -102,6 +134,7 @@ export function useDocumentGenerationBatch(
       stateRef.current = next;
     }
   }, [initialBatch]);
+
   const previewAbortRef = useRef<AbortController | null>(null);
   const { disarm, requestNavigation, dialog } = useUnsavedNavigationGuard(
     state.dirty,
@@ -111,8 +144,21 @@ export function useDocumentGenerationBatch(
     requestNavigation(destination);
   }, [disarm, requestNavigation]);
 
-  const commit = useCallback((saved: DocumentGenerationBatchDto) => {
+  const commit = useCallback((
+    saved: DocumentGenerationBatchDto,
+    requestFingerprint?: string,
+  ) => {
     const current = stateRef.current;
+    if (
+      requestFingerprint !== undefined
+      && batchWorkspaceWriteFingerprint(current) !== requestFingerprint
+    ) {
+      const acknowledged = acknowledgeBatchWithNewerLocalState(current, saved);
+      dispatch({ type: 'server/acknowledge-newer-local', batch: saved });
+      stateRef.current = acknowledged;
+      return acknowledged.batch;
+    }
+
     const normalized = editableBatchFromDto(saved);
     const currentActiveItem = current.activeItemId
       ? normalized.items.find((item) =>
@@ -143,6 +189,18 @@ export function useDocumentGenerationBatch(
     return committed;
   }, []);
 
+  const recordConflict = useCallback((error: unknown): boolean => {
+    const currentRevision = conflictRevision(error);
+    if (currentRevision === null) return false;
+    dispatch({ type: 'save/conflict', currentRevision });
+    stateRef.current = {
+      ...stateRef.current,
+      pending: null,
+      conflict: { currentRevision },
+    };
+    return true;
+  }, []);
+
   const resolveItemId = useCallback((itemId: string): string => {
     const item = stateRef.current.batch.items.find(
       (entry) =>
@@ -156,25 +214,24 @@ export function useDocumentGenerationBatch(
   const persistInFlightRef = useRef<Promise<EditableDocumentGenerationBatch> | null>(null);
 
   const persist = useCallback(async (): Promise<EditableDocumentGenerationBatch> => {
-    if (persistInFlightRef.current) {
-      return persistInFlightRef.current;
-    }
+    if (persistInFlightRef.current) return persistInFlightRef.current;
+
     const run = async (): Promise<EditableDocumentGenerationBatch> => {
       const current = stateRef.current;
       if (current.batch.items.length === 0) {
         throw new Error('Select at least one template before saving');
       }
+      const requestFingerprint = batchWorkspaceWriteFingerprint(current);
       dispatch({ type: 'request/start', pending: 'save' });
       let batchId = current.batch.id;
       let revision = current.batch.revision;
       let activeItemId = current.activeItemId;
       let items = current.batch.items;
+
       try {
         if (!batchId) {
           const created = await createDocumentGenerationBatch({
-            items: current.batch.items.map((item) => ({
-              templateId: item.templateId,
-            })),
+            items: current.batch.items.map((item) => ({ templateId: item.templateId })),
             ...(current.batch.legacyDraftId
               ? { legacyDraftId: current.batch.legacyDraftId }
               : {}),
@@ -193,25 +250,17 @@ export function useDocumentGenerationBatch(
             return server ? { ...item, id: server.id } : item;
           });
         }
+
         const updateInput = buildUpdateInput({
           ...current,
           activeItemId,
           batch: { ...current.batch, id: batchId, revision, items },
         });
         const saved = await saveDocumentGenerationBatch(batchId, updateInput);
-        disarm();
-        return commit(saved);
+        return commit(saved, requestFingerprint);
       } catch (error) {
-        if (
-          error instanceof DocumentGenerationBatchApiError
-          && error.status === 409
-          && error.details
-          && typeof error.details === 'object'
-          && 'currentRevision' in error.details
-        ) {
-          const currentRevision = Number(
-            (error.details as { currentRevision: unknown }).currentRevision,
-          );
+        const currentRevision = conflictRevision(error);
+        if (currentRevision !== null) {
           if (batchId && !stateRef.current.batch.id) {
             dispatch({
               type: 'server/track-id',
@@ -221,13 +270,17 @@ export function useDocumentGenerationBatch(
             });
             stateRef.current = {
               ...stateRef.current,
-              batch: { ...stateRef.current.batch, id: batchId, revision: revision ?? 0 },
+              batch: {
+                ...stateRef.current.batch,
+                id: batchId,
+                revision: revision ?? 0,
+              },
               conflict: { currentRevision },
               dirty: true,
               pending: null,
             };
           } else {
-            dispatch({ type: 'save/conflict', currentRevision });
+            recordConflict(error);
           }
         } else {
           dispatch({ type: 'request/end' });
@@ -235,6 +288,7 @@ export function useDocumentGenerationBatch(
         throw error;
       }
     };
+
     const promise = run();
     persistInFlightRef.current = promise;
     try {
@@ -242,24 +296,34 @@ export function useDocumentGenerationBatch(
     } finally {
       persistInFlightRef.current = null;
     }
-  }, [commit, disarm]);
+  }, [commit, recordConflict]);
 
   const ensurePersisted = useCallback(async (): Promise<EditableDocumentGenerationBatch> => {
     const stagesMatch = () => {
       const current = stateRef.current;
       const localStage = BATCH_STAGES.indexOf(current.stage);
-      const persistedStage = Math.min(current.batch.currentStage, BATCH_STAGES.length - 1);
+      const persistedStage = Math.min(
+        current.batch.currentStage,
+        BATCH_STAGES.length - 1,
+      );
       return persistedStage === localStage;
     };
-    const current = stateRef.current;
-    if (current.batch.id && !current.dirty && stagesMatch()) {
-      return current.batch;
-    }
-    await persist();
-    if (!stagesMatch()) {
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const current = stateRef.current;
+      if (current.batch.id && !current.dirty && stagesMatch()) {
+        return current.batch;
+      }
       await persist();
     }
-    return stateRef.current.batch;
+
+    const current = stateRef.current;
+    if (current.dirty || !stagesMatch()) {
+      throw new Error(
+        'The batch changed while it was being saved. Save the latest changes before continuing.',
+      );
+    }
+    return current.batch;
   }, [persist]);
 
   const saveDraft = useCallback(() => persist(), [persist]);
@@ -276,6 +340,7 @@ export function useDocumentGenerationBatch(
   ) => {
     await ensurePersisted();
     const current = stateRef.current;
+    const requestFingerprint = batchWorkspaceWriteFingerprint(current);
     const resolvedItemId = resolveItemId(itemId);
     const batchId = current.batch.id!;
     previewAbortRef.current?.abort();
@@ -292,15 +357,19 @@ export function useDocumentGenerationBatch(
         },
         controller.signal,
       );
-      return commit(saved);
+      return commit(saved, requestFingerprint);
+    } catch (error) {
+      recordConflict(error);
+      throw error;
     } finally {
       dispatch({ type: 'request/end' });
     }
-  }, [commit, ensurePersisted, resolveItemId]);
+  }, [commit, ensurePersisted, recordConflict, resolveItemId]);
 
   const reviewItem = useCallback(async (itemId: string) => {
     await ensurePersisted();
     const current = stateRef.current;
+    const requestFingerprint = batchWorkspaceWriteFingerprint(current);
     const resolvedItemId = resolveItemId(itemId);
     dispatch({ type: 'request/start', pending: 'review' });
     try {
@@ -309,30 +378,38 @@ export function useDocumentGenerationBatch(
         resolvedItemId,
         { expectedRevision: current.batch.revision ?? 0 },
       );
-      return commit(saved);
+      return commit(saved, requestFingerprint);
+    } catch (error) {
+      recordConflict(error);
+      throw error;
     } finally {
       dispatch({ type: 'request/end' });
     }
-  }, [commit, ensurePersisted, resolveItemId]);
+  }, [commit, ensurePersisted, recordConflict, resolveItemId]);
 
   const preflight = useCallback(async () => {
     await ensurePersisted();
     const current = stateRef.current;
+    const requestFingerprint = batchWorkspaceWriteFingerprint(current);
     dispatch({ type: 'request/start', pending: 'preflight' });
     try {
       const saved = await preflightDocumentGenerationBatch(
         current.batch.id!,
         { expectedRevision: current.batch.revision ?? 0 },
       );
-      return commit(saved);
+      return commit(saved, requestFingerprint);
+    } catch (error) {
+      recordConflict(error);
+      throw error;
     } finally {
       dispatch({ type: 'request/end' });
     }
-  }, [commit, ensurePersisted]);
+  }, [commit, ensurePersisted, recordConflict]);
 
   const generate = useCallback(async () => {
     await ensurePersisted();
     const current = stateRef.current;
+    const requestFingerprint = batchWorkspaceWriteFingerprint(current);
     dispatch({ type: 'request/start', pending: 'generate' });
     try {
       const result = await generateDocumentGenerationBatch(
@@ -341,17 +418,21 @@ export function useDocumentGenerationBatch(
       );
       if (result.batchId) {
         const refreshed = await getDocumentGenerationBatch(result.batchId);
-        commit(refreshed);
+        commit(refreshed, requestFingerprint);
       }
       return result;
+    } catch (error) {
+      recordConflict(error);
+      throw error;
     } finally {
       dispatch({ type: 'request/end' });
     }
-  }, [commit, ensurePersisted]);
+  }, [commit, ensurePersisted, recordConflict]);
 
   const retry = useCallback(async (itemId: string) => {
     await ensurePersisted();
     const current = stateRef.current;
+    const requestFingerprint = batchWorkspaceWriteFingerprint(current);
     const resolvedItemId = resolveItemId(itemId);
     dispatch({ type: 'request/start', pending: 'retry' });
     try {
@@ -360,11 +441,14 @@ export function useDocumentGenerationBatch(
         resolvedItemId,
         { expectedRevision: current.batch.revision ?? 0 },
       );
-      return commit(saved);
+      return commit(saved, requestFingerprint);
+    } catch (error) {
+      recordConflict(error);
+      throw error;
     } finally {
       dispatch({ type: 'request/end' });
     }
-  }, [commit, ensurePersisted, resolveItemId]);
+  }, [commit, ensurePersisted, recordConflict, resolveItemId]);
 
   const overwriteConflict = useCallback(async () => {
     const conflict = stateRef.current.conflict;
@@ -372,7 +456,10 @@ export function useDocumentGenerationBatch(
       dispatch({ type: 'conflict/accept-revision' });
       stateRef.current = {
         ...stateRef.current,
-        batch: { ...stateRef.current.batch, revision: conflict.currentRevision },
+        batch: {
+          ...stateRef.current.batch,
+          revision: conflict.currentRevision,
+        },
         conflict: null,
       };
     }

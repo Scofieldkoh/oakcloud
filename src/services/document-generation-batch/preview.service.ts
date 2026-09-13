@@ -10,9 +10,7 @@ import {
   storageFormatToCustomPlaceholders,
   mergeTemplateAndPartialPlaceholders,
 } from '@/lib/template-analysis';
-import {
-  resolveEffectiveCustomData,
-} from '@/lib/document-generation-master-fields';
+import { resolveEffectiveCustomData } from '@/lib/document-generation-master-fields';
 import {
   createPreviewFingerprint,
   createReviewedFingerprint,
@@ -22,9 +20,7 @@ import {
   selectDocumentGenerationTitleDate,
 } from '@/lib/document-generation-title';
 import { claimGeneratedDocumentRevision } from '@/lib/document-editor/generated-document-revision';
-import {
-  renderTemplateForGeneration,
-} from '@/services/document-generator.service';
+import { renderTemplateForGeneration } from '@/services/document-generator.service';
 import type {
   BatchItemMutationInput,
   DocumentGenerationBatchDto,
@@ -231,7 +227,8 @@ export async function previewDocumentGenerationBatchItem(
     }
 
     const hasManualEdits = Boolean(
-      item.editedContent && item.editedContent !== item.previewContent,
+      (item.editedContent && item.editedContent !== item.previewContent)
+      || item.editedContentJson,
     );
     if (hasManualEdits && !input.replaceEditedContent) {
       throw new ConflictError(
@@ -261,9 +258,7 @@ export async function previewDocumentGenerationBatchItem(
         previewContent: evaluated.content,
         previewFingerprint: evaluated.fingerprint,
         reviewedFingerprint: null,
-        editedContent: hasManualEdits && !input.replaceEditedContent
-          ? item.editedContent
-          : null,
+        editedContent: null,
         editedContentJson: Prisma.DbNull,
         status: diagnostics.status,
         validationDiagnostics: diagnostics as never,

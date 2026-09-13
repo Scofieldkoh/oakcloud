@@ -257,3 +257,211 @@ Start/resume only the three released Wave 0 worker packets:
 - WORKFLOW — `WORKFLOW-W0-20260911-01`
 
 CORE should remain idle after this C0 handoff until their files contain READY FOR INTEGRATION/BLOCKED evidence and the user resumes CORE. VERIFY must remain idle; no Q1/Q2 assignment exists. Do not advance any worker to S1/F1/W1 or freeze G0 yet.
+
+## 2026-09-12 — C2 handoff — CORE-C2-20260912-01
+
+Status: **READY FOR INTEGRATION — C2 ONLY**
+
+### Scope and frozen baseline
+
+- Packet: `CORE-C2-20260912-01`
+- Branch: `codex/a4-editor-core-c2-20260912`
+- Actual branch start: `6f1ab8d3cb90056c556771936f4c763d9596efdf` (current merged main with final G1 coordination records and Wave-2 dispatch).
+- Programme-recorded G1-validated Stage-2 source baseline: `ad7285ace280f0b4002f119f923a8e2166b9475f` (reference only; branch was **not** reset to it).
+- Frozen contract consumed: **v1 frozen at G0 — unchanged**.
+- G1 state consumed: **G1 FROZEN/PASSED**.
+- Validated C2 production/test code commit before this handoff-only coordination commit: `e825d900b3fdc19e9fa9f0ae69c0fe8d878ebbd7`.
+- No application version bump, deployment work, C3 work, or merge to `main` was performed.
+
+### C2 implementation completed
+
+1. `A4PageEditor` now routes canonical native structural editing through the C1 session authority and SEMANTICS-owned transactions instead of persisting physical-page DOM fragments.
+   - cross-page Backspace/Delete and selected deletion use S1 `deleteA4Selection`;
+   - Shift+Enter uses S1 `insertA4LineBreak`;
+   - manual page break insertion uses S1 `insertA4ManualPageBreak` and canonical semantic break markers;
+   - hard-page-start Backspace maps the rendered page-start position to the semantic boundary and supplies explicit S1 affinity;
+   - cut uses the same canonical semantic deletion route;
+   - no new revision/session/history authority was introduced.
+2. The old `splitActivePageAtSelection` physical fragment writer was removed. Manual breaks are canonical semantic transactions; projection derives physical pages afterward.
+3. Reflow now consumes `paginateA4FlowHtml` and the S1 revision-qualified `A4ProjectionPositionMap`. CORE verifies the map session/document revision against the C1 projection revision before publication. C1 remains the only authority that decides whether a projection can publish.
+4. Latest canonical state remains authoritative while pagination/reflow is behind; stale rendered selections continue through C1 `resolveNativeInputTarget` rejection/mapping rules rather than replacing canonical content.
+5. F1 is consumed instead of duplicated:
+   - editor sanitization uses `getA4SanitizerPolicy()` plus the approved editor decoration attributes;
+   - optional stable `fieldScope` and `onFieldAnalysis` hooks expose F1 `parseTemplateFields` output from canonical C1 snapshots;
+   - CORE does not create field grammar, identity, resolution, escaping, or field mutation semantics.
+6. Collapsed Clear Formatting now records neutral pending typing marks so the next typed run is actually cleared rather than merely changing toolbar state.
+7. Focused C2 browser coverage was added for semantic page-break insertion/removal inside a later-page list item and for a native cross-page selection replaced by one semantic line break.
+8. The obsolete component expectation that the page-break toolbar must synchronously create a second physical page was replaced by a canonical semantic-break assertion. Physical pagination is projection only.
+
+### Deliberate compatibility boundary retained pending S2
+
+S1 does not yet provide the complete list-item Enter/exit semantics required by the frozen G1 browser contract. Directly routing Enter through the current S1 paragraph primitive regressed list-item split/exit and caret-follow cases during C2 validation. CORE therefore centralizes a temporary compatibility path in `a4-editor-semantic-bridge.ts` that calls the existing **SEMANTICS-owned canonical** `insertParagraphAtSelection` transaction for Enter only. CORE does not duplicate that implementation. Delete, Shift+Enter, manual breaks, position mapping and projection mapping use the S1 contracts directly.
+
+Exact S2 integration request: provide the finalized structural paragraph/list Enter/exit command (including ordered/unordered list continuity, empty-item exit and selection/caret result) so CORE can replace this compatibility call without changing C1 authority or G1 behavior.
+
+### Additional owner integration requests
+
+- **SEMANTICS / S2:** provide one canonical indent/outdent capability for Tab/Shift+Tab and toolbar equivalence, constrained to valid list/table contexts. CORE must not invent list/table structural rules. Also provide a semantic table-column-resize transaction when that behavior is assigned; the existing table resize remains bounded native reconciliation through C1 and is not a page-state writer.
+- **FIELDS / F2:** provide the canonical field insertion/edit/import lifecycle transactions. CORE currently consumes F1 parsing/content policy only and intentionally does not implement field-domain mutation behavior.
+- **WORKFLOW / W2:** pass the stable field owner scope/session identity from the workflow/template owner and consume the resulting canonical C1 snapshot in persistence/output. CORE did not edit WORKFLOW-owned routes or persistence files.
+
+### Exact focused validation executed under Node 24
+
+Validation run: `https://github.com/Scofieldkoh/oakcloud/actions/runs/34667643792`
+
+```text
+node -e "if (Number(process.versions.node.split('.')[0]) !== 24) process.exit(1)"
+npm ci
+npx playwright install --with-deps chromium
+
+npx vitest run \
+  __tests__/components/a4-editor-c2-bridge.test.ts \
+  __tests__/components/a4-editor-session.test.ts \
+  __tests__/components/a4-page-editor.test.tsx \
+  __tests__/components/a4-editor-toolbar.test.tsx \
+  __tests__/components/a4-page-editor-ssr.test.tsx \
+  --reporter=verbose
+PASS — 5 files, 98/98 tests
+
+npx vitest run __tests__/components/a4-pagination --reporter=verbose
+PASS — 8 files, 171/171 tests
+
+npx vitest run \
+  __tests__/lib/template-field-contract.test.ts \
+  __tests__/lib/template-field-f0-compatibility.test.ts \
+  __tests__/lib/template-field-f1.test.ts \
+  __tests__/lib/a4-content-policy-f1.test.ts \
+  --reporter=verbose
+PASS — 4 files, 63/63 tests
+
+npx vitest run --config vitest.browser.config.ts \
+  __tests__/browser/a4-input-sequences.browser.test.tsx \
+  __tests__/browser/a4-boundary-semantics.browser.test.tsx \
+  __tests__/browser/a4-page-editor.browser.test.tsx \
+  --reporter=verbose
+PASS — 3 real-Chromium files, 60/60 tests
+
+npx eslint \
+  src/components/documents/a4-page-editor.tsx \
+  src/components/documents/a4-editor-semantic-bridge.ts \
+  __tests__/components/a4-editor-c2-bridge.test.ts \
+  __tests__/components/a4-page-editor.test.tsx \
+  __tests__/browser/a4-input-sequences.browser.test.tsx
+PASS — exit 0, 0 errors, 8 warnings
+
+DATABASE_URL=postgresql://localhost:5432/oakcloud npm run db:generate
+PASS
+
+npm run typecheck
+PASS
+
+npx tsc -b
+PASS
+```
+
+Focused C2 total: **20 test files, 392 tests passed, 0 failed** across the four explicitly executed Vitest/browser groups. The Chromium evidence is actual browser execution and includes the two new C2 cross-page/semantic-break cases plus all frozen G1 Enter/list/caret regressions.
+
+The full production `npm run build` is intentionally not claimed from this focused run. It is executed by the repository's existing `Node 24 compatibility` pull-request workflow after the C2 PR is opened; that PR evidence must be reported separately rather than inferred.
+
+### Review/correction evidence
+
+C2 was reviewed and corrected against fresh Node 24 runs rather than weakening the frozen contract:
+
+- initial component validation exposed the obsolete physical-page page-break assertion and the hard-page/leading-empty-block Backspace boundary;
+- the hard-page boundary was corrected by semantic position/affinity mapping, not physical-page mutation;
+- an unchanged rerun distinguished one transient selection assertion from a reproducible C2 defect;
+- real Chromium then exposed that the current S1 paragraph primitive does not yet implement the frozen list Enter/exit semantics; CORE restored the existing SEMANTICS-owned canonical paragraph transaction as the bounded S2 compatibility path;
+- final run `34667643792` is green for all focused component, S1, F1, Chromium, lint, Prisma, typecheck and `tsc -b` gates above.
+
+### Compatibility impact / remaining risks
+
+- Canonical C1 revision/session/history authority is unchanged.
+- No reconstruction of canonical state from physical page DOM was introduced; the page-break writer that did persist cloned physical fragments is removed.
+- Existing v1 semantic hard-break compatibility is preserved; no v2 writer is enabled.
+- G1 browser behavior is preserved by the final 60/60 Chromium run.
+- Existing explicit Add Blank Page/Delete Current Page controls still call SEMANTICS-owned canonical hard-section helpers (`appendHardPage` / `deleteHardPageSection`) selected from derived page metadata. They do not persist page DOM, but a future SEMANTICS packet should replace them with the final semantic page/break capability if the frozen model removes those helpers.
+- Existing table column resize remains bounded rendered-table reconciliation through C1 until SEMANTICS supplies a canonical table-resize transaction.
+- Complete field lifecycle remains dependent on F2; workflow persistence/output remains dependent on W2.
+- Production Next build and repository-wide PR checks are not claimed here until the PR workflow executes them.
+
+**READY FOR INTEGRATION — C2 ONLY**
+
+
+## Wave-2 CORE integration closeout — 2026-09-12
+
+Status: **G2 CANDIDATE BLOCKED — CORRECTION REQUIRED**
+
+CORE integrated Wave-2 on `codex/a4-editor-wave2-g2-integration-20260912` from current merged main `6f1ab8d3cb90056c556771936f4c763d9596efdf`. The historical G1-validated source baseline remains `ad7285ace280f0b4002f119f923a8e2166b9475f`; it was not used as the integration branch base. The frozen contract remains **v1 frozen at G0 — unchanged** and G1 remains **G1 FROZEN/PASSED**.
+
+Integrated reviewed packets, in dependency order, without merging any packet PR to main:
+- S2 — PR #43 — `4b025bec4f256169a32b2216b0fd54cd4a083349` — `SEMANTICS-S2-20260912-01`
+- F2 — PR #45 — `df56185328d20784ad870adf0750b0d0315996f8` — `FIELDS-F2-20260912-01`
+- W2 — PR #44 — `d5a98dd48d1b3196706cc41bd000b9f8f9f9b03f` — `WORKFLOW-W2-20260912-01`
+- C2 — PR #46 — `b154630a3227646a4cf8d562902566720c532fec` — `CORE-C2-20260912-01`
+
+The single integration PR is **#47**. The final product-code checkpoint before coordination closeout is `a5e86d01e3906d3ec72ed6ce3fcb8f5a3d15d2d4`. The immutable candidate checksum is the PR #47 head containing this closeout record and is validated directly by the final candidate matrix.
+
+### CORE-owned C2 ↔ S2 wiring completed
+
+- Enter now consumes `insertA4S2ParagraphBreak`; the temporary C2 compatibility Enter path is no longer authoritative.
+- Native Tab/Shift+Tab and toolbar indent/outdent consume S2 indentation semantics through the C1 adapter.
+- OL/UL conversion, restart numbering and continue numbering consume S2 APIs where S2 exposes the operation.
+- CORE consumes S2 mixed/uniform formatting state and the S2 neutral typing-format patch for collapsed Clear Formatting.
+- C1 remains the sole canonical session, editor history and document-revision authority. One S2 transaction becomes one C1 action/history/revision commit.
+- Semantic nesting/lift and native Tab/Shift+Tab integration regressions were corrected in CORE.
+- Two CORE attempts to restore Enter-driven caret viewport following did not satisfy the required real-Chromium proof; no test or contract was weakened.
+
+### F2 / W2 integration implications
+
+F2 remains the owner of parser/registry identity, scoped resolution, escaping/trust and atomic field lifecycle transactions. CORE does not recreate those rules. Full lifecycle activation is not silently expanded into C2; that producer/consumer boundary remains for a later authorized packet.
+
+W2 consumes C1 snapshots/revisions and does not introduce another editor history/session authority. W2's server expected-revision/CAS token remains separate from C1's local editor revision. W2 focused and PostgreSQL behavior is healthy, but two W1 source-contract tests still inspect the pre-W2 editor-page source after extraction; that compatibility repair belongs to WORKFLOW/W2.
+
+### Blocking evidence
+
+- S2 focused: 5 files / 106 tests — **104 passed, 2 failed**: indent-limit normalization and mixed bold state.
+- Full A4 pagination: 10 files / 199 tests — **197 passed, 2 failed**, same S2 failures.
+- F1/F2: 12 files / **133/133 passed**.
+- W2 focused: 3 files / **28/28 passed**.
+- W1/W2 source compatibility: 6 files / 42 tests passed; 2 W1 source-contract files fail during loading after W2 extraction.
+- Exact S2 Chromium boundary: 1 file / 13 tests — **12 passed, 1 failed**, same mixed-formatting-state defect.
+- CORE component recheck: 5 files / 100 tests — **99 passed, 1 failed**. Remaining list toggle-off requires semantic unlist; S2 exposes `ordered | unordered | alpha` but no `none`/unlist transaction.
+- CORE Chromium recheck: 2 files / 53 tests — **51 passed, 2 failed**: active-list toggle-off and viewport-follow.
+- Targeted Chromium at `a5e86d01e3906d3ec72ed6ce3fcb8f5a3d15d2d4`: selected empty paragraph restored, but viewport `scrollTop` remained `200`; required assertion is `> 200`.
+- Disposable PostgreSQL 16: all 71 migrations replayed; W2 draft sequencing **5/5 passed**; W2/W1 PostgreSQL compatibility **13/13 passed**.
+- Bundle freshness, lint, typecheck, `npx tsc -b`, and production build passed at the integrated code checkpoint. Final candidate matrix reruns them on the immutable closeout head.
+
+Unresolved owners:
+1. **SEMANTICS/S2** — indent-limit normalization defect.
+2. **SEMANTICS/S2** — mixed formatting-state defect.
+3. **SEMANTICS/S2** — no semantic unlist/`none` operation for active-list toggle-off.
+4. **WORKFLOW/W2** — two W1 source-contract checks were not migrated after source extraction.
+5. **CORE integration** — Enter restores semantic caret after repagination but real-Chromium viewport-follow remains broken after two targeted corrections.
+
+Q1 — G2 boundary and reader compatibility: **WITHHELD**. No Q1 run is released while the candidate is blocked.
+
+Stop boundary remains in force: no C3, S3, F3, W3, D1 deployment or version bump.
+
+## Corrected Wave-2 CORE closeout / Q1 release — 2026-09-12
+
+Status: **G2 CORE CANDIDATE FROZEN — Q1 RELEASED**
+
+The earlier blocked Wave-2 closeout above is retained as chronology. CORE corrected all five blocking findings without changing the frozen v1 contract and froze production candidate `6e8d4426c0d57043d85a830045dee465f6ff9a47` for independent VERIFY/Q1.
+
+Corrections are limited to the integrated Wave-2 boundary: S2 indent/mixed-format/unlist semantics, CORE semantic list-toggle and caret-viewport integration, and W1/W2 source-contract proof alignment. No new database schema/migration, deployment, version bump, C3, S3, F3 or W3 work was introduced.
+
+Immutable corrected-candidate evidence against exact `6e8d4426c0d57043d85a830045dee465f6ff9a47`:
+
+- corrected S2 focused lane: **107/107 passed**;
+- corrected CORE focused lane: **100/100 passed**;
+- real Chromium integrated matrix: **66/66 passed**;
+- disposable PostgreSQL 16 after **71 migrations**: **31/31 passed** (W1 CAS/batch 13/13; W2 drafts 5/5; W2/W1 compatibility 13/13);
+- complete required component/static lanes: **PASS** including full pagination, FIELDS F1/F2, W1, W2 non-PostgreSQL, pagination-bundle freshness, lint, typecheck, `npx tsc -b`, and production build;
+- lint completed with no errors; repository warnings remain non-blocking and did not change the gate outcome;
+- production build required a larger validation-runner Node heap and synthetic required environment values only; the application candidate was unchanged.
+
+The first immutable PostgreSQL lane used `postgres` instead of the W2 suite-required synthetic username `assistant_test`; its guard failure was corrected in the harness. The exact candidate then passed the complete 31-test PostgreSQL matrix on the required disposable database. No production data was used.
+
+CORE does **not** mark G2 passed from its own matrix and does **not** execute Q1. Production edits are frozen at `6e8d4426c0d57043d85a830045dee465f6ff9a47`. `VERIFY-Q1-20260912-01` is released in `coordination/dispatch.md` for independent evidence. Any production-code change requires a new immutable candidate and fresh Q1 dispatch.
+
+Stop boundary remains: no C3, S3, F3, W3, D1 deployment or version bump.

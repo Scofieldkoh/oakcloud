@@ -516,3 +516,126 @@ Static review of the correction confirms:
 PR #40 contains only the S1 corrections above and must not be merged by SEMANTICS. CORE should re-integrate the PR head, run the exact Node 24 S1 component and boundary browser commands, then decide whether G1 is cleared. SEMANTICS does not mark G1 passed or frozen.
 
 **READY FOR CORE RE-INTEGRATION — S1 G1 CORRECTION ONLY**
+
+---
+
+## SEMANTICS-S2-20260912-01
+
+Role / packet: **SEMANTICS / S2 — list, Enter, indent, numbering and formatting correctness**
+Assignment: `SEMANTICS-S2-20260912-01`
+Starting merged-main SHA: `6f1ab8d3cb90056c556771936f4c763d9596efdf`
+Programme-recorded G1 source baseline consumed as historical reference: `ad7285ace280f0b4002f119f923a8e2166b9475f`
+Working branch / PR: `codex/a4-editor-semantics-s2` / `#43`
+Frozen contract consumed: **v1 frozen at G0 — unchanged**
+Gate prerequisite: **G1 FROZEN/PASSED**
+Scope boundary: **S2 only; no C2/F2/W2/S3, deployment, version bump, or merge to main**
+
+### S2 implementation completed
+
+- Added pure `s2-semantics.ts` transactions on `CanonicalEditorDocument + A4Selection`; no React state, event listener, history stack, focus side effect, revision allocation or physical-page canonical state is introduced.
+- Enter semantics now split ordinary/list blocks in logical DOM order, retain paragraph formatting, change a heading-end Enter to body text, preserve a mid-heading split, retain nested descendants exactly once, preserve authored blank paragraphs, lift an empty nested item one list level and exit an empty top-level item without corrupting ordered values.
+- Enter rejects a split inside a Unicode grapheme cluster and keeps S1 semantic hard-break nodes on the correct logical side of the split.
+- List indent/outdent changes semantic nesting level instead of `margin-left`; impossible first-item indent and outermost outdent are reported as capabilities/no-ops. Multi-item operations retain document order.
+- Explicit list-type conversion operates on selected whole logical items, keeps nested descendants attached, preserves meaningful ordered/alpha marker attributes and right-side ordered starts, and deliberately removes incompatible `li[value]` state when the converted target is unordered.
+- Paragraph-to-list conversion joins a compatible previous list, next list, or both without reversing selected paragraphs. Ordered bridging preserves start/continuation compatibility rather than treating visual adjacency as authority.
+- Ordered restart can split at a selected item and intentionally override a selected `li[value]`. Explicit Continue numbering searches the previous compatible ordered sequence at the same structural level, sets the current list's semantic start and preserves intervening paragraphs / hard-break nodes rather than merging independent canonical lists.
+- Paragraph indent normalization correctly distinguishes `rem`, `em` and `px`, uses supplied measured font/root-size context, preserves unsupported legacy expressions unchanged, and rejects an indent step past the measured usable width.
+- Mixed formatting state is exported per property so a mixed bold state does not erase uniform italic/color state. Existing selected-range formatting is regression-covered for turning bold off while preserving italic/color and unselected outside bold.
+- Collapsed Clear formatting is represented by `getA4S2NeutralTypingFormatPatch()`. CORE owns the typing-mark store and must consume this neutral patch rather than asking SEMANTICS to fake a zero-width DOM clear.
+
+### Exact S2 production exports for CORE C2
+
+`src/components/documents/a4-pagination/s2-semantics.ts`:
+
+- `insertA4S2ParagraphBreak(canonical, selection)`
+- `getA4S2ListIndentCapability(canonical, selection, direction)`
+- `indentA4S2ListItems(canonical, selection)`
+- `outdentA4S2ListItems(canonical, selection)`
+- `applyA4S2Indent(canonical, selection, direction, metrics)`
+- `setA4S2ListType(canonical, selection, type)`
+- `restartA4S2OrderedListAtSelection(canonical, selection, start)`
+- `getA4S2ContinueNumberingCapability(canonical, selection)`
+- `continueA4S2OrderedList(canonical, selection)`
+- `normalizeA4S2IndentValue(current, direction, metrics)`
+- `readA4S2FormattingState(canonical, selection)`
+- `getA4S2NeutralTypingFormatPatch()`
+- `A4S2ListType`, `A4S2IndentDirection`, `A4S2Capability`, `A4S2IndentMetrics`, `A4S2IndentValueResult`, `A4S2UniformValue`, `A4S2FormattingState`.
+
+### Required CORE C2 adapter/wiring
+
+CORE remains the only native input/revision/history authority. C2 should wire the exports above as follows without duplicating them:
+
+1. Map the current native rendered selection through the existing C1/S1 structural position bridge and validate the current CORE revision before invoking an S2 transaction.
+2. Route Enter on assigned non-table paragraph/list contexts to `insertA4S2ParagraphBreak` and commit an applied result exactly once through CORE's canonical commit/history path.
+3. Route Tab / Shift+Tab and toolbar indent/outdent through the same `applyA4S2Indent` transaction. For ordinary paragraphs, supply measured `emPx`, root `remPx` and current usable text width; list selections use semantic level changes through the same API.
+4. Route explicit OL/UL/alpha toolbar conversion to `setA4S2ListType`, restart-numbering UI to `restartA4S2OrderedListAtSelection`, and Continue numbering only when `getA4S2ContinueNumberingCapability().applicable` is true.
+5. Use `readA4S2FormattingState` for per-property mixed/uniform toolbar state. For collapsed Clear, apply `getA4S2NeutralTypingFormatPatch()` to CORE's existing typing-mark state. For a selected range, retain the existing S-owned range-formatting transaction; do not convert collapsed Clear into a DOM mutation.
+6. One native user action must create one CORE history entry/revision commit. S2 returns pure `A4TransactionResult` only and must never allocate its own revision.
+
+### Regression coverage authored
+
+New component suites:
+
+```text
+__tests__/components/a4-pagination/s2-semantics.test.ts
+24 S2 cases
+
+__tests__/components/a4-pagination/s2-list-formatting-regressions.test.ts
+4 S2 cases
+```
+
+Existing S-owned native browser suite extended in place:
+
+```text
+__tests__/browser/a4-boundary-semantics.browser.test.tsx
+5 new S2 browser cases
+```
+
+The native cases use actual `window.getSelection()` capture and cover backward paragraph-to-list conversion, Enter splitting, adjacent multi-item indent, explicit numbering continuation across an authored hard break, and per-property mixed formatting state.
+
+### Exact validation commands
+
+Required focused Node 24 commands:
+
+```text
+npx vitest run \
+  __tests__/components/a4-pagination/s2-semantics.test.ts \
+  __tests__/components/a4-pagination/s2-list-formatting-regressions.test.ts \
+  __tests__/components/a4-pagination/structural-position.test.ts \
+  __tests__/components/a4-pagination/structural-commands.test.ts \
+  __tests__/components/a4-pagination/semantic-break-projection.test.ts \
+  __tests__/components/a4-pagination/formatting.test.ts \
+  --reporter=verbose
+
+npx vitest run --config vitest.browser.config.ts \
+  __tests__/browser/a4-boundary-semantics.browser.test.tsx \
+  --reporter=verbose
+
+npm run lint
+npm run typecheck
+npm run build
+```
+
+Direct focused Vitest execution from this worker environment is **BLOCKED, not claimed as pass or failure**: the available container is Node `v22.16.0`, has no repository checkout/dependencies, cannot resolve GitHub, and the authenticated repository connector cannot execute arbitrary commands. SEMANTICS did not edit I-owned workflow/package/configuration files to bypass that lease. The existing `Node 24 compatibility` PR workflow is supplemental static/build/production-Chromium evidence only; it does not execute the focused S2 component/browser commands above.
+
+### Compatibility impact
+
+- Frozen v1 C02/C03/C04/C09 semantics remain unchanged; `CanonicalEditorDocument` still has no revision/session field.
+- No CORE, FIELDS or WORKFLOW production file was edited.
+- No package/lock/configuration, database, generated pagination bundle, application version, deployment or feature-gate change is included.
+- Legacy independent ordered lists remain independent until the explicit Continue numbering command is applied. An authored hard break remains semantic document content and is preserved by Continue numbering.
+- Existing S1 runtime IDs and hard-break representation are consumed; new S2 commands operate on the unsplit canonical tree and do not promote physical page fragments into canonical state.
+- Table-cell paragraph splitting remains outside the S2 list contract and returns unchanged from the new Enter command; S1 table/break support boundaries remain intact.
+
+### Blocked evidence / remaining risks
+
+- The two mandatory focused Node 24 Vitest invocations require an authorized Node 24 checkout/runner. A green repository compatibility workflow must not be misreported as those tests having run.
+- CORE C2 wiring is still required for Enter/Tab/Shift+Tab/toolbar dispatch, one-history-entry semantics, measured indent metrics and collapsed typing-mark Clear behavior. SEMANTICS intentionally did not edit CORE files.
+- WORKFLOW output remains responsible for final HTML/PDF compatibility. S2 preserves semantic `ol[start]` plus the existing `--list-start` mirror; final PDF rendering evidence belongs to the W2/integration output gate.
+- Browser-native regressions are authored in the existing S-owned browser suite, but no browser pass count is claimed until that exact suite executes on Node 24/Playwright Chromium.
+
+### Stop boundary
+
+Implementation is complete within the SEMANTICS S2 lease and PR #43 remains unmerged. No S3 work has started.
+
+**READY FOR INTEGRATION — S2 ONLY, with focused Node 24/browser execution evidence explicitly pending the authorized integration runner.**
