@@ -49,7 +49,7 @@ function storedDefinitionForEditorField(field: CustomPlaceholderDefinition): Rea
       : {}),
     ...(field.storageCategory ? { category: field.storageCategory } : {}),
     ...(field.storagePath ? { path: field.storagePath } : {}),
-    ...(field.storageRequiredWasExplicit ? { required: field.required } : {}),
+    ...(field.storageRequiredWasExplicit || field.required ? { required: field.required } : {}),
     ...(field.defaultValue !== undefined ? { defaultValue: field.defaultValue } : {}),
     ...(field.linkedTo ? { linkedTo: field.linkedTo } : {}),
     ...(field.sourcePartial ? { sourcePartial: field.sourcePartial } : {}),
@@ -119,6 +119,7 @@ export function resolveTopLevelCustomValues(input: {
   });
 
   for (const definition of registry.definitions) {
+    if (typeof definition.original.sourcePartial === 'string') continue;
     if (definition.source !== 'custom' && !definition.key.startsWith('custom.')) continue;
     const resolved = resolveTypedFieldValueByPrecedence({
       definition,
