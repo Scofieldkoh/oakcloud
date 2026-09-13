@@ -1,0 +1,81 @@
+name: A4 Wave 4 final integration validation
+
+on:
+  push:
+    branches:
+      - codex/a4-editor-wave4-integration-20260913
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a4-wave4-final-validation
+  cancel-in-progress: true
+
+jobs:
+  static-unit-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
+      JWT_SECRET: ci-only-build-secret-that-is-not-used-at-runtime-and-is-long-enough
+      ENCRYPTION_KEY: ci-only-build-encryption-key
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify pagination bundle freshness
+        run: |
+          npm run generate:pagination-bundle
+          git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx tsc -b
+      - name: CORE C3 component matrix
+        run: >-
+          npx vitest run
+          __tests__/components/a4-editor-c3-accessibility.test.tsx
+          __tests__/components/a4-editor-toolbar.test.tsx
+          __tests__/components/a4-page-editor.test.tsx
+          --reporter=dot
+      - name: SEMANTICS S3 pagination matrix
+        run: npx vitest run __tests__/components/a4-pagination --reporter=dot
+      - name: FIELDS F3 and compatibility matrix
+        run: npx vitest run __tests__/components/template-editor __tests__/lib/template-field-contract.test.ts __tests__/lib/template-field-parser.test.ts __tests__/lib/template-field-registry.test.ts __tests__/lib/template-field-resolver.test.ts --reporter=dot
+      - name: WORKFLOW W3 and output compatibility
+        run: >-
+          npx vitest run
+          __tests__/lib/a4-workflow-w3.test.ts
+          __tests__/services/a4-w3-synthetic-generation.test.ts
+          __tests__/services/scoped-template-field-renderer.test.ts
+          tests/services/document-export-w1.test.ts
+          --reporter=dot
+      - run: npm run build
+
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - name: CORE C3 + Q1 preservation in Chromium
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-page-editor.browser.test.tsx
+          __tests__/browser/a4-input-sequences.browser.test.tsx
+          --reporter=dot
+      - name: SEMANTICS S3 performance/boundary in Chromium
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-s3-performance.browser.test.tsx
+          __tests__/browser/a4-boundary-semantics.browser.test.tsx
+          --reporter=dot
