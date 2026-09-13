@@ -31,24 +31,17 @@ jobs:
 
       - run: npm ci
 
-      - name: Capture remaining component exits
+      - name: Capture page-editor result
         shell: bash
         run: |
           set +e
-          : > a4-c3-file-exits.txt
-          for test_file in \
-            __tests__/components/a4-editor-toolbar.test.tsx \
-            __tests__/components/a4-page-editor.test.tsx \
-            __tests__/components/a4-editor-session.test.ts
-          do
-            npx vitest run "$test_file" --reporter=dot >/dev/null 2>&1
-            code=$?
-            echo "$test_file=$code" >> a4-c3-file-exits.txt
-          done
-          cat a4-c3-file-exits.txt
+          npx vitest run __tests__/components/a4-page-editor.test.tsx \
+            --reporter=json --outputFile=a4-c3-page-editor-result.json
+          code=$?
+          echo "$code" > a4-c3-page-editor-exit.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f a4-c3-file-exits.txt
-          git commit -m "test(a4): isolate C3 component diagnostic"
+          git add -f a4-c3-page-editor-result.json a4-c3-page-editor-exit.txt
+          git commit -m "test(a4): capture page-editor C3 diagnostic"
           git push origin HEAD:codex/a4-editor-core-c3-20260913
           exit 0
