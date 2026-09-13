@@ -669,24 +669,26 @@ export function PlaceholderPanel({
         size="md"
       >
         <ModalBody className="space-y-3">
-          {deletePreview?.usageCount === null ? (
-            <p className="rounded-md bg-status-warning/10 p-2 text-xs text-status-warning">Usage locations are not available in this consumer. Confirming deletion keeps any existing references unresolved rather than guessing that the field is unused.</p>
-          ) : deletePreview.usageCount === 0 ? (
-            <p className="rounded-md bg-status-success/10 p-2 text-xs text-status-success">This field is not referenced in the supplied document source.</p>
-          ) : (
-            <>
-              <p className="rounded-md bg-status-warning/10 p-2 text-xs text-status-warning">This field is used {deletePreview.usageCount} {deletePreview.usageCount === 1 ? 'time' : 'times'}. Choose whether references should remain unresolved or be removed atomically.</p>
-              <ul aria-label="Field usage locations" className="space-y-1">
-                {deletePreview.locations.map((location) => (
-                  <li key={location.occurrenceId}>
-                    {onNavigateToFieldOccurrence ? (
-                      <button type="button" onClick={() => onNavigateToFieldOccurrence(location)} className="w-full rounded px-2 py-1 text-left text-xs text-accent-primary hover:bg-background-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary/50">{location.label}</button>
-                    ) : <span className="block px-2 py-1 text-xs text-text-secondary">{location.label}</span>}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          {deletePreview ? (
+            deletePreview.usageCount === null ? (
+              <p className="rounded-md bg-status-warning/10 p-2 text-xs text-status-warning">Usage locations are not available in this consumer. Confirming deletion keeps any existing references unresolved rather than guessing that the field is unused.</p>
+            ) : deletePreview.usageCount === 0 ? (
+              <p className="rounded-md bg-status-success/10 p-2 text-xs text-status-success">This field is not referenced in the supplied document source.</p>
+            ) : (
+              <>
+                <p className="rounded-md bg-status-warning/10 p-2 text-xs text-status-warning">This field is used {deletePreview.usageCount} {deletePreview.usageCount === 1 ? 'time' : 'times'}. Choose whether references should remain unresolved or be removed atomically.</p>
+                <ul aria-label="Field usage locations" className="space-y-1">
+                  {deletePreview.locations.map((location) => (
+                    <li key={location.occurrenceId}>
+                      {onNavigateToFieldOccurrence ? (
+                        <button type="button" onClick={() => onNavigateToFieldOccurrence(location)} className="w-full rounded px-2 py-1 text-left text-xs text-accent-primary hover:bg-background-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary/50">{location.label}</button>
+                      ) : <span className="block px-2 py-1 text-xs text-text-secondary">{location.label}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )
+          ) : null}
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" size="sm" onClick={() => setDeleteCandidate(null)}>Cancel</Button>
