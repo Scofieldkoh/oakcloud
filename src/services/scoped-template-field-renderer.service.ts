@@ -202,14 +202,29 @@ function buildCompatibilityMaps(input: {
 
   // Existing template-carried partial linking metadata remains compatibility
   // input only. It is converted into explicit structured identity bindings and
-  // never used as flattened identity itself.
+  // never used as flattened identity itself. Older editor snapshots may have
+  // renamed a colliding copied key (for example child_note) while preserving
+  // the canonical partial id/path. Prefer those stable identities first so an
+  // intentional link is not lost merely because the display key was renamed.
   for (const raw of input.templateRawDefinitions) {
     if (typeof raw.sourcePartial !== 'string') continue;
     const partial = partialByName.get(raw.sourcePartial);
     if (!partial) continue;
     const definitions = input.partialDefinitions.get(partial.id) ?? [];
-    const rawKey = typeof raw.key === 'string' ? raw.key.replace(/^custom\./, '') : '';
-    const target = definitions.find((definition) => baseKey(definition) === rawKey);
+    const stableCandidates = [raw.id, raw.path, raw.key]
+      .filter((candidate): candidate is string => typeof candidate === 'string' && candidate.length > 0);
+    let target: LosslessStoredFieldDefinition | undefined;
+    for (const candidate of stableCandidates) {
+      target = findDefinition(definitions, candidate);
+      if (target) break;
+    }
+    if (!target && typeof raw.key === 'string') {
+      const rawKey = raw.key.replace(/^custom\./, '');
+      const legacyPrefix = `${partial.name}_`;
+      if (rawKey.startsWith(legacyPrefix)) {
+        target = findDefinition(definitions, rawKey.slice(legacyPrefix.length));
+      }
+    }
     addBinding(target, raw.linkedTo);
   }
 
