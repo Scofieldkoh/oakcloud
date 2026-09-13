@@ -43,6 +43,6 @@ describe('A4PageEditor C3 accessibility', () => {
     const status = screen.getByTestId('a4-editor-status');
     expect(status).not.toHaveAttribute('aria-live');
     expect(status).not.toHaveAttribute('role', 'status');
-    expect(status).toHaveTextContent('Editing');
+    expect(status).toHaveTextContent('Repaginating…');
   });
 });
