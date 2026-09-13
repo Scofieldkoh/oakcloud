@@ -9,7 +9,6 @@ import {
   normalizePlaceholderKey,
   normalizeStoredPlaceholders,
   storageFormatToCustomPlaceholders,
-  mergeTemplateAndPartialPlaceholders,
 } from '@/lib/template-analysis';
 import {
   canonicalPlaceholderType,
@@ -65,37 +64,20 @@ async function templateCustomFields(
   templateId: string,
   tenantId: string,
 ): Promise<{
-  fields: CustomPlaceholderDefinition[];
   ownFields: CustomPlaceholderDefinition[];
   storedDefinitions: Readonly<Record<string, unknown>>[];
   titleDateFieldKey: string | null;
 }> {
   const template = await prisma.documentTemplate.findFirst({
     where: { id: templateId, tenantId, deletedAt: null },
-    select: { id: true, content: true, placeholders: true, contentJson: true },
+    select: { id: true, placeholders: true, contentJson: true },
   });
   if (!template) throw new NotFoundError('Template not found');
-  const partials = await prisma.templatePartial.findMany({
-    where: { tenantId, deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      content: true,
-      placeholders: true,
-      version: true,
-    },
-  });
   const storedDefinitions = normalizeStoredFieldDefinitionInput(template.placeholders);
   const ownFields = storageFormatToCustomPlaceholders(
     normalizeStoredPlaceholders(template.placeholders),
     { scope: { kind: 'template', id: template.id } },
   ).filter((field) => !field.sourcePartial);
-  const fields = mergeTemplateAndPartialPlaceholders({
-    templatePlaceholders: ownFields,
-    templateContent: template.content,
-    partials,
-  });
   const contentJson = template.contentJson;
   const titleDateFieldKey = contentJson
     && typeof contentJson === 'object'
@@ -103,7 +85,7 @@ async function templateCustomFields(
     && typeof (contentJson as Record<string, unknown>).documentTitleDateFieldKey === 'string'
     ? (contentJson as Record<string, string>).documentTitleDateFieldKey
     : null;
-  return { fields, ownFields, storedDefinitions, titleDateFieldKey };
+  return { ownFields, storedDefinitions, titleDateFieldKey };
 }
 
 function typedBatchCustomData(input: {
