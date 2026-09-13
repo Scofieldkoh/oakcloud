@@ -15,7 +15,7 @@ const sourceSection = (source: string, startMarker: string, endMarker: string) =
 };
 
 const templateEditorSource = readRepoFile(
-  'src/app/(dashboard)/template-partials/editor/page.tsx',
+  'src/app/(dashboard)/template-partials/editor/template-editor-workflow-page.tsx',
 );
 const templateServiceSource = readRepoFile(
   'src/services/document-template.service.ts',
@@ -31,7 +31,7 @@ const prismaSchemaSource = readRepoFile('prisma/schema.prisma');
 const templateSaveBlock = sourceSection(
   templateEditorSource,
   'const handleSave = useCallback',
-  '// Handle keyboard shortcuts',
+  'const onKeyDown = (event: KeyboardEvent)',
 );
 const generatedDocumentModel = sourceSection(
   prismaSchemaSource,
@@ -40,8 +40,8 @@ const generatedDocumentModel = sourceSection(
 );
 
 describe('A4 editor WORKFLOW W1 persistence and revision proofs', () => {
-  it.fails(
-    'W-SAVE-01 CORE submit-time snapshot remains outside WORKFLOW W1',
+  it(
+    'W-SAVE-01 CORE submit-time snapshot is consumed by the integrated workflow',
     () => {
       expect(templateSaveBlock).not.toContain('content: formData.content');
       expect(templateSaveBlock).not.toContain(

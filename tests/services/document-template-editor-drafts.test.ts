@@ -14,8 +14,9 @@ const sourceSection = (source: string, startMarker: string, endMarker: string) =
 
 const generatedEditorSource = readRepoFile('src/app/(dashboard)/generated-documents/[id]/edit/page.tsx');
 const draftRouteSource = readRepoFile('src/app/api/generated-documents/[id]/draft/route.ts');
+const draftWorkflowServiceSource = readRepoFile('src/services/document-draft-workflow.service.ts');
 const prismaSchemaSource = readRepoFile('prisma/schema.prisma');
-const generatedSaveBlock = sourceSection(generatedEditorSource, 'const handleSave = useCallback', '// Handle draft recovery');
+const generatedSaveBlock = sourceSection(generatedEditorSource, 'const handleSave = useCallback', 'const handleLetterheadToggle = useCallback');
 const draftModel = sourceSection(prismaSchemaSource, 'model DocumentDraft {', 'model TemplatePartial {');
 
 type EditState = { snapshotRevision: number; dirty: boolean; content: string };
@@ -49,8 +50,12 @@ describe('A4 editor WORKFLOW W1 draft and save-race proofs', () => {
 
   it('W-DRAFT-SURVIVE-01 draft reads and deletes are tenant-gated and user-scoped', () => {
     expect(draftRouteSource).toContain('getGeneratedDocumentById(id, tenantId)');
-    expect(draftRouteSource).toContain('getLatestDraft(id, session.id)');
-    expect(draftRouteSource).toContain('where: { documentId: id, userId: session.id }');
+    expect(draftRouteSource).toContain('getLatestEditorDraft(id, session.id, tenantId)');
+    expect(draftRouteSource).toContain('deleteEditorDrafts({');
+    expect(draftWorkflowServiceSource).toContain('where: { id: documentId, tenantId, deletedAt: null }');
+    expect(draftWorkflowServiceSource).toContain('where: { documentId, userId }');
+    expect(draftWorkflowServiceSource).toContain('where: { id: input.documentId, tenantId: input.tenantId, deletedAt: null }');
+    expect(draftWorkflowServiceSource).toContain('where: { documentId: input.documentId, userId: input.userId }');
   });
 
   it('W-DRAFT-COMPAT-01 existing metadata carries canonical base revisions without a draft schema migration', () => {

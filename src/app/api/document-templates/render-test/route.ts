@@ -3,37 +3,28 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { renderTemplateForGeneration } from '@/services/document-generator.service';
 import {
-  renderTemplateForGeneration,
-  type RenderTemplateForGenerationResult,
-} from '@/services/document-generator.service';
+  renderUnsavedTemplateSnapshot,
+} from '@/services/document-template-preview.service';
 import type { PlaceholderContext } from '@/lib/placeholder-resolver';
 
 const renderTestSchema = z.object({
   templateId: z.string().uuid().optional(),
-  content: z.string().optional(),
+  content: z.string().min(1).optional(),
+  contentJson: z.unknown().optional(),
+  placeholders: z.array(z.record(z.unknown())).optional(),
+  compositionType: z.enum(['STANDARD', 'SERVICE_AGREEMENT']).optional(),
+  templateScopeId: z.string().optional(),
   name: z.string().optional(),
   category: z.string().optional(),
   companyId: z.string().uuid().optional().nullable(),
   contactIds: z.array(z.string().uuid()).optional(),
   customData: z.record(z.unknown()).optional(),
   context: z.record(z.unknown()).optional(),
+}).refine((value) => Boolean(value.content || value.templateId), {
+  message: 'Template content or templateId is required',
 });
-
-function toResponse(rendered: RenderTemplateForGenerationResult) {
-  return {
-    preview: {
-      template: rendered.template,
-      content: rendered.content,
-      contentHtml: rendered.contentHtml,
-      sections: rendered.sections,
-      unresolvedPlaceholders: rendered.missingPlaceholders,
-      missingPartials: rendered.missingPartials,
-      blockingErrors: rendered.blockingErrors,
-      contextSummary: rendered.contextSummary,
-    },
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,27 +34,69 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = renderTestSchema.parse(body);
     const tenantId = requireSessionWorkspaceId(session);
+    const generatedBy = `${session.firstName} ${session.lastName}`.trim();
+    const context = data.context as PlaceholderContext | undefined;
 
-    const rendered = await renderTemplateForGeneration({
-      templateId: data.templateId,
+    if (!data.content && data.templateId) {
+      const rendered = await renderTemplateForGeneration({
+        templateId: data.templateId,
+        tenantId,
+        companyId: data.companyId,
+        contactIds: data.contactIds,
+        customData: data.customData,
+        contextOverride: context,
+        generatedBy,
+        mode: 'test',
+      });
+      return NextResponse.json({
+        preview: {
+          template: rendered.template,
+          content: rendered.content,
+          contentHtml: rendered.contentHtml,
+          sections: rendered.sections,
+          unresolvedPlaceholders: rendered.missingPlaceholders,
+          missingPartials: rendered.missingPartials,
+          blockingErrors: rendered.blockingErrors,
+          contextSummary: rendered.contextSummary,
+        },
+      });
+    }
+
+    const result = await renderUnsavedTemplateSnapshot({
       tenantId,
-      templateContent: data.content,
-      templateName: data.name,
-      templateCategory: data.category,
+      generatedBy,
+      content: data.content!,
+      contentJson: data.contentJson,
+      placeholders: data.placeholders,
+      compositionType: data.compositionType,
+      templateScopeId: data.templateScopeId,
+      name: data.name,
+      category: data.category,
       companyId: data.companyId,
       contactIds: data.contactIds,
       customData: data.customData,
-      contextOverride: data.context as PlaceholderContext | undefined,
-      generatedBy: `${session.firstName} ${session.lastName}`.trim(),
-      mode: 'test',
+      context,
     });
+    const rendered = result.rendered;
 
-    return NextResponse.json(toResponse(rendered));
+    return NextResponse.json({
+      preview: {
+        template: rendered.template,
+        content: rendered.content,
+        contentHtml: rendered.contentHtml,
+        sections: rendered.sections,
+        unresolvedPlaceholders: rendered.missingPlaceholders,
+        missingPartials: rendered.missingPartials,
+        blockingErrors: rendered.blockingErrors,
+        contextSummary: rendered.contextSummary,
+        snapshot: result.snapshot,
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
