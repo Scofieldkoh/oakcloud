@@ -104,7 +104,10 @@ export async function paginateA4BrowserPage(
 
   const fragments = validateFragments(rawFragments);
   const assembly = assembleA4OutputPages(fragments, {
-    sanitizeFragment: (html) => sanitizeCanonicalA4Html(html, { projection: true }),
+    // Final PDF/HTML output must use canonical C06 attributes only. Editor-only
+    // projection decorations (for example data-flow-id/data-field-reference)
+    // are intentionally stripped after pagination and before installation.
+    sanitizeFragment: (html) => sanitizeCanonicalA4Html(html),
   });
   options.session.markPaginationReady();
   options.session.assertActive();
