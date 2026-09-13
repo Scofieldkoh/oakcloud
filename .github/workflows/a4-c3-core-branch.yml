@@ -31,17 +31,24 @@ jobs:
 
       - run: npm ci
 
-      - name: Capture accessibility result
+      - name: Capture remaining component exits
         shell: bash
         run: |
           set +e
-          npx vitest run __tests__/components/a4-editor-c3-accessibility.test.tsx \
-            --reporter=json --outputFile=a4-c3-result.json
-          code=$?
-          echo "$code" > a4-c3-exit.txt
+          : > a4-c3-file-exits.txt
+          for test_file in \
+            __tests__/components/a4-editor-toolbar.test.tsx \
+            __tests__/components/a4-page-editor.test.tsx \
+            __tests__/components/a4-editor-session.test.ts
+          do
+            npx vitest run "$test_file" --reporter=dot >/dev/null 2>&1
+            code=$?
+            echo "$test_file=$code" >> a4-c3-file-exits.txt
+          done
+          cat a4-c3-file-exits.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f a4-c3-result.json a4-c3-exit.txt
-          git commit -m "test(a4): capture C3 accessibility diagnostic"
+          git add -f a4-c3-file-exits.txt
+          git commit -m "test(a4): isolate C3 component diagnostic"
           git push origin HEAD:codex/a4-editor-core-c3-20260913
           exit 0
