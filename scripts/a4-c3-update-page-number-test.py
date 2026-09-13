@@ -9,4 +9,15 @@ if old in text:
     text = text.replace(old, new, 1)
 elif 'pageNumbersSupported' not in text:
     raise SystemExit('missing page-number test anchor')
+
+text = text.replace(
+    "it('keeps a hard blank page after the first Add Page click'",
+    "it('keeps a hard blank page after the first Add blank page click'",
+    1,
+)
+text = text.replace(
+    "screen.getByRole('button', { name: 'Add Page' })",
+    "screen.getByRole('button', { name: 'Add blank page' })",
+    1,
+)
 path.write_text(text)
