@@ -9,20 +9,21 @@ permissions:
   contents: write
 
 jobs:
-  diagnose-page-editor:
+  validate-c3:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: codex/a4-editor-core-c3-20260913
 
-      - name: Apply deterministic C3 source patch
+      - name: Apply deterministic C3 source/test patch
         run: |
           python3 scripts/a4-c3-apply-patch.py
           python3 scripts/a4-c3-update-page-number-test.py
+          python3 scripts/a4-c3-update-interactions.py
 
       - uses: actions/setup-node@v4
         with:
@@ -31,17 +32,61 @@ jobs:
 
       - run: npm ci
 
-      - name: Capture page-editor structured result
+      - name: Focused C3 components
+        run: >-
+          npx vitest run
+          __tests__/components/a4-editor-toolbar.test.tsx
+          __tests__/components/a4-editor-c3-accessibility.test.tsx
+          __tests__/components/a4-page-editor.test.tsx
+          __tests__/components/a4-editor-session.test.ts
+          --reporter=verbose
+
+      - name: Targeted lint
+        run: >-
+          npx eslint
+          src/components/documents/a4-page-editor.tsx
+          src/components/documents/a4-editor-toolbar.tsx
+          __tests__/components/a4-editor-toolbar.test.tsx
+          __tests__/components/a4-editor-c3-accessibility.test.tsx
+          __tests__/components/a4-page-editor.test.tsx
+          __tests__/browser/a4-page-editor.browser.test.tsx
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Frozen real-Chromium regressions
+        run: >-
+          npx vitest run --config vitest.browser.config.ts
+          __tests__/browser/a4-page-editor.browser.test.tsx
+          __tests__/browser/a4-q1-acceptance.browser.test.tsx
+          __tests__/browser/a4-input-sequences.browser.test.tsx
+          --reporter=verbose
+
+      - name: Materialize validated standalone C3 slice
         shell: bash
         run: |
-          set +e
-          npx vitest run __tests__/components/a4-page-editor.test.tsx \
-            --reporter=json --outputFile=a4-c3-page-editor-result.json
-          code=$?
-          echo "$code" > a4-c3-page-editor-exit.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f a4-c3-page-editor-result.json a4-c3-page-editor-exit.txt
-          git commit -m "test(a4): capture exact page-editor C3 diagnostic"
+          git rm -f \
+            a4-c3-focused.log \
+            a4-c3-result.json \
+            a4-c3-exit.txt \
+            a4-c3-file-exits.txt \
+            a4-c3-page-editor-result.json \
+            a4-c3-page-editor-exit.txt 2>/dev/null || true
+          git add \
+            src/components/documents/a4-page-editor.tsx \
+            src/components/documents/a4-editor-toolbar.tsx \
+            __tests__/components/a4-editor-toolbar.test.tsx \
+            __tests__/components/a4-editor-c3-accessibility.test.tsx \
+            __tests__/components/a4-page-editor.test.tsx \
+            __tests__/browser/a4-page-editor.browser.test.tsx
+          if git diff --cached --quiet; then
+            echo "C3 source slice already materialized"
+            exit 0
+          fi
+          git commit -m "feat(a4): complete standalone C3 editor controls"
           git push origin HEAD:codex/a4-editor-core-c3-20260913
-          exit 0
