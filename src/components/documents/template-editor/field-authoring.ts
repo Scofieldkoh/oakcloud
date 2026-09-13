@@ -10,10 +10,7 @@ import {
   type TypedFieldValue,
 } from '@/lib/template-field-contract';
 import { parseTemplateFields } from '@/lib/template-field-parser';
-import {
-  createFieldInputDescriptor,
-  validateTypedFieldValue,
-} from '@/lib/template-field-registry';
+import { createFieldInputDescriptor, validateTypedFieldValue } from '@/lib/template-field-registry';
 import type { CustomPlaceholderDefinition, PlaceholderValueType } from '@/types/placeholders';
 
 /** F3 UX projections over the frozen F1/F2 parser, identity and value contracts. */
@@ -139,8 +136,6 @@ export function parseFieldAuthoringInput(
       if (typeof raw !== 'boolean') return invalidValue(descriptor);
       value = { kind: 'boolean', value: raw };
       break;
-    case 'read-only':
-      return { ok: false, code: 'read-only', message: 'This field is read-only.' };
   }
   return validateTypedFieldValue(value) ? { ok: true, value } : invalidValue(descriptor);
 }
@@ -152,17 +147,31 @@ export interface FieldKeyDraft {
 }
 
 export function normalizeAuthoringFieldKey(value: string): string {
-  return value.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
 export function createFieldKeyDraft(input: { label?: string; key?: string } = {}): FieldKeyDraft {
   const label = input.label ?? '';
   const manual = typeof input.key === 'string';
-  return { label, key: manual ? input.key ?? '' : normalizeAuthoringFieldKey(label), keyMode: manual ? 'manual' : 'generated' };
+  return {
+    label,
+    key: manual ? input.key ?? '' : normalizeAuthoringFieldKey(label),
+    keyMode: manual ? 'manual' : 'generated',
+  };
 }
 
 export function updateFieldKeyDraftLabel(draft: FieldKeyDraft, label: string): FieldKeyDraft {
-  return { ...draft, label, key: draft.keyMode === 'generated' ? normalizeAuthoringFieldKey(label) : draft.key };
+  return {
+    ...draft,
+    label,
+    key: draft.keyMode === 'generated' ? normalizeAuthoringFieldKey(label) : draft.key,
+  };
 }
 
 export function updateFieldKeyDraftKey(draft: FieldKeyDraft, key: string): FieldKeyDraft {
@@ -173,7 +182,9 @@ export function commitFieldKeyDraft(draft: FieldKeyDraft): FieldKeyDraft {
   return { ...draft, label: draft.label.trim(), key: normalizeAuthoringFieldKey(draft.key) };
 }
 
-export type FieldAvailability = { status: 'available' } | { status: 'unavailable'; reason: string };
+export type FieldAvailability =
+  | { status: 'available' }
+  | { status: 'unavailable'; reason: string };
 
 export interface FieldDiscoveryDescriptor {
   identity: string;
@@ -202,20 +213,36 @@ export interface CatalogFieldDiscoveryInput {
 }
 
 const TYPE_LABELS: Readonly<Record<PlaceholderValueType, string>> = {
-  text: 'Text', textarea: 'Long text', date: 'Date', number: 'Number', currency: 'Currency', boolean: 'Yes / No',
-};
-const SOURCE_LABELS: Readonly<Record<string, string>> = {
-  company: 'Company record', contact: 'Contact record', officer: 'Officer record', shareholder: 'Shareholder record', service: 'Service', custom: 'Custom', system: 'System',
+  text: 'Text',
+  textarea: 'Long text',
+  date: 'Date',
+  number: 'Number',
+  currency: 'Currency',
+  boolean: 'Yes / No',
 };
 
-export function inferCatalogFieldValueType(field: Pick<CatalogFieldDiscoveryInput, 'key' | 'category'>): PlaceholderValueType {
+const SOURCE_LABELS: Readonly<Record<string, string>> = {
+  company: 'Company record',
+  contact: 'Contact record',
+  officer: 'Officer record',
+  shareholder: 'Shareholder record',
+  service: 'Service',
+  custom: 'Custom',
+  system: 'System',
+};
+
+export function inferCatalogFieldValueType(
+  field: Pick<CatalogFieldDiscoveryInput, 'key' | 'category'>,
+): PlaceholderValueType {
   if (/date$/i.test(field.key)) return 'date';
   if (/numberOfShares$/i.test(field.key)) return 'number';
   if (/capital$/i.test(field.key)) return 'currency';
   return 'text';
 }
 
-export function createCatalogFieldDiscoveryDescriptor(field: CatalogFieldDiscoveryInput): FieldDiscoveryDescriptor {
+export function createCatalogFieldDiscoveryDescriptor(
+  field: CatalogFieldDiscoveryInput,
+): FieldDiscoveryDescriptor {
   const valueType = field.valueType ?? inferCatalogFieldValueType(field);
   const unavailableReason = field.availabilityReason ?? (field.category === 'Modifiers'
     ? 'Select an existing valid field first. Modifier application is owned by the editor field controls.'
@@ -235,7 +262,9 @@ export function createCatalogFieldDiscoveryDescriptor(field: CatalogFieldDiscove
     groupKey: field.category.toLowerCase().replace(/\s+/g, '-'),
     groupLabel: field.category,
     ...(field.example ? { valueSummary: field.example } : {}),
-    availability: unavailableReason ? { status: 'unavailable', reason: unavailableReason } : { status: 'available' },
+    availability: unavailableReason
+      ? { status: 'unavailable', reason: unavailableReason }
+      : { status: 'available' },
   };
 }
 
@@ -263,24 +292,35 @@ export function createCustomFieldDiscoveryDescriptor(
   const key = customFieldPath(field);
   const storedType = field.storedType ?? field.type;
   const source = field.storageSource ?? 'custom';
-  const unavailableReason = field.preserveOnly ? `Legacy field type "${storedType}" is preserve-only.` : undefined;
+  const unavailableReason = field.preserveOnly
+    ? `Legacy field type "${storedType}" is preserve-only.`
+    : undefined;
   const defaultSummary = field.defaultValue === undefined
     ? 'No default'
     : field.type === 'boolean'
-      ? field.defaultValue === 'true' ? 'Yes' : field.defaultValue === 'false' ? 'No' : field.defaultValue
+      ? field.defaultValue === 'true'
+        ? 'Yes'
+        : field.defaultValue === 'false'
+          ? 'No'
+          : field.defaultValue
       : field.defaultValue;
   return {
     identity: stableCustomFieldIdentity(field, fallbackScope),
     key,
     expression: `{{${key}}}`,
     label: field.label,
-    description: field.description?.trim() || (source === 'service' ? 'Provided by the existing service field source.' : 'Requested during document generation.'),
+    description: field.description?.trim()
+      || (source === 'service'
+        ? 'Provided by the existing service field source.'
+        : 'Requested during document generation.'),
     sourceLabel: SOURCE_LABELS[source] ?? field.storageRawSource ?? source,
     typeLabel: field.preserveOnly ? storedType : TYPE_LABELS[field.type],
     groupKey: source === 'service' ? 'service-fields' : 'custom',
     groupLabel: source === 'service' ? 'Service fields' : 'Custom',
     defaultSummary,
-    availability: unavailableReason ? { status: 'unavailable', reason: unavailableReason } : { status: 'available' },
+    availability: unavailableReason
+      ? { status: 'unavailable', reason: unavailableReason }
+      : { status: 'available' },
   };
 }
 
@@ -294,11 +334,19 @@ export function formatTypedFieldValueSummary(value: TypedFieldValue): string {
   }
 }
 
-export function filterFieldDiscovery(fields: readonly FieldDiscoveryDescriptor[], query: string): readonly FieldDiscoveryDescriptor[] {
+export function filterFieldDiscovery(
+  fields: readonly FieldDiscoveryDescriptor[],
+  query: string,
+): readonly FieldDiscoveryDescriptor[] {
   const normalized = query.trim().toLocaleLowerCase();
   if (!normalized) return fields;
-  return fields.filter((field) => [field.label, field.description, field.sourceLabel, field.typeLabel, field.groupLabel]
-    .some((value) => value.toLocaleLowerCase().includes(normalized)));
+  return fields.filter((field) => [
+    field.label,
+    field.description,
+    field.sourceLabel,
+    field.typeLabel,
+    field.groupLabel,
+  ].some((value) => value.toLocaleLowerCase().includes(normalized)));
 }
 
 export function reconcileRecentFieldIdentities(
@@ -310,9 +358,15 @@ export function reconcileRecentFieldIdentities(
 }
 
 export function pushRecentFieldIdentity(
-  recents: readonly string[], identity: string, availableFields: readonly Pick<FieldDiscoveryDescriptor, 'identity'>[], limit = 5,
+  recents: readonly string[],
+  identity: string,
+  availableFields: readonly Pick<FieldDiscoveryDescriptor, 'identity'>[],
+  limit = 5,
 ): readonly string[] {
-  return reconcileRecentFieldIdentities([identity, ...recents.filter((candidate) => candidate !== identity)], availableFields).slice(0, limit);
+  return reconcileRecentFieldIdentities(
+    [identity, ...recents.filter((candidate) => candidate !== identity)],
+    availableFields,
+  ).slice(0, limit);
 }
 
 export interface AtomicFieldReference {
@@ -324,10 +378,15 @@ export interface AtomicFieldReference {
 }
 
 function definitionPaths(definition: LosslessStoredFieldDefinition): readonly string[] {
-  return [...new Set([definition.key, definition.resolverPath, definition.path].filter((value): value is string => typeof value === 'string' && value.length > 0))];
+  return [...new Set([definition.key, definition.resolverPath, definition.path].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0,
+  ))];
 }
 
-function definitionForPath(registry: readonly LosslessStoredFieldDefinition[] | undefined, path: string): LosslessStoredFieldDefinition | undefined {
+function definitionForPath(
+  registry: readonly LosslessStoredFieldDefinition[] | undefined,
+  path: string,
+): LosslessStoredFieldDefinition | undefined {
   return registry?.find((definition) => definitionPaths(definition).includes(path));
 }
 
@@ -355,9 +414,13 @@ export function collectAtomicFieldReferences(input: {
   });
 }
 
-export interface AtomicFieldClipboardPayload { text: string }
+export interface AtomicFieldClipboardPayload {
+  text: string;
+}
 
-export function createAtomicFieldClipboardPayload(reference: AtomicFieldReference): AtomicFieldClipboardPayload {
+export function createAtomicFieldClipboardPayload(
+  reference: AtomicFieldReference,
+): AtomicFieldClipboardPayload {
   return { text: reference.sourceText };
 }
 
@@ -368,7 +431,11 @@ export function parseAtomicFieldPaste(input: {
   scope: FieldOwnerScope;
   registry?: readonly LosslessStoredFieldDefinition[];
 }): AtomicFieldReference | null {
-  const references = collectAtomicFieldReferences({ content: input.text, scope: input.scope, registry: input.registry });
+  const references = collectAtomicFieldReferences({
+    content: input.text,
+    scope: input.scope,
+    registry: input.registry,
+  });
   if (references.length !== 1) return null;
   const [reference] = references;
   return reference.span.start === 0 && reference.span.end === input.text.length ? reference : null;
@@ -379,7 +446,8 @@ export function serializeAtomicFieldReference(reference: AtomicFieldReference): 
 }
 
 export function expandAtomicFieldEditRange(
-  references: readonly AtomicFieldReference[], requested: { start: number; end: number },
+  references: readonly AtomicFieldReference[],
+  requested: { start: number; end: number },
 ): { start: number; end: number } {
   let start = Math.min(requested.start, requested.end);
   let end = Math.max(requested.start, requested.end);
@@ -403,7 +471,10 @@ export function expandAtomicFieldEditRange(
   return { start, end };
 }
 
-export function createModifierExpression(reference: AtomicFieldReference, modifier: string): string {
+export function createModifierExpression(
+  reference: AtomicFieldReference,
+  modifier: string,
+): string {
   if (!/^[A-Z_]+$/.test(modifier)) throw new TypeError('Unsupported field modifier.');
   return `${modifier}({{${reference.path}}})`;
 }
@@ -427,9 +498,17 @@ function sourceLineColumn(source: string, offset: number): { line: number; colum
   return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
 }
 
-function locationForNode(source: string, node: Pick<FieldGrammarNode, 'occurrenceId' | 'span'>): FieldOccurrenceLocation {
+function locationForNode(
+  source: string,
+  node: Pick<FieldGrammarNode, 'occurrenceId' | 'span'>,
+): FieldOccurrenceLocation {
   const position = sourceLineColumn(source, node.span.start);
-  return { occurrenceId: node.occurrenceId, span: node.span, ...position, label: `Line ${position.line}, column ${position.column}` };
+  return {
+    occurrenceId: node.occurrenceId,
+    span: node.span,
+    ...position,
+    label: `Line ${position.line}, column ${position.column}`,
+  };
 }
 
 export function collectFieldUsage(input: {
@@ -439,7 +518,12 @@ export function collectFieldUsage(input: {
   identity?: string;
   registry?: readonly LosslessStoredFieldDefinition[];
 }): FieldUsageSummary {
-  const parsed = parseTemplateFields({ content: input.content, scope: input.scope, registry: input.registry, knownPaths: [input.path] });
+  const parsed = parseTemplateFields({
+    content: input.content,
+    scope: input.scope,
+    registry: input.registry,
+    knownPaths: [input.path],
+  });
   const nodes = parsed.nodes.filter((node) => node.kind === 'reference' && node.path === input.path);
   return {
     identity: input.identity ?? createScopedFieldIdentity({ scope: input.scope, key: input.path }),
@@ -455,7 +539,10 @@ export interface FieldDeletionPreview {
   requiresReferenceDecision: boolean;
 }
 
-export function createFieldDeletionPreview(input: { identity: string; usage?: FieldUsageSummary }): FieldDeletionPreview {
+export function createFieldDeletionPreview(input: {
+  identity: string;
+  usage?: FieldUsageSummary;
+}): FieldDeletionPreview {
   return {
     identity: input.identity,
     usageCount: input.usage?.count ?? null,
@@ -472,12 +559,20 @@ export interface FieldDiagnosticNavigationTarget {
   label: string;
 }
 
-function containingOccurrence(nodes: readonly FieldGrammarNode[], diagnostic: FieldParserDiagnostic): FieldGrammarNode | undefined {
-  return nodes.find((node) => node.span.start <= diagnostic.span.start && node.span.end >= diagnostic.span.end)
-    ?? nodes.find((node) => node.span.start < diagnostic.span.end && node.span.end > diagnostic.span.start);
+function containingOccurrence(
+  nodes: readonly FieldGrammarNode[],
+  diagnostic: FieldParserDiagnostic,
+): FieldGrammarNode | undefined {
+  return nodes.find((node) => (
+    node.span.start <= diagnostic.span.start && node.span.end >= diagnostic.span.end
+  )) ?? nodes.find((node) => (
+    node.span.start < diagnostic.span.end && node.span.end > diagnostic.span.start
+  ));
 }
 
-export function createFieldDiagnosticNavigationTargets(parsed: ParsedTemplateFieldSyntax): readonly FieldDiagnosticNavigationTarget[] {
+export function createFieldDiagnosticNavigationTargets(
+  parsed: ParsedTemplateFieldSyntax,
+): readonly FieldDiagnosticNavigationTarget[] {
   return parsed.diagnostics.map((diagnostic) => {
     const occurrence = containingOccurrence(parsed.nodes, diagnostic);
     const position = sourceLineColumn(parsed.source, diagnostic.span.start);
