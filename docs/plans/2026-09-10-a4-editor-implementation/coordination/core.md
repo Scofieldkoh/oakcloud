@@ -465,3 +465,56 @@ The first immutable PostgreSQL lane used `postgres` instead of the W2 suite-requ
 CORE does **not** mark G2 passed from its own matrix and does **not** execute Q1. Production edits are frozen at `6e8d4426c0d57043d85a830045dee465f6ff9a47`. `VERIFY-Q1-20260912-01` is released in `coordination/dispatch.md` for independent evidence. Any production-code change requires a new immutable candidate and fresh Q1 dispatch.
 
 Stop boundary remains: no C3, S3, F3, W3, D1 deployment or version bump.
+
+## CORE-C3 / Wave-4 integration closeout — 2026-09-13
+
+Status: **WAVE-4 PRODUCT CANDIDATE FROZEN FOR INDEPENDENT VERIFY — NO MAIN MERGE / NO DEPLOYMENT**
+
+- Wave-4 common baseline: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`.
+- Dispatch-only merged `main` at integration start: `bf2d864541f608095da81acdd3c804c7247a85e7`.
+- Integration branch: `codex/a4-editor-wave4-integration-20260913`.
+- Frozen clean product candidate for independent verification: `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`.
+- Frozen contract: **v1 frozen at G0 — unchanged**.
+- Deployment and application-version bump: **not authorized**.
+
+### Integrated producer packets
+
+- SEMANTICS / S3 — PR #53 — integration merge `0fb4e299fcaa0a82472ba924624fb3290ae8e262`.
+- FIELDS / F3 — PR #54 — integration merge `ec201e79218c687c5e88f0fc83b50e12d87d528b`.
+- CORE / C3 — PR #51 — integration merge `69878bef05bc8b3d99ff7202f56a651519b91145`.
+- WORKFLOW / W3 — PR #52 — integration merge `ecfa66dd4ef5f7eed6407fa04fb6ee062cc66b86`.
+- Final C3 producer-consumer wiring commit: `d40d231faa99c2f9af9e56eb89ee296171edfdec`.
+- Temporary integration scaffolding cleanup: `123f44a900bfbc96d8d93a782cc624bb26cf3441`.
+
+C3 now consumes W3 output preparation/page assembly and workflow status, and S3 page measurement/font-readiness producers rather than maintaining duplicate output/measurement authority. Local print uses the shared canonical output-preparation path and cleanup lifecycle. Page-number authoring/display remains capability-gated. Command applicability remains independent of repagination busy state. The F3/W3 typed-field rendezvous preserves exact false/zero/date/multiline behavior and scoped identities without moving ownership into CORE.
+
+### Final integrated validation evidence
+
+Authoritative final integration workflow: `A4 Wave 4 final integration validation`, run `34746728698` — **SUCCESS** on validation head `c63e569f787412f05ed4b1fbe4b2f69f7ec1252e`.
+
+The frozen candidate `b522cf50f61f18b75f2cae62b42cd142bef4cf2d` differs from that validated head only by deleting the validation-only workflow and its trigger; application, test, generated bundle and coordination source used by the validation are otherwise unchanged.
+
+Node `24.20.0`, npm `11.19.0`, Ubuntu 24.04:
+
+- pagination bundle regeneration + checked-in bundle diff: **PASS**;
+- `npm run lint`: **PASS — 0 errors / 12 warnings**;
+- `npm run typecheck`: **PASS**;
+- `npx tsc -b`: **PASS**;
+- CORE C3 component matrix: **3 files / 78 tests passed**;
+- S3 pagination matrix: **11 files / 209 tests passed**;
+- F3 authoring/discovery: **2 files / 34 tests passed**;
+- F1/F2/F3 contract/resolver compatibility: **4 files / 75 tests passed**;
+- W3/output compatibility: **4 files / 21 tests passed**;
+- production `npm run build`: **PASS**, including 171 static pages generated;
+- real Chromium CORE/Q1 preservation: **2 files / 53 tests passed**;
+- real Chromium S3 performance/boundary: **2 files / 15 tests passed**.
+
+The JSDOM CORE lane emits expected `Window.focus` / `Window.print` not-implemented logs and existing React `act(...)` warnings; these did not fail tests. The lint lane has warnings only and no errors.
+
+### G3 assessment / Q2 boundary
+
+CORE's integration assessment is **G3 implementation-complete and ready for independent acceptance**, covering F2/F3 + W2/W3 + C02/C05 integration, typed/scoped fields, lossless field metadata, plain-text/trusted-rich policy, revision/draft/preview behavior and common output preparation. CORE does **not** self-certify the remaining real-output/user-interaction acceptance as a G3/G4 pass.
+
+Independent VERIFY must use exact candidate `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`, first close any remaining G3 acceptance evidence on that immutable target, and only then record G4/Q2. Required real PDF/HTML/local-print, clipboard, IME/accessibility, staff-journey, failure/cleanup and rollback evidence remains a VERIFY responsibility under `verification-and-rollout.md`.
+
+No Q2/G4 execution was performed by CORE. Any production defect found by VERIFY returns to the owning packet and requires a new immutable candidate plus repetition of affected dependent checks.
