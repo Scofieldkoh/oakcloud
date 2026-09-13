@@ -1,0 +1,95 @@
+name: A4 Q1 corrective verification
+
+on:
+  push:
+    branches:
+      - verify/a4-editor-q1-20260912
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: e232f998475f87248588c79cdc63988e942f0da2
+
+jobs:
+  q1_11_output:
+    name: Q1-11 independent real HTML/PDF rerun
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out verifier branch
+        uses: actions/checkout@v6
+        with:
+          path: verify
+          persist-credentials: false
+      - name: Check out corrected integrated candidate
+        uses: actions/checkout@v6
+        with:
+          ref: e232f998475f87248588c79cdc63988e942f0da2
+          path: candidate
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove immutable corrected candidate
+        run: cd candidate && test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA" && test -z "$(git status --porcelain)"
+      - name: Overlay independent Q1-11 verifier only
+        run: cp verify/tests/document-output/a4-q1-11-real-render.test.ts candidate/tests/document-output/
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: candidate/package-lock.json
+      - name: Install dependencies
+        working-directory: candidate
+        run: npm ci
+      - name: Install real Chromium
+        working-directory: candidate
+        run: npx playwright install --with-deps chromium
+      - name: Bind production Puppeteer path
+        working-directory: candidate
+        run: |
+          CHROME_PATH=$(node -e 'const { chromium } = require("playwright"); process.stdout.write(chromium.executablePath())')
+          echo "PUPPETEER_EXECUTABLE_PATH=${CHROME_PATH}" >> "$GITHUB_ENV"
+      - name: Configure rendered evidence directory
+        run: echo "Q1_OUTPUT_DIR=${GITHUB_WORKSPACE}/candidate/q1-corrective-artifacts" >> "$GITHUB_ENV"
+      - name: Execute independent Q1-11 real render
+        working-directory: candidate
+        run: npx vitest run tests/document-output/a4-q1-11-real-render.test.ts --reporter=verbose
+      - name: Execute corrected production output regression
+        working-directory: candidate
+        run: npx vitest run tests/document-output/a4-q1-11-ordered-list-output.test.ts --reporter=verbose
+      - name: Upload independent rendered evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a4-q1-11-corrective-independent-render
+          path: candidate/q1-corrective-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+  dependent_output_and_pagination:
+    name: Q1 dependent output/pagination checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out corrected integrated candidate
+        uses: actions/checkout@v6
+        with:
+          ref: e232f998475f87248588c79cdc63988e942f0da2
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove immutable corrected candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA" && test -z "$(git status --porcelain)"
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Execute print-style regression
+        run: npx vitest run __tests__/components/a4-print-styles.test.ts --reporter=verbose
+      - name: Execute semantic pagination/list dependency suite
+        run: npx vitest run __tests__/components/a4-pagination --reporter=verbose
+      - name: Execute existing HTML/PDF contract baseline
+        run: npx vitest run tests/document-output/document-template-editor-output.test.ts --reporter=verbose
