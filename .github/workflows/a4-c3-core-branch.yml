@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -19,7 +20,9 @@ jobs:
           ref: codex/a4-editor-core-c3-20260913
 
       - name: Apply deterministic C3 source patch
-        run: python3 scripts/a4-c3-apply-patch.py
+        run: |
+          python3 scripts/a4-c3-apply-patch.py
+          python3 scripts/a4-c3-update-page-number-test.py
 
       - uses: actions/setup-node@v4
         with:
@@ -64,6 +67,7 @@ jobs:
             src/components/documents/a4-page-editor.tsx \
             src/components/documents/a4-editor-toolbar.tsx \
             __tests__/components/a4-editor-toolbar.test.tsx \
+            __tests__/components/a4-page-editor.test.tsx \
             __tests__/browser/a4-page-editor.browser.test.tsx
           git commit -m "chore(a4): apply C3 editor surface patch"
           git push origin HEAD:codex/a4-editor-core-c3-20260913
