@@ -270,3 +270,16 @@ Final corrective rerun total: **14 test files / 226 tests passed / 0 failed** ac
 ### Final promotion decision
 
 **G2 / Q1 PASSED — TECHNICALLY READY FOR D1 PROMOTION, SUBJECT TO SEPARATE DEPLOYMENT AUTHORIZATION AND THE ROLLBACK/COMPATIBILITY RULES IN `verification-and-rollout.md`.**
+
+## VERIFY-Q2-G4-20260913-01 — assignment published; NOT EXECUTED
+
+- Immutable product candidate: `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`.
+- Integration branch: `codex/a4-editor-wave4-integration-20260913`.
+- Frozen contract: **v1 frozen at G0 — unchanged**.
+- G2/Q1: **PASSED** and remains frozen.
+- CORE assessment: Wave-4 implementation is integrated and ready for independent remaining-G3 then G4/Q2 acceptance.
+- Q2/G4 result in this record: **NOT STARTED / NOT PASSED / NOT FAILED**.
+
+The verifier must use the exact immutable candidate above and the full Q2/G4 acceptance in `verification-and-rollout.md`. Required evidence includes actual PDF/HTML/local-print output, persistence/concurrency/drafts/preview/batch paths, real clipboard and IME/accessibility interaction, representative staff journeys, failure/cleanup behavior, repository checks, rollback rehearsal and explicit blocked-environment reporting.
+
+VERIFY may add acceptance-only tests/evidence under its dispatch lease, but may not fix product source. Any product defect returns to the owning implementation packet and invalidates the candidate for affected dependent checks. No main merge, deployment, version bump or production business-data mutation is authorized by this assignment.
