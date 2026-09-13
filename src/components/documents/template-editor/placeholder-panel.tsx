@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -107,11 +107,6 @@ function sourceScope(field: CustomPlaceholderDefinition, fallback?: FieldOwnerSc
   return field.ownerScope ?? fallback ?? DEFAULT_FIELD_SCOPE;
 }
 
-function customFieldPath(field: CustomPlaceholderDefinition): string {
-  if (field.storageSource === 'service') return field.storagePath ?? field.key;
-  return field.key.startsWith('custom.') ? field.key : `custom.${field.key}`;
-}
-
 export function PlaceholderPanel({
   onInsert,
   partials,
@@ -129,7 +124,7 @@ export function PlaceholderPanel({
   onDeleteCustomField,
 }: PlaceholderPanelProps) {
   const [query, setQuery] = useState('');
-  const [expanded, setExpanded] = useState(['agreement-blocks', 'company', 'loops', 'conditions', 'service-fields']);
+  const [expanded, setExpanded] = useState(['agreement-blocks', 'company', 'loops', 'conditions', 'service-fields', 'custom']);
   const [recents, setRecents] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [builder, setBuilder] = useState<Builder | null>(null);
@@ -165,7 +160,10 @@ export function PlaceholderPanel({
   })), []);
   const filteredCategories = useMemo(() => catalogCategories
     .map((category) => {
-      const filtered = new Set(filterFieldDiscovery(category.entries.map((entry) => entry.descriptor), normalizedQuery).map((field) => field.identity));
+      const filtered = new Set(filterFieldDiscovery(
+        category.entries.map((entry) => entry.descriptor),
+        normalizedQuery,
+      ).map((field) => field.identity));
       return { ...category, entries: category.entries.filter((entry) => filtered.has(entry.descriptor.identity)) };
     })
     .filter((category) => category.entries.length > 0), [catalogCategories, normalizedQuery]);
@@ -177,11 +175,19 @@ export function PlaceholderPanel({
     () => filterFieldDiscovery(serviceDescriptors, normalizedQuery),
     [serviceDescriptors, normalizedQuery],
   );
-  const matchingPartials = partials.filter((partial) => !normalizedQuery || matches(normalizedQuery, partial.name, partial.displayName, partial.description, 'Partials'));
-  const partialLinks = useMemo(() => mergedPlaceholders.filter((field) => field.source === 'partial').reduce<Record<string, MergedPlaceholder[]>>((groups, field) => {
-    (groups[field.sourceName || 'unknown'] ||= []).push(field);
-    return groups;
-  }, {}), [mergedPlaceholders]);
+  const matchingPartials = partials.filter((partial) => !normalizedQuery || matches(
+    normalizedQuery,
+    partial.name,
+    partial.displayName,
+    partial.description,
+    'Partials',
+  ));
+  const partialLinks = useMemo(() => mergedPlaceholders
+    .filter((field) => field.source === 'partial')
+    .reduce<Record<string, MergedPlaceholder[]>>((groups, field) => {
+      (groups[field.sourceName || 'unknown'] ||= []).push(field);
+      return groups;
+    }, {}), [mergedPlaceholders]);
 
   const allRecentableFields = useMemo(() => [
     ...catalogCategories.flatMap((category) => category.entries)
@@ -218,6 +224,14 @@ export function PlaceholderPanel({
   const deletePreview = deleteDescriptor
     ? createFieldDeletionPreview({ identity: deleteDescriptor.identity, usage: deleteUsage })
     : null;
+  const serviceOpen = Boolean(normalizedQuery) || expanded.includes('service-fields');
+  const customOpen = Boolean(normalizedQuery) || formOpen || expanded.includes('custom');
+
+  const toggleSection = (key: string) => {
+    setExpanded((previous) => previous.includes(key)
+      ? previous.filter((candidate) => candidate !== key)
+      : [...previous, key]);
+  };
 
   const resetForm = () => {
     setForm(emptyCustomFieldForm());
@@ -392,9 +406,7 @@ export function PlaceholderPanel({
                 type="button"
                 aria-label={resultLabel(category.label, category.entries.length)}
                 aria-expanded={isOpen}
-                onClick={() => setExpanded((previous) => previous.includes(category.key)
-                  ? previous.filter((key) => key !== category.key)
-                  : [...previous, category.key])}
+                onClick={() => toggleSection(category.key)}
                 className="flex w-full items-center justify-between gap-2 px-2 py-2 text-left hover:bg-background-tertiary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-primary/50"
               >
                 <span className="min-w-0 break-words text-xs font-semibold text-text-primary">{category.label}</span>
@@ -410,44 +422,68 @@ export function PlaceholderPanel({
 
         {(!normalizedQuery || matchingServiceDescriptors.length > 0) && serviceDescriptors.length > 0 && (
           <section className="mb-2 rounded-md border border-border-primary">
-            <div className="px-2 py-2">
-              <h3 className="text-xs font-semibold text-text-primary">Service fields</h3>
-              <p className="text-[11px] text-text-muted">Only fields supplied by the existing service source are shown.</p>
-              <span className="sr-only">{resultLabel('Service fields', matchingServiceDescriptors.length)}</span>
-            </div>
-            <div className="border-t border-border-secondary">
-              {matchingServiceDescriptors.map((descriptor) => (
-                <FieldRow
-                  key={descriptor.identity}
-                  descriptor={descriptor}
-                  primaryAction={descriptor.availability.status === 'available' ? {
-                    label: 'Insert',
-                    ariaLabel: `Insert ${descriptor.label}`,
-                    onClick: () => insertDescriptor(descriptor),
-                  } : undefined}
-                  copyAction={descriptor.availability.status === 'available' ? {
-                    copied: copied === descriptor.identity,
-                    ariaLabel: `Copy ${descriptor.label}`,
-                    onClick: () => copyDescriptor(descriptor),
-                  } : undefined}
-                />
-              ))}
-            </div>
+            <button
+              type="button"
+              aria-label={resultLabel('Service fields', matchingServiceDescriptors.length)}
+              aria-expanded={serviceOpen}
+              onClick={() => toggleSection('service-fields')}
+              className="flex w-full items-center justify-between gap-2 px-2 py-2 text-left hover:bg-background-tertiary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-primary/50"
+            >
+              <span className="min-w-0">
+                <span className="block break-words text-xs font-semibold text-text-primary">Service fields</span>
+                <span className="block text-[11px] text-text-muted">Only fields supplied by the existing service source are shown.</span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2 text-[11px] text-text-muted">
+                <span className="rounded-full bg-background-tertiary px-1.5 py-0.5">{matchingServiceDescriptors.length}</span>
+                {serviceOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              </span>
+            </button>
+            {serviceOpen && (
+              <div className="border-t border-border-secondary">
+                {matchingServiceDescriptors.map((descriptor) => (
+                  <FieldRow
+                    key={descriptor.identity}
+                    descriptor={descriptor}
+                    primaryAction={descriptor.availability.status === 'available' ? {
+                      label: 'Insert',
+                      ariaLabel: `Insert ${descriptor.label}`,
+                      onClick: () => insertDescriptor(descriptor),
+                    } : undefined}
+                    copyAction={descriptor.availability.status === 'available' ? {
+                      copied: copied === descriptor.identity,
+                      ariaLabel: `Copy ${descriptor.label}`,
+                      onClick: () => copyDescriptor(descriptor),
+                    } : undefined}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
         {(!normalizedQuery || matchingCustomDescriptors.length > 0 || formOpen) && (
           <section className="mb-2 rounded-md border border-border-primary">
-            <div className="flex flex-wrap items-start justify-between gap-2 px-2 py-2">
-              <div className="min-w-0">
-                <h3 className="text-xs font-semibold text-text-primary">Custom</h3>
-                <p className="text-[11px] text-text-muted">Fields requested during generation.</p>
-                <span className="sr-only">{resultLabel('Custom', matchingCustomDescriptors.length)}</span>
-              </div>
-              {!formOpen && <Button size="xs" variant="secondary" leftIcon={<Plus />} onClick={startCreate}>Add custom field</Button>}
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <button
+                type="button"
+                aria-label={resultLabel('Custom', matchingCustomDescriptors.length)}
+                aria-expanded={customOpen}
+                onClick={() => toggleSection('custom')}
+                className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2 text-left hover:bg-background-tertiary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-primary/50"
+              >
+                <span className="min-w-0">
+                  <span className="block break-words text-xs font-semibold text-text-primary">Custom</span>
+                  <span className="block text-[11px] text-text-muted">Fields requested during generation.</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2 text-[11px] text-text-muted">
+                  <span className="rounded-full bg-background-tertiary px-1.5 py-0.5">{matchingCustomDescriptors.length}</span>
+                  {customOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                </span>
+              </button>
+              {!formOpen && <div className="p-1.5"><Button size="xs" variant="secondary" leftIcon={<Plus />} onClick={startCreate}>Add custom field</Button></div>}
             </div>
 
-            {formOpen && (
+            {customOpen && formOpen && (
               <div className="space-y-3 border-t border-border-secondary p-3">
                 <div>
                   <label htmlFor="custom-field-label" className="mb-1 block text-xs font-medium text-text-secondary">Field label</label>
@@ -544,7 +580,7 @@ export function PlaceholderPanel({
               </div>
             )}
 
-            {matchingCustomDescriptors.map((descriptor) => {
+            {customOpen && matchingCustomDescriptors.map((descriptor) => {
               const field = customFields.find((candidate) => stableCustomFieldIdentity(candidate, ownerScope) === descriptor.identity);
               if (!field) return null;
               return (
@@ -654,7 +690,7 @@ export function PlaceholderPanel({
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" size="sm" onClick={() => setDeleteCandidate(null)}>Cancel</Button>
-          {deletePreview && deletePreview.usageCount !== 0 && onDeleteCustomField && (
+          {deletePreview && deletePreview.usageCount !== null && deletePreview.usageCount > 0 && onDeleteCustomField && (
             <Button variant="secondary" size="sm" onClick={() => confirmDelete('remove-references')}>Delete and remove references</Button>
           )}
           <Button size="sm" onClick={() => confirmDelete('keep-unresolved')}>
@@ -677,7 +713,7 @@ function FieldRow({
   example?: string;
   primaryAction?: { label: string; ariaLabel: string; onClick: () => void };
   copyAction?: { copied: boolean; ariaLabel: string; onClick: () => void | Promise<void> };
-  extraActions?: React.ReactNode;
+  extraActions?: ReactNode;
 }) {
   return (
     <div className="group flex min-w-0 flex-wrap items-start gap-2 border-b border-border-secondary px-2 py-2 last:border-b-0 hover:bg-background-tertiary">

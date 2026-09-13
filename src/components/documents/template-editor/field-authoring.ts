@@ -223,7 +223,7 @@ export function createCatalogFieldDiscoveryDescriptor(field: CatalogFieldDiscove
   return {
     identity: `catalog-field:v1:${encodeURIComponent(field.key)}`,
     key: field.key,
-    expression: field.key.startsWith('{{') || /^[ULP]CASE\(/.test(field.key) ? field.key : `{{${field.key}}}`,
+    expression: field.category === 'Modifiers' || field.key.startsWith('{{') ? field.key : `{{${field.key}}}`,
     label: field.label,
     description: field.description ?? (field.category === 'System'
       ? `${field.label} supplied by the existing document generation system.`
