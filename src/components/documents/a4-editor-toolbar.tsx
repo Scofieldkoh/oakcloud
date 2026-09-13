@@ -308,7 +308,7 @@ export function A4EditorToolbar({
 }: A4EditorToolbarProps) {
   const blocked = disabled || mutationDisabled;
   const command = (nextCommand: EditorCommand) => () => onCommand(nextCommand);
-  const [openMenu, setOpenMenu] = useState<'list' | 'text' | 'tables' | 'page' | null>(null);
+  const [openMenu, setOpenMenu] = useState<'list' | 'text' | 'tables' | null>(null);
   const [startDraft, setStartDraft] = useState('1');
 
   useEffect(() => {
@@ -363,10 +363,10 @@ export function A4EditorToolbar({
         <ToolbarButton label="Numbered list" icon={ListOrdered} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'ordered' })} disabled={blocked} pressed={activeFormats.list === 'ordered'} />
         <ToolbarButton label="Decrease indent" icon={Outdent} onSaveSelection={onSaveSelection} onClick={command({ type: 'outdent' })} disabled={blocked} />
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={blocked} />
+        <ToolbarButton label="Nested list" icon={ListTree} onSaveSelection={onSaveSelection} onClick={command({ type: 'nest-list' })} disabled={blocked} />
         <ToolbarMenu label="List options" disabled={disabled} isOpen={openMenu === 'list'} onOpenChange={(open) => setOpenMenu(open ? 'list' : null)} onSaveSelection={onSaveSelection}>
           <div role="group" aria-label="Advanced list controls" className="flex flex-wrap items-center gap-2">
             <ToolbarButton label="Alphabetical list" icon={CaseLower} onSaveSelection={onSaveSelection} onClick={command({ type: 'list', value: 'alpha' })} disabled={blocked} pressed={activeFormats.list === 'alpha'} />
-            <ToolbarButton label="Nested list" icon={ListTree} onSaveSelection={onSaveSelection} onClick={command({ type: 'nest-list' })} disabled={blocked} />
             <ToolbarButton label="Bold list numbers" icon={Hash} onSaveSelection={onSaveSelection} onClick={command({ type: 'list-bold-numbers' })} disabled={blocked || (activeFormats.list !== 'ordered' && activeFormats.list !== 'alpha')} pressed={activeFormats.listMarkersBold} />
             <label
               className="flex h-8 items-center gap-1 text-xs text-text-secondary"
@@ -397,8 +397,8 @@ export function A4EditorToolbar({
       </ToolbarGroup>
 
       <ToolbarGroup label="Insert">
-        <ToolbarButton label="Page break" title="Page break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={blocked} />
-        <ToolbarMenu label="Table" disabled={disabled} isOpen={openMenu === 'tables'} onOpenChange={(open) => setOpenMenu(open ? 'tables' : null)} onSaveSelection={onSaveSelection}>
+        <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={blocked} />
+        <ToolbarMenu label="Tables" disabled={disabled} isOpen={openMenu === 'tables'} onOpenChange={(open) => setOpenMenu(open ? 'tables' : null)} onSaveSelection={onSaveSelection}>
           <div role="group" aria-label="Table actions" className="flex items-center gap-2">
             <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={blocked} />
             <ToolbarButton label="Add table row" title="Add Table Row" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableRow')} disabled={blocked || !onLegacyCommand} />
@@ -452,14 +452,10 @@ export function A4EditorToolbar({
         </ToolbarMenu>
       </ToolbarGroup>
 
-      <ToolbarGroup label="Page options">
-        <ToolbarMenu label="Page options" disabled={disabled} isOpen={openMenu === 'page'} onOpenChange={(open) => setOpenMenu(open ? 'page' : null)} onSaveSelection={onSaveSelection}>
-          <div role="group" aria-label="Page section actions" className="flex items-center gap-2">
-            <ToolbarButton label="Append blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={blocked} />
-            <ToolbarButton label="Remove page break" title="Remove the page break before the current page" icon={Unlink} onSaveSelection={onSaveSelection} onClick={onRemovePageBreak} disabled={blocked || !canRemovePageBreak} />
-            <ToolbarButton label="Delete current hard section" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={blocked || !canDeletePage} destructive />
-          </div>
-        </ToolbarMenu>
+      <ToolbarGroup label="Page">
+        <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={blocked} />
+        <ToolbarButton label="Remove page break" title="Remove the page break before the current page" icon={Unlink} onSaveSelection={onSaveSelection} onClick={onRemovePageBreak} disabled={blocked || !canRemovePageBreak} />
+        <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={blocked || !canDeletePage} destructive />
       </ToolbarGroup>
 
       {pageNumbersSupported ? (

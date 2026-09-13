@@ -23,7 +23,6 @@ import {
   Eye,
   FileText,
   Loader2,
-  Plus,
   Printer,
   SeparatorHorizontal,
   Trash2,
@@ -596,6 +595,10 @@ export interface A4PageEditorProps {
   onChange?: (html: string) => void;
   placeholder?: string;
   className?: string;
+  /** Accessible name for the editable document surface. */
+  ariaLabel?: string;
+  /** Enable page-number authoring only when persistence/output support is complete. */
+  pageNumbersSupported?: boolean;
   tenantId?: string;
   previewContent?: string;
   showPreviewToggle?: boolean;
@@ -872,6 +875,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       onChange,
       placeholder,
       className,
+      ariaLabel = 'Document editor',
+      pageNumbersSupported = false,
       tenantId: _tenantId,
       previewContent,
       showPreviewToggle = true,
@@ -3414,36 +3419,30 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           <div className="flex items-center gap-2">
             <button
               type="button"
+              aria-label="Previous page"
+              title="Previous page"
               onClick={() => scrollToPage('up')}
               disabled={currentPageIdx === 0}
-              className="p-1.5 rounded text-text-secondary hover:bg-background-tertiary disabled:opacity-50"
+              className="p-1.5 rounded text-text-secondary hover:bg-background-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-50"
             >
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4" aria-hidden="true" />
             </button>
             <span className="text-xs font-medium w-12 text-center text-text-secondary">
               {currentPageIdx + 1}/{displayPages.length}
             </span>
             <button
               type="button"
+              aria-label="Next page"
+              title="Next page"
               onClick={() => scrollToPage('down')}
               disabled={currentPageIdx === displayPages.length - 1}
-              className="p-1.5 rounded text-text-secondary hover:bg-background-tertiary disabled:opacity-50"
+              className="p-1.5 rounded text-text-secondary hover:bg-background-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-50"
             >
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
 
             <div className="w-px h-5 bg-border-primary mx-1" />
 
-            {!readOnly && !isPreviewMode && (
-              <button
-                type="button"
-                onClick={handleAddPage}
-                className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200"
-              >
-                <Plus className="w-4 h-4" />
-                Add Page
-              </button>
-            )}
 
             {!readOnly && (onPreview || (showPreviewToggle && previewContent)) && (
               <button
@@ -3495,6 +3494,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             activeFormats={activeFormats}
             onLayoutChange={updateLayout}
             showPageNumbers={showPageNumbers}
+            pageNumbersSupported={pageNumbersSupported}
             canDeletePage={hardSectionCount > 1}
             canRemovePageBreak={
               displayPages[currentPageIdx]?.hardBreakBefore === true
@@ -3506,7 +3506,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             onTogglePageNumbers={setShowPageNumbers}
             onLegacyCommand={handleCommand}
             disabled={effectivePreviewMode}
-            mutationDisabled={isReflowing}
           />
         )}
 
@@ -3522,6 +3521,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             data-semantic-projection-revision={
               semanticProjectionMapRef.current?.documentRevision ?? 0
             }
+            role="textbox"
+            aria-label={ariaLabel}
+            aria-multiline="true"
+            aria-readonly={effectivePreviewMode}
+            tabIndex={0}
             contentEditable={!effectivePreviewMode}
             suppressContentEditableWarning
             aria-busy={isReflowing}
@@ -3598,7 +3602,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             }}
             onBlur={() => !effectivePreviewMode && saveCursorPosition()}
             className={cn(
-              'flex flex-col items-center gap-8 outline-none',
+              'flex flex-col items-center gap-8 outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2',
               effectivePreviewMode && 'cursor-default',
             )}
             style={{
@@ -3648,16 +3652,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           </div>
           </div>
 
-          {!readOnly && !effectivePreviewMode && (
-            <button
-              type="button"
-              onClick={handleAddPage}
-              className="mx-auto mt-8 flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border-primary text-text-muted hover:border-text-muted hover:text-text-secondary transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Add New Page
-            </button>
-          )}
         </div>
 
         <div className="flex-shrink-0 px-4 py-1.5 bg-background-elevated border-t border-border-primary text-xs text-text-muted flex justify-between">
@@ -3669,7 +3663,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           <span>
             {formatA4LayoutStatus(effectiveLayout)}
           </span>
-          <span role="status" aria-live="polite" data-testid="a4-editor-status">
+          <span data-testid="a4-editor-status">
             {isReflowing
               ? 'Repaginating…'
               : readOnly
