@@ -1,0 +1,252 @@
+name: A4 Wave 4 Q2 G4 Verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - verify/a4-wave4-q2-g4-20260913
+    paths:
+      - .github/workflows/a4-wave4-q2-g4-verify.yml
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SHA: b522cf50f61f18b75f2cae62b42cd142bef4cf2d
+  VERIFY_BRANCH: verify/a4-wave4-q2-g4-20260913
+
+jobs:
+  q2-static-regression:
+    name: Q2 G4 static + integrated regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout frozen product candidate
+        uses: actions/checkout@v4
+        with:
+          ref: b522cf50f61f18b75f2cae62b42cd142bef4cf2d
+          fetch-depth: 0
+      - name: Assert exact frozen SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FROZEN_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Regenerate Prisma client
+        run: npm run db:generate
+      - name: Regenerate A4 pagination bundle and require clean tracked tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run generate:pagination-bundle
+          git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: TypeScript build graph
+        run: npx tsc -b
+      - name: CORE C3 regression matrix
+        run: npx vitest run __tests__/components/a4-editor-c3-accessibility.test.tsx __tests__/components/a4-editor-c3-interactions.test.tsx __tests__/components/a4-editor-c3-print.test.tsx __tests__/components/a4-page-editor.test.tsx __tests__/components/a4-editor-toolbar.test.tsx
+      - name: SEMANTICS S3 pagination matrix
+        run: npx vitest run __tests__/components/a4-pagination
+      - name: FIELDS F3 authoring and compatibility matrices
+        run: npx vitest run __tests__/components/template-editor/field-authoring.test.ts __tests__/lib/template-field-contract.test.ts __tests__/lib/template-field-parser.test.ts __tests__/lib/template-placeholder-storage.test.ts __tests__/lib/placeholder-resolver.test.ts
+      - name: WORKFLOW W3 output and compatibility matrices
+        run: npx vitest run __tests__/lib/a4-workflow-w3.test.ts __tests__/services/a4-w3-synthetic-generation.test.ts tests/services/document-export-w1.test.ts
+      - name: Production build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+      - name: Final candidate SHA assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FINAL_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+          git diff --exit-code
+
+  q2-browser:
+    name: Q2 G4 real Chromium + prior-gate browser regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout frozen product candidate
+        uses: actions/checkout@v4
+        with:
+          ref: b522cf50f61f18b75f2cae62b42cd142bef4cf2d
+          fetch-depth: 0
+      - name: Assert exact frozen SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FROZEN_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium and Playwright dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Regenerate A4 pagination bundle and require clean tracked tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run generate:pagination-bundle
+          git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
+      - name: Run integrated browser acceptance matrix
+        run: npm run test:browser
+      - name: Final candidate SHA assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FINAL_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+          git diff --exit-code
+
+  q2-persistence:
+    name: Q2 G4 PostgreSQL persistence + concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: q2_verify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d q2_verify"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/q2_verify?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/q2_verify?schema=public
+    steps:
+      - name: Checkout frozen product candidate
+        uses: actions/checkout@v4
+        with:
+          ref: b522cf50f61f18b75f2cae62b42cd142bef4cf2d
+          fetch-depth: 0
+      - name: Assert exact frozen SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FROZEN_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+      - name: Checkout verifier evidence overlays separately
+        uses: actions/checkout@v4
+        with:
+          ref: verify/a4-wave4-q2-g4-20260913
+          path: .q2-verifier
+          fetch-depth: 1
+      - name: Install verifier-only persistence overlay without changing product HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .q2-verifier/__tests__/integration/a4-editor-q2-persistence.test.ts __tests__/integration/a4-editor-q2-persistence.test.ts
+          printf 'PRODUCT_HEAD_AFTER_OVERLAY=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: Apply migrations to disposable PostgreSQL
+        run: npx prisma migrate deploy
+      - name: Run prior Q1 and independent Q2 persistence acceptance
+        run: npx vitest run __tests__/integration/a4-editor-q1-persistence.test.ts __tests__/integration/a4-editor-q2-persistence.test.ts --maxWorkers=1
+      - name: Final candidate SHA assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FINAL_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+          git diff --exit-code
+
+  q2-real-output:
+    name: Q2 G4 real HTML PDF output evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout frozen product candidate
+        uses: actions/checkout@v4
+        with:
+          ref: b522cf50f61f18b75f2cae62b42cd142bef4cf2d
+          fetch-depth: 0
+      - name: Assert exact frozen SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FROZEN_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+      - name: Checkout verifier evidence overlays separately
+        uses: actions/checkout@v4
+        with:
+          ref: verify/a4-wave4-q2-g4-20260913
+          path: .q2-verifier
+          fetch-depth: 1
+      - name: Install verifier-only output overlay without changing product HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .q2-verifier/tests/document-output/a4-editor-q2-output.test.ts tests/document-output/a4-editor-q2-output.test.ts
+          printf 'PRODUCT_HEAD_AFTER_OVERLAY=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium and Playwright dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Regenerate A4 pagination bundle and require clean tracked tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run generate:pagination-bundle
+          git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
+      - name: Run prior Q1 and independent Q2 real output acceptance
+        env:
+          Q1_OUTPUT_DIR: artifacts/q1-output
+          Q2_OUTPUT_DIR: artifacts/q2-output
+        run: npx vitest run tests/document-output/a4-editor-q1-output.test.ts tests/document-output/a4-editor-q2-output.test.ts --maxWorkers=1
+      - name: List generated evidence
+        if: always()
+        shell: bash
+        run: |
+          find artifacts -maxdepth 3 -type f -printf '%p %s bytes\n' 2>/dev/null || true
+      - name: Upload actual HTML PDF output evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a4-wave4-q2-g4-output-evidence
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Final candidate SHA assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Q2_FINAL_HEAD=%s\n' "$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+          git diff --exit-code
