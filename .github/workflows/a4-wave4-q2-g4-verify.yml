@@ -14,6 +14,7 @@ permissions:
 env:
   FROZEN_SHA: b522cf50f61f18b75f2cae62b42cd142bef4cf2d
   VERIFY_BRANCH: verify/a4-wave4-q2-g4-20260913
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/q2_verify?schema=public
 
 jobs:
   q2-static-regression:
