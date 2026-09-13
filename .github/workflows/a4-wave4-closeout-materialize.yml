@@ -17,151 +17,24 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Publish CORE closeout and independent VERIFY assignment
+      - name: Append closeout records
+        shell: bash
+        env:
+          CORE_APPEND: "CiMjIENPUkUtQzMgLyBXYXZlLTQgaW50ZWdyYXRpb24gY2xvc2VvdXQg4oCUIDIwMjYtMDktMTMKClN0YXR1czogKipXQVZFLTQgUFJPRFVDVCBDQU5ESURBVEUgRlJPWkVOIEZPUiBJTkRFUEVOREVOVCBWRVJJRlkg4oCUIE5PIE1BSU4gTUVSR0UgLyBOTyBERVBMT1lNRU5UKioKCi0gV2F2ZS00IGNvbW1vbiBiYXNlbGluZTogYDE0MGNiN2FhNDIxYzg4NTZhNmI1YjZlZjk2MTYxOGU4NzgwZmIxYTlgLgotIERpc3BhdGNoLW9ubHkgbWVyZ2VkIGBtYWluYCBhdCBpbnRlZ3JhdGlvbiBzdGFydDogYGJmMmQ4NjQ1NDFmNjA4MDk1ZGE4MWFjZGQzYzgwNGM3MjQ3YTg1ZTdgLgotIEludGVncmF0aW9uIGJyYW5jaDogYGNvZGV4L2E0LWVkaXRvci13YXZlNC1pbnRlZ3JhdGlvbi0yMDI2MDkxM2AuCi0gRnJvemVuIGNsZWFuIHByb2R1Y3QgY2FuZGlkYXRlIGZvciBpbmRlcGVuZGVudCB2ZXJpZmljYXRpb246IGBiNTIyY2Y1MGY2MWYxOGI3NWYyY2FlNjJiNDJjZDE0MmJlZjRjZjJkYC4KLSBGcm96ZW4gY29udHJhY3Q6ICoqdjEgZnJvemVuIGF0IEcwIOKAlCB1bmNoYW5nZWQqKi4KLSBEZXBsb3ltZW50IGFuZCBhcHBsaWNhdGlvbi12ZXJzaW9uIGJ1bXA6ICoqbm90IGF1dGhvcml6ZWQqKi4KCiMjIyBJbnRlZ3JhdGVkIHByb2R1Y2VyIHBhY2tldHMKCi0gU0VNQU5USUNTIC8gUzMg4oCUIFBSICM1MyDigJQgaW50ZWdyYXRpb24gbWVyZ2UgYDBmYjRlMjk5ZmNhYTBhODI0NzJiYTkyNDYyNGZiMzI5MGFlOGUyNjJgLgotIEZJRUxEUyAvIEYzIOKAlCBQUiAjNTQg4oCUIGludGVncmF0aW9uIG1lcmdlIGBlYzIwMWU3OTIxOGM2ODdjNWU4OGYwZmM4M2I1MGUxMmQ4N2Q1MjhiYC4KLSBDT1JFIC8gQzMg4oCUIFBSICM1MSDigJQgaW50ZWdyYXRpb24gbWVyZ2UgYDY5ODc4YmVmMDViYzhiM2Q5OWZmNzIwMmY1NmE2NTE1MTliOTExNDVgLgotIFdPUktGTE9XIC8gVzMg4oCUIFBSICM1MiDigJQgaW50ZWdyYXRpb24gbWVyZ2UgYGVjZmE2NmRkNGVmNWY3ZWVkNjQwN2ZhMDRmYjZlZTA2MmNjNjZiODZgLgotIEZpbmFsIEMzIHByb2R1Y2VyLWNvbnN1bWVyIHdpcmluZyBjb21taXQ6IGBkNDBkMjMxZmFhOTljMmY5YWY5ZTU2ZWI4OWVlMjk2MTcxZWRmZGVjYC4KLSBUZW1wb3JhcnkgaW50ZWdyYXRpb24gc2NhZmZvbGRpbmcgY2xlYW51cDogYDEyM2Y0NGE5MDBiZmJjOTZkOGQ5M2E3ODJjYzYyNGJiMjZjZjM0NDFgLgoKQzMgbm93IGNvbnN1bWVzIFczIG91dHB1dCBwcmVwYXJhdGlvbi9wYWdlIGFzc2VtYmx5IGFuZCB3b3JrZmxvdyBzdGF0dXMsIGFuZCBTMyBwYWdlIG1lYXN1cmVtZW50L2ZvbnQtcmVhZGluZXNzIHByb2R1Y2VycyByYXRoZXIgdGhhbiBtYWludGFpbmluZyBkdXBsaWNhdGUgb3V0cHV0L21lYXN1cmVtZW50IGF1dGhvcml0eS4gTG9jYWwgcHJpbnQgdXNlcyB0aGUgc2hhcmVkIGNhbm9uaWNhbCBvdXRwdXQtcHJlcGFyYXRpb24gcGF0aCBhbmQgY2xlYW51cCBsaWZlY3ljbGUuIFBhZ2UtbnVtYmVyIGF1dGhvcmluZy9kaXNwbGF5IHJlbWFpbnMgY2FwYWJpbGl0eS1nYXRlZC4gQ29tbWFuZCBhcHBsaWNhYmlsaXR5IHJlbWFpbnMgaW5kZXBlbmRlbnQgb2YgcmVwYWdpbmF0aW9uIGJ1c3kgc3RhdGUuIFRoZSBGMy9XMyB0eXBlZC1maWVsZCByZW5kZXp2b3VzIHByZXNlcnZlcyBleGFjdCBmYWxzZS96ZXJvL2RhdGUvbXVsdGlsaW5lIGJlaGF2aW9yIGFuZCBzY29wZWQgaWRlbnRpdGllcyB3aXRob3V0IG1vdmluZyBvd25lcnNoaXAgaW50byBDT1JFLgoKIyMjIEZpbmFsIGludGVncmF0ZWQgdmFsaWRhdGlvbiBldmlkZW5jZQoKQXV0aG9yaXRhdGl2ZSBmaW5hbCBpbnRlZ3JhdGlvbiB3b3JrZmxvdzogYEE0IFdhdmUgNCBmaW5hbCBpbnRlZ3JhdGlvbiB2YWxpZGF0aW9uYCwgcnVuIGAzNDc0NjcyODY5OGAg4oCUICoqU1VDQ0VTUyoqIG9uIHZhbGlkYXRpb24gaGVhZCBgYzYzZTU2OWY3ODc0MTJmMDVlZDRiMWZiZTRiMmY2OWY3ZWMxMjUyZWAuCgpUaGUgZnJvemVuIGNhbmRpZGF0ZSBgYjUyMmNmNTBmNjFmMThiNzVmMmNhZTYyYjQyY2QxNDJiZWY0Y2YyZGAgZGlmZmVycyBmcm9tIHRoYXQgdmFsaWRhdGVkIGhlYWQgb25seSBieSBkZWxldGluZyB0aGUgdmFsaWRhdGlvbi1vbmx5IHdvcmtmbG93IGFuZCBpdHMgdHJpZ2dlcjsgYXBwbGljYXRpb24sIHRlc3QsIGdlbmVyYXRlZCBidW5kbGUgYW5kIGNvb3JkaW5hdGlvbiBzb3VyY2UgdXNlZCBieSB0aGUgdmFsaWRhdGlvbiBhcmUgb3RoZXJ3aXNlIHVuY2hhbmdlZC4KCk5vZGUgYDI0LjIwLjBgLCBucG0gYDExLjE5LjBgLCBVYnVudHUgMjQuMDQ6CgotIHBhZ2luYXRpb24gYnVuZGxlIHJlZ2VuZXJhdGlvbiArIGNoZWNrZWQtaW4gYnVuZGxlIGRpZmY6ICoqUEFTUyoqOwotIGBucG0gcnVuIGxpbnRgOiAqKlBBU1Mg4oCUIDAgZXJyb3JzIC8gMTIgd2FybmluZ3MqKjsKLSBgbnBtIHJ1biB0eXBlY2hlY2tgOiAqKlBBU1MqKjsKLSBgbnB4IHRzYyAtYmA6ICoqUEFTUyoqOwotIENPUkUgQzMgY29tcG9uZW50IG1hdHJpeDogKiozIGZpbGVzIC8gNzggdGVzdHMgcGFzc2VkKio7Ci0gUzMgcGFnaW5hdGlvbiBtYXRyaXg6ICoqMTEgZmlsZXMgLyAyMDkgdGVzdHMgcGFzc2VkKio7Ci0gRjMgYXV0aG9yaW5nL2Rpc2NvdmVyeTogKioyIGZpbGVzIC8gMzQgdGVzdHMgcGFzc2VkKio7Ci0gRjEvRjIvRjMgY29udHJhY3QvcmVzb2x2ZXIgY29tcGF0aWJpbGl0eTogKio0IGZpbGVzIC8gNzUgdGVzdHMgcGFzc2VkKio7Ci0gVzMvb3V0cHV0IGNvbXBhdGliaWxpdHk6ICoqNCBmaWxlcyAvIDIxIHRlc3RzIHBhc3NlZCoqOwotIHByb2R1Y3Rpb24gYG5wbSBydW4gYnVpbGRgOiAqKlBBU1MqKiwgaW5jbHVkaW5nIDE3MSBzdGF0aWMgcGFnZXMgZ2VuZXJhdGVkOwotIHJlYWwgQ2hyb21pdW0gQ09SRS9RMSBwcmVzZXJ2YXRpb246ICoqMiBmaWxlcyAvIDUzIHRlc3RzIHBhc3NlZCoqOwotIHJlYWwgQ2hyb21pdW0gUzMgcGVyZm9ybWFuY2UvYm91bmRhcnk6ICoqMiBmaWxlcyAvIDE1IHRlc3RzIHBhc3NlZCoqLgoKVGhlIEpTRE9NIENPUkUgbGFuZSBlbWl0cyBleHBlY3RlZCBgV2luZG93LmZvY3VzYCAvIGBXaW5kb3cucHJpbnRgIG5vdC1pbXBsZW1lbnRlZCBsb2dzIGFuZCBleGlzdGluZyBSZWFjdCBgYWN0KC4uLilgIHdhcm5pbmdzOyB0aGVzZSBkaWQgbm90IGZhaWwgdGVzdHMuIFRoZSBsaW50IGxhbmUgaGFzIHdhcm5pbmdzIG9ubHkgYW5kIG5vIGVycm9ycy4KCiMjIyBHMyBhc3Nlc3NtZW50IC8gUTIgYm91bmRhcnkKCkNPUkUncyBpbnRlZ3JhdGlvbiBhc3Nlc3NtZW50IGlzICoqRzMgaW1wbGVtZW50YXRpb24tY29tcGxldGUgYW5kIHJlYWR5IGZvciBpbmRlcGVuZGVudCBhY2NlcHRhbmNlKiosIGNvdmVyaW5nIEYyL0YzICsgVzIvVzMgKyBDMDIvQzA1IGludGVncmF0aW9uLCB0eXBlZC9zY29wZWQgZmllbGRzLCBsb3NzbGVzcyBmaWVsZCBtZXRhZGF0YSwgcGxhaW4tdGV4dC90cnVzdGVkLXJpY2ggcG9saWN5LCByZXZpc2lvbi9kcmFmdC9wcmV2aWV3IGJlaGF2aW9yIGFuZCBjb21tb24gb3V0cHV0IHByZXBhcmF0aW9uLiBDT1JFIGRvZXMgKipub3QqKiBzZWxmLWNlcnRpZnkgdGhlIHJlbWFpbmluZyByZWFsLW91dHB1dC91c2VyLWludGVyYWN0aW9uIGFjY2VwdGFuY2UgYXMgYSBHMy9HNCBwYXNzLgoKSW5kZXBlbmRlbnQgVkVSSUZZIG11c3QgdXNlIGV4YWN0IGNhbmRpZGF0ZSBgYjUyMmNmNTBmNjFmMThiNzVmMmNhZTYyYjQyY2QxNDJiZWY0Y2YyZGAsIGZpcnN0IGNsb3NlIGFueSByZW1haW5pbmcgRzMgYWNjZXB0YW5jZSBldmlkZW5jZSBvbiB0aGF0IGltbXV0YWJsZSB0YXJnZXQsIGFuZCBvbmx5IHRoZW4gcmVjb3JkIEc0L1EyLiBSZXF1aXJlZCByZWFsIFBERi9IVE1ML2xvY2FsLXByaW50LCBjbGlwYm9hcmQsIElNRS9hY2Nlc3NpYmlsaXR5LCBzdGFmZi1qb3VybmV5LCBmYWlsdXJlL2NsZWFudXAgYW5kIHJvbGxiYWNrIGV2aWRlbmNlIHJlbWFpbnMgYSBWRVJJRlkgcmVzcG9uc2liaWxpdHkgdW5kZXIgYHZlcmlmaWNhdGlvbi1hbmQtcm9sbG91dC5tZGAuCgpObyBRMi9HNCBleGVjdXRpb24gd2FzIHBlcmZvcm1lZCBieSBDT1JFLiBBbnkgcHJvZHVjdGlvbiBkZWZlY3QgZm91bmQgYnkgVkVSSUZZIHJldHVybnMgdG8gdGhlIG93bmluZyBwYWNrZXQgYW5kIHJlcXVpcmVzIGEgbmV3IGltbXV0YWJsZSBjYW5kaWRhdGUgcGx1cyByZXBldGl0aW9uIG9mIGFmZmVjdGVkIGRlcGVuZGVudCBjaGVja3MuCg=="
+          DISPATCH_APPEND: "CiMjIFdBVkUtNCBJTlRFR1JBVElPTiBDTE9TRU9VVCAvIFZFUklGWS1RMi1HNC0yMDI2MDkxMy0wMSDigJQgMjAyNi0wOS0xMwoKRGlzcGF0Y2ggSUQ6IGBWRVJJRlktUTItRzQtMjAyNjA5MTMtMDFgCgpSb2xlIC8gZ2F0ZTogKippbmRlcGVuZGVudCBWRVJJRlkg4oCUIHJlbWFpbmluZyBHMyBhY2NlcHRhbmNlLCB0aGVuIEc0IC8gUTIgZnVsbCBhY2NlcHRhbmNlKioKClN0YXRlOiAqKkRJU1BBVENIRUQg4oCUIGluZGVwZW5kZW50IHZlcmlmaWNhdGlvbiBub3Qgc3RhcnRlZCoqCgpJbW11dGFibGUgcHJvZHVjdCBjYW5kaWRhdGU6IGBiNTIyY2Y1MGY2MWYxOGI3NWYyY2FlNjJiNDJjZDE0MmJlZjRjZjJkYAoKSW50ZWdyYXRpb24gYnJhbmNoOiBgY29kZXgvYTQtZWRpdG9yLXdhdmU0LWludGVncmF0aW9uLTIwMjYwOTEzYC4gVGhlIGZpbmFsIGludGVncmF0aW9uIFBSIHRhcmdldHMgYG1haW5gIGFuZCBtdXN0IHJlbWFpbiB1bm1lcmdlZCB1bnRpbCB0aGUgdXNlciBzZXBhcmF0ZWx5IGF1dGhvcml6ZXMgbWVyZ2UgYWZ0ZXIgaW5kZXBlbmRlbnQgdmVyaWZpY2F0aW9uLiBWRVJJRlkgbXVzdCBjaGVjayBvdXQgdGhlIGV4YWN0IGNhbmRpZGF0ZSBTSEEgYWJvdmUsIG5vdCBhIGxhdGVyIGNvb3JkaW5hdGlvbi1vbmx5IGJyYW5jaCBoZWFkLgoKQ29udHJhY3Q6ICoqdjEgZnJvemVuIGF0IEcwIOKAlCB1bmNoYW5nZWQqKi4KClByZXJlcXVpc2l0ZXM6IEcyL1ExIHJlbWFpbnMgKipQQVNTRUQqKjsgQzMvUzMvRjMvVzMgYXJlIGludGVncmF0ZWQgb24gdGhlIFdhdmUtNCBicmFuY2guIENPUkUgaW50ZWdyYXRpb24gZXZpZGVuY2UgaXMgZ3JlZW4sIGJ1dCBDT1JFIGRvZXMgbm90IHNlbGYtY2VydGlmeSBpbmRlcGVuZGVudCBRMi9HNC4KCiMjIyBDT1JFIEczIGFzc2Vzc21lbnQKCkNPUkUgYXNzZXNzZXMgdGhlIGludGVncmF0ZWQgaW1wbGVtZW50YXRpb24gYXMgKipHMyBpbXBsZW1lbnRhdGlvbi1jb21wbGV0ZSAvIHJlYWR5IGZvciBpbmRlcGVuZGVudCBhY2NlcHRhbmNlKio6IHR5cGVkL3Njb3BlZCBmaWVsZCBsaWZlY3ljbGUsIGxvc3NsZXNzIGRlZmluaXRpb25zIGFuZCBtZXRhZGF0YSwgcGxhaW4tdGV4dC90cnVzdGVkLXJpY2ggcG9saWN5LCByZXZpc2lvbi9kcmFmdC9wcmV2aWV3IGJlaGF2aW9yIGFuZCBjb21tb24gb3V0cHV0IHByZXBhcmF0aW9uIGFyZSBpbnRlZ3JhdGVkLiBCZWNhdXNlIGB2ZXJpZmljYXRpb24tYW5kLXJvbGxvdXQubWRgIHJlcXVpcmVzIGFjdHVhbCBvdXRwdXQgYW5kIHJlYWwgdXNlci1pbnRlcmFjdGlvbiBldmlkZW5jZSwgRzMgaXMgbm90IHByb21vdGVkIGJ5IENPUkUgdG8gYW4gaW5kZXBlbmRlbnRseSBhY2NlcHRlZCByZWxlYXNlIGdhdGUuIFZFUklGWSBtdXN0IGNsb3NlIHRoZSByZW1haW5pbmcgRzMgZXZpZGVuY2UgZmlyc3Q7IGlmIGl0IHBhc3NlcyBvbiB0aGlzIHNhbWUgaW1tdXRhYmxlIHRhcmdldCwgY29udGludWUgaW1tZWRpYXRlbHkgaW50byBHNC9RMi4KCiMjIyBWRVJJRlkgb3duZXJzaGlwIGFuZCBleGFjdCBsZWFzZQoKVkVSSUZZIG1heSBhZGQgb25seSBpbmRlcGVuZGVudCBhY2NlcHRhbmNlIGV2aWRlbmNlIHVuZGVyIG5hbWVkIHZlcmlmaWNhdGlvbiBwYXRocywgZm9yIGV4YW1wbGU6CgotIGBkb2NzL3BsYW5zLzIwMjYtMDktMTAtYTQtZWRpdG9yLWltcGxlbWVudGF0aW9uL2Nvb3JkaW5hdGlvbi92ZXJpZnkubWRgOwotIGBfX3Rlc3RzX18vYnJvd3Nlci9hNC1xMi1hY2NlcHRhbmNlLmJyb3dzZXIudGVzdC50c3hgOwotIGBfX3Rlc3RzX18vaW50ZWdyYXRpb24vYTQtZWRpdG9yLXEyLXBlcnNpc3RlbmNlLnRlc3QudHNgOwotIGB0ZXN0cy9kb2N1bWVudC1vdXRwdXQvYTQtZWRpdG9yLXEyLW91dHB1dC50ZXN0LnRzYDsKLSBuYXJyb3dseSBzY29wZWQgUTItb25seSBmaXh0dXJlL2V2aWRlbmNlIGZpbGVzIHJlcXVpcmVkIGJ5IHRob3NlIHRlc3RzLgoKVkVSSUZZIG11c3Qgbm90IGVkaXQgcHJvZHVjdGlvbiBjb2RlLCBmcm96ZW4gY29udHJhY3RzLCBvd25lciB0ZXN0cywgbWlncmF0aW9ucywgcGFja2FnZS92ZXJzaW9uIGZpbGVzLCBkZXBsb3ltZW50IGNvbmZpZ3VyYXRpb24gb3IgZXhpc3RpbmcgYnVzaW5lc3MgZGF0YS4gUHJvZHVjdCBkZWZlY3RzIHJldHVybiB0byBDT1JFL1NFTUFOVElDUy9GSUVMRFMvV09SS0ZMT1cgYW5kIHJlcXVpcmUgYSBuZXcgZnJvemVuIGNhbmRpZGF0ZS4KCiMjIyBSZXF1aXJlZCBpbmRlcGVuZGVudCBRMiAvIEc0IGV2aWRlbmNlCgpGb2xsb3cgdGhlIGNvbXBsZXRlIFEyIGFuZCBHNCBzZWN0aW9ucyBvZiBgdmVyaWZpY2F0aW9uLWFuZC1yb2xsb3V0Lm1kYCwgaW5jbHVkaW5nIGF0IG1pbmltdW06CgotIG9uZSBmaWVsZCBncmFtbWFyIGFjcm9zcyBzaW1wbGUvc3BhY2VkL21vZGlmaWVyL2xvb3AvcGFydGlhbCBzeW50YXggYW5kIHJlcGFpcmFibGUgZGlhZ25vc3RpY3M7Ci0gYXRvbWljIGZpZWxkcyB0aHJvdWdoIGJvbGQvaGVhZGluZ3MvbGlzdHMvdGFibGVzL2FkamFjZW5jeS9wYWdlIGJvdW5kYXJpZXMsIGlkZW50aXR5LXByZXNlcnZpbmcgcmVuYW1lL21pZ3JhdGlvbi9kZWxldGUvdW5kbywgY29sbGlkaW5nIG5lc3RlZCBwYXJ0aWFsIHNjb3BlcyBhbmQgaW50ZW50aW9uYWwgbGlua2luZ3M7Ci0gbGl0ZXJhbCBhbXBlcnNhbmQvYW5nbGUtYnJhY2tldCB0ZXh0LCB0cnVzdGVkLXJpY2ggcG9saWN5LCBmYWxzZS96ZXJvL2VtcHR5L21pc3NpbmcvZGF0ZS9tdWx0aWxpbmUvZGVmYXVsdCBiZWhhdmlvciBhbmQgbGVnYWN5L3Vua25vd24gbWV0YWRhdGEgbm8tY2hhbmdlIEFQSSByb3VuZC10cmlwOwotIGltbWVkaWF0ZS9yZXBlYXRlZCBzYXZlIG9yZGVyaW5nLCB0d28tY2xpZW50IGV4cGVjdGVkLXJldmlzaW9uIGNvbmZsaWN0cywgdGVtcGxhdGUvcGFydGlhbC9nZW5lcmF0ZWQtZHJhZnQvYmF0Y2ggcmV2aXNpb25zLCB3cm9uZy10ZW5hbnQvcGVybWlzc2lvbi9sb2NrZWQvZGVsZXRlZCBiZWhhdmlvciwgZHJhZnQgcmVjb3ZlcnkgYW5kIHN0YWxlIHByZXZpZXcgc3VwcHJlc3Npb247Ci0gY29tcGxldGUgZm91ci1zdGFnZSBiYXRjaCBVSSBqb3VybmV5IHdpdGggaWRlbnRpdHkvbGF5b3V0L3Jldmlld2VkIGZpbmdlcnByaW50L21hbnVhbCBjb250ZW50L2RlcGVuZGVuY3kgcHJlc2VydmF0aW9uOwotICoqYWN0dWFsIFBERiBhbmQgSFRNTCoqIGZyb20gZ2VuZXJhdGVkIHNuYXBzaG90cywgUERGIHBhZ2UgcmVuZGVyaW5nL2luc3BlY3Rpb24sIHVuaXF1ZSBzZW50aW5lbHMgZXhhY3RseSBvbmNlL2luIG9yZGVyLCBudW1iZXJpbmcvcXVvdGVzL2NhcHRpb25zL2Zvb3RlciByb3dzL2ltYWdlcy9zdXAvc3ViL21hcmdpbnMvc3BhY2luZy9sZXR0ZXJoZWFkL3BhZ2UgbnVtYmVycy93YXRlcm1hcmsgcGFyaXR5OwotIGNvbGQvd2FybS9zbG93LWZvbnQgY29udmVyZ2VuY2UsIG92ZXJzaXplZC1jb250ZW50IHByZXNlbmNlIGFuZCBndWlkYW5jZTsKLSBmb3JjZWQgcGFnaW5hdGlvbiBmYWlsdXJlLCBzdGFsZS9taXNzaW5nIGJ1bmRsZSwgZm9udCBmYWlsdXJlIGFuZCBleHBvcnQgdGltZW91dCB3aXRoIGZhaWwtY2xvc2VkIG91dHB1dCBhbmQgcmVzb3VyY2UgY2xlYW51cDsKLSBsb2NhbCBwcmludCB0aHJvdWdoIHRoZSBzaGFyZWQgb3V0cHV0IGNvbnRyYWN0IGluY2x1ZGluZyBjYW5jZWxsYXRpb247Ci0gcmVhbCBzeW50aGV0aWMgY2xpcGJvYXJkIGNvbnRlbnQgZnJvbSBXb3JkLCBHb29nbGUgRG9jcywgT3V0bG9vay9lbWFpbCwgYSB3ZWJzaXRlIGFuZCBwbGFpbiB0ZXh0OwotIGtleWJvYXJkL21vdXNlL2N1dC1jb3B5LXBhc3RlL3NlbGVjdC1hbGwvbmF2aWdhdGlvbiwgcmVhbCBJTUUgY29tcG9zaXRpb24sIGVtb2ppL2dyYXBoZW1lIGRlbGV0aW9uLCBzY3JlZW4tcmVhZGVyL2ZvY3VzIG9yZGVyIGFuZCBzdXBwb3J0ZWQgbmFycm93IGRlc2t0b3AvdGFibGV0IHZpZXdzOwotIHJlcHJlc2VudGF0aXZlIHN0YWZmIEpvdXJuZXlzIEEtRCB3aXRoIHJlY29yZGVkIG9ic2VydmF0aW9ucyBhbmQgdGhlIHByb2dyYW1tZSdzIHN0YXRlZCBzdWNjZXNzIHRhcmdldDsKLSByZXBvc2l0b3J5IGNoZWNrcyB1bmRlciBOb2RlIDI0LCBicm93c2VyIHN1aXRlcywgcHJvZHVjdGlvbiBidWlsZCwgZGlzcG9zYWJsZSBQb3N0Z3JlU1FMIG1pZ3JhdGlvbi9jb25jdXJyZW5jeSBzdWl0ZXMgYW5kIGNhcGFiaWxpdHkvYnVuZGxlLXZlcnNpb24gY2hlY2tzIG9uIHRoZSBhY3R1YWwgY2FuZGlkYXRlOwotIHJvbGxiYWNrIHJlaGVhcnNhbC9taW5pbXVtIGNvbXBhdGlibGUgcmVhZGVyIGFuZCBleHBsaWNpdCBibG9ja2VkIHN0YXR1cyBmb3IgYW55IHVuYXZhaWxhYmxlIHJlcXVpcmVkIGVudmlyb25tZW50LiBNaXNzaW5nIHNtb2tlIFVSTHMgb3IgZGV2aWNlL0FUIGVudmlyb25tZW50cyBkbyBub3QgY291bnQgYXMgcGFzc2VzLgoKVkVSSUZZIG11c3QgY29uZmlybSBgZ2l0IHJldi1wYXJzZSBIRUFEYCBlcXVhbHMgYGI1MjJjZjUwZjYxZjE4Yjc1ZjJjYWU2MmI0MmNkMTQyYmVmNGNmMmRgIGJlZm9yZSBkZWNpc2l2ZSBwcm9kdWN0IGNoZWNrcy4gSWYgc291cmNlIGNoYW5nZXMsIHN0b3AgYW5kIHJlcXVlc3QgYSBuZXcgaW1tdXRhYmxlIGRpc3BhdGNoLgoKIyMjIENvbXBsZXRpb24gYm91bmRhcnkKCldyaXRlIHRoZSBpbmRlcGVuZGVudCByZXBvcnQgdG8gYGNvb3JkaW5hdGlvbi92ZXJpZnkubWRgIHdpdGggZW52aXJvbm1lbnQsIGV4YWN0IGNvbW1hbmRzL2NvdW50cywgbmF0aXZlL3JlYWwtdXNlciByZXN1bHRzLCBQREYvSFRNTC92aXN1YWwgZXZpZGVuY2UsIGNvbXBhdGliaWxpdHkvY2FwYWJpbGl0eSB2ZXJzaW9ucywgYmxvY2tlZCBjaGVja3MsIGRlZmVjdHMsIHJvbGxiYWNrIG1pbmltdW0gYW5kIHRlY2huaWNhbCBwcm9tb3Rpb24gZGVjaXNpb24uCgpEbyAqKm5vdCoqIG1lcmdlIHRoZSBmaW5hbCBXYXZlLTQgUFIgdG8gYG1haW5gLCBkZXBsb3kgRDEvRDIvRDMsIGFjdGl2YXRlIHN0cmljdCByb2xsb3V0IGJlaGF2aW9yLCBmaW5hbGl6ZS9zZW5kL3NpZ24vZmlsZSByZWFsIGRvY3VtZW50cywgb3IgYnVtcCB0aGUgYXBwbGljYXRpb24gdmVyc2lvbiBmcm9tIHRoaXMgYXNzaWdubWVudC4gUTIvRzQgdGVjaG5pY2FsIGFjY2VwdGFuY2UgaXMgbm90IGRlcGxveW1lbnQgcGVybWlzc2lvbi4K"
+          VERIFY_APPEND: "CiMjIFZFUklGWS1RMi1HNC0yMDI2MDkxMy0wMSDigJQgYXNzaWdubWVudCBwdWJsaXNoZWQ7IE5PVCBFWEVDVVRFRAoKLSBJbW11dGFibGUgcHJvZHVjdCBjYW5kaWRhdGU6IGBiNTIyY2Y1MGY2MWYxOGI3NWYyY2FlNjJiNDJjZDE0MmJlZjRjZjJkYC4KLSBJbnRlZ3JhdGlvbiBicmFuY2g6IGBjb2RleC9hNC1lZGl0b3Itd2F2ZTQtaW50ZWdyYXRpb24tMjAyNjA5MTNgLgotIEZyb3plbiBjb250cmFjdDogKip2MSBmcm96ZW4gYXQgRzAg4oCUIHVuY2hhbmdlZCoqLgotIEcyL1ExOiAqKlBBU1NFRCoqIGFuZCByZW1haW5zIGZyb3plbi4KLSBDT1JFIGFzc2Vzc21lbnQ6IFdhdmUtNCBpbXBsZW1lbnRhdGlvbiBpcyBpbnRlZ3JhdGVkIGFuZCByZWFkeSBmb3IgaW5kZXBlbmRlbnQgcmVtYWluaW5nLUczIHRoZW4gRzQvUTIgYWNjZXB0YW5jZS4KLSBRMi9HNCByZXN1bHQgaW4gdGhpcyByZWNvcmQ6ICoqTk9UIFNUQVJURUQgLyBOT1QgUEFTU0VEIC8gTk9UIEZBSUxFRCoqLgoKVGhlIHZlcmlmaWVyIG11c3QgdXNlIHRoZSBleGFjdCBpbW11dGFibGUgY2FuZGlkYXRlIGFib3ZlIGFuZCB0aGUgZnVsbCBRMi9HNCBhY2NlcHRhbmNlIGluIGB2ZXJpZmljYXRpb24tYW5kLXJvbGxvdXQubWRgLiBSZXF1aXJlZCBldmlkZW5jZSBpbmNsdWRlcyBhY3R1YWwgUERGL0hUTUwvbG9jYWwtcHJpbnQgb3V0cHV0LCBwZXJzaXN0ZW5jZS9jb25jdXJyZW5jeS9kcmFmdHMvcHJldmlldy9iYXRjaCBwYXRocywgcmVhbCBjbGlwYm9hcmQgYW5kIElNRS9hY2Nlc3NpYmlsaXR5IGludGVyYWN0aW9uLCByZXByZXNlbnRhdGl2ZSBzdGFmZiBqb3VybmV5cywgZmFpbHVyZS9jbGVhbnVwIGJlaGF2aW9yLCByZXBvc2l0b3J5IGNoZWNrcywgcm9sbGJhY2sgcmVoZWFyc2FsIGFuZCBleHBsaWNpdCBibG9ja2VkLWVudmlyb25tZW50IHJlcG9ydGluZy4KClZFUklGWSBtYXkgYWRkIGFjY2VwdGFuY2Utb25seSB0ZXN0cy9ldmlkZW5jZSB1bmRlciBpdHMgZGlzcGF0Y2ggbGVhc2UsIGJ1dCBtYXkgbm90IGZpeCBwcm9kdWN0IHNvdXJjZS4gQW55IHByb2R1Y3QgZGVmZWN0IHJldHVybnMgdG8gdGhlIG93bmluZyBpbXBsZW1lbnRhdGlvbiBwYWNrZXQgYW5kIGludmFsaWRhdGVzIHRoZSBjYW5kaWRhdGUgZm9yIGFmZmVjdGVkIGRlcGVuZGVudCBjaGVja3MuIE5vIG1haW4gbWVyZ2UsIGRlcGxveW1lbnQsIHZlcnNpb24gYnVtcCBvciBwcm9kdWN0aW9uIGJ1c2luZXNzLWRhdGEgbXV0YXRpb24gaXMgYXV0aG9yaXplZCBieSB0aGlzIGFzc2lnbm1lbnQuCg=="
+        run: |
+          set -euo pipefail
+          printf '%s' "$CORE_APPEND" | base64 -d >> docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md
+          printf '%s' "$DISPATCH_APPEND" | base64 -d >> docs/plans/2026-09-10-a4-editor-implementation/coordination/dispatch.md
+          printf '%s' "$VERIFY_APPEND" | base64 -d >> docs/plans/2026-09-10-a4-editor-implementation/coordination/verify.md
+      - name: Commit closeout records
         shell: bash
         run: |
           set -euo pipefail
-          CORE='docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md'
-          DISPATCH='docs/plans/2026-09-10-a4-editor-implementation/coordination/dispatch.md'
-          VERIFY='docs/plans/2026-09-10-a4-editor-implementation/coordination/verify.md'
-
-          cat >> "$CORE" <<'EOF'
-
-## CORE-C3 / Wave-4 integration closeout — 2026-09-13
-
-Status: **WAVE-4 PRODUCT CANDIDATE FROZEN FOR INDEPENDENT VERIFY — NO MAIN MERGE / NO DEPLOYMENT**
-
-- Wave-4 common baseline: `140cb7aa421c8856a6b5b6ef961618e8780fb1a9`.
-- Dispatch-only merged `main` at integration start: `bf2d864541f608095da81acdd3c804c7247a85e7`.
-- Integration branch: `codex/a4-editor-wave4-integration-20260913`.
-- Frozen clean product candidate for independent verification: `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`.
-- Frozen contract: **v1 frozen at G0 — unchanged**.
-- Deployment and application-version bump: **not authorized**.
-
-### Integrated producer packets
-
-- SEMANTICS / S3 — PR #53 — integration merge `0fb4e299fcaa0a82472ba924624fb3290ae8e262`.
-- FIELDS / F3 — PR #54 — integration merge `ec201e79218c687c5e88f0fc83b50e12d87d528b`.
-- CORE / C3 — PR #51 — integration merge `69878bef05bc8b3d99ff7202f56a651519b91145`.
-- WORKFLOW / W3 — PR #52 — integration merge `ecfa66dd4ef5f7eed6407fa04fb6ee062cc66b86`.
-- Final C3 producer-consumer wiring commit: `d40d231faa99c2f9af9e56eb89ee296171edfdec`.
-- Temporary integration scaffolding cleanup: `123f44a900bfbc96d8d93a782cc624bb26cf3441`.
-
-C3 now consumes W3 output preparation/page assembly and workflow status, and S3 page measurement/font-readiness producers rather than maintaining duplicate output/measurement authority. Local print uses the shared canonical output-preparation path and cleanup lifecycle. Page-number authoring/display remains capability-gated. Command applicability remains independent of repagination busy state. The F3/W3 typed-field rendezvous preserves exact false/zero/date/multiline behavior and scoped identities without moving ownership into CORE.
-
-### Final integrated validation evidence
-
-Authoritative final integration workflow: `A4 Wave 4 final integration validation`, run `34746728698` — **SUCCESS** on validation head `c63e569f787412f05ed4b1fbe4b2f69f7ec1252e`.
-
-The frozen candidate `b522cf50f61f18b75f2cae62b42cd142bef4cf2d` differs from that validated head only by deleting the validation-only workflow and its trigger; application, test, generated bundle and coordination source used by the validation are otherwise unchanged.
-
-Node `24.20.0`, npm `11.19.0`, Ubuntu 24.04:
-
-- pagination bundle regeneration + checked-in bundle diff: **PASS**;
-- `npm run lint`: **PASS — 0 errors / 12 warnings**;
-- `npm run typecheck`: **PASS**;
-- `npx tsc -b`: **PASS**;
-- CORE C3 component matrix: **3 files / 78 tests passed**;
-- S3 pagination matrix: **11 files / 209 tests passed**;
-- F3 authoring/discovery: **2 files / 34 tests passed**;
-- F1/F2/F3 contract/resolver compatibility: **4 files / 75 tests passed**;
-- W3/output compatibility: **4 files / 21 tests passed**;
-- production `npm run build`: **PASS**, including 171 static pages generated;
-- real Chromium CORE/Q1 preservation: **2 files / 53 tests passed**;
-- real Chromium S3 performance/boundary: **2 files / 15 tests passed**.
-
-The JSDOM CORE lane emits expected `Window.focus` / `Window.print` not-implemented logs and existing React `act(...)` warnings; these did not fail tests. The lint lane has warnings only and no errors.
-
-### G3 assessment / Q2 boundary
-
-CORE's integration assessment is **G3 implementation-complete and ready for independent acceptance**, covering F2/F3 + W2/W3 + C02/C05 integration, typed/scoped fields, lossless field metadata, plain-text/trusted-rich policy, revision/draft/preview behavior and common output preparation. CORE does **not** self-certify the remaining real-output/user-interaction acceptance as a G3/G4 pass.
-
-Independent VERIFY must use exact candidate `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`, first close any remaining G3 acceptance evidence on that immutable target, and only then record G4/Q2. Required real PDF/HTML/local-print, clipboard, IME/accessibility, staff-journey, failure/cleanup and rollback evidence remains a VERIFY responsibility under `verification-and-rollout.md`.
-
-No Q2/G4 execution was performed by CORE. Any production defect found by VERIFY returns to the owning packet and requires a new immutable candidate plus repetition of affected dependent checks.
-EOF
-
-          cat >> "$DISPATCH" <<'EOF'
-
-## WAVE-4 INTEGRATION CLOSEOUT / VERIFY-Q2-G4-20260913-01 — 2026-09-13
-
-Dispatch ID: `VERIFY-Q2-G4-20260913-01`
-
-Role / gate: **independent VERIFY — remaining G3 acceptance, then G4 / Q2 full acceptance**
-
-State: **DISPATCHED — independent verification not started**
-
-Immutable product candidate: `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`
-
-Integration branch: `codex/a4-editor-wave4-integration-20260913`. The final integration PR targets `main` and must remain unmerged until the user separately authorizes merge after independent verification. VERIFY must check out the exact candidate SHA above, not a later coordination-only branch head.
-
-Contract: **v1 frozen at G0 — unchanged**.
-
-Prerequisites: G2/Q1 remains **PASSED**; C3/S3/F3/W3 are integrated on the Wave-4 branch. CORE integration evidence is green, but CORE does not self-certify independent Q2/G4.
-
-### CORE G3 assessment
-
-CORE assesses the integrated implementation as **G3 implementation-complete / ready for independent acceptance**: typed/scoped field lifecycle, lossless definitions and metadata, plain-text/trusted-rich policy, revision/draft/preview behavior and common output preparation are integrated. Because `verification-and-rollout.md` requires actual output and real user-interaction evidence, G3 is not promoted by CORE to an independently accepted release gate. VERIFY must close the remaining G3 evidence first; if it passes on this same immutable target, continue immediately into G4/Q2.
-
-### VERIFY ownership and exact lease
-
-VERIFY may add only independent acceptance evidence under named verification paths, for example:
-
-- `docs/plans/2026-09-10-a4-editor-implementation/coordination/verify.md`;
-- `__tests__/browser/a4-q2-acceptance.browser.test.tsx`;
-- `__tests__/integration/a4-editor-q2-persistence.test.ts`;
-- `tests/document-output/a4-editor-q2-output.test.ts`;
-- narrowly scoped Q2-only fixture/evidence files required by those tests.
-
-VERIFY must not edit production code, frozen contracts, owner tests, migrations, package/version files, deployment configuration or existing business data. Product defects return to CORE/SEMANTICS/FIELDS/WORKFLOW and require a new frozen candidate.
-
-### Required independent Q2 / G4 evidence
-
-Follow the complete Q2 and G4 sections of `verification-and-rollout.md`, including at minimum:
-
-- one field grammar across simple/spaced/modifier/loop/partial syntax and repairable diagnostics;
-- atomic fields through bold/headings/lists/tables/adjacency/page boundaries, identity-preserving rename/migration/delete/undo, colliding nested partial scopes and intentional linkings;
-- literal ampersand/angle-bracket text, trusted-rich policy, false/zero/empty/missing/date/multiline/default behavior and legacy/unknown metadata no-change API round-trip;
-- immediate/repeated save ordering, two-client expected-revision conflicts, template/partial/generated-draft/batch revisions, wrong-tenant/permission/locked/deleted behavior, draft recovery and stale preview suppression;
-- complete four-stage batch UI journey with identity/layout/reviewed fingerprint/manual content/dependency preservation;
-- **actual PDF and HTML** from generated snapshots, PDF page rendering/inspection, unique sentinels exactly once/in order, numbering/quotes/captions/footer rows/images/sup/sub/margins/spacing/letterhead/page numbers/watermark parity;
-- cold/warm/slow-font convergence, oversized-content presence and guidance;
-- forced pagination failure, stale/missing bundle, font failure and export timeout with fail-closed output and resource cleanup;
-- local print through the shared output contract including cancellation;
-- real synthetic clipboard content from Word, Google Docs, Outlook/email, a website and plain text;
-- keyboard/mouse/cut-copy-paste/select-all/navigation, real IME composition, emoji/grapheme deletion, screen-reader/focus order and supported narrow desktop/tablet views;
-- representative staff Journeys A-D with recorded observations and the programme's stated success target;
-- repository checks under Node 24, browser suites, production build, disposable PostgreSQL migration/concurrency suites and capability/bundle-version checks on the actual candidate;
-- rollback rehearsal/minimum compatible reader and explicit blocked status for any unavailable required environment. Missing smoke URLs or device/AT environments do not count as passes.
-
-VERIFY must confirm `git rev-parse HEAD` equals `b522cf50f61f18b75f2cae62b42cd142bef4cf2d` before decisive product checks. If source changes, stop and request a new immutable dispatch.
-
-### Completion boundary
-
-Write the independent report to `coordination/verify.md` with environment, exact commands/counts, native/real-user results, PDF/HTML/visual evidence, compatibility/capability versions, blocked checks, defects, rollback minimum and technical promotion decision.
-
-Do **not** merge the final Wave-4 PR to `main`, deploy D1/D2/D3, activate strict rollout behavior, finalize/send/sign/file real documents, or bump the application version from this assignment. Q2/G4 technical acceptance is not deployment permission.
-EOF
-
-          cat >> "$VERIFY" <<'EOF'
-
-## VERIFY-Q2-G4-20260913-01 — assignment published; NOT EXECUTED
-
-- Immutable product candidate: `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`.
-- Integration branch: `codex/a4-editor-wave4-integration-20260913`.
-- Frozen contract: **v1 frozen at G0 — unchanged**.
-- G2/Q1: **PASSED** and remains frozen.
-- CORE assessment: Wave-4 implementation is integrated and ready for independent remaining-G3 then G4/Q2 acceptance.
-- Q2/G4 result in this record: **NOT STARTED / NOT PASSED / NOT FAILED**.
-
-The verifier must use the exact immutable candidate above and the full Q2/G4 acceptance in `verification-and-rollout.md`. Required evidence includes actual PDF/HTML/local-print output, persistence/concurrency/drafts/preview/batch paths, real clipboard and IME/accessibility interaction, representative staff journeys, failure/cleanup behavior, repository checks, rollback rehearsal and explicit blocked-environment reporting.
-
-VERIFY may add acceptance-only tests/evidence under its dispatch lease, but may not fix product source. Any product defect returns to the owning implementation packet and invalidates the candidate for affected dependent checks. No main merge, deployment, version bump or production business-data mutation is authorized by this assignment.
-EOF
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$CORE" "$DISPATCH" "$VERIFY"
+          git add docs/plans/2026-09-10-a4-editor-implementation/coordination/core.md docs/plans/2026-09-10-a4-editor-implementation/coordination/dispatch.md docs/plans/2026-09-10-a4-editor-implementation/coordination/verify.md
           git diff --cached --check
           git commit -m 'docs(a4): publish Wave 4 closeout and Q2 G4 handoff'
           git push origin HEAD:codex/a4-editor-wave4-integration-20260913
