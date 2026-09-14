@@ -45,7 +45,7 @@ jobs:
       - name: Install Playwright Chromium and expose executable
         run: |
           npx playwright install chromium --with-deps
-          echo "CHROME_PATH=$(node -e \"console.log(require('playwright').chromium.executablePath())\")" >> "$GITHUB_ENV"
+          node -e "require('fs').appendFileSync(process.env.GITHUB_ENV, 'CHROME_PATH=' + require('playwright').chromium.executablePath() + '\n')"
       - name: Regenerate A4 pagination bundle and require clean tree
         run: |
           npm run generate:pagination-bundle
