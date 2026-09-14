@@ -41,6 +41,14 @@ function outputShell(canonicalHtml: string): string {
   return `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;font-family:Arial,sans-serif}.print-page{box-sizing:border-box}</style></head><body><main id="a4-paginated-sections">${canonicalHtml}</main></body></html>`;
 }
 
+function renderedOutputBody(renderedHtml: string): string {
+  const match = renderedHtml.match(/<main\s+id=["']a4-paginated-sections["'][^>]*>([\s\S]*?)<\/main>/i);
+  if (!match) {
+    throw new Error('Rendered output did not contain #a4-paginated-sections');
+  }
+  return match[1];
+}
+
 describe('Wave 4 independent G3 actual HTML/PDF output', () => {
   it('renders canonical field values, semantic breaks and sanitized multi-page output through real Chromium', async () => {
     await mkdir(artifactDir, { recursive: true });
@@ -57,18 +65,21 @@ describe('Wave 4 independent G3 actual HTML/PDF output', () => {
       },
       timeoutMs: 30_000,
     });
+    const outputBody = renderedOutputBody(rendered.html);
 
     expect(rendered.assembly.pageCount).toBeGreaterThanOrEqual(2);
     expect(rendered.assembly.pages.some((page) => page.hardBreakBefore)).toBe(true);
-    expect(rendered.html).toContain('BOOLEAN_FALSE:false');
-    expect(rendered.html).toContain('NUMERIC_ZERO:0');
-    expect(rendered.html).toContain('DATE_VALUE:2026-09-14');
-    expect(rendered.html).toContain('MULTILINE_VALUE:first line');
-    expect(rendered.html).toContain('second line');
-    expect(rendered.html).toContain('SANITIZER_VALUE:retained-text');
-    expect(rendered.html).not.toContain('data-flow-id=');
-    expect(rendered.html).toContain('G3-HEADER');
-    expect(rendered.html).toContain('G3-FOOTER');
+    expect(outputBody).toContain('BOOLEAN_FALSE:false');
+    expect(outputBody).toContain('NUMERIC_ZERO:0');
+    expect(outputBody).toContain('DATE_VALUE:2026-09-14');
+    expect(outputBody).toContain('MULTILINE_VALUE:first line');
+    expect(outputBody).toContain('second line');
+    expect(outputBody).toContain('SANITIZER_VALUE:retained-text');
+    expect(outputBody).not.toContain('data-flow-id=');
+    expect(outputBody).not.toContain('data-flow-continuation=');
+    expect(outputBody).not.toContain('data-flow-oversized=');
+    expect(outputBody).toContain('G3-HEADER');
+    expect(outputBody).toContain('G3-FOOTER');
 
     const pdf = await generatePDF(htmlShell, {
       format: 'A4',
@@ -99,7 +110,7 @@ describe('Wave 4 independent G3 actual HTML/PDF output', () => {
               dateValue: true,
               multilineValue: true,
               semanticPageBreak: true,
-              projectionDecorationRemoved: true,
+              projectionDecorationRemovedFromOutputBody: true,
               serverPageChrome: true,
             },
           },
