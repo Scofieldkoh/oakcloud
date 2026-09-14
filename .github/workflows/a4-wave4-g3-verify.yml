@@ -85,6 +85,23 @@ jobs:
           git show origin/verify/a4-wave4-q2-g4-20260914:verification/a4-wave4-g3-actual-output.verify.test.ts > __tests__/services/a4-wave4-g3-actual-output.verify.test.ts
       - name: Actual HTML and PDF output through Chromium
         run: npx vitest run __tests__/services/a4-wave4-g3-actual-output.verify.test.ts --reporter=dot
+      - name: Inspect actual generated PDF
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          pdfinfo artifacts/a4-wave4-g3/wave4-g3-actual-output.pdf | tee artifacts/a4-wave4-g3/wave4-g3-pdfinfo.txt
+          pages="$(pdfinfo artifacts/a4-wave4-g3/wave4-g3-actual-output.pdf | awk '/^Pages:/ {print $2}')"
+          test -n "$pages"
+          test "$pages" -ge 2
+          pdftotext -layout artifacts/a4-wave4-g3/wave4-g3-actual-output.pdf artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'Wave 4 G3 actual output' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'BOOLEAN_FALSE:false' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'NUMERIC_ZERO:0' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'DATE_VALUE:2026-09-14' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'G3-BEFORE-1:' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'G3-AFTER-38:' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'G3-HEADER' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
+          grep -F 'G3-FOOTER' artifacts/a4-wave4-g3/wave4-g3-actual-output.txt
       - name: Upload G3 output evidence
         if: always()
         uses: actions/upload-artifact@v4
