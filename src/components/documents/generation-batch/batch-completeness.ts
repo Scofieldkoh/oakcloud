@@ -19,10 +19,14 @@ import {
   canonicalPlaceholderType,
   masterFieldId,
 } from '@/lib/document-generation-master-fields';
+import {
+  createWorkflowFieldInputDescriptors,
+  fieldInputDescriptorDefaultValue,
+  isWorkflowFieldValuePresent,
+} from '@/lib/document-editor/template-field-workflow';
 import type { BatchStage, EditableBatchItem } from './batch-workspace-state';
 
 export interface MissingRequirement {
-  /** Stable id, usable as a scroll/focus target hint. */
   id: string;
   label: string;
 }
@@ -43,10 +47,6 @@ export const EMPTY_COMPLETENESS: ItemCompleteness = {
   isComplete: true,
 };
 
-/**
- * Splits a template's placeholders into the ones promoted to the shared
- * (master) catalogue and the ones that stay document-specific.
- */
 export function partitionTemplateFields(
   templateFields: CustomPlaceholderDefinition[],
   masterFields: MasterFieldCatalogue,
@@ -77,7 +77,6 @@ function effectiveMasterValue(
 
 export interface SelectItemCompletenessParams {
   item: EditableBatchItem;
-  /** Placeholders declared by this item's template. */
   templateFields: CustomPlaceholderDefinition[];
   masterFields: MasterFieldCatalogue;
   masterFieldValues: Record<string, string>;
@@ -98,14 +97,23 @@ export function selectItemCompleteness({
   });
 
   const { itemOnly } = partitionTemplateFields(templateFields, masterFields);
-  for (const field of itemOnly) {
-    if (!field.required) continue;
+  const descriptors = createWorkflowFieldInputDescriptors(itemOnly, {
+    kind: 'template',
+    id: item.templateId,
+  });
+  itemOnly.forEach((field, index) => {
+    const descriptor = descriptors[index];
+    if (!(descriptor?.required ?? field.required)) return;
+    const explicit = Object.prototype.hasOwnProperty.call(item.configuration.itemValues, field.key);
+    const value = explicit
+      ? item.configuration.itemValues[field.key]
+      : descriptor ? fieldInputDescriptorDefaultValue(descriptor) : field.defaultValue;
     requirements.push({
       id: `field:${field.key}`,
       label: field.label,
-      filled: (item.configuration.itemValues[field.key] ?? '').trim().length > 0,
+      filled: isWorkflowFieldValuePresent(value),
     });
-  }
+  });
 
   for (const field of masterFields.fields) {
     if (!field.requiredTemplateIds.includes(item.templateId)) continue;
@@ -178,14 +186,8 @@ export function completenessFor(
   return map[itemKey] ?? EMPTY_COMPLETENESS;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Stage gating                                                              */
-/* ------------------------------------------------------------------------- */
-
 export interface StageGate {
-  /** True when the stage has everything it needs to be considered done. */
   satisfied: boolean;
-  /** Why the next stage is unavailable. Null when satisfied. */
   reason: string | null;
 }
 
@@ -230,11 +232,6 @@ export function selectStageGates(params: {
   };
 }
 
-/**
- * Index of the furthest stage the user may jump to. A stage only becomes
- * reachable once every earlier gate is satisfied, which stops the stepper
- * from dropping the user onto a screen that cannot function yet.
- */
 export function selectHighestReachableStageIndex(
   gates: StageGates,
   stages: BatchStage[],
@@ -253,11 +250,6 @@ export interface GenerationBlocker {
   reason: string;
 }
 
-/**
- * Names the documents preventing generation. Kept consistent with
- * `selectCanRequestPreflight` by only inspecting items that are not already
- * `READY`/`GENERATED`, so an empty blocker list always means "can generate".
- */
 export function selectGenerationBlockers(
   items: EditableBatchItem[],
   completeness: CompletenessMap,
@@ -294,12 +286,10 @@ export function selectGenerationBlockers(
   return blockers;
 }
 
-/** True when the preview no longer reflects the saved configuration. */
 export function isPreviewStale(item: EditableBatchItem): boolean {
   return Boolean(item.previewContent && !item.previewFingerprint);
 }
 
-/** True when the user has hand-edited the rendered preview. */
 export function hasManualEdits(item: EditableBatchItem): boolean {
   return Boolean(item.editedContent && item.editedContent !== item.previewContent);
 }
