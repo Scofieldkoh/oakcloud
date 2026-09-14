@@ -621,7 +621,12 @@ describe('A4PageEditor real layout pagination', () => {
     selection.addRange(range);
 
     await act(async () => {
-      await userEvent.click(buttonByLabel('Alphabetical list'));
+      await userEvent.click(buttonByLabel('List options'));
+      const alphabeticalList = document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Alphabetical list"]',
+      );
+      if (!alphabeticalList) throw new Error('Expected Alphabetical list control');
+      alphabeticalList.click();
     });
     await waitForEditorIdle();
 
@@ -735,14 +740,19 @@ describe('A4PageEditor real layout pagination', () => {
     selection.removeAllRanges();
     selection.addRange(range);
 
+    const listOptions = host.querySelector<HTMLButtonElement>(
+      'button[aria-label="List options"]',
+    );
+    if (!listOptions) throw new Error('Expected List options control');
+    await act(async () => userEvent.click(listOptions));
     await act(async () => {
       await vi.waitFor(() => {
         expect(
-          host.querySelector('[aria-label="List start number"]'),
+          document.querySelector('[aria-label="List start number"]'),
         ).not.toBeNull();
       });
     });
-    const input = host.querySelector<HTMLInputElement>(
+    const input = document.querySelector<HTMLInputElement>(
       '[aria-label="List start number"]',
     )!;
     await act(async () => {
@@ -802,7 +812,12 @@ describe('A4PageEditor real layout pagination', () => {
         (button) => button.getAttribute('aria-label') === label,
       )!;
     await act(async () => {
-      await userEvent.click(buttonByLabel('Bold list numbers'));
+      await userEvent.click(buttonByLabel('List options'));
+      const boldListNumbers = document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Bold list numbers"]',
+      );
+      if (!boldListNumbers) throw new Error('Expected Bold list numbers control');
+      boldListNumbers.click();
     });
     await waitForEditorIdle();
 
@@ -815,7 +830,17 @@ describe('A4PageEditor real layout pagination', () => {
     expect(getComputedStyle(listItem, '::before').fontWeight).toBe('700');
 
     await act(async () => {
-      await userEvent.click(buttonByLabel('Bold list numbers'));
+      let boldListNumbers = document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Bold list numbers"]',
+      );
+      if (!boldListNumbers) {
+        await userEvent.click(buttonByLabel('List options'));
+        boldListNumbers = document.querySelector<HTMLButtonElement>(
+          'button[aria-label="Bold list numbers"]',
+        );
+      }
+      if (!boldListNumbers) throw new Error('Expected Bold list numbers control');
+      boldListNumbers.click();
     });
     await waitForEditorIdle();
     body = new DOMParser()
@@ -1964,12 +1989,25 @@ describe('A4PageEditor real layout pagination', () => {
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       });
       await waitForEditorIdle();
-      const fontFamily = document.querySelector<HTMLSelectElement>(
+      let fontFamily = document.querySelector<HTMLSelectElement>(
         'select[aria-label="Font family"]',
-      )!;
+      );
+      if (!fontFamily) {
+        const textOptions = Array.from(host.querySelectorAll('button')).find(
+          (button) => button.getAttribute('aria-label') === 'Text options',
+        );
+        if (!textOptions) throw new Error('Expected Text options control');
+        await act(async () => {
+          await userEvent.click(textOptions);
+        });
+        fontFamily = document.querySelector<HTMLSelectElement>(
+          'select[aria-label="Font family"]',
+        );
+      }
       const fontSize = document.querySelector<HTMLSelectElement>(
         'select[aria-label="Font size"]',
-      )!;
+      );
+      if (!fontFamily || !fontSize) throw new Error('Expected text option controls');
       await act(async () => {
         await userEvent.selectOptions(fontFamily, 'Georgia, serif');
         await flushLayoutFrames();
@@ -2455,6 +2493,19 @@ describe('A4PageEditor real layout pagination', () => {
       selection.removeAllRanges();
       selection.addRange(range);
     };
+    const selectSecondListItem = () => {
+      const paragraphs = Array.from(
+        host.querySelectorAll('[data-testid="a4-page-content-1"] li > p'),
+      );
+      expect(paragraphs).toHaveLength(2);
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(paragraphs[1].firstChild!, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    };
 
     await act(async () => {
       selectBoth();
@@ -2486,7 +2537,7 @@ describe('A4PageEditor real layout pagination', () => {
     ).toBe(true);
 
     await act(async () => {
-      selectBoth();
+      selectSecondListItem();
     });
     await act(async () => {
       await userEvent.click(buttonByLabel('Increase indent'));
@@ -2495,30 +2546,11 @@ describe('A4PageEditor real layout pagination', () => {
     body = new DOMParser()
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
-        (listItem) => listItem.style.marginLeft === '2em',
-      ),
-    ).toBe(true);
+    expect(body.querySelector(':scope > ul > li:first-child > ul > li > p')?.textContent).toBe('Two');
+    expect(body.querySelectorAll(':scope > ul > li')).toHaveLength(1);
 
     await act(async () => {
-      selectBoth();
-    });
-    await act(async () => {
-      await userEvent.click(buttonByLabel('Increase indent'));
-    });
-    await waitForEditorIdle();
-    body = new DOMParser()
-      .parseFromString(editorRef.current!.getContent(), 'text/html')
-      .body;
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
-        (listItem) => listItem.style.marginLeft === '4em',
-      ),
-    ).toBe(true);
-
-    await act(async () => {
-      selectBoth();
+      selectSecondListItem();
     });
     await act(async () => {
       await userEvent.click(buttonByLabel('Decrease indent'));
@@ -2527,11 +2559,8 @@ describe('A4PageEditor real layout pagination', () => {
     body = new DOMParser()
       .parseFromString(editorRef.current!.getContent(), 'text/html')
       .body;
-    expect(
-      Array.from(body.querySelectorAll<HTMLElement>('ul > li')).every(
-        (listItem) => listItem.style.marginLeft === '2em',
-      ),
-    ).toBe(true);
+    expect(body.querySelectorAll(':scope > ul > li')).toHaveLength(2);
+    expect(body.querySelectorAll(':scope > ul > li > ul')).toHaveLength(0);
 
     await act(async () => {
       selectBoth();
@@ -2756,9 +2785,22 @@ describe('A4PageEditor real layout pagination', () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
     });
 
-    const colorInput = document.querySelector<HTMLInputElement>(
+    let colorInput = document.querySelector<HTMLInputElement>(
       'input[aria-label="Text color"]',
-    )!;
+    );
+    if (!colorInput) {
+      const textOptions = Array.from(host.querySelectorAll('button')).find(
+        (button) => button.getAttribute('aria-label') === 'Text options',
+      );
+      if (!textOptions) throw new Error('Expected Text options control');
+      await act(async () => {
+        await userEvent.click(textOptions);
+      });
+      colorInput = document.querySelector<HTMLInputElement>(
+        'input[aria-label="Text color"]',
+      );
+    }
+    if (!colorInput) throw new Error('Expected Text color control');
     expect(colorInput.value).toBe('#ff0000');
   });
 

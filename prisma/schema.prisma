@@ -914,6 +914,7 @@ model GeneratedDocument {
   tenantId                  String                       @map("tenant_id")
   templateId                String?                      @map("template_id")
   templateVersion           Int?                         @map("template_version")
+  revision                  Int                          @default(0)
   sharePointRelativeFolderPathSnapshot String?            @map("sharepoint_relative_folder_path_snapshot")
   companyId                 String?                      @map("company_id")
   title                     String                       @db.VarChar(300)
