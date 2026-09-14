@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: a4-wave4-g3-independent-verification
+  cancel-in-progress: true
+
 jobs:
   g3-static-browser-output:
     name: G3 static, browser, and actual output
@@ -20,7 +24,6 @@ jobs:
       DATABASE_URL: postgresql://oakcloud:oakcloud_password@127.0.0.1:5432/oakcloud
       JWT_SECRET: ci-only-build-secret-that-is-not-used-at-runtime-and-is-long-enough
       ENCRYPTION_KEY: ci-only-build-encryption-key
-      CHROME_PATH: /usr/bin/chromium
       G3_ARTIFACT_DIR: artifacts/a4-wave4-g3
     steps:
       - name: Check out frozen product candidate
@@ -39,15 +42,14 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Install Chromium
+      - name: Install Playwright Chromium and expose executable
         run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium
-          chromium --version
+          npx playwright install chromium --with-deps
+          echo "CHROME_PATH=$(node -e \"console.log(require('playwright').chromium.executablePath())\")" >> "$GITHUB_ENV"
       - name: Regenerate A4 pagination bundle and require clean tree
         run: |
-          npm run generate:a4-pagination-bundle
-          git diff --exit-code
+          npm run generate:pagination-bundle
+          git diff --exit-code -- src/components/documents/a4-pagination/pagination-bundle.generated.ts
       - name: Typecheck
         run: npm run typecheck
       - name: G3 field grammar and authoring lifecycle
@@ -70,12 +72,11 @@ jobs:
           --reporter=dot
       - name: Prior-gate Chromium regression
         run: >-
-          npx vitest run
+          npx vitest run --config vitest.browser.config.ts
           __tests__/browser/a4-page-editor.browser.test.tsx
           __tests__/browser/a4-input-sequences.browser.test.tsx
           __tests__/browser/a4-s3-performance.browser.test.tsx
           __tests__/browser/a4-boundary-semantics.browser.test.tsx
-          --browser.enabled --browser.headless --browser.provider=playwright --browser.name=chromium
           --reporter=dot
       - name: Fetch temporary verifier material
         run: git fetch origin verify/a4-wave4-q2-g4-20260914:refs/remotes/origin/verify/a4-wave4-q2-g4-20260914
