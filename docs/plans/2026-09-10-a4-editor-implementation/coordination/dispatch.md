@@ -479,3 +479,62 @@ Handoff path: `coordination/workflow.md`.
 Completion boundary and next dependency: stop at **W3 only**. Do not deploy, activate a production rollout, perform Q2 or bump version.
 
 Wave-4 assignments are now published from the merged Q1 evidence baseline. Publication authorizes only the named implementation packets under their ownership boundaries; it does not itself deploy D1/D2/D3 or release Q2.
+
+## WAVE-4 INTEGRATION CLOSEOUT / VERIFY-Q2-G4-20260913-01 — 2026-09-13
+
+Dispatch ID: `VERIFY-Q2-G4-20260913-01`
+
+Role / gate: **independent VERIFY — remaining G3 acceptance, then G4 / Q2 full acceptance**
+
+State: **DISPATCHED — independent verification not started**
+
+Immutable product candidate: `b522cf50f61f18b75f2cae62b42cd142bef4cf2d`
+
+Integration branch: `codex/a4-editor-wave4-integration-20260913`. The final integration PR targets `main` and must remain unmerged until the user separately authorizes merge after independent verification. VERIFY must check out the exact candidate SHA above, not a later coordination-only branch head.
+
+Contract: **v1 frozen at G0 — unchanged**.
+
+Prerequisites: G2/Q1 remains **PASSED**; C3/S3/F3/W3 are integrated on the Wave-4 branch. CORE integration evidence is green, but CORE does not self-certify independent Q2/G4.
+
+### CORE G3 assessment
+
+CORE assesses the integrated implementation as **G3 implementation-complete / ready for independent acceptance**: typed/scoped field lifecycle, lossless definitions and metadata, plain-text/trusted-rich policy, revision/draft/preview behavior and common output preparation are integrated. Because `verification-and-rollout.md` requires actual output and real user-interaction evidence, G3 is not promoted by CORE to an independently accepted release gate. VERIFY must close the remaining G3 evidence first; if it passes on this same immutable target, continue immediately into G4/Q2.
+
+### VERIFY ownership and exact lease
+
+VERIFY may add only independent acceptance evidence under named verification paths, for example:
+
+- `docs/plans/2026-09-10-a4-editor-implementation/coordination/verify.md`;
+- `__tests__/browser/a4-q2-acceptance.browser.test.tsx`;
+- `__tests__/integration/a4-editor-q2-persistence.test.ts`;
+- `tests/document-output/a4-editor-q2-output.test.ts`;
+- narrowly scoped Q2-only fixture/evidence files required by those tests.
+
+VERIFY must not edit production code, frozen contracts, owner tests, migrations, package/version files, deployment configuration or existing business data. Product defects return to CORE/SEMANTICS/FIELDS/WORKFLOW and require a new frozen candidate.
+
+### Required independent Q2 / G4 evidence
+
+Follow the complete Q2 and G4 sections of `verification-and-rollout.md`, including at minimum:
+
+- one field grammar across simple/spaced/modifier/loop/partial syntax and repairable diagnostics;
+- atomic fields through bold/headings/lists/tables/adjacency/page boundaries, identity-preserving rename/migration/delete/undo, colliding nested partial scopes and intentional linkings;
+- literal ampersand/angle-bracket text, trusted-rich policy, false/zero/empty/missing/date/multiline/default behavior and legacy/unknown metadata no-change API round-trip;
+- immediate/repeated save ordering, two-client expected-revision conflicts, template/partial/generated-draft/batch revisions, wrong-tenant/permission/locked/deleted behavior, draft recovery and stale preview suppression;
+- complete four-stage batch UI journey with identity/layout/reviewed fingerprint/manual content/dependency preservation;
+- **actual PDF and HTML** from generated snapshots, PDF page rendering/inspection, unique sentinels exactly once/in order, numbering/quotes/captions/footer rows/images/sup/sub/margins/spacing/letterhead/page numbers/watermark parity;
+- cold/warm/slow-font convergence, oversized-content presence and guidance;
+- forced pagination failure, stale/missing bundle, font failure and export timeout with fail-closed output and resource cleanup;
+- local print through the shared output contract including cancellation;
+- real synthetic clipboard content from Word, Google Docs, Outlook/email, a website and plain text;
+- keyboard/mouse/cut-copy-paste/select-all/navigation, real IME composition, emoji/grapheme deletion, screen-reader/focus order and supported narrow desktop/tablet views;
+- representative staff Journeys A-D with recorded observations and the programme's stated success target;
+- repository checks under Node 24, browser suites, production build, disposable PostgreSQL migration/concurrency suites and capability/bundle-version checks on the actual candidate;
+- rollback rehearsal/minimum compatible reader and explicit blocked status for any unavailable required environment. Missing smoke URLs or device/AT environments do not count as passes.
+
+VERIFY must confirm `git rev-parse HEAD` equals `b522cf50f61f18b75f2cae62b42cd142bef4cf2d` before decisive product checks. If source changes, stop and request a new immutable dispatch.
+
+### Completion boundary
+
+Write the independent report to `coordination/verify.md` with environment, exact commands/counts, native/real-user results, PDF/HTML/visual evidence, compatibility/capability versions, blocked checks, defects, rollback minimum and technical promotion decision.
+
+Do **not** merge the final Wave-4 PR to `main`, deploy D1/D2/D3, activate strict rollout behavior, finalize/send/sign/file real documents, or bump the application version from this assignment. Q2/G4 technical acceptance is not deployment permission.

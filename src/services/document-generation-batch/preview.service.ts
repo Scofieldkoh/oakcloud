@@ -6,11 +6,20 @@ import {
   ValidationError,
 } from '@/lib/errors';
 import {
+  normalizePlaceholderKey,
   normalizeStoredPlaceholders,
   storageFormatToCustomPlaceholders,
-  mergeTemplateAndPartialPlaceholders,
 } from '@/lib/template-analysis';
-import { resolveEffectiveCustomData } from '@/lib/document-generation-master-fields';
+import {
+  canonicalPlaceholderType,
+  masterFieldId,
+} from '@/lib/document-generation-master-fields';
+import {
+  normalizeStoredFieldDefinitionInput,
+  resolveTopLevelCustomValues,
+  isWorkflowFieldValuePresent,
+} from '@/lib/document-editor/template-field-workflow';
+import { loadStoredFieldRegistry } from '@/lib/template-field-registry';
 import {
   createPreviewFingerprint,
   createReviewedFingerprint,
@@ -20,7 +29,7 @@ import {
   selectDocumentGenerationTitleDate,
 } from '@/lib/document-generation-title';
 import { claimGeneratedDocumentRevision } from '@/lib/document-editor/generated-document-revision';
-import { renderTemplateForGeneration } from '@/services/document-generator.service';
+import { renderTemplateForWorkflow } from '@/services/document-workflow-renderer.service';
 import type {
   BatchItemMutationInput,
   DocumentGenerationBatchDto,
@@ -46,42 +55,29 @@ export interface EvaluatedPreview {
   content: string;
   fingerprint: string;
   blockingErrors: string[];
-  effectiveCustomData: Record<string, string>;
+  effectiveCustomData: Record<string, unknown>;
   resolvedTitle: string;
-  rendered: Awaited<ReturnType<typeof renderTemplateForGeneration>>;
+  rendered: Awaited<ReturnType<typeof renderTemplateForWorkflow>>;
 }
 
 async function templateCustomFields(
   templateId: string,
   tenantId: string,
 ): Promise<{
-  fields: CustomPlaceholderDefinition[];
+  ownFields: CustomPlaceholderDefinition[];
+  storedDefinitions: Readonly<Record<string, unknown>>[];
   titleDateFieldKey: string | null;
 }> {
   const template = await prisma.documentTemplate.findFirst({
     where: { id: templateId, tenantId, deletedAt: null },
-    select: { id: true, content: true, placeholders: true, contentJson: true },
+    select: { id: true, placeholders: true, contentJson: true },
   });
   if (!template) throw new NotFoundError('Template not found');
-  const partials = await prisma.templatePartial.findMany({
-    where: { tenantId, deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      content: true,
-      placeholders: true,
-      version: true,
-    },
-  });
-  const fields = mergeTemplateAndPartialPlaceholders({
-    templatePlaceholders: storageFormatToCustomPlaceholders(
-      normalizeStoredPlaceholders(template.placeholders),
-      { scope: { kind: 'template', id: template.id } },
-    ),
-    templateContent: template.content,
-    partials,
-  });
+  const storedDefinitions = normalizeStoredFieldDefinitionInput(template.placeholders);
+  const ownFields = storageFormatToCustomPlaceholders(
+    normalizeStoredPlaceholders(template.placeholders),
+    { scope: { kind: 'template', id: template.id } },
+  ).filter((field) => !field.sourcePartial);
   const contentJson = template.contentJson;
   const titleDateFieldKey = contentJson
     && typeof contentJson === 'object'
@@ -89,7 +85,54 @@ async function templateCustomFields(
     && typeof (contentJson as Record<string, unknown>).documentTitleDateFieldKey === 'string'
     ? (contentJson as Record<string, string>).documentTitleDateFieldKey
     : null;
-  return { fields, titleDateFieldKey };
+  return { ownFields, storedDefinitions, titleDateFieldKey };
+}
+
+function typedBatchCustomData(input: {
+  templateId: string;
+  storedDefinitions: readonly Readonly<Record<string, unknown>>[];
+  ownFields: readonly CustomPlaceholderDefinition[];
+  masterValues: Readonly<Record<string, string>>;
+  overrides: Readonly<Record<string, string>>;
+  itemValues: Readonly<Record<string, unknown>>;
+}): Record<string, unknown> {
+  const scope = { kind: 'template' as const, id: input.templateId };
+  const registry = loadStoredFieldRegistry({ scope, definitions: input.storedDefinitions });
+  const overridesByIdentity: Record<string, unknown> = {};
+  const mastersByIdentity: Record<string, unknown> = {};
+  const ownByKey = new Map(input.ownFields.map((field) => [normalizePlaceholderKey(field.key), field]));
+
+  for (const definition of registry.definitions) {
+    if (typeof definition.original.sourcePartial === 'string') continue;
+    const field = ownByKey.get(normalizePlaceholderKey(definition.key));
+    if (!field) continue;
+    const aggregateId = masterFieldId(
+      normalizePlaceholderKey(field.key),
+      canonicalPlaceholderType(field.type),
+    );
+    if (Object.prototype.hasOwnProperty.call(input.overrides, aggregateId)) {
+      overridesByIdentity[definition.identity] = input.overrides[aggregateId];
+    }
+    if (Object.prototype.hasOwnProperty.call(input.masterValues, aggregateId)) {
+      mastersByIdentity[definition.identity] = input.masterValues[aggregateId];
+    }
+  }
+
+  return resolveTopLevelCustomValues({
+    definitions: input.storedDefinitions,
+    scope,
+    itemValues: input.itemValues,
+    documentOverrides: overridesByIdentity,
+    sharedMasterValues: mastersByIdentity,
+  });
+}
+
+function stringValues(values: Readonly<Record<string, unknown>>): Record<string, string> {
+  const output: Record<string, string> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === 'string') output[key] = value;
+  }
+  return output;
 }
 
 export async function buildBatchItemRenderInput(
@@ -100,17 +143,18 @@ export async function buildBatchItemRenderInput(
 ): Promise<EvaluatedPreview> {
   const configuration = parseBatchItemConfiguration(item.configuration);
   const templateFieldConfig = await templateCustomFields(item.templateId, params.tenantId);
-  const templateFields = templateFieldConfig.fields;
-  const effectiveCustomData = resolveEffectiveCustomData({
-    templateFields,
+  const effectiveCustomData = typedBatchCustomData({
     templateId: item.templateId,
+    storedDefinitions: templateFieldConfig.storedDefinitions,
+    ownFields: templateFieldConfig.ownFields,
     masterValues: (batch.masterFieldValues ?? {}) as Record<string, string>,
     overrides: configuration.masterOverrides,
     itemValues: configuration.itemValues,
   });
   const agreement = item.generatedDocument?.serviceAgreement;
+  const titleValues = stringValues(effectiveCustomData);
   const titleDate = selectDocumentGenerationTitleDate({
-    values: effectiveCustomData,
+    values: titleValues,
     selectedFieldKey: item.template.compositionType === 'STANDARD'
       ? templateFieldConfig.titleDateFieldKey
       : null,
@@ -120,7 +164,9 @@ export async function buildBatchItemRenderInput(
   const selectedTitleDateMissing = item.template.compositionType === 'STANDARD'
     && configuration.title.includes('{{date}}')
     && Boolean(templateFieldConfig.titleDateFieldKey)
-    && !effectiveCustomData[templateFieldConfig.titleDateFieldKey!]?.trim();
+    && !isWorkflowFieldValuePresent(
+      effectiveCustomData[templateFieldConfig.titleDateFieldKey!],
+    );
   const titleErrors = selectedTitleDateMissing
     ? ['The selected document title date is missing']
     : [];
@@ -130,7 +176,7 @@ export async function buildBatchItemRenderInput(
     companyName: batch.primaryCompany?.name,
     date: titleDate,
   });
-  const rendered = await renderTemplateForGeneration({
+  const rendered = await renderTemplateForWorkflow({
     templateId: item.templateId,
     tenantId: params.tenantId,
     userId: params.userId,
@@ -344,6 +390,10 @@ export async function reviewDocumentGenerationBatchItem(
       where: { id: item.id },
       data: {
         reviewedFingerprint,
+        // Freeze the exact reviewed W3 scoped bytes. W2 generation already
+        // treats editedContent as the final materialization override; equality
+        // with previewContent is still considered unedited by refresh gating.
+        editedContent: item.editedContent ?? item.previewContent,
         status: 'READY',
         validationDiagnostics: Prisma.DbNull,
       },
