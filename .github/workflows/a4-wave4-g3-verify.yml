@@ -2,6 +2,11 @@ name: A4 Wave 4 G3 independent verification
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - verify/a4-wave4-q2-g4-20260914
+    paths:
+      - '.github/workflows/a4-wave4-g3-verify.yml'
 
 permissions:
   contents: read
@@ -72,9 +77,11 @@ jobs:
           __tests__/browser/a4-boundary-semantics.browser.test.tsx
           --browser.enabled --browser.headless --browser.provider=playwright --browser.name=chromium
           --reporter=dot
+      - name: Fetch temporary verifier material
+        run: git fetch origin verify/a4-wave4-q2-g4-20260914:refs/remotes/origin/verify/a4-wave4-q2-g4-20260914
       - name: Materialize verifier-only actual-output test
         run: |
-          git show verify/a4-wave4-q2-g4-20260914:verification/a4-wave4-g3-actual-output.verify.test.ts > __tests__/services/a4-wave4-g3-actual-output.verify.test.ts
+          git show origin/verify/a4-wave4-q2-g4-20260914:verification/a4-wave4-g3-actual-output.verify.test.ts > __tests__/services/a4-wave4-g3-actual-output.verify.test.ts
       - name: Actual HTML and PDF output through Chromium
         run: npx vitest run __tests__/services/a4-wave4-g3-actual-output.verify.test.ts --reporter=dot
       - name: Upload G3 output evidence
